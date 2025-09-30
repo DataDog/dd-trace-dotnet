@@ -133,6 +133,52 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         return customConfiguration;
     }
 
+#if NETFRAMEWORK
+    private static ServicePoint ConfigureServicePoint(Uri baseUri)
+    {
+        var sp = ServicePointManager.FindServicePoint(baseUri);
+
+        // Kill “zombie” keep-alives proactively
+        sp.ConnectionLeaseTimeout = (int)TimeSpan.FromSeconds(25).TotalMilliseconds; // < typical 30s LB idle
+        sp.MaxIdleTime = (int)TimeSpan.FromSeconds(20).TotalMilliseconds; // drop idle sockets quickly
+
+        // Reduce proxy quirks / latency micro-hiccups
+        sp.Expect100Continue = false;  // per-ServicePoint (not global)
+        sp.UseNagleAlgorithm = false;  // optional: lowers small-write delays
+
+        // Keep enough lanes open to avoid request queueing
+        sp.ConnectionLimit = Math.Max(64, Environment.ProcessorCount * 8);
+        return sp;
+    }
+
+    private static void CloseConnectionGroupOnFailure(Uri baseUri, Exception exception)
+    {
+        if (exception is not WebException webException)
+        {
+            return;
+        }
+
+        switch (webException.Status)
+        {
+            case WebExceptionStatus.ConnectionClosed:
+            case WebExceptionStatus.KeepAliveFailure:
+            case WebExceptionStatus.ReceiveFailure:
+                try
+                {
+                    var servicePoint = ServicePointManager.FindServicePoint(baseUri);
+                    servicePoint?.CloseConnectionGroup(string.Empty);
+                    Log.Debug("TestOptimizationClient: Closed ServicePoint connection group after keep-alive failure.");
+                }
+                catch (Exception closeEx)
+                {
+                    Log.Debug(closeEx, "TestOptimizationClient: Failed to close ServicePoint connection group.");
+                }
+
+                break;
+        }
+    }
+#endif
+
     private bool EnsureRepositoryUrl()
     {
         if (string.IsNullOrEmpty(_repositoryUrl))
@@ -230,6 +276,9 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                                var client = state.Client;
                                var uri = state.Uri;
                                var body = state.Body;
+#if NETFRAMEWORK
+                               ConfigureServicePoint(uri);
+#endif
                                var request = client._apiRequestFactory.Create(uri);
                                client.SetRequestHeader(request);
 
@@ -254,6 +303,9 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                                catch (Exception ex)
                                {
                                    Log.Error(ex, "TestOptimizationClient: Error getting result.");
+#if NETFRAMEWORK
+                                   CloseConnectionGroupOnFailure(uri, ex);
+#endif
                                    callbacks.OnError(ex);
                                    throw;
                                }
@@ -284,6 +336,9 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                                var client = state.Client;
                                var uri = state.Uri;
                                var multipartFormItems = state.MultipartFormItems;
+#if NETFRAMEWORK
+                               ConfigureServicePoint(uri);
+#endif
                                var request = client._apiRequestFactory.Create(uri);
                                client.SetRequestHeader(request);
 
@@ -308,6 +363,9 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                                catch (Exception ex)
                                {
                                    Log.Error(ex, "TestOptimizationClient: Error getting result.");
+#if NETFRAMEWORK
+                                   CloseConnectionGroupOnFailure(uri, ex);
+#endif
                                    callbacks.OnError(ex);
                                    throw;
                                }
