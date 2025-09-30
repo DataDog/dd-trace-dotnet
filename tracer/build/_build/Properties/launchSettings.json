@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "_build": {
+      "commandName": "Project",
+      "commandLineArgs": "GenerateVariables"
+    }
+  }
+}
