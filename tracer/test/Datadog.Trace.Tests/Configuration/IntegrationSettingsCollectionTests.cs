@@ -36,7 +36,8 @@ namespace Datadog.Trace.Tests.Configuration
             instance1.Enabled.Should().BeNull();
 
             var instance2 = settings[integrationName];
-            instance2.Should().NotBe(instance1);
+            instance2.Should().NotBeSameAs(instance1);
+            instance2.Should().Be(instance1); // works because of value-comparison IEquatable implementation
             instance2.IntegrationName.Should().Be(integrationName);
             instance2.Enabled.Should().BeNull();
         }

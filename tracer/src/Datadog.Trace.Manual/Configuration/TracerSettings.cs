@@ -466,7 +466,6 @@ public sealed class TracerSettings
     /// </summary>
     /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
     /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
-    [PublicApi]
     public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
     {
         // Check for null to be safe as it's a public API.
