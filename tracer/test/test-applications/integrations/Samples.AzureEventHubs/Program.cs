@@ -270,26 +270,21 @@ namespace Samples.AzureEventHubs
             Console.WriteLine("\n=== EventHubs Enumerable Test ===");
 
             var partitionIds = await consumerClient.GetPartitionIdsAsync();
-            Console.WriteLine("Creating enumerable of events...");
 
-            var events = new[]
+            var messageCountString = Environment.GetEnvironmentVariable("EVENTHUBS_MESSAGE_COUNT");
+            var messageCount = int.TryParse(messageCountString, out var parsedCount) ? parsedCount : 1;
+
+            Console.WriteLine($"Creating enumerable of {messageCount} event(s)...");
+
+            var events = new EventData[messageCount];
+            for (int i = 0; i < messageCount; i++)
             {
-                new EventData(Encoding.UTF8.GetBytes("Enumerable event 1"))
+                events[i] = new EventData(Encoding.UTF8.GetBytes($"Enumerable event {i + 1}"))
                 {
                     MessageId = Guid.NewGuid().ToString(),
-                    ContentType = "EnumerableTest1"
-                },
-                new EventData(Encoding.UTF8.GetBytes("Enumerable event 2"))
-                {
-                    MessageId = Guid.NewGuid().ToString(),
-                    ContentType = "EnumerableTest2"
-                },
-                new EventData(Encoding.UTF8.GetBytes("Enumerable event 3"))
-                {
-                    MessageId = Guid.NewGuid().ToString(),
-                    ContentType = "EnumerableTest3"
-                }
-            };
+                    ContentType = $"EnumerableTest{i + 1}"
+                };
+            }
 
             Console.WriteLine("Setting properties on events...");
             for (int i = 0; i < events.Length; i++)

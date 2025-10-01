@@ -15,5 +15,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     internal interface IAmqpConsumer : IDuckType
     {
         string EventHubName { get; }
+
+        IAmqpConnectionScope? ConnectionScope { get; }
+    }
+
+    internal interface IAmqpConnectionScope
+    {
+        System.Uri? ServiceEndpoint { get; }
     }
 }

@@ -31,6 +31,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
+        public static IEnumerable<object[]> GetEnabledConfigWithMessageCount()
+            => from packageVersionArray in PackageVersions.AzureEventHubs
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               from messageCount in new[] { 1, 3 }
+               select new object[] { packageVersionArray[0], metadataSchemaVersion, messageCount };
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
             SpanKinds.Consumer => span.IsAzureEventHubsInbound(metadataSchemaVersion),
@@ -99,14 +105,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [MemberData(nameof(GetEnabledConfigWithMessageCount))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsEnumerableIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsEnumerableIntegration(string packageVersion, string metadataSchemaVersion, int messageCount)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
             SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsEnumerable");
+            SetEnvironmentVariable("EVENTHUBS_MESSAGE_COUNT", messageCount.ToString());
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -190,14 +197,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [MemberData(nameof(GetEnabledConfigWithMessageCount))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsEnumerableIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsEnumerableIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion, int messageCount)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
             SetEnvironmentVariable("EVENTHUBS_TEST_MODE", "TestEventHubsEnumerable");
+            SetEnvironmentVariable("EVENTHUBS_MESSAGE_COUNT", messageCount.ToString());
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))

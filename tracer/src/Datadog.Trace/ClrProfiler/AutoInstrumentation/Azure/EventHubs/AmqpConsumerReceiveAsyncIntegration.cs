@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             {
                 if (returnValue is IReadOnlyList<object> readOnlyList && readOnlyList.Count > 0)
                 {
-                    ProcessReceivedEvents(readOnlyList, instance.EventHubName);
+                    ProcessReceivedEvents(readOnlyList, instance);
                 }
                 else
                 {
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return returnValue;
         }
 
-        private static void ProcessReceivedEvents(IReadOnlyList<object> eventsList, string eventHubName)
+        private static void ProcessReceivedEvents(IReadOnlyList<object> eventsList, IAmqpConsumer consumerInstance)
         {
             var tracer = Tracer.Instance;
             var messageCount = eventsList.Count;
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
 
             var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, events) : null;
-            var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, eventHubName, events);
+            var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, consumerInstance, events);
 
             if (scope != null && events.Count > 0)
             {
@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             return spanLinks;
         }
 
-        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount, string eventHubName, List<object> events)
+        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount, IAmqpConsumer consumerInstance, List<object> events)
         {
             try
             {
@@ -145,6 +145,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: links);
                 var span = scope.Span;
 
+                var eventHubName = consumerInstance.EventHubName;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = eventHubName;
 
@@ -164,6 +165,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                             tags.MessagingMessageId = messageId;
                         }
                     }
+                }
+
+                var endpoint = consumerInstance.ConnectionScope?.ServiceEndpoint;
+                if (endpoint != null)
+                {
+                    tags.ServerAddress = endpoint.Host;
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
