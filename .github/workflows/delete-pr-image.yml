@@ -19,10 +19,6 @@ jobs:
         run: |
           BRANCH="${{ github.event.pull_request.head.ref }}"
           TAG="${BRANCH//\//_}"
-          if ! [[ $TAG =~ ^[A-Za-z0-9._-]+$ ]]; then
-            echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _"
-            exit 1
-          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Delete image by tag from GHCR
