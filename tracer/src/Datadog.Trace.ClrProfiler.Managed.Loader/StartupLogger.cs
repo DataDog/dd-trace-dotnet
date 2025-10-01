@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return logDirectory;
             }
 
-            if (envVars.GetEnvironmentVariable("DD_TRACE_LOG_PATH") is { } logFilename && !string.IsNullOrEmpty(logFilename))
+            if (envVars.GetEnvironmentVariable("DD_TRACE_LOG_PATH") is { } logFilename)
             {
                 return Path.GetDirectoryName(logFilename);
             }
