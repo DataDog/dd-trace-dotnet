@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         static StartupLogger()
         {
-            var envVars = new EnvironmentVariableProvider(false);
+            var envVars = new EnvironmentVariableProvider(logErrors: false);
             DebugEnabled = envVars.GetBooleanEnvironmentVariable("DD_TRACE_DEBUG") ?? false;
 
             try
