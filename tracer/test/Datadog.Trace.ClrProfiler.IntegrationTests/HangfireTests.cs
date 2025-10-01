@@ -54,10 +54,12 @@ public class HangfireTests : TracingIntegrationTest
             var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
             var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+            var hangfireInnerExceptionJoin = new Regex(@"\.\s*\r?\n\s*--->");
             settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
             settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
             settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(hangfireInnerExceptionJoin, ". --->");
             await VerifyHelper.VerifySpans(
                                             spans,
                                             settings,
