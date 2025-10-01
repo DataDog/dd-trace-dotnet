@@ -132,7 +132,7 @@ namespace Datadog.Trace.AppSec
                                            .Value;
 
             ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
-                                           .AsBool(false);
+                                           .AsBool(true);
 
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
                                            .AsInt32(300, val => val >= 0)
