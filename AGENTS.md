@@ -215,7 +215,7 @@ tracer/src/Datadog.Trace
 
 - C#: .editorconfig (4-space indent, System.* first, prefer var). Types/methods PascalCase; locals camelCase.
   - When a "using" directive is missing in a file, add it instead of using fully-qualified type names.
-  - Use modern C# syntax, but avoid syntax that requires types not available in older runtimes (for example, ValueTuple is not included in .NET Framework 4.6.1)
+  - Use modern C# syntax, but avoid syntax that requires types not available in older runtimes (for example, don't use syntax that requires ValueTuple because is not included in .NET Framework 4.6.1)
 - StyleCop: `tracer/stylecop.json`; address warnings before pushing.
 - C/C++: `.clang-format`; keep consistent naming.
 
