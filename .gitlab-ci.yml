@@ -1,3 +1,32 @@
+# 1) Pipelines always exist on these branches
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(master|release\/.+|hotfix\/.+)$/'
+      when: always
+    - when: always   # create pipeline for other branches too (jobs may skip)
+
+# Anchor the job rules so you can reuse them on every job
+.run_when_not_docs:
+  rules:
+    # Always run on master/release/hotfix
+    - if: '$CI_COMMIT_BRANCH =~ /^(master|release\/.+|hotfix\/.+)$/'
+      when: on_success
+
+    # If the commit changes ONLY the excluded paths below, skip the job.
+    # NOTE: If any non-excluded path also changed, this rule must not match first.
+    - changes:
+        - .azure-pipelines/noop-pipeline.yml
+        - .azure-pipelines/ultimate-pipeline.yml
+        - .github/**/*
+        - docs/**/*
+        - tracer/README.MD
+        - tracer/samples/**/*
+        - .gitlab-ci.yml
+      when: never
+
+    # Otherwise, run.
+    - when: on_success
+
 stages:
   - build
   - package
@@ -14,57 +43,12 @@ variables:
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
 
 build:
-  rules:
-    # Skip if only documentation, samples, or CI config files changed
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master" && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
-      changes:
-        - "**/*"
-      when: on_success
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"
-      changes:
-        - "docs/**/*"
-        - "tracer/README.MD"
-        - "tracer/samples/**/*"
-        - ".github/**/*"
-        - ".azure-pipelines/noop-pipeline.yml"
-        - ".azure-pipelines/ultimate-pipeline.yml"
-        - ".gitlab-ci.yml"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
-      changes:
-        - "**/*"
-      when: on_success
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/
-      changes:
-        - "docs/**/*"
-        - "tracer/README.MD"
-        - "tracer/samples/**/*"
-        - ".github/**/*"
-        - ".azure-pipelines/noop-pipeline.yml"
-        - ".gitlab-ci.yml"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
-      changes:
-        - "**/*"
-      when: on_success
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/
-      changes:
-        - "docs/**/*"
-        - "tracer/README.MD"
-        - "tracer/samples/**/*"
-        - ".github/**/*"
-        - ".azure-pipelines/noop-pipeline.yml"
-        - ".gitlab-ci.yml"
-      when: never
-    # For other branches, run if there are any changes
-    - if: $CI_PIPELINE_SOURCE == "push"
-      when: on_success
-    # Skip for deployment and tag builds
-    - if: $DEPLOY_TO_REL_ENV == "true"
-      when: never
-    - if: $CI_COMMIT_TAG
-      when: never
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
+  extends: .run_when_not_docs
   tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
