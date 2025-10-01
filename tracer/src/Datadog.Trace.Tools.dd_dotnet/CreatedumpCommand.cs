@@ -687,7 +687,8 @@ internal class CreatedumpCommand : Command
 
         if (!isSuspicious)
         {
-            var filteringEnabled = Environment.GetEnvironmentVariable(EnvironmentFilteringEnabled) ?? string.Empty;
+            // Disable filtering by default.
+            var filteringEnabled = Environment.GetEnvironmentVariable(EnvironmentFilteringEnabled) ?? "0";
 
             if (filteringEnabled == "0"
                 || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase)
