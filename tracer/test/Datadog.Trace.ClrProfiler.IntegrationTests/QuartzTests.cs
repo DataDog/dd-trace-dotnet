@@ -104,8 +104,9 @@ public class QuartzTests : TracingIntegrationTest
         {
 #if NETCOREAPP3_0 || NETCOREAPP3_1
             return new("V3NETCOREAPP3X", 2);
-#endif
+#else
             return new("V3", 2);
+#endif
         }
 
         return new Version(packageVersion) switch
