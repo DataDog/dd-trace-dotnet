@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 const string methodName = "Initialize";
-                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey, defaultValue: false);
+                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey) ?? false;
 
                 if (usingAasSiteExtension)
                 {

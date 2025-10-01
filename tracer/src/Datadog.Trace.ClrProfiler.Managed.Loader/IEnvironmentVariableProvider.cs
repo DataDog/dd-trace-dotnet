@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.ClrProfiler.Managed.Loader;
 
 /// <summary>
@@ -31,17 +33,38 @@ internal static class EnvironmentVariableProviderExtensions
     /// </summary>
     /// <param name="provider">The environment variable provider.</param>
     /// <param name="key">The name of the environment variable.</param>
-    /// <param name="defaultValue">The default boolean value to return if the environment variable is not set or cannot be parsed.</param>
     /// <returns>A boolean value parsed from the environment variable, or the default value if parsing is not possible.</returns>
-    public static bool GetBooleanEnvironmentVariable(this IEnvironmentVariableProvider provider, string key, bool defaultValue)
+    public static bool? GetBooleanEnvironmentVariable(this IEnvironmentVariableProvider provider, string key)
     {
         var value = provider.GetEnvironmentVariable(key);
 
-        return value switch
-               {
-                   "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
-                   "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
-                   _ => defaultValue
-               };
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        if (value!.Length == 1)
+        {
+            return value[0] switch
+                   {
+                       '1' or 'T' or 't' or 'Y' or 'y' => true,
+                       '0' or 'F' or 'f' or 'N' or 'n' => false,
+                       _ => null
+                   };
+        }
+
+        if (string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "YES", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(value, "FALSE", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "NO", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return null;
     }
 }
