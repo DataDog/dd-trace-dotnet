@@ -27,6 +27,13 @@ workflow:
     # Otherwise, run.
     - when: on_success
 
+.skip_rel_and_tags:
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true"'
+      when: never
+    - if: '$CI_COMMIT_TAG'   # release tag builds shouldn't run this job
+      when: never
+
 stages:
   - build
   - package
@@ -43,12 +50,10 @@ variables:
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
 
 build:
-  except:
-    variables:
-      - $DEPLOY_TO_REL_ENV == "true"
-      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
-  extends: .run_when_not_docs
+  extends:
+    - .skip_rel_and_tags
+    - .run_when_not_docs
   tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
