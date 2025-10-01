@@ -162,6 +162,8 @@ requirements_json_test:
     REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
 package-oci:
+  extends:
+    - .run_when_not_docs
   needs: [ download-single-step-artifacts ]
 
 generate-lib-init-pinned-tag-values:
@@ -203,6 +205,8 @@ aws-lambda-layer:
   stage: package
   needs: [download-serverless-artifacts]
   when: manual
+  extends:
+    - .run_when_not_docs
   trigger:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
