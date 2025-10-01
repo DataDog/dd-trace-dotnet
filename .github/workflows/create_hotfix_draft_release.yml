@@ -19,7 +19,7 @@ jobs:
         steps:
             - name: Verify running on hotfix branch
               run: |
-                if [[ "${{  github.ref }}" != refs/head/hotfix* ]]; then
+                if [[ "${{  github.ref }}" != refs/heads/hotfix* ]]; then
                   echo "Error: This workflow can only be run from a hotfix/* branch"
                   echo "Current branch: ${{ github.ref }}"
                   exit 1

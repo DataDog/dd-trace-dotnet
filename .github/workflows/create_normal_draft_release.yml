@@ -19,7 +19,7 @@ jobs:
         steps:
             - name: Verify running on main release branch
               run: |
-                if [[ "${{  github.ref }}" != "refs/head/master" ]]; then
+                if [[ "${{  github.ref }}" != "refs/heads/master" ]]; then
                   echo "Error: This workflow can only be run from the following: master"
                   echo "Current branch: ${{ github.ref }}"
                   exit 1
