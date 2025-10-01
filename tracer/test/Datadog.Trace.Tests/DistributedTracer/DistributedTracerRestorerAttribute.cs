@@ -17,13 +17,13 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
         public override void Before(MethodInfo methodUnderTest)
         {
-            _distributedTracer = ClrProfiler.DistributedTracer.Instance;
+            _distributedTracer = Datadog.Trace.ClrProfiler.DistributedTracer.Instance;
             base.Before(methodUnderTest);
         }
 
         public override void After(MethodInfo methodUnderTest)
         {
-            ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(_distributedTracer);
+            Datadog.Trace.ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(_distributedTracer);
             base.After(methodUnderTest);
         }
     }
