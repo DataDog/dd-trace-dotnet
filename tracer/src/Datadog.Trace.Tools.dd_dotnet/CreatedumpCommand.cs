@@ -714,7 +714,7 @@ internal class CreatedumpCommand : Command
         }
 
         DebugPrint("Setting crash report metadata");
-        _ = SetMetadata(crashReport, _runtime, exception);
+        _ = SetMetadata(crashReport, _runtime, exception, isSuspicious);
 
         try
         {
@@ -810,7 +810,7 @@ internal class CreatedumpCommand : Command
         return true;
     }
 
-    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception)
+    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception, bool isSuspicious)
     {
         var flavor = runtime.ClrInfo.Flavor switch
         {
@@ -854,6 +854,11 @@ internal class CreatedumpCommand : Command
         if (exception != null)
         {
             tags = [.. tags, ("exception", exception.ToString())];
+        }
+
+        if (isSuspicious)
+        {
+            tags = [.. tags, ("crash_datadog", "true")];
         }
 
         var bag = new List<IntPtr>();
