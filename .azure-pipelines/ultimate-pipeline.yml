@@ -29,7 +29,8 @@ pr:
       - docs/
       - tracer/README.MD
       - tracer/samples/
-
+      - .gitlab-ci.yml # just for testing
+      - ultimate-pipeline.yml
 schedules:
   - cron: "0 3 * * *"
     displayName: Daily 3am (UTC) build

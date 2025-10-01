@@ -27,6 +27,7 @@ build:
         - "tracer/samples/**/*"
         - ".github/**/*"
         - ".azure-pipelines/noop-pipeline.yml"
+        - ".gitlab-ci.yml"
       when: never
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
       changes:
@@ -39,6 +40,7 @@ build:
         - "tracer/samples/**/*"
         - ".github/**/*"
         - ".azure-pipelines/noop-pipeline.yml"
+        - ".gitlab-ci.yml"
       when: never
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
       changes:
@@ -51,6 +53,7 @@ build:
         - "tracer/samples/**/*"
         - ".github/**/*"
         - ".azure-pipelines/noop-pipeline.yml"
+        - ".gitlab-ci.yml"
       when: never
     # For other branches, run if there are any changes
     - if: $CI_PIPELINE_SOURCE == "push"
