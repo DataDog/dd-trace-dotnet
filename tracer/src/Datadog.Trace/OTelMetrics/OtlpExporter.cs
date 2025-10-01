@@ -23,11 +23,16 @@ namespace Datadog.Trace.OTelMetrics
     /// Supports both grpc and http/protobuf transports as specified in the RFC.
     /// This is a Push Metric Exporter that sends metrics via the OpenTelemetry Protocol.
     /// </summary>
-    internal class OtlpExporter(Configuration.TracerSettings settings) : MetricExporter
+    internal class OtlpExporter : MetricExporter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
         private readonly HttpClient _httpClient = new();
-        private readonly Configuration.TracerSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        private readonly Configuration.TracerSettings _settings;
+
+        public OtlpExporter(Configuration.TracerSettings settings)
+        {
+            _settings = settings;
+        }
 
         /// <summary>
         /// Exports a batch of metrics using OTLP protocol.
@@ -37,7 +42,6 @@ namespace Datadog.Trace.OTelMetrics
         /// <returns>ExportResult indicating success or failure</returns>
         public override ExportResult Export(IReadOnlyList<MetricPoint> metrics)
         {
-            // For backward compatibility, call the async version synchronously
             return ExportAsync(metrics).GetAwaiter().GetResult();
         }
 

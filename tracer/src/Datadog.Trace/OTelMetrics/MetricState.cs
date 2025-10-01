@@ -21,12 +21,14 @@ internal class MetricState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricState));
     private readonly MetricStreamIdentity _identity;
+    private readonly AggregationTemporality? _temporality; // null for gauges
 
     private readonly ConcurrentDictionary<TagSet, MetricPoint> _points = new();
 
-    public MetricState(MetricStreamIdentity identity)
+    public MetricState(MetricStreamIdentity identity, AggregationTemporality? temporality)
     {
         _identity = identity;
+        _temporality = temporality;
     }
 
     public void RecordMeasurementLong(long value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
@@ -107,16 +109,18 @@ internal class MetricState
     public void RecordMeasurementHistogramDouble(double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
         => GetOrCreatePoint(tags).UpdateHistogram(value);
 
-    public IEnumerable<MetricPoint> GetMetricPoints()
+    /// <summary>
+    /// Builds metric point snapshots and adds them to the provided list.
+    /// For Delta temporality, resets the running values after snapshotting.
+    /// </summary>
+    public void TryBuildPoints(List<MetricPoint> into)
     {
-        var points = new List<MetricPoint>();
         foreach (var point in _points.Values)
         {
-            var snapshot = point.CreateSnapshotAndReset(point.AggregationTemporality == AggregationTemporality.Delta);
-            points.Add(snapshot);
+            var shouldReset = _temporality == AggregationTemporality.Delta;
+            var snapshot = point.CreateSnapshotAndReset(shouldReset);
+            into.Add(snapshot);
         }
-
-        return points;
     }
 
     public MetricStreamIdentity GetIdentity() => _identity;
@@ -136,7 +140,7 @@ internal class MetricState
             _identity.InstrumentName,
             _identity.MeterName,
             _identity.InstrumentType,
-            MetricReaderHandler.GetTemporality(_identity.InstrumentType),
+            _temporality, // Temporality decided at construction time
             tagDict));
     }
 }
