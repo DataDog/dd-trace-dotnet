@@ -102,8 +102,8 @@ public class QuartzTests : TracingIntegrationTest
     {
         if (string.IsNullOrEmpty(packageVersion))
         {
-#if NETCOREAPP3_1
-            return new("V3NETCOREAPP31", 2);
+#if NETCOREAPP3_0 || NETCOREAPP3_1
+            return new("V3NETCOREAPP3X", 2);
 #endif
             return new("V3", 2);
         }
@@ -111,8 +111,8 @@ public class QuartzTests : TracingIntegrationTest
         return new Version(packageVersion) switch
         {
             { } v when v >= new Version("4.0.0") => new("V4", 3),
-#if NETCOREAPP3_1
-            { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP31", 2),
+#if NETCOREAPP3_0 || NETCOREAPP3_1
+            { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP3X", 2),
 #endif
             _ => new("V3", 2)
         };
