@@ -27,6 +27,7 @@ build:
         - "tracer/samples/**/*"
         - ".github/**/*"
         - ".azure-pipelines/noop-pipeline.yml"
+        - ".azure-pipelines/ultimate-pipeline.yml"
         - ".gitlab-ci.yml"
       when: never
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
