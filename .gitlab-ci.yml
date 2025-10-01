@@ -1,36 +1,5 @@
-# master/hotfix branches should always run
-trigger:
-  branches:
-    include:
-      - master
-      - release/*
-      - hotfix/*
-    exclude:
-      - refs/pull/*/head
-
-# Changes in PRs and other branches need to run, if
-# - There were any code changes
-# - There were any changes to the AzDo or GitLab builds
-# They don't need to run if there are changes to
-# - Standalone samples
-# - Docs
-# - Any other non-build related files (but these rarely change, so just suck it up)
-pr:
-  branches:
-    include:
-      - '*' # default
-  paths:
-    exclude:
-      - .azure-pipelines/noop-pipeline.yml
-      - .github/
-      - docs/
-      - tracer/README.MD
-      - tracer/samples/
-      - .gitlab-ci.yml # just for testing, remove before merging
-
 stages:
   - build
-  - publish
   - package
   - shared-pipeline
   - publish
@@ -45,10 +14,52 @@ variables:
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
 
 build:
-  except:
-    variables:
-      - $DEPLOY_TO_REL_ENV == "true"
-      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
+  rules:
+    # Skip if only documentation, samples, or CI config files changed
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master" && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
+      changes:
+        - "**/*"
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"
+      changes:
+        - "docs/**/*"
+        - "tracer/README.MD"
+        - "tracer/samples/**/*"
+        - ".github/**/*"
+        - ".azure-pipelines/noop-pipeline.yml"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
+      changes:
+        - "**/*"
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^release\/.*$/
+      changes:
+        - "docs/**/*"
+        - "tracer/README.MD"
+        - "tracer/samples/**/*"
+        - ".github/**/*"
+        - ".azure-pipelines/noop-pipeline.yml"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/ && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" && $CI_COMMIT_SHA != $CI_COMMIT_BEFORE_SHA
+      changes:
+        - "**/*"
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^hotfix\/.*$/
+      changes:
+        - "docs/**/*"
+        - "tracer/README.MD"
+        - "tracer/samples/**/*"
+        - ".github/**/*"
+        - ".azure-pipelines/noop-pipeline.yml"
+      when: never
+    # For other branches, run if there are any changes
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: on_success
+    # Skip for deployment and tag builds
+    - if: $DEPLOY_TO_REL_ENV == "true"
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never
   stage: build
   tags: ["windows-v2:2019"]
   hooks:
