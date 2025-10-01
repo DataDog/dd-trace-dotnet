@@ -131,6 +131,8 @@ download-single-step-artifacts:
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   timeout: 45m
   tags: [ "arch:amd64" ]
+  extends:
+    - .run_when_not_docs
   needs:
     - job: build
       optional: true
@@ -177,6 +179,8 @@ download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
+  extends:
+    - .run_when_not_docs
   needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
