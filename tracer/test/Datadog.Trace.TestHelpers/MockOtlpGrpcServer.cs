@@ -26,25 +26,50 @@ namespace Datadog.Trace.TestHelpers
     /// <summary>
     /// Minimal h2c endpoint that accepts OTLP/gRPC Metrics Export (Unary).
     /// No Grpc.AspNetCore or Grpc.Core dependency. Test-only.
+    /// Supports both TCP/IP and Unix Domain Sockets.
     /// </summary>
     public sealed class MockOtlpGrpcServer : IDisposable, IAsyncDisposable
     {
         private readonly IHost _host;
+        private readonly string _udsPath;
 
-        public MockOtlpGrpcServer(int? fixedPort = null)
+        public MockOtlpGrpcServer(int? fixedPort = null, string udsPath = null)
         {
             // Allow plaintext HTTP/2 (h2c) client connections in this process
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-            Port = fixedPort ?? TcpPortProvider.GetOpenPort();
+            _udsPath = udsPath;
+
+            if (udsPath != null)
+            {
+                // Delete existing socket file if it exists
+                if (File.Exists(udsPath))
+                {
+                    File.Delete(udsPath);
+                }
+
+                UdsPath = udsPath;
+            }
+            else
+            {
+                Port = fixedPort ?? TcpPortProvider.GetOpenPort();
+            }
 
             _host = Host.CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(web =>
                 {
                     web.ConfigureKestrel(k =>
                     {
-                        // h2c on localhost
-                        k.ListenLocalhost(Port, o => o.Protocols = HttpProtocols.Http2);
+                        if (_udsPath != null)
+                        {
+                            // Listen on Unix Domain Socket
+                            k.ListenUnixSocket(_udsPath, o => o.Protocols = HttpProtocols.Http2);
+                        }
+                        else
+                        {
+                            // h2c on localhost
+                            k.ListenLocalhost(Port, o => o.Protocols = HttpProtocols.Http2);
+                        }
                     });
 
                     web.Configure(app =>
@@ -149,9 +174,27 @@ namespace Datadog.Trace.TestHelpers
 
         public int Port { get; }
 
+        public string UdsPath { get; }
+
         public System.Collections.Concurrent.ConcurrentQueue<MockTracerAgent.MockOtlpRequest> Requests { get; } = new();
 
-        public void Dispose() => _host.Dispose();
+        public void Dispose()
+        {
+            _host.Dispose();
+
+            // Clean up UDS socket file
+            if (_udsPath != null && File.Exists(_udsPath))
+            {
+                try
+                {
+                    File.Delete(_udsPath);
+                }
+                catch
+                {
+                    // Best effort cleanup
+                }
+            }
+        }
 
         public ValueTask DisposeAsync()
         {

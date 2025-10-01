@@ -8,10 +8,12 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -30,12 +32,37 @@ namespace Datadog.Trace.OTelMetrics
     internal class OtlpExporter : MetricExporter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
-        private readonly HttpClient _httpClient = new();
-        private readonly Configuration.TracerSettings _settings;
+        private readonly HttpClient _httpClient;
+        private readonly Telemetry.Metrics.MetricTags.Protocol _protocolTag;
+        private readonly OtlpMetricsSerializer _serializer;
+        private readonly Uri _endpoint;
+        private readonly IReadOnlyDictionary<string, string> _headers;
+        private readonly int _timeoutMs;
+        private readonly Configuration.OtlpProtocol _protocol;
 
         public OtlpExporter(Configuration.TracerSettings settings)
         {
-            _settings = settings;
+            _endpoint = settings.OtlpMetricsEndpoint;
+            _headers = settings.OtlpMetricsHeaders;
+            _timeoutMs = settings.OtlpMetricsTimeoutMs;
+            _protocol = settings.OtlpMetricsProtocol;
+
+            _protocolTag = _protocol switch
+            {
+                Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Protocol.Grpc,
+                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf,
+                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Protocol.HttpJson,
+                _ => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf
+            };
+            _serializer = new OtlpMetricsSerializer(settings);
+
+            // Enable h2c (HTTP/2 without TLS) for gRPC only, and only for non-HTTPS endpoints
+            if (_protocol == Configuration.OtlpProtocol.Grpc && _endpoint.Scheme != Uri.UriSchemeHttps)
+            {
+                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            }
+
+            _httpClient = CreateHttpClient(_endpoint);
         }
 
         /// <summary>
@@ -59,32 +86,31 @@ namespace Datadog.Trace.OTelMetrics
         {
             if (metrics.Count == 0)
             {
-                Log.Debug("No metrics to export.");
                 return ExportResult.Success;
             }
 
-            TelemetryFactory.Metrics.RecordCountMetricsExportAttempts(GetProtocolTag());
+            TelemetryFactory.Metrics.RecordCountMetricsExportAttempts(_protocolTag);
 
             try
             {
-                var otlpPayload = OtlpMetricsSerializer.SerializeMetrics(metrics, _settings);
+                var otlpPayload = _serializer.SerializeMetrics(metrics);
                 var success = await SendOtlpRequest(otlpPayload).ConfigureAwait(false);
 
                 if (success)
                 {
-                    TelemetryFactory.Metrics.RecordCountMetricsExportSuccesses(GetProtocolTag());
+                    TelemetryFactory.Metrics.RecordCountMetricsExportSuccesses(_protocolTag);
                     return ExportResult.Success;
                 }
                 else
                 {
-                    TelemetryFactory.Metrics.RecordCountMetricsExportFailures(GetProtocolTag());
+                    TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag);
                     return ExportResult.Failure;
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error exporting OTLP metrics.");
-                TelemetryFactory.Metrics.RecordCountMetricsExportFailures(GetProtocolTag());
+                TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag);
                 return ExportResult.Failure;
             }
         }
@@ -110,31 +136,81 @@ namespace Datadog.Trace.OTelMetrics
         }
 
         /// <summary>
-        /// Gets the protocol tag for telemetry metrics based on the configured OTLP protocol.
+        /// Creates an HttpClient with Unix Domain Socket support if the endpoint uses unix:// scheme.
+        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient with HTTP/2.
         /// </summary>
-        private Telemetry.Metrics.MetricTags.Protocol GetProtocolTag()
+        private static HttpClient CreateHttpClient(Uri endpoint)
         {
-            return _settings.OtlpMetricsProtocol switch
+            if (endpoint.Scheme == "unix")
             {
-                Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Protocol.Grpc,
-                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf,
-                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Protocol.HttpJson,
-                _ => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf // Default fallback
+                // Extract the socket path from unix:///path/to/socket.sock
+                var socketPath = endpoint.AbsolutePath;
+                Log.Information("Creating HttpClient for Unix Domain Socket: {SocketPath}", socketPath);
+
+                var handler = new SocketsHttpHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                    ConnectCallback = async (context, cancellationToken) =>
+                    {
+                        var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                        var udsEndpoint = new UnixDomainSocketEndPoint(socketPath);
+                        await socket.ConnectAsync(udsEndpoint, cancellationToken).ConfigureAwait(false);
+                        return new NetworkStream(socket, ownsSocket: true);
+                    }
+                };
+
+                return new HttpClient(handler)
+                {
+                    DefaultRequestVersion = HttpVersion.Version20,
+                    DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
+                };
+            }
+
+            // Standard TCP/IP endpoint
+            var tcpHandler = new SocketsHttpHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
+
+            return new HttpClient(tcpHandler)
+            {
+                DefaultRequestVersion = HttpVersion.Version20,
+                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
+            };
+        }
+
+        /// <summary>
+        /// Strips the 5-byte gRPC framing header (1 byte compressed flag + 4 bytes message length).
+        /// Returns the original span if unframed/too short or if compression is detected (not handled).
+        /// </summary>
+        private static ReadOnlySpan<byte> TryUnframeGrpc(ReadOnlySpan<byte> body)
+        {
+            if (body.Length < 5)
+            {
+                return body;
+            }
+
+            var compressed = body[0] == 1;
+            var len = BinaryPrimitives.ReadUInt32BigEndian(body.Slice(1, 4));
+
+            if (compressed || body.Length < 5 + len)
+            {
+                return body; // We don't handle compressed; return original
+            }
+
+            return body.Slice(5, (int)len);
         }
 
         private async Task<bool> SendOtlpRequest(byte[] otlpPayload)
         {
             try
             {
-                // Handle different OTLP protocols as per RFC
-                // Note: gRPC is not supported in the tracer to avoid heavy dependencies
-                return _settings.OtlpMetricsProtocol switch
+                return _protocol switch
                 {
                     Configuration.OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),
                     Configuration.OtlpProtocol.HttpJson => await SendHttpJsonRequest(otlpPayload).ConfigureAwait(false),
-                    Configuration.OtlpProtocol.Grpc => await SendGrpcRequest(otlpPayload).ConfigureAwait(false), // Fallback to HTTP/protobuf for gRPC
-                    _ => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false) // Default fallback
+                    Configuration.OtlpProtocol.Grpc => await SendGrpcRequest(otlpPayload).ConfigureAwait(false),
+                    _ => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false)
                 };
             }
             catch (Exception ex)
@@ -144,37 +220,151 @@ namespace Datadog.Trace.OTelMetrics
             }
         }
 
+        private async Task<bool> SendHttpJsonRequest(byte[] otlpPayload)
+        {
+            Log.Warning("HTTP/JSON protocol is not yet implemented, falling back to HTTP/protobuf");
+            return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
+        }
+
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            // HTTP/protobuf - RFC compliant implementation with retry logic
-            var content = new ByteArrayContent(otlpPayload);
+            // For UDS, HttpRequestMessage needs http://localhost + path (the socket is chosen by ConnectCallback)
+            // Config already includes /v1/metrics in the endpoint, we just need to rewrite the scheme/host
+            var uri = _endpoint.Scheme == "unix"
+                ? new Uri("http://localhost" + _endpoint.AbsolutePath)
+                : _endpoint;
+
+            using var content = new ByteArrayContent(otlpPayload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
 
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, _settings.OtlpMetricsEndpoint)
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri)
             {
                 Content = content
             };
 
-            // Add custom headers
-            foreach (var header in _settings.OtlpMetricsHeaders)
+            foreach (var header in _headers)
             {
-                httpRequest.Headers.Add(header.Key, header.Value);
+                httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
 
-            // Add Accept-Encoding header for gzip support (RFC requirement)
-            httpRequest.Headers.Add("Accept-Encoding", "gzip");
-
-            // Implement retry logic as per RFC
             return await SendWithRetry(httpRequest).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendHttpJsonRequest(byte[] otlpPayload)
+        private async Task<bool> SendGrpcRequest(byte[] exportRequest)
         {
-            // HTTP/JSON - Optional support as per RFC
-            // Note: This would require JSON serialization instead of protobuf
-            // For now, we'll log a warning and fall back to HTTP/protobuf
-            Log.Warning("HTTP/JSON protocol is not yet implemented, falling back to HTTP/protobuf");
-            return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
+            const int maxRetries = 3;
+            var retryDelay = TimeSpan.FromMilliseconds(100);
+
+            for (var attempt = 0; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    var framed = new byte[5 + exportRequest.Length];
+                    framed[0] = 0;
+                    BinaryPrimitives.WriteUInt32BigEndian(framed.AsSpan(1, 4), (uint)exportRequest.Length);
+                    Buffer.BlockCopy(exportRequest, 0, framed, 5, exportRequest.Length);
+
+                    // For UDS (unix://), construct URI with localhost authority since the actual connection goes through the socket
+                    Uri grpcUri;
+                    if (_endpoint.Scheme == "unix")
+                    {
+                        grpcUri = new Uri("http://localhost/opentelemetry.proto.collector.metrics.v1.MetricsService/Export");
+                    }
+                    else
+                    {
+                        grpcUri = new Uri(_endpoint, "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export");
+                    }
+
+                    var content = new ByteArrayContent(framed);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/grpc");
+
+                    var req = new HttpRequestMessage(HttpMethod.Post, grpcUri)
+                    {
+                        Version = HttpVersion.Version20,
+                        VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
+                        Content = content
+                    };
+
+                    req.Headers.TE.Add(new TransferCodingWithQualityHeaderValue("trailers"));
+
+                    foreach (var header in _headers)
+                    {
+                        req.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    }
+
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_timeoutMs));
+                    using var resp = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+
+                    var responseBody = await resp.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
+
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        return false;
+                    }
+
+                    if (resp.TrailingHeaders.TryGetValues("grpc-status", out var trailerVals) ||
+                        resp.Headers.TryGetValues("grpc-status", out trailerVals))
+                    {
+                        var statusStr = trailerVals.FirstOrDefault();
+                        if (!int.TryParse(statusStr, out var grpcStatus))
+                        {
+                            return false;
+                        }
+
+                        if (grpcStatus == 0)
+                        {
+                            var payload = TryUnframeGrpc(responseBody);
+                            if (CheckForPartialSuccess(payload))
+                            {
+                                TelemetryFactory.Metrics.RecordCountMetricsExportPartialSuccesses(_protocolTag);
+                            }
+
+                            return true;
+                        }
+
+                        // Check if status is retryable per OTLP spec
+                        // Retryable: CANCELLED(1), DEADLINE_EXCEEDED(4), RESOURCE_EXHAUSTED(8), ABORTED(10), OUT_OF_RANGE(11), UNAVAILABLE(14), DATA_LOSS(15)
+                        bool isRetryable = grpcStatus == 1 || grpcStatus == 4 || grpcStatus == 8 ||
+                                          grpcStatus == 10 || grpcStatus == 11 || grpcStatus == 14 || grpcStatus == 15;
+
+                        if (!isRetryable)
+                        {
+                            return false;
+                        }
+
+                        if (attempt < maxRetries)
+                        {
+                            retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
+                            await Task.Delay(retryDelay).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (TaskCanceledException) when (attempt < maxRetries)
+                {
+                    retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
+                    await Task.Delay(retryDelay).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error sending gRPC request (attempt {Attempt})", (attempt + 1).ToString());
+                    if (attempt < maxRetries)
+                    {
+                        retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
+                        await Task.Delay(retryDelay).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private async Task<bool> SendWithRetry(HttpRequestMessage httpRequest)
@@ -186,13 +376,17 @@ namespace Datadog.Trace.OTelMetrics
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_settings.OtlpMetricsTimeoutMs));
+                    using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_timeoutMs));
                     var response = await _httpClient.SendAsync(httpRequest, cts.Token).ConfigureAwait(false);
 
-                    // Check for success
                     if (response.IsSuccessStatusCode)
                     {
-                        // TODO: Parse protobuf response body to check for partial_success field
+                        var responseBody = await response.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
+                        if (CheckForPartialSuccess(responseBody))
+                        {
+                            TelemetryFactory.Metrics.RecordCountMetricsExportPartialSuccesses(_protocolTag);
+                        }
+
                         return true;
                     }
 
@@ -204,42 +398,34 @@ namespace Datadog.Trace.OTelMetrics
                         return false;
                     }
 
-                    // SHOULD retry on specific status codes
                     if (statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504)
                     {
                         if (attempt < maxRetries)
                         {
-                            // Check for Retry-After header (RFC requirement)
                             var retryAfter = response.Headers.RetryAfter?.Delta;
                             if (retryAfter.HasValue)
                             {
                                 retryDelay = retryAfter.Value;
-                                Log.Debug("Retrying after {RetryAfter} as specified in Retry-After header", retryAfter.Value.ToString());
                             }
                             else
                             {
                                 retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
                             }
 
-                            await Task.Delay(retryDelay, cts.Token).ConfigureAwait(false);
+                            await Task.Delay(retryDelay).ConfigureAwait(false);
                             continue;
                         }
                         else
                         {
-                            Log.Warning("Max retries exceeded for retryable status code: {StatusCode}", response.StatusCode);
                             return false;
                         }
                     }
 
-                    // All other 4xx/5xx status codes MUST NOT be retried
-                    Log.Warning("Non-retryable status code: {StatusCode}", response.StatusCode);
                     return false;
                 }
                 catch (TaskCanceledException) when (attempt < maxRetries)
                 {
-                    // Timeout - retry with exponential backoff
                     retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
-                    Log.Debug("Request timeout, retrying after {RetryDelay} (attempt {Attempt})", retryDelay.ToString(), (attempt + 1).ToString());
                     await Task.Delay(retryDelay).ConfigureAwait(false);
                 }
                 catch (Exception ex)
@@ -260,59 +446,22 @@ namespace Datadog.Trace.OTelMetrics
             return false;
         }
 
-        private async Task<bool> SendGrpcRequest(byte[] exportRequest)
+        /// <summary>
+        /// Checks if the OTLP response indicates partial success by parsing the protobuf response body.
+        /// According to OTLP spec, partial success is indicated by the presence of the partial_success field (field 1, wire type 2).
+        /// Expects unframed protobuf bytes (caller should use TryUnframeGrpc for gRPC responses).
+        /// </summary>
+        private bool CheckForPartialSuccess(ReadOnlySpan<byte> payload)
         {
-            var framed = new byte[5 + exportRequest.Length];
-            framed[0] = 0;
-            BinaryPrimitives.WriteUInt32BigEndian(framed.AsSpan(1, 4), (uint)exportRequest.Length);
-            Buffer.BlockCopy(exportRequest, 0, framed, 5, exportRequest.Length);
-
-            var baseUri = _settings.OtlpMetricsEndpoint;
-            var grpcUri = new Uri(baseUri, "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export");
-
-            var content = new ByteArrayContent(framed);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/grpc");
-
-            var req = new HttpRequestMessage(HttpMethod.Post, grpcUri)
-            {
-                Version = HttpVersion.Version20,
-                VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
-                Content = content
-            };
-
-            // Required by gRPC over HTTP/2
-            req.Headers.TE.Add(new TransferCodingWithQualityHeaderValue("trailers"));
-
-            // Forward custom headers if any
-            foreach (var header in _settings.OtlpMetricsHeaders)
-            {
-                req.Headers.TryAddWithoutValidation(header.Key, header.Value);
-            }
-
-            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_settings.OtlpMetricsTimeoutMs));
-            using var resp = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
-
-            // Read body so trailers become available
-            _ = await resp.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
-
-            if (!resp.IsSuccessStatusCode)
+            if (payload.Length == 0)
             {
                 return false;
             }
 
-            if (resp.TrailingHeaders.TryGetValues("grpc-status", out var trailerVals) ||
-                resp.Headers.TryGetValues("grpc-status", out trailerVals))
-            {
-                var status = trailerVals.FirstOrDefault();
+            // ExportMetricsServiceResponse.partial_success has field number 1 (tag 0x0A = field 1, wire type 2)
+            const byte partialSuccessTag = 0x0A;
 
-                if (status != "0")
-                {
-                    Log.Warning("gRPC export returned non-OK grpc-status: {Status}", status ?? "<missing>");
-                    return false;
-                }
-            }
-
-            return true; // OK
+            return payload[0] == partialSuccessTag;
         }
     }
 }

@@ -116,18 +116,14 @@ namespace Datadog.Trace.OTelMetrics
         {
             try
             {
-                // Collect async instruments first
                 CollectObservableInstruments();
 
-                // Get a snapshot of all metric points (thread-safe via ToArray())
                 var points = _handler.GetMetricPointsSnapshot();
                 if (points.Count == 0)
                 {
-                    Log.Debug("No metrics to export");
                     return;
                 }
 
-                Log.Debug<int>("Exporting {Count} metric points", points.Count);
                 var result = await _exporter.ExportAsync(points).ConfigureAwait(false);
                 if (result == ExportResult.Failure)
                 {

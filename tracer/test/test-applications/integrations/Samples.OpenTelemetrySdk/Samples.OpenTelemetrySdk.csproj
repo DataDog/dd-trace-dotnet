@@ -12,5 +12,6 @@
     <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(ApiVersion)" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.59.0" />
   </ItemGroup>
 </Project>

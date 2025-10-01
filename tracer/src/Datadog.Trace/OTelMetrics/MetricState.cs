@@ -97,18 +97,6 @@ internal class MetricState
         }
     }
 
-    public void RecordMeasurementGaugeLong(long value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
-        => GetOrCreatePoint(tags).UpdateGauge(value);
-
-    public void RecordMeasurementGaugeDouble(double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
-        => GetOrCreatePoint(tags).UpdateGauge(value);
-
-    public void RecordMeasurementHistogramLong(long value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
-        => GetOrCreatePoint(tags).UpdateHistogram(value);
-
-    public void RecordMeasurementHistogramDouble(double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
-        => GetOrCreatePoint(tags).UpdateHistogram(value);
-
     /// <summary>
     /// Builds metric point snapshots and adds them to the provided list.
     /// For Delta temporality, resets the running values after snapshotting.
@@ -117,31 +105,43 @@ internal class MetricState
     {
         foreach (var point in _points.Values)
         {
-            var shouldReset = _temporality == AggregationTemporality.Delta;
-            var snapshot = point.CreateSnapshotAndReset(shouldReset);
+            var snapshot = point.CreateSnapshotAndReset();
             into.Add(snapshot);
         }
     }
-
-    public MetricStreamIdentity GetIdentity() => _identity;
 
     private MetricPoint GetOrCreatePoint(ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
         var tagSet = TagSet.FromSpan(tags);
 
-        var tagDict = new Dictionary<string, object?>();
-        for (int i = 0; i < tags.Length; i++)
+        if (_points.TryGetValue(tagSet, out var existingPoint))
         {
-            var kv = tags[i];
-            tagDict[kv.Key] = kv.Value;
+            return existingPoint;
         }
 
-        return _points.GetOrAdd(tagSet, _ => new MetricPoint(
-            _identity.InstrumentName,
-            _identity.MeterName,
-            _identity.InstrumentType,
-            _temporality, // Temporality decided at construction time
-            tagDict));
+        var tagsArray = tags.ToArray();  // Materialize span to heap array
+
+        // fallback, have to allocate
+        return _points.GetOrAdd(
+        tagSet,
+        _ =>
+        {
+            var dict = new Dictionary<string, object?>(tagsArray.Length);
+            for (int i = 0; i < tagsArray.Length; i++)
+            {
+                ref readonly var kv = ref tagsArray[i];
+                dict[kv.Key] = kv.Value;
+            }
+
+            return new MetricPoint(
+                _identity.InstrumentName,
+                _identity.MeterName,
+                _identity.InstrumentType,
+                _temporality,
+                dict,
+                _identity.Unit,
+                _identity.Description);
+        });
     }
 }
 #endif

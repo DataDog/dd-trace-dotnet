@@ -134,8 +134,7 @@ internal sealed class MetricReaderHandler
     /// </summary>
     public List<MetricPoint> GetMetricPointsSnapshot()
     {
-        // Snapshot the dictionary first to avoid changes during enumeration
-        var pairs = _streams.ToArray(); // moment-in-time keys+values
+        var pairs = _streams.ToArray();
         var list = new List<MetricPoint>(pairs.Length);
 
         foreach (var (_, state) in pairs)

@@ -89,10 +89,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true", "grpc"];
-                yield return [packageVersion[0], "true", "false", "grpc"];
-                yield return [packageVersion[0], "false", "true", "http/protobuf"];
-                yield return [packageVersion[0], "true", "false", "http/protobuf"];
+                yield return [packageVersion[0], "false", "true", "grpc", "unix"];
+                yield return [packageVersion[0], "true", "false", "grpc", "unix"];
+                yield return [packageVersion[0], "false", "true", "grpc", "http"];
+                yield return [packageVersion[0], "true", "false", "grpc", "http"];
+                yield return [packageVersion[0], "false", "true", "http/protobuf", "http"];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", "http"];
             }
         }
 #endif
@@ -216,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetMetricsTestData))]
-        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string exporter)
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string exporter, string networkType)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
             var runtimeMajor = Environment.Version.Major;
@@ -231,14 +233,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
-            // Enable HTTP/2 unencrypted support for native OTel SDK gRPC client
-            // AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", false);
-
             MockOtlpGrpcServer grpcServer = null;
+
+            string udsPath = networkType == "unix" ? "/tmp/otel-grpc-server.sock" : null;
+
+            if (udsPath is not null && OperatingSystem.IsWindows())
+            {
+                throw new SkipException("OTLP gRPC over UDS not supported on Windows.");
+            }
 
             if (exporter == "grpc")
             {
-                grpcServer = new MockOtlpGrpcServer(initialAgentPort + 1);
+                grpcServer = networkType == "unix"
+                    ? new MockOtlpGrpcServer(udsPath: udsPath)
+                    : new MockOtlpGrpcServer();
             }
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
@@ -247,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", exporter);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{grpcServer?.Port ?? initialAgentPort}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", networkType == "http" ? $"http://127.0.0.1:{grpcServer?.Port ?? initialAgentPort}" : $"unix://{udsPath}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 

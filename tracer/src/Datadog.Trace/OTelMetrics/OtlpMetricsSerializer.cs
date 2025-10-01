@@ -19,24 +19,32 @@ namespace Datadog.Trace.OTelMetrics
     /// OTLP protobuf serializer that creates binary protobuf payloads
     /// compliant with the OpenTelemetry ExportMetricsServiceRequest schema.
     /// </summary>
-    internal static class OtlpMetricsSerializer
+    internal class OtlpMetricsSerializer
     {
         // Protobuf wire types
         private const int VarInt = 0;
         private const int Fixed64 = 1;
         private const int LengthDelimited = 2;
 
-        private static byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
+        private readonly TracerSettings _settings;
+        private readonly byte[] _cachedResourceData;
+
+        public OtlpMetricsSerializer(TracerSettings settings)
         {
-            using var buffer = new MemoryStream();
+            _settings = settings;
+            _cachedResourceData = SerializeResource(settings);
+        }
+
+        private byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics)
+        {
+            using var buffer = new MemoryStream(512);
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            var resourceData = SerializeResource(settings);
             WriteTag(writer, FieldNumbers.Resource, LengthDelimited);
-            WriteVarInt(writer, resourceData.Length);
-            writer.Write(resourceData);
+            WriteVarInt(writer, _cachedResourceData.Length);
+            writer.Write(_cachedResourceData);
 
-            var scopeMetricsData = SerializeScopeMetrics(metrics, settings);
+            var scopeMetricsData = SerializeScopeMetrics(metrics);
             WriteTag(writer, FieldNumbers.ScopeMetrics, LengthDelimited);
             WriteVarInt(writer, scopeMetricsData.Length);
             writer.Write(scopeMetricsData);
@@ -44,7 +52,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeResource(TracerSettings settings)
+        private byte[] SerializeResource(TracerSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -109,7 +117,7 @@ namespace Datadog.Trace.OTelMetrics
         /// <summary>
         /// Checks if a tag key represents a resource attribute that has already been handled
         /// </summary>
-        private static bool IsHandledResourceAttribute(string tagKey)
+        private bool IsHandledResourceAttribute(string tagKey)
         {
             return tagKey.Equals("service", StringComparison.OrdinalIgnoreCase) ||
                    tagKey.Equals("env", StringComparison.OrdinalIgnoreCase) ||
@@ -120,7 +128,7 @@ namespace Datadog.Trace.OTelMetrics
                    tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
+        private byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -148,7 +156,7 @@ namespace Datadog.Trace.OTelMetrics
                     || metric.InstrumentType is InstrumentType.ObservableCounter
                     || metric.InstrumentType is InstrumentType.ObservableUpDownCounter)
                 {
-                    metricData = SerializeCounterMetric(metric, settings);
+                    metricData = SerializeCounterMetric(metric);
                 }
                 else if (metric.InstrumentType is InstrumentType.Gauge
                          || metric.InstrumentType is InstrumentType.ObservableGauge)
@@ -157,7 +165,7 @@ namespace Datadog.Trace.OTelMetrics
                 }
                 else if (metric.InstrumentType is InstrumentType.Histogram)
                 {
-                    metricData = SerializeHistogramMetric(metric, settings);
+                    metricData = SerializeHistogramMetric(metric);
                 }
 
                 if (metricData != null)
@@ -171,7 +179,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeInstrumentationScope(string meterName)
+        private byte[] SerializeInstrumentationScope(string meterName)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -182,17 +190,17 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeCounterMetric(MetricPoint metric, TracerSettings settings)
+        private byte[] SerializeCounterMetric(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, string.Empty);
-            WriteStringField(writer, FieldNumbers.Unit, string.Empty);
+            WriteStringField(writer, FieldNumbers.Description, metric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
 
             // Sum
-            var sumData = SerializeSum(metric, settings);
+            var sumData = SerializeSum(metric);
             WriteTag(writer, FieldNumbers.Sum, LengthDelimited);
             WriteVarInt(writer, sumData.Length);
             writer.Write(sumData);
@@ -200,14 +208,14 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeGaugeMetric(MetricPoint metric)
+        private byte[] SerializeGaugeMetric(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, string.Empty);
-            WriteStringField(writer, FieldNumbers.Unit, string.Empty);
+            WriteStringField(writer, FieldNumbers.Description, metric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
 
             var gaugeData = SerializeGauge(metric);
             WriteTag(writer, FieldNumbers.Gauge, LengthDelimited);
@@ -217,16 +225,16 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeHistogramMetric(MetricPoint metric, TracerSettings settings)
+        private byte[] SerializeHistogramMetric(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, string.Empty);
-            WriteStringField(writer, FieldNumbers.Unit, string.Empty);
+            WriteStringField(writer, FieldNumbers.Description, metric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
 
-            var histogramData = SerializeHistogram(metric, settings);
+            var histogramData = SerializeHistogram(metric);
             WriteTag(writer, FieldNumbers.Histogram, LengthDelimited);
             WriteVarInt(writer, histogramData.Length);
             writer.Write(histogramData);
@@ -234,7 +242,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeSum(MetricPoint metric, TracerSettings settings)
+        private byte[] SerializeSum(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -254,7 +262,7 @@ namespace Datadog.Trace.OTelMetrics
             }
             else
             {
-                temporality = settings.OtlpMetricsTemporalityPreference switch
+                temporality = _settings.OtlpMetricsTemporalityPreference switch
                 {
                     OtlpTemporality.Delta => 1,
                     OtlpTemporality.LowMemory => 1,
@@ -273,7 +281,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeGauge(MetricPoint metric)
+        private byte[] SerializeGauge(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -286,7 +294,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeHistogram(MetricPoint metric, TracerSettings settings)
+        private byte[] SerializeHistogram(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -296,7 +304,7 @@ namespace Datadog.Trace.OTelMetrics
             WriteVarInt(writer, dataPointData.Length);
             writer.Write(dataPointData);
 
-            var temporality = settings.OtlpMetricsTemporalityPreference switch
+            var temporality = _settings.OtlpMetricsTemporalityPreference switch
             {
                 OtlpTemporality.Delta => 1,
                 OtlpTemporality.LowMemory => 1,
@@ -309,7 +317,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeNumberDataPoint(MetricPoint metric)
+        private byte[] SerializeNumberDataPoint(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -345,7 +353,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeNumberDataPointForGauge(MetricPoint metric)
+        private byte[] SerializeNumberDataPointForGauge(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -370,7 +378,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeHistogramDataPoint(MetricPoint metric)
+        private byte[] SerializeHistogramDataPoint(MetricPoint metric)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -423,7 +431,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeKeyValue(string key, string value)
+        private byte[] SerializeKeyValue(string key, string value)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -438,7 +446,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static byte[] SerializeStringAnyValue(string value)
+        private byte[] SerializeStringAnyValue(string value)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -448,7 +456,7 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
+        private void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {
@@ -457,24 +465,24 @@ namespace Datadog.Trace.OTelMetrics
             }
         }
 
-        private static void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
+        private void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
         {
             WriteVarInt(writer, (fieldNumber << 3) | wireType);
         }
 
-        private static void WriteString(BinaryWriter writer, string value)
+        private void WriteString(BinaryWriter writer, string value)
         {
             var bytes = Encoding.UTF8.GetBytes(value);
             WriteVarInt(writer, bytes.Length);
             writer.Write(bytes);
         }
 
-        private static void WriteVarInt(BinaryWriter writer, int value)
+        private void WriteVarInt(BinaryWriter writer, int value)
         {
             WriteVarInt(writer, (uint)value);
         }
 
-        private static void WriteVarInt(BinaryWriter writer, uint value)
+        private void WriteVarInt(BinaryWriter writer, uint value)
         {
             while (value >= 0x80)
             {
@@ -488,12 +496,12 @@ namespace Datadog.Trace.OTelMetrics
         /// <summary>
         /// Serializes metrics to OTLP MetricsData binary format
         /// </summary>
-        public static byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics, TracerSettings settings)
+        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            var resourceMetricsData = SerializeResourceMetrics(metrics, settings);
+            var resourceMetricsData = SerializeResourceMetrics(metrics);
             WriteTag(writer, FieldNumbers.ResourceMetrics, LengthDelimited);
             WriteVarInt(writer, resourceMetricsData.Length);
             writer.Write(resourceMetricsData);

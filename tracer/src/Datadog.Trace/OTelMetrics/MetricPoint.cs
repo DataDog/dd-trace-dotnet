@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics;
 
-internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags)
+internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "")
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
@@ -32,6 +32,10 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
     public AggregationTemporality? AggregationTemporality { get; } = temporality;
 
     public Dictionary<string, object?> Tags { get; } = tags;
+
+    public string Unit { get; } = unit ?? string.Empty;
+
+    public string Description { get; } = description ?? string.Empty;
 
     internal long RunningCount => _runningCountValue;
 
@@ -115,17 +119,17 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
     /// Creates a snapshot copy of the current metric state for export.
     /// For delta temporality, this resets the running values after taking the snapshot.
     /// For cumulative temporality, this preserves the running values.
+    /// The temporality behavior is determined by the AggregationTemporality set at construction.
     /// </summary>
-    /// <param name="resetAfterSnapshot">True if this is a delta export (reset after snapshot), false for cumulative</param>
     /// <returns>A new MetricPoint containing the snapshot values</returns>
-    public MetricPoint CreateSnapshotAndReset(bool resetAfterSnapshot)
+    public MetricPoint CreateSnapshotAndReset()
     {
         lock (_histogramLock)
         {
             var endTime = DateTimeOffset.UtcNow;
 
             // Create a snapshot copy with current values
-            var snapshot = new MetricPoint(InstrumentName, MeterName, InstrumentType, AggregationTemporality, Tags)
+            var snapshot = new MetricPoint(InstrumentName, MeterName, InstrumentType, AggregationTemporality, Tags, Unit, Description)
             {
                 StartTime = this.StartTime,
                 EndTime = endTime,
@@ -143,8 +147,7 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
                 Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
             }
 
-            // For delta temporality, reset the running values after taking snapshot
-            if (resetAfterSnapshot)
+            if (AggregationTemporality == OTelMetrics.AggregationTemporality.Delta)
             {
                 _runningCountValue = 0;
                 _runningDoubleValue = 0.0;
