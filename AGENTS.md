@@ -230,6 +230,7 @@ tracer/src/Datadog.Trace
 
 - Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues.
 - PRs: Clear description, linked issues, risks/rollout, screenshots/logs if behavior changes.
+  - follow the existing PR description template in .github/pull_request_template.md
 - CI: All checks green; include tests/docs for changes.
 
 ## Internal Docs & References
