@@ -89,8 +89,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "true", "false"];  // DD enabled, OTel disabled
-                yield return [packageVersion[0], "false", "true"]; // DD disabled, OTel enabled
+                yield return [packageVersion[0], "false", "true", "grpc"];
+                yield return [packageVersion[0], "true", "false", "grpc"];
+                yield return [packageVersion[0], "false", "true", "http/protobuf"];
+                yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
         }
 #endif
@@ -214,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetMetricsTestData))]
-        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled)
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string exporter)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
             var runtimeMajor = Environment.Version.Major;
@@ -229,22 +231,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
+            // Enable HTTP/2 unencrypted support for native OTel SDK gRPC client
+            // AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", false);
+
+            MockOtlpGrpcServer grpcServer = null;
+
+            if (exporter == "grpc")
+            {
+                grpcServer = new MockOtlpGrpcServer(initialAgentPort + 1);
+            }
+
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", exporter);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{grpcServer?.Port ?? initialAgentPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
             {
-                var metricRequests = agent.OtlpRequests
-                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
+                // Collect requests from both MockTracerAgent and MockOtlpGrpcServer
+                var agentRequests = agent.OtlpRequests
+                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics") || r.PathAndQuery.Contains("MetricsService"))
                                           .ToList();
+
+                var grpcRequests = grpcServer?.Requests.ToList();
+                var metricRequests = agentRequests.Concat(grpcRequests ?? []).ToList();
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
@@ -288,6 +304,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         attribute.Value.StringValue = "sdk-version";
                     }
+                    else if (attribute.Key.Equals("telemetry.sdk.name"))
+                    {
+                        attribute.Value.StringValue = "sdk-name";
+                    }
                 }
 
                 // Although there's only one resource, let's still emit snapshot data in the expected array format
@@ -311,6 +331,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }
+
+            grpcServer?.DisposeAsync();
         }
 
 #endif

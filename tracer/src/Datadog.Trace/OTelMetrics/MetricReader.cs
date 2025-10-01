@@ -77,12 +77,11 @@ namespace Datadog.Trace.OTelMetrics
 
         public async Task StopAsync()
         {
-            _timer?.Dispose();
+            _timer?.DisposeAsync();
             _timer = null;
 
             try
             {
-                // Final export before shutdown
                 await ForceCollectAndExportAsync().ConfigureAwait(false);
             }
             catch (Exception ex)

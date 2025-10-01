@@ -6,8 +6,12 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -56,30 +60,23 @@ namespace Datadog.Trace.OTelMetrics
             if (metrics.Count == 0)
             {
                 Log.Debug("No metrics to export.");
-                return ExportResult.Success; // Success - nothing to do
+                return ExportResult.Success;
             }
 
-            // Record export attempt
             TelemetryFactory.Metrics.RecordCountMetricsExportAttempts(GetProtocolTag());
 
             try
             {
-                // Metrics are already snapshots from MetricState.GetMetricPoints()
-                // Serialize to OTLP protobuf format
                 var otlpPayload = OtlpMetricsSerializer.SerializeMetrics(metrics, _settings);
-
-                // Send to OTLP endpoint asynchronously for optimal performance
                 var success = await SendOtlpRequest(otlpPayload).ConfigureAwait(false);
 
                 if (success)
                 {
-                    // Record successful export
                     TelemetryFactory.Metrics.RecordCountMetricsExportSuccesses(GetProtocolTag());
                     return ExportResult.Success;
                 }
                 else
                 {
-                    // Record failed export
                     TelemetryFactory.Metrics.RecordCountMetricsExportFailures(GetProtocolTag());
                     return ExportResult.Failure;
                 }
@@ -87,7 +84,6 @@ namespace Datadog.Trace.OTelMetrics
             catch (Exception ex)
             {
                 Log.Error(ex, "Error exporting OTLP metrics.");
-                // Record failed export
                 TelemetryFactory.Metrics.RecordCountMetricsExportFailures(GetProtocolTag());
                 return ExportResult.Failure;
             }
@@ -137,7 +133,7 @@ namespace Datadog.Trace.OTelMetrics
                 {
                     Configuration.OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),
                     Configuration.OtlpProtocol.HttpJson => await SendHttpJsonRequest(otlpPayload).ConfigureAwait(false),
-                    Configuration.OtlpProtocol.Grpc => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false), // Fallback to HTTP/protobuf for gRPC
+                    Configuration.OtlpProtocol.Grpc => await SendGrpcRequest(otlpPayload).ConfigureAwait(false), // Fallback to HTTP/protobuf for gRPC
                     _ => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false) // Default fallback
                 };
             }
@@ -152,7 +148,7 @@ namespace Datadog.Trace.OTelMetrics
         {
             // HTTP/protobuf - RFC compliant implementation with retry logic
             var content = new ByteArrayContent(otlpPayload);
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-protobuf");
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, _settings.OtlpMetricsEndpoint)
             {
@@ -184,7 +180,7 @@ namespace Datadog.Trace.OTelMetrics
         private async Task<bool> SendWithRetry(HttpRequestMessage httpRequest)
         {
             const int maxRetries = 3;
-            var retryDelay = TimeSpan.FromMilliseconds(100); // Initial delay
+            var retryDelay = TimeSpan.FromMilliseconds(100);
 
             for (var attempt = 0; attempt <= maxRetries; attempt++)
             {
@@ -196,16 +192,12 @@ namespace Datadog.Trace.OTelMetrics
                     // Check for success
                     if (response.IsSuccessStatusCode)
                     {
-                        // For now, treat any 200 response as success
                         // TODO: Parse protobuf response body to check for partial_success field
-                        // RFC: MUST NOT retry on partial success, but we'd need to parse the response
                         return true;
                     }
 
-                    // Handle specific status codes as per RFC
                     var statusCode = (int)response.StatusCode;
 
-                    // MUST NOT retry on 400 Bad Request
                     if (statusCode == 400)
                     {
                         Log.Warning("Bad Request (400) - not retrying: {StatusCode}", response.StatusCode);
@@ -266,6 +258,61 @@ namespace Datadog.Trace.OTelMetrics
             }
 
             return false;
+        }
+
+        private async Task<bool> SendGrpcRequest(byte[] exportRequest)
+        {
+            var framed = new byte[5 + exportRequest.Length];
+            framed[0] = 0;
+            BinaryPrimitives.WriteUInt32BigEndian(framed.AsSpan(1, 4), (uint)exportRequest.Length);
+            Buffer.BlockCopy(exportRequest, 0, framed, 5, exportRequest.Length);
+
+            var baseUri = _settings.OtlpMetricsEndpoint;
+            var grpcUri = new Uri(baseUri, "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export");
+
+            var content = new ByteArrayContent(framed);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/grpc");
+
+            var req = new HttpRequestMessage(HttpMethod.Post, grpcUri)
+            {
+                Version = HttpVersion.Version20,
+                VersionPolicy = HttpVersionPolicy.RequestVersionOrHigher,
+                Content = content
+            };
+
+            // Required by gRPC over HTTP/2
+            req.Headers.TE.Add(new TransferCodingWithQualityHeaderValue("trailers"));
+
+            // Forward custom headers if any
+            foreach (var header in _settings.OtlpMetricsHeaders)
+            {
+                req.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_settings.OtlpMetricsTimeoutMs));
+            using var resp = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+
+            // Read body so trailers become available
+            _ = await resp.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            if (resp.TrailingHeaders.TryGetValues("grpc-status", out var trailerVals) ||
+                resp.Headers.TryGetValues("grpc-status", out trailerVals))
+            {
+                var status = trailerVals.FirstOrDefault();
+
+                if (status != "0")
+                {
+                    Log.Warning("gRPC export returned non-OK grpc-status: {Status}", status ?? "<missing>");
+                    return false;
+                }
+            }
+
+            return true; // OK
         }
     }
 }

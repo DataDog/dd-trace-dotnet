@@ -21,11 +21,9 @@ namespace Datadog.Trace.OTelMetrics
     {
         private readonly MetricReader _reader;
 
-        public OtelMetricsPipeline(TracerSettings settings, MetricExporter? exporterOverride = null)
+        public OtelMetricsPipeline(TracerSettings settings, MetricExporter exporter)
         {
             var handler = new MetricReaderHandler(settings);
-            var exporter = exporterOverride ?? new OtlpExporter(settings);
-
             _reader = new MetricReader(settings, handler, exporter);
         }
 

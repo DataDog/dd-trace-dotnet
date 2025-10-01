@@ -29,7 +29,8 @@ namespace Datadog.Trace.OTelMetrics
                 return;
             }
 
-            _instance = new OtelMetricsPipeline(settings);
+            var exporter = new OtlpExporter(settings);
+            _instance = new OtelMetricsPipeline(settings, exporter);
             _instance.Start();
 
             LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());

@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests
             Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
-            await using var pipeline = new OtelMetricsPipeline(settings, exporterOverride: testExporter);
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
 
             // Create a test meter
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Tests
             Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
-            await using var pipeline = new OtelMetricsPipeline(settings, exporterOverride: testExporter);
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
 
             var meter = new Meter("TestMeter");
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Tests
             Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
-            await using var pipeline = new OtelMetricsPipeline(settings, exporterOverride: testExporter);
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
 
             // Create a test meter
