@@ -131,8 +131,6 @@ download-single-step-artifacts:
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   timeout: 45m
   tags: [ "arch:amd64" ]
-  extends:
-    - .run_when_not_docs
   needs:
     - job: build
       optional: true
@@ -162,6 +160,7 @@ requirements_json_test:
     REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
 package-oci:
+  stage: package
   extends:
     - .run_when_not_docs
   needs: [ download-single-step-artifacts ]
@@ -182,8 +181,6 @@ download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
-  extends:
-    - .run_when_not_docs
   needs: []
   rules:
     - !reference [.run_when_not_docs, rules]
