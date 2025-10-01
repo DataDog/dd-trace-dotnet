@@ -213,6 +213,8 @@ benchmark-serverless:
   stage: benchmarks
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
+  extends:
+    - .run_when_not_docs
   when: on_success
   needs:
     - benchmark-serverless-trigger
@@ -223,6 +225,8 @@ benchmark-serverless:
 benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
+  extends:
+    - .run_when_not_docs
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
@@ -241,6 +245,8 @@ benchmark-serverless-trigger:
 macrobenchmarks:
   stage: benchmarks
   needs: [ ]
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -254,12 +260,16 @@ macrobenchmarks:
 microbenchmarks:
   stage: benchmarks
   needs: [ ]
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true
 
 dsm_throughput:
   stage: benchmarks
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
