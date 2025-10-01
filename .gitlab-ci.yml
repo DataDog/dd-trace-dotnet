@@ -1,6 +1,41 @@
+# 1) Pipelines always exist on these branches
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(master|release\/.+|hotfix\/.+)$/'
+      when: always
+    - when: always   # create pipeline for other branches too (jobs may skip)
+
+# Anchor the job rules so you can reuse them on every job
+.run_when_not_docs:
+  rules:
+    # Always run on master/release/hotfix
+    - if: '$CI_COMMIT_BRANCH =~ /^(master|release\/.+|hotfix\/.+)$/'
+      when: on_success
+
+    # If the commit changes ONLY the excluded paths below, skip the job.
+    # NOTE: If any non-excluded path also changed, this rule must not match first.
+    - changes:
+        - .azure-pipelines/noop-pipeline.yml
+        - .azure-pipelines/ultimate-pipeline.yml
+        - .github/**/*
+        - docs/**/*
+        - tracer/README.MD
+        - tracer/samples/**/*
+        - .gitlab-ci.yml
+      when: never
+
+    # Otherwise, run.
+    - when: on_success
+
+.skip_rel_and_tags:
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true"'
+      when: never
+    - if: '$CI_COMMIT_TAG'   # release tag builds shouldn't run this job
+      when: never
+
 stages:
   - build
-  - publish
   - package
   - shared-pipeline
   - publish
@@ -15,11 +50,10 @@ variables:
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
 
 build:
-  except:
-    variables:
-      - $DEPLOY_TO_REL_ENV == "true"
-      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
+  extends:
+    - .skip_rel_and_tags
+    - .run_when_not_docs
   tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
@@ -102,6 +136,7 @@ download-single-step-artifacts:
       optional: true
       artifacts: true
   rules:
+    - !reference [.run_when_not_docs, rules]
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
@@ -125,6 +160,9 @@ requirements_json_test:
     REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
 package-oci:
+  stage: package
+  extends:
+    - .run_when_not_docs
   needs: [ download-single-step-artifacts ]
 
 generate-lib-init-pinned-tag-values:
@@ -145,6 +183,7 @@ download-serverless-artifacts:
   tags: [ "arch:amd64" ]
   needs: []
   rules:
+    - !reference [.run_when_not_docs, rules]
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
@@ -163,6 +202,8 @@ aws-lambda-layer:
   stage: package
   needs: [download-serverless-artifacts]
   when: manual
+  extends:
+    - .run_when_not_docs
   trigger:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
@@ -175,6 +216,8 @@ benchmark-serverless:
   stage: benchmarks
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
+  extends:
+    - .run_when_not_docs
   when: on_success
   needs:
     - benchmark-serverless-trigger
@@ -185,6 +228,8 @@ benchmark-serverless:
 benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
+  extends:
+    - .run_when_not_docs
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
@@ -203,6 +248,8 @@ benchmark-serverless-trigger:
 macrobenchmarks:
   stage: benchmarks
   needs: [ ]
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -216,12 +263,16 @@ macrobenchmarks:
 microbenchmarks:
   stage: benchmarks
   needs: [ ]
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true
 
 dsm_throughput:
   stage: benchmarks
+  extends:
+    - .run_when_not_docs
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true

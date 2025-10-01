@@ -6,7 +6,7 @@ on:
 
 jobs:
   delete-pr-image:
-    # Only run for PRs that had the docker_image_artifacts label
+    # Only run for PRs that had the docker_image_artifacts label.
     if: contains(github.event.pull_request.labels.*.name, 'docker_image_artifacts')
     runs-on: ubuntu-latest
     permissions:
