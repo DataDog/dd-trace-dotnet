@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        internal static string? ResolveManagedProfilerDirectory(IEnvironmentVariableProvider envVars)
+        internal static string? ComputeTfmDirectory(IEnvironmentVariableProvider envVars)
         {
             var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
 
@@ -27,15 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
-            var fullPath = Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
-
-            if (!Directory.Exists(fullPath))
-            {
-                StartupLogger.Log($"Tracer home directory not found at '{fullPath}'");
-                return null;
-            }
-
-            return fullPath;
+            return Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
         }
 
         private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
