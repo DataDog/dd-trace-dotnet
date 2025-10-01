@@ -130,7 +130,10 @@ namespace Datadog.Trace.Configuration
                 RuntimeMetricsEnabled: not null,
                 ServiceMapping: not null,
                 DataStreamsEnabled: not null,
-                SpanSamplingRules: not null
+                SpanSamplingRules: not null,
+                DynamicInstrumentationEnabled: not null,
+                ExceptionReplayEnabled: not null,
+                CodeOriginEnabled: not null
             };
         }
 
