@@ -63,7 +63,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
-            remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = true },
+            remoteConfig: new { dynamic_instrumentation_enabled = true },
             DynamicInstrumentationEnabledLogEntry,
             finalMemoryAssertions: memoryAssertions =>
             {
@@ -88,7 +88,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no Exception Replay objects should exist
                 memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             },
-            remoteConfig: new { DD_EXCEPTION_REPLAY_ENABLED = true },
+            remoteConfig: new { exception_replay_enabled = true },
             ExceptionReplayEnabledLogEntry);
     }
 
@@ -108,7 +108,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no Code Origin object should exist
                 memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
-            remoteConfig: new { DD_CODE_ORIGIN_FOR_SPANS_ENABLED = true },
+            remoteConfig: new { code_origin_enabled = true },
             CodeOriginForSpansEnabledLogEntry);
     }
 
@@ -135,9 +135,9 @@ public class DebuggerManagerDynamicTests : TestHelper
             },
             remoteConfig: new
             {
-                DD_DYNAMIC_INSTRUMENTATION_ENABLED = true,
-                DD_EXCEPTION_REPLAY_ENABLED = true,
-                DD_CODE_ORIGIN_FOR_SPANS_ENABLED = true
+                dynamic_instrumentation_enabled = true,
+                exception_replay_enabled = true,
+                code_origin_enabled = true
             },
             ExceptionReplayEnabledLogEntry,
             finalMemoryAssertions: memoryAssertions =>
@@ -173,7 +173,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<LineProbeResolver>();
                 memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
             },
-            remoteConfig: new { DD_DYNAMIC_INSTRUMENTATION_ENABLED = false },
+            remoteConfig: new { dynamic_instrumentation_enabled = false },
             $"Dynamic Instrumentation {DisabledByRemoteConfiguration}",
             finalMemoryAssertions: memoryAssertions =>
             {
@@ -201,7 +201,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, Exception Replay objects should exist
                 memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             },
-            remoteConfig: new { DD_EXCEPTION_REPLAY_ENABLED = false },
+            remoteConfig: new { exception_replay_enabled = false },
             $"Exception Replay {DisabledByRemoteConfiguration}");
     }
 
@@ -222,7 +222,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, Code Origin object should exist
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
-            remoteConfig: new { DD_CODE_ORIGIN_FOR_SPANS_ENABLED = false },
+            remoteConfig: new { code_origin_enabled = false },
             $"Code Origin for Spans {DisabledByRemoteConfiguration}");
     }
 

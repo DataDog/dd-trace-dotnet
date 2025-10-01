@@ -218,14 +218,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.BootstrapServers = bootstrapServers;
                 }
 
-                if (message is not null && message.Timestamp.Type != 0)
+                if (message?.Instance is not null && message.Timestamp.Type != 0)
                 {
                     var consumeTime = span.StartTime.UtcDateTime;
                     var produceTime = message.Timestamp.UtcDateTime;
                     tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
                 }
 
-                if (message is not null && message.Value is null)
+                if (message?.Instance is not null && message.Value is null)
                 {
                     tags.Tombstone = "true";
                 }
@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         dataStreamsManager,
                         CheckpointKind.Consume,
                         edgeTags,
-                        message is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
+                        message?.Instance is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
                         tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 

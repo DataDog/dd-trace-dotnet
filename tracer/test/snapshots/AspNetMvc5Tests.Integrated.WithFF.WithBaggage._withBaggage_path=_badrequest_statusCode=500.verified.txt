@@ -9,6 +9,7 @@
     Error: 1,
     Tags: {
       baggage.user.id: doggo,
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke.,
       error.stack:
@@ -46,6 +47,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       aspnet.action: badrequest,
       aspnet.controller: home,
       aspnet.route: badrequest,
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke.,
       error.stack:
