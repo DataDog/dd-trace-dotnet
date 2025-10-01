@@ -19,7 +19,7 @@ internal interface IEnvironmentVariableProvider
     /// Gets the value of an environment variable.
     /// </summary>
     /// <param name="key">The name of the environment variable.</param>
-    /// <returns>The value of the environment variable, or an empty string if it does not exist.</returns>
+    /// <returns>The value of the environment variable, or null if it does not exist.</returns>
     string? GetEnvironmentVariable(string key);
 }
 
