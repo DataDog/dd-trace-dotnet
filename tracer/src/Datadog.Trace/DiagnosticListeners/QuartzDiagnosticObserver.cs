@@ -55,7 +55,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 case "Quartz.Job.Veto.Exception":
                     // setting an exception manually
                     var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity is not null)
+                    if (closingActivity?.Instance is not null)
                     {
                         QuartzCommon.AddException(arg, closingActivity);
                     }
