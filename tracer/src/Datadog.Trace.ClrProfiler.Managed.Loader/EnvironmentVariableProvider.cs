@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader;
 
