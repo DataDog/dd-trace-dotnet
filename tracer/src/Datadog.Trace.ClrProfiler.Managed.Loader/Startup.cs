@@ -58,21 +58,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);
-                ManagedProfilerDirectory = ComputeTfmDirectory(envVars);
+                var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
 
-                if (ManagedProfilerDirectory is null)
+                if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log("Could not determine Datadog.Trace.dll directory or it doesn't exist. Datadog SDK will be disabled.");
+                    StartupLogger.Log($"{TracerHomePathKey} not set. Datadog SDK will be disabled.");
                     return;
                 }
+
+                ManagedProfilerDirectory = ComputeTfmDirectory(tracerHomeDirectory);
 
                 if (!Directory.Exists(ManagedProfilerDirectory))
                 {
-                    StartupLogger.Log($"Tracer home directory not found at '{ManagedProfilerDirectory}'");
+                    StartupLogger.Log($"Datadog.Trace.dll TFM directory not found at '{ManagedProfilerDirectory}'. Datadog SDK will be disabled.");
                     return;
                 }
 
-                StartupLogger.Debug("Resolved Datadog.Trace.dll directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolved Datadog.Trace.dll TFM directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {

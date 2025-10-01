@@ -23,15 +23,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
-        internal static string? ComputeTfmDirectory(IEnvironmentVariableProvider envVars)
+        internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
-            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
-
-            if (tracerHomeDirectory is null)
-            {
-                return null;
-            }
-
             var version = Environment.Version;
             string managedLibrariesDirectory;
 

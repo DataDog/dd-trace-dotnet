@@ -18,15 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        internal static string? ComputeTfmDirectory(IEnvironmentVariableProvider envVars)
+        internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
-            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
-
-            if (tracerHomeDirectory is null)
-            {
-                return null;
-            }
-
             return Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
         }
 
