@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
-        internal static string? ResolveManagedProfilerDirectory(IEnvironmentVariableProvider envVars)
+        internal static string? ComputeTfmDirectory(IEnvironmentVariableProvider envVars)
         {
             var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
 
@@ -53,21 +53,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             var fullPath = Path.Combine(Path.GetFullPath(tracerHomeDirectory), managedLibrariesDirectory);
 
-            if (!Directory.Exists(fullPath))
+            if (Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"Tracer home directory not found at '{fullPath}'");
-                return null;
-            }
+                // We use the List/Array approach due to the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
+                var assemblies = new List<CachedAssembly>();
+                foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
+                {
+                    assemblies.Add(new CachedAssembly(file, null));
+                }
 
-            // We use the List/Array approach due to the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
-            var assemblies = new List<CachedAssembly>();
-            foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
-            {
-                assemblies.Add(new CachedAssembly(file, null));
+                _assemblies = assemblies.ToArray();
+                StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
             }
-
-            _assemblies = assemblies.ToArray();
-            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
 
             return fullPath;
         }

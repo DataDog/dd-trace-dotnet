@@ -58,11 +58,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);
-                ManagedProfilerDirectory = ResolveManagedProfilerDirectory(envVars);
+                ManagedProfilerDirectory = ComputeTfmDirectory(envVars);
 
                 if (ManagedProfilerDirectory is null)
                 {
                     StartupLogger.Log("Could not determine Datadog.Trace.dll directory or it doesn't exist. Datadog SDK will be disabled.");
+                    return;
+                }
+
+                if (!Directory.Exists(ManagedProfilerDirectory))
+                {
+                    StartupLogger.Log($"Tracer home directory not found at '{ManagedProfilerDirectory}'");
                     return;
                 }
 
