@@ -826,12 +826,13 @@ bool CorProfilerCallback::StartServices()
 #ifdef LINUX
     // We cannot add the timer_create-based CPU profiler to the _services list
     // we have to control the Stop
-    // If we fail to stop, we mustn't release the memory associated to it
+    // If we fail to stop, we shouldn't release the memory associated to it
     // otherwise we might crash.
     if (_pCpuProfiler != nullptr)
     {
-        auto success = _pCpuProfiler->Start();
+        success = _pCpuProfiler->Start();
         LogServiceStart(success, _pCpuProfiler->GetName());
+        result &= success;
     }
 #endif
 
@@ -862,6 +863,19 @@ bool CorProfilerCallback::StopServices()
     // been initialized in the Initialize() method.
     bool result = true;
     bool success = true;
+
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        // if we failed at stopping the time_create-based CPU profiler,
+        // it's safer to not release the memory.
+        // Otherwise, we might crash the application.
+        // Reason: one thread could be executing the signal handler and accessing some field
+        success = _pCpuProfiler->Stop();
+        LogServiceStop(success, _pCpuProfiler->GetName());
+        result &= success;
+    }
+#endif
 
     // stop all services
     for (size_t i = _services.size(); i > 0; i--)
@@ -1618,22 +1632,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
-
-#ifdef LINUX
-    if (_pCpuProfiler != nullptr)
-    {
-        // if we failed at stopping the time_create-based CPU profiler,
-        // it's safer to not release the memory.
-        // Otherwise, we might crash the application.
-        // Reason: one thread could be executing the signal handler and accessing some field
-        auto stopped = _pCpuProfiler->Stop();
-        LogServiceStop(stopped, _pCpuProfiler->GetName());
-        if (stopped)
-        {
-            _pCpuProfiler = nullptr;
-        }
-    }
-#endif
 
     // sanity check: ensure that the Stable Configuration has been set by the managed layer
     if (_pConfiguration->IsManagedActivationEnabled())
