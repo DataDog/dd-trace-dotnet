@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
 using Newtonsoft.Json;
@@ -205,25 +206,60 @@ namespace Datadog.Trace.Tests.Configuration
                       });
         }
 
+        [Fact]
+        public void DynamicConfigConfigurationSource_JTokenConstructor_ProducesSameResultAsStringConstructor()
+        {
+            // Arrange
+            var configData = new
+            {
+                lib_config = new
+                {
+                    tracing_enabled = true,
+                    log_injection_enabled = false,
+                    tracing_sampling_rate = 0.75,
+                    tracing_tags = new[] { "key1:value1", "key2:value2" }
+                }
+            };
+
+            var json = JsonConvert.SerializeObject(configData);
+            var jToken = JToken.FromObject(configData);
+
+            // Act
+            var stringSource = new DynamicConfigConfigurationSource(json, ConfigurationOrigins.RemoteConfig);
+            var jTokenSource = new DynamicConfigConfigurationSource(jToken, ConfigurationOrigins.RemoteConfig);
+
+            var stringBuilder = new ConfigurationBuilder(stringSource, Mock.Of<IConfigurationTelemetry>());
+            var jTokenBuilder = new ConfigurationBuilder(jTokenSource, Mock.Of<IConfigurationTelemetry>());
+
+            // Assert - Both should produce identical configuration results
+            stringBuilder.WithKeys(ConfigurationKeys.TraceEnabled).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.TraceEnabled).AsBool());
+
+            stringBuilder.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool());
+
+            stringBuilder.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble());
+
+            var stringTags = stringBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
+            var jTokenTags = jTokenBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
+            stringTags.Should().BeEquivalentTo(jTokenTags);
+        }
+
         private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)
         {
-            using var stringWriter = new StringWriter();
-            using var jsonWriter = new JsonTextWriter(stringWriter);
-
-            jsonWriter.WriteStartObject();
-            jsonWriter.WritePropertyName("lib_config");
-            jsonWriter.WriteStartObject();
-
+            var libConfigObj = new JObject();
             foreach (var (key, value) in settings)
             {
-                jsonWriter.WritePropertyName(key);
-                jsonWriter.WriteRawValue(JsonConvert.SerializeObject(value));
+                libConfigObj[key] = JToken.FromObject(value);
             }
 
-            jsonWriter.Close();
-            var json = stringWriter.ToString();
+            var configObj = new JObject
+            {
+                ["lib_config"] = libConfigObj
+            };
 
-            var configurationSource = new DynamicConfigConfigurationSource(json, ConfigurationOrigins.RemoteConfig);
+            var configurationSource = new DynamicConfigConfigurationSource(configObj, ConfigurationOrigins.RemoteConfig);
             return new ConfigurationBuilder(configurationSource, Mock.Of<IConfigurationTelemetry>());
         }
     }

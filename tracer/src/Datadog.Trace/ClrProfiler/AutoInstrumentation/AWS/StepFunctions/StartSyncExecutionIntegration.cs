@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         internal static CallTargetState OnMethodBegin<TTarget, TStartSyncExecutionRequest>(TTarget instance, TStartSyncExecutionRequest request)
             where TStartSyncExecutionRequest : IStartExecutionRequest, IDuckType
         {
-            if (request is null)
+            if (request?.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
