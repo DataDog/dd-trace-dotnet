@@ -138,6 +138,7 @@ download-single-step-artifacts:
       optional: true
       artifacts: true
   rules:
+    - !reference [.run_when_not_docs, rules]
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
@@ -183,6 +184,7 @@ download-serverless-artifacts:
     - .run_when_not_docs
   needs: []
   rules:
+    - !reference [.run_when_not_docs, rules]
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
