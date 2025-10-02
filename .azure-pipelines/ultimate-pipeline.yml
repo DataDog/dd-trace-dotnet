@@ -29,6 +29,8 @@ pr:
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - AGENTS.md
+      - '**/CLAUDE.md'
 
 schedules:
   - cron: "0 3 * * *"

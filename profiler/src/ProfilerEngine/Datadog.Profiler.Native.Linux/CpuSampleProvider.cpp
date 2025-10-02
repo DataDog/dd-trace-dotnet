@@ -11,10 +11,10 @@
 CpuSampleProvider::CpuSampleProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    std::unique_ptr<RingBuffer> ringBuffer,
+    RingBuffer* ringBuffer,
     MetricsRegistry& metricsRegistry
     )
     :
-    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, std::move(ringBuffer), metricsRegistry)
+    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, ringBuffer, metricsRegistry)
 {
 }

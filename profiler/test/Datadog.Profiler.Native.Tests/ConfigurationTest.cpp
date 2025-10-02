@@ -1184,20 +1184,38 @@ TEST_F(ConfigurationTest, CheckDefaultCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+    auto expected =
+#ifdef _WINDOWS
+        CpuProfilerType::ManualCpuTime;
+#else
+        CpuProfilerType::TimerCreate;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
 }
 
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+    auto expected =
+#ifdef _WINDOWS
+        CpuProfilerType::ManualCpuTime;
+#else
+        CpuProfilerType::TimerCreate;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
 }
 
 TEST_F(ConfigurationTest, CheckUnknownCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+    auto expected =
+#ifdef _WINDOWS
+        CpuProfilerType::ManualCpuTime;
+#else
+        CpuProfilerType::TimerCreate;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
 }
 
 TEST_F(ConfigurationTest, CheckManualCpuProfilerType)
