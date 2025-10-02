@@ -49,10 +49,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // Startup() was already called before in the same AppDomain, this can happen because the profiler rewrites
                 // methods before the jitting to inject the loader. This is done until the profiler detects that the loader
                 // has been initialized.
-                // The piece of code injected already includes an Interlocked condition but, because the static variable is emitted
-                // in a custom type inside the running assembly, others assemblies will also have a different type with a different static
-                // variable, so, we still can hit an scenario where multiple loaders initialize.
-                // With this we prevent this scenario.
+                // The piece of code injected already includes an Interlocked condition. However, because the static variable is emitted
+                // in a custom type inside the running assembly, other assemblies will also have a different type with a different static
+                // variable, so we still can hit a scenario where multiple loaders initialize. This prevents this scenario.
                 return;
             }
 
@@ -140,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // Nothing to do here.
                 }
 
-                // If the logger fails, throw the original exception. The profiler emits code to log it.
+                // If the logger fails, throw the original exception. The native library emits code to log it.
                 throw;
             }
         }
@@ -158,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return tracerHomeDirectory!.Trim();
             }
 
-            // try to compute the path from the various "COR[ECLR]_PROFILER_PATH*" architecture-specific variations
+            // try to compute the path from the architecture-specific "COR_PROFILER_PATH_*" or "CORECLR_PROFILER_PATH_*"
             var archEnvVarName = GetProfilerPathEnvVarNameForArch();
 
             if (ComputeTracerHomePathFromProfilerPath(envVars, archEnvVarName) is { } archTracerHomePath)
@@ -166,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return archTracerHomePath;
             }
 
-            // try to compute the path from the general "COR[ECLR]_PROFILER_PATH" (no architecture)
+            // try to compute the path from "COR_PROFILER_PATH" or "CORECLR_PROFILER_PATH" (no architecture)
             var fallbackEnvVarName = GetProfilerPathEnvVarNameFallback();
 
             if (ComputeTracerHomePathFromProfilerPath(envVars, fallbackEnvVarName) is { } fallbackTracerHomePath)
