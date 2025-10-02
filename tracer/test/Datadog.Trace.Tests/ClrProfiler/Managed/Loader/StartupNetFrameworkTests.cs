@@ -111,6 +111,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.Managed.Loader
         [Theory]
         [InlineData("win-x64")]
         [InlineData("win-x86")]
+        [InlineData("win-arm64")]
         [InlineData("linux-x64")]
         [InlineData("linux-arm64")]
         [InlineData("linux-musl-x64")]
