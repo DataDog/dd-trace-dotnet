@@ -36,6 +36,7 @@ workflow:
 
 stages:
   - build
+  - fetch-artifacts
   - package
   - shared-pipeline
   - publish
@@ -127,7 +128,7 @@ publish:
       } while ($i -lt 3)
 
 download-single-step-artifacts:
-  stage: package
+  stage: fetch-artifacts
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   timeout: 45m
   tags: [ "arch:amd64" ]
@@ -178,7 +179,7 @@ deploy_to_reliability_env:
     - when: never # dd-trace-dotnet does not use reliability environment
 
 download-serverless-artifacts:
-  stage: package
+  stage: fetch-artifacts
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
   needs: []
