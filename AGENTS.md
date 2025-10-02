@@ -220,6 +220,30 @@ tracer/src/Datadog.Trace
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
 - C/C++: see `.clang-format`; keep consistent naming.
 
+## Performance Guidelines
+
+- Minimize heap allocations: The tracer runs in-process with customer applications and must have minimal performance impact. Avoid unnecessary object allocations, prefer value types where appropriate, use object pooling for frequently allocated objects, and cache reusable instances.
+
+### Performance-Critical Code Paths
+
+Performance is especially critical in two areas:
+
+1. **Bootstrap/Startup Code**: Initialization code runs at application startup in every instrumented process, including:
+   - The managed loader (`Datadog.Trace.ClrProfiler.Managed.Loader`)
+   - Tracer initialization in `Datadog.Trace` (static constructors, configuration loading, first tracer instance creation)
+   - Integration registration and setup
+
+   Any allocations or inefficiencies here directly impact application startup time and customer experience. This code must be extremely efficient.
+
+2. **Hot Paths**: Code that executes frequently during application runtime, such as:
+   - Span creation and tagging (executes on every traced operation)
+   - Context propagation (executes on every HTTP request/response)
+   - Sampling decisions (executes on every trace)
+   - Integration instrumentation callbacks (executes on every instrumented method call)
+   - Any code in the request/response pipeline
+
+In these areas, even small inefficiencies are multiplied by the frequency of execution and can significantly impact application performance.
+
 ## Testing Guidelines
 
 - Frameworks: xUnit (managed), GoogleTest (native).
