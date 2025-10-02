@@ -58,6 +58,8 @@ public class ConfigurationTests
         "DD_INSTRUMENTATION_INSTALL_TIME",
         "DD_INJECTION_ENABLED",
         "DD_INJECT_FORCE",
+        // deprecated alias
+        "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED"
     };
 
     // These are the keys that are used in the integration registry which are _not_ sent to telemetry, so we can ignore them
