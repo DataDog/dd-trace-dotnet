@@ -482,6 +482,7 @@ namespace Datadog.Trace
                     Advanced = { TelemetryFlushInterval = null }
                 };
 
+                /*
                 switch (settings.Exporter.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
@@ -501,7 +502,9 @@ namespace Datadog.Trace
                         Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
                         break;
                 }
+                */
 
+                config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}/tmp/datadog_dogstatsd.socket";
                 statsd.Configure(config);
                 return statsd;
             }

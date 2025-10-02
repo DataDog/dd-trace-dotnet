@@ -10,9 +10,11 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Agent.Transports;
 
@@ -26,7 +28,7 @@ internal class NativeAgentless
 
     static NativeAgentless()
     {
-        Environment.SetEnvironmentVariable("DD_LIBAGENT_PATH", "/Users/tony.redondo/liblibagent.dylib");
+        Environment.SetEnvironmentVariable("DD_LIBAGENT_PATH", "/Users/tony.redondo/libagent-macos-arm64/libagent.dylib");
 
 #if NETCOREAPP3_0_OR_GREATER
         NativeLibrary.SetDllImportResolver(typeof(NativeAgentless).Assembly, Resolve);
@@ -214,7 +216,21 @@ internal class NativeAgentless
     public static Task<Response> DeleteAsync(string path, NameValueCollection? headers = null, CancellationToken cancellationToken = default)
         => RequestAsync("DELETE", path, SerializeHttpHeaders(headers), body: null, cancellationToken);
 
-    public static NameValueCollection ParseHttpHeaders(string headerString)
+    public static bool SendMetric(string metric)
+    {
+        var metricBytes = ArrayPool<byte>.Shared.Rent(metric.Length * 2);
+        try
+        {
+            var metricBytesLength = Encoding.UTF8.GetBytes(metric, 0, metric.Length, metricBytes, 0);
+            return Native.SendDogStatsDMetric(metricBytes, (UIntPtr)metricBytesLength) == 0;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(metricBytes);
+        }
+    }
+
+    private static NameValueCollection ParseHttpHeaders(string headerString)
     {
         if (string.IsNullOrWhiteSpace(headerString))
         {
@@ -259,7 +275,7 @@ internal class NativeAgentless
         return headers;
     }
 
-    public static string SerializeHttpHeaders(NameValueCollection? headers)
+    private static string SerializeHttpHeaders(NameValueCollection? headers)
     {
         if (headers == null)
         {
@@ -311,6 +327,9 @@ internal class NativeAgentless
             IntPtr userData);
 
         [DllImport("libagent")]
+        public static extern int SendDogStatsDMetric(byte[] payload, UIntPtr payloadLen);
+
+        [DllImport("libagent")]
         public static extern void Initialize();
 
         [DllImport("libagent", EntryPoint = "GetMetrics")]
@@ -347,6 +366,10 @@ internal class NativeAgentless
             public double ResponseTimeEma4xx;
             public double ResponseTimeEma5xx;
             public ulong ResponseTimeSampleCount;
+
+            public ulong DogStatsdRequests;
+            public ulong DogstatsdSuccesses;
+            public ulong DogStatsdErrors;
         }
     }
 
