@@ -226,6 +226,7 @@ tracer/src/Datadog.Trace
 - Projects: `*.Tests.csproj` under `tracer/test`, native under `profiler/test`.
 - Filters: `--filter "Category=Smoke"`, `--framework net6.0` as needed.
 - Docker: Many integration tests require Docker; services in `docker-compose.yml`.
+- Test style: Inline result variables in assertions. Prefer `SomeMethod().Should().Be(expected)` over storing intermediate `result` variables.
 
 ## Commit & Pull Request Guidelines
 
