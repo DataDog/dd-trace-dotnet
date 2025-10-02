@@ -171,12 +171,15 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.LogDirectory).AsString();
+        var configurationBuilder = new ConfigurationBuilder(source, telemetry);
+        var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
         if (string.IsNullOrEmpty(logDirectory))
         {
-#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.ProfilerLogPath).AsString();
-#pragma warning restore 618
+            // todo, handle in phase 2 with deprecations
+// ProfilerLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later we want to pull deprecations differently as part of centralized file
+#pragma warning disable DD0008, 618
+            var nativeLogFile = configurationBuilder.WithKeys(ConfigurationKeys.TraceLogPath).AsString();
+#pragma warning restore DD0008, 618
 
             if (!string.IsNullOrEmpty(nativeLogFile))
             {

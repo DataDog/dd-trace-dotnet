@@ -265,7 +265,7 @@ namespace Datadog.Trace.Configuration
                                    validator: null);
 
             OtlpLogsProtocol = config
-                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
                                   defaultValue: new(OtlpProtocol.Grpc, "grpc"),
                                   converter: x => x switch
@@ -291,14 +291,14 @@ namespace Datadog.Trace.Configuration
                     converter: uriString => new Uri(uriString));
 
             OtlpLogsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpLogsTimeoutMs = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
 
             var otelLogsExporter = config
@@ -1304,6 +1304,16 @@ namespace Datadog.Trace.Configuration
 
             return list.ToArray();
         }
+
+        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
+            => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
+
+        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
+            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
+
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
+            => MutableSettings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
 
         internal string GetDefaultHttpClientExclusions()
         {
