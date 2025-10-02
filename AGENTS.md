@@ -282,7 +282,9 @@ In these areas, even small inefficiencies are multiplied by the frequency of exe
 
 - Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues.
 - PRs: Clear description, linked issues, risks/rollout, screenshots/logs if behavior changes.
-  - follow the existing PR description template in .github/pull_request_template.md
+  - Follow the existing PR description template in `.github/pull_request_template.md`
+  - Keep descriptions concise - provide essential context without excessive detail
+  - Focus on "what" and "why", with brief "how" for complex changes
 - CI: All checks green; include tests/docs for changes.
 
 ## Internal Docs & References
