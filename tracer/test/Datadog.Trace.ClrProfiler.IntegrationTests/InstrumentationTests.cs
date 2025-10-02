@@ -251,6 +251,21 @@ namespace Foo
             agent.Telemetry.Should().NotBeEmpty();
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenOmittingTracerHome_InstrumentsApp()
+        {
+            SetLogDirectory();
+
+            // DD_DOTNET_TRACER_HOME is not set, so the tracer should derive it from the profiler path
+            Output.WriteLine("DD_DOTNET_TRACER_HOME not set, relying on profiler path environment variables");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
         [SkippableTheory]
         [CombinatorialData]
         [Trait("RunOnWindows", "True")]
