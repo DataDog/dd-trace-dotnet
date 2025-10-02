@@ -46,46 +46,7 @@ public static class CustomMeterProviderBuilderExtensions
         && value == "true")
         {
             builder.AddMeter("OpenTelemetryMetricsMeter");
-
-            // Check if using Unix Domain Sockets
-            var endpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
-            var useUds = endpoint != null && endpoint.StartsWith("unix://", StringComparison.OrdinalIgnoreCase);
-
-            if (useUds && !OperatingSystem.IsWindows())
-            {
-                var udsPath = new Uri(endpoint).AbsolutePath;
-
-                // Allow h2c (HTTP/2 without TLS) for gRPC over UDS
-                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
-                return builder.AddOtlpExporter(o =>
-                {
-                    o.Protocol = OtlpExportProtocol.Grpc;
-
-                    // gRPC requires an http/https authority; actual connection goes via ConnectCallback
-                    o.Endpoint = new Uri("http://localhost");
-
-                    o.HttpClientFactory = () =>
-                    {
-                        var handler = new SocketsHttpHandler
-                        {
-                            ConnectCallback = async (ctx, ct) =>
-                            {
-                                var sock = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-                                await sock.ConnectAsync(new UnixDomainSocketEndPoint(udsPath), ct).ConfigureAwait(false);
-                                return new NetworkStream(sock, ownsSocket: true);
-                            }
-                        };
-
-                        return new HttpClient(handler, disposeHandler: true);
-                    };
-                });
-            }
-            else
-            {
-                // Normal env-var driven exporter (grpc/http) for TCP
-                return builder.AddOtlpExporter();
-            }
+            builder.AddOtlpExporter();
         }
 
         return builder;

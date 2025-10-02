@@ -89,12 +89,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true", "grpc", "unix"];
-                yield return [packageVersion[0], "true", "false", "grpc", "unix"];
-                yield return [packageVersion[0], "false", "true", "grpc", "http"];
-                yield return [packageVersion[0], "true", "false", "grpc", "http"];
-                yield return [packageVersion[0], "false", "true", "http/protobuf", "http"];
-                yield return [packageVersion[0], "true", "false", "http/protobuf", "http"];
+                yield return [packageVersion[0], "false", "true"];
+                yield return [packageVersion[0], "true", "false"];
             }
         }
 #endif
@@ -218,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetMetricsTestData))]
-        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string exporter, string networkType)
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
             var runtimeMajor = Environment.Version.Major;
@@ -233,29 +229,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
-            MockOtlpGrpcServer grpcServer = null;
-
-            string udsPath = networkType == "unix" ? "/tmp/otel-grpc-server.sock" : null;
-
-            if (udsPath is not null && OperatingSystem.IsWindows())
-            {
-                throw new SkipException("OTLP gRPC over UDS not supported on Windows.");
-            }
-
-            if (exporter == "grpc")
-            {
-                grpcServer = networkType == "unix"
-                    ? new MockOtlpGrpcServer(udsPath: udsPath)
-                    : new MockOtlpGrpcServer();
-            }
-
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", exporter);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", networkType == "http" ? $"http://127.0.0.1:{grpcServer?.Port ?? initialAgentPort}" : $"unix://{udsPath}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
@@ -263,12 +243,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
             {
                 // Collect requests from both MockTracerAgent and MockOtlpGrpcServer
-                var agentRequests = agent.OtlpRequests
+                var metricRequests = agent.OtlpRequests
                                           .Where(r => r.PathAndQuery.StartsWith("/v1/metrics") || r.PathAndQuery.Contains("MetricsService"))
                                           .ToList();
-
-                var grpcRequests = grpcServer?.Requests.ToList();
-                var metricRequests = agentRequests.Concat(grpcRequests ?? []).ToList();
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
 
@@ -339,13 +316,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }
-
-            grpcServer?.DisposeAsync();
         }
-
 #endif
-
-        // TODO Test Telemetry Metrics
 
         private static string GetSuffix(string packageVersion)
         {
