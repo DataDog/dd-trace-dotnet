@@ -20,19 +20,19 @@ internal ref struct ExpressionEvaluationResult
 
     internal List<EvaluationError> Errors { get; set; }
 
-    internal bool HasError => Errors is { Count: > 0 };
+    internal readonly bool HasError => Errors is { Count: > 0 };
 
-    internal bool IsNull()
+    internal readonly bool IsNull()
     {
         return Template == null && Condition == null && Metric == null && Decorations?.Length == 0 && Errors == null;
     }
 
     internal struct DecorationResult
     {
-        public string TagName { get; set; }
+        internal string TagName { get; set; }
 
-        public string Value { get; set; }
+        internal string Value { get; set; }
 
-        public EvaluationError[] Errors { get; set; }
+        internal EvaluationError[] Errors { get; set; }
     }
 }
