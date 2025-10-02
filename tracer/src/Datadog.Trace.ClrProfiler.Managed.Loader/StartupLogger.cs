@@ -42,25 +42,25 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Log(string message)
         {
-            LogCore(message, null);
+            Log(message, null);
         }
 
         public static void Log(string message, object? arg0)
         {
-            LogCore(message, [arg0]);
+            Log(message, [arg0]);
         }
 
         public static void Log(string message, object? arg0, object? arg1)
         {
-            LogCore(message, [arg0, arg1]);
+            Log(message, [arg0, arg1]);
         }
 
         public static void Log(string message, object? arg0, object? arg1, object? arg2)
         {
-            LogCore(message, [arg0, arg1, arg2]);
+            Log(message, [arg0, arg1, arg2]);
         }
 
-        private static void LogCore(string message, object?[]? args)
+        private static void Log(string message, object?[]? args)
         {
             if (StartupLogFilePath == null)
             {
@@ -93,26 +93,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Log(Exception ex, string message)
         {
-            LogCore("{0}{1}{2}", [message, Environment.NewLine, ex]);
+            Log("{0}{1}{2}", [message, Environment.NewLine, ex]);
         }
 
         public static void Log(Exception ex, string message, object? arg0)
         {
             var formattedMessage = string.Format(message, arg0);
-            LogCore("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
         }
 
         public static void Log(Exception ex, string message, object? arg0, object? arg1)
         {
             var formattedMessage = string.Format(message, arg0, arg1);
-            LogCore("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
         }
 
         public static void Debug(string message)
         {
             if (DebugEnabled)
             {
-                LogCore(message, null);
+                Log(message, null);
             }
         }
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             if (DebugEnabled)
             {
-                LogCore(message, [arg0]);
+                Log(message, [arg0]);
             }
         }
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             if (DebugEnabled)
             {
-                LogCore(message, [arg0, arg1]);
+                Log(message, [arg0, arg1]);
             }
         }
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             if (DebugEnabled)
             {
-                LogCore(message, [arg0, arg1, arg2]);
+                Log(message, [arg0, arg1, arg2]);
             }
         }
 
