@@ -13,11 +13,13 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class CosmosDbTags : InstrumentationTags
     {
+        public CosmosDbTags()
+            : base(nameof(IntegrationId.CosmosDb))
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.CosmosDb);
 
         [Tag(Trace.Tags.DbType)]
         public string DbType => "cosmosdb";

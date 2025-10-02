@@ -9,6 +9,11 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class WebTags : InstrumentationTags, IHasStatusCode
     {
+        public WebTags(string instrumentationName)
+            : base(instrumentationName)
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 

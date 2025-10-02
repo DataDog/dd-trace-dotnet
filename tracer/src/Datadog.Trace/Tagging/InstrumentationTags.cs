@@ -12,7 +12,15 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract partial class InstrumentationTags : TagsList
     {
+        protected InstrumentationTags(string instrumentationName)
+        {
+            InstrumentationName = instrumentationName;
+        }
+
         public abstract string SpanKind { get; }
+
+        [Tag(Trace.Tags.InstrumentationName)]
+        public string InstrumentationName { get; set; }
 
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }

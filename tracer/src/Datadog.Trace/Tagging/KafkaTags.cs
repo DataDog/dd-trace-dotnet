@@ -11,8 +11,6 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class KafkaTags : InstrumentationTags
     {
-        private const string ComponentName = "kafka";
-
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind
         // so the setter is only invoked once
@@ -23,15 +21,13 @@ namespace Datadog.Trace.Tagging
         }
 
         public KafkaTags(string spanKind)
+            : base("kafka")
         {
             SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => ComponentName;
 
         [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }

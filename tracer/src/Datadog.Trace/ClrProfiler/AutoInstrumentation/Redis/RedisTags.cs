@@ -13,11 +13,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     internal partial class RedisTags : InstrumentationTags
     {
+        public RedisTags()
+            : base(null)
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string? InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.RedisRawCommand)]
         public string? RawCommand { get; set; }

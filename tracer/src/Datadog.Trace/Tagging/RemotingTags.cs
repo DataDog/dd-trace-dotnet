@@ -12,15 +12,13 @@ namespace Datadog.Trace.Tagging
     internal abstract partial class RemotingTags : InstrumentationTags
     {
         public RemotingTags(string spanKind)
+            : base(nameof(IntegrationId.Remoting))
         {
             SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Remoting);
 
         [Tag(Trace.Tags.RpcMethod)]
         public string MethodName { get; set; }

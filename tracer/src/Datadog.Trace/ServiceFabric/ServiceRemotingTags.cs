@@ -14,6 +14,7 @@ namespace Datadog.Trace.ServiceFabric
     internal abstract partial class ServiceRemotingTags : InstrumentationTags
     {
         public ServiceRemotingTags(string spanKind)
+            : base(null)
         {
             SpanKind = spanKind;
         }

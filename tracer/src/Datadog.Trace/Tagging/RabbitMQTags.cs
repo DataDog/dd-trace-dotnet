@@ -24,15 +24,13 @@ namespace Datadog.Trace.Tagging
         }
 
         public RabbitMQTags(string spanKind)
+            : base(nameof(Configuration.IntegrationId.RabbitMQ))
         {
             SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
 
         [Tag(Trace.Tags.AmqpCommand)]
         public string Command { get; set; }

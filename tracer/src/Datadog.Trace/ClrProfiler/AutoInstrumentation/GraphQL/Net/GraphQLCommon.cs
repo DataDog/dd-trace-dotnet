@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
+                var tags = new GraphQLTags();
                 string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string source = executionContext.Document.OriginalQuery;
                 string operationName = executionContext.Operation.Name;
                 var operationType = OperationTypeProxyString[(int)executionContext.Operation.OperationType];
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string source = executionContext.Document.Source.ToString();
                 string operationName = executionContext.Operation.Name.StringValue;
                 string operationType = OperationTypeProxyString[(int)executionContext.Operation.Operation];
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {

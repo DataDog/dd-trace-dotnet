@@ -11,11 +11,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal partial class MongoDbTags : InstrumentationTags
     {
+        public MongoDbTags()
+            : base(MongoDbIntegration.IntegrationName)
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
         [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }

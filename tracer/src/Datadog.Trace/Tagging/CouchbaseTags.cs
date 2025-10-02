@@ -12,11 +12,13 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class CouchbaseTags : InstrumentationTags
     {
+        public CouchbaseTags()
+            : base(nameof(IntegrationId.Couchbase))
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
         [Tag(Trace.Tags.CouchbaseSeedNodes)]
         public string SeedNodes { get; set; }

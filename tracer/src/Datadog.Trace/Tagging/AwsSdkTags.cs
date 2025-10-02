@@ -9,8 +9,10 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode
     {
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "aws-sdk";
+        protected AwsSdkTags()
+            : base("aws-sdk")
+        {
+        }
 
         [Tag(Trace.Tags.AwsAgentName)]
         public string AgentName => "dotnet-aws-sdk";

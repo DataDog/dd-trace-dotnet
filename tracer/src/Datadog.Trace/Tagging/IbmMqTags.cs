@@ -10,16 +10,21 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class IbmMqTags : InstrumentationTags
     {
-        public IbmMqTags() => SpanKind = SpanKinds.Consumer;
+        public IbmMqTags()
+            : base("ibmmq")
+        {
+            SpanKind = SpanKinds.Consumer;
+        }
 
-        public IbmMqTags(string spanKind) => SpanKind = spanKind;
+        public IbmMqTags(string spanKind)
+            : base("ibmmq")
+        {
+            SpanKind = spanKind;
+        }
 
         /// <inheritdoc/>
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "ibmmq";
 
         [Tag(Trace.Tags.TopicName)]
         public string? TopicName { get; set; }

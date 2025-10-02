@@ -12,15 +12,13 @@ namespace Datadog.Trace.Tagging
     internal abstract partial class GrpcTags : InstrumentationTags
     {
         public GrpcTags(string spanKind)
+            : base(nameof(IntegrationId.Grpc))
         {
             SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => nameof(IntegrationId.Grpc);
 
         [Tag(Trace.Tags.GrpcMethodKind)]
         public string MethodKind { get; set; }

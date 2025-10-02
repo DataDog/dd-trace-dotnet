@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var queryOperationName = request.OperationName;
                 var source = request.Query?.ToString();
                 var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(IntegrationName), ServiceName, queryOperationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, queryOperationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var queryOperationName = request.OperationName;
                 var source = request.Document?.ToString();
                 var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, queryOperationName, source, operationType);
             }
             catch (Exception ex)
             {

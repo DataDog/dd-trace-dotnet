@@ -10,11 +10,13 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AerospikeTags : InstrumentationTags
     {
+        public AerospikeTags()
+            : base("aerospike")
+        {
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "aerospike";
 
         [Tag(Trace.Tags.AerospikeKey)]
         public string Key { get; set; }

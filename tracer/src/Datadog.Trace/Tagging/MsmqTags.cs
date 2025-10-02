@@ -13,13 +13,21 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class MsmqTags : InstrumentationTags
     {
-        public MsmqTags() => SpanKind = SpanKinds.Consumer;
+        public MsmqTags()
+            : base("msmq")
+        {
+            SpanKind = SpanKinds.Consumer;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MsmqTags"/> class.
         /// </summary>
         /// <param name="spanKind">kind of span</param>
-        public MsmqTags(string spanKind) => SpanKind = spanKind;
+        public MsmqTags(string spanKind)
+            : base("msmq")
+        {
+            SpanKind = spanKind;
+        }
 
         [Tag(Trace.Tags.MsmqCommand)]
         public string Command { get; set; }
@@ -27,9 +35,6 @@ namespace Datadog.Trace.Tagging
         /// <inheritdoc/>
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
-
-        [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "msmq";
 
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }

@@ -15,11 +15,13 @@ namespace Datadog.Trace.Tagging
         private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
         private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
 
+        public AzureFunctionsTags()
+            : base(ComponentName)
+        {
+        }
+
         [Tag(Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
-
-        [Tag(Tags.InstrumentationName)]
-        public string InstrumentationName => ComponentName;
 
         [Tag(ShortNameTagName)]
         public string ShortName { get; set; }
