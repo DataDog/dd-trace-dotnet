@@ -44,6 +44,8 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yaml
+    rules:
+    - !reference [.run_when_not_docs]
 
 variables:
   DOTNET_PACKAGE_VERSION:
