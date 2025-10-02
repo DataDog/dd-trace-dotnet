@@ -9,14 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -102,11 +100,10 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
                     serviceBusMessage.ApplicationProperties != null)
                 {
-                    var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
-                    var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
-                    if (extractedContext.SpanContext != null)
+                    var extractedContext = AzureMessagingCommon.ExtractContext(serviceBusMessage.ApplicationProperties);
+                    if (extractedContext != null)
                     {
-                        extractedContexts.Add(extractedContext.SpanContext);
+                        extractedContexts.Add(extractedContext);
                     }
                 }
             }
@@ -186,8 +183,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     {
         try
         {
-            var context = new Propagators.PropagationContext(scope.Span.Context, Baggage.Current);
-
             foreach (var message in messagesList)
             {
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
@@ -195,8 +190,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                     var amqpMessage = serviceBusMessage.AmqpMessage;
                     if (amqpMessage?.ApplicationProperties != null)
                     {
-                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(amqpMessage.ApplicationProperties);
-                        tracer.TracerManager.SpanContextPropagator.Inject(context, headerAdapter);
+                        AzureMessagingCommon.InjectContext(amqpMessage.ApplicationProperties, scope);
                     }
                 }
             }

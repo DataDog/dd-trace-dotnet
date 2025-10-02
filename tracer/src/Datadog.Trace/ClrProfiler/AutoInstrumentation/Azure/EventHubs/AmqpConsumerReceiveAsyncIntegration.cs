@@ -94,15 +94,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             {
                 foreach (var eventObj in eventsList)
                 {
-                    if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+                    if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
+                        eventData.Properties != null)
                     {
-                        if (eventData.Properties != null)
+                        var extractedContext = AzureMessagingCommon.ExtractContext(eventData.Properties);
+                        if (extractedContext != null)
                         {
-                            var extractedContext = AzureMessagingCommon.ExtractContext(eventData.Properties);
-                            if (extractedContext != null)
-                            {
-                                extractedContexts.Add(extractedContext);
-                            }
+                            extractedContexts.Add(extractedContext);
                         }
                     }
                 }

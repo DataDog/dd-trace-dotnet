@@ -14,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
 {
     internal static class AzureMessagingCommon
     {
-        private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureMessagingCommon));
 
         /// <summary>
@@ -24,10 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         {
             if (properties == null || scope?.Span?.Context == null)
             {
-                Log.Debug(
-                    LogPrefix + "Skipping context injection: properties={0}, scope={1}",
-                    properties == null,
-                    scope?.Span?.Context == null);
                 return;
             }
 
@@ -38,15 +33,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
                     context,
                     properties,
                     default(DictionaryContextPropagation));
-
-                Log.Debug(
-                    LogPrefix + "Successfully injected trace context: TraceId={0}, SpanId={1}",
-                    scope.Span.TraceId,
-                    scope.Span.SpanId);
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, LogPrefix + "Failed to inject trace context into message properties");
+                Log.Warning(ex, "Failed to inject trace context into message properties");
             }
         }
 
@@ -57,7 +47,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         {
             if (properties == null)
             {
-                Log.Debug(LogPrefix + "Cannot extract context from null properties");
                 return null;
             }
 
@@ -67,23 +56,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
                     properties,
                     default(DictionaryContextPropagation));
 
-                if (extractedContext.SpanContext != null)
-                {
-                    Log.Debug(
-                        LogPrefix + "Successfully extracted trace context: TraceId={0}, SpanId={1}",
-                        extractedContext.SpanContext.TraceId128.ToString(),
-                        extractedContext.SpanContext.SpanId);
-                }
-                else
-                {
-                    Log.Debug(LogPrefix + "No trace context found in message properties");
-                }
-
                 return extractedContext.SpanContext;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, LogPrefix + "Failed to extract trace context from message properties");
+                Log.Warning(ex, "Failed to extract trace context from message properties");
                 return null;
             }
         }
@@ -97,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
             {
                 if (carrier.TryGetValue(key, out var value) && value is string stringValue)
                 {
-                    return new[] { stringValue };
+                    return [stringValue];
                 }
 
                 return System.Linq.Enumerable.Empty<string>();
