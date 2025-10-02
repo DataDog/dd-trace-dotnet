@@ -40,7 +40,27 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        public static void Log(string message, params object?[] args)
+        public static void Log(string message)
+        {
+            LogCore(message, null);
+        }
+
+        public static void Log(string message, object? arg0)
+        {
+            LogCore(message, [arg0]);
+        }
+
+        public static void Log(string message, object? arg0, object? arg1)
+        {
+            LogCore(message, [arg0, arg1]);
+        }
+
+        public static void Log(string message, object? arg0, object? arg1, object? arg2)
+        {
+            LogCore(message, [arg0, arg1, arg2]);
+        }
+
+        private static void LogCore(string message, object?[]? args)
         {
             if (StartupLogFilePath == null)
             {
@@ -52,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 lock (PadLock)
                 {
                     using var fileSink = new FileSink(StartupLogFilePath);
+
                     if (DebugEnabled)
                     {
                         var currentDomain = AppDomain.CurrentDomain;
@@ -72,14 +93,40 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Log(Exception ex, string message, params object?[] args)
         {
-            Log($"{message}{Environment.NewLine}{ex}", args);
+            // Format the message first, then append exception
+            var formattedMessage = args.Length > 0 ? string.Format(message, args) : message;
+            Log("{0}{1}{2}", formattedMessage, Environment.NewLine, ex);
         }
 
-        public static void Debug(string message, params object?[] args)
+        public static void Debug(string message)
         {
             if (DebugEnabled)
             {
-                Log(message, args);
+                LogCore(message, null);
+            }
+        }
+
+        public static void Debug(string message, object? arg0)
+        {
+            if (DebugEnabled)
+            {
+                LogCore(message, [arg0]);
+            }
+        }
+
+        public static void Debug(string message, object? arg0, object? arg1)
+        {
+            if (DebugEnabled)
+            {
+                LogCore(message, [arg0, arg1]);
+            }
+        }
+
+        public static void Debug(string message, object? arg0, object? arg1, object? arg2)
+        {
+            if (DebugEnabled)
+            {
+                LogCore(message, [arg0, arg1, arg2]);
             }
         }
 
@@ -141,12 +188,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 // Do our best to not block other processes on write by using the process name and id
                 using var process = Process.GetCurrentProcess();
-                return Path.Combine(logDirectory, $"dotnet-tracer-loader-{process.ProcessName}-{process.Id}.log");
+                var fileName = string.Concat("dotnet-tracer-loader-", process.ProcessName, "-", process.Id.ToString(), ".log");
+                return Path.Combine(logDirectory, fileName);
             }
             catch
             {
                 // We can't get the process info, use a random guid instead
-                return Path.Combine(logDirectory, $"dotnet-tracer-loader-{Guid.NewGuid()}.log");
+                var fileName = string.Concat("dotnet-tracer-loader-", Guid.NewGuid().ToString(), ".log");
+                return Path.Combine(logDirectory, fileName);
             }
         }
     }
