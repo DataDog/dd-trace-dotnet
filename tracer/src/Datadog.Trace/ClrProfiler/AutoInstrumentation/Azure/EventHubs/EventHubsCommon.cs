@@ -139,10 +139,4 @@ internal static class EventHubsCommon
             return CallTargetState.GetDefault();
         }
     }
-
-    internal static TReturn OnAsyncMethodEnd<TReturn>(TReturn returnValue, Exception? exception, in CallTargetState state)
-    {
-        state.Scope?.DisposeWithException(exception);
-        return returnValue;
-    }
 }

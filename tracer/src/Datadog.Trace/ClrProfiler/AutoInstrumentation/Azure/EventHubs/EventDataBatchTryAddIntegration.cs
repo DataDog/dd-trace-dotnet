@@ -11,7 +11,6 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 
@@ -32,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 public class EventDataBatchTryAddIntegration
 {
     private const string OperationName = "create";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventDataBatchTryAddIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TEventData>(
         TTarget instance,

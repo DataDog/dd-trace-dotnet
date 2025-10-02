@@ -9,7 +9,6 @@ namespace Samples.AzureEventHubs
 {
     public enum TestMode
     {
-        Default,
         TestEventHubsMessageBatch,
         TestEventHubsEnumerable,
         TestEventHubsBufferedProducer
@@ -39,10 +38,9 @@ namespace Samples.AzureEventHubs
                 var properties = await producerClient.GetEventHubPropertiesAsync();
                 Console.WriteLine($"EventHub properties retrieved: Name={properties.Name}, PartitionCount={properties.PartitionIds.Length}");
 
-                TestMode testMode = TestMode.Default;
-                if (!string.IsNullOrEmpty(testModeString) && Enum.TryParse<TestMode>(testModeString, ignoreCase: true, out var parsedMode))
+                if (string.IsNullOrEmpty(testModeString) || !Enum.TryParse<TestMode>(testModeString, ignoreCase: true, out var testMode))
                 {
-                    testMode = parsedMode;
+                    throw new ArgumentException($"Invalid or missing EVENTHUBS_TEST_MODE. Expected one of: {string.Join(", ", Enum.GetNames(typeof(TestMode)))}. Got: '{testModeString ?? "null"}'");
                 }
 
                 switch (testMode)
@@ -56,10 +54,8 @@ namespace Samples.AzureEventHubs
                     case TestMode.TestEventHubsBufferedProducer:
                         await TestEventHubsBufferedProducerAsync(consumerClient);
                         break;
-                    case TestMode.Default:
                     default:
-                        await RunDefaultBehaviorAsync(producerClient, consumerClient);
-                        break;
+                        throw new ArgumentException($"Unhandled test mode: {testMode}");
                 }
 
                 await producerClient.DisposeAsync();
@@ -74,96 +70,6 @@ namespace Samples.AzureEventHubs
             }
 
             Console.WriteLine("Azure EventHubs Test Sample completed successfully");
-        }
-
-        private static async Task RunDefaultBehaviorAsync(EventHubProducerClient producerClient, EventHubConsumerClient consumerClient)
-        {
-            Console.WriteLine("\n=== Single Event Operations ===");
-
-            var singleEvent = new EventData(Encoding.UTF8.GetBytes("Hello from EventHubs test!"))
-            {
-                MessageId = Guid.NewGuid().ToString()
-            };
-            singleEvent.Properties["TestType"] = "Single";
-
-            Console.WriteLine($"Sending single event with ID: {singleEvent.MessageId}");
-            await producerClient.SendAsync(new[] { singleEvent });
-            Console.WriteLine("Single event sent successfully");
-
-            Console.WriteLine("\n=== EventDataBatch Operations ===");
-
-            var batch = await producerClient.CreateBatchAsync();
-            Console.WriteLine("EventDataBatch created successfully");
-
-            for (int i = 0; i < 3; i++)
-            {
-                var eventData = new EventData(Encoding.UTF8.GetBytes($"Batch event {i}"));
-                eventData.MessageId = Guid.NewGuid().ToString();
-                eventData.Properties["EventNumber"] = i;
-                eventData.Properties["TestType"] = "Batch";
-
-                bool added = batch.TryAdd(eventData);
-                Console.WriteLine($"Added event {i} to batch: {added}");
-            }
-
-            Console.WriteLine($"Batch ready with {batch.Count} events, size: {batch.SizeInBytes} bytes");
-
-            Console.WriteLine("Sending EventDataBatch...");
-            await producerClient.SendAsync(batch);
-
-            Console.WriteLine("EventDataBatch sent successfully");
-            Console.WriteLine("\n=== Consumer Operations ===");
-            Console.WriteLine("Attempting to read events from all partitions...");
-
-            var partitionIds = await consumerClient.GetPartitionIdsAsync();
-            Console.WriteLine($"Found {partitionIds.Length} partitions");
-
-            int totalEventsReceived = 0;
-            var readTimeout = TimeSpan.FromSeconds(3);
-
-            foreach (var partitionId in partitionIds)
-            {
-                Console.WriteLine($"Reading from partition {partitionId}...");
-
-                try
-                {
-                    var startTime = DateTime.UtcNow;
-                    await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsFromPartitionAsync(
-                        partitionId,
-                        EventPosition.Earliest,
-                        new ReadEventOptions { MaximumWaitTime = readTimeout }))
-                    {
-                        if (partitionEvent.Data != null)
-                        {
-                            var body = partitionEvent.Data.EventBody.ToString();
-                            var messageId = partitionEvent.Data.MessageId;
-                            var testType = partitionEvent.Data.Properties.ContainsKey("TestType")
-                                ? partitionEvent.Data.Properties["TestType"]
-                                : "Unknown";
-
-                            Console.WriteLine($"Received event from partition {partitionId}: ID={messageId}, Type={testType}, Body={body}");
-                            totalEventsReceived++;
-                        }
-
-                        if (DateTime.UtcNow - startTime > TimeSpan.FromSeconds(10) || totalEventsReceived >= 10)
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading from partition {partitionId}: {ex.Message}");
-                }
-
-                if (totalEventsReceived >= 10)
-                {
-                    break;
-                }
-            }
-
-            Console.WriteLine($"Total events received: {totalEventsReceived}");
-            Console.WriteLine("EventHubs operations completed successfully");
         }
 
         private static async Task TestEventHubsMessageBatchAsync(EventHubProducerClient producerClient, EventHubConsumerClient consumerClient)

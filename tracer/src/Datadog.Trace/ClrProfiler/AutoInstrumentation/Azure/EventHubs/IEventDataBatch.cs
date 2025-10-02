@@ -16,8 +16,6 @@ internal interface IEventDataBatch : IDuckType
 {
     int Count { get; }
 
-    long SizeInBytes { get; }
-
     string EventHubName { get; }
 
     string FullyQualifiedNamespace { get; }

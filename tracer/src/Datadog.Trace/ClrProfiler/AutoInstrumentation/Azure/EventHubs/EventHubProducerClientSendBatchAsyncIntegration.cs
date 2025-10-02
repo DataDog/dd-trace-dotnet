@@ -53,6 +53,7 @@ public class EventHubProducerClientSendBatchAsyncIntegration
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        return EventHubsCommon.OnAsyncMethodEnd(returnValue, exception, in state);
+        state.Scope?.DisposeWithException(exception);
+        return returnValue;
     }
 }

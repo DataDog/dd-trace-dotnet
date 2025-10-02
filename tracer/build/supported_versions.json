@@ -404,13 +404,13 @@
   {
     "integrationName": "AzureEventHubs",
     "assemblyName": "Azure.Messaging.EventHubs",
-    "minAssemblyVersionInclusive": "5.0.0",
+    "minAssemblyVersionInclusive": "5.9.2",
     "maxAssemblyVersionInclusive": "5.65535.65535",
     "packages": [
       {
         "name": "Azure.Messaging.EventHubs",
         "minVersionAvailableInclusive": "5.0.0",
-        "minVersionSupportedInclusive": "5.0.0",
+        "minVersionSupportedInclusive": "5.9.2",
         "minVersionTestedInclusive": "5.11.6",
         "maxVersionSupportedInclusive": "5.12.2",
         "maxVersionAvailableInclusive": "5.12.2",

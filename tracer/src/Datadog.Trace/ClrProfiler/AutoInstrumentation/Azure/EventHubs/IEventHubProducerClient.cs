@@ -17,8 +17,6 @@ internal interface IEventHubProducerClient : IDuckType
 {
     string EventHubName { get; }
 
-    string FullyQualifiedNamespace { get; }
-
     IEventHubConnection Connection { get; }
 }
 
