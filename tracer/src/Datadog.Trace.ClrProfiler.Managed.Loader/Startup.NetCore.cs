@@ -19,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static CachedAssembly[]? _assemblies;
+        private static readonly System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext = new ManagedProfilerAssemblyLoadContext();
 
-        private static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
+        private static CachedAssembly[]? _assemblies;
 
         internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
