@@ -351,6 +351,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestEventHubsIntegrationDisabled()
+        {
+            SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "false");
+
+            var testModes = new[] { "TestEventHubsMessageBatch", "TestEventHubsEnumerable", "TestEventHubsBufferedProducer" };
+
+            foreach (var testMode in testModes)
+            {
+                Output.WriteLine($"Testing with EVENTHUBS_TEST_MODE={testMode}");
+                SetEnvironmentVariable("EVENTHUBS_TEST_MODE", testMode);
+
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                using (await RunSampleAndWaitForExit(agent))
+                {
+                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, assertExpectedCount: false);
+                    spans.Should().BeEmpty($"Expected no spans when DD_TRACE_AZUREEVENTHUBS_ENABLED is false for test mode {testMode}");
+                }
+            }
+        }
+
         private static void ValidateSpanLinks(
             IList<MockSpan> sendSpans,
             IList<MockSpan> receiveSpans,
