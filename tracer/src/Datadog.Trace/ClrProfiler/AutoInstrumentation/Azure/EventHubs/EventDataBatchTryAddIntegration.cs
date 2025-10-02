@@ -32,8 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 public class EventDataBatchTryAddIntegration
 {
     private const string OperationName = "create";
-    private const string SpanOperationName = "azure_eventhubs.create";
-    private const string LogPrefix = "[EventHubs] ";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventDataBatchTryAddIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TEventData>(
@@ -67,12 +65,16 @@ public class EventDataBatchTryAddIntegration
         Exception? exception,
         in CallTargetState state)
     {
-        if (exception == null && returnValue is bool success && success && state.Scope?.Span?.Context != null && instance != null)
+        if (state.Scope != null)
         {
-            BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
+            if (exception == null && returnValue is bool success && success && instance != null)
+            {
+                BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
+            }
+
+            state.Scope.DisposeWithException(exception);
         }
 
-        state.Scope.DisposeWithException(exception);
         return new CallTargetReturn<TReturn>(returnValue);
     }
 }
