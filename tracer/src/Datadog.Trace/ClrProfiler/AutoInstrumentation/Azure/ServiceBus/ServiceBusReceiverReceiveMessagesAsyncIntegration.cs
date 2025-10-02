@@ -176,6 +176,8 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             tags.ServerAddress = endpoint.Host;
         }
 
+        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
+
         return scope;
     }
 

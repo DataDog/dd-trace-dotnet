@@ -73,7 +73,7 @@ internal static class EventHubsCommon
         IEnumerable<SpanLink>? spanLinks)
     {
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false))
         {
             return CallTargetState.GetDefault();
         }
@@ -115,9 +115,11 @@ internal static class EventHubsCommon
             {
                 foreach (var message in messages)
                 {
-                    var duckTypedMessage = message?.DuckCast<IEventData>();
-                    singleMessageId = duckTypedMessage?.MessageId;
-                    break;
+                    if (message?.TryDuckCast<IEventData>(out var eventData) == true)
+                    {
+                        singleMessageId = eventData.MessageId;
+                        break;
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(singleMessageId))
@@ -125,6 +127,8 @@ internal static class EventHubsCommon
                     tags.MessagingMessageId = singleMessageId;
                 }
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
 
             return new CallTargetState(scope);
         }

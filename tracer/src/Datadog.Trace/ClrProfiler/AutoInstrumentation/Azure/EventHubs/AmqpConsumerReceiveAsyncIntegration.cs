@@ -65,27 +65,18 @@ public class AmqpConsumerReceiveAsyncIntegration
         var messageCount = eventsList.Count;
         var linksEnabled = tracer.Settings.AzureEventHubsBatchLinksEnabled;
 
-        var events = new List<object>();
-        foreach (var evt in eventsList)
-        {
-            if (evt != null)
-            {
-                events.Add(evt);
-            }
-        }
+        var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, eventsList) : null;
+        var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, consumerInstance, eventsList);
 
-        var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, events) : null;
-        var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, consumerInstance, events);
-
-        if (scope != null && events.Count > 0)
+        if (scope != null && eventsList.Count > 0)
         {
-            ReinjectContextIntoMessages(tracer, scope, events);
+            ReinjectContextIntoMessages(tracer, scope, eventsList);
         }
 
         scope?.Dispose();
     }
 
-    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, List<object> eventsList)
+    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, IReadOnlyList<object> eventsList)
     {
         var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
@@ -121,7 +112,7 @@ public class AmqpConsumerReceiveAsyncIntegration
         return null;
     }
 
-    private static Scope? CreateAndConfigureSpan(Tracer tracer, IEnumerable<SpanLink>? spanLinks, int messageCount, IAmqpConsumer consumerInstance, List<object> events)
+    private static Scope? CreateAndConfigureSpan(Tracer tracer, IEnumerable<SpanLink>? spanLinks, int messageCount, IAmqpConsumer consumerInstance, IReadOnlyList<object> events)
     {
         var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
         tags.MessagingOperation = OperationName;
@@ -163,7 +154,7 @@ public class AmqpConsumerReceiveAsyncIntegration
         return scope;
     }
 
-    private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, List<object> eventsList)
+    private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, IReadOnlyList<object> eventsList)
     {
         try
         {

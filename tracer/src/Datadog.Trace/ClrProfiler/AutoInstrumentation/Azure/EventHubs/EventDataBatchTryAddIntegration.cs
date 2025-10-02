@@ -48,12 +48,15 @@ public class EventDataBatchTryAddIntegration
             return CallTargetState.GetDefault();
         }
 
-        var messages = eventData?.Instance != null ? new[] { eventData.Instance } : null;
+        if (eventData.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
 
         return EventHubsCommon.CreateSenderSpan(
             instance,
             OperationName,
-            messages: messages,
+            messages: new[] { eventData.Instance },
             messageCount: 1,
             spanLinks: null);
     }
