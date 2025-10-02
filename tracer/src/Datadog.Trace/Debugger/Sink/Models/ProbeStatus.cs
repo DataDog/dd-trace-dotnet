@@ -48,6 +48,10 @@ namespace Datadog.Trace.Debugger.Sink.Models
         [JsonProperty("debugger.type")]
         public string DebuggerType { get; } = DebuggerTags.DebuggerType.Diagnostic;
 
+        // in .net tracer, this is always "di" for now
+        [JsonProperty("debugger.product")]
+        public string DebuggerProduct { get; } = DebuggerTags.DebuggerProduct.DI;
+
         [JsonProperty("debugger")]
         public DebuggerDiagnostics DebuggerDiagnostics { get; }
     }
