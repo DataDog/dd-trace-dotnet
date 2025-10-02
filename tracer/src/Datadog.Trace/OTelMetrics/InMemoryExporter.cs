@@ -34,7 +34,7 @@ namespace Datadog.Trace.OTelMetrics
             }
         }
 
-        public override ExportResult Export(IReadOnlyList<MetricPoint> metrics)
+        public override Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics)
         {
             lock (_lock)
             {
@@ -42,12 +42,7 @@ namespace Datadog.Trace.OTelMetrics
                 Log.Debug<int, int>("InMemoryExporter: Exported {Count} metrics (total: {Total})", metrics.Count, _exportedMetrics.Count);
             }
 
-            return ExportResult.Success;
-        }
-
-        public override Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics)
-        {
-            var result = Export(metrics);
+            var result = ExportResult.Success;
             return Task.FromResult(result);
         }
 
@@ -55,24 +50,6 @@ namespace Datadog.Trace.OTelMetrics
         {
             // No-op for in-memory exporter
             return true;
-        }
-
-        public List<MetricPoint> Drain()
-        {
-            lock (_lock)
-            {
-                var copy = new List<MetricPoint>(_exportedMetrics);
-                _exportedMetrics.Clear();
-                return copy;
-            }
-        }
-
-        public void Clear()
-        {
-            lock (_lock)
-            {
-                _exportedMetrics.Clear();
-            }
         }
     }
 }

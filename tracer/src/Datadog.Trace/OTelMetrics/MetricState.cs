@@ -101,7 +101,7 @@ internal class MetricState
     /// Builds metric point snapshots and adds them to the provided list.
     /// For Delta temporality, resets the running values after snapshotting.
     /// </summary>
-    public void TryBuildPoints(List<MetricPoint> into)
+    public void BuildPoints(List<MetricPoint> into)
     {
         foreach (var point in _points.Values)
         {
@@ -119,29 +119,24 @@ internal class MetricState
             return existingPoint;
         }
 
-        var tagsArray = tags.ToArray();  // Materialize span to heap array
-
         // fallback, have to allocate
-        return _points.GetOrAdd(
-        tagSet,
-        _ =>
+        var dict = new Dictionary<string, object?>(tags.Length);
+        for (int i = 0; i < tags.Length; i++)
         {
-            var dict = new Dictionary<string, object?>(tagsArray.Length);
-            for (int i = 0; i < tagsArray.Length; i++)
-            {
-                ref readonly var kv = ref tagsArray[i];
-                dict[kv.Key] = kv.Value;
-            }
+            ref readonly var kv = ref tags[i];
+            dict[kv.Key] = kv.Value;
+        }
 
-            return new MetricPoint(
+        return _points.GetOrAdd(
+            tagSet,
+            _ => new MetricPoint(
                 _identity.InstrumentName,
                 _identity.MeterName,
                 _identity.InstrumentType,
                 _temporality,
                 dict,
                 _identity.Unit,
-                _identity.Description);
-        });
+                _identity.Description));
     }
 }
 #endif

@@ -595,7 +595,9 @@ namespace Datadog.Trace.Configuration
                                     .AsBool(defaultValue: false);
 
             var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
-            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
+                ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal);
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -696,7 +698,7 @@ namespace Datadog.Trace.Configuration
 
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
-        internal string[] OpenTelemetryMeterNames { get; }
+        internal HashSet<string> OpenTelemetryMeterNames { get; }
 
         /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.

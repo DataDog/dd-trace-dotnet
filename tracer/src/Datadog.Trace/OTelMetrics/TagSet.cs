@@ -20,6 +20,9 @@ namespace Datadog.Trace.OTelMetrics;
 /// </summary>
 internal readonly struct TagSet : IEquatable<TagSet>
 {
+    private static readonly IComparer<KeyValuePair<string, object?>> KeyComparer =
+        Comparer<KeyValuePair<string, object?>>.Create(static (a, b) => string.CompareOrdinal(a.Key, b.Key));
+
     private readonly string _key;
 
     private TagSet(string key) => _key = key;
@@ -35,7 +38,7 @@ internal readonly struct TagSet : IEquatable<TagSet>
         if (len == 1)
         {
             ref readonly var kv = ref tags[0];
-            var sb = StringBuilderCache.Acquire(32 + kv.Key.Length);
+            var sb = StringBuilderCache.Acquire();
             sb.Append(kv.Key).Append('=');
             if (kv.Value is not null)
             {
@@ -49,10 +52,9 @@ internal readonly struct TagSet : IEquatable<TagSet>
         try
         {
             tags.CopyTo(sorted);
-            Array.Sort(sorted, 0, len, Comparer<KeyValuePair<string, object?>>.Create(
-                static (a, b) => string.CompareOrdinal(a.Key, b.Key)));
+            Array.Sort(sorted, 0, len, KeyComparer);
 
-            var sb = StringBuilderCache.Acquire(len * 24);
+            var sb = StringBuilderCache.Acquire();
             for (int i = 0; i < len; i++)
             {
                 if (i > 0)
@@ -73,7 +75,7 @@ internal readonly struct TagSet : IEquatable<TagSet>
         }
         finally
         {
-            ArrayPool<KeyValuePair<string, object?>>.Shared.Return(sorted, clearArray: true);
+            ArrayPool<KeyValuePair<string, object?>>.Shared.Return(sorted);
         }
     }
 

@@ -59,21 +59,11 @@ namespace Datadog.Trace.OTelMetrics
             // Enable h2c (HTTP/2 without TLS) for gRPC only, and only for non-HTTPS endpoints
             if (_protocol == Configuration.OtlpProtocol.Grpc && _endpoint.Scheme != Uri.UriSchemeHttps)
             {
+                Log.Information("Enabling HTTP/2 without TLS (h2c) support for gRPC endpoint: {Endpoint}", _endpoint);
                 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             }
 
             _httpClient = CreateHttpClient(_endpoint);
-        }
-
-        /// <summary>
-        /// Exports a batch of metrics using OTLP protocol.
-        /// This method implements the MetricExporter base class Export operation.
-        /// </summary>
-        /// <param name="metrics">Batch of metrics to export</param>
-        /// <returns>ExportResult indicating success or failure</returns>
-        public override ExportResult Export(IReadOnlyList<MetricPoint> metrics)
-        {
-            return ExportAsync(metrics).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -93,8 +83,7 @@ namespace Datadog.Trace.OTelMetrics
 
             try
             {
-                var otlpPayload = _serializer.SerializeMetrics(metrics);
-                var success = await SendOtlpRequest(otlpPayload).ConfigureAwait(false);
+                var success = await SendOtlpRequest(metrics).ConfigureAwait(false);
 
                 if (success)
                 {
@@ -124,7 +113,6 @@ namespace Datadog.Trace.OTelMetrics
         {
             try
             {
-                using var cts = new CancellationTokenSource(timeoutMilliseconds);
                 _httpClient.Dispose();
                 return true;
             }
@@ -201,10 +189,14 @@ namespace Datadog.Trace.OTelMetrics
             return body.Slice(5, (int)len);
         }
 
-        private async Task<bool> SendOtlpRequest(byte[] otlpPayload)
+        private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)
         {
             try
             {
+                // Serialize metrics to protobuf format
+                // Note: JSON serialization is not yet implemented, so we always use protobuf ATM
+                var otlpPayload = _serializer.SerializeMetrics(metrics);
+
                 return _protocol switch
                 {
                     Configuration.OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),

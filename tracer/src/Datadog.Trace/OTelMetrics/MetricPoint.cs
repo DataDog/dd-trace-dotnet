@@ -33,9 +33,9 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
 
     public Dictionary<string, object?> Tags { get; } = tags;
 
-    public string Unit { get; } = unit ?? string.Empty;
+    public string Unit { get; } = unit;
 
-    public string Description { get; } = description ?? string.Empty;
+    public string Description { get; } = description;
 
     internal long RunningCount => _runningCountValue;
 

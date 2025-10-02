@@ -23,7 +23,8 @@ namespace Datadog.Trace.OTelMetrics
     internal sealed class MetricReader
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
-        private readonly TracerSettings _settings;
+        private readonly int _exportIntervalMs;
+        private readonly int _timeoutMs;
         private readonly MetricReaderHandler _handler;
         private readonly MetricExporter _exporter;
         private MeterListener? _listener;
@@ -31,7 +32,8 @@ namespace Datadog.Trace.OTelMetrics
 
         public MetricReader(TracerSettings settings, MetricReaderHandler handler, MetricExporter exporter)
         {
-            _settings = settings;
+            _exportIntervalMs = settings.OtelMetricExportIntervalMs;
+            _timeoutMs = settings.OtlpMetricsTimeoutMs;
             _handler = handler;
             _exporter = exporter;
         }
@@ -55,7 +57,7 @@ namespace Datadog.Trace.OTelMetrics
             listener.Start();
             _listener = listener;
 
-            var interval = TimeSpan.FromMilliseconds(_settings.OtelMetricExportIntervalMs);
+            var interval = TimeSpan.FromMilliseconds(_exportIntervalMs);
             _timer = new Timer(
                 callback: async void (_) =>
                 {
@@ -72,13 +74,16 @@ namespace Datadog.Trace.OTelMetrics
                 dueTime: interval,
                 period: interval);
 
-            Log.Debug<int>("MetricReader started with {IntervalMs}ms export interval", _settings.OtelMetricExportIntervalMs);
+            Log.Debug<int>("MetricReader started with {IntervalMs}ms export interval", _exportIntervalMs);
         }
 
         public async Task StopAsync()
         {
-            _timer?.DisposeAsync();
-            _timer = null;
+            if (_timer != null)
+            {
+                await _timer.DisposeAsync().ConfigureAwait(false);
+                _timer = null;
+            }
 
             try
             {
@@ -90,7 +95,7 @@ namespace Datadog.Trace.OTelMetrics
             }
             finally
             {
-                _exporter.Shutdown(_settings.OtlpMetricsTimeoutMs);
+                _exporter.Shutdown(_timeoutMs);
                 _listener?.Dispose();
                 _listener = null;
                 Log.Debug("MetricReader stopped");

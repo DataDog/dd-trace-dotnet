@@ -45,9 +45,9 @@ internal sealed class MetricReaderHandler
         bool shouldEnable;
         var enabledMeterNames = _settings.OpenTelemetryMeterNames;
 
-        if (enabledMeterNames.Length > 0)
+        if (enabledMeterNames.Count > 0)
         {
-            shouldEnable = Array.Exists(enabledMeterNames, name => name.Equals(meterName, StringComparison.Ordinal));
+            shouldEnable = enabledMeterNames.Contains(meterName);
         }
         else
         {
@@ -66,7 +66,7 @@ internal sealed class MetricReaderHandler
             return;
         }
 
-        var temporality = TemporalityFor(instrumentType.Value, _settings.OtlpMetricsTemporalityPreference);
+        var temporality = GetTemporality(instrumentType.Value, _settings.OtlpMetricsTemporalityPreference);
         var identity = new MetricStreamIdentity(instrument, instrumentType.Value);
 
         if (_streams.ContainsKey(identity))
@@ -139,8 +139,8 @@ internal sealed class MetricReaderHandler
 
         foreach (var (_, state) in pairs)
         {
-            // TryBuildPoints creates MetricPoint snapshots and performs delta resets if needed
-            state.TryBuildPoints(list);
+            // BuildPoints creates MetricPoint snapshots and performs delta resets if needed
+            state.BuildPoints(list);
         }
 
         return list;
@@ -175,7 +175,7 @@ internal sealed class MetricReaderHandler
         return true;
     }
 
-    private static AggregationTemporality? TemporalityFor(InstrumentType kind, OtlpTemporality preference)
+    private static AggregationTemporality? GetTemporality(InstrumentType kind, OtlpTemporality preference)
     {
         return kind switch
         {

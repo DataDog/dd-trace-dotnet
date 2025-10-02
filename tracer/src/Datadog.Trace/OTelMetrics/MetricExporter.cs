@@ -27,11 +27,6 @@ namespace Datadog.Trace.OTelMetrics
     internal abstract class MetricExporter
     {
         /// <summary>
-        /// Exports a batch of metrics synchronously.
-        /// </summary>
-        public abstract ExportResult Export(IReadOnlyList<MetricPoint> metrics);
-
-        /// <summary>
         /// Exports a batch of metrics asynchronously.
         /// </summary>
         public abstract Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics);
