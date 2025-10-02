@@ -91,11 +91,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        public static void Log(Exception ex, string message, params object?[] args)
+        public static void Log(Exception ex, string message)
         {
-            // Format the message first, then append exception
-            var formattedMessage = args.Length > 0 ? string.Format(message, args) : message;
-            Log("{0}{1}{2}", formattedMessage, Environment.NewLine, ex);
+            LogCore("{0}{1}{2}", [message, Environment.NewLine, ex]);
+        }
+
+        public static void Log(Exception ex, string message, object? arg0)
+        {
+            var formattedMessage = string.Format(message, arg0);
+            LogCore("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+        }
+
+        public static void Log(Exception ex, string message, object? arg0, object? arg1)
+        {
+            var formattedMessage = string.Format(message, arg0, arg1);
+            LogCore("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
         }
 
         public static void Debug(string message)
