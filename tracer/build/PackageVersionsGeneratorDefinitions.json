@@ -4,7 +4,7 @@
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",
     "MinVersion": "1.7.0",
-    "MaxVersionExclusive": "1.9.0",
+    "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
       "1.7.*",
       "1.8.*"
