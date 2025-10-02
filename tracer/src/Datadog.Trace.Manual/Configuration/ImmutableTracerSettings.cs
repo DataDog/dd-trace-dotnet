@@ -131,7 +131,7 @@ public sealed class ImmutableTracerSettings
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
 #pragma warning restore CS1574
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     public bool AnalyticsEnabled
     {
         [Instrumented]

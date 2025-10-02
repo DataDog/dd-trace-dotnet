@@ -209,7 +209,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// See the documentation for more details.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     public bool AnalyticsEnabled { get; }
 
     /// <summary>
@@ -546,7 +546,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         return false;
     }
 
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
     {
         var integrationSettings = Integrations[integration];

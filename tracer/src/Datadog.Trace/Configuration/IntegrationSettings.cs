@@ -24,13 +24,13 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key pattern for enabling or disabling Analytics in an integration.
         /// </summary>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
+        [Obsolete(DeprecationConstants.AppAnalytics)]
         public const string AnalyticsEnabledKey = "DD_TRACE_{0}_ANALYTICS_ENABLED";
 
         /// <summary>
         /// Configuration key pattern for setting Analytics sampling rate in an integration.
         /// </summary>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
+        [Obsolete(DeprecationConstants.AppAnalytics)]
         public const string AnalyticsSampleRateKey = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
 
         /// <summary>
