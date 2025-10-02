@@ -31,10 +31,12 @@ internal static class EnvironmentVariableProviderExtensions
     /// <summary>
     /// Gets the boolean value of an environment variable.
     /// </summary>
+    /// <typeparam name="TEnvVars">The type of environment variable provider.</typeparam>
     /// <param name="provider">The environment variable provider.</param>
     /// <param name="key">The name of the environment variable.</param>
     /// <returns>A boolean value parsed from the environment variable, or the default value if parsing is not possible.</returns>
-    public static bool? GetBooleanEnvironmentVariable(this IEnvironmentVariableProvider provider, string key)
+    public static bool? GetBooleanEnvironmentVariable<TEnvVars>(this TEnvVars provider, string key)
+        where TEnvVars : IEnvironmentVariableProvider
     {
         var value = provider.GetEnvironmentVariable(key);
 

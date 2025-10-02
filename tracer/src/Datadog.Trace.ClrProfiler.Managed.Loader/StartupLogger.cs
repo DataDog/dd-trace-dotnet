@@ -83,7 +83,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        internal static string? GetLogDirectoryFromEnvVars(IEnvironmentVariableProvider envVars)
+        internal static string? GetLogDirectoryFromEnvVars<TEnvVars>(TEnvVars envVars)
+            where TEnvVars : IEnvironmentVariableProvider
         {
             if (envVars.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY") is { } logDirectory)
             {
@@ -98,7 +99,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        internal static string GetDefaultLogDirectory(IEnvironmentVariableProvider envVars)
+        internal static string GetDefaultLogDirectory<TEnvVars>(TEnvVars envVars)
+            where TEnvVars : IEnvironmentVariableProvider
         {
             var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
             var isAas = !string.IsNullOrEmpty(envVars.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
