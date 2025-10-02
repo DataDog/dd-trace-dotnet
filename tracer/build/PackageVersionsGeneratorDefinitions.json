@@ -611,7 +611,7 @@
     "SampleProjectName": "Samples.MSTestTests2",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.10.5",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
@@ -623,7 +623,7 @@
     "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.10.5",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
