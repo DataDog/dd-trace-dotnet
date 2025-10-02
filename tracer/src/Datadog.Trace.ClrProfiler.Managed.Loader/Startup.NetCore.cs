@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                        Architecture.X86 => "CORECLR_PROFILER_PATH_32",
                        Architecture.Arm64 => "CORECLR_PROFILER_PATH_ARM64",
                        Architecture.Arm => "CORECLR_PROFILER_PATH_ARM",
-                       _ => throw new ArgumentOutOfRangeException() // can't happen, but if it does, there's a catch up the stack.
+                       _ => throw new ArgumentOutOfRangeException(nameof(RuntimeInformation.ProcessArchitecture), RuntimeInformation.ProcessArchitecture, "Unsupported architecture")
                    };
         }
 
