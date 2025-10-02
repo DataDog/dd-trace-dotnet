@@ -66,6 +66,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -116,6 +118,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -166,6 +170,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -226,6 +232,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
