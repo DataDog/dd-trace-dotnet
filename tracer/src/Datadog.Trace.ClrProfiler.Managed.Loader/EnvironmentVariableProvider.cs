@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader;
 /// <summary>
 /// Default implementation of <see cref="IEnvironmentVariableProvider"/> that uses System.Environment.
 /// </summary>
-internal class EnvironmentVariableProvider : IEnvironmentVariableProvider
+internal readonly struct EnvironmentVariableProvider : IEnvironmentVariableProvider
 {
     private readonly bool _logErrors;
 
