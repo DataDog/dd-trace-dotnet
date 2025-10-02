@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log($"{TracerHomePathKey} not set. Datadog SDK will be disabled.");
+                    StartupLogger.Log("{0} not set. Datadog SDK will be disabled.", TracerHomePathKey);
                     return;
                 }
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (!Directory.Exists(ManagedProfilerDirectory))
                 {
-                    StartupLogger.Log($"Datadog.Trace.dll TFM directory not found at '{ManagedProfilerDirectory}'. Datadog SDK will be disabled.");
+                    StartupLogger.Log("Datadog.Trace.dll TFM directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
                     return;
                 }
 
@@ -103,14 +103,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
                     const string processManagerTypeName = "Datadog.Trace.AgentProcessManager";
-                    StartupLogger.Log($"Invoking {processManagerTypeName}.{methodName}() to start external processes.");
+                    StartupLogger.Log("Invoking {0}.{1}() to start external processes.", processManagerTypeName, methodName);
                     TryInvokeManagedMethod(processManagerTypeName, methodName, "Datadog.Trace.AgentProcessManagerLoader");
                 }
 
                 // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
                 const string instrumentationTypeName = "Datadog.Trace.ClrProfiler.Instrumentation";
-                StartupLogger.Log($"Invoking {instrumentationTypeName}.{methodName}() to initialize instrumentation.");
+                StartupLogger.Log("Invoking {0}.{1}() to initialize instrumentation.", instrumentationTypeName, methodName);
                 TryInvokeManagedMethod(instrumentationTypeName, methodName, "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
