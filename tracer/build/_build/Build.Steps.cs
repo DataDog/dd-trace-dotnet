@@ -1362,11 +1362,11 @@ partial class Build
         .Unlisted()
         .After(Restore)
         .After(CompileManagedSrc)
-        .After(CompileManagedLoader)
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
