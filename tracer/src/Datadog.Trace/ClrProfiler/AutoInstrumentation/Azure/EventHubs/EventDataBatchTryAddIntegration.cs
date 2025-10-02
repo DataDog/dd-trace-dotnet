@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -66,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         {
             if (exception == null && returnValue is bool success && success && state.Scope?.Span?.Context != null && instance != null)
             {
-                EventHubsCommon.StoreSpanContext(instance, state.Scope.Span.Context);
+                BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
             }
 
             state.Scope.DisposeWithException(exception);

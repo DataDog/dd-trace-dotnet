@@ -7,8 +7,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -40,8 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             where TTarget : IEventHubProducerClient, IDuckType
             where TEventBatch : IEventDataBatch, IDuckType
         {
-            var spanContexts = EventHubsCommon.RetrieveAndClearSpanContexts(eventBatch?.Instance);
-            var spanLinks = spanContexts?.Select(ctx => new SpanLink(ctx));
+            var spanLinks = BatchSpanContextStorage.ExtractSpanContexts(eventBatch?.Instance);
             var messageCount = eventBatch?.Instance != null ? eventBatch.Count : (int?)null;
 
             return EventHubsCommon.CreateSenderSpan(

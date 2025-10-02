@@ -36,8 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     public class AmqpConsumerReceiveAsyncIntegration
     {
         private const string OperationName = "receive";
-        private const string SpanOperationName = "azure_eventhubs.receive";
-        private const string LogPrefix = "[EventHubs] ";
+        private const string SpanOperationName = "azure_eventhubs." + OperationName;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AmqpConsumerReceiveAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maximumEventCount, TimeSpan? maximumWaitTime, CancellationToken cancellationToken)
@@ -53,20 +52,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                 return returnValue;
             }
 
-            try
+            if (returnValue is IReadOnlyList<object> readOnlyList && readOnlyList.Count > 0)
             {
-                if (returnValue is IReadOnlyList<object> readOnlyList && readOnlyList.Count > 0)
-                {
-                    ProcessReceivedEvents(readOnlyList, instance);
-                }
-                else
-                {
-                    Log.Debug(LogPrefix + "No events received or unexpected return type");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, LogPrefix + "Error processing received EventHub messages in AmqpConsumer.ReceiveAsync");
+                ProcessReceivedEvents(readOnlyList, instance);
             }
 
             return returnValue;
@@ -77,8 +65,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             var tracer = Tracer.Instance;
             var messageCount = eventsList.Count;
             var linksEnabled = tracer.Settings.AzureEventHubsBatchLinksEnabled;
-
-            Log.Debug(LogPrefix + "Processing {0} EventHub messages{1}", (object)messageCount, linksEnabled ? " with span links" : " without span links");
 
             var events = new List<object>();
             foreach (var evt in eventsList)
@@ -100,9 +86,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             scope?.Dispose();
         }
 
-        private static List<SpanContext> ExtractSpanLinksFromMessages(Tracer tracer, List<object> eventsList)
+        private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, List<object> eventsList)
         {
-            var spanLinks = new List<SpanContext>();
+            var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
             try
             {
@@ -115,74 +101,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                             var extractedContext = AzureMessagingCommon.ExtractContext(eventData.Properties);
                             if (extractedContext != null)
                             {
-                                spanLinks.Add(extractedContext);
-                                Log.Debug(LogPrefix + "Extracted context from EventData for span link");
+                                extractedContexts.Add(extractedContext);
                             }
                         }
                     }
                 }
 
-                Log.Debug(LogPrefix + "Successfully extracted {0} context(s) for span links from EventHub messages", (object)spanLinks.Count);
+                var spanLinks = new List<SpanLink>(extractedContexts.Count);
+
+                foreach (var ctx in extractedContexts)
+                {
+                    spanLinks.Add(new SpanLink(ctx));
+                }
+
+                return spanLinks;
             }
             catch (Exception ex)
             {
-                Log.Error(ex, LogPrefix + "Error extracting contexts for span links from EventHub messages");
+                Log.Error(ex, "Error extracting contexts for span links from EventHub messages");
             }
 
-            return spanLinks;
+            return null;
         }
 
-        private static Scope? CreateAndConfigureSpan(Tracer tracer, List<SpanContext>? spanLinks, int messageCount, IAmqpConsumer consumerInstance, List<object> events)
+        private static Scope? CreateAndConfigureSpan(Tracer tracer, IEnumerable<SpanLink>? spanLinks, int messageCount, IAmqpConsumer consumerInstance, List<object> events)
         {
-            try
+            var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
+            tags.MessagingOperation = OperationName;
+
+            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+            var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: spanLinks);
+            var span = scope.Span;
+
+            var eventHubName = consumerInstance.EventHubName;
+            span.Type = SpanTypes.Queue;
+            span.ResourceName = eventHubName;
+
+            if (messageCount > 1)
             {
-                var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
-                tags.MessagingOperation = OperationName;
+                tags.MessagingBatchMessageCount = messageCount.ToString();
+            }
 
-                var links = spanLinks?.Select(ctx => new SpanLink(ctx));
-
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
-                var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: links);
-                var span = scope.Span;
-
-                var eventHubName = consumerInstance.EventHubName;
-                span.Type = SpanTypes.Queue;
-                span.ResourceName = eventHubName;
-
-                if (messageCount > 1)
+            if (messageCount == 1)
+            {
+                var eventObj = events[0];
+                if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
                 {
-                    tags.MessagingBatchMessageCount = messageCount.ToString();
-                }
-
-                if (messageCount == 1)
-                {
-                    var eventObj = events[0];
-                    if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+                    var messageId = eventData.MessageId;
+                    if (!string.IsNullOrEmpty(messageId))
                     {
-                        var messageId = eventData.MessageId;
-                        if (!string.IsNullOrEmpty(messageId))
-                        {
-                            tags.MessagingMessageId = messageId;
-                        }
+                        tags.MessagingMessageId = messageId;
                     }
                 }
-
-                var endpoint = consumerInstance.ConnectionScope?.ServiceEndpoint;
-                if (endpoint != null)
-                {
-                    tags.ServerAddress = endpoint.Host;
-                }
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
-                Log.Debug(LogPrefix + "Created receive span with {0} message(s) and {1} link(s)", (object)messageCount, (object)(spanLinks?.Count ?? 0));
-
-                return scope;
             }
-            catch (Exception ex)
+
+            var endpoint = consumerInstance.ConnectionScope?.ServiceEndpoint;
+            if (endpoint != null)
             {
-                Log.Error(ex, LogPrefix + "Error creating EventHub receive span");
-                return null;
+                tags.ServerAddress = endpoint.Host;
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
+
+            return scope;
         }
 
         private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, List<object> eventsList)
@@ -199,12 +180,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
                         }
                     }
                 }
-
-                Log.Debug(LogPrefix + "Re-injected context into {0} EventHub messages", (object)eventsList.Count);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, LogPrefix + "Error re-injecting context into EventHub messages");
+                Log.Error(ex, "Error re-injecting context into EventHub messages");
             }
         }
     }

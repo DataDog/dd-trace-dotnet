@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -203,24 +204,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         catch (Exception ex)
         {
             Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
-        }
-    }
-
-    private class SpanContextComparer : IEqualityComparer<SpanContext>
-    {
-        public bool Equals(SpanContext? x, SpanContext? y)
-        {
-            if (x == null || y == null)
-            {
-                return x == y;
-            }
-
-            return x.TraceId128 == y.TraceId128 && x.SpanId == y.SpanId;
-        }
-
-        public int GetHashCode(SpanContext obj)
-        {
-            return HashCode.Combine(obj.TraceId128, obj.SpanId);
         }
     }
 }

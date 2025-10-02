@@ -7,10 +7,7 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -24,59 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         private const int DefaultEventHubsPort = 5671;
         private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
-
-        // Maps EventDataBatch instances to their collection of message span contexts
-        private static readonly ConditionalWeakTable<object, ConcurrentBag<SpanContext>> BatchToSpanContexts = new();
-
-        public static void StoreSpanContext(object batchInstance, SpanContext spanContext)
-        {
-            if (batchInstance == null || spanContext == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var spanContexts = BatchToSpanContexts.GetValue(batchInstance, _ => new ConcurrentBag<SpanContext>());
-                spanContexts.Add(spanContext);
-
-                Log.Debug(LogPrefix + "Stored span context for batch. TraceId={TraceId}, SpanId={SpanId}", (object)spanContext.TraceId128, (object)spanContext.SpanId);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, LogPrefix + "Failed to store span context for EventDataBatch");
-            }
-        }
-
-        public static IEnumerable<SpanContext>? RetrieveAndClearSpanContexts(object? batchInstance)
-        {
-            if (batchInstance == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                if (!BatchToSpanContexts.TryGetValue(batchInstance, out var spanContexts) || spanContexts.IsEmpty)
-                {
-                    Log.Debug(LogPrefix + "No stored span contexts found for batch");
-                    return null;
-                }
-
-                var contexts = spanContexts.ToList();
-
-                Log.Debug(LogPrefix + "Retrieved {Count} span contexts for batch send operation", (object)contexts.Count);
-
-                BatchToSpanContexts.Remove(batchInstance);
-
-                return contexts.Count > 0 ? contexts : null;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, LogPrefix + "Failed to retrieve span contexts for EventDataBatch");
-                return null;
-            }
-        }
 
         internal static CallTargetState CreateSenderSpan(
             IEventHubProducerClient instance,
