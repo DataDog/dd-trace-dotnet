@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         public void Emit(ILogEvent? logEvent)
         {
             if (_isDisabled
-                || logEvent is null
+                || logEvent?.Instance is null
                 || (int)logEvent.Level < _minimumLevel)
             {
                 return;

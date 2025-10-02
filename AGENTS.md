@@ -214,6 +214,8 @@ tracer/src/Datadog.Trace
 ## Coding Style & Naming Conventions
 
 - C#: .editorconfig (4-space indent, System.* first, prefer var). Types/methods PascalCase; locals camelCase.
+  - When a "using" directive is missing in a file, add it instead of using fully-qualified type names.
+  - Use modern C# syntax, but avoid syntax that requires types not available in older runtimes (for example, don't use syntax that requires ValueTuple because is not included in .NET Framework 4.6.1)
 - StyleCop: `tracer/stylecop.json`; address warnings before pushing.
 - C/C++: `.clang-format`; keep consistent naming.
 
@@ -228,6 +230,7 @@ tracer/src/Datadog.Trace
 
 - Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues.
 - PRs: Clear description, linked issues, risks/rollout, screenshots/logs if behavior changes.
+  - follow the existing PR description template in .github/pull_request_template.md
 - CI: All checks green; include tests/docs for changes.
 
 ## Internal Docs & References

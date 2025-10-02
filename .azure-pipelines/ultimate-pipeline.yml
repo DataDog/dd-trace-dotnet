@@ -29,6 +29,8 @@ pr:
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - AGENTS.md
+      - '**/CLAUDE.md'
 
 schedules:
   - cron: "0 3 * * *"
@@ -4231,6 +4233,10 @@ stages:
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
+            fi
+            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._-/]+$ ]]; then
+              echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _ /"
+              exit 1
             fi
           fi
 
