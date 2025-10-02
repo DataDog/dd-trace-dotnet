@@ -19,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
     internal static class EventHubsCommon
     {
         private const int DefaultEventHubsPort = 5671;
-        private const string LogPrefix = "[EventHubs] ";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
 
         internal static CallTargetState CreateSenderSpan(
@@ -131,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
             }
             catch (Exception ex)
             {
-                Log.Error(ex, LogPrefix + "Error creating producer span");
+                Log.Error(ex, "Error creating producer span");
                 scope?.Dispose();
                 return CallTargetState.GetDefault();
             }

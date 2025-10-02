@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         MethodName = "InstrumentMessage",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "System.Collections.Generic.IDictionary`2[System.String,System.Object]", ClrNames.String, "System.String&", "System.String&" },
-        MinimumVersion = "5.0.0",
+        MinimumVersion = "5.9.2",
         MaximumVersion = "5.*.*",
         IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         MethodName = "ReceiveAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.EventHubs.EventData]]",
         ParameterTypeNames = [ClrNames.Int32, "System.Nullable`1[System.TimeSpan]", ClrNames.CancellationToken],
-        MinimumVersion = "5.0.0",
+        MinimumVersion = "5.9.2",
         MaximumVersion = "5.*.*",
         IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]

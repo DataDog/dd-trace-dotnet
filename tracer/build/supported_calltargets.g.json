@@ -3522,8 +3522,8 @@
     ],
     "MinimumVersion": {
       "Item1": 5,
-      "Item2": 0,
-      "Item3": 0
+      "Item2": 9,
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 5,
@@ -3548,8 +3548,8 @@
     ],
     "MinimumVersion": {
       "Item1": 5,
-      "Item2": 0,
-      "Item3": 0
+      "Item2": 9,
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 5,
@@ -3572,8 +3572,8 @@
     ],
     "MinimumVersion": {
       "Item1": 5,
-      "Item2": 0,
-      "Item3": 0
+      "Item2": 9,
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 5,
@@ -3597,8 +3597,8 @@
     ],
     "MinimumVersion": {
       "Item1": 5,
-      "Item2": 0,
-      "Item3": 0
+      "Item2": 9,
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 5,
@@ -3622,8 +3622,8 @@
     ],
     "MinimumVersion": {
       "Item1": 5,
-      "Item2": 0,
-      "Item3": 0
+      "Item2": 9,
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 5,

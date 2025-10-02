@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { "Azure.Messaging.EventHubs.Producer.EventDataBatch", ClrNames.CancellationToken },
-        MinimumVersion = "5.0.0",
+        MinimumVersion = "5.9.2",
         MaximumVersion = "5.*.*",
         IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]

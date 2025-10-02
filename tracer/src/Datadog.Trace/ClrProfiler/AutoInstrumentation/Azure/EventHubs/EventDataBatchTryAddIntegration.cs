@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
         MethodName = "TryAdd",
         ReturnTypeName = ClrNames.Bool,
         ParameterTypeNames = new[] { "Azure.Messaging.EventHubs.EventData" },
-        MinimumVersion = "5.0.0",
+        MinimumVersion = "5.9.2",
         MaximumVersion = "5.*.*",
         IntegrationName = nameof(IntegrationId.AzureEventHubs))]
     [Browsable(false)]
