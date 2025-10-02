@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log("{0} not set. Datadog SDK will be disabled.", TracerHomePathKey);
+                    StartupLogger.Log("The tracer home directory could not be determined automatically. Datadog SDK will be disabled. To resolve this issue, set environment variable {0}.", TracerHomePathKey);
                     return;
                 }
 
@@ -174,7 +174,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return fallbackTracerHomePath;
             }
 
-            StartupLogger.Log("The tracer home directory cannot be determined.");
             return null;
         }
 
