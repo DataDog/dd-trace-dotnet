@@ -23,6 +23,6 @@ public:
     CpuSampleProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        std::unique_ptr<RingBuffer> ringBuffer,
+        RingBuffer* ringBuffer,
         MetricsRegistry& metricsRegistry);
 };

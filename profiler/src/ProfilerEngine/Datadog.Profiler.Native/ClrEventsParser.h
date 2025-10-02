@@ -34,6 +34,7 @@ const int EVENT_CONTENTION_STOP = 91; // version 1 contains the duration in nano
 const int EVENT_CONTENTION_START = 81;
 
 const int EVENT_ALLOCATION_TICK = 10; // version 4 contains the size + reference
+const int EVENT_ALLOCATION_SAMPLED = 303; // available in .NET 10+
 const int EVENT_GC_TRIGGERED = 35;
 const int EVENT_GC_START = 1;                 // V2
 const int EVENT_GC_END = 2;                   // V1
@@ -116,6 +117,35 @@ struct AllocationTickV4Payload
     uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
     uintptr_t Address;             // The address of the last allocated object.
     uint64_t ObjectSize;           // The size of the last allocated object.
+};
+
+// for .NET 10+, we get new sampling events with information
+// about the remaining bytes in the allocation context before
+// the allocation triggers the event.
+// i.e. ObjectSize > SampledByteOffset and the diff between the two is the
+// part of the allocation that did not fit below the sampling threshold
+//
+//  Remaining of an Allocation Context
+//  +-----------------------------------+-------------------+
+//  +                                   |                   |
+//  +<_______SampledByteOffset_________>|                   |
+//  +                                   |                   |
+//  +-----------------------------------+-------------------+
+//  +<______________________ObjectSize______________________>
+//
+struct AllocationSampledPayload
+{
+    uint32_t AllocationKind;    // 0x0 - Small object allocation(allocation is in small object heap).
+                                // 0x1 - Large object allocation(allocation is in large object heap).
+                                // 0x2 - Pinned Object Heap
+    uint16_t ClrInstanceId;     // Unique ID for the instance of CLR or CoreCLR.
+    uintptr_t TypeId;           // The address of the MethodTable. When there are several types of objects that were allocated during this event,
+                                // this is the address of the MethodTable that corresponds to the last object allocated (the object that caused the 100 KB threshold to be exceeded).
+    const WCHAR* TypeName;      // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
+                                // this is the type of the last object allocated (the object that caused the 100 KB threshold to be exceeded).
+    uintptr_t Address;          // The address of the last allocated object.
+    uint64_t ObjectSize;        // The size of the last allocated object.
+    uint64_t SampledByteOffset; // The sampling threshold of the allocation context --> ObjectSize > SampledByteOffset
 };
 
 struct ContentionPayload  // for .NET Framework Contention(Start/Stop) share the same generic payload
@@ -244,9 +274,10 @@ struct GCDetails
 class ClrEventsParser
 {
 public:
-    static const int64_t KEYWORD_GC = 0x1;
-    static const int64_t KEYWORD_CONTENTION = 0x4000;
-    static const int64_t KEYWORD_WAITHANDLE = 0x40000000000; // .NET 9+ only
+    static const int64_t KEYWORD_GC =                             0x1;
+    static const int64_t KEYWORD_CONTENTION =                  0x4000;
+    static const int64_t KEYWORD_WAITHANDLE =           0x40000000000; // .NET 9+ only
+    static const int64_t KEYWORD_ALLOCATION_SAMPLING =  0x80000000000; // .NET 10+ only
 
 public:
     ClrEventsParser(
@@ -278,6 +309,9 @@ private:
     void ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseAllocationSampledEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    bool ParseAllocationEvent(ULONG cbEventData, LPCBYTE pEventData, AllocationTickV4Payload& payload);
+    bool ParseAllocationSampledEvent(ULONG cbEventData, LPCBYTE pEventData, AllocationSampledPayload& payload);
 
     // garbage collection events processing
     void OnGCTriggered();

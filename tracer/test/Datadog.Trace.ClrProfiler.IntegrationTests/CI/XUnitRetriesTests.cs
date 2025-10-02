@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Xunit;
 using Xunit.Abstractions;
@@ -44,6 +45,7 @@ public class XUnitRetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
+    [Flaky("Under investigation", 5)]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {
         return base.FlakyRetriesWithExceptionReplay(packageVersion);
