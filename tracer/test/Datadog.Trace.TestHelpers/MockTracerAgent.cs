@@ -528,7 +528,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v2/input"))
             {
-                HandlePotentialDebuggerData(request);
+                HandlePotentialDiagnosticsData(request);
                 responseType = MockTracerResponseType.Debugger;
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/diagnostics"))
@@ -732,10 +732,20 @@ namespace Datadog.Trace.TestHelpers
                 if (batch.StartsWith("[{\"debugger\":{\"snapshot\":", StringComparison.OrdinalIgnoreCase))
                 {
                     ReceiveDebuggerBatch(batch);
+                    return;
+                }
+
+                var startIndex = batch.IndexOf('[');
+                var endIndex = batch.LastIndexOf(']') + 1;
+                var jsonString = batch.Substring(startIndex, endIndex - startIndex + 1);
+                if (jsonString.StartsWith("[{\"debugger\":{\"snapshot\":", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReceiveDebuggerBatch(jsonString);
+                    return;
                 }
                 else
                 {
-                    ReceiveDiagnosticsBatch(batch);
+                    ReceiveDiagnosticsBatch(jsonString);
                 }
             }
             catch (Exception ex)
@@ -754,11 +764,7 @@ namespace Datadog.Trace.TestHelpers
 
             void ReceiveDiagnosticsBatch(string batch)
             {
-                var startIndex = batch.IndexOf('[');
-                var endIndex = batch.LastIndexOf(']') + 1;
-                var jsonString = batch.Substring(startIndex, endIndex - startIndex + 1);
-
-                var arr = JArray.Parse(jsonString);
+                var arr = JArray.Parse(batch);
 
                 var probeStatuses = new Dictionary<string, string>();
 
