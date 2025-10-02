@@ -118,16 +118,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static bool IsDatadogAssembly(string path, out Assembly? cachedAssembly)
         {
-            if (_assemblies is not null)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
-                for (var i = 0; i < _assemblies.Length; i++)
+                var assembly = _assemblies[i];
+                if (assembly.Path == path)
                 {
-                    var assembly = _assemblies[i];
-                    if (assembly.Path == path)
-                    {
-                        cachedAssembly = assembly.Assembly;
-                        return true;
-                    }
+                    cachedAssembly = assembly.Assembly;
+                    return true;
                 }
             }
 
@@ -137,15 +134,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static void SetDatadogAssembly(string path, Assembly cachedAssembly)
         {
-            if (_assemblies is not null)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
-                for (var i = 0; i < _assemblies.Length; i++)
+                if (_assemblies[i].Path == path)
                 {
-                    if (_assemblies[i].Path == path)
-                    {
-                        _assemblies[i] = new CachedAssembly(path, cachedAssembly);
-                        return;
-                    }
+                    _assemblies[i] = new CachedAssembly(path, cachedAssembly);
+                    return;
                 }
             }
         }
