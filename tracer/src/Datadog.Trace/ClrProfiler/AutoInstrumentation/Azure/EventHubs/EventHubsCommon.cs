@@ -14,132 +14,131 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
+
+internal static class EventHubsCommon
 {
-    internal static class EventHubsCommon
+    private const int DefaultEventHubsPort = 5671;
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
+
+    internal static CallTargetState CreateSenderSpan(
+        IEventHubProducerClient instance,
+        string operationName,
+        IEnumerable? messages = null,
+        int? messageCount = null,
+        IEnumerable<SpanLink>? spanLinks = null)
     {
-        private const int DefaultEventHubsPort = 5671;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
+        var endpoint = instance.Connection?.ServiceEndpoint;
+        var networkDestinationName = endpoint?.Host;
+        var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
+                                        "5671" :
+                                        endpoint.Port.ToString();
 
-        internal static CallTargetState CreateSenderSpan(
-            IEventHubProducerClient instance,
-            string operationName,
-            IEnumerable? messages = null,
-            int? messageCount = null,
-            IEnumerable<SpanLink>? spanLinks = null)
+        return CreateSenderSpanInternal(
+            instance.EventHubName,
+            networkDestinationName,
+            networkDestinationPort,
+            operationName,
+            messages,
+            messageCount,
+            spanLinks);
+    }
+
+    internal static CallTargetState CreateSenderSpan(
+        IEventDataBatch instance,
+        string operationName,
+        IEnumerable? messages = null,
+        int? messageCount = null,
+        IEnumerable<SpanLink>? spanLinks = null)
+    {
+        var networkDestinationName = instance.FullyQualifiedNamespace;
+
+        return CreateSenderSpanInternal(
+            instance.EventHubName,
+            networkDestinationName,
+            null,
+            operationName,
+            messages,
+            messageCount,
+            spanLinks);
+    }
+
+    private static CallTargetState CreateSenderSpanInternal(
+        string? eventHubName,
+        string? networkDestinationName,
+        string? networkDestinationPort,
+        string operationName,
+        IEnumerable? messages,
+        int? messageCount,
+        IEnumerable<SpanLink>? spanLinks)
+    {
+        var tracer = Tracer.Instance;
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
-            var endpoint = instance.Connection?.ServiceEndpoint;
-            var networkDestinationName = endpoint?.Host;
-            var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
-                                            "5671" :
-                                            endpoint.Port.ToString();
-
-            return CreateSenderSpanInternal(
-                instance.EventHubName,
-                networkDestinationName,
-                networkDestinationPort,
-                operationName,
-                messages,
-                messageCount,
-                spanLinks);
+            return CallTargetState.GetDefault();
         }
 
-        internal static CallTargetState CreateSenderSpan(
-            IEventDataBatch instance,
-            string operationName,
-            IEnumerable? messages = null,
-            int? messageCount = null,
-            IEnumerable<SpanLink>? spanLinks = null)
-        {
-            var networkDestinationName = instance.FullyQualifiedNamespace;
+        Scope? scope = null;
 
-            return CreateSenderSpanInternal(
-                instance.EventHubName,
-                networkDestinationName,
-                null,
-                operationName,
-                messages,
-                messageCount,
-                spanLinks);
-        }
-
-        private static CallTargetState CreateSenderSpanInternal(
-            string? eventHubName,
-            string? networkDestinationName,
-            string? networkDestinationPort,
-            string operationName,
-            IEnumerable? messages,
-            int? messageCount,
-            IEnumerable<SpanLink>? spanLinks)
+        try
         {
-            var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
+            tags.MessagingDestinationName = eventHubName;
+            tags.MessagingOperation = operationName;
+
+            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+            scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
+            var span = scope.Span;
+
+            span.Type = SpanTypes.Queue;
+            span.ResourceName = eventHubName;
+
+            if (!string.IsNullOrEmpty(networkDestinationName))
             {
-                return CallTargetState.GetDefault();
+                tags.NetworkDestinationName = networkDestinationName;
             }
 
-            Scope? scope = null;
-
-            try
+            if (!string.IsNullOrEmpty(networkDestinationPort))
             {
-                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
-                tags.MessagingDestinationName = eventHubName;
-                tags.MessagingOperation = operationName;
-
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
-                scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Queue;
-                span.ResourceName = eventHubName;
-
-                if (!string.IsNullOrEmpty(networkDestinationName))
-                {
-                    tags.NetworkDestinationName = networkDestinationName;
-                }
-
-                if (!string.IsNullOrEmpty(networkDestinationPort))
-                {
-                    tags.NetworkDestinationPort = networkDestinationPort;
-                }
-
-                var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
-                string? singleMessageId = null;
-
-                if (actualMessageCount > 1)
-                {
-                    tags.MessagingBatchMessageCount = actualMessageCount.ToString();
-                }
-
-                if (actualMessageCount == 1 && messages != null)
-                {
-                    foreach (var message in messages)
-                    {
-                        var duckTypedMessage = message?.DuckCast<IEventData>();
-                        singleMessageId = duckTypedMessage?.MessageId;
-                        break;
-                    }
-
-                    if (!string.IsNullOrEmpty(singleMessageId))
-                    {
-                        tags.MessagingMessageId = singleMessageId;
-                    }
-                }
-
-                return new CallTargetState(scope);
+                tags.NetworkDestinationPort = networkDestinationPort;
             }
-            catch (Exception ex)
+
+            var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+            string? singleMessageId = null;
+
+            if (actualMessageCount > 1)
             {
-                Log.Error(ex, "Error creating producer span");
-                scope?.Dispose();
-                return CallTargetState.GetDefault();
+                tags.MessagingBatchMessageCount = actualMessageCount.ToString();
             }
+
+            if (actualMessageCount == 1 && messages != null)
+            {
+                foreach (var message in messages)
+                {
+                    var duckTypedMessage = message?.DuckCast<IEventData>();
+                    singleMessageId = duckTypedMessage?.MessageId;
+                    break;
+                }
+
+                if (!string.IsNullOrEmpty(singleMessageId))
+                {
+                    tags.MessagingMessageId = singleMessageId;
+                }
+            }
+
+            return new CallTargetState(scope);
         }
-
-        internal static TReturn OnAsyncMethodEnd<TReturn>(TReturn returnValue, Exception? exception, in CallTargetState state)
+        catch (Exception ex)
         {
-            state.Scope?.DisposeWithException(exception);
-            return returnValue;
+            Log.Error(ex, "Error creating producer span");
+            scope?.Dispose();
+            return CallTargetState.GetDefault();
         }
+    }
+
+    internal static TReturn OnAsyncMethodEnd<TReturn>(TReturn returnValue, Exception? exception, in CallTargetState state)
+    {
+        state.Scope?.DisposeWithException(exception);
+        return returnValue;
     }
 }

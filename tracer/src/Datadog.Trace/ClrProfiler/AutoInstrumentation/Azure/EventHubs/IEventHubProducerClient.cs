@@ -8,22 +8,21 @@
 using System;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
+
+/// <summary>
+/// Duck type for Azure.Messaging.EventHubs.Producer.EventHubProducerClient
+/// </summary>
+internal interface IEventHubProducerClient : IDuckType
 {
-    /// <summary>
-    /// Duck type for Azure.Messaging.EventHubs.Producer.EventHubProducerClient
-    /// </summary>
-    internal interface IEventHubProducerClient : IDuckType
-    {
-        string EventHubName { get; }
+    string EventHubName { get; }
 
-        string FullyQualifiedNamespace { get; }
+    string FullyQualifiedNamespace { get; }
 
-        IEventHubConnection Connection { get; }
-    }
+    IEventHubConnection Connection { get; }
+}
 
-    internal interface IEventHubConnection
-    {
-        Uri? ServiceEndpoint { get; }
-    }
+internal interface IEventHubConnection
+{
+    Uri? ServiceEndpoint { get; }
 }

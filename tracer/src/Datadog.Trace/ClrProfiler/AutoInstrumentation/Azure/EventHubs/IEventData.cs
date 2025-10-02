@@ -8,15 +8,14 @@
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
-{
-    /// <summary>
-    /// Duck type for Azure.Messaging.EventHubs.EventData
-    /// </summary>
-    internal interface IEventData : IDuckType
-    {
-        IDictionary<string, object> Properties { get; }
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 
-        string MessageId { get; }
-    }
+/// <summary>
+/// Duck type for Azure.Messaging.EventHubs.EventData
+/// </summary>
+internal interface IEventData : IDuckType
+{
+    IDictionary<string, object> Properties { get; }
+
+    string MessageId { get; }
 }

@@ -13,47 +13,46 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
+
+/// <summary>
+/// Azure.Messaging.EventHubs.Producer.EventHubProducerClient.SendAsync calltarget instrumentation for EventDataBatch
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Azure.Messaging.EventHubs",
+    TypeName = "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+    MethodName = "SendAsync",
+    ReturnTypeName = ClrNames.Task,
+    ParameterTypeNames = new[] { "Azure.Messaging.EventHubs.Producer.EventDataBatch", ClrNames.CancellationToken },
+    MinimumVersion = "5.9.2",
+    MaximumVersion = "5.*.*",
+    IntegrationName = nameof(IntegrationId.AzureEventHubs))]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class EventHubProducerClientSendBatchAsyncIntegration
 {
-    /// <summary>
-    /// Azure.Messaging.EventHubs.Producer.EventHubProducerClient.SendAsync calltarget instrumentation for EventDataBatch
-    /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "Azure.Messaging.EventHubs",
-        TypeName = "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
-        MethodName = "SendAsync",
-        ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { "Azure.Messaging.EventHubs.Producer.EventDataBatch", ClrNames.CancellationToken },
-        MinimumVersion = "5.9.2",
-        MaximumVersion = "5.*.*",
-        IntegrationName = nameof(IntegrationId.AzureEventHubs))]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class EventHubProducerClientSendBatchAsyncIntegration
+    private const string OperationName = "send";
+
+    internal static CallTargetState OnMethodBegin<TTarget, TEventBatch>(
+        TTarget instance,
+        TEventBatch eventBatch,
+        CancellationToken cancellationToken)
+        where TTarget : IEventHubProducerClient, IDuckType
+        where TEventBatch : IEventDataBatch, IDuckType
     {
-        private const string OperationName = "send";
+        var spanLinks = BatchSpanContextStorage.ExtractSpanContexts(eventBatch?.Instance);
+        var messageCount = eventBatch?.Instance != null ? eventBatch.Count : (int?)null;
 
-        internal static CallTargetState OnMethodBegin<TTarget, TEventBatch>(
-            TTarget instance,
-            TEventBatch eventBatch,
-            CancellationToken cancellationToken)
-            where TTarget : IEventHubProducerClient, IDuckType
-            where TEventBatch : IEventDataBatch, IDuckType
-        {
-            var spanLinks = BatchSpanContextStorage.ExtractSpanContexts(eventBatch?.Instance);
-            var messageCount = eventBatch?.Instance != null ? eventBatch.Count : (int?)null;
+        return EventHubsCommon.CreateSenderSpan(
+            instance,
+            OperationName,
+            messages: null,
+            messageCount: messageCount,
+            spanLinks: spanLinks);
+    }
 
-            return EventHubsCommon.CreateSenderSpan(
-                instance,
-                OperationName,
-                messages: null,
-                messageCount: messageCount,
-                spanLinks: spanLinks);
-        }
-
-        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
-        {
-            return EventHubsCommon.OnAsyncMethodEnd(returnValue, exception, in state);
-        }
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    {
+        return EventHubsCommon.OnAsyncMethodEnd(returnValue, exception, in state);
     }
 }

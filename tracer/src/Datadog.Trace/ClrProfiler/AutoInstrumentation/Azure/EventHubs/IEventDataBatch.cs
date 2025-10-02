@@ -7,19 +7,18 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
+
+/// <summary>
+/// Duck type for Azure.Messaging.EventHubs.Producer.EventDataBatch
+/// </summary>
+internal interface IEventDataBatch : IDuckType
 {
-    /// <summary>
-    /// Duck type for Azure.Messaging.EventHubs.Producer.EventDataBatch
-    /// </summary>
-    internal interface IEventDataBatch : IDuckType
-    {
-        int Count { get; }
+    int Count { get; }
 
-        long SizeInBytes { get; }
+    long SizeInBytes { get; }
 
-        string EventHubName { get; }
+    string EventHubName { get; }
 
-        string FullyQualifiedNamespace { get; }
-    }
+    string FullyQualifiedNamespace { get; }
 }
