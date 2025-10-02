@@ -170,7 +170,7 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.LogDirectory).AsString();
+        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeyNoAliasLookup(ConfigurationKeys.LogDirectory).AsString();
         if (string.IsNullOrEmpty(logDirectory))
         {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
