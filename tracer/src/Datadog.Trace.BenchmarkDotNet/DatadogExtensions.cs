@@ -4,6 +4,7 @@
 // </copyright>
 
 using BenchmarkDotNet.Configs;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
@@ -33,14 +34,14 @@ public static class DatadogExtensions
     {
         var cfg = config.AddLogger(DatadogSessionLogger.Default);
 
-        enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled) ?? string.Empty).ToBoolean() ?? false;
+        enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Profiler.ProfilingEnabled) ?? string.Empty).ToBoolean() ?? false;
         switch (enableProfiler)
         {
             case true:
                 cfg = cfg.WithOption(ConfigOptions.KeepBenchmarkFiles, true);
                 break;
             case false:
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled, null);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Profiler.ProfilingEnabled, null);
                 break;
         }
 
