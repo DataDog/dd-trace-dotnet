@@ -240,11 +240,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                     else if (triggerType == "ServiceBus" && tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
                     {
-                        extractedContext = ExtractPropagatedContextFromServiceBus(context).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
                     else if (triggerType == "EventHub")
                     {
-                        extractedContext = ExtractPropagatedContextFromEventHub(context).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -344,7 +344,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context)
+        private static PropagationContext ExtractPropagatedContextFromMessaging<T>(T context, string singlePropertyKey, string batchPropertyKey)
             where T : IFunctionContext
         {
             try
@@ -372,8 +372,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
                 var spanContexts = new List<SpanContext>();
 
-                // Extract from single message UserProperties
-                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                // Extract from single message properties
+                if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
                 {
                     if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
@@ -382,8 +382,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                // Extract from batch UserPropertiesArray
-                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                // Extract from batch properties array
+                if (triggerMetadata?.TryGetValue(batchPropertyKey, out var arrayPropsObj) == true &&
                     TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
                 {
                     foreach (var props in propsArray)
@@ -405,14 +405,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (!areAllTheSame)
                 {
-                    Log.Warning("Multiple different contexts found in ServiceBus messages. Using first context for parentship.");
+                    Log.Warning("Multiple different contexts found in messages. Using first context for parentship.");
                 }
 
                 return new PropagationContext(spanContexts[0], Baggage.Current, null);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
+                Log.Error(ex, "Error extracting propagated context from messaging binding");
                 return default;
             }
         }
@@ -420,89 +420,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
         {
             return Shared.AzureMessagingCommon.ExtractContext(userProperties);
-        }
-
-        private static PropagationContext ExtractPropagatedContextFromEventHub<T>(T context)
-            where T : IFunctionContext
-        {
-            const string logPrefix = "[EventHubs] ";
-
-            try
-            {
-                if (context.Features == null)
-                {
-                    Log.Debug(logPrefix + "No features available in function context");
-                    return default;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
-                if (bindingsFeature == null)
-                {
-                    Log.Warning(logPrefix + "Could not find IFunctionBindingsFeature in context");
-                    return default;
-                }
-
-                var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-                if (triggerMetadata == null)
-                {
-                    Log.Warning(logPrefix + "TriggerMetadata is null");
-                    return default;
-                }
-
-                var spanContexts = new List<SpanContext>();
-
-                if (triggerMetadata?.TryGetValue("Properties", out var singlePropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
-                {
-                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
-                    {
-                        spanContexts.Add(singleContext);
-                    }
-                }
-
-                if (triggerMetadata?.TryGetValue("PropertiesArray", out var arrayPropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
-                {
-                    foreach (var props in propsArray)
-                    {
-                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
-                        {
-                            spanContexts.Add(batchContext);
-                        }
-                    }
-                }
-
-                if (spanContexts.Count == 0)
-                {
-                    Log.Warning(logPrefix + "No trace context found in EventHub trigger metadata");
-                    return default;
-                }
-
-                bool areAllTheSame = spanContexts.Count == 1 ||
-                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
-
-                if (!areAllTheSame)
-                {
-                    Log.Warning(logPrefix + "Multiple different contexts found in EventHub messages. Using first context for parentship.");
-                }
-
-                Log.Debug(logPrefix + "Successfully extracted {0} context(s) from EventHub trigger", (object)spanContexts.Count);
-                return new PropagationContext(spanContexts[0], Baggage.Current, null);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, logPrefix + "Error extracting propagated context from EventHub binding");
-                return default;
-            }
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
