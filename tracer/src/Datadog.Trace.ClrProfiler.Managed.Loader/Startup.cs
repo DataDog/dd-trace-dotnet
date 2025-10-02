@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -20,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AssemblyName = "Datadog.Trace, Version=3.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
+
+        private static readonly List<string> ArchitectureDirectories = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx", "osx-arm64", "osx-x64"];
 
         private static int _startupCtorInitialized;
 
@@ -58,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);
-                var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+                var tracerHomeDirectory = GetTracerHomePath(envVars);
 
                 if (tracerHomeDirectory is null)
                 {
@@ -131,6 +134,76 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         }
 
         internal static string? ManagedProfilerDirectory { get; }
+
+        internal static string? GetTracerHomePath(IEnvironmentVariableProvider envVars)
+        {
+            // allow override with DD_DOTNET_TRACER_HOME
+            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+
+            if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
+            {
+                return tracerHomeDirectory!.Trim();
+            }
+
+            // try to compute the path from the various "COR[ECLR]_PROFILER_PATH*" architecture-specific variations
+            var archEnvVarName = GetProfilerPathEnvVarNameForArch();
+
+            if (ComputeTracerHomePathFromProfilerPath(envVars, archEnvVarName) is { } archTracerHomePath)
+            {
+                return archTracerHomePath;
+            }
+
+            // try to compute the path from the general "COR[ECLR]_PROFILER_PATH" (no architecture)
+            var fallbackEnvVarName = GetProfilerPathEnvVarNameFallback();
+
+            if (ComputeTracerHomePathFromProfilerPath(envVars, fallbackEnvVarName) is { } fallbackTracerHomePath)
+            {
+                return fallbackTracerHomePath;
+            }
+
+            StartupLogger.Log("The tracer home directory cannot be determined.");
+            return null;
+        }
+
+        internal static string? ComputeTracerHomePathFromProfilerPath(IEnvironmentVariableProvider envVars, string envVarName)
+        {
+            var envVarValue = envVars.GetEnvironmentVariable(envVarName)?.Trim();
+
+            if (string.IsNullOrWhiteSpace(envVarValue))
+            {
+                return null;
+            }
+
+            try
+            {
+                var directory = Directory.GetParent(envVarValue);
+
+                if (directory is null)
+                {
+                    StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, envVarValue);
+                    return null;
+                }
+
+                // if the directory name is one of the well-known "os-arch" child directories (e.g. "win-x64"), go one level higher
+                if (ArchitectureDirectories.Contains(directory.Name))
+                {
+                    directory = directory.Parent;
+
+                    if (directory is null)
+                    {
+                        StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, envVarValue);
+                        return null;
+                    }
+                }
+
+                return directory.FullName;
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, "Error resolving tracer home directory from {0}={1}", envVarName, envVarValue);
+                return null;
+            }
+        }
 
         private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {
