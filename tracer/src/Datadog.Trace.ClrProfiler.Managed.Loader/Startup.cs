@@ -22,7 +22,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
-        private static readonly List<string> ArchitectureDirectories = ["win-x64", "win-x86", "linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64", "osx", "osx-arm64", "osx-x64"];
+        private static readonly HashSet<string> ArchitectureDirectories = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "win-x64",
+            "win-x86",
+            "linux-x64",
+            "linux-arm64",
+            "linux-musl-x64",
+            "linux-musl-arm64",
+            "osx",
+            "osx-arm64",
+            "osx-x64"
+        };
 
         private static int _startupCtorInitialized;
 
