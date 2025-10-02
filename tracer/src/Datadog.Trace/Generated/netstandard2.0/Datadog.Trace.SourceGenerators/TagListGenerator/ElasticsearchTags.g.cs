@@ -16,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // ActionBytes = MessagePack.Serialize("elasticsearch.action");
         private static ReadOnlySpan<byte> ActionBytes => new byte[] { 180, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
         // MethodBytes = MessagePack.Serialize("elasticsearch.method");
@@ -32,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "elasticsearch.action" => Action,
                 "elasticsearch.method" => Method,
                 "elasticsearch.url" => Url,
@@ -58,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                     Host = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ElasticsearchTags));
                     break;
                 default: 
@@ -72,11 +68,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (Action is not null)
@@ -108,13 +99,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

@@ -14,8 +14,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreTags
     {
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // AspNetCoreRouteBytes = MessagePack.Serialize("aspnet_core.route");
         private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
         // HttpRouteBytes = MessagePack.Serialize("http.route");
@@ -25,7 +23,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "component" => InstrumentationName,
                 "aspnet_core.route" => AspNetCoreRoute,
                 "http.route" => HttpRoute,
                 _ => base.GetTag(key),
@@ -36,9 +33,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "component": 
-                    InstrumentationName = value;
-                    break;
                 case "aspnet_core.route": 
                     AspNetCoreRoute = value;
                     break;
@@ -53,11 +47,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
-            }
-
             if (AspNetCoreRoute is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.route", AspNetCoreRoute, AspNetCoreRouteBytes));
@@ -73,13 +62,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
-                  .Append(',');
-            }
-
             if (AspNetCoreRoute is not null)
             {
                 sb.Append("aspnet_core.route (tag):")

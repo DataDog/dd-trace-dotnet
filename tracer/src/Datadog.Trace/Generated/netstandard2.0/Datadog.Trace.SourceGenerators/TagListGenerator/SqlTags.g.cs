@@ -18,8 +18,6 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // DbTypeBytes = MessagePack.Serialize("db.type");
         private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // DbNameBytes = MessagePack.Serialize("db.name");
         private static ReadOnlySpan<byte> DbNameBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
         // DbUserBytes = MessagePack.Serialize("db.user");
@@ -35,7 +33,6 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "db.type" => DbType,
-                "component" => InstrumentationName,
                 "db.name" => DbName,
                 "db.user" => DbUser,
                 "out.host" => OutHost,
@@ -50,9 +47,6 @@ namespace Datadog.Trace.Tagging
             {
                 case "db.type": 
                     DbType = value;
-                    break;
-                case "component": 
-                    InstrumentationName = value;
                     break;
                 case "db.name": 
                     DbName = value;
@@ -85,11 +79,6 @@ namespace Datadog.Trace.Tagging
             if (DbType is not null)
             {
                 processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (DbName is not null)
@@ -128,13 +117,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("db.type (tag):")
                   .Append(DbType)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

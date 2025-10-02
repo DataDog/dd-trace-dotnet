@@ -16,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // DbNameBytes = MessagePack.Serialize("db.name");
         private static ReadOnlySpan<byte> DbNameBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
         // QueryBytes = MessagePack.Serialize("mongodb.query");
@@ -34,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "db.name" => DbName,
                 "mongodb.query" => Query,
                 "mongodb.collection" => Collection,
@@ -64,7 +61,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     Port = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(MongoDbTags));
                     break;
                 default: 
@@ -78,11 +74,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (DbName is not null)
@@ -119,13 +110,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

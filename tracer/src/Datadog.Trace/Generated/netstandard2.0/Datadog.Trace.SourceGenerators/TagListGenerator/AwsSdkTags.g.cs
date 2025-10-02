@@ -14,8 +14,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // AgentNameBytes = MessagePack.Serialize("aws.agent");
         private static ReadOnlySpan<byte> AgentNameBytes => new byte[] { 169, 97, 119, 115, 46, 97, 103, 101, 110, 116 };
         // OperationBytes = MessagePack.Serialize("aws.operation");
@@ -41,7 +39,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "component" => InstrumentationName,
                 "aws.agent" => AgentName,
                 "aws.operation" => Operation,
                 "aws.region" => AwsRegion,
@@ -81,7 +78,6 @@ namespace Datadog.Trace.Tagging
                 case "http.status_code": 
                     HttpStatusCode = value;
                     break;
-                case "component": 
                 case "aws.agent": 
                 case "aws.region": 
                 case "aws.service": 
@@ -95,11 +91,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
-            }
-
             if (AgentName is not null)
             {
                 processor.Process(new TagItem<string>("aws.agent", AgentName, AgentNameBytes));
@@ -155,13 +146,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
-                  .Append(',');
-            }
-
             if (AgentName is not null)
             {
                 sb.Append("aws.agent (tag):")

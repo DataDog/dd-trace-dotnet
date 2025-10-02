@@ -16,8 +16,6 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // SeedNodesBytes = MessagePack.Serialize("db.couchbase.seed.nodes");
         private static ReadOnlySpan<byte> SeedNodesBytes => new byte[] { 183, 100, 98, 46, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 115, 101, 101, 100, 46, 110, 111, 100, 101, 115 };
         // OperationCodeBytes = MessagePack.Serialize("couchbase.operation.code");
@@ -36,7 +34,6 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "db.couchbase.seed.nodes" => SeedNodes,
                 "couchbase.operation.code" => OperationCode,
                 "couchbase.operation.bucket" => Bucket,
@@ -70,7 +67,6 @@ namespace Datadog.Trace.Tagging
                     Port = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(CouchbaseTags));
                     break;
                 default: 
@@ -84,11 +80,6 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (SeedNodes is not null)
@@ -130,13 +121,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

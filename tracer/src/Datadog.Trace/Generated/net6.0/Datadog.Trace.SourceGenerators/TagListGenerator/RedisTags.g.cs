@@ -18,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         private static ReadOnlySpan<byte> DatabaseIndexBytes => new byte[] { 183, 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // RawCommandBytes = MessagePack.Serialize("redis.raw_command");
         private static ReadOnlySpan<byte> RawCommandBytes => new byte[] { 177, 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
         // HostBytes = MessagePack.Serialize("out.host");
@@ -32,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "redis.raw_command" => RawCommand,
                 "out.host" => Host,
                 "out.port" => Port,
@@ -44,9 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         {
             switch(key)
             {
-                case "component": 
-                    InstrumentationName = value;
-                    break;
                 case "redis.raw_command": 
                     RawCommand = value;
                     break;
@@ -70,11 +64,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (RawCommand is not null)
@@ -101,13 +90,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

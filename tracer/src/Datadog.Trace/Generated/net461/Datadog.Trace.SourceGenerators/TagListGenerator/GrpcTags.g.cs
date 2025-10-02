@@ -16,8 +16,6 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // MethodKindBytes = MessagePack.Serialize("grpc.method.kind");
         private static ReadOnlySpan<byte> MethodKindBytes => new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
         // MethodNameBytes = MessagePack.Serialize("grpc.method.name");
@@ -36,7 +34,6 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "grpc.method.kind" => MethodKind,
                 "grpc.method.name" => MethodName,
                 "grpc.method.path" => MethodPath,
@@ -70,7 +67,6 @@ namespace Datadog.Trace.Tagging
                     StatusCode = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GrpcTags));
                     break;
                 default: 
@@ -84,11 +80,6 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (MethodKind is not null)
@@ -130,13 +121,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

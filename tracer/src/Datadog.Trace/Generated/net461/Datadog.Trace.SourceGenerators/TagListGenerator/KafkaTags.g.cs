@@ -18,8 +18,6 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // BootstrapServersBytes = MessagePack.Serialize("messaging.kafka.bootstrap.servers");
         private static ReadOnlySpan<byte> BootstrapServersBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 98, 111, 111, 116, 115, 116, 114, 97, 112, 46, 115, 101, 114, 118, 101, 114, 115 };
         // TopicBytes = MessagePack.Serialize("messaging.destination.name");
@@ -38,7 +36,6 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "messaging.kafka.bootstrap.servers" => BootstrapServers,
                 "messaging.destination.name" => Topic,
                 "kafka.partition" => Partition,
@@ -72,7 +69,6 @@ namespace Datadog.Trace.Tagging
                     ConsumerGroup = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(KafkaTags));
                     break;
                 default: 
@@ -86,11 +82,6 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (BootstrapServers is not null)
@@ -132,13 +123,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 

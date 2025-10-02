@@ -16,7 +16,52 @@ namespace Datadog.Trace.Tagging
     {
         // AnalyticsSampleRateBytes = MessagePack.Serialize("_dd1.sr.eausr");
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 
+        public override string? GetTag(string key)
+        {
+            return key switch
+            {
+                "component" => InstrumentationName,
+                _ => base.GetTag(key),
+            };
+        }
+
+        public override void SetTag(string key, string value)
+        {
+            switch(key)
+            {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
+                default: 
+                    base.SetTag(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        {
+            if (InstrumentationName is not null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            base.EnumerateTags(ref processor);
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (InstrumentationName is not null)
+            {
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
         public override double? GetMetric(string key)
         {
             return key switch

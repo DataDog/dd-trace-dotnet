@@ -16,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // SourceBytes = MessagePack.Serialize("graphql.source");
         private static ReadOnlySpan<byte> SourceBytes => new byte[] { 174, 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
         // OperationNameBytes = MessagePack.Serialize("graphql.operation.name");
@@ -30,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return key switch
             {
                 "span.kind" => SpanKind,
-                "component" => InstrumentationName,
                 "graphql.source" => Source,
                 "graphql.operation.name" => OperationName,
                 "graphql.operation.type" => OperationType,
@@ -52,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                     OperationType = value;
                     break;
                 case "span.kind": 
-                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GraphQLTags));
                     break;
                 default: 
@@ -66,11 +62,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (Source is not null)
@@ -97,13 +88,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (InstrumentationName is not null)
-            {
-                sb.Append("component (tag):")
-                  .Append(InstrumentationName)
                   .Append(',');
             }
 
