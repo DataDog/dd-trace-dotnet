@@ -28,9 +28,8 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   variables:
     AWS_REGION: "us-east-1"
 
-    # TODO: Change to dd-trace-dotnet/micro before merging
     # Branch containing a provision for building the AMI
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
     PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
 
@@ -44,13 +43,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    # TODO: Uncomment the second line, remove the first one
-    - |
-      if [ -z "$GITHUB_TOKEN" ]; then
-        GITHUB_TOKEN=$(cat /tmp/github-token)
-      fi
-      echo "GITHUB_TOKEN=$GITHUB_TOKEN" > .env
-    # - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
+    - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
@@ -79,18 +72,15 @@ run-benchmarks:
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
-  # TODO: Revert to the commented lines before merging
-  when: manual
-  # rules:
-  #   - when: on_success
+  rules:
+    - when: on_success
   variables:
     AWS_REGION: "us-east-1"
 
-    # TODO: Change to dd-trace-dotnet/micro before merging
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
     # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
@@ -104,7 +94,7 @@ run-benchmarks:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
   after_script:
-    # TODO: Ideally, should be in a script.
+    # Future improvement: Ideally, should be in a script.
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
@@ -114,7 +104,7 @@ run-benchmarks:
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
     - ./platform/steps/post-pr-comment.sh
-    # Temporarily commented out pending issue resolution with sending files to backend
+    # TODO: Uncomment this when the issue with sending files to backend is resolved
     # - ./platform/steps/upload-to-bp-ui.sh
     
 # TODO: Remove if unnecessary
@@ -134,8 +124,7 @@ upload-to-bp-ui:
     AWS_REGION: "us-east-1"
 
     # Here, we don't include BP_INFRA since we don't use BP_INFRA in this job.
-    # TODO: Change to dd-trace-dotnet/micro before merging
-    BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+    BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
     # Where to fetch results from
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
