@@ -241,6 +241,10 @@ namespace Datadog.Trace.Tests.Debugger
                 TestMethod(spanCodeOrigin, span);
 
                 // Assert
+                // Exit span code origin has been disabled since tracer version 3.2.8.
+                span.Tags.GetTag($"{CodeOriginTag}.type").Should().BeNull();
+
+                /* Uncomment when exit span will be enabled again
                 var codeOriginType = span.Tags.GetTag($"{CodeOriginTag}.type");
                 codeOriginType.Should().Be("exit");
                 var frame0Method = span.Tags.GetTag($"{CodeOriginTag}.frames.0.method");
@@ -253,6 +257,7 @@ namespace Datadog.Trace.Tests.Debugger
                 line.Should().NotBeNullOrEmpty();
                 var column = span.Tags.GetTag($"{CodeOriginTag}.frames.0.column");
                 column.Should().NotBeNullOrEmpty();
+                */
             }
 
             [Fact]
@@ -267,10 +272,15 @@ namespace Datadog.Trace.Tests.Debugger
                 DeepTestMethod1(span, spanCodeOrigin);
 
                 // Assert
+                // Exit span code origin has been disabled since tracer version 3.2.8.
+                span.Tags.GetTag($"{CodeOriginTag}.type").Should().BeNull();
+
+                /* Uncomment when exit span will be enabled again
                 var tags = ((List<KeyValuePair<string, string>>)(typeof(Datadog.Trace.Tagging.TagsList).GetField("_tags", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(span.Tags))).Select(i => i.Key).ToList();
                 tags.Should().Contain(s => s.StartsWith($"{CodeOriginTag}.frames.0"));
                 tags.Should().Contain(s => s.StartsWith($"{CodeOriginTag}.frames.1"));
                 tags.Should().NotContain(s => s.StartsWith($"{CodeOriginTag}.frames.2"));
+                */
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
