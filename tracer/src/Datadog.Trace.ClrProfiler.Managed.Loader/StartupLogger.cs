@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly string? StartupLogFilePath;
         private static readonly object PadLock = new();
 
+        private static bool _loggingEnabled;
+
         static StartupLogger()
         {
             var envVars = new EnvironmentVariableProvider(logErrors: false);
@@ -29,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 var logDirectory = GetLogDirectoryFromEnvVars(envVars) ?? GetDefaultLogDirectory(envVars);
                 Directory.CreateDirectory(logDirectory);
                 StartupLogFilePath = ComputeStartupLogFilePath(logDirectory);
+                _loggingEnabled = true;
             }
             catch
             {
@@ -37,30 +40,44 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 //   - Directory.Exists
                 //   - Environment.GetFolderPath
                 //   - Path.GetTempPath
+                StartupLogFilePath = null;
+                _loggingEnabled = false;
             }
         }
 
         public static void Log(string message)
         {
-            Log(message, null);
+            if (_loggingEnabled)
+            {
+                Log(message, args: []);
+            }
         }
 
         public static void Log(string message, object? arg0)
         {
-            Log(message, [arg0]);
+            if (_loggingEnabled)
+            {
+                Log(message, [arg0]);
+            }
         }
 
         public static void Log(string message, object? arg0, object? arg1)
         {
-            Log(message, [arg0, arg1]);
+            if (_loggingEnabled)
+            {
+                Log(message, [arg0, arg1]);
+            }
         }
 
         public static void Log(string message, object? arg0, object? arg1, object? arg2)
         {
-            Log(message, [arg0, arg1, arg2]);
+            if (_loggingEnabled)
+            {
+                Log(message, [arg0, arg1, arg2]);
+            }
         }
 
-        private static void Log(string message, object?[]? args)
+        private static void Log(string message, object?[] args)
         {
             if (StartupLogFilePath == null)
             {
@@ -87,38 +104,48 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             catch
             {
-                // ignore
+                // ignore exceptions (nowhere to log) and disable logging
+                _loggingEnabled = false;
             }
         }
 
         public static void Log(Exception ex, string message)
         {
-            Log("{0}{1}{2}", [message, Environment.NewLine, ex]);
+            if (_loggingEnabled)
+            {
+                Log("{0}{1}{2}", [message, Environment.NewLine, ex]);
+            }
         }
 
         public static void Log(Exception ex, string message, object? arg0)
         {
-            var formattedMessage = string.Format(message, arg0);
-            Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            if (_loggingEnabled)
+            {
+                var formattedMessage = string.Format(message, arg0);
+                Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            }
         }
 
         public static void Log(Exception ex, string message, object? arg0, object? arg1)
         {
-            var formattedMessage = string.Format(message, arg0, arg1);
-            Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            if (_loggingEnabled)
+            {
+                var formattedMessage = string.Format(message, arg0, arg1);
+                Log("{0}{1}{2}", [formattedMessage, Environment.NewLine, ex]);
+            }
         }
 
         public static void Debug(string message)
         {
-            if (DebugEnabled)
+            if (_loggingEnabled && DebugEnabled)
             {
-                Log(message, null);
+                Log(message, args: []);
             }
         }
 
         public static void Debug(string message, object? arg0)
         {
-            if (DebugEnabled)
+            if (_loggingEnabled && DebugEnabled)
             {
                 Log(message, [arg0]);
             }
@@ -126,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Debug(string message, object? arg0, object? arg1)
         {
-            if (DebugEnabled)
+            if (_loggingEnabled && DebugEnabled)
             {
                 Log(message, [arg0, arg1]);
             }
@@ -134,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Debug(string message, object? arg0, object? arg1, object? arg2)
         {
-            if (DebugEnabled)
+            if (_loggingEnabled && DebugEnabled)
             {
                 Log(message, [arg0, arg1, arg2]);
             }
