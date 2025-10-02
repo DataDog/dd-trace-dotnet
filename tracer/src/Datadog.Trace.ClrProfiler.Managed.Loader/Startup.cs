@@ -153,6 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
             {
+                // Safe to use ! here because we just checked !string.IsNullOrWhiteSpace above
                 return tracerHomeDirectory!.Trim();
             }
 
