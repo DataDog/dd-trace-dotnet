@@ -220,6 +220,26 @@ tracer/src/Datadog.Trace
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
 - C/C++: see `.clang-format`; keep consistent naming.
 
+## Logging Guidelines
+
+Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous—it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+
+**Customer-facing terminology (high-level logs):**
+- **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
+  - Example: `"The Datadog SDK has been disabled"`
+- **Instrumentation** or **Instrumentation component** — For the native tracer auto-instrumentation
+  - Example: `"Instrumentation has been disabled"` or `"The Instrumentation component failed to initialize"`
+- **Continuous Profiler** — Always use full name for the profiling product
+  - Example: `"The Continuous Profiler has been disabled"`
+- **Datadog.Trace.dll** — For the managed tracer assembly (avoid "managed profiler")
+  - Example: `"Unable to initialize: Datadog.Trace.dll was not yet loaded into the App Domain"`
+
+**Internal/technical naming (still valid):**
+- Native loader, Native tracer, Managed tracer loader, Managed tracer, Libdatadog, Continuous Profiler
+- `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
+
+**Reference:** See PR 7467 for examples of consistent terminology in native logs.
+
 ## Performance Guidelines
 
 - Minimize heap allocations: The tracer runs in-process with customer applications and must have minimal performance impact. Avoid unnecessary object allocations, prefer value types where appropriate, use object pooling for frequently allocated objects, and cache reusable instances.
