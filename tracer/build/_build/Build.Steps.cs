@@ -1362,6 +1362,7 @@ partial class Build
         .Unlisted()
         .After(Restore)
         .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
