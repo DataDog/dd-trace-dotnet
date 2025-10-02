@@ -20,7 +20,7 @@ using Xunit.Abstractions;
 #nullable enable
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
-#if !NETCOREAPP2_1
+#if !NETCOREAPP2_1 && !NET8_0
 [CollectionDefinition(nameof(DebuggerManagerTests), DisableParallelization = true)]
 [Collection(nameof(DebuggerManagerTests))]
 [UsesVerify]
