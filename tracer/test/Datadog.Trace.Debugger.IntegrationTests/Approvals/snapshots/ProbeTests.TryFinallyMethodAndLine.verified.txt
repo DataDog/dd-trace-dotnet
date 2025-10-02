@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -46,6 +46,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "ReadRawMessageOriginal",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
@@ -98,6 +100,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "ReadRawMessageOriginal",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
@@ -150,6 +154,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "ReadRawMessageOriginal",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
@@ -202,6 +208,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "ReadRawMessageOriginal",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",

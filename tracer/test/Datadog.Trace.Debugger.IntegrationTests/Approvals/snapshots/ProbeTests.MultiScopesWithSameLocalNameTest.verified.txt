@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -44,6 +44,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiScopesWithSameLocalNameTest",
@@ -99,6 +101,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiScopesWithSameLocalNameTest",
@@ -154,6 +158,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiScopesWithSameLocalNameTest",
@@ -209,6 +215,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiScopesWithSameLocalNameTest",
