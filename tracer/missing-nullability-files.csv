@@ -88,7 +88,7 @@ src/Datadog.Trace/Configuration/ConfigurationKeys.Iast.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Logging.cs
 src/Datadog.Trace/Configuration/ConfigurationKeys.Rcm.cs
 src/Datadog.Trace/Configuration/DbmPropagationLevel.cs
-src/Datadog.Trace/Configuration/DeprecationMessages.cs
+src/Datadog.Trace/Configuration/DeprecationConstants.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
 src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs

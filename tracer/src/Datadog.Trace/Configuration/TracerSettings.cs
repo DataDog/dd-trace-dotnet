@@ -780,7 +780,7 @@ namespace Datadog.Trace.Configuration
         public ExporterSettings Exporter { get; }
 
         /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
+        [Obsolete(DeprecationConstants.AppAnalytics)]
         public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
 
         /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
@@ -1231,7 +1231,7 @@ namespace Datadog.Trace.Configuration
         internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
             => DynamicSettings.TraceEnabled != false && MutableSettings.IsIntegrationEnabled(integration, defaultValue);
 
-        [Obsolete(DeprecationMessages.AppAnalytics)]
+        [Obsolete(DeprecationConstants.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
             => MutableSettings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
 

@@ -148,7 +148,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
         /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
+        [Obsolete(DeprecationConstants.AppAnalytics)]
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
         /// <summary>
