@@ -35,7 +35,8 @@ public class ConfigurationBuilderTests
                 var data = new NameValueCollection();
                 foreach (var kvp in values)
                 {
-                    data.Add(kvp.Key, kvp.Value?.ToString());
+                    // use FormattableString.Invariant as europeans might have 1.23.ToString()=1,23 which makes tests fail
+                    data.Add(kvp.Key, kvp.Value is null ? null : FormattableString.Invariant($"{kvp.Value}"));
                 }
 
                 return new NameValueConfigurationSource(data);
