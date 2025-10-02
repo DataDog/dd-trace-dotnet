@@ -244,6 +244,24 @@ Performance is especially critical in two areas:
 
 In these areas, even small inefficiencies are multiplied by the frequency of execution and can significantly impact application performance.
 
+### Performance Optimization Patterns
+
+**Zero-Allocation Provider Structs**
+- Use `readonly struct` implementing interfaces instead of classes for frequently-instantiated abstractions
+- Use generic type parameters with interface constraints to avoid boxing: `<TProvider> where TProvider : IProvider`
+- Example: `EnvironmentVariableProvider` in managed loader (see tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader)
+- Benefits: Zero heap allocations, no boxing, better JIT optimization
+
+**Avoid Allocation in Logging**
+- Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
+- Allows logger to check level before formatting
+- Critical in startup and hot paths where logging is frequent
+
+**Avoid params Array Allocations**
+- Provide overloads for common cases (0, 1, 2 args) that avoid `params object?[]` array allocation
+- Keep params overload as fallback for 3+ args
+- Example: Logging methods with multiple overloads for different argument counts
+
 ## Testing Guidelines
 
 - Frameworks: xUnit (managed), GoogleTest (native).
@@ -251,6 +269,14 @@ In these areas, even small inefficiencies are multiplied by the frequency of exe
 - Filters: `--filter "Category=Smoke"`, `--framework net6.0` as needed.
 - Docker: Many integration tests require Docker; services in `docker-compose.yml`.
 - Test style: Inline result variables in assertions. Prefer `SomeMethod().Should().Be(expected)` over storing intermediate `result` variables.
+
+### Testing Patterns
+
+**Abstraction for Testability**
+- Extract interfaces for environment/filesystem dependencies (e.g., `IEnvironmentVariableProvider`)
+- Allows mocking in unit tests without affecting production performance
+- Use struct implementations with generic constraints for zero-allocation production code
+- Example: Managed loader tests use `MockEnvironmentVariableProvider` for isolation (see tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/)
 
 ## Commit & Pull Request Guidelines
 
