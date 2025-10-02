@@ -84,11 +84,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (!Directory.Exists(ManagedProfilerDirectory))
                 {
-                    StartupLogger.Log("Datadog.Trace.dll TFM directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
+                    StartupLogger.Log("Datadog.Trace.dll directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
                     return;
                 }
 
-                StartupLogger.Debug("Resolved Datadog.Trace.dll TFM directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolved Datadog.Trace.dll directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {
