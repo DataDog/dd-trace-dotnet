@@ -92,7 +92,6 @@ src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
 src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs
-src/Datadog.Trace/ContinuousProfiler/ConfigurationKeys.cs
 src/Datadog.Trace/ContinuousProfiler/ContextTracker.cs
 src/Datadog.Trace/ContinuousProfiler/IContextTracker.cs
 src/Datadog.Trace/ContinuousProfiler/IProfilerStatus.cs
