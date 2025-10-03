@@ -1,6 +1,6 @@
 {
     "name": "libdatadog",
-    "version-string": "21.0.0",
+    "version-string": "22.0.0",
     "description": "Package providing libdatadog prebuilt binaries for Windows only.",
     "dependencies": []
 }
