@@ -175,7 +175,7 @@ internal sealed class MetricReaderHandler
         return true;
     }
 
-    private static AggregationTemporality? GetTemporality(InstrumentType kind, OtlpTemporality preference)
+    private static AggregationTemporality? GetTemporality(InstrumentType kind, OtlpTemporalityPreference preference)
     {
         return kind switch
         {
@@ -188,9 +188,9 @@ internal sealed class MetricReaderHandler
             InstrumentType.Counter or InstrumentType.ObservableCounter or InstrumentType.Histogram
                 => preference switch
                 {
-                    OtlpTemporality.Cumulative => AggregationTemporality.Cumulative,
-                    OtlpTemporality.Delta => AggregationTemporality.Delta,
-                    OtlpTemporality.LowMemory => kind is InstrumentType.ObservableCounter
+                    OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
+                    OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
+                    OtlpTemporalityPreference.LowMemory => kind is InstrumentType.ObservableCounter
                         ? AggregationTemporality.Cumulative
                         : AggregationTemporality.Delta,
                     _ => AggregationTemporality.Delta

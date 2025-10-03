@@ -251,13 +251,13 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
-                                   defaultValue: new(OtlpTemporality.Delta, "delta"),
+                                   defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
                                    converter: x => x switch
                                    {
-                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Cumulative,
-                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Delta,
-                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.LowMemory,
-                                       _ => ParsingResult<OtlpTemporality>.Failure(),
+                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Cumulative,
+                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Delta,
+                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.LowMemory,
+                                       _ => ParsingResult<OtlpTemporalityPreference>.Failure(),
                                    },
                                    validator: null);
 
@@ -762,7 +762,7 @@ namespace Datadog.Trace.Configuration
         /// Default is 'delta' for Datadog - deviates from OTel spec default of 'cumulative'.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
-        internal OtlpTemporality OtlpMetricsTemporalityPreference { get; }
+        internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.

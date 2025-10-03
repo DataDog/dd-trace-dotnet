@@ -252,24 +252,21 @@ namespace Datadog.Trace.OTelMetrics
             WriteVarInt(writer, dataPointData.Length);
             writer.Write(dataPointData);
 
-            // Determine temporality and monotonicity based on instrument type
             AggregationTemporality temporality;
             bool isMonotonic;
 
             if (metric.InstrumentType is InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter)
             {
-                // UpDownCounter is always cumulative and non-monotonic
                 temporality = AggregationTemporality.Cumulative;
                 isMonotonic = false;
             }
             else
             {
-                // Counter and ObservableCounter use configured temporality and are monotonic
                 temporality = _settings.OtlpMetricsTemporalityPreference switch
                 {
-                    OtlpTemporality.Delta => AggregationTemporality.Delta,
-                    OtlpTemporality.LowMemory => AggregationTemporality.Delta,
-                    OtlpTemporality.Cumulative => AggregationTemporality.Cumulative,
+                    OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
+                    OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
+                    OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
                     _ => AggregationTemporality.Delta
                 };
                 isMonotonic = true;
@@ -309,9 +306,9 @@ namespace Datadog.Trace.OTelMetrics
 
             var temporality = _settings.OtlpMetricsTemporalityPreference switch
             {
-                OtlpTemporality.Delta => AggregationTemporality.Delta,
-                OtlpTemporality.LowMemory => AggregationTemporality.Delta,
-                OtlpTemporality.Cumulative => AggregationTemporality.Cumulative,
+                OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
+                OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
+                OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
                 _ => AggregationTemporality.Delta
             };
             WriteTag(writer, FieldNumbers.AggregationTemporality, VarInt);
