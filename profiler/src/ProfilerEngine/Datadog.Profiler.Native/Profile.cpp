@@ -182,9 +182,14 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     std::vector<ddog_prof_ValueType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
 
+    // TODO: create a vector<int32> containing the indexes of the valueTypes
+    std::vector<int32_t> indexes;
+    indexes.reserve(valueTypes.size());
+
     for (auto const& type : valueTypes)
     {
         samplesTypes.push_back(CreateValueType(type.Name, type.Unit));
+        indexes.push_back(type.Index);
     }
 
     struct ddog_prof_Slice_ValueType sample_types = {samplesTypes.data(), samplesTypes.size()};
