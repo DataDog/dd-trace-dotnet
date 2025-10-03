@@ -588,6 +588,46 @@
       "description": "Number of times the libdatadog trace exporter isn't used and we fallback on the previous implementation",
       "send_to_user": false,
       "user_tags": []
+    },
+    "metrics_export_attempts": {
+      "tags": [
+        "protocol"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of OTLP metrics export attempts, tagged by protocol (grpc, http/protobuf, http/json)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "metrics_export_successes": {
+      "tags": [
+        "protocol"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of successful OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "metrics_export_partial_successes": {
+      "tags": [
+        "protocol"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of partially successful OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "metrics_export_failures": {
+      "tags": [
+        "protocol"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of failed OTLP metrics exports, tagged by protocol (grpc, http/protobuf, http/json)",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "telemetry": {

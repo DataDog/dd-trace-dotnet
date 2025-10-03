@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics;
 
-internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags)
+internal class MetricPoint(string instrumentName, string meterName, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "")
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
@@ -33,6 +33,10 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
 
     public Dictionary<string, object?> Tags { get; } = tags;
 
+    public string Unit { get; } = unit;
+
+    public string Description { get; } = description;
+
     internal long RunningCount => _runningCountValue;
 
     internal double RunningSum => _runningDoubleValue;
@@ -43,11 +47,35 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
 
     internal long[] RunningBucketCounts => _runningBucketCounts;
 
+    public DateTimeOffset StartTime { get; private set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset EndTime { get; private set; } = DateTimeOffset.UtcNow;
+
+    public long SnapshotCount { get; private set; }
+
+    public double SnapshotSum { get; private set; }
+
+    public double SnapshotGaugeValue { get; private set; }
+
+    public double SnapshotMin { get; private set; }
+
+    public double SnapshotMax { get; private set; }
+
+    public long[] SnapshotBucketCounts { get; private set; } = [];
+
     internal void UpdateCounter(double value)
     {
         lock (_histogramLock)
         {
             _runningDoubleValue += value;
+        }
+    }
+
+    internal void UpdateObservableCounter(double currentValue)
+    {
+        lock (_histogramLock)
+        {
+            _runningDoubleValue = currentValue;
         }
     }
 
@@ -84,7 +112,58 @@ internal class MetricPoint(string instrumentName, string meterName, InstrumentTy
             }
         }
 
-        return DefaultHistogramBounds.Length;
+        return DefaultHistogramBounds.Length; // Overflow bucket
+    }
+
+    /// <summary>
+    /// Creates a snapshot copy of the current metric state for export.
+    /// For delta temporality, this resets the running values after taking the snapshot.
+    /// For cumulative temporality, this preserves the running values.
+    /// The temporality behavior is determined by the AggregationTemporality set at construction.
+    /// </summary>
+    /// <returns>A new MetricPoint containing the snapshot values</returns>
+    public MetricPoint CreateSnapshotAndReset()
+    {
+        lock (_histogramLock)
+        {
+            var endTime = DateTimeOffset.UtcNow;
+
+            // Create a snapshot copy with current values
+            var snapshot = new MetricPoint(InstrumentName, MeterName, InstrumentType, AggregationTemporality, Tags, Unit, Description)
+            {
+                StartTime = this.StartTime,
+                EndTime = endTime,
+                SnapshotCount = _runningCountValue,
+                SnapshotSum = _runningDoubleValue,
+                SnapshotGaugeValue = _runningDoubleValue,
+                SnapshotMin = _runningMin,
+                SnapshotMax = _runningMax
+            };
+
+            // Copy bucket counts for histograms
+            if (_runningBucketCounts.Length > 0)
+            {
+                snapshot.SnapshotBucketCounts = new long[_runningBucketCounts.Length];
+                Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
+            }
+
+            if (AggregationTemporality == OTelMetrics.AggregationTemporality.Delta)
+            {
+                _runningCountValue = 0;
+                _runningDoubleValue = 0.0;
+                _runningMin = double.PositiveInfinity;
+                _runningMax = double.NegativeInfinity;
+                if (_runningBucketCounts.Length > 0)
+                {
+                    Array.Clear(_runningBucketCounts, 0, _runningBucketCounts.Length);
+                }
+
+                // Update start time for next delta window
+                StartTime = endTime;
+            }
+
+            return snapshot;
+        }
     }
 }
 #endif
