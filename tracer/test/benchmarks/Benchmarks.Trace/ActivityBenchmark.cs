@@ -118,6 +118,7 @@ internal class MockActivity6 : MockActivity5, IActivity6
 internal class MockActivity5 : MockW3CActivity, IActivity5
 {
     private readonly Activity _activity;
+    private string? _displayName;
 
     public MockActivity5(Activity activity, IActivity? parent, Datadog.Trace.Activity.DuckTypes.ActivitySource source)
         : base(activity, parent)
@@ -126,7 +127,11 @@ internal class MockActivity5 : MockW3CActivity, IActivity5
         Source = source;
     }
 
-    public string DisplayName => _activity.DisplayName;
+    public string DisplayName
+    {
+        get => _displayName ?? _activity.DisplayName;
+        set => _displayName = value;
+    }
 
     public bool IsAllDataRequested
     {

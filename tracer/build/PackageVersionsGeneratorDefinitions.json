@@ -1,5 +1,19 @@
 [
   {
+    "IntegrationName": "Quartz",
+    "SampleProjectName": "Samples.Quartz",
+    "NugetPackageSearchName": "Quartz",
+    "MinVersion": "3.1.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSdk",
     "SampleProjectName": "Samples.AWS.DynamoDBv2",
     "NugetPackageSearchName": "AWSSDK.Core",
