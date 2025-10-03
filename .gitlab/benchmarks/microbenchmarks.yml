@@ -128,7 +128,7 @@ upload-to-bp-ui:
     name: "artifacts"
     when: always
     paths:
-      - candidate-results/
+      - $ARTIFACTS_DIR
     expire_in: 3 months
   variables:
     AWS_REGION: "us-east-1"
@@ -138,6 +138,13 @@ upload-to-bp-ui:
 
     # Where to fetch results from
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+    # Where to store benchmarking artifacts produced on ephemeral instances,
+    # after fetching them
+    ARTIFACTS_DIR: "platform/artifacts"
+
+    # TODO: Remove
+    BP_INFRA_TEST: "true"
   script:
     - git clone --branch $BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/upload-to-bp-ui.sh
