@@ -356,6 +356,36 @@ In these areas, even small inefficiencies are multiplied by the frequency of exe
 - Build/registration: Definitions are discovered and generated during build; no manual native changes required.
 - Tests: Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and corresponding samples under `tracer/test/test-applications/integrations`. Run with OS‑specific Nuke targets; filter with `--filter`/`--framework`.
 
+## Azure Functions
+
+### Automatic Instrumentation Setup
+
+**Windows (Premium / Elastic Premium / Dedicated / App Services hosting plans)**
+- Use the Azure App Services Site Extension, not the NuGet package.
+
+**Other scenarios (e.g., Linux Consumption, Container Apps)**
+- Add NuGet package: `Datadog.AzureFunctions`
+- Configure environment variables:
+
+**Windows environment variables:**
+```
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll
+CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll
+DD_DOTNET_TRACER_HOME=C:\home\site\wwwroot\datadog
+DOTNET_STARTUP_HOOKS=C:\home\site\wwwroot\Datadog.Serverless.Compat.dll
+```
+
+**Linux environment variables:**
+```
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so
+DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog
+DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
+```
+
 ## Security & Configuration Tips
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
