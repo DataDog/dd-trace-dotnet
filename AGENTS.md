@@ -386,6 +386,12 @@ DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog
 DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
 ```
 
+### Development & Testing
+
+- Integration details: See `docs/development/AzureFunctions.md` for in-process vs isolated worker model differences, instrumentation specifics, and ASP.NET Core integration.
+- Tests: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`.
+- Dependencies: `Datadog.AzureFunctions` transitively references `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)), which contains the Datadog Agent executable. The agent process is started either via `DOTNET_STARTUP_HOOKS` or by calling `Datadog.Serverless.CompatibilityLayer.Start()` explicitly during bootstrap in user code.
+
 ## Security & Configuration Tips
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
