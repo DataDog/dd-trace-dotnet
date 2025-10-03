@@ -217,7 +217,10 @@ namespace Datadog.Trace.Tests.Configuration
                     tracing_enabled = true,
                     log_injection_enabled = false,
                     tracing_sampling_rate = 0.75,
-                    tracing_tags = new[] { "key1:value1", "key2:value2" }
+                    tracing_tags = new[] { "key1:value1", "key2:value2" },
+                    dynamic_instrumentation_enabled = true,
+                    exception_replay_enabled = true,
+                    code_origin_enabled = true,
                 }
             };
 
@@ -244,6 +247,15 @@ namespace Datadog.Trace.Tests.Configuration
             var stringTags = stringBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
             var jTokenTags = jTokenBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
             stringTags.Should().BeEquivalentTo(jTokenTags);
+
+            stringBuilder.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool());
+
+            stringBuilder.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool());
+
+            stringBuilder.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool());
         }
 
         private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)

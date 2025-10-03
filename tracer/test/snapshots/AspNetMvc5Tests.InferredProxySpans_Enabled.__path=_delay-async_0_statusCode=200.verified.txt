@@ -11,6 +11,7 @@
       aspnet.action: delayasync,
       aspnet.controller: home,
       aspnet.route: delay-async/{seconds},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -31,6 +32,7 @@
     Type: web,
     ParentId: Id_4,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
