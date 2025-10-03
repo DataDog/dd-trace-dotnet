@@ -213,11 +213,74 @@ tracer/src/Datadog.Trace
 
 ## Coding Style & Naming Conventions
 
-- C#: .editorconfig (4-space indent, System.* first, prefer var). Types/methods PascalCase; locals camelCase.
+- C#: see `.editorconfig` (4-space indent, `System.*` first, prefer `var`). Types/methods PascalCase; locals camelCase.
   - When a "using" directive is missing in a file, add it instead of using fully-qualified type names.
   - Use modern C# syntax, but avoid syntax that requires types not available in older runtimes (for example, don't use syntax that requires ValueTuple because is not included in .NET Framework 4.6.1)
-- StyleCop: `tracer/stylecop.json`; address warnings before pushing.
-- C/C++: `.clang-format`; keep consistent naming.
+  - Prefer modern collection expressions (`[]`)
+- StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
+- C/C++: see `.clang-format`; keep consistent naming.
+
+## Logging Guidelines
+
+Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous—it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+
+**Customer-facing terminology (high-level logs):**
+- **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
+  - Example: `"The Datadog SDK has been disabled"`
+- **Instrumentation** or **Instrumentation component** — For the native tracer auto-instrumentation
+  - Example: `"Instrumentation has been disabled"` or `"The Instrumentation component failed to initialize"`
+- **Continuous Profiler** — Always use full name for the profiling product
+  - Example: `"The Continuous Profiler has been disabled"`
+- **Datadog.Trace.dll** — For the managed tracer assembly (avoid "managed profiler")
+  - Example: `"Unable to initialize: Datadog.Trace.dll was not yet loaded into the App Domain"`
+
+**Internal/technical naming (still valid):**
+- Native loader, Native tracer, Managed tracer loader, Managed tracer, Libdatadog, Continuous Profiler
+- `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
+
+**Reference:** See PR 7467 for examples of consistent terminology in native logs.
+
+## Performance Guidelines
+
+- Minimize heap allocations: The tracer runs in-process with customer applications and must have minimal performance impact. Avoid unnecessary object allocations, prefer value types where appropriate, use object pooling for frequently allocated objects, and cache reusable instances.
+
+### Performance-Critical Code Paths
+
+Performance is especially critical in two areas:
+
+1. **Bootstrap/Startup Code**: Initialization code runs at application startup in every instrumented process, including:
+   - The managed loader (`Datadog.Trace.ClrProfiler.Managed.Loader`)
+   - Tracer initialization in `Datadog.Trace` (static constructors, configuration loading, first tracer instance creation)
+   - Integration registration and setup
+
+   Any allocations or inefficiencies here directly impact application startup time and customer experience. This code must be extremely efficient.
+
+2. **Hot Paths**: Code that executes frequently during application runtime, such as:
+   - Span creation and tagging (executes on every traced operation)
+   - Context propagation (executes on every HTTP request/response)
+   - Sampling decisions (executes on every trace)
+   - Integration instrumentation callbacks (executes on every instrumented method call)
+   - Any code in the request/response pipeline
+
+In these areas, even small inefficiencies are multiplied by the frequency of execution and can significantly impact application performance.
+
+### Performance Optimization Patterns
+
+**Zero-Allocation Provider Structs**
+- Use `readonly struct` implementing interfaces instead of classes for frequently-instantiated abstractions
+- Use generic type parameters with interface constraints to avoid boxing: `<TProvider> where TProvider : IProvider`
+- Example: `EnvironmentVariableProvider` in managed loader (see tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader)
+- Benefits: Zero heap allocations, no boxing, better JIT optimization
+
+**Avoid Allocation in Logging**
+- Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
+- Allows logger to check level before formatting
+- Critical in startup and hot paths where logging is frequent
+
+**Avoid params Array Allocations**
+- Provide overloads for common cases (0, 1, 2 args) that avoid `params object?[]` array allocation
+- Keep params overload as fallback for 3+ args
+- Example: Logging methods with multiple overloads for different argument counts
 
 ## Testing Guidelines
 
@@ -225,12 +288,23 @@ tracer/src/Datadog.Trace
 - Projects: `*.Tests.csproj` under `tracer/test`, native under `profiler/test`.
 - Filters: `--filter "Category=Smoke"`, `--framework net6.0` as needed.
 - Docker: Many integration tests require Docker; services in `docker-compose.yml`.
+- Test style: Inline result variables in assertions. Prefer `SomeMethod().Should().Be(expected)` over storing intermediate `result` variables.
+
+### Testing Patterns
+
+**Abstraction for Testability**
+- Extract interfaces for environment/filesystem dependencies (e.g., `IEnvironmentVariableProvider`)
+- Allows mocking in unit tests without affecting production performance
+- Use struct implementations with generic constraints for zero-allocation production code
+- Example: Managed loader tests use `MockEnvironmentVariableProvider` for isolation (see tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/)
 
 ## Commit & Pull Request Guidelines
 
-- Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues.
+- Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues. Keep messages concise - avoid including full diffs or extensive details in the commit message.
 - PRs: Clear description, linked issues, risks/rollout, screenshots/logs if behavior changes.
-  - follow the existing PR description template in .github/pull_request_template.md
+  - Follow the existing PR description template in `.github/pull_request_template.md`
+  - Keep descriptions concise - provide essential context without excessive detail
+  - Focus on "what" and "why", with brief "how" for complex changes
 - CI: All checks green; include tests/docs for changes.
 
 ## Internal Docs & References
@@ -282,7 +356,67 @@ tracer/src/Datadog.Trace
 - Build/registration: Definitions are discovered and generated during build; no manual native changes required.
 - Tests: Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and corresponding samples under `tracer/test/test-applications/integrations`. Run with OS‑specific Nuke targets; filter with `--filter`/`--framework`.
 
+## Azure Functions
+
+### Automatic Instrumentation Setup
+
+**Windows (Premium / Elastic Premium / Dedicated / App Services hosting plans)**
+- Use the Azure App Services Site Extension, not the NuGet package.
+
+**Other scenarios (e.g., Linux Consumption, Container Apps)**
+- Add NuGet package: `Datadog.AzureFunctions`
+- Configure environment variables:
+
+**Windows environment variables:**
+```
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll
+CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll
+DD_DOTNET_TRACER_HOME=C:\home\site\wwwroot\datadog
+DOTNET_STARTUP_HOOKS=C:\home\site\wwwroot\Datadog.Serverless.Compat.dll
+```
+
+**Linux environment variables:**
+```
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so
+DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog
+DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
+```
+
+### Development & Testing
+
+- Integration details: See `docs/development/AzureFunctions.md` for in-process vs isolated worker model differences, instrumentation specifics, and ASP.NET Core integration.
+- Tests: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`.
+- Dependencies: `Datadog.AzureFunctions` transitively references `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)), which contains the Datadog Agent executable. The agent process is started either via `DOTNET_STARTUP_HOOKS` or by calling `Datadog.Serverless.CompatibilityLayer.Start()` explicitly during bootstrap in user code.
+
 ## Security & Configuration Tips
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
 - Use `global.json` SDK; confirm with `dotnet --version`.
+
+## Glossary
+
+Common acronyms used in this repository:
+
+- **AAS** — Azure App Services
+- **AAP** — App and API Protection (formerly ASM, previously AppSec)
+- **AOT** — Ahead-of-Time (compilation)
+- **APM** — Application Performance Monitoring
+- **ASM** — Application Security Management (formerly AppSec; now AAP)
+- **CI** — Continuous Integration / CI Visibility
+- **CP** — Continuous Profiler
+- **DBM** — Database Monitoring
+- **DI** — Dynamic Instrumentation
+- **DSM** — Data Streams Monitoring
+- **IAST** — Interactive Application Security Testing
+- **JIT** — Just-in-Time (compiler)
+- **OTEL** — OpenTelemetry
+- **R2R** — ReadyToRun
+- **RASP** — Runtime Application Self-Protection
+- **RCM** — Remote Configuration Management
+- **RID** — Runtime Identifier
+- **TFM** — Target Framework Moniker
+- **WAF** — Web Application Firewall
