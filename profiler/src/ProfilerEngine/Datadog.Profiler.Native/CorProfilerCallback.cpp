@@ -3,6 +3,8 @@
 
 // from dotnet coreclr includes
 
+// TO REMOVE: only to trigger profiler tests
+//
 #include "cor.h"
 #include "corprof.h"
 // end
