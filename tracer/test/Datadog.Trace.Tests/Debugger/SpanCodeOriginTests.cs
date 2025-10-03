@@ -272,7 +272,7 @@ namespace Datadog.Trace.Tests.Debugger
                 DeepTestMethod1(span, spanCodeOrigin);
 
                 // Assert
-                // Exit span code origin has been disabled since tracer version 3.2.8.
+                // Exit span code origin has been disabled since tracer version 3.28.0.
                 span.Tags.GetTag($"{CodeOriginTag}.type").Should().BeNull();
 
                 /* Uncomment when exit span will be enabled again
