@@ -210,6 +210,7 @@ partial class Build : NukeBuild
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
+        .DependsOn(CheckConfigurationKeysAgainstJsonValidations)
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
