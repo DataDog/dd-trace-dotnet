@@ -80,22 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var batchSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
                 batchSendSpans.Should().HaveCount(1, "Expected 1 batch send span from SendAsync operation");
 
-                foreach (var createSpan in createSpans)
+                foreach (var span in spans)
                 {
-                    var result = ValidateIntegrationSpan(createSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Create span validation failed: {result}");
-                }
-
-                foreach (var sendSpan in sendSpans)
-                {
-                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
-                }
-
-                foreach (var receiveSpan in receiveSpans)
-                {
-                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Span validation failed: {result}");
                 }
 
                 var allProducerSpans = createSpans.Concat(sendSpans).ToList();
@@ -134,16 +122,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var enumerableSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
                 enumerableSendSpans.Should().HaveCount(1, "Expected 1 enumerable send span from SendAsync operation");
 
-                foreach (var sendSpan in sendSpans)
+                foreach (var span in spans)
                 {
-                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
-                }
-
-                foreach (var receiveSpan in receiveSpans)
-                {
-                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Span validation failed: {result}");
                 }
 
                 ValidateSpanLinks(sendSpans, receiveSpans, spans);
@@ -166,12 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
-
                 Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
-                foreach (var span in spans)
-                {
-                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
-                }
 
                 var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
@@ -212,12 +189,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
-
                 Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
-                foreach (var span in spans)
-                {
-                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
-                }
 
                 var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
@@ -280,22 +252,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var bufferedSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
                 bufferedSendSpans.Should().HaveCount(1, "Expected 1 buffered send span from FlushAsync operation");
 
-                foreach (var createSpan in createSpans)
+                foreach (var span in spans)
                 {
-                    var result = ValidateIntegrationSpan(createSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Create span validation failed: {result}");
-                }
-
-                foreach (var sendSpan in sendSpans)
-                {
-                    var result = ValidateIntegrationSpan(sendSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Send span validation failed: {result}");
-                }
-
-                foreach (var receiveSpan in receiveSpans)
-                {
-                    var result = ValidateIntegrationSpan(receiveSpan, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Receive span validation failed: {result}");
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Span validation failed: {result}");
                 }
 
                 var allProducerSpans = createSpans.Concat(sendSpans).ToList();
@@ -319,12 +279,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
-
                 Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
-                foreach (var span in spans)
-                {
-                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, Tags=[{string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}={kvp.Value}"))}]");
-                }
 
                 var sendSpans = spans.Where(span => span.Name == "azure_eventhubs.send").ToList();
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
@@ -351,10 +306,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
-        [SkippableFact]
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsIntegrationDisabled()
+        public async Task TestEventHubsIntegrationDisabled(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "false");
 
             var testModes = new[] { "TestEventHubsMessageBatch", "TestEventHubsEnumerable", "TestEventHubsBufferedProducer" };
@@ -365,9 +322,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 SetEnvironmentVariable("EVENTHUBS_TEST_MODE", testMode);
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
-                using (await RunSampleAndWaitForExit(agent))
+                using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
                 {
-                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 3000, assertExpectedCount: false);
                     spans.Should().BeEmpty($"Expected no spans when DD_TRACE_AZUREEVENTHUBS_ENABLED is false for test mode {testMode}");
                 }
             }
