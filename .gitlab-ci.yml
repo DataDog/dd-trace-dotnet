@@ -226,3 +226,12 @@ dsm_throughput:
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
+
+
+validate_supported_configurations_local_file:
+  stage: build
+  rules:
+    - when: on_success
+  extends: .validate_supported_configurations_local_file
+  variables:
+    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
