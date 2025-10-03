@@ -201,6 +201,15 @@ tracer/src/Datadog.Trace
   - `UpdateSnapshots`, `PrintSnapshotsDiff` — Snapshot testing utilities.
   - `UpdateVersion`, `GenerateSpanDocumentation`, `RunInstrumentationGenerator` — Maintenance.
 
+## Windows Development
+
+- Use forward slashes (`/`) as path separators instead of backslashes (`\`) to avoid string escaping issues in commands and scripts
+  - Example: `D:/source/datadog` instead of `D:\source\datadog`
+  - Applies to: Git commands, bash scripts, curl, and other CLI tools
+- Build: `./tracer/build.cmd` (or `./tracer/build.cmd <Target>`)
+- PowerShell: Use `pwsh` instead of `powershell` when running PowerShell scripts
+- Git Bash: Forward slashes work in both Git Bash and native Windows terminals
+
 ## macOS Development
 
 - Prereqs: Install .NET SDK, Xcode Command Line Tools, and `cmake` (`brew install cmake`).
