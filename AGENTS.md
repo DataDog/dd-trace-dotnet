@@ -390,3 +390,19 @@ DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
 - Use `global.json` SDK; confirm with `dotnet --version`.
+
+## Glossary
+
+Common acronyms used in this repository:
+
+- **AAS** — Azure App Services
+- **APM** — Application Performance Monitoring
+- **ASM** — Application Security Management (formerly AppSec)
+- **CI** — Continuous Integration / CI Visibility
+- **DBM** — Database Monitoring
+- **DSM** — Data Streams Monitoring
+- **IAST** — Interactive Application Security Testing
+- **OTEL** — OpenTelemetry
+- **RCM** — Remote Configuration Management
+- **RASP** — Runtime Application Self-Protection
+- **WAF** — Web Application Firewall
