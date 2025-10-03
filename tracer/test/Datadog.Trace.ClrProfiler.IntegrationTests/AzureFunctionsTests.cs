@@ -278,6 +278,14 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
+            // by default host logs are disabled e.g.,
+            // DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED=false
+            // so we will enable them with a lot of logging
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED", "true");
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "VERBOSE");
+            var hostName = "integration_ilogger_az_tests";
+            using var logsIntake = new MockLogsIntake();
+            EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
@@ -286,10 +294,64 @@ public abstract class AzureFunctionsTests : TestHelper
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
-
                 await AssertIsolatedSpans(filteredSpans);
 
                 filteredSpans.Count.Should().Be(expectedSpanCount);
+
+                var logs = logsIntake.Logs;
+
+                // ~327 (ish) logs but we kill func.exe so some logs are lost
+                // and since sometimes the batch of logs can be 100+ it can be a LOT of logs that we lose
+                // so just check that we have much more than when we have host logs disabled
+                logs.Should().HaveCountGreaterThanOrEqualTo(200);
+            }
+        }
+    }
+
+    // The reason why we have a separate application here is because we run into a Singleton locking issue when
+    // we re-run the same function application in the same test session.
+    // I couldn't find a way to reset the state between test runs, so the easiest solution was to
+    // just create a separate function app.
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4HostLogsDisabled : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4HostLogsDisabled(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.HostLogsDisabled", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED", "false");
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "VERBOSE");
+            var hostName = "integration_ilogger_az_tests";
+            using var logsIntake = new MockLogsIntake();
+            EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 21;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+
+                await AssertIsolatedSpans(filteredSpans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
+                filteredSpans.Count.Should().Be(expectedSpanCount);
+
+                var logs = logsIntake.Logs;
+                // we expect some logs still from the worker process
+                // this just seems flaky I THINK because of killing the func.exe process (even though we aren't using the host logs)
+                // commonly see 13, 14, 15, 16 logs, but IF we were logging the host logs we'd see 300+
+                logs.Should().HaveCountGreaterThan(10);
+                logs.Should().HaveCountLessThanOrEqualTo(20);
             }
         }
     }
@@ -324,6 +386,8 @@ public abstract class AzureFunctionsTests : TestHelper
                 // opting to just scrub them from the snapshots - we also don't think that the spans provide much
                 // value so they may be removed from being traced.
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
+
+                filteredSpans = filteredSpans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
 
