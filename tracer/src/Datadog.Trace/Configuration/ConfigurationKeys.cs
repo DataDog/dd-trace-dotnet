@@ -591,7 +591,7 @@ namespace Datadog.Trace.Configuration
         /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
         /// Default value is true (discovery service enabled).
         /// </summary>
-        public const string DiscoveryServiceEnabled = "DD_TRACE_DISCOVERY_ENABLED";
+        public const string DiscoveryServiceEnabled = "DD_DISCOVERY_SERVICE_ENABLED";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
