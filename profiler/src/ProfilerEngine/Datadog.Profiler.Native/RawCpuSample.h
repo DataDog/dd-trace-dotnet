@@ -11,7 +11,7 @@
 class RawCpuSample : public RawSample
 {
 public:
-    RawCpuSample() = default;
+    RawCpuSample() noexcept = default;
 
     RawCpuSample(RawCpuSample&& other) noexcept
         :

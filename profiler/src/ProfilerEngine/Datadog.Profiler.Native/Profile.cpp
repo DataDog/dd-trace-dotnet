@@ -184,6 +184,7 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
 
     // TODO: create a vector<int32> containing the indexes of the valueTypes
     std::vector<int32_t> indexes;
+    indexes.reserve(valueTypes.size());
 
     for (auto const& type : valueTypes)
     {
