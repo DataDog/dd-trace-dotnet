@@ -402,13 +402,21 @@ DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
 Common acronyms used in this repository:
 
 - **AAS** — Azure App Services
+- **AAP** — App and API Protection (formerly ASM, previously AppSec)
+- **AOT** — Ahead-of-Time (compilation)
 - **APM** — Application Performance Monitoring
-- **ASM** — Application Security Management (formerly AppSec)
+- **ASM** — Application Security Management (formerly AppSec; now AAP)
 - **CI** — Continuous Integration / CI Visibility
+- **CP** — Continuous Profiler
 - **DBM** — Database Monitoring
+- **DI** — Dynamic Instrumentation
 - **DSM** — Data Streams Monitoring
 - **IAST** — Interactive Application Security Testing
+- **JIT** — Just-in-Time (compiler)
 - **OTEL** — OpenTelemetry
-- **RCM** — Remote Configuration Management
+- **R2R** — ReadyToRun
 - **RASP** — Runtime Application Self-Protection
+- **RCM** — Remote Configuration Management
+- **RID** — Runtime Identifier
+- **TFM** — Target Framework Moniker
 - **WAF** — Web Application Firewall
