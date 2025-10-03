@@ -65,7 +65,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private bool ShouldSkipExitSpan()
         {
-            // Exit span code origin has been disabled since tracer version 3.2.8.
+            // Exit span code origin has been disabled since tracer version 3.28.0.
             // when it will be enabled, update SpanCodeOriginTests.ExitSpanTests
             return true;
         }
