@@ -140,7 +140,7 @@ namespace Datadog.Trace.Util
         public static bool IsRunningInAzureFunctionsHost()
         {
             var cmd = Environment.CommandLine ?? string.Empty;
-            var hasWorkerId = cmd.IndexOf("--functions-workerid", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            var hasWorkerId = cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) >= 0 ||
                               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
 
             return IsAzureFunctions()
