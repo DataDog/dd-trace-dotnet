@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> Hangfire => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Hangfire : PackageVersionsLatestSpecific.Hangfire;
+
         public static IEnumerable<object[]> Quartz => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Quartz : PackageVersionsLatestSpecific.Quartz;
 
         public static IEnumerable<object[]> AwsSdk => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSdk : PackageVersionsLatestSpecific.AwsSdk;
