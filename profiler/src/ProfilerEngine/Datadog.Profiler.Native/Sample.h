@@ -20,6 +20,11 @@ struct SampleValueType
 {
     std::string Name;
     std::string Unit;
+
+    // Samples belonging to the same provider will share the same index
+    // For libdatadog, it means that they will be stored in the same profile
+    // This value will be set when registering the SampleValueType with SampleValueTypeProvider
+    int32_t Index; // -1 means not set
 };
 
 typedef std::vector<int64_t> Values;
