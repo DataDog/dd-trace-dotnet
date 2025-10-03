@@ -278,9 +278,10 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            // by default host logs are enabled e.g.,
-            // DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED=true
-            // but we do just want a lot of logging, so still bump up the level to VERBOSE
+            // by default host logs are disabled e.g.,
+            // DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED=false
+            // so we will enable them with a lot of logging
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED", "true");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "VERBOSE");
             var hostName = "integration_ilogger_az_tests";
             using var logsIntake = new MockLogsIntake();
