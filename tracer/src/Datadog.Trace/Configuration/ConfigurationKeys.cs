@@ -586,6 +586,14 @@ namespace Datadog.Trace.Configuration
         public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
         /// <summary>
+        /// Configuration key to disable the agent discovery service.
+        /// When disabled, the tracer will not query the agent for available endpoints.
+        /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
+        /// Default value is true (discovery service enabled).
+        /// </summary>
+        public const string DiscoveryServiceEnabled = "DD_DISCOVERY_SERVICE_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
