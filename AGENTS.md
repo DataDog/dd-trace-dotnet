@@ -19,13 +19,13 @@
 
 ## Tracer Structure
 
-See @docs/agents/architecture/tracer_structure.md for detailed component breakdown.
+See [tracer structure documentation](docs/agents/architecture/tracer_structure.md) for detailed component breakdown.
 
 Load when you need to understand the detailed structure of the tracer codebase.
 
 ## Build, Test, and Development Commands
 
-See @docs/agents/development/build_commands.md for comprehensive build and test commands.
+See [build commands documentation](docs/agents/development/build_commands.md) for comprehensive build and test commands.
 
 Quick reference:
 - Build: `./tracer/build.sh` (or `./tracer/build.cmd` on Windows)
@@ -34,7 +34,7 @@ Quick reference:
 
 ## Coding Style & Naming Conventions
 
-See @docs/agents/development/coding_style.md for complete style guidelines.
+See [coding style documentation](docs/agents/development/coding_style.md) for complete style guidelines.
 
 Quick reference:
 - C#: 4-space indent, PascalCase types/methods, camelCase locals, prefer `var`, modern collection expressions (`[]`)
@@ -45,7 +45,7 @@ Load when writing or reviewing code.
 
 ## Performance Guidelines
 
-See @docs/agents/development/performance_guidelines.md for detailed performance optimization patterns.
+See [performance guidelines documentation](docs/agents/development/performance_guidelines.md) for detailed performance optimization patterns.
 
 **Critical:** Minimize allocations in bootstrap/startup code and hot paths (span creation, context propagation, sampling).
 
@@ -53,7 +53,7 @@ Load when working on performance-sensitive code paths.
 
 ## Testing Guidelines
 
-See @docs/agents/development/testing_guidelines.md for testing frameworks, patterns, and Datadog API verification.
+See [testing guidelines documentation](docs/agents/development/testing_guidelines.md) for testing frameworks, patterns, and Datadog API verification.
 
 Quick reference:
 - Frameworks: xUnit (managed), GoogleTest (native)
@@ -84,19 +84,19 @@ Load when writing tests or verifying instrumentation.
 
 ## CallTarget Wiring
 
-See @docs/agents/architecture/calltarget_wiring.md for how automatic instrumentation works via CallTarget mechanism.
+See [CallTarget wiring documentation](docs/agents/architecture/calltarget_wiring.md) for how automatic instrumentation works via CallTarget mechanism.
 
 Load when working on integrations or understanding the auto-instrumentation pipeline.
 
 ## Duck Typing Mechanism
 
-See @docs/agents/architecture/duck_typing.md for duck typing implementation details.
+See [duck typing documentation](docs/agents/architecture/duck_typing.md) for duck typing implementation details.
 
 Load when creating integrations that need to interact with external types without hard dependencies.
 
 ## Integrations
 
-See @docs/agents/integrations/creating_integrations.md for step-by-step integration creation guide.
+See [creating integrations documentation](docs/agents/integrations/creating_integrations.md) for step-by-step integration creation guide.
 
 Load when adding new integrations for third-party libraries.
 
@@ -104,19 +104,19 @@ Load when adding new integrations for third-party libraries.
 
 ### Azure App Service
 
-See @docs/agents/deployment/azure_app_service.md for Azure App Service setup and capabilities.
+See [Azure App Service documentation](docs/agents/deployment/azure_app_service.md) for Azure App Service setup and capabilities.
 
 Load when working on Azure App Service instrumentation.
 
 ### AWS Lambda
 
-See @docs/agents/deployment/aws_lambda.md for Lambda installation methods, layers, and environment variables.
+See [AWS Lambda documentation](docs/agents/deployment/aws_lambda.md) for Lambda installation methods, layers, and environment variables.
 
 Load when working on AWS Lambda instrumentation.
 
 ### Azure Functions
 
-See @docs/agents/deployment/azure_functions.md for Azure Functions setup across different hosting plans.
+See [Azure Functions documentation](docs/agents/deployment/azure_functions.md) for Azure Functions setup across different hosting plans.
 
 Load when working on Azure Functions instrumentation or testing.
 
@@ -124,19 +124,19 @@ Load when working on Azure Functions instrumentation or testing.
 
 ### .NET Core / .NET 5+
 
-See @docs/agents/deployment/installation_dotnet_core.md for installation methods and enabling the tracer.
+See [.NET Core installation documentation](docs/agents/deployment/installation_dotnet_core.md) for installation methods and enabling the tracer.
 
 Load when working on .NET Core installation or troubleshooting.
 
 ### .NET Framework
 
-See @docs/agents/deployment/installation_dotnet_framework.md for .NET Framework-specific installation.
+See [.NET Framework installation documentation](docs/agents/deployment/installation_dotnet_framework.md) for .NET Framework-specific installation.
 
 Load when working on .NET Framework installation or IIS/Windows Services setup.
 
 ## Agentless Logging
 
-See @docs/agents/deployment/agentless_logging.md for direct log submission to Datadog.
+See [agentless logging documentation](docs/agents/deployment/agentless_logging.md) for direct log submission to Datadog.
 
 Load when working on serverless logging or troubleshooting log delivery.
 

@@ -49,6 +49,6 @@ Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and cor
 
 ## Related Documentation
 
-- See @docs/agents/architecture/calltarget_wiring.md for CallTarget mechanism details
-- See @docs/agents/architecture/duck_typing.md for duck typing implementation guide
+- [CallTarget wiring documentation](../architecture/calltarget_wiring.md) for CallTarget mechanism details
+- [Duck typing documentation](../architecture/duck_typing.md) for duck typing implementation guide
 - See `docs/development/AutomaticInstrumentation.md` for comprehensive walkthrough
