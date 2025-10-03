@@ -221,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var snapshotName = runtimeMajor switch
             {
-                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => ".NET_6",
+                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => otelMetricsEnabled.Equals("true") ? ".NET_6_OTEL" : ".NET_6_DD",
                 7 or 8 when parsedVersion >= new Version("1.5.1") && parsedVersion < new Version("1.10.0") => ".NET_7_8",
                 >= 9 when parsedVersion >= new Version("1.10.0") => string.Empty,
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
@@ -237,7 +237,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            // Up until Sdk version 1.6.0 Otel didn't support reading from the env var
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
 
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
