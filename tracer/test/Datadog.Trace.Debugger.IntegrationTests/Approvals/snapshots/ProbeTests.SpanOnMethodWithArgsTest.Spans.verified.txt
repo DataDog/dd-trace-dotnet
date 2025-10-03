@@ -11,8 +11,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      version: 1.0.0,
-      _dd.code_origin.type: exit
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,

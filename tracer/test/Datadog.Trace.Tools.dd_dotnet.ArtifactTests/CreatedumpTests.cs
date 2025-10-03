@@ -480,7 +480,7 @@ public class CreatedumpTests : ConsoleTestHelper
     [SkippableTheory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task IgnoreNonDatadogCrashes(bool mainThread)
+    public async Task OptionallyDoNotReportNonDatadogCrashes(bool mainThread)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
@@ -492,7 +492,7 @@ public class CreatedumpTests : ConsoleTestHelper
         using var helper = await StartConsoleWithArgs(
                                arg,
                                enableProfiler: true,
-                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_FILTERING_ENABLED", "1")]);
 
         await helper.Task;
 
@@ -507,11 +507,8 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
-    public async Task OptionallyReportNonDatadogCrashes()
+    public async Task ReportNonDatadogCrashes()
     {
-        // This test only validates the case where DD_CRASHTRACKING_FILTERING_ENABLED is set to 0
-        // The default case is tested by IgnoreNonDatadogCrashes
-
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
@@ -521,6 +518,29 @@ public class CreatedumpTests : ConsoleTestHelper
                                "crash",
                                enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_FILTERING_ENABLED", "0")]);
+
+        await helper.Task;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
+        }
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public async Task MakeSureNonDatadogCrashesAreReportedByDefault()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 

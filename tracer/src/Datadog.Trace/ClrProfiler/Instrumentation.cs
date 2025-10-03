@@ -480,6 +480,7 @@ namespace Datadog.Trace.ClrProfiler
             else
             {
                 observers.Add(new AspNetCoreDiagnosticObserver());
+                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);

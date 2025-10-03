@@ -36,9 +36,14 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
+            if (ShouldSkipExitSpan())
+            {
+                return;
+            }
+
             if (span == null)
             {
-                Log.Debug("Can not add code origin when span is null");
+                Log.Debug("Can not add code origin for exit span when span is null");
                 return;
             }
 
@@ -56,6 +61,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             AddExitSpanTags(span);
+        }
+
+        private bool ShouldSkipExitSpan()
+        {
+            // Exit span code origin has been disabled since tracer version 3.28.0.
+            // when it will be enabled, update SpanCodeOriginTests.ExitSpanTests
+            return true;
         }
 
         internal void SetCodeOriginForEntrySpan(Span? span, Type? type, MethodInfo? method)

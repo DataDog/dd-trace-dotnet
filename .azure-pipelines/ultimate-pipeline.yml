@@ -26,9 +26,15 @@ pr:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .github/
+      - .claude/
+      - .devcontainer/
+      - .vscode/
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - AGENTS.md
+      - LICENSE
+      - NOTICE
 
 schedules:
   - cron: "0 3 * * *"

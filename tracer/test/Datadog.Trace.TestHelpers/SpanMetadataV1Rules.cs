@@ -53,8 +53,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetMvcV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -72,8 +71,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetWebApi2V1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -100,8 +98,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetCoreV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -1159,5 +1156,22 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
+
+        public static Result IsQuartzV1(this MockSpan span) => Result.FromSpan(span)
+          .Tags(s => s
+                .IsOptional("events")
+                .IsPresent("fire.instance.id")
+                .IsPresent("job.group")
+                .IsPresent("job.name")
+                .IsOptional("job.type")
+                .IsOptional("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .IsPresent("otel.status_code")
+                .IsOptional("scheduler.id")
+                .IsOptional("scheduler.name")
+                .IsOptional("span.kind")
+                .IsPresent("trigger.group")
+                .IsPresent("trigger.name"));
     }
 }

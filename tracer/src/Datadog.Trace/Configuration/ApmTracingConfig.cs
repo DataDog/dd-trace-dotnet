@@ -104,6 +104,9 @@ namespace Datadog.Trace.Configuration
                 ServiceMapping = higher.ServiceMapping ?? lower.ServiceMapping,
                 DataStreamsEnabled = higher.DataStreamsEnabled ?? lower.DataStreamsEnabled,
                 SpanSamplingRules = higher.SpanSamplingRules ?? lower.SpanSamplingRules,
+                DynamicInstrumentationEnabled = higher.DynamicInstrumentationEnabled ?? lower.DynamicInstrumentationEnabled,
+                ExceptionReplayEnabled = higher.ExceptionReplayEnabled ?? lower.ExceptionReplayEnabled,
+                CodeOriginEnabled = higher.CodeOriginEnabled ?? lower.CodeOriginEnabled
             };
         }
     }
@@ -181,5 +184,14 @@ namespace Datadog.Trace.Configuration
 
         [JsonProperty("span_sampling_rules")]
         public object? SpanSamplingRules { get; set; }
+
+        [JsonProperty("dynamic_instrumentation_enabled")]
+        public bool? DynamicInstrumentationEnabled { get; set; }
+
+        [JsonProperty("exception_replay_enabled")]
+        public bool? ExceptionReplayEnabled { get; set; }
+
+        [JsonProperty("code_origin_enabled")]
+        public bool? CodeOriginEnabled { get; set; }
     }
 }
