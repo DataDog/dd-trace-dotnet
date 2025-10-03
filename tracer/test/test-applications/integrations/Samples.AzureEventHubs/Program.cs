@@ -102,7 +102,6 @@ namespace Samples.AzureEventHubs
             Console.WriteLine("Adding events to batch using TryAdd...");
             for (int i = 0; i < events.Length; i++)
             {
-                events[i].Properties["Subject"] = $"BatchTest{i + 1}";
                 var added = eventBatch.TryAdd(events[i]);
                 Console.WriteLine($"Event {i + 1} (ID: {events[i].MessageId}) added to batch: {added}");
             }
@@ -135,13 +134,7 @@ namespace Samples.AzureEventHubs
                     {
                         if (partitionEvent.Data != null)
                         {
-                            var body = partitionEvent.Data.EventBody.ToString();
-                            var messageId = partitionEvent.Data.MessageId;
-                            var subject = partitionEvent.Data.Properties.ContainsKey("Subject")
-                                ? partitionEvent.Data.Properties["Subject"]
-                                : "Unknown";
-
-                            Console.WriteLine($"Processing event ID: {messageId}, Subject: {subject}, Body: {body}");
+                            Console.WriteLine($"Processing event ID: {partitionEvent.Data.MessageId}");
                             totalEventsReceived++;
 
                             if (totalEventsReceived >= eventBatch.Count)
@@ -192,13 +185,6 @@ namespace Samples.AzureEventHubs
                 };
             }
 
-            Console.WriteLine("Setting properties on events...");
-            for (int i = 0; i < events.Length; i++)
-            {
-                events[i].Properties["Subject"] = $"EnumerableTest{i + 1}";
-                Console.WriteLine($"Event {i + 1} (ID: {events[i].MessageId}) prepared");
-            }
-
             var sendTime = DateTimeOffset.UtcNow;
 
             Console.WriteLine("Sending enumerable of events...");
@@ -225,13 +211,7 @@ namespace Samples.AzureEventHubs
                     {
                         if (partitionEvent.Data != null)
                         {
-                            var body = partitionEvent.Data.EventBody.ToString();
-                            var messageId = partitionEvent.Data.MessageId;
-                            var subject = partitionEvent.Data.Properties.ContainsKey("Subject")
-                                ? partitionEvent.Data.Properties["Subject"]
-                                : "Unknown";
-
-                            Console.WriteLine($"Processing event ID: {messageId}, Subject: {subject}, Body: {body}");
+                            Console.WriteLine($"Processing event ID: {partitionEvent.Data.MessageId}");
                             totalEventsReceived++;
 
                             if (totalEventsReceived >= events.Length)
@@ -308,12 +288,6 @@ namespace Samples.AzureEventHubs
                 }
             };
 
-            for (int i = 0; i < events.Length; i++)
-            {
-                events[i].Properties["Subject"] = $"BufferedTest{i + 1}";
-                Console.WriteLine($"Event {i + 1} (ID: {events[i].MessageId}) prepared");
-            }
-
             var sendTime = DateTimeOffset.UtcNow;
 
             Console.WriteLine("Enqueueing events...");
@@ -346,13 +320,7 @@ namespace Samples.AzureEventHubs
                     {
                         if (partitionEvent.Data != null)
                         {
-                            var body = partitionEvent.Data.EventBody.ToString();
-                            var messageId = partitionEvent.Data.MessageId;
-                            var subject = partitionEvent.Data.Properties.ContainsKey("Subject")
-                                ? partitionEvent.Data.Properties["Subject"]
-                                : "Unknown";
-
-                            Console.WriteLine($"Processing event ID: {messageId}, Subject: {subject}, Body: {body}");
+                            Console.WriteLine($"Processing event ID: {partitionEvent.Data.MessageId}");
                             totalEventsReceived++;
 
                             if (totalEventsReceived >= events.Length)

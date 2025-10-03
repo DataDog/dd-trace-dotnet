@@ -133,13 +133,10 @@ public class AmqpConsumerReceiveAsyncIntegration
         if (messageCount == 1)
         {
             var eventObj = events[0];
-            if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+            if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
+                !string.IsNullOrEmpty(eventData.MessageId))
             {
-                var messageId = eventData.MessageId;
-                if (!string.IsNullOrEmpty(messageId))
-                {
-                    tags.MessagingMessageId = messageId;
-                }
+                tags.MessagingMessageId = eventData.MessageId;
             }
         }
 
@@ -160,12 +157,10 @@ public class AmqpConsumerReceiveAsyncIntegration
         {
             foreach (var eventObj in eventsList)
             {
-                if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true)
+                if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
+                    eventData.Properties != null)
                 {
-                    if (eventData.Properties != null)
-                    {
-                        AzureMessagingCommon.InjectContext(eventData.Properties, scope);
-                    }
+                    AzureMessagingCommon.InjectContext(eventData.Properties, scope);
                 }
             }
         }
