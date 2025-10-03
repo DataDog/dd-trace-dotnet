@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.AutoInstrumentation;
 using Newtonsoft.Json.Linq;
@@ -101,12 +102,20 @@ public static class ErrorHelpers
                         """;
 
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (response.StatusCode != HttpStatusCode.Accepted)
+        try
         {
-            outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.Accepted)
+            {
+                outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            }
+        }
+        catch (Exception ex)
+        {
+            outputHelper.WriteLine($"Failed to submit metric {metricName}. Exception: {ex.ToString()} Payload: \"{payload}\"");
         }
     }
 
