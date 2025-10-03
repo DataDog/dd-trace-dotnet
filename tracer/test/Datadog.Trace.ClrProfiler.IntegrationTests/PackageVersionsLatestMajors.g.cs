@@ -19,6 +19,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMajors
     {
+            public static IEnumerable<object[]> Quartz =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP2_1
+                new object[] { "3.15.0" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.15.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.15.0" },
+#endif
+#if NET5_0
+                new object[] { "3.15.0" },
+#endif
+#if NET6_0
+                new object[] { "3.15.0" },
+#endif
+#if NET7_0
+                new object[] { "3.15.0" },
+#endif
+#if NET8_0
+                new object[] { "3.15.0" },
+#endif
+#if NET9_0
+                new object[] { "3.15.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AwsSdk =>
 
             new List<object[]>
