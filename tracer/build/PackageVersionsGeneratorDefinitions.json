@@ -11,6 +11,20 @@
     ]
   },
   {
+    "IntegrationName": "Quartz",
+    "SampleProjectName": "Samples.Quartz",
+    "NugetPackageSearchName": "Quartz",
+    "MinVersion": "3.1.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSdk",
     "SampleProjectName": "Samples.AWS.DynamoDBv2",
     "NugetPackageSearchName": "AWSSDK.Core",
@@ -173,7 +187,7 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.5.0",
     "SpecificVersions": [
       "2.0.*",
       "2.5.*",
@@ -610,7 +624,7 @@
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.10.5",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
@@ -622,7 +636,7 @@
     "SampleProjectName": "Samples.MSTestTests2",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.10.5",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
@@ -634,7 +648,7 @@
     "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.10.5",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
