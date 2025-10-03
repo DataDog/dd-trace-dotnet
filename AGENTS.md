@@ -300,7 +300,7 @@ In these areas, even small inefficiencies are multiplied by the frequency of exe
 
 ## Commit & Pull Request Guidelines
 
-- Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues.
+- Commits: Imperative; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`); reference issues. Keep messages concise - avoid including full diffs or extensive details in the commit message.
 - PRs: Clear description, linked issues, risks/rollout, screenshots/logs if behavior changes.
   - Follow the existing PR description template in `.github/pull_request_template.md`
   - Keep descriptions concise - provide essential context without excessive detail
