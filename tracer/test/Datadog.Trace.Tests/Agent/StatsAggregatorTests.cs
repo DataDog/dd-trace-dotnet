@@ -447,6 +447,7 @@ namespace Datadog.Trace.Tests.Agent
                 callback(new AgentConfiguration(
                              configurationEndpoint: "configurationEndpoint",
                              debuggerEndpoint: "debuggerEndpoint",
+                             debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
                              agentVersion: "agentVersion",

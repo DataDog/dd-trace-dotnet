@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -101,6 +101,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest",
@@ -162,6 +164,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest",
