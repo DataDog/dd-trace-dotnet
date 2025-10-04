@@ -19,6 +19,19 @@ internal class TraceExporterConfiguration : SafeHandle
     private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<TraceExporterConfiguration>();
 
     private IntPtr _telemetryConfigPtr;
+    private string _url = string.Empty;
+    private string _traceVersion = string.Empty;
+    private string _language = string.Empty;
+    private string _languageVersion = string.Empty;
+    private string _languageInterpreter = string.Empty;
+    private string? _hostname;
+    private string? _env;
+    private string? _version;
+    private string? _service;
+    private TelemetryClientConfiguration? _telemetryClientConfiguration;
+    private bool _computeStats;
+    private bool _clientComputedStats;
+    private ulong _connectionTimeoutMs;
 
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
@@ -33,6 +46,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _url = value;
             using var url = new CharSlice(value);
             using var error = NativeInterop.Config.SetUrl(this, url);
             error.ThrowIfError();
@@ -43,6 +57,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _traceVersion = value;
             using var tracerVersion = new CharSlice(value);
             using var error = NativeInterop.Config.SetTracerVersion(this, tracerVersion);
             error.ThrowIfError();
@@ -53,6 +68,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _language = value;
             using var language = new CharSlice(value);
             using var error = NativeInterop.Config.SetLanguage(this, language);
             error.ThrowIfError();
@@ -63,6 +79,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _languageVersion = value;
             using var languageVersion = new CharSlice(value);
             using var error = NativeInterop.Config.SetLanguageVersion(this, languageVersion);
             error.ThrowIfError();
@@ -73,6 +90,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _languageInterpreter = value;
             using var interpreter = new CharSlice(value);
             using var error = NativeInterop.Config.SetInterpreter(this, interpreter);
             error.ThrowIfError();
@@ -83,6 +101,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _hostname = value;
             using var hostname = new CharSlice(value);
             using var error = NativeInterop.Config.SetHostname(this, hostname);
             error.ThrowIfError();
@@ -93,6 +112,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _env = value;
             using var env = new CharSlice(value);
             using var error = NativeInterop.Config.SetEnv(this, env);
             error.ThrowIfError();
@@ -103,6 +123,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _version = value;
             using var version = new CharSlice(value);
             using var error = NativeInterop.Config.SetVersion(this, version);
             error.ThrowIfError();
@@ -113,6 +134,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _service = value;
             using var service = new CharSlice(value);
             using var error = NativeInterop.Config.SetService(this, service);
             error.ThrowIfError();
@@ -123,6 +145,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _telemetryClientConfiguration = value;
             if (value.HasValue)
             {
                 _telemetryConfigPtr = Marshal.AllocHGlobal(Marshal.SizeOf(value.Value));
@@ -137,6 +160,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _computeStats = value;
             using var error = NativeInterop.Config.SetComputeStats(this, value);
             error.ThrowIfError();
         }
@@ -146,6 +170,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _clientComputedStats = value;
             using var error = NativeInterop.Config.SetClientComputedStats(this, value);
             error.ThrowIfError();
         }
@@ -155,6 +180,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
+            _connectionTimeoutMs = value;
             using var error = NativeInterop.Config.SetConnectionTimeout(this, value);
             error.ThrowIfError();
         }
@@ -178,5 +204,22 @@ internal class TraceExporterConfiguration : SafeHandle
         }
 
         return true;
+    }
+
+    public override string ToString()
+    {
+        return $"Url: {_url}, " +
+               $"TraceVersion: {_traceVersion}, " +
+               $"Language: {_language}, " +
+               $"LanguageVersion: {_languageVersion}, " +
+               $"LanguageInterpreter: {_languageInterpreter}, " +
+               $"Hostname: {_hostname}, " +
+               $"Env: {_env}, " +
+               $"Version: {_version}, " +
+               $"Service: {_service}, " +
+               $"TelemetryClientConfiguration: {_telemetryClientConfiguration}, " +
+               $"ComputeStats: {_computeStats}, " +
+               $"ClientComputedStats: {_clientComputedStats}, " +
+               $"ConnectionTimeoutMs: {_connectionTimeoutMs}";
     }
 }
