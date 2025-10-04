@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Azure.Messaging.EventHubs -->
+    <!--    Assembly: Azure.Messaging.EventHubs -->
+    <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.EventHubs/5.12.2 -->
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.12.2" />
+  </ItemGroup>
+
+</Project>
