@@ -9,7 +9,7 @@
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.9.25 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.9.24" />
+    <PackageReference Include="StackExchange.Redis" Version="2.9.25" />
   </ItemGroup>
 
 </Project>
