@@ -12,7 +12,6 @@ using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -20,8 +19,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
     internal class LogFormatter
     {
-        private const string KeyValueTagSeparator = ":";
-        private const string TagSeparator = ",";
+        private const char KeyValueTagSeparator = ':';
+        private const char TagSeparator = ',';
         private const string SourcePropertyName = "ddsource";
         private const string ServicePropertyName = "service";
         private const string HostPropertyName = "host";
@@ -63,7 +62,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
 
-        internal string? Tags { get; private set; }
+        private string? Tags { get; set; }
 
         private static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
         {
@@ -76,9 +75,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             foreach (var tagPair in globalTags)
             {
                 sb.Append(tagPair.Key)
-                  .Append(':')
+                  .Append(KeyValueTagSeparator)
                   .Append(tagPair.Value)
-                  .Append(',');
+                  .Append(TagSeparator);
             }
 
             // remove final joiner
@@ -87,6 +86,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         }
 
         private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
+        private static string? RemoveScheme(string url)
+        {
+            return url switch
+                   {
+                       not null when url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => url.Substring("https://".Length),
+                       not null when url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) => url.Substring("http://".Length),
+                       _ => url
+                   };
+        }
         {
             if (aasSettings is null)
             {
@@ -156,16 +164,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             }
 
             _gitMetadataAdded = true;
-        }
-
-        private string? RemoveScheme(string url)
-        {
-            return url switch
-            {
-                { } when url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => url.Substring("https://".Length),
-                { } when url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) => url.Substring("http://".Length),
-                _ => url
-            };
         }
 
         internal static bool IsSourceProperty(string? propertyName) =>
