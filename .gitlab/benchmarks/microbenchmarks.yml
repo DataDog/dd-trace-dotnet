@@ -145,9 +145,6 @@ upload-to-bp-ui:
     # Where to store benchmarking artifacts produced on ephemeral instances,
     # after fetching them
     ARTIFACTS_DIR: "platform/artifacts"
-
-    # TODO: Remove when working
-    TEST: "true"
   script:
     - git clone --branch $BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/upload-to-bp-ui.sh
