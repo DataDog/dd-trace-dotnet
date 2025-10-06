@@ -133,7 +133,8 @@ upload-to-bp-ui:
   variables:
     AWS_REGION: "us-east-1"
 
-    BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
+    # TODO: Point to dd-trace-dotnet/micro
+    BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
 
     # Where to fetch results from
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
