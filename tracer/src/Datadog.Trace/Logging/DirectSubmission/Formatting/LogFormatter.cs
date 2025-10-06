@@ -93,9 +93,45 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return string.IsNullOrEmpty(globalTags) ? null : globalTags;
             }
 
-            var aasTags = $"{Trace.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}" +
-                          $"{TagSeparator}{Trace.Tags.AzureAppServicesSiteKind}{KeyValueTagSeparator}{aasSettings.SiteKind}" +
-                          $"{TagSeparator}{Trace.Tags.AzureAppServicesSiteType}{KeyValueTagSeparator}{aasSettings.SiteType}";
+            var sb = StringBuilderCache.Acquire();
+
+            if (!string.IsNullOrEmpty(aasSettings.ResourceId))
+            {
+                sb.Append(Trace.Tags.AzureAppServicesResourceId)
+                  .Append(KeyValueTagSeparator)
+                  .Append(aasSettings.ResourceId);
+            }
+
+            if (!string.IsNullOrEmpty(aasSettings.SiteKind))
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(TagSeparator);
+                }
+
+                sb.Append(Trace.Tags.AzureAppServicesSiteKind)
+                  .Append(KeyValueTagSeparator)
+                  .Append(aasSettings.SiteKind);
+            }
+
+            if (!string.IsNullOrEmpty(aasSettings.SiteType))
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(TagSeparator);
+                }
+
+                sb.Append(Trace.Tags.AzureAppServicesSiteType)
+                  .Append(KeyValueTagSeparator)
+                  .Append(aasSettings.SiteType);
+            }
+
+            var aasTags = StringBuilderCache.GetStringAndRelease(sb);
+
+            if (string.IsNullOrEmpty(aasTags))
+            {
+                return string.IsNullOrEmpty(globalTags) ? null : globalTags;
+            }
 
             return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
         }
