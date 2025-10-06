@@ -100,7 +100,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             return url;
         }
 
-        private string EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
+        private static string EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
         {
             if (aasSettings is null)
             {
