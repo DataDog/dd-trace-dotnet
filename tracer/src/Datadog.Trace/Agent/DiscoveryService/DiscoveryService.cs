@@ -298,7 +298,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
                 debuggerV2Endpoint: debuggerV2Endpoint ?? diagnosticsEndpoint,
-                diagnosticsEndpoint: diagnosticsEndpoint ?? debuggerEndpoint,
+                diagnosticsEndpoint: diagnosticsEndpoint,
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
