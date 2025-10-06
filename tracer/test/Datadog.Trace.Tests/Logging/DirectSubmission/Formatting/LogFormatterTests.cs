@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             (string Key, string Value)[] expectedTags = (isInAas, hasRenderedTags) switch
             {
                 (_, true) => null, // if the log itself adds this, we don't add the global tags currently
-                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("aas.site.kind", aasSettings.SiteKind), ("aas.site.type", aasSettings.SiteType), ("Key1", "Value1"), ("Key2", "Value2")],
+                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("aas.site.kind", aasSettings.SiteKind), ("Key1", "Value1"), ("Key2", "Value2")],
                 (false, false) => [("Key1", "Value1"), ("Key2", "Value2")],
             };
 
