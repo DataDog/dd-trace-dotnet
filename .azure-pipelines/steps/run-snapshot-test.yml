@@ -72,11 +72,19 @@ steps:
     displayName: Set env-specific  variables
 
 - bash: |
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm $(START_TEST_AGENT_TARGET)
+    set -euo pipefail
+    P="ddtrace_$(Build.BuildId)_$(System.JobAttempt)"
+    DC='${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p '"$P"
+
+    $DC down -v || true
+    $DC up --abort-on-container-exit --exit-code-from $(START_TEST_AGENT_TARGET) $(START_TEST_AGENT_TARGET)
+    rc=$?
+    $DC down -v || true
+    exit $rc
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
-  displayName: docker-compose run start-test-agent
+  displayName: docker-compose up start-test-agent (isolated)
   retryCountOnTaskFailure: 3
 
 - script: |
