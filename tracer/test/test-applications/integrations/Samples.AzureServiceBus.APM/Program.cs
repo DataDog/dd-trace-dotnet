@@ -9,7 +9,8 @@ namespace Samples.AzureServiceBus.APM
         SendMessages,
         ReceiveMessages,
         ReceiveMessagesMultiple,
-        ScheduleMessages
+        ScheduleMessages,
+        TestServiceBusMessageBatch
     }
 
     public class Program
@@ -54,6 +55,9 @@ namespace Samples.AzureServiceBus.APM
                         break;
                     case TestMode.ScheduleMessages:
                         await TestScheduleMessagesAsync(sender);
+                        break;
+                    case TestMode.TestServiceBusMessageBatch:
+                        await TestServiceBusMessageBatchAsync(sender, receiver);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(testMode), testMode, "Unhandled test mode");
@@ -169,6 +173,61 @@ namespace Samples.AzureServiceBus.APM
             var sequenceNumbers = await sender.ScheduleMessagesAsync(scheduledMessages, scheduleTime);
             Console.WriteLine($"Scheduled {scheduledMessages.Length} messages for {scheduleTime}");
             Console.WriteLine($"Sequence numbers: {string.Join(", ", sequenceNumbers)}");
+        }
+
+        private static async Task TestServiceBusMessageBatchAsync(ServiceBusSender sender, ServiceBusReceiver receiver)
+        {
+            Console.WriteLine("\n=== Service Bus Message Batch Test ===");
+
+            Console.WriteLine("Creating message batch...");
+            using var messageBatch = await sender.CreateMessageBatchAsync();
+
+            var messages = new[]
+            {
+                new ServiceBusMessage("Batch message 1")
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    Subject = "BatchTest1"
+                },
+                new ServiceBusMessage("Batch message 2")
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    Subject = "BatchTest2"
+                },
+                new ServiceBusMessage("Batch message 3")
+                {
+                    MessageId = Guid.NewGuid().ToString(),
+                    Subject = "BatchTest3"
+                }
+            };
+
+            Console.WriteLine("Adding messages to batch using TryAddMessage...");
+            for (int i = 0; i < messages.Length; i++)
+            {
+                var added = messageBatch.TryAddMessage(messages[i]);
+                Console.WriteLine($"Message {i + 1} (ID: {messages[i].MessageId}) added to batch: {added}");
+            }
+
+            Console.WriteLine($"Batch now contains {messageBatch.Count} messages");
+
+            Console.WriteLine("Sending message batch...");
+            await sender.SendMessagesAsync(messageBatch);
+            Console.WriteLine($"Successfully sent batch with {messageBatch.Count} messages");
+
+            Console.WriteLine("Receiving messages from batch...");
+            var receivedMessages = await receiver.ReceiveMessagesAsync(
+                maxMessages: messageBatch.Count,
+                maxWaitTime: TimeSpan.FromSeconds(10));
+
+            Console.WriteLine($"Received {receivedMessages.Count} messages from batch");
+            foreach (var msg in receivedMessages)
+            {
+                Console.WriteLine($"Processing message ID: {msg.MessageId}, Subject: {msg.Subject}, Body: {msg.Body}");
+                await receiver.CompleteMessageAsync(msg);
+            }
+            Console.WriteLine($"Completed processing {receivedMessages.Count} messages");
+
+            Console.WriteLine("Service Bus Message Batch test completed");
         }
 
         private static async Task PurgeQueue(ServiceBusReceiver receiver)

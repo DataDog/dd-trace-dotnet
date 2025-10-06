@@ -16,14 +16,17 @@ jobs:
     steps:
       - name: Sanitize branch name to match image tag
         id: sanitize
+        env:
+          PR_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
-          TAG="${BRANCH//\//_}"
+          TAG="${PR_REF//\//_}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Delete image by tag from GHCR
+        env:
+          TAG: ${{ steps.sanitize.outputs.tag }}
         run: |
           gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions" \
-            --jq ".[] | select(.metadata.container.tags[]? == \"${{ steps.sanitize.outputs.tag }}\") | .id" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${TAG}\") | .id" \
             | xargs -r -I {} gh api "orgs/DataDog/packages/container/dd-trace-dotnet%2Fdd-trace-dotnet/versions/{}" -X DELETE
-          echo "Deleted version with tag: ${{ steps.sanitize.outputs.tag }}" 
+          echo "Deleted version with tag: ${TAG}"

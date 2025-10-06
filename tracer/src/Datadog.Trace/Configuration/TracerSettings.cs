@@ -368,6 +368,10 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                          .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
 
+            AzureServiceBusBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -832,6 +836,13 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc cref="MutableSettings.KafkaCreateConsumerScopeEnabled"/>
         public bool KafkaCreateConsumerScopeEnabled => MutableSettings.KafkaCreateConsumerScopeEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether to enable span linking for individual messages
+        /// when using Azure Service Bus batch operations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
+        public bool AzureServiceBusBatchLinksEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution

@@ -6,9 +6,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-static const SampleValueType CpuValueType = {"cpu", "nanoseconds"};
-static const SampleValueType WallTimeValueType = {"walltime", "nanoseconds"};
-static const SampleValueType ExceptionValueType = {"exception", "count"};
+static SampleValueType CpuValueType = {"cpu", "nanoseconds", -1};
+static SampleValueType WallTimeValueType = {"walltime", "nanoseconds", -1};
+static SampleValueType ExceptionValueType = {"exception", "count", -1};
 
 testing::AssertionResult AreSampleValueTypeEqual(SampleValueType const& v1, SampleValueType const& v2)
 {
@@ -33,7 +33,7 @@ using ValueOffsets = std::vector<SampleValueTypeProvider::Offset>;
 TEST(SampleValueTypeProvider, RegisterValueTypes)
 {
     SampleValueTypeProvider provider;
-    auto const valueTypes = std::vector<SampleValueType>{CpuValueType, WallTimeValueType};
+    auto valueTypes = std::vector<SampleValueType>{CpuValueType, WallTimeValueType};
 
     auto offsets = provider.GetOrRegister(valueTypes);
 
@@ -94,4 +94,27 @@ TEST(SampleValueTypeProvider, EnsureThrowIfAddValueTypeSameNameButDifferentUnit)
     auto anotherValuetype = std::vector<SampleValueType>{{"cpu", "non-sense-unit"}};
 
     EXPECT_THROW(provider.GetOrRegister(anotherValuetype), std::runtime_error);
+}
+
+TEST(SampleValueTypeProvider, CheckSequentialIndex)
+{
+    std::vector<SampleValueType> AllocationSampleTypeDefinitions(
+        {{"alloc-samples", "count", -1},
+         {"alloc-size", "bytes", -1}});
+    std::vector<SampleValueType> ExceptionSampleTypeDefinitions(
+        {{"exception", "count", -1}});
+    std::vector<SampleValueType> CpuSampleTypeDefinitions(
+        {{"cpu", "nanoseconds", -1},
+         {"cpu-samples", "count", -1}});
+
+    SampleValueTypeProvider provider;
+    auto allocationsOffsets = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    auto exceptionOffsets = provider.GetOrRegister(ExceptionSampleTypeDefinitions);
+    auto cpuOffsets = provider.GetOrRegister(CpuSampleTypeDefinitions);
+
+    ASSERT_EQ(AllocationSampleTypeDefinitions[0].Index, 0);
+    ASSERT_EQ(AllocationSampleTypeDefinitions[1].Index, 0);
+    ASSERT_EQ(ExceptionSampleTypeDefinitions[0].Index, 1);
+    ASSERT_EQ(CpuSampleTypeDefinitions[0].Index, 2);
+    ASSERT_EQ(CpuSampleTypeDefinitions[1].Index, 2);
 }

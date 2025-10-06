@@ -16,8 +16,8 @@
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 {
-    {"inuse-objects", "count"},
-    {"inuse-space", "bytes"}
+    {"inuse-objects", "count", -1},
+    {"inuse-space", "bytes", -1}
 });
 
 const uint32_t MAX_LIVE_OBJECTS = 1024;

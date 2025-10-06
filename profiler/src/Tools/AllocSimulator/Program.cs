@@ -31,13 +31,47 @@ namespace AllocSimulator
                 ParseCommandLine(
                     args,
                     out string allocFile,
-                    out string allocDirectory,
+                    out string allocFolder,
                     out int meanPoisson,
                     out SamplingMode sampling1,
                     out SamplingMode sampling2,
-                    out UpscalingMode upscalingMode);
+                    out UpscalingMode upscalingMode,
+                    out bool computeDiff);
 
-                if (string.IsNullOrEmpty(allocDirectory))
+                // show the difference between .pprof and .balloc files
+                if (computeDiff)
+                {
+                    if (string.IsNullOrEmpty(allocFolder))
+                    {
+                        if (string.IsNullOrEmpty(allocFile))
+                        {
+                            throw new InvalidOperationException("Missing allocations file...");
+                        }
+
+                        var extension = Path.GetExtension(allocFile);
+
+                        if ((extension == ".alloc") || (extension == ".balloc"))
+                        {
+                            CompareAllocations(allocFile, meanPoisson);
+                            return;
+                        }
+                    }
+
+                    foreach (var filename in Directory.GetFiles(allocFolder, "*.alloc"))
+                    {
+                        CompareAllocations(filename, meanPoisson);
+                    }
+
+                    foreach (var filename in Directory.GetFiles(allocFolder, "*.balloc"))
+                    {
+                        CompareAllocations(filename, meanPoisson);
+                    }
+
+                    return;
+                }
+
+                // compute the simulated sampling/upscaling of allocations
+                if (string.IsNullOrEmpty(allocFolder))
                 {
                     if (string.IsNullOrEmpty(allocFile))
                     {
@@ -45,6 +79,7 @@ namespace AllocSimulator
                     }
 
                     var extension = Path.GetExtension(allocFile);
+
                     if ((extension == ".alloc") || (extension == ".balloc"))
                     {
                         SimulateAllocations(allocFile, meanPoisson, sampling1, sampling2);
@@ -58,19 +93,20 @@ namespace AllocSimulator
                     }
                 }
 
-                foreach (var filename in Directory.GetFiles(allocDirectory, "*.alloc"))
+                foreach (var filename in Directory.GetFiles(allocFolder, "*.alloc"))
                 {
                     SimulateAllocations(filename, meanPoisson, sampling1, sampling2);
                 }
 
-                foreach (var filename in Directory.GetFiles(allocDirectory, "*.balloc"))
+                foreach (var filename in Directory.GetFiles(allocFolder, "*.balloc"))
                 {
                     SimulateAllocations(filename, meanPoisson, sampling1, sampling2);
                 }
             }
             catch (InvalidOperationException x)
             {
-                Console.WriteLine("AllocSimulator <allocations recording file .balloc or .alloc> [-m Poisson mean] [-d directory] [-c x y with 1, 2, or 3 for x or y] [-u x with 1, 2, or 3 for x]");
+                Console.WriteLine("AllocSimulator <allocations recording file .balloc or .alloc> [-d ] [-m Poisson mean] [-f folder] [-c x y with 1, 2, or 3 for x or y] [-u x with 1, 2, or 3 for x]");
+                Console.WriteLine("   -d is showing the difference between .pprof and .balloc without any sampling/upscaling");
                 Console.WriteLine("   -u is supported only when comparing .pprof and .balloc");
                 Console.WriteLine("   for -c and -u, 1 = Fixed 100 KB threshold");
                 Console.WriteLine("                  2 = Poisson");
@@ -82,7 +118,7 @@ namespace AllocSimulator
 
         // if both .balloc and .pprof files exist, compare them
         // else if only .pprof exist, dump the allocations (should be sampled)
-        // if upcaling mode is provided, compute the upscaled value
+        // if upscaling mode is provided, compute the upscaled value
         private static void DumpProfile(string filename, UpscalingMode upscalingMode, int meanPoisson)
         {
             try
@@ -99,7 +135,7 @@ namespace AllocSimulator
                     Path.GetFileNameWithoutExtension(filename)) + ".balloc";
 #pragma warning restore CS8604 // Possible null reference argument.
 
-                // just dump the sampleds allocations if no recording
+                // just dump the sampled allocations if no recording
                 if (!File.Exists(recordedAllocationsFile))
                 {
                     Console.WriteLine($"Dumping allocations from {filename}");
@@ -351,21 +387,92 @@ namespace AllocSimulator
             }
         }
 
+        private static void CompareAllocations(string allocFile, int meanPoisson)
+        {
+            try
+            {
+                // accept binary (.balloc) allocations recording
+                var extension = Path.GetExtension(allocFile);
+                if (extension != ".balloc")
+                {
+                    throw new InvalidOperationException($"{extension} file extension is not supported");
+                }
+
+                var filename = Path.GetFileNameWithoutExtension(allocFile);
+
+                // look for the matching .pprof file
+#pragma warning disable CS8604 // Possible null reference argument.
+                var pprofFile = Path.Combine(
+                    Path.GetDirectoryName(allocFile),
+                    filename + ".pprof");
+#pragma warning restore CS8604 // Possible null reference argument.
+
+                if (!File.Exists(pprofFile))
+                {
+                    throw new InvalidOperationException($"Missing .pprof file for {allocFile}");
+                }
+
+                Console.WriteLine($"Comparing allocations between {pprofFile} and {allocFile}");
+                Console.WriteLine("---------------------------------------------");
+
+                // get allocations from the .pprof
+                var profile = ProfileAllocations.Load(pprofFile);
+                var sampledAllocations = profile.GetAllocations().ToList();
+                var totalSampledBytes = sampledAllocations.Sum(alloc => alloc.Size);
+
+                // get the allocations from the recording
+                IAllocProvider provider = new BinaryFileAllocProvider(allocFile);
+                var realAllocations = AggregateAllocations(provider.GetAllocations()).OrderBy(alloc => alloc.Size).ToList();
+                var totalAllocatedBytes = realAllocations.Sum(alloc => alloc.Size);
+
+                foreach (var realAllocation in realAllocations)
+                {
+                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
+
+                    float countRatio = 0;
+                    float sizeRatio = 0;
+
+                    var sampled = sampledAllocations.FirstOrDefault(a => (a.Type.EndsWith(realAllocation.Type)));
+                    if (sampled != null)
+                    {
+                        Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
+                        countRatio = -(float)(realAllocation.Count - sampled.Count) / (float)realAllocation.Count;
+                        sizeRatio = -(float)(realAllocation.Size - sampled.Size) / (float)realAllocation.Size;
+                        Console.WriteLine($"{countRatio,9:P1} | {sizeRatio,13:P1}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"        ~ |-----------------^");
+                    }
+
+                    Console.WriteLine();
+                }
+
+                Console.WriteLine();
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine($"Error in {allocFile}: {x.Message}");
+            }
+        }
+
         private static void ParseCommandLine(
             string[] args,
             out string allocFile,
-            out string allocDirectory,
+            out string allocFolder,
             out int meanPoisson,
             out SamplingMode sampling1,
             out SamplingMode sampling2,
-            out UpscalingMode upscalingMode)
+            out UpscalingMode upscalingMode,
+            out bool computeDiff)
         {
             allocFile = string.Empty;
-            allocDirectory = string.Empty;
+            allocFolder = string.Empty;
             meanPoisson = 100;  // 100 KB is the mean of the distribution for AllocationTick in .NET
             sampling1 = SamplingMode.Fixed;
             sampling2 = SamplingMode.PoissonWithAllocationContext;
             upscalingMode = UpscalingMode.None;
+            computeDiff = false;
 
             SamplingMode GetSamplingMode(string[] args, int i)
             {
@@ -460,13 +567,19 @@ namespace AllocSimulator
                     }
                 }
                 else
-                if ("-d".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                if ("f".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
                     i++;
                     if (i < args.Length)
                     {
-                        allocDirectory = args[i];
+                        allocFolder = args[i];
                     }
+                }
+                else
+                if ("-d".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    // compute diff between .pprof and .balloc files
+                    computeDiff = true;
                 }
                 else
                 {

@@ -32,7 +32,7 @@ internal class ApiSecurity
         _apmTracingEnabled = securitySettings.ApmTracingEnabled;
         _minTimeBetweenReprocessTimeSpan = TimeSpan.FromSeconds(securitySettings.ApiSecuritySampleDelay);
         _maxRoutesSize = maxRouteSize;
-        _endpointsCollectionEnabled = securitySettings.ApiSecurityEndpointCollectionEnabled;
+        _endpointsCollectionEnabled = securitySettings is { ApiSecurityEndpointCollectionEnabled: true, AppsecEnabled: true };
         _endpointsCollectionMessageLimit = securitySettings.ApiSecurityEndpointCollectionMessageLimit;
     }
 

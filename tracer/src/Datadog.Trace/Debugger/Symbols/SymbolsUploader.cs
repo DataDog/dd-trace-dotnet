@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 (from configByProduct in addedConfig
                  where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
                  from remoteConfiguration in configByProduct.Value
-                 where remoteConfiguration.Path.Id.StartsWith(DefinitionPaths.SymDB)
+                 where remoteConfiguration.Path.Id.StartsWith(DefinitionPaths.SymDB, StringComparison.Ordinal)
                  select new NamedRawFile(remoteConfiguration.Path, remoteConfiguration.Contents)
                  into rawFile
                  select rawFile.Deserialize<SymDbEnablement>()).FirstOrDefault();
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 _processExit.TrySetResult(true);
             }
 
-            return Array.Empty<ApplyDetails>();
+            return [];
         }
 
         private void ConfigurationChanged(AgentConfiguration configuration)
@@ -227,6 +227,10 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 await UploadAssemblySymbols(assembly).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
             }
             catch (Exception e)
             {
@@ -492,9 +496,9 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 _disposed = true;
-                _subscriptionManager.Unsubscribe(_subscription);
-
                 _processExit.TrySetResult(true);
+                UnRegisterToAssemblyLoadEvent();
+                _subscriptionManager.Unsubscribe(_subscription);
                 _assemblySemaphore.Dispose();
                 _enablementSemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();

@@ -26,9 +26,15 @@ pr:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .github/
+      - .claude/
+      - .devcontainer/
+      - .vscode/
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - AGENTS.md
+      - LICENSE
+      - NOTICE
 
 schedules:
   - cron: "0 3 * * *"
@@ -56,17 +62,17 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100-preview.7.25380.108
+  dotnetCoreSdkLatestVersion: 10.0.100-rc.1.25451.107
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 10.0.100-preview.7
+  dotnetCoreSdkLatestVersionShort: 10.0.100-rc.1
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
-  linuxX64SmokePool: azure-managed-linux-smoke
-  linuxX64Pool: azure-managed-linux-x64-1
-  linuxArm64Pool: azure-managed-linux-arm64-2
-  windowsX64Pool: azure-managed-windows-x64-1
+  linuxX64SmokePool: azure-managed-linux-smoke-2
+  linuxX64Pool: azure-managed-linux-x64-2
+  linuxArm64Pool: azure-managed-linux-arm64-1
+  windowsX64Pool: azure-managed-windows-x64-2
 
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -4231,6 +4237,10 @@ stages:
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
+            fi
+            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._-/]+$ ]]; then
+              echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _ /"
+              exit 1
             fi
           fi
 

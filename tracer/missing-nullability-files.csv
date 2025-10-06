@@ -348,8 +348,6 @@ src/Datadog.Trace/Telemetry/DTOs/IPayload.cs
 src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
 src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs
 src/Datadog.Trace/Util/Http/HttpRequestExtensions.Core.cs
-src/Datadog.Trace/Util/Http/HttpRequestExtensions.Framework.cs
-src/Datadog.Trace/Util/Http/HttpRequestUtils.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs

@@ -116,6 +116,7 @@ public class SpanPointersTests
         var stringAttr = new Mock<IDynamoDbAttributeValue>();
         stringAttr.Setup(a => a.S).Returns("testvalue");
         var keys = new Mock<IDynamoDbKeysObject>();
+        keys.Setup(k => k.Instance).Returns(new object()); // not important of what it returns as long as it isn't null
         keys.Setup(k => k.KeyNames).Returns(new[] { "key1" });
         keys.Setup(k => k["key1"]).Returns(stringAttr.Object);
 

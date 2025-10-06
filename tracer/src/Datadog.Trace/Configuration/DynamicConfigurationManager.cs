@@ -8,13 +8,18 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
 {
@@ -26,7 +31,8 @@ namespace Datadog.Trace.Configuration
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ConfigurationTelemetry _configurationTelemetry;
-
+        private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
+        private readonly object _configLock = new();
         private ISubscription? _subscription;
 
         public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
@@ -41,12 +47,17 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);     // 15
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true); // 14
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);  // 13
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);     // 12
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);    // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);                          // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);                      // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);                       // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);                          // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);                      // 19
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);                         // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabledDynamicInstrumentation, true);       // 38
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, true);               // 39
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, true);                    // 40
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, true);                 // 41
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);                         // 45
             }
         }
 
@@ -91,88 +102,142 @@ namespace Datadog.Trace.Configuration
             // Needs to be done before returning, to feed the value to the telemetry
             // var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
 
+            TracerSettings newSettings;
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
+                newSettings = oldSettings;
+            }
+            else
+            {
+                Log.Information("Applying new dynamic configuration");
+
+                newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+
+                /*
+                if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
+                {
+                    GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
+                    Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
+
+                    NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
+                }
+                */
+
+                Tracer.Configure(newSettings);
+            }
+
+            var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
+            {
+                DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
+                ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
+                CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
+            };
+
+            var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
+
+            if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
+            {
+                Log.Debug("No changes detected in the new dynamic debugger configuration");
                 return;
             }
 
-            Log.Information("Applying new dynamic configuration");
-
-            var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
-
-            /*
-            if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
+            Log.Information("Applying new dynamic debugger configuration");
+            if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
-                Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
-
-                NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
+                Log.Debug(
+                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
+                    dynamicDebuggerSettings.DynamicInstrumentationEnabled,
+                    dynamicDebuggerSettings.ExceptionReplayEnabled,
+                    dynamicDebuggerSettings.CodeOriginEnabled);
             }
-            */
 
-            Tracer.Configure(newSettings);
+            var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
+
+            DebuggerManager.Instance.UpdateConfiguration(newSettings, newDebuggerSettings)
+                           .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+        private ApplyDetails[] ConfigurationUpdated(
+            Dictionary<string, List<RemoteConfiguration>> configByProduct,
+            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
-            if (!configByProduct.TryGetValue(ProductName, out var apmLibrary))
+            lock (_configLock)
             {
-                return Array.Empty<ApplyDetails>();
-            }
+                var applyDetailsResult = new List<ApplyDetails>();
 
-            if (apmLibrary.Count == 0)
-            {
-                return Array.Empty<ApplyDetails>();
-            }
-
-            var result = new ApplyDetails[apmLibrary.Count];
-
-            try
-            {
-                IConfigurationSource configurationSource;
-
-                if (apmLibrary.Count == 1)
+                try
                 {
-                    configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
-                }
-                else
-                {
-                    var compositeConfigurationSource = new CompositeConfigurationSource();
-
-                    foreach (var item in apmLibrary)
+                    // Phase 1: Handle explicit removals from removedConfigByProduct
+                    if (removedConfigByProduct?.TryGetValue(ProductName, out var removedConfigs) == true)
                     {
-                        compositeConfigurationSource.Add(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
+                        foreach (var removedConfig in removedConfigs)
+                        {
+                            if (_activeConfigurations.Remove(removedConfig.Id))
+                            {
+                                Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
+                                applyDetailsResult.Add(ApplyDetails.FromOk(removedConfig.Path));
+                            }
+                        }
                     }
 
-                    configurationSource = compositeConfigurationSource;
+                    // Phase 2: Handle new/updated configurations and implicit removals
+                    if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
+                    {
+                        var receivedConfigIds = new HashSet<string>();
+
+                        // Add/update configurations
+                        foreach (var config in apmLibrary)
+                        {
+                            receivedConfigIds.Add(config.Path.Id);
+                            _activeConfigurations[config.Path.Id] = config;
+                            applyDetailsResult.Add(ApplyDetails.FromOk(config.Path.Path));
+                        }
+
+                        // Remove configurations not in this update
+                        var configsToRemove = _activeConfigurations.Keys
+                                                                   .Where(configId => !receivedConfigIds.Contains(configId))
+                                                                   .ToList();
+
+                        foreach (var configId in configsToRemove)
+                        {
+                            _activeConfigurations.Remove(configId);
+                            Log.Debug("Implicitly removed APM_TRACING configuration {ConfigId} (not in update)", configId);
+                        }
+                    }
+
+                    // Phase 3: Apply merged configuration
+                    ApplyMergedConfiguration();
+
+                    return applyDetailsResult.ToArray();
                 }
-
-                var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
-
-                OnConfigurationChanged(configurationBuilder);
-
-                _configurationTelemetry.CopyTo(TelemetryFactory.Config);
-                _configurationTelemetry.Clear();
-
-                for (int i = 0; i < apmLibrary.Count; i++)
+                catch (Exception ex)
                 {
-                    result[i] = ApplyDetails.FromOk(apmLibrary[i].Path.Path);
+                    Log.Error(ex, "Error while applying dynamic configuration");
+                    return applyDetailsResult.Select(r => ApplyDetails.FromError(r.Filename, ex.ToString())).ToArray();
                 }
-
-                return result;
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while applying dynamic configuration");
+        }
 
-                for (int i = 0; i < apmLibrary.Count; i++)
-                {
-                    result[i] = ApplyDetails.FromError(apmLibrary[i].Path.Path, ex.ToString());
-                }
+        private void ApplyMergedConfiguration()
+        {
+            // Get current service/environment for filtering
+            var currentSettings = Tracer.Instance.Settings;
+            var serviceName = currentSettings.ServiceName;
+            var environment = currentSettings.Environment ?? Tracer.Instance.DefaultServiceName;
 
-                return result;
-            }
+            var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
+                _activeConfigurations.Values.ToList(),
+                serviceName,
+                environment);
+
+            var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
+            var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
+
+            OnConfigurationChanged(configurationBuilder);
+
+            _configurationTelemetry.CopyTo(TelemetryFactory.Config);
+            _configurationTelemetry.Clear();
         }
     }
 }
