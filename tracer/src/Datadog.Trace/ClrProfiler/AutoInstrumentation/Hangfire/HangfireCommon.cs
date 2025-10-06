@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
 internal static class HangfireCommon
 {
-    private const string HangfireServiceName = "hangfire";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HangfireCommon));
 
     internal const string IntegrationName = nameof(IntegrationId.Hangfire);
@@ -35,8 +34,7 @@ internal static class HangfireCommon
 
         try
         {
-            var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, HangfireServiceName);
-            scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, serviceName: serviceName, tags: tags);
+            scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, tags: tags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
             PopulatePerformSpanTags((HangfireTags)scope.Span.Tags, performingContext);

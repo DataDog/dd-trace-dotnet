@@ -47,13 +47,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         {
             if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
-                ((Dictionary<string, object>)performedContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
-                if (performedContext.Exception is not null)
+                if (((Dictionary<string, object>)performedContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out Scope scope))
                 {
-                    HangfireCommon.SetStatusAndRecordException((Scope?)scope, performedContext.Exception);
-                }
+                    if (performedContext.Exception is not null)
+                    {
+                        HangfireCommon.SetStatusAndRecordException(scope, performedContext.Exception);
+                    }
 
-                ((Scope?)scope)?.Dispose();
+                    scope.Dispose();
+                }
             }
         }
     }

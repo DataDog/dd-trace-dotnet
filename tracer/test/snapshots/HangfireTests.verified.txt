@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: Hangfire.onPerform,
     Resource: JOB TestJob.Execute,
-    Service: Samples.Hangfire-hangfire,
+    Service: Samples.Hangfire,
     ParentId: Id_3,
     Tags: {
       component: Hangfire,
@@ -14,7 +14,7 @@
       language: dotnet,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.base_service: Samples.Hangfire
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -28,7 +28,7 @@
     SpanId: Id_4,
     Name: Hangfire.onPerform,
     Resource: JOB TestJob.ThrowException,
-    Service: Samples.Hangfire-hangfire,
+    Service: Samples.Hangfire,
     ParentId: Id_3,
     Error: 1,
     Tags: {
@@ -44,7 +44,7 @@ at Samples.Hangfire.Jobs.TestJob.ThrowException(),
       language: dotnet,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.base_service: Samples.Hangfire
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
