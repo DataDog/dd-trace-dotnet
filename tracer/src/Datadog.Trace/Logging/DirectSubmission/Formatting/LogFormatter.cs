@@ -85,14 +85,19 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static string? RemoveScheme(string url)
+        private static string RemoveScheme(string url)
         {
-            return url switch
-                   {
-                       not null when url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => url.Substring("https://".Length),
-                       not null when url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) => url.Substring("http://".Length),
-                       _ => url
-                   };
+            if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                return url.Substring("https://".Length);
+            }
+
+            if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            {
+                return url.Substring("http://".Length);
+            }
+
+            return url;
         }
 
         private string EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
