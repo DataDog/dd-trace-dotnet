@@ -318,79 +318,28 @@ In these areas, even small inefficiencies are multiplied by the frequency of exe
 - docs/development/UpdatingTheSdk.md — SDK updates
 - docs/RUNTIME_SUPPORT_POLICY.md — Supported runtimes
 
-## CallTarget Wiring
+## CallTarget Wiring & Integrations
 
-- Define an integration class decorated with `InstrumentMethod` describing the target assembly/type/method, version range, and integration name. Example: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Couchbase/ClusterNodeIntegration.cs` and attribute API in `tracer/src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs`.
-- Build collects attributes and generates native definitions used by the CLR profiler (see generator `tracer/build/_build/CodeGenerators/CallTargetsGenerator.cs`). This emits a C++ list (registered at startup) and a JSON snapshot.
-- Native CLR profiler (C++) registers those definitions and rewrites IL for matched methods during JIT/ReJIT to call the managed invoker.
-- The managed entry point is `CallTargetInvoker` (`tracer/src/Datadog.Trace/ClrProfiler/CallTarget/CallTargetInvoker.cs`). It invokes `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` on your integration type, handling generics, ref/out, and async continuations.
-- `OnMethodBegin` returns `CallTargetState`, which can contain a tracing `Scope` to represent the span. That state flows to the end handler; async returns are awaited and then `OnAsyncMethodEnd` runs.
-- Integrations typically create a scope in `OnMethodBegin` and tag/finish it in the end handler. See the Couchbase example’s `OnMethodBegin`/`OnAsyncMethodEnd` methods.
-- Enable/disable per-integration via config (IntegrationName), and by framework/versions declared in the attribute.
-- For a full walkthrough and patterns, read `docs/development/AutomaticInstrumentation.md`.
+Creating new integrations involves CallTarget instrumentation and duck typing. For full details, see:
+- `docs/development/AutomaticInstrumentation.md` — Complete guide to creating integrations, testing, and rollout
+- `docs/development/DuckTyping.md` — Duck typing patterns, best practices, and performance considerations
 
-## Duck Typing Mechanism
-
-- Purpose: Interact with external types across versions without adding hard dependencies. Provides fast, strongly-typed access via generated proxies.
-- Shape interfaces: Define minimal contracts (properties/methods) you need, e.g., `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IPutRecordsRequest.cs` and `IAmazonKinesisRequestWithStreamName.cs`.
-- Interface + IDuckType constraints: In CallTarget integrations, use `where TReq : IMyShape, IDuckType`. Example: `PutRecordsIntegration.OnMethodBegin` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordsIntegration.cs`.
-- Creating proxies:
-  - Generic constraints (above) let the woven callsite pass a proxy automatically.
-  - At runtime by type: `DuckType.GetOrCreateProxyType(typeof(IMyShape), targetType)` and `CreateInstance(...)` (see `tracer/src/Datadog.Trace/OTelMetrics/OtlpMetricsExporter.cs`).
-  - From an instance: `obj.DuckCast<IMyShape>()` for nested values (see `GetRecordsIntegration` `DuckCast<IRecord>` in `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/GetRecordsIntegration.cs`).
-- Accessing originals: All proxies implement `IDuckType` (`tracer/src/Datadog.Trace/DuckTyping/IDuckType.cs`) exposing `Instance` and `Type`.
-- Binding rules: Name/signature matching; support for properties/fields/methods. Use attributes in `tracer/src/Datadog.Trace/DuckTyping/` to control binding:
-  - `[DuckField]`, `[DuckPropertyOrField]`, `[DuckIgnore]`, `[DuckInclude]`, `[DuckReverseMethod]`, `[DuckCopy]`, `[DuckAsClass]`, `[DuckType]`, `[DuckTypeTarget]`.
-- Visibility: Proxies can access non-public members; the library emits IL and uses `IgnoresAccessChecksToAttribute` if present (`tracer/src/Datadog.Trace/DuckTyping/IgnoresAccessChecksToAttribute.cs`).
-- Nullability/perf: Enable `#nullable` in new files; proxies are cached per (shape,target) for low overhead. See core implementation `tracer/src/Datadog.Trace/DuckTyping/DuckType.cs` and partials.
-- Guidance: Prefer interface shapes; avoid vendor types in signatures; check for `proxy.Instance != null` before use; keep shapes stable across upstream versions. Deep dive: `docs/development/DuckTyping.md`.
-
-## Integrations
-
-- Location: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/<Integration>.cs`. Place shape interfaces and shared helpers in the same `<Area>` folder (e.g., `AWS/Kinesis/*`, `Couchbase/*`, `GraphQL/*`).
-- Create one
-  - Add shape interfaces for third‑party types you consume (no direct package refs).
-  - Add an integration class with one or more `InstrumentMethod` attributes specifying: `AssemblyName`, `TypeName`, `MethodName`, `ReturnTypeName`, `ParameterTypeNames`, `MinimumVersion`, `MaximumVersion`, `IntegrationName` (and `CallTargetIntegrationKind` if needed).
-  - Implement static handlers: `OnMethodBegin` returns `CallTargetState`; end handlers are `OnMethodEnd` for sync or `OnAsyncMethodEnd` for async. Use `Tracer.Instance` to create a `Scope`, tag it, and dispose in the end handler.
-  - Use duck typing in method generics: `where TReq : IMyShape, IDuckType` and `DuckCast<TShape>()` for nested members. Examples: `AWS/Kinesis/PutRecordsIntegration.cs`, `Couchbase/ClusterNodeIntegration.cs`.
-- Build/registration: Definitions are discovered and generated during build; no manual native changes required.
-- Tests: Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and corresponding samples under `tracer/test/test-applications/integrations`. Run with OS‑specific Nuke targets; filter with `--filter`/`--framework`.
+Quick reference:
+- Location: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/<Integration>.cs`
+- Add `[InstrumentMethod]` attribute with assembly/type/method details and version range
+- Implement `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` handlers
+- Use duck typing constraints (`where TReq : IMyShape, IDuckType`) or `obj.DuckCast<IMyShape>()` for third-party types
+- Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with corresponding samples in `tracer/test/test-applications/integrations`
+- Run `./tracer/build.ps1 RunInstrumentationGenerator` to generate boilerplate code
 
 ## Azure Functions
 
-### Automatic Instrumentation Setup
+For detailed information on Azure Functions integration (in-process vs isolated worker models, instrumentation specifics, ASP.NET Core integration, and debugging), see `docs/development/AzureFunctions.md`.
 
-**Windows (Premium / Elastic Premium / Dedicated / App Services hosting plans)**
-- Use the Azure App Services Site Extension, not the NuGet package.
-
-**Other scenarios (e.g., Linux Consumption, Container Apps)**
-- Add NuGet package: `Datadog.AzureFunctions`
-- Configure environment variables:
-
-**Windows environment variables:**
-```
-CORECLR_ENABLE_PROFILING=1
-CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll
-CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll
-DD_DOTNET_TRACER_HOME=C:\home\site\wwwroot\datadog
-DOTNET_STARTUP_HOOKS=C:\home\site\wwwroot\Datadog.Serverless.Compat.dll
-```
-
-**Linux environment variables:**
-```
-CORECLR_ENABLE_PROFILING=1
-CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so
-DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog
-DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll
-```
-
-### Development & Testing
-
-- Integration details: See `docs/development/AzureFunctions.md` for in-process vs isolated worker model differences, instrumentation specifics, and ASP.NET Core integration.
-- Tests: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`.
-- Dependencies: `Datadog.AzureFunctions` transitively references `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)), which contains the Datadog Agent executable. The agent process is started either via `DOTNET_STARTUP_HOOKS` or by calling `Datadog.Serverless.CompatibilityLayer.Start()` explicitly during bootstrap in user code.
+Quick reference:
+- **Setup**: Use Azure App Services Site Extension on Windows Premium/Elastic Premium/Dedicated plans; use `Datadog.AzureFunctions` NuGet package for Linux Consumption/Container Apps
+- **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
+- **Dependencies**: `Datadog.AzureFunctions` → `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)) contains agent executable
 
 ## Security & Configuration Tips
 
