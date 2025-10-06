@@ -40,7 +40,11 @@ namespace Datadog.Trace.Debugger.Upload
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
             _enableCompression = enableCompression;
-            discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
+            discoveryService.SubscribeToChanges(c =>
+            {
+                Endpoint = c.SymbolDbEndpoint;
+                Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+            });
         }
 
         internal static IBatchUploadApi Create(

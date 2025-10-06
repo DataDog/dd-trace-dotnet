@@ -26,6 +26,7 @@ namespace Datadog.Trace.Debugger.Upload
             discoveryService.SubscribeToChanges(c =>
             {
                 Endpoint = c.DebuggerV2Endpoint ?? c.DiagnosticsEndpoint;
+                Log.Debug("SnapshotUploadApi: Updated endpoint to {Endpoint}", Endpoint);
             });
         }
 
