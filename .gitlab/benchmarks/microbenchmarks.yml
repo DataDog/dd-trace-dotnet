@@ -116,8 +116,7 @@ run-benchmarks:
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
     - ./platform/steps/post-pr-comment.sh
-    # TODO: Uncomment this when the issue with sending files to backend is resolved
-    # - ./platform/steps/upload-to-bp-ui.sh
+    - ./platform/steps/upload-to-bp-ui.sh
     
 # TODO: Remove if unnecessary
 upload-to-bp-ui:
