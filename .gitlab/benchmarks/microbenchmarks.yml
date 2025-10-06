@@ -99,6 +99,9 @@ run-benchmarks:
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
+
+    BP_INFRA_TEST: true
+    TEST: true
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
