@@ -297,7 +297,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var newConfig = new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
-                debuggerV2Endpoint: debuggerV2Endpoint ?? diagnosticsEndpoint ?? debuggerEndpoint,
+                debuggerV2Endpoint: debuggerV2Endpoint ?? diagnosticsEndpoint,
                 diagnosticsEndpoint: diagnosticsEndpoint ?? debuggerEndpoint,
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
