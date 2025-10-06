@@ -109,9 +109,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             var hasResourceId = !string.IsNullOrEmpty(aasSettings.ResourceId);
             var hasSiteKind = !string.IsNullOrEmpty(aasSettings.SiteKind);
-            var hasSiteType = !string.IsNullOrEmpty(aasSettings.SiteType);
 
-            if (!hasResourceId && !hasSiteKind && !hasSiteType)
+            if (!hasResourceId && !hasSiteKind)
             {
                 return globalTags;
             }
@@ -131,14 +130,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 sb.Append(Trace.Tags.AzureAppServicesSiteKind)
                   .Append(KeyValueTagSeparator)
                   .Append(aasSettings.SiteKind)
-                  .Append(TagSeparator);
-            }
-
-            if (hasSiteType)
-            {
-                sb.Append(Trace.Tags.AzureAppServicesSiteType)
-                  .Append(KeyValueTagSeparator)
-                  .Append(aasSettings.SiteType)
                   .Append(TagSeparator);
             }
 
