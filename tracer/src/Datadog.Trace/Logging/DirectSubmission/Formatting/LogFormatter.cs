@@ -85,7 +85,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
         private static string? RemoveScheme(string url)
         {
             return url switch
@@ -95,53 +94,54 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                        _ => url
                    };
         }
+
+        private string EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
         {
             if (aasSettings is null)
             {
-                return string.IsNullOrEmpty(globalTags) ? null : globalTags;
+                return globalTags;
+            }
+
+            var hasResourceId = !string.IsNullOrEmpty(aasSettings.ResourceId);
+            var hasSiteKind = !string.IsNullOrEmpty(aasSettings.SiteKind);
+            var hasSiteType = !string.IsNullOrEmpty(aasSettings.SiteType);
+
+            if (!hasResourceId && !hasSiteKind && !hasSiteType)
+            {
+                return globalTags;
             }
 
             var sb = StringBuilderCache.Acquire();
 
-            if (!string.IsNullOrEmpty(aasSettings.ResourceId))
+            if (hasResourceId)
             {
                 sb.Append(Trace.Tags.AzureAppServicesResourceId)
                   .Append(KeyValueTagSeparator)
-                  .Append(aasSettings.ResourceId);
+                  .Append(aasSettings.ResourceId)
+                  .Append(TagSeparator);
             }
 
-            if (!string.IsNullOrEmpty(aasSettings.SiteKind))
+            if (hasSiteKind)
             {
-                if (sb.Length > 0)
-                {
-                    sb.Append(TagSeparator);
-                }
-
                 sb.Append(Trace.Tags.AzureAppServicesSiteKind)
                   .Append(KeyValueTagSeparator)
-                  .Append(aasSettings.SiteKind);
+                  .Append(aasSettings.SiteKind)
+                  .Append(TagSeparator);
             }
 
-            if (!string.IsNullOrEmpty(aasSettings.SiteType))
+            if (hasSiteType)
             {
-                if (sb.Length > 0)
-                {
-                    sb.Append(TagSeparator);
-                }
-
                 sb.Append(Trace.Tags.AzureAppServicesSiteType)
                   .Append(KeyValueTagSeparator)
-                  .Append(aasSettings.SiteType);
+                  .Append(aasSettings.SiteType)
+                  .Append(TagSeparator);
             }
 
+            // remove final joiner
+            sb.Remove(sb.Length - 1, length: 1);
             var aasTags = StringBuilderCache.GetStringAndRelease(sb);
 
-            if (string.IsNullOrEmpty(aasTags))
-            {
-                return string.IsNullOrEmpty(globalTags) ? null : globalTags;
-            }
-
-            return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
+            return string.IsNullOrEmpty(globalTags) ? aasTags : $"{aasTags}{TagSeparator}{globalTags}";
         }
 
         private void EnrichTagsStringWithGitMetadata()
