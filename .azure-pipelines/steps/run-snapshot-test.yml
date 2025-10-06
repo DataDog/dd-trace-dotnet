@@ -72,7 +72,30 @@ steps:
     displayName: Set env-specific  variables
 
 - bash: |
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm $(START_TEST_AGENT_TARGET)
+    set -euo pipefail
+    P="${DDC_PROJECT:-ddtrace_$(Build.BuildNumber)}"
+    DC='${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p '"$P"
+
+    echo "Using compose project: $P"
+
+    # --- HARD RESET (safe to run every time; very helpful on retries) ---
+    # Tear down project resources (containers, networks, named/anon volumes, orphans)
+    $DC down -v --remove-orphans || true
+    # Remove any stopped leftovers Compose knows about
+    $DC rm -fsv || true
+    # Belt-and-suspenders: remove any stragglers with the project label
+    docker ps -aq --filter "label=com.docker.compose.project=$P" | xargs -r docker rm -f || true
+    docker network ls -q --filter "label=com.docker.compose.project=$P" | xargs -r docker network rm || true
+    docker volume ls -q --filter "label=com.docker.compose.project=$P" | xargs -r docker volume rm -f || true
+    # Give containerd a moment to release any stale shims
+    sleep 2
+    # --------------------------------------------------------------------
+
+    # 1) Start the agent fresh (force-recreate to avoid reusing any half-state)
+    $DC up -d --force-recreate --renew-anon-volumes test-agent
+
+    # 2) Block until it’s listening on 8126 (your wait container)
+    $DC run --rm $(START_TEST_AGENT_TARGET)
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
