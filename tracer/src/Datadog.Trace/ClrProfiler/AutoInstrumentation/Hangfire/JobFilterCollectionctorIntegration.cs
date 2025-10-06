@@ -49,6 +49,7 @@ public class JobFilterCollectionctorIntegration
 
         if (Interlocked.Exchange(ref _filtersRegistered, 0) != 1)
         {
+            // filters already registered, skip injection of datadog job filter
             return CallTargetReturn.GetDefault();
         }
 
