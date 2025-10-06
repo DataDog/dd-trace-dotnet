@@ -80,6 +80,12 @@ run-benchmarks:
       aud: dd-octo-sts
   rules:
     - when: on_success
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - platform/artifacts
+    expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform
     DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
@@ -99,6 +105,9 @@ run-benchmarks:
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
+
+    # Where to look for benchmarking artifacts for uploading to the BP UI
+    ARTIFACTS_DIR: "platform/artifacts"
 
     BP_INFRA_TEST: true
     TEST: true
