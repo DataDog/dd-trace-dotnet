@@ -720,8 +720,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsHangfireV1(this MockSpan span) => Result.FromSpan(span)
            .Properties(s => s
-                .MatchesOneOf(Name,  "Hangfire.onPerform")
-                .Matches(Type, "Hangfire"))
+                .MatchesOneOf(Name, "Hangfire.onPerform"))
            .Tags(s => s
                 .Matches("_dd.base_service", "Samples.Hangfire")
                 .Matches("component", "Hangfire")

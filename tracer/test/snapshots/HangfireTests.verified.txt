@@ -1,11 +1,10 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: Hangfire.onPerform,
     Resource: JOB TestJob.Execute,
-    Service: Samples.Hangfire-Hangfire,
-    Type: Hangfire,
+    Service: Samples.Hangfire-hangfire,
     ParentId: Id_3,
     Tags: {
       component: Hangfire,
@@ -29,8 +28,7 @@
     SpanId: Id_4,
     Name: Hangfire.onPerform,
     Resource: JOB TestJob.ThrowException,
-    Service: Samples.Hangfire-Hangfire,
-    Type: Hangfire,
+    Service: Samples.Hangfire-hangfire,
     ParentId: Id_3,
     Error: 1,
     Tags: {
@@ -60,7 +58,7 @@ at Samples.Hangfire.Jobs.TestJob.ThrowException(),
     SpanId: Id_3,
     Name: internal,
     Resource: OtelParent,
-    Service: Samples.Hangfire,
+    Service: OTEL-parent,
     Type: custom,
     Tags: {
       env: integration_tests,
@@ -70,7 +68,7 @@ at Samples.Hangfire.Jobs.TestJob.ThrowException(),
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0
+      _dd.base_service: Samples.Hangfire
     },
     Metrics: {
       process_id: 0,

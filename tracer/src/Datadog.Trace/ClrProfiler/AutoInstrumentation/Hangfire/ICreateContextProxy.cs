@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
@@ -19,15 +20,10 @@ internal interface ICreateContextProxy : IDuckType
     /// <summary>
     /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
     /// </summary>
-    object Items { get; }
+    IDictionary<string, object?> Items { get; }
 
     /// <summary>
     /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
     /// </summary>
-    object Parameters { get; }
-
-    /// <summary>
-    /// Gets a value of Hangfire.Common.Job
-    /// </summary>
-    object Job { get; }
+    IDictionary<string, object?> Parameters { get; }
 }

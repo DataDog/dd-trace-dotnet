@@ -47,18 +47,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         object GetEnumerator();
 
         /// <summary>
-        /// Calls method: System.Collections.Generic.IEnumerable`1[Hangfire.Common.JobFilter] Hangfire.Common.JobFilterCollection::Hangfire.Common.IJobFilterProvider.GetFilters(Hangfire.Common.Job)
-        /// </summary>
-        [Duck(Name = "Hangfire.Common.IJobFilterProvider.GetFilters")]
-        object HangfireCommonIJobFilterProviderGetFilters(object job);
-
-        /// <summary>
-        /// Calls method: System.Collections.IEnumerator Hangfire.Common.JobFilterCollection::System.Collections.IEnumerable.GetEnumerator()
-        /// </summary>
-        [Duck(Name = "System.Collections.IEnumerable.GetEnumerator")]
-        object SystemCollectionsIEnumerableGetEnumerator();
-
-        /// <summary>
         /// Calls method: System.Void Hangfire.Common.JobFilterCollection::ValidateFilterInstance(System.Object)
         /// </summary>
         void ValidateFilterInstance(object instance);

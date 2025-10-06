@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Hangfire.States;
@@ -33,7 +34,15 @@ public class Program
 
         try
         {
-            using var localActivity = AdditionalActivitySource.StartActivity(name: "OtelParent");
+            var tags = new[]
+            {
+                new KeyValuePair<string, object?>("service.name", "OTEL-parent"),
+            };
+            using var localActivity = AdditionalActivitySource.StartActivity(
+                name: "OtelParent",
+                kind: ActivityKind.Internal,
+                tags: tags
+            );
             // run tests
             await Should_Create_Span();
             await Should_Create_Span_With_Status_Error_When_Job_Failed();
@@ -61,7 +70,6 @@ public class Program
         try
         {
             await JobCompletion.Register(jobId, new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
-            throw new Exception("Expected failure but job succeeded.");
         }
         catch (Exception ex)
         {

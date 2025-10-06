@@ -43,11 +43,6 @@ public interface IPerformContextProxy : IDuckType
     DateTime CreatedAt { get; }
 
     /// <summary>
-    /// Calls method: System.Void Hangfire.Server.PerformContext::SetJobParameter(System.String,System.Object)
-    /// </summary>
-    void SetJobParameter(string name, object value);
-
-    /// <summary>
     /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String)
     /// </summary>
     T GetJobParameter<T>(string name);

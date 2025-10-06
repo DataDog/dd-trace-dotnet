@@ -17,8 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
 internal static class HangfireCommon
 {
-    private const string HangfireServiceName = "Hangfire";
-    private const string HangfireType = "Hangfire";
+    private const string HangfireServiceName = "hangfire";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HangfireCommon));
 
     internal const string IntegrationName = nameof(IntegrationId.Hangfire);
@@ -38,8 +37,6 @@ internal static class HangfireCommon
         {
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, HangfireServiceName);
             scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, serviceName: serviceName, tags: tags);
-            var span = scope.Span;
-            span.Type = HangfireType;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
             PopulatePerformSpanTags((HangfireTags)scope.Span.Tags, performingContext);
@@ -50,16 +47,6 @@ internal static class HangfireCommon
         }
 
         return scope;
-    }
-
-    internal static IEnumerable<string> ExtractSpanProperties(Dictionary<string, string> carrier, string key)
-    {
-        if (carrier.TryGetValue(key, out var value))
-        {
-            return [value];
-        }
-
-        return [];
     }
 
     internal static void SetStatusAndRecordException(Scope? scope, Exception exception)
