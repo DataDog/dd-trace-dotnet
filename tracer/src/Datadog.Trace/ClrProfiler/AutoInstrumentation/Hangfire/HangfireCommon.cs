@@ -37,7 +37,8 @@ internal static class HangfireCommon
             scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, tags: tags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
-            PopulatePerformSpanTags((HangfireTags)scope.Span.Tags, performingContext);
+            tags.JobId = performingContext.JobId;
+            tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");
         }
         catch (Exception ex)
         {
@@ -55,12 +56,6 @@ internal static class HangfireCommon
     internal static void InjectSpanProperties(IDictionary<string, string> jobParams, string key, string value)
     {
         jobParams[key] = value;
-    }
-
-    internal static void PopulatePerformSpanTags(HangfireTags tags, IPerformingContextProxy performingContext)
-    {
-        tags.JobId = performingContext.JobId;
-        tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");
     }
 
     internal static void CreateDatadogFilter(out object? serverFilter, out object? clientFilter)

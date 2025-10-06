@@ -6,6 +6,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -29,8 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public class JobFilterCollectionctorIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionctorIntegration));
-    private static readonly object _registrationLock = new object();
-    private static volatile bool _filtersRegistered = false;
+    private static int _filtersRegistered = 1;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : IJobFilterCollectionProxy
@@ -47,28 +47,20 @@ public class JobFilterCollectionctorIntegration
             return CallTargetReturn.GetDefault();
         }
 
-        if (_filtersRegistered)
+        if (Interlocked.Exchange(ref _filtersRegistered, 0) != 1)
         {
             return CallTargetReturn.GetDefault();
         }
 
-        lock (_registrationLock)
+        HangfireCommon.CreateDatadogFilter(out var serverFilter, out var clientFilter);
+        if (serverFilter is not null && clientFilter is not null)
         {
-            if (!_filtersRegistered)
-            {
-                HangfireCommon.CreateDatadogFilter(out var serverFilter, out var clientFilter);
-                if (serverFilter is not null && clientFilter is not null)
-                {
-                    instance.Add(serverFilter);
-                    instance.Add(clientFilter);
-                }
-                else
-                {
-                    Log.Error("Unable to create Datadog Hangfire server filter");
-                }
-
-                _filtersRegistered = true;
-            }
+            instance.Add(serverFilter);
+            instance.Add(clientFilter);
+        }
+        else
+        {
+            Log.Error("Unable to create Datadog Hangfire server filter");
         }
 
         return CallTargetReturn.GetDefault();
