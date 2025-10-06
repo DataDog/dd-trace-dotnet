@@ -21,6 +21,7 @@ namespace Datadog.Trace.OTelMetrics
         {
             InstrumentName = instrument.Name;
             MeterName = instrument.Meter.Name;
+            MeterVersion = instrument.Meter.Version ?? string.Empty;
             Unit = instrument.Unit ?? string.Empty;
             Description = instrument.Description ?? string.Empty;
             InstrumentType = instrumentType;
@@ -32,6 +33,8 @@ namespace Datadog.Trace.OTelMetrics
         public string InstrumentName { get; }
 
         public string MeterName { get; }
+
+        public string MeterVersion { get; }
 
         public string Unit { get; }
 

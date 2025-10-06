@@ -67,7 +67,6 @@ namespace Datadog.Trace.OTelMetrics
             WriteVarInt(writer, sdkLangAttr.Length);
             writer.Write(sdkLangAttr);
 
-            // telemetry.sdk.version attribute
             var sdkVersionAttr = SerializeKeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion);
             WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
             WriteVarInt(writer, sdkVersionAttr.Length);
@@ -133,19 +132,20 @@ namespace Datadog.Trace.OTelMetrics
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            string meterName = "OpenTelemetryMetricsMeter";
+            string meterName = string.Empty;
+            string meterVersion = string.Empty;
+
             if (metrics.Count > 0)
             {
                 meterName = metrics[0].MeterName;
+                meterVersion = metrics[0].MeterVersion;
             }
 
-            // InstrumentationScope
-            var scopeData = SerializeInstrumentationScope(meterName);
+            var scopeData = SerializeInstrumentationScope(meterName, meterVersion);
             WriteTag(writer, FieldNumbers.Scope, LengthDelimited);
             WriteVarInt(writer, scopeData.Length);
             writer.Write(scopeData);
 
-            // Metrics (use for loop for maximum performance, skip unsupported types)
             for (int i = 0; i < metrics.Count; i++)
             {
                 var metric = metrics[i];
@@ -179,13 +179,13 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeInstrumentationScope(string meterName)
+        private byte[] SerializeInstrumentationScope(string meterName, string meterVersion)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.Name, meterName);
-            WriteStringField(writer, FieldNumbers.Version, string.Empty);
+            WriteStringField(writer, FieldNumbers.Version, meterVersion);
 
             return buffer.ToArray();
         }
@@ -199,7 +199,6 @@ namespace Datadog.Trace.OTelMetrics
             WriteStringField(writer, FieldNumbers.Description, metric.Description);
             WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
 
-            // Sum
             var sumData = SerializeSum(metric);
             WriteTag(writer, FieldNumbers.Sum, LengthDelimited);
             WriteVarInt(writer, sumData.Length);

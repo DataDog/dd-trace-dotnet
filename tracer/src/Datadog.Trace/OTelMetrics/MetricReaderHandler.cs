@@ -51,7 +51,7 @@ internal sealed class MetricReaderHandler
         }
         else
         {
-            shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal);
+            shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal) && !meterName.StartsWith("Microsoft.", StringComparison.Ordinal);
         }
 
         if (!shouldEnable)

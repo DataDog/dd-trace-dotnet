@@ -131,6 +131,7 @@ internal class MetricState
             _ => new MetricPoint(
                 _identity.InstrumentName,
                 _identity.MeterName,
+                _identity.MeterVersion,
                 _identity.InstrumentType,
                 _temporality,
                 dict,

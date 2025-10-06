@@ -409,8 +409,13 @@ internal static class MetricTags
     internal enum Protocol
     {
         [Description("protocol:grpc")] Grpc,
-        [Description("protocol:http/protobuf")] HttpProtobuf,
-        [Description("protocol:http/json")] HttpJson,
+        [Description("protocol:http")] Http,
+    }
+
+    internal enum Encoding
+    {
+        [Description("encoding:protobuf")] Protobuf,
+        [Description("encoding:json")] Json,
     }
 
     public enum CIVisibilityTestFramework

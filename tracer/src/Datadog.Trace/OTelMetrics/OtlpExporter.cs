@@ -34,6 +34,7 @@ namespace Datadog.Trace.OTelMetrics
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
         private readonly HttpClient _httpClient;
         private readonly Telemetry.Metrics.MetricTags.Protocol _protocolTag;
+        private readonly Telemetry.Metrics.MetricTags.Encoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
         private readonly Uri _endpoint;
         private readonly IReadOnlyDictionary<string, string> _headers;
@@ -50,10 +51,19 @@ namespace Datadog.Trace.OTelMetrics
             _protocolTag = _protocol switch
             {
                 Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Protocol.Grpc,
-                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf,
-                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Protocol.HttpJson,
-                _ => Telemetry.Metrics.MetricTags.Protocol.HttpProtobuf
+                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Protocol.Http,
+                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Protocol.Http,
+                _ => Telemetry.Metrics.MetricTags.Protocol.Http
             };
+
+            _encodingTag = _protocol switch
+            {
+                Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Encoding.Protobuf,
+                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Encoding.Protobuf,
+                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Encoding.Json,
+                _ => Telemetry.Metrics.MetricTags.Encoding.Protobuf
+            };
+
             _serializer = new OtlpMetricsSerializer(settings);
 
             _httpClient = CreateHttpClient(_endpoint);
@@ -72,7 +82,7 @@ namespace Datadog.Trace.OTelMetrics
                 return ExportResult.Success;
             }
 
-            TelemetryFactory.Metrics.RecordCountMetricsExportAttempts(_protocolTag);
+            TelemetryFactory.Metrics.RecordCountMetricsExportAttempts(_protocolTag, _encodingTag);
 
             try
             {
@@ -80,19 +90,19 @@ namespace Datadog.Trace.OTelMetrics
 
                 if (success)
                 {
-                    TelemetryFactory.Metrics.RecordCountMetricsExportSuccesses(_protocolTag);
+                    TelemetryFactory.Metrics.RecordCountMetricsExportSuccesses(_protocolTag, _encodingTag);
                     return ExportResult.Success;
                 }
                 else
                 {
-                    TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag);
+                    TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag, _encodingTag);
                     return ExportResult.Failure;
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error exporting OTLP metrics.");
-                TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag);
+                TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag, _encodingTag);
                 return ExportResult.Failure;
             }
         }
@@ -191,20 +201,23 @@ namespace Datadog.Trace.OTelMetrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            using var content = new ByteArrayContent(otlpPayload);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
-
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, _endpoint)
+            return await SendWithRetry(() =>
             {
-                Content = content
-            };
+                var content = new ByteArrayContent(otlpPayload);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
 
-            foreach (var header in _headers)
-            {
-                httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
-            }
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, _endpoint)
+                {
+                    Content = content
+                };
 
-            return await SendWithRetry(httpRequest).ConfigureAwait(false);
+                foreach (var header in _headers)
+                {
+                    httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+
+                return httpRequest;
+            }).ConfigureAwait(false);
         }
 
         private async Task<bool> SendGrpcRequest(byte[] otlpPayload)
@@ -213,15 +226,18 @@ namespace Datadog.Trace.OTelMetrics
             return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendWithRetry(HttpRequestMessage httpRequest)
+        private async Task<bool> SendWithRetry(Func<HttpRequestMessage> requestFactory)
         {
             const int maxRetries = 3;
             var retryDelay = TimeSpan.FromMilliseconds(100);
 
             for (var attempt = 0; attempt <= maxRetries; attempt++)
             {
+                HttpRequestMessage? httpRequest = null;
                 try
                 {
+                    httpRequest = requestFactory();
+
                     using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_timeoutMs));
                     var response = await _httpClient.SendAsync(httpRequest, cts.Token).ConfigureAwait(false);
 
@@ -230,7 +246,7 @@ namespace Datadog.Trace.OTelMetrics
                         var responseBody = await response.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
                         if (CheckForPartialSuccess(responseBody))
                         {
-                            TelemetryFactory.Metrics.RecordCountMetricsExportPartialSuccesses(_protocolTag);
+                            TelemetryFactory.Metrics.RecordCountMetricsExportPartialSuccesses(_protocolTag, _encodingTag);
                         }
 
                         return true;
@@ -286,6 +302,10 @@ namespace Datadog.Trace.OTelMetrics
                     {
                         return false;
                     }
+                }
+                finally
+                {
+                    httpRequest?.Dispose();
                 }
             }
 
