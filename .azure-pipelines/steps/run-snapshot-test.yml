@@ -75,7 +75,6 @@ steps:
     set -euo pipefail
     P="ddtrace_$(Build.BuildId)_$(System.JobAttempt)"
     DC='${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p '"$P"
-
     $DC down -v || true
     $DC up --abort-on-container-exit --exit-code-from $(START_TEST_AGENT_TARGET) $(START_TEST_AGENT_TARGET)
     rc=$?
