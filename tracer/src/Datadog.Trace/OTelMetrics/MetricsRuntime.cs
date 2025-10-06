@@ -36,6 +36,16 @@ namespace Datadog.Trace.OTelMetrics
             LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
         }
 
+        public static Task ForceFlushAsync()
+        {
+            if (_instance == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return _instance.ForceCollectAndExportAsync();
+        }
+
         public static async Task StopAsync()
         {
             if (_instance == null)

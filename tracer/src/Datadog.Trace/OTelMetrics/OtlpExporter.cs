@@ -56,13 +56,6 @@ namespace Datadog.Trace.OTelMetrics
             };
             _serializer = new OtlpMetricsSerializer(settings);
 
-            // Enable h2c (HTTP/2 without TLS) for gRPC only, and only for non-HTTPS endpoints
-            if (_protocol == Configuration.OtlpProtocol.Grpc && _endpoint.Scheme != Uri.UriSchemeHttps)
-            {
-                Log.Information("Enabling HTTP/2 without TLS (h2c) support for gRPC endpoint: {Endpoint}", _endpoint);
-                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            }
-
             _httpClient = CreateHttpClient(_endpoint);
         }
 
@@ -167,28 +160,6 @@ namespace Datadog.Trace.OTelMetrics
             };
         }
 
-        /// <summary>
-        /// Strips the 5-byte gRPC framing header (1 byte compressed flag + 4 bytes message length).
-        /// Returns the original span if unframed/too short or if compression is detected (not handled).
-        /// </summary>
-        private static ReadOnlySpan<byte> TryUnframeGrpc(ReadOnlySpan<byte> body)
-        {
-            if (body.Length < 5)
-            {
-                return body;
-            }
-
-            var compressed = body[0] == 1;
-            var len = BinaryPrimitives.ReadUInt32BigEndian(body.Slice(1, 4));
-
-            if (compressed || body.Length < 5 + len)
-            {
-                return body; // We don't handle compressed; return original
-            }
-
-            return body.Slice(5, (int)len);
-        }
-
         private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)
         {
             try
@@ -220,16 +191,10 @@ namespace Datadog.Trace.OTelMetrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            // For UDS, HttpRequestMessage needs http://localhost + path (the socket is chosen by ConnectCallback)
-            // Config already includes /v1/metrics in the endpoint, we just need to rewrite the scheme/host
-            var uri = _endpoint.Scheme == "unix"
-                ? new Uri("http://localhost" + _endpoint.AbsolutePath)
-                : _endpoint;
-
             using var content = new ByteArrayContent(otlpPayload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
 
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri)
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, _endpoint)
             {
                 Content = content
             };
@@ -330,7 +295,6 @@ namespace Datadog.Trace.OTelMetrics
         /// <summary>
         /// Checks if the OTLP response indicates partial success by parsing the protobuf response body.
         /// According to OTLP spec, partial success is indicated by the presence of the partial_success field (field 1, wire type 2).
-        /// Expects unframed protobuf bytes (caller should use TryUnframeGrpc for gRPC responses).
         /// </summary>
         private bool CheckForPartialSuccess(ReadOnlySpan<byte> payload)
         {

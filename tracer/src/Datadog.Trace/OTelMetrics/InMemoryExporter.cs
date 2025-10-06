@@ -48,7 +48,6 @@ namespace Datadog.Trace.OTelMetrics
 
         public override bool Shutdown(int timeoutMilliseconds)
         {
-            // No-op for in-memory exporter
             return true;
         }
     }

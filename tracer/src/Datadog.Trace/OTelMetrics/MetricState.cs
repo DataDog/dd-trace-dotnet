@@ -21,7 +21,7 @@ internal class MetricState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricState));
     private readonly MetricStreamIdentity _identity;
-    private readonly AggregationTemporality? _temporality; // null for gauges
+    private readonly AggregationTemporality? _temporality;
 
     private readonly ConcurrentDictionary<TagSet, MetricPoint> _points = new();
 
@@ -119,7 +119,6 @@ internal class MetricState
             return existingPoint;
         }
 
-        // fallback, have to allocate
         var dict = new Dictionary<string, object?>(tags.Length);
         for (int i = 0; i < tags.Length; i++)
         {
