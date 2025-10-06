@@ -71,10 +71,25 @@ steps:
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.windows.yml"
     displayName: Set env-specific  variables
 
+# Start agent + wait, and set a per-task-retry project name for all later steps
 - bash: |
     set -euo pipefail
-    P="ddtrace_$(Build.BuildId)_$(System.JobAttempt)"
+
+    # Derive a unique compose project per task retry (and job attempt)
+    ATTEMPT="${SYSTEM_RETRYATTEMPT:-1}"     # increments on retryCountOnTaskFailure
+    JOBTRY="${SYSTEM_JOBATTEMPT:-1}"        # increments only if the entire job is retried
+    P="ddtrace_${BUILD_BUILDID:-local}_${JOBTRY}_try${ATTEMPT}"
+
+    # Export for subsequent steps
+    echo "Using compose project: $P"
+    echo "##vso[task.setvariable variable=DDC_PROJECT]$P"
+
     DC='${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p '"$P"
+
+    # Pre-clean just in case this exact project name existed on the agent
+    $DC down -v || true
+
+    # 1) Start the agent in the background
     $DC up -d test-agent
 
     # 2) Block until it’s listening on 8126 (your wait container)
@@ -87,7 +102,7 @@ steps:
 
 - script: |
     echo "Starting snapshot session"
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
   displayName: start snapshot session
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -96,7 +111,7 @@ steps:
     # We explicitly set the DD_PROFILING_ENABLED=1 flag here, because we want to ensure that profiling is enabled for this
     # test, but _not_ for the crash tracking test. For some scenarios (e.g. chiseled tests) we can't set env vars directly
     # in the container, so we explicitly set this once here because it needs to change between the two tests.
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=1 -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=1 -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -105,13 +120,13 @@ steps:
 
 - script: |
     echo "Dumping traces"
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
     
     echo "Dumping stats"
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
     
     echo "Dumping all requests"
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
   displayName: dump snapshots
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -119,7 +134,7 @@ steps:
 - ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
-      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
+      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
     displayName: check snapshots
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -142,19 +157,19 @@ steps:
 - ${{ else }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
-      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
+      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
     displayName: check snapshots
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
-- script: ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) logs $(TEST_AGENT_TARGET)
+- script: ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) logs $(TEST_AGENT_TARGET)
   displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
 
-- script: ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
+- script: ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p $(DDC_PROJECT) down -v --remove-orphans
   displayName: docker-compose stop services
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -168,7 +183,7 @@ steps:
 
       TMPLOG="$(mktemp)"
       COMPOSE="${{ parameters.dockerComposePath }}"
-      PROJ="ddtrace_$(Build.BuildNumber)"
+      PROJ="$(DDC_PROJECT)"
 
       # Build the compose run command; -T disables TTY (prevents buffering/hangs)
       CMD=( "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" run --rm -T \
@@ -182,9 +197,7 @@ steps:
       echo "Running: ${CMD[*]}"
 
       # Bound execution to avoid indefinite hangs; force line-buffered stdout/stderr
-      # (stdbuf is available on Alpine-based agents; if not, remove it)
       if ! timeout 240s stdbuf -oL -eL "${CMD[@]}" 2>&1 | tee "$TMPLOG" ; then
-        # Don't fail the step yet—crash is expected; just record exit code.
         rc=${PIPESTATUS[0]}
         echo "compose run exited with code $rc (non-zero is expected in a crash test)."
       fi
@@ -194,22 +207,16 @@ steps:
         echo "✅ Correctly found evidence of crash detection"
       else
         echo "❌ Did not find required evidence of crash detection"
-        # Helpful diagnostics before failing
         "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" ps || true
         "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" logs --no-color || true
-        # Fail the task
         exit 1
       fi
 
-      # Always cleanup to avoid orphans impacting subsequent runs
       "$COMPOSE" -f "$(COMPOSE_PATH)" -p "$PROJ" down -v --remove-orphans || true
     env:
       dockerTag: $(dockerTag)
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     displayName: Check logs for evidence of crash output
-    # This job sometimes hangs, and when it does, we lose all the logs, so explicitly end it early instead
-    # and retry instead. It should be very unlikely to hang on both trys, and if it does, we should probably
-    # investigate the cause of the hang further.
     timeoutInMinutes: 5
     retryCountOnTaskFailure: 2
     condition: and(succeeded(), eq(variables['runCrashTest'], 'true'))
