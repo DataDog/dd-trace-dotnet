@@ -75,15 +75,14 @@ steps:
     set -euo pipefail
     P="ddtrace_$(Build.BuildId)_$(System.JobAttempt)"
     DC='${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p '"$P"
-    $DC down -v || true
-    $DC up --abort-on-container-exit --exit-code-from $(START_TEST_AGENT_TARGET) $(START_TEST_AGENT_TARGET)
-    rc=$?
-    $DC down -v || true
-    exit $rc
+    $DC up -d test-agent
+
+    # 2) Block until it’s listening on 8126 (your wait container)
+    $DC run --rm $(START_TEST_AGENT_TARGET)
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
-  displayName: docker-compose up start-test-agent (isolated)
+  displayName: docker-compose up test-agent + wait
   retryCountOnTaskFailure: 3
 
 - script: |
