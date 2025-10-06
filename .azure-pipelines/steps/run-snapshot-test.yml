@@ -92,7 +92,7 @@ steps:
     # --------------------------------------------------------------------
 
     # 1) Start the agent fresh (force-recreate to avoid reusing any half-state)
-    $DC up -d --force-recreate --renew-anon-volumes test-agent
+    $DC up -d --force-recreate --renew-anon-volumes $(TEST_AGENT_TARGET)
 
     # 2) Block until it’s listening on 8126 (your wait container)
     $DC run --rm $(START_TEST_AGENT_TARGET)
