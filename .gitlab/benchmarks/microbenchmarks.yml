@@ -34,8 +34,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
     AWS_REGION: "us-east-1"
 
+    # TODO: Point to dd-trace-dotnet/micro after the branch below is merged
+    # to it
     # Branch containing a provision for building the AMI
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
 
     PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
 
@@ -93,8 +95,8 @@ run-benchmarks:
 
     AWS_REGION: "us-east-1"
 
-    # TODO: Point to dd-trace-dotnet/micro when the branch below is merged
-    # to dd-trace-dotnet/micro
+    # TODO: Point to dd-trace-dotnet/micro after the branch below is merged
+    # to it
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
