@@ -5,10 +5,10 @@
 
 #if NET6_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.OTelMetrics;
 using Datadog.Trace.TestHelpers;
@@ -21,22 +21,18 @@ namespace Datadog.Trace.Tests
 {
     [UsesVerify]
     [TracerRestorer]
-    public class MeterListenerTests : IDisposable
+    public class MeterListenerTests
     {
-        public void Dispose()
-        {
-            MetricReader.Stop();
-            MetricReaderHandler.ResetForTesting();
-        }
-
         [Fact]
-        public void CreatesSeparateMetricPointsForDifferentTagSets()
+        public async Task CreatesSeparateMetricPointsForDifferentTagSets()
         {
             var settings = TracerSettings.Create(new());
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
-            MetricReader.Initialize();
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
 
             // Create a test meter
             using var meter = new Meter("TestMeter");
@@ -76,8 +72,8 @@ namespace Datadog.Trace.Tests
 #endif
 
             // Collect metrics
-            MetricReader.CollectObservableInstruments();
-            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
+            await pipeline.ForceCollectAndExportAsync();
+            var capturedMetrics = testExporter.ExportedMetrics;
 
             // Verify we have separate metric points for each tag set
             var counterMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.counter").ToList();
@@ -90,9 +86,9 @@ namespace Datadog.Trace.Tests
             counterWithTestValue.Should().NotBeNull("Counter should have a metric point with test_attr=test_value");
             counterWithNonDefaultValue.Should().NotBeNull("Counter should have a metric point with test_attr=non_default_value");
 
-            // Verify RunningSum values for counter metrics
-            counterWithTestValue!.RunningSum.Should().Be(10.0, "Counter with test_value should have RunningSum of 10");
-            counterWithNonDefaultValue!.RunningSum.Should().Be(5.0, "Counter with non_default_value should have RunningSum of 5");
+            // Verify SnapshotSum values for counter metrics
+            counterWithTestValue!.SnapshotSum.Should().Be(10.0, "Counter with test_value should have SnapshotSum of 10");
+            counterWithNonDefaultValue!.SnapshotSum.Should().Be(5.0, "Counter with non_default_value should have SnapshotSum of 5");
 
             var histogramMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.histogram").ToList();
             histogramMetrics.Count.Should().Be(2, "Histogram should have 2 separate metric points for different tag sets");
@@ -105,8 +101,8 @@ namespace Datadog.Trace.Tests
             histogramWithNonDefaultValue.Should().NotBeNull("Histogram should have a metric point with test_attr=non_default_value");
 
             // Verify RunningSum values for histogram metrics
-            histogramWithTestValue!.RunningSum.Should().Be(3.5, "Histogram with test_value should have RunningSum of 3.5");
-            histogramWithNonDefaultValue!.RunningSum.Should().Be(2.1, "Histogram with non_default_value should have RunningSum of 2.1");
+            histogramWithTestValue!.SnapshotSum.Should().Be(3.5, "Histogram with test_value should have SnapshotSum of 3.5");
+            histogramWithNonDefaultValue!.SnapshotSum.Should().Be(2.1, "Histogram with non_default_value should have SnapshotSum of 2.1");
 
 #if NET7_0_OR_GREATER
             var upDownMetrics = capturedMetrics.Where(m => m.InstrumentName == "test.upDownCounter").ToList();
@@ -119,9 +115,9 @@ namespace Datadog.Trace.Tests
             upDownWithTestValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=test_value");
             upDownWithNonDefaultValue.Should().NotBeNull("UpDownCounter should have a metric point with test_attr=non_default_value");
 
-            // Verify RunningSum values for upDownCounter metrics
-            upDownWithTestValue!.RunningSum.Should().Be(15.0, "UpDownCounter with test_value should have RunningSum of 15");
-            upDownWithNonDefaultValue!.RunningSum.Should().Be(-8.0, "UpDownCounter with non_default_value should have RunningSum of -8");
+            // Verify SnapshotSum values for upDownCounter metrics
+            upDownWithTestValue!.SnapshotSum.Should().Be(15.0, "UpDownCounter with test_value should have SnapshotSum of 15");
+            upDownWithNonDefaultValue!.SnapshotSum.Should().Be(-8.0, "UpDownCounter with non_default_value should have SnapshotSum of -8");
 #endif
 
 #if NET9_0_OR_GREATER
@@ -135,21 +131,23 @@ namespace Datadog.Trace.Tests
             gaugeWithTestValue.Should().NotBeNull("Gauge should have a metric point with test_attr=test_value");
             gaugeWithNonDefaultValue.Should().NotBeNull("Gauge should have a metric point with test_attr=non_default_value");
 
-            // Verify RunningSum values for gauge metrics
-            gaugeWithTestValue!.RunningSum.Should().Be(42.0, "Gauge with test_value should have RunningSum of 42.0");
-            gaugeWithNonDefaultValue!.RunningSum.Should().Be(99.0, "Gauge with non_default_value should have RunningSum of 99.0");
+            // Verify SnapshotGaugeValue values for gauge metrics
+            gaugeWithTestValue!.SnapshotGaugeValue.Should().Be(42.0, "Gauge with test_value should have SnapshotGaugeValue of 42.0");
+            gaugeWithNonDefaultValue!.SnapshotGaugeValue.Should().Be(99.0, "Gauge with non_default_value should have SnapshotGaugeValue of 99.0");
 #endif
         }
 
         [Fact]
-        public void DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
+        public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
         {
             // Arrange
             var settings = TracerSettings.Create(new());
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
-            MetricReader.Initialize();
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
 
             var meter = new Meter("TestMeter");
 
@@ -160,8 +158,8 @@ namespace Datadog.Trace.Tests
             counter1.Add(1, new KeyValuePair<string, object>("tag1", "value1"));
             counter2.Add(2, new KeyValuePair<string, object>("tag2", "value2"));
 
-            MetricReader.CollectObservableInstruments();
-            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
+            await pipeline.ForceCollectAndExportAsync();
+            var capturedMetrics = testExporter.ExportedMetrics;
 
             capturedMetrics.Count.Should().Be(1, "Should have 1 metric point.");
             // Verify both metrics have different instrument names (case-sensitive)
@@ -172,7 +170,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_Default()
         {
-            CapturesAllMetricsWithCorrectTemporality(
+            _ = CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: null,
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -186,7 +184,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_DeltaPreference()
         {
-            CapturesAllMetricsWithCorrectTemporality(
+            _ = CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "delta",
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -200,7 +198,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_CumulativePreference()
         {
-            CapturesAllMetricsWithCorrectTemporality(
+            _ = CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "cumulative",
                 expectedCounterTemporality: AggregationTemporality.Cumulative,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -214,7 +212,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void CapturesAllMetricsWithCorrectTemporality_LowMemoryPreference()
         {
-            CapturesAllMetricsWithCorrectTemporality(
+            _ = CapturesAllMetricsWithCorrectTemporality(
                 temporalityPreference: "lowmemory",
                 expectedCounterTemporality: AggregationTemporality.Delta,
                 expectedUpDownTemporality: AggregationTemporality.Cumulative,
@@ -225,7 +223,7 @@ namespace Datadog.Trace.Tests
                 expectedGaugeTemporality: null);
         }
 
-        private void CapturesAllMetricsWithCorrectTemporality(
+        private async Task CapturesAllMetricsWithCorrectTemporality(
             string temporalityPreference,
             AggregationTemporality expectedCounterTemporality,
             AggregationTemporality expectedUpDownTemporality,
@@ -238,13 +236,15 @@ namespace Datadog.Trace.Tests
             var settings = TracerSettings.Create(
                 new()
                 {
-                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference }
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference },
                 });
 
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
-            MetricReader.Initialize();
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
 
             // Create a test meter
             using var meter = new Meter("TestMeter");
@@ -279,9 +279,9 @@ namespace Datadog.Trace.Tests
             expectedMetricsCount += 1;
 #endif
 
-            // Trigger async collection and get metrics for testing
-            MetricReader.CollectObservableInstruments();
-            var capturedMetrics = MetricReaderHandler.GetCapturedMetricsForTesting();
+            // Trigger collection and export
+            await pipeline.ForceCollectAndExportAsync();
+            var capturedMetrics = testExporter.ExportedMetrics;
 
             capturedMetrics.Count.Should().Be(expectedMetricsCount, $"Should capture exactly {expectedMetricsCount} metrics based on .NET version");
 
@@ -296,7 +296,7 @@ namespace Datadog.Trace.Tests
             counterMetric.Should().NotBeNull();
             counterMetric!.InstrumentType.Should().Be(InstrumentType.Counter);
             counterMetric.AggregationTemporality.Should().Be(expectedCounterTemporality);
-            counterMetric.RunningSum.Should().Be(11.0);
+            counterMetric.SnapshotSum.Should().Be(11.0);
             counterMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
             counterMetric.Tags.Should().ContainKey("rid").WhoseValue.Should().Be("1234567890");
 
@@ -304,27 +304,27 @@ namespace Datadog.Trace.Tests
             asyncCounterMetric.Should().NotBeNull();
             asyncCounterMetric!.InstrumentType.Should().Be(InstrumentType.ObservableCounter);
             asyncCounterMetric.AggregationTemporality.Should().Be(expectedObservableCounterTemporality);
-            asyncCounterMetric.RunningSum.Should().Be(22.0);
+            asyncCounterMetric.SnapshotSum.Should().Be(22.0);
             asyncCounterMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var asyncGaugeMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.gauge");
             asyncGaugeMetric.Should().NotBeNull();
             asyncGaugeMetric!.InstrumentType.Should().Be(InstrumentType.ObservableGauge);
             asyncGaugeMetric.AggregationTemporality.Should().Be(expectedObservableGaugeTemporality, "ObservableGauge temporality should match expected value");
-            asyncGaugeMetric.RunningSum.Should().Be(88.0);
+            asyncGaugeMetric.SnapshotGaugeValue.Should().Be(88.0);
             asyncGaugeMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 
             var histogramMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.histogram");
             histogramMetric.Should().NotBeNull();
             histogramMetric!.InstrumentType.Should().Be(InstrumentType.Histogram);
             histogramMetric.AggregationTemporality.Should().Be(expectedHistogramTemporality);
-            histogramMetric.RunningCount.Should().Be(1L);
-            histogramMetric.RunningSum.Should().Be(33.0);
-            histogramMetric.RunningMin.Should().Be(33.0);
-            histogramMetric.RunningMax.Should().Be(33.0);
+            histogramMetric.SnapshotCount.Should().Be(1L);
+            histogramMetric.SnapshotSum.Should().Be(33.0);
+            histogramMetric.SnapshotMin.Should().Be(33.0);
+            histogramMetric.SnapshotMax.Should().Be(33.0);
             histogramMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
             histogramMetric.Tags.Should().ContainKey("rid").WhoseValue.Should().Be("1234567890");
-            var bucketCounts = histogramMetric.RunningBucketCounts;
+            var bucketCounts = histogramMetric.SnapshotBucketCounts;
             bucketCounts[4].Should().Be(1L, "Value 33.0 should fall in bucket 4 (25 < 33.0 <= 50)");
 
 #if NET7_0_OR_GREATER
@@ -332,14 +332,14 @@ namespace Datadog.Trace.Tests
             upDownMetric.Should().NotBeNull("UpDown counter metric should be captured");
             upDownMetric!.InstrumentType.Should().Be(InstrumentType.UpDownCounter);
             upDownMetric.AggregationTemporality.Should().Be(expectedUpDownTemporality);
-            upDownMetric.RunningSum.Should().Be(55.0);
+            upDownMetric.SnapshotSum.Should().Be(55.0);
             upDownMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 
             var asyncUpDownMetric = capturedMetrics.FirstOrDefault(m => m.InstrumentName == "test.async.upDownCounter");
             asyncUpDownMetric.Should().NotBeNull("Async UpDown counter metric should be captured");
             asyncUpDownMetric!.InstrumentType.Should().Be(InstrumentType.ObservableUpDownCounter);
             asyncUpDownMetric.AggregationTemporality.Should().Be(expectedObservableUpDownTemporality);
-            asyncUpDownMetric.RunningSum.Should().Be(66.0);
+            asyncUpDownMetric.SnapshotSum.Should().Be(66.0);
             asyncUpDownMetric.Tags.Count.Should().Be(0, "Async metrics have no tags");
 #endif
 #if NET9_0_OR_GREATER
@@ -347,7 +347,7 @@ namespace Datadog.Trace.Tests
             gaugeMetric.Should().NotBeNull("Gauge metric should be captured");
             gaugeMetric!.InstrumentType.Should().Be(InstrumentType.Gauge);
             gaugeMetric.AggregationTemporality.Should().Be(expectedGaugeTemporality, "Gauge temporality should match expected value");
-            gaugeMetric.RunningSum.Should().Be(77.0);
+            gaugeMetric.SnapshotGaugeValue.Should().Be(77.0);
             gaugeMetric.Tags.Should().ContainKey("http.method").WhoseValue.Should().Be("GET");
 #endif
         }
