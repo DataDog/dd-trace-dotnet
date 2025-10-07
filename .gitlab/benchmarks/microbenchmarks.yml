@@ -108,8 +108,6 @@ run-benchmarks:
 
     # Where to look for benchmarking artifacts for uploading to the BP UI
     ARTIFACTS_DIR: "platform/artifacts"
-
-    BP_INFRA_TEST: true
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
