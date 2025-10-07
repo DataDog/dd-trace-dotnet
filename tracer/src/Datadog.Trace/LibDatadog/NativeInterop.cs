@@ -144,6 +144,6 @@ internal static class NativeInterop
         internal static extern void ConfiguratorDrop(IntPtr configurator);
 
         [DllImport(DllName, EntryPoint = "ddog_library_config_drop")]
-        internal static extern void LibraryConfigDrop(LibraryConfigs configs);
+        internal static extern void LibraryConfigDrop(LibraryConfigResult configs);
     }
 }
