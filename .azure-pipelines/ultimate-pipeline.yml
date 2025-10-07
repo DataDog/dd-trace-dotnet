@@ -4538,6 +4538,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
@@ -4620,6 +4621,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - script: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
