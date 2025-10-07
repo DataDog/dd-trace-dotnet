@@ -115,7 +115,6 @@ run-benchmarks:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
   after_script:
-    # Future improvement: Ideally, should be in a script.
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
@@ -125,34 +124,4 @@ run-benchmarks:
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
     - ./platform/steps/post-pr-comment.sh
-    - ./platform/steps/upload-to-bp-ui.sh
-    
-# TODO: Remove if unnecessary
-upload-to-bp-ui:
-  stage: benchmarks
-  tags: ["arch:amd64"]
-  timeout: 1h
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
-  when: manual
-  artifacts:
-    name: "artifacts"
-    when: always
-    paths:
-      - platform/artifacts
-    expire_in: 3 months
-  variables:
-    AWS_REGION: "us-east-1"
-
-    # TODO: Point to dd-trace-dotnet/micro when the branch below is merged
-    # to dd-trace-dotnet/micro
-    BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
-
-    # Where to fetch results from
-    BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
-
-    # Where to store benchmarking artifacts produced on ephemeral instances,
-    # after fetching them
-    ARTIFACTS_DIR: "platform/artifacts"
-  script:
-    - git clone --branch $BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/upload-to-bp-ui.sh
