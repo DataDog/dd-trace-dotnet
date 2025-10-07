@@ -22,6 +22,8 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
     private double _runningDoubleValue;
     private double _runningMin = double.PositiveInfinity;
     private double _runningMax = double.NegativeInfinity;
+    private bool _hasMeasurements;
+    private double _lastObservedCumulative = double.NaN;
 
     public string InstrumentName { get; } = instrumentName;
 
@@ -72,6 +74,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
         lock (_histogramLock)
         {
             _runningDoubleValue += value;
+            _hasMeasurements = true;
         }
     }
 
@@ -79,6 +82,15 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
     {
         lock (_histogramLock)
         {
+            if (double.IsNaN(_lastObservedCumulative))
+            {
+                _hasMeasurements = currentValue != 0;
+            }
+            else if (currentValue != _lastObservedCumulative)
+            {
+                _hasMeasurements = true;
+            }
+
             _runningDoubleValue = currentValue;
         }
     }
@@ -86,6 +98,10 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
     internal void UpdateGauge(double value)
     {
         Interlocked.Exchange(ref _runningDoubleValue, value);
+        lock (_histogramLock)
+        {
+            _hasMeasurements = true;
+        }
     }
 
     internal void UpdateHistogram(double value)
@@ -103,8 +119,11 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
 
             _runningMin = Math.Min(_runningMin, value);
             _runningMax = Math.Max(_runningMax, value);
+            _hasMeasurements = true;
         }
     }
+
+    public bool HasDataToExport() => _hasMeasurements;
 
     private static int FindBucketIndex(double value)
     {
@@ -116,7 +135,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
             }
         }
 
-        return DefaultHistogramBounds.Length; // Overflow bucket
+        return DefaultHistogramBounds.Length;
     }
 
     /// <summary>
@@ -132,19 +151,31 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
         {
             var endTime = DateTimeOffset.UtcNow;
 
-            // Create a snapshot copy with current values
+            double sumForSnapshot = _runningDoubleValue;
+
+            if (InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
+            {
+                var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
+                var delta = _runningDoubleValue - previousCumulative;
+
+                sumForSnapshot = AggregationTemporality == OTelMetrics.AggregationTemporality.Delta
+                    ? delta
+                    : _runningDoubleValue;
+
+                _lastObservedCumulative = _runningDoubleValue;
+            }
+
             var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description)
             {
                 StartTime = this.StartTime,
                 EndTime = endTime,
                 SnapshotCount = _runningCountValue,
-                SnapshotSum = _runningDoubleValue,
+                SnapshotSum = sumForSnapshot,
                 SnapshotGaugeValue = _runningDoubleValue,
                 SnapshotMin = _runningMin,
                 SnapshotMax = _runningMax
             };
 
-            // Copy bucket counts for histograms
             if (_runningBucketCounts.Length > 0)
             {
                 snapshot.SnapshotBucketCounts = new long[_runningBucketCounts.Length];
@@ -162,9 +193,10 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                     Array.Clear(_runningBucketCounts, 0, _runningBucketCounts.Length);
                 }
 
-                // Update start time for next delta window
                 StartTime = endTime;
             }
+
+            _hasMeasurements = false;
 
             return snapshot;
         }

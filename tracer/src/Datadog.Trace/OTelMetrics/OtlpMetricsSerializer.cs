@@ -35,6 +35,39 @@ namespace Datadog.Trace.OTelMetrics
             _cachedResourceData = SerializeResource(settings);
         }
 
+        /// <summary>
+        /// Creates a deterministic string key from meter tags for grouping.
+        /// Sorts a copy to avoid mutating the original array.
+        /// </summary>
+        private static string JoinMeterTags(KeyValuePair<string, object?>[] tags)
+        {
+            if (tags.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var copy = new KeyValuePair<string, object?>[tags.Length];
+            Array.Copy(tags, copy, tags.Length);
+            Array.Sort(copy, (a, b) => string.CompareOrdinal(a.Key, b.Key));
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < copy.Length; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(';');
+                }
+
+                sb.Append(copy[i].Key).Append('=');
+                if (copy[i].Value is not null)
+                {
+                    sb.Append(copy[i].Value);
+                }
+            }
+
+            return sb.ToString();
+        }
+
         private byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream(512);
@@ -44,10 +77,29 @@ namespace Datadog.Trace.OTelMetrics
             WriteVarInt(writer, _cachedResourceData.Length);
             writer.Write(_cachedResourceData);
 
-            var scopeMetricsData = SerializeScopeMetrics(metrics);
-            WriteTag(writer, FieldNumbers.ScopeMetrics, LengthDelimited);
-            WriteVarInt(writer, scopeMetricsData.Length);
-            writer.Write(scopeMetricsData);
+            // Group metrics by meter identity (name + version + tags)
+            var meterGroups = new Dictionary<string, List<MetricPoint>>();
+            for (int i = 0; i < metrics.Count; i++)
+            {
+                var metric = metrics[i];
+                var meterKey = $"{metric.MeterName}|{metric.MeterVersion}|{JoinMeterTags(metric.MeterTags)}";
+
+                if (!meterGroups.TryGetValue(meterKey, out var meterMetrics))
+                {
+                    meterMetrics = new List<MetricPoint>();
+                    meterGroups[meterKey] = meterMetrics;
+                }
+
+                meterMetrics.Add(metric);
+            }
+
+            foreach (var meterMetrics in meterGroups.Values)
+            {
+                var scopeMetricsData = SerializeScopeMetrics(meterMetrics);
+                WriteTag(writer, FieldNumbers.ScopeMetrics, LengthDelimited);
+                WriteVarInt(writer, scopeMetricsData.Length);
+                writer.Write(scopeMetricsData);
+            }
 
             return buffer.ToArray();
         }
@@ -148,26 +200,41 @@ namespace Datadog.Trace.OTelMetrics
             WriteVarInt(writer, scopeData.Length);
             writer.Write(scopeData);
 
+            var metricGroups = new Dictionary<string, List<MetricPoint>>();
             for (int i = 0; i < metrics.Count; i++)
             {
                 var metric = metrics[i];
-                byte[]? metricData = null;
+                var key = $"{metric.InstrumentName}|{metric.InstrumentType}|{metric.Unit}|{metric.Description}";
 
-                if (metric.InstrumentType is InstrumentType.Counter
-                    || metric.InstrumentType is InstrumentType.UpDownCounter
-                    || metric.InstrumentType is InstrumentType.ObservableCounter
-                    || metric.InstrumentType is InstrumentType.ObservableUpDownCounter)
+                if (!metricGroups.TryGetValue(key, out var group))
                 {
-                    metricData = SerializeCounterMetric(metric);
+                    group = new List<MetricPoint>();
+                    metricGroups[key] = group;
                 }
-                else if (metric.InstrumentType is InstrumentType.Gauge
-                         || metric.InstrumentType is InstrumentType.ObservableGauge)
+
+                group.Add(metric);
+            }
+
+            foreach (var group in metricGroups.Values)
+            {
+                byte[]? metricData = null;
+                var firstMetric = group[0];
+
+                if (firstMetric.InstrumentType is InstrumentType.Counter
+                    || firstMetric.InstrumentType is InstrumentType.UpDownCounter
+                    || firstMetric.InstrumentType is InstrumentType.ObservableCounter
+                    || firstMetric.InstrumentType is InstrumentType.ObservableUpDownCounter)
                 {
-                    metricData = SerializeGaugeMetric(metric);
+                    metricData = SerializeCounterMetric(group);
                 }
-                else if (metric.InstrumentType is InstrumentType.Histogram)
+                else if (firstMetric.InstrumentType is InstrumentType.Gauge
+                         || firstMetric.InstrumentType is InstrumentType.ObservableGauge)
                 {
-                    metricData = SerializeHistogramMetric(metric);
+                    metricData = SerializeGaugeMetric(group);
+                }
+                else if (firstMetric.InstrumentType is InstrumentType.Histogram)
+                {
+                    metricData = SerializeHistogramMetric(group);
                 }
 
                 if (metricData != null)
@@ -187,9 +254,7 @@ namespace Datadog.Trace.OTelMetrics
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.Name, meterName);
-
-            WriteTag(writer, FieldNumbers.Version, LengthDelimited);
-            WriteString(writer, meterVersion);
+            WriteStringField(writer, FieldNumbers.Version, meterVersion);
 
             for (int i = 0; i < meterTags.Length; i++)
             {
@@ -203,16 +268,17 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeCounterMetric(MetricPoint metric)
+        private byte[] SerializeCounterMetric(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, metric.Description);
-            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
+            var firstMetric = metrics[0];
+            WriteStringField(writer, FieldNumbers.MetricName, firstMetric.InstrumentName);
+            WriteStringField(writer, FieldNumbers.Description, firstMetric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, firstMetric.Unit);
 
-            var sumData = SerializeSum(metric);
+            var sumData = SerializeSum(metrics);
             WriteTag(writer, FieldNumbers.Sum, LengthDelimited);
             WriteVarInt(writer, sumData.Length);
             writer.Write(sumData);
@@ -220,16 +286,17 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeGaugeMetric(MetricPoint metric)
+        private byte[] SerializeGaugeMetric(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, metric.Description);
-            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
+            var firstMetric = metrics[0];
+            WriteStringField(writer, FieldNumbers.MetricName, firstMetric.InstrumentName);
+            WriteStringField(writer, FieldNumbers.Description, firstMetric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, firstMetric.Unit);
 
-            var gaugeData = SerializeGauge(metric);
+            var gaugeData = SerializeGauge(metrics);
             WriteTag(writer, FieldNumbers.Gauge, LengthDelimited);
             WriteVarInt(writer, gaugeData.Length);
             writer.Write(gaugeData);
@@ -237,16 +304,17 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeHistogramMetric(MetricPoint metric)
+        private byte[] SerializeHistogramMetric(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            WriteStringField(writer, FieldNumbers.MetricName, metric.InstrumentName);
-            WriteStringField(writer, FieldNumbers.Description, metric.Description);
-            WriteStringField(writer, FieldNumbers.Unit, metric.Unit);
+            var firstMetric = metrics[0];
+            WriteStringField(writer, FieldNumbers.MetricName, firstMetric.InstrumentName);
+            WriteStringField(writer, FieldNumbers.Description, firstMetric.Description);
+            WriteStringField(writer, FieldNumbers.Unit, firstMetric.Unit);
 
-            var histogramData = SerializeHistogram(metric);
+            var histogramData = SerializeHistogram(metrics);
             WriteTag(writer, FieldNumbers.Histogram, LengthDelimited);
             WriteVarInt(writer, histogramData.Length);
             writer.Write(histogramData);
@@ -254,20 +322,24 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeSum(MetricPoint metric)
+        private byte[] SerializeSum(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            var dataPointData = SerializeNumberDataPoint(metric);
-            WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
-            WriteVarInt(writer, dataPointData.Length);
-            writer.Write(dataPointData);
+            for (int i = 0; i < metrics.Count; i++)
+            {
+                var dataPointData = SerializeNumberDataPoint(metrics[i]);
+                WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
+                WriteVarInt(writer, dataPointData.Length);
+                writer.Write(dataPointData);
+            }
 
+            var firstMetric = metrics[0];
             AggregationTemporality temporality;
             bool isMonotonic;
 
-            if (metric.InstrumentType is InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter)
+            if (firstMetric.InstrumentType is InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter)
             {
                 temporality = AggregationTemporality.Cumulative;
                 isMonotonic = false;
@@ -293,28 +365,34 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeGauge(MetricPoint metric)
+        private byte[] SerializeGauge(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            var dataPointData = SerializeNumberDataPointForGauge(metric);
-            WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
-            WriteVarInt(writer, dataPointData.Length);
-            writer.Write(dataPointData);
+            for (int i = 0; i < metrics.Count; i++)
+            {
+                var dataPointData = SerializeNumberDataPointForGauge(metrics[i]);
+                WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
+                WriteVarInt(writer, dataPointData.Length);
+                writer.Write(dataPointData);
+            }
 
             return buffer.ToArray();
         }
 
-        private byte[] SerializeHistogram(MetricPoint metric)
+        private byte[] SerializeHistogram(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            var dataPointData = SerializeHistogramDataPoint(metric);
-            WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
-            WriteVarInt(writer, dataPointData.Length);
-            writer.Write(dataPointData);
+            for (int i = 0; i < metrics.Count; i++)
+            {
+                var dataPointData = SerializeHistogramDataPoint(metrics[i]);
+                WriteTag(writer, FieldNumbers.DataPoints, LengthDelimited);
+                WriteVarInt(writer, dataPointData.Length);
+                writer.Write(dataPointData);
+            }
 
             var temporality = _settings.OtlpMetricsTemporalityPreference switch
             {
@@ -348,19 +426,8 @@ namespace Datadog.Trace.OTelMetrics
             WriteTag(writer, FieldNumbers.NumberDataPointTimeUnixNano, Fixed64);
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
-            if (metric.InstrumentType is InstrumentType.Counter
-                or InstrumentType.UpDownCounter
-                or InstrumentType.ObservableCounter
-                or InstrumentType.ObservableUpDownCounter)
-            {
-                WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
-                writer.Write((long)metric.SnapshotSum);
-            }
-            else
-            {
-                WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
-                writer.Write(metric.SnapshotSum);
-            }
+            WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
+            writer.Write(metric.SnapshotSum);
 
             return buffer.ToArray();
         }
