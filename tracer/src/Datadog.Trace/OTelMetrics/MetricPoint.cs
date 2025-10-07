@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics;
 
-internal class MetricPoint(string instrumentName, string meterName, string meterVersion, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "")
+internal class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "")
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
@@ -28,6 +28,8 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
     public string MeterName { get; } = meterName;
 
     public string MeterVersion { get; } = meterVersion;
+
+    public KeyValuePair<string, object?>[] MeterTags { get; } = meterTags;
 
     public InstrumentType InstrumentType { get; } = instrumentType;
 
@@ -131,7 +133,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
             var endTime = DateTimeOffset.UtcNow;
 
             // Create a snapshot copy with current values
-            var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, InstrumentType, AggregationTemporality, Tags, Unit, Description)
+            var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description)
             {
                 StartTime = this.StartTime,
                 EndTime = endTime,

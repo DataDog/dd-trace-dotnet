@@ -139,22 +139,22 @@ internal enum Count
     /// <summary>
     /// The number of OTLP metrics export attempts, tagged by protocol (grpc, http) and encoding (protobuf, json)
     /// </summary>
-    [TelemetryMetric<MetricTags.Protocol, MetricTags.Encoding>("otel.metrics_export_attempts")] MetricsExportAttempts,
+    [TelemetryMetric<MetricTags.Protocol, MetricTags.MetricEncoding>("otel.metrics_export_attempts", isCommon: true, NS.Tracer)] MetricsExportAttempts,
 
     /// <summary>
     /// The number of successful OTLP metrics exports, tagged by protocol (grpc, http) and encoding (protobuf, json)
     /// </summary>
-    [TelemetryMetric<MetricTags.Protocol, MetricTags.Encoding>("otel.metrics_export_successes")] MetricsExportSuccesses,
+    [TelemetryMetric<MetricTags.Protocol, MetricTags.MetricEncoding>("otel.metrics_export_successes", isCommon: true, NS.Tracer)] MetricsExportSuccesses,
 
     /// <summary>
     /// The number of partial success OTLP metrics exports, tagged by protocol (grpc, http) and encoding (protobuf, json)
     /// </summary>
-    [TelemetryMetric<MetricTags.Protocol, MetricTags.Encoding>("otel.metrics_export_partial_successes")] MetricsExportPartialSuccesses,
+    [TelemetryMetric<MetricTags.Protocol, MetricTags.MetricEncoding>("otel.metrics_export_partial_successes", isCommon: true, NS.Tracer)] MetricsExportPartialSuccesses,
 
     /// <summary>
     /// The number of failed OTLP metrics exports, tagged by protocol (grpc, http) and encoding (protobuf, json)
     /// </summary>
-    [TelemetryMetric<MetricTags.Protocol, MetricTags.Encoding>("otel.metrics_export_failures")] MetricsExportFailures,
+    [TelemetryMetric<MetricTags.Protocol, MetricTags.MetricEncoding>("otel.metrics_export_failures", isCommon: true, NS.Tracer)] MetricsExportFailures,
 #endregion
 #region Telemetry Namespace
 

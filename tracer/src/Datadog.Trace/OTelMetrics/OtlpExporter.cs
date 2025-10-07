@@ -34,7 +34,7 @@ namespace Datadog.Trace.OTelMetrics
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
         private readonly HttpClient _httpClient;
         private readonly Telemetry.Metrics.MetricTags.Protocol _protocolTag;
-        private readonly Telemetry.Metrics.MetricTags.Encoding _encodingTag;
+        private readonly Telemetry.Metrics.MetricTags.MetricEncoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
         private readonly Uri _endpoint;
         private readonly IReadOnlyDictionary<string, string> _headers;
@@ -58,10 +58,10 @@ namespace Datadog.Trace.OTelMetrics
 
             _encodingTag = _protocol switch
             {
-                Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Encoding.Protobuf,
-                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Encoding.Protobuf,
-                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Encoding.Json,
-                _ => Telemetry.Metrics.MetricTags.Encoding.Protobuf
+                Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf,
+                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf,
+                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.MetricEncoding.Json,
+                _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
             };
 
             _serializer = new OtlpMetricsSerializer(settings);

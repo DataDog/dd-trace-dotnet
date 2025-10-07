@@ -44,7 +44,7 @@
       {
         Scope: {
           Name: OpenTelemetryMetricsMeter,
-          Version: 
+          Version: 1.0
         },
         Metrics: [
           {

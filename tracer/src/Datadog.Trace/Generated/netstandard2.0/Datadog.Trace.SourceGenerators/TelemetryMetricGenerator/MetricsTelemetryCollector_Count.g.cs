@@ -858,25 +858,25 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
         var index = 349 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
         var index = 353 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
         var index = 357 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
         var index = 361 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);

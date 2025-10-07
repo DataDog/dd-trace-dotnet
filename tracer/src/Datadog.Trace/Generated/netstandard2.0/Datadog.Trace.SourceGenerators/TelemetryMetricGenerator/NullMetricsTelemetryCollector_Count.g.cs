@@ -104,19 +104,19 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
     }
 
-    public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
     }
 
-    public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
     }
 
-    public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.Encoding tag2, int increment = 1)
+    public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
     }
 

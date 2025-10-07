@@ -132,6 +132,7 @@ internal class MetricState
                 _identity.InstrumentName,
                 _identity.MeterName,
                 _identity.MeterVersion,
+                _identity.MeterTags,
                 _identity.InstrumentType,
                 _temporality,
                 dict,

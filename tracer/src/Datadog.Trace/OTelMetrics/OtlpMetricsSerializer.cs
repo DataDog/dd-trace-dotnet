@@ -132,16 +132,18 @@ namespace Datadog.Trace.OTelMetrics
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            string meterName = string.Empty;
-            string meterVersion = string.Empty;
+            var meterName = string.Empty;
+            var meterVersion = string.Empty;
+            var meterTags = Array.Empty<KeyValuePair<string, object?>>();
 
             if (metrics.Count > 0)
             {
                 meterName = metrics[0].MeterName;
                 meterVersion = metrics[0].MeterVersion;
+                meterTags = metrics[0].MeterTags;
             }
 
-            var scopeData = SerializeInstrumentationScope(meterName, meterVersion);
+            var scopeData = SerializeInstrumentationScope(meterName, meterVersion, meterTags);
             WriteTag(writer, FieldNumbers.Scope, LengthDelimited);
             WriteVarInt(writer, scopeData.Length);
             writer.Write(scopeData);
@@ -179,13 +181,24 @@ namespace Datadog.Trace.OTelMetrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeInstrumentationScope(string meterName, string meterVersion)
+        private byte[] SerializeInstrumentationScope(string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.Name, meterName);
-            WriteStringField(writer, FieldNumbers.Version, meterVersion);
+
+            WriteTag(writer, FieldNumbers.Version, LengthDelimited);
+            WriteString(writer, meterVersion);
+
+            for (int i = 0; i < meterTags.Length; i++)
+            {
+                var tag = meterTags[i];
+                var attributeData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                WriteTag(writer, FieldNumbers.ScopeAttributes, LengthDelimited);
+                WriteVarInt(writer, attributeData.Length);
+                writer.Write(attributeData);
+            }
 
             return buffer.ToArray();
         }
@@ -528,6 +541,7 @@ namespace Datadog.Trace.OTelMetrics
             // InstrumentationScope
             public const int Name = 1;
             public const int Version = 2;
+            public const int ScopeAttributes = 3;
 
             // Metric
             public const int MetricName = 1;

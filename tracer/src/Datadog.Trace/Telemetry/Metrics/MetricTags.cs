@@ -412,7 +412,7 @@ internal static class MetricTags
         [Description("protocol:http")] Http,
     }
 
-    internal enum Encoding
+    internal enum MetricEncoding
     {
         [Description("encoding:protobuf")] Protobuf,
         [Description("encoding:json")] Json,

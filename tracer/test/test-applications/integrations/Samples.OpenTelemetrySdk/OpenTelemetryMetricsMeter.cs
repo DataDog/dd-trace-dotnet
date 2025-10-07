@@ -1,14 +1,27 @@
 ﻿#if NET6_0_OR_GREATER
 
 using System.Diagnostics.Metrics;
+using System.Collections.Generic;
 
 namespace Samples.OpenTelemetrySdk;
 
 public static class OpenTelemetryMetricsMeter
 {
+    internal const string MeterVersion = "1.0";
     internal const string MeterName = "OpenTelemetryMetricsMeter";
 
-    private static readonly Meter _meter = new Meter(MeterName);
+#if NET8_0_OR_GREATER
+    internal static readonly List<KeyValuePair<string, object>> MeterTags = new()
+    {
+        new(
+            "MeterTagKey",
+            "MeterTagValue"),
+    };
+
+    private static readonly Meter _meter = new (MeterName, MeterVersion, MeterTags);
+#else
+    private static readonly Meter _meter = new Meter(MeterName, MeterVersion);
+#endif
     public static Counter<long> LongCounter => _meter.CreateCounter<long>("example.counter");
     public static Histogram<double> DoubleHistogram => _meter.CreateHistogram<double>("example.histogram");
     public static ObservableCounter<long> AsyncLongCounter = _meter.CreateObservableCounter<long>("example.async.counter", () => 22L);
