@@ -10,7 +10,7 @@ public static class OpenTelemetryMetricsMeter
     internal const string MeterVersion = "1.0";
     internal const string MeterName = "OpenTelemetryMetricsMeter";
 
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
     internal static readonly List<KeyValuePair<string, object>> MeterTags = new()
     {
         new(
