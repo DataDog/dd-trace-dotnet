@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 if (datadogMetadataReader.MetadataReader.TypeDefinitions.Count == 0)
                 {
-                    Log.Debug("Could not found any type in assembly {Assembly}", assembly.FullName);
+                    Log.Debug("Could not find any type in assembly {Assembly}", assembly.FullName);
                     return null;
                 }
 

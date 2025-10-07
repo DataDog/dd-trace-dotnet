@@ -14,7 +14,7 @@ public class AllTriggers
 {
     private readonly IHostApplicationLifetime _lifetime;
     private const string AtMidnightOnFirstJan = "0 0 0 1 Jan *";
-    private static readonly HttpClient HttpClient = new(); 
+    private static readonly HttpClient HttpClient = new();
     private static readonly ManualResetEventSlim _mutex = new(initialState: false, spinCount: 0);
 
     private readonly ILogger _logger;
@@ -69,7 +69,7 @@ public class AllTriggers
         await Task.Yield();
         using var s = SampleHelpers.CreateScope("Manual inside Simple");
         _logger.LogInformation("C# HTTP trigger function processed a request.");
-        
+
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", "text/plain; charset=utf-8");
         await res.WriteStringAsync("This HTTP triggered function executed successfully!");
@@ -82,7 +82,7 @@ public class AllTriggers
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequestData req)
     {
         using var s = SampleHelpers.CreateScope("Manual inside Trigger");
-       
+
         _logger.LogInformation("Calling simple");
         await Attempt("simple");
         await Attempt("exception", expectFailure: true);
