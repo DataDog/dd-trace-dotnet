@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace Datadog.Trace.OTelMetrics;
 
-internal class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "")
+internal class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false)
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
@@ -42,6 +42,8 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
     public string Unit { get; } = unit;
 
     public string Description { get; } = description;
+
+    public bool IsLongType { get; } = isLongType;
 
     internal long RunningCount => _runningCountValue;
 
@@ -84,7 +86,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
         {
             if (double.IsNaN(_lastObservedCumulative))
             {
-                _hasMeasurements = currentValue != 0;
+                _hasMeasurements = true;
             }
             else if (currentValue != _lastObservedCumulative)
             {
@@ -165,7 +167,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                 _lastObservedCumulative = _runningDoubleValue;
             }
 
-            var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description)
+            var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description, IsLongType)
             {
                 StartTime = this.StartTime,
                 EndTime = endTime,

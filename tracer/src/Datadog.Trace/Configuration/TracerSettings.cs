@@ -216,7 +216,11 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
+            var defaultAgentHost = config
+                .WithKeys(ConfigurationKeys.AgentHost)
+                .AsString(defaultValue: "localhost");
+
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(

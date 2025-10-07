@@ -426,8 +426,16 @@ namespace Datadog.Trace.OTelMetrics
             WriteTag(writer, FieldNumbers.NumberDataPointTimeUnixNano, Fixed64);
             writer.Write((ulong)metric.EndTime.ToUnixTimeNanoseconds());
 
-            WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
-            writer.Write(metric.SnapshotSum);
+            if (metric.IsLongType)
+            {
+                WriteTag(writer, FieldNumbers.NumberDataPointAsInt, Fixed64);
+                writer.Write((long)metric.SnapshotSum);
+            }
+            else
+            {
+                WriteTag(writer, FieldNumbers.NumberDataPointAsDouble, Fixed64);
+                writer.Write(metric.SnapshotSum);
+            }
 
             return buffer.ToArray();
         }

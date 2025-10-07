@@ -143,7 +143,8 @@ internal class MetricState
                 _temporality,
                 dict,
                 _identity.Unit,
-                _identity.Description));
+                _identity.Description,
+                _identity.IsLongType));
     }
 }
 #endif

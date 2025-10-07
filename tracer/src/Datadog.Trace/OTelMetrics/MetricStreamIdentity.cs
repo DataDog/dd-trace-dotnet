@@ -35,6 +35,9 @@ namespace Datadog.Trace.OTelMetrics
             InstrumentType = instrumentType;
             IsHistogram = instrumentType == InstrumentType.Histogram;
 
+            IsLongType = instrument.GetType().IsGenericType &&
+                         instrument.GetType().GetGenericArguments()[0] == typeof(long);
+
             MetricStreamName = $"{MeterName}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
         }
 
@@ -55,6 +58,8 @@ namespace Datadog.Trace.OTelMetrics
         public string MetricStreamName { get; }
 
         public bool IsHistogram { get; }
+
+        public bool IsLongType { get; }
 
         public static bool operator ==(MetricStreamIdentity left, MetricStreamIdentity right)
         {
