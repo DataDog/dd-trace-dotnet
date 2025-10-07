@@ -27,15 +27,8 @@ namespace Datadog.Trace.OTelMetrics
             MeterVersion = instrument.Meter.Version ?? string.Empty;
 
             // Duck typing works at runtime - checks if Tags property exists (.NET 8+)
-            try
-            {
-                var meterDuck = instrument.Meter.DuckCast<IMeterDuck>();
-                MeterTags = meterDuck.Tags?.ToArray() ?? [];
-            }
-            catch
-            {
-                MeterTags = [];
-            }
+            var meterDuck = instrument.Meter.DuckAs<IMeterDuck>();
+            MeterTags = meterDuck?.Tags?.ToArray() ?? [];
 
             Unit = instrument.Unit ?? string.Empty;
             Description = instrument.Description ?? string.Empty;

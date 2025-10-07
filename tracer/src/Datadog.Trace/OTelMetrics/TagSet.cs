@@ -37,7 +37,7 @@ internal readonly struct TagSet : IEquatable<TagSet>
 
         if (len == 1)
         {
-            ref readonly var kv = ref tags[0];
+            var kv = tags[0];
             var sb = StringBuilderCache.Acquire();
             sb.Append(kv.Key).Append('=');
             if (kv.Value is not null)
@@ -62,7 +62,7 @@ internal readonly struct TagSet : IEquatable<TagSet>
                     sb.Append(';');
                 }
 
-                ref readonly var kv = ref sorted[i];
+                var kv = sorted[i];
                 sb.Append(kv.Key).Append('=');
                 if (kv.Value is not null)
                 {

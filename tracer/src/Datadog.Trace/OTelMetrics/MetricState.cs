@@ -128,7 +128,7 @@ internal class MetricState
         var dict = new Dictionary<string, object?>(tags.Length);
         for (int i = 0; i < tags.Length; i++)
         {
-            ref readonly var kv = ref tags[i];
+            var kv = tags[i];
             dict[kv.Key] = kv.Value;
         }
 
