@@ -40,5 +40,5 @@ jobs:
       name: 'Unfreeze PRs'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        state: failure
+        state: success
         workflow_name: code_freeze_end.yml # this allows for a click through to go to the action
