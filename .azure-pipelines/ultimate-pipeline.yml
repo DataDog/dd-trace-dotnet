@@ -134,7 +134,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.28.0
+  ToolVersion: 3.29.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -4238,10 +4238,6 @@ stages:
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
             fi
-            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._-/]+$ ]]; then
-              echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _ /"
-              exit 1
-            fi
           fi
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$REF and azdo_build_id=$(Build.BuildId) and is_release_version=False"
@@ -4542,6 +4538,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
@@ -4624,6 +4621,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - script: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
