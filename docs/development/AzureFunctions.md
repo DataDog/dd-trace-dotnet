@@ -42,7 +42,7 @@ To correctly flow and parent the state across each request, our integration does
 - In-process instrumentation of `FunctionInvocationMiddleware` in `func.exe`.
   - This is the same integration we use for normal in-process functions. We need to keep the span generated here as it represents the "real" latencies seen by customers calling the function. This is only created for HTTP requests.
 - In-process instrumentation of `FunctionExecutor` in `func.exe`.
-  - This is the same integration point as for in-process functions, but it serves a slightly different purpose. We don't want to create a span here (this function invocation doesn't represent anything useful), but we _do_ want to enrich the top-level HTTP span with more details about the function invocation. 
+  - This is the same integration point as for in-process functions, but it serves a slightly different purpose. We don't want to create a span here (this function invocation doesn't represent anything useful), but we _do_ want to enrich the top-level HTTP span with more details about the function invocation.
   - The "function" being executed here is the "fake" in-process function which mirrors the "real" out-of-process function. Consequently, we don't have real type names, and the function name is prefixed with `Functions.`, e.g. `Functions.MyAppTrigger` instead of `MyAppTrigger`
 - Instrumentation of `GrpcMessageConversionExtensions.ToRpcHttp()` in `func.exe`.
   - This is a new integration, which hooks into the method that converts the incoming HTTP request into a GRPC message.
@@ -57,7 +57,7 @@ For an HTTP trigger function, the result is something like this:
 
 ```mermaid
 gantt
-    title HTTP span 
+    title HTTP span
     dateFormat  X
     axisFormat %s
     todayMarker off
@@ -70,7 +70,7 @@ For a timer trigger, there's a single span
 
 ```mermaid
 gantt
-    title HTTP span 
+    title HTTP span
     dateFormat  X
     axisFormat %s
     todayMarker off
@@ -119,7 +119,7 @@ This script:
 1. Cleans up previous builds
 2. Removes the `Datadog.AzureFunctions` package from the local NuGet cache
 3. Optionally downloads `Datadog.Trace.Bundle` from a specific build
-4. Builds `Datadog.Trace` and publishes to the bundle folder (net6.0 and net461 targets)
+4. Builds `Datadog.Trace` and publishes to the bundle folder (`net6.0` and `net461` targets)
 5. Builds the `Datadog.AzureFunctions` NuGet package
 6. Optionally copies the package to a specified path
 
