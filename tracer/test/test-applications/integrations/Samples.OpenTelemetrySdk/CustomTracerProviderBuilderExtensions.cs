@@ -1,6 +1,9 @@
 using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+#if OTEL_1_2
+using OpenTelemetry.Metrics;
+#endif
 
 namespace Samples.OpenTelemetrySdk;
 public static class CustomTracerProviderBuilderExtensions
@@ -32,3 +35,21 @@ public static class CustomTracerProviderBuilderExtensions
         return builder;
     }
 }
+
+#if OTEL_1_2
+public static class CustomMeterProviderBuilderExtensions
+{
+    public static MeterProviderBuilder AddOtlpExporterIfEnvironmentVariablePresent(this MeterProviderBuilder builder)
+    {
+        if (Environment.GetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED") is string value
+        && value == "true")
+        {
+            return builder
+                  .AddMeter("OpenTelemetryMetricsMeter")
+                  .AddOtlpExporter();
+        }
+
+        return builder;
+    }
+}
+#endif

@@ -11,22 +11,28 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Runtime.CompilerServices;
-using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.OTelMetrics;
 
-internal static class MetricReaderHandler
+/// <summary>
+/// Instance-based handler for MeterListener events.
+/// Thread-safe aggregation of metrics with safe snapshotting via ToArray().
+/// </summary>
+internal sealed class MetricReaderHandler
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReaderHandler));
+    private readonly TracerSettings _settings;
+    private readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> _streams = new();
+    private readonly HashSet<string> _streamNames = new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly ConcurrentDictionary<MetricStreamIdentity, MetricState> CapturedMetrics = new();
-    private static readonly HashSet<string> MetricStreamNames = new(StringComparer.OrdinalIgnoreCase);
+    public MetricReaderHandler(TracerSettings settings)
+    {
+        _settings = settings;
+    }
 
-    private static int _metricCount;
-
-    public static void OnInstrumentPublished(Instrument instrument, MeterListener listener)
+    public void OnInstrumentPublished(Instrument instrument, MeterListener listener)
     {
         var meterName = instrument.Meter.Name;
 
@@ -37,29 +43,56 @@ internal static class MetricReaderHandler
         }
 
         bool shouldEnable;
-        var enabledMeterNames = Tracer.Instance.Settings.OpenTelemetryMeterNames;
+        var enabledMeterNames = _settings.OpenTelemetryMeterNames;
 
-        if (enabledMeterNames.Length > 0)
+        if (enabledMeterNames.Count > 0)
         {
             shouldEnable = enabledMeterNames.Contains(meterName);
         }
         else
         {
-            shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal);
+            shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal) && !meterName.StartsWith("Microsoft.", StringComparison.Ordinal);
         }
 
-        if (shouldEnable)
+        if (!shouldEnable)
         {
-            var state = CreateMetricState(instrument);
-            if (state != null)
-            {
-                listener.EnableMeasurementEvents(instrument, state);
-                Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
-            }
+            return;
+        }
+
+        var instrumentType = GetInstrumentType(instrument.GetType().FullName);
+        if (instrumentType == null)
+        {
+            Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrument.GetType().FullName);
+            return;
+        }
+
+        var temporality = GetTemporality(instrumentType.Value, _settings.OtlpMetricsTemporalityPreference);
+        var identity = new MetricStreamIdentity(instrument, instrumentType.Value);
+
+        if (_streams.ContainsKey(identity))
+        {
+            Log.Warning(
+                "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
+                [instrumentType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
+            return;
+        }
+
+        // Check for duplicate metric stream name
+        if (!_streamNames.Add(identity.MetricStreamName))
+        {
+            Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", identity.MetricStreamName);
+        }
+
+        var state = new MetricState(identity, temporality);
+
+        if (_streams.TryAdd(identity, state))
+        {
+            listener.EnableMeasurementEvents(instrument, state);
+            Log.Debug("Enabled measurement events for instrument: {InstrumentName} from meter: {MeterName}", instrument.Name, meterName);
         }
     }
 
-    public static void OnMeasurementRecordedLong(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedLong(Instrument instrument, long value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         if (state is MetricState metricState)
         {
@@ -67,7 +100,7 @@ internal static class MetricReaderHandler
         }
     }
 
-    public static void OnMeasurementRecordedDouble(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedDouble(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         if (state is MetricState metricState)
         {
@@ -75,55 +108,42 @@ internal static class MetricReaderHandler
         }
     }
 
-    public static void OnMeasurementRecordedByte(Instrument instrument, byte value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedByte(Instrument instrument, byte value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         OnMeasurementRecordedLong(instrument, value, tags, state);
     }
 
-    public static void OnMeasurementRecordedShort(Instrument instrument, short value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedShort(Instrument instrument, short value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         OnMeasurementRecordedLong(instrument, value, tags, state);
     }
 
-    public static void OnMeasurementRecordedInt(Instrument instrument, int value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedInt(Instrument instrument, int value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         OnMeasurementRecordedLong(instrument, value, tags, state);
     }
 
-    public static void OnMeasurementRecordedFloat(Instrument instrument, float value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
+    public void OnMeasurementRecordedFloat(Instrument instrument, float value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
     {
         OnMeasurementRecordedDouble(instrument, value, tags, state);
     }
 
-    internal static IReadOnlyList<MetricPoint> GetMetricsForExport(bool clearAfterGet = false)
+    /// <summary>
+    /// Gets a safe snapshot of all metric points.
+    /// Uses ToArray() to avoid enumeration race conditions.
+    /// </summary>
+    public List<MetricPoint> GetMetricPointsSnapshot()
     {
-        var allMetricPoints = new List<MetricPoint>();
+        var pairs = _streams.ToArray();
+        var list = new List<MetricPoint>(pairs.Length);
 
-        foreach (var kvp in CapturedMetrics)
+        foreach (var (_, state) in pairs)
         {
-            var metricState = kvp.Value;
-            var metricPoints = metricState.GetMetricPoints();
-            allMetricPoints.AddRange(metricPoints);
+            // BuildPoints creates MetricPoint snapshots and performs delta resets if needed
+            state.BuildPoints(list);
         }
 
-        if (clearAfterGet)
-        {
-            CapturedMetrics.Clear();
-        }
-
-        return allMetricPoints;
-    }
-
-    // For testing only to be deleted in next PR
-    internal static IReadOnlyList<MetricPoint> GetCapturedMetricsForTesting()
-     => GetMetricsForExport(clearAfterGet: false);
-
-    // For testing only - reset all captured metrics
-    internal static void ResetForTesting()
-    {
-        CapturedMetrics.Clear();
-        MetricStreamNames.Clear();
-        Interlocked.Exchange(ref _metricCount, 0);
+        return list;
     }
 
     private static bool IsValidInstrumentName(string name)
@@ -155,41 +175,38 @@ internal static class MetricReaderHandler
         return true;
     }
 
-    internal static AggregationTemporality? GetTemporality(InstrumentType instrumentType)
+    private static AggregationTemporality? GetTemporality(InstrumentType kind, OtlpTemporalityPreference preference)
     {
-        if (instrumentType is InstrumentType.Gauge or InstrumentType.ObservableGauge)
+        return kind switch
         {
-            return null;
-        }
+            InstrumentType.Gauge or InstrumentType.ObservableGauge
+                => null,
 
-        return Tracer.Instance.Settings.OtlpMetricsTemporalityPreference switch
-        {
-            Configuration.OtlpTemporality.Cumulative => AggregationTemporality.Cumulative,
+            InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
+                => AggregationTemporality.Cumulative,
 
-            Configuration.OtlpTemporality.Delta => instrumentType switch
-            {
-                InstrumentType.Counter or InstrumentType.ObservableCounter or InstrumentType.Histogram
-                    => AggregationTemporality.Delta,
-                InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
-                    => AggregationTemporality.Cumulative,
-                _ => AggregationTemporality.Delta
-            },
-
-            Configuration.OtlpTemporality.LowMemory => instrumentType switch
-            {
-                InstrumentType.Counter or InstrumentType.Histogram
-                    => AggregationTemporality.Delta,
-                InstrumentType.ObservableCounter or InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter
-                    => AggregationTemporality.Cumulative,
-                _ => AggregationTemporality.Delta
-            },
+            InstrumentType.Counter or InstrumentType.ObservableCounter or InstrumentType.Histogram
+                => preference switch
+                {
+                    OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
+                    OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
+                    OtlpTemporalityPreference.LowMemory => kind is InstrumentType.ObservableCounter
+                        ? AggregationTemporality.Cumulative
+                        : AggregationTemporality.Delta,
+                    _ => AggregationTemporality.Delta
+                },
 
             _ => AggregationTemporality.Delta
         };
     }
 
-    private static InstrumentType? GetInstrumentType(string instrumentType)
+    private static InstrumentType? GetInstrumentType(string? instrumentType)
     {
+        if (string.IsNullOrEmpty(instrumentType))
+        {
+            return null;
+        }
+
         if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1"))
         {
             return InstrumentType.Counter;
@@ -220,53 +237,6 @@ internal static class MetricReaderHandler
         }
 
         return null;
-    }
-
-    private static MetricState? CreateMetricState(Instrument instrument)
-    {
-        try
-        {
-            var instrumentType = instrument.GetType().FullName;
-            if (instrumentType is null)
-            {
-                Log.Warning("Unable to get the full name of the instrument type for: {InstrumentName}", instrument.Name);
-                return null;
-            }
-
-            var aggregationType = GetInstrumentType(instrumentType);
-            if (aggregationType == null)
-            {
-                Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrumentType);
-                return null;
-            }
-
-            var metricStreamIdentity = new MetricStreamIdentity(instrument, aggregationType.Value);
-
-            if (CapturedMetrics.ContainsKey(metricStreamIdentity))
-            {
-                Log.Warning(
-                    "Duplicate instrument registration detected: {InstrumentType} '{InstrumentName}' (Unit='{Unit}', Description='{Description}') from meter '{MeterName}'. Previous instrument will be reused.",
-                    [aggregationType.Value, instrument.Name, instrument.Unit ?? "null", instrument.Description ?? "null", instrument.Meter.Name]);
-
-                return null;
-            }
-
-            if (!MetricStreamNames.Add(metricStreamIdentity.MetricStreamName))
-            {
-                Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", metricStreamIdentity.MetricStreamName);
-            }
-
-            var state = new MetricState(metricStreamIdentity);
-
-            CapturedMetrics.TryAdd(metricStreamIdentity, state);
-
-            return state;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating metric state for instrument: {InstrumentName}", instrument.Name);
-            return null;
-        }
     }
 }
 #endif
