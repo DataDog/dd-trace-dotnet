@@ -116,16 +116,17 @@ internal class NativeInterop
 
     internal static class LibraryConfig
     {
-        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
-        internal static extern TracerMemfdHandleResult StoreTracerMetadata(
-            byte schemaVersion,
-            CharSlice runtimeId,
-            CharSlice tracerLanguage,
-            CharSlice tracerVersion,
-            CharSlice hostname,
-            CharSlice serviceName,
-            CharSlice serviceEnv,
-            CharSlice serviceVersion);
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_new")]
+        internal static extern IntPtr TracerMetadataNew();
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_free")]
+        internal static extern void TracerMetadataFree(IntPtr);
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_set")]
+        internal static extern void TracerMetadataSet(IntPtr, byte, CString);
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_store")]
+        internal static extern TracerMemfdHandleResult StoreTracerMetadata(IntPtr);
 
         [DllImport(DllName, EntryPoint = "ddog_library_configurator_new")]
         internal static extern IntPtr ConfiguratorNew(byte debugLogs, CharSlice language);
