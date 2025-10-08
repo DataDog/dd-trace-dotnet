@@ -293,6 +293,9 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/Serverless.md` — Serverless instrumentation
 - `docs/development/UpdatingTheSdk.md` — SDK updates
+
+**CI & Testing:**
+- `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
 - `docs/development/CI/RunSmokeTestsLocally.md` — Running smoke tests locally
 
 ## Security & Configuration
