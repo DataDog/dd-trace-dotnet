@@ -12,6 +12,9 @@
     Optional Azure DevOps build ID. If provided, downloads the Datadog.Trace.Bundle package
     from the specified build before packaging.
 
+.PARAMETER CopyTo
+    Optional destination path. If provided, copies the built NuGet package to this location.
+
 .EXAMPLE
     .\Build-AzureFunctionsNuget.ps1
     Build using existing bundle
@@ -19,13 +22,21 @@
 .EXAMPLE
     .\Build-AzureFunctionsNuget.ps1 -BuildId 12345
     Download bundle from build first
+
+.EXAMPLE
+    .\Build-AzureFunctionsNuget.ps1 -CopyTo 'D:\temp\nuget'
+    Build and copy package to specified path
 #>
 
 [CmdletBinding()]
 param(
     [Parameter()]
     [string]
-    $BuildId
+    $BuildId,
+
+    [Parameter()]
+    [string]
+    $CopyTo
 )
 
 $ErrorActionPreference = 'Stop'
@@ -88,5 +99,12 @@ dotnet publish "$tracerDir\src\Datadog.Trace" -c Release -o "$tracerDir\src\Data
 # Build Azure Functions NuGet package
 Write-Verbose "Building Datadog.AzureFunctions NuGet package..."
 & "$tracerDir\build.ps1" BuildAzureFunctionsNuget
+
+# Copy package to destination if specified
+if ($CopyTo)
+{
+    Write-Verbose "Copying package to: $CopyTo"
+    Copy-Item "$tracerDir\bin\artifacts\nuget\azure-functions\Datadog.AzureFunctions.*.nupkg" $CopyTo -Force
+}
 
 Write-Verbose "Build complete!"
