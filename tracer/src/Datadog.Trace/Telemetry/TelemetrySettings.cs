@@ -23,7 +23,8 @@ namespace Datadog.Trace.Telemetry
             TimeSpan heartbeatInterval,
             bool dependencyCollectionEnabled,
             bool metricsEnabled,
-            bool debugEnabled)
+            bool debugEnabled,
+            bool compressionEnabled)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Telemetry
             DependencyCollectionEnabled = dependencyCollectionEnabled;
             MetricsEnabled = metricsEnabled;
             DebugEnabled = debugEnabled;
+            CompressionEnabled = compressionEnabled;
         }
 
         /// <summary>
@@ -54,6 +56,8 @@ namespace Datadog.Trace.Telemetry
         public bool DebugEnabled { get; }
 
         public bool MetricsEnabled { get; }
+
+        public bool CompressionEnabled { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, TracerSettings tracerSettings, bool? isAgentAvailable)
             => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
@@ -139,6 +143,8 @@ namespace Datadog.Trace.Telemetry
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
 
+            var telemetryCompressionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionEnabled).AsBool(true);
+
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
@@ -164,7 +170,8 @@ namespace Datadog.Trace.Telemetry
                 TimeSpan.FromSeconds(heartbeatInterval),
                 dependencyCollectionEnabled,
                 metricsEnabled,
-                debugEnabled);
+                debugEnabled,
+                telemetryCompressionEnabled);
         }
 
         public class AgentlessSettings

@@ -1,4 +1,4 @@
-﻿// <copyright file="JsonTelemetryTransport.cs" company="Datadog">
+// <copyright file="JsonTelemetryTransport.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -30,14 +32,16 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly string? _containerId;
         private readonly string? _entityId;
         private readonly bool _enableDebug;
+        private readonly bool _compressPayload;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, bool compressPayload)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
             _containerId = ContainerMetadata.GetContainerId();
             _entityId = ContainerMetadata.GetEntityId();
+            _compressPayload = compressPayload;
         }
 
         protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
@@ -51,8 +55,12 @@ namespace Datadog.Trace.Telemetry.Transports
                 // have to buffer in memory so we know the content length
                 var serializedData = SerializeTelemetry(data);
                 var bytes = Encoding.UTF8.GetBytes(serializedData);
-
                 var request = _requestFactory.Create(_endpoint);
+
+                if (_compressPayload)
+                {
+                    bytes = CompressGzip(bytes);
+                }
 
                 request.AddHeader(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
                 request.AddHeader(TelemetryConstants.RequestTypeHeader, data.RequestType);
@@ -73,7 +81,8 @@ namespace Datadog.Trace.Telemetry.Transports
                 }
 
                 TelemetryFactory.Metrics.RecordCountTelemetryApiRequests(endpointMetricTag);
-                using var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json").ConfigureAwait(false);
+
+                using var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json", _compressPayload ? "gzip" : null).ConfigureAwait(false);
                 TelemetryFactory.Metrics.RecordCountTelemetryApiResponses(endpointMetricTag, response.GetTelemetryStatusCodeMetricTag());
                 if (response.StatusCode is >= 200 and < 300)
                 {
@@ -114,6 +123,18 @@ namespace Datadog.Trace.Telemetry.Transports
         internal static string SerializeTelemetry<T>(T data) => JsonConvert.SerializeObject(data, Formatting.None, SerializerSettings);
 
         protected abstract MetricTags.TelemetryEndpoint GetEndpointMetricTag();
+
+        private static byte[] CompressGzip(byte[] input)
+        {
+            using var output = new MemoryStream();
+            // leaveOpen=true is not needed here, but harmless
+            using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+            {
+                gzip.Write(input, 0, input.Length);
+            }
+
+            return output.ToArray();
+        }
 
         private static bool IsFatalException(Exception ex)
         {
