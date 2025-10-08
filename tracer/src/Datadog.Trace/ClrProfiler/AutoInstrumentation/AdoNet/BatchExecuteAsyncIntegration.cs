@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 
 /// <summary>
 /// CallTarget instrumentation for:
-/// Task[*] [DbBatch].Execute*Async(*)
+/// Task[*] [DbBatch].Execute*Async(CancellationToken)
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

@@ -12442,7 +12442,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12467,7 +12467,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12537,7 +12537,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12586,7 +12586,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1

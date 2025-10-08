@@ -380,7 +380,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
-            CallTargetType = typeof(BatchExecuteAsyncIntegration))]
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class BatchExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
@@ -390,7 +390,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteReader,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-            CallTargetType = typeof(BatchExecuteIntegration))]
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class BatchExecuteReaderWithBehaviorAttribute : Attribute
         {
@@ -400,7 +400,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
-            CallTargetType = typeof(BatchExecuteAsyncIntegration))]
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class BatchExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
@@ -410,7 +410,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-            CallTargetType = typeof(BatchExecuteIntegration))]
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class BatchExecuteDbDataReaderWithBehaviorAttribute : Attribute
         {
