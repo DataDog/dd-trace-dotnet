@@ -4241,6 +4241,10 @@ stages:
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
             fi
+            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._/-]+$ ]]; then
+              echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _ /"
+              exit 1
+            fi
           fi
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$REF and azdo_build_id=$(Build.BuildId) and is_release_version=False"
