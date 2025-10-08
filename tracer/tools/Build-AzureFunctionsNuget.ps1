@@ -34,15 +34,19 @@ $ProgressPreference = 'SilentlyContinue'
 # Resolve paths relative to script location
 $scriptDir = Split-Path -Parent $PSCommandPath
 $tracerDir = Split-Path -Parent $scriptDir
+Write-Verbose "Tracer directory: $tracerDir"
 
 # Clean up previous builds
+Write-Verbose "Cleaning up previous builds from: $tracerDir\bin\artifacts\nuget\azure-functions\"
 Remove-Item -Path "$tracerDir\bin\artifacts\nuget\azure-functions\*" -Force -ErrorAction SilentlyContinue
 
 # Remove package Datadog.AzureFunctions from NuGet cache
+Write-Verbose "Removing $packageId from NuGet cache..."
 $packageId = 'Datadog.AzureFunctions'
 $globalPackagesPath = & dotnet nuget locals global-packages --list | ForEach-Object {
     if ($_ -match "global-packages:\s*(.+)$") { $matches[1] }
 }
+Write-Verbose "Global packages path: $globalPackagesPath"
 
 if (-not $globalPackagesPath)
 {
@@ -59,19 +63,30 @@ else
     }
     else
     {
-        Write-Host "Package `"$packagePath`" not found in the NuGet cache."
+        Write-Verbose "Package `"$packagePath`" not found in the NuGet cache."
     }
 }
 
 # Download Datadog.Trace.Bundle NuGet package from build artifacts
 if ($BuildId)
 {
+    Write-Verbose "Downloading Datadog.Trace.Bundle from build: $BuildId"
     & "$tracerDir\build.ps1" DownloadBundleNugetFromBuild --build-id $BuildId
+}
+else
+{
+    Write-Verbose "Skipping bundle download (no BuildId provided)"
 }
 
 # Build Datadog.Trace and publish to bundle folder, replacing the files from the NuGet package
+Write-Verbose "Publishing Datadog.Trace (net6.0) to bundle folder..."
 dotnet publish "$tracerDir\src\Datadog.Trace" -c Release -o "$tracerDir\src\Datadog.Trace.Bundle\home\net6.0" -f 'net6.0'
+
+Write-Verbose "Publishing Datadog.Trace (net461) to bundle folder..."
 dotnet publish "$tracerDir\src\Datadog.Trace" -c Release -o "$tracerDir\src\Datadog.Trace.Bundle\home\net461" -f 'net461'
 
 # Build Azure Functions NuGet package
+Write-Verbose "Building Datadog.AzureFunctions NuGet package..."
 & "$tracerDir\build.ps1" BuildAzureFunctionsNuget
+
+Write-Verbose "Build complete!"
