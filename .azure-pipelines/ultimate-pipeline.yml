@@ -2777,6 +2777,7 @@ stages:
         useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2785,6 +2786,7 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2793,6 +2795,7 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
