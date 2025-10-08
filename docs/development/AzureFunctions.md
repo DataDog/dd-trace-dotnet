@@ -95,6 +95,36 @@ Whether a Functions app uses this new mode is subtle:
 
 and the project will have a reference to [Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore](https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore/) package.
 
+## Local Development
+
+### Building the Datadog.AzureFunctions NuGet Package
+
+For rapid iteration when testing changes to `Datadog.Trace` in Azure Functions projects, use the `Build-AzureFunctionsNuget.ps1` helper script:
+
+```powershell
+# Build using existing bundle
+.\tracer\tools\Build-AzureFunctionsNuget.ps1
+
+# Download bundle from a specific Azure DevOps build first
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345
+
+# Build and copy package to a specific location
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo 'D:\temp\nuget'
+
+# Use -Verbose for detailed progress
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -Verbose
+```
+
+This script:
+1. Cleans up previous builds
+2. Removes the `Datadog.AzureFunctions` package from the local NuGet cache
+3. Optionally downloads `Datadog.Trace.Bundle` from a specific build
+4. Builds `Datadog.Trace` and publishes to the bundle folder (net6.0 and net461 targets)
+5. Builds the `Datadog.AzureFunctions` NuGet package
+6. Optionally copies the package to a specified path
+
+See `Get-Help .\tracer\tools\Build-AzureFunctionsNuget.ps1 -Full` for complete documentation.
+
 ## Debugging
 
 To debug Azure Functions locally ensure that you have the following:
