@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.CodeDom;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -62,9 +63,9 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
         var request = _apiRequestFactory.Create(new Uri(uri));
         var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
 
-        return isDebuggerV1
-                   ? request.PostAsync(data, MimeTypes.Json)
-                   : request.PostAsync([new("event", MimeTypes.Json, "event.json", data)]);
+        return this is DiagnosticsUploadApi && !isDebuggerV1
+                   ? request.PostAsync([new("event", MimeTypes.Json, "event.json", data)])
+                   : request.PostAsync(data, MimeTypes.Json);
     }
 
     private string GetDefaultTagsMergedWithGlobalTags()
