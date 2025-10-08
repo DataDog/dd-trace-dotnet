@@ -69,6 +69,8 @@ namespace Datadog.Trace.OTelMetrics
             _httpClient = CreateHttpClient(_endpoint);
         }
 
+        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers);
+
         /// <summary>
         /// Exports a batch of metrics using OTLP protocol asynchronously.
         /// This is the preferred method for better performance.
@@ -201,23 +203,25 @@ namespace Datadog.Trace.OTelMetrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            return await SendWithRetry(() =>
+            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers)
             {
-                var content = new ByteArrayContent(otlpPayload);
+                var content = new ByteArrayContent(payload);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
 
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, _endpoint)
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
                     Content = content
                 };
 
-                foreach (var header in _headers)
+                foreach (var header in headers)
                 {
                     httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
 
                 return httpRequest;
-            }).ConfigureAwait(false);
+            }
+
+            return await SendWithRetry(otlpPayload, CreateHttpProtobufRequest).ConfigureAwait(false);
         }
 
         private async Task<bool> SendGrpcRequest(byte[] otlpPayload)
@@ -226,17 +230,16 @@ namespace Datadog.Trace.OTelMetrics
             return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendWithRetry(Func<HttpRequestMessage> requestFactory)
+        private async Task<bool> SendWithRetry(byte[] otlpPayload, HttpRequestFactory requestFactory)
         {
             const int maxRetries = 3;
             var retryDelay = TimeSpan.FromMilliseconds(100);
 
             for (var attempt = 0; attempt <= maxRetries; attempt++)
             {
-                HttpRequestMessage? httpRequest = null;
                 try
                 {
-                    httpRequest = requestFactory();
+                    using HttpRequestMessage httpRequest = requestFactory(otlpPayload, _endpoint, _headers);
 
                     using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_timeoutMs));
                     var response = await _httpClient.SendAsync(httpRequest, cts.Token).ConfigureAwait(false);
@@ -302,10 +305,6 @@ namespace Datadog.Trace.OTelMetrics
                     {
                         return false;
                     }
-                }
-                finally
-                {
-                    httpRequest?.Dispose();
                 }
             }
 
