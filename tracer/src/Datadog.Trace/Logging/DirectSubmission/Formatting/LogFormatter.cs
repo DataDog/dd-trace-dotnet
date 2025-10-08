@@ -62,7 +62,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
 
-        internal string? Tags { get; set; }
+        internal string? Tags { get; private set; }
 
         private static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
         {
