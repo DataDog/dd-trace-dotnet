@@ -19,10 +19,10 @@ public class AllTriggers
 
     private readonly ILogger _logger;
 
-    public AllTriggers(ILoggerFactory loggerFactory, IHostApplicationLifetime lifetime)
+    public AllTriggers(ILogger<AllTriggers> logger, IHostApplicationLifetime lifetime)
     {
         _lifetime = lifetime;
-        _logger = loggerFactory.CreateLogger<AllTriggers>();
+        _logger = logger;
     }
 
     [Function("TriggerAllTimer")]
@@ -54,7 +54,6 @@ public class AllTriggers
 
         _logger.LogInformation($"Calling StopApplication()");
         _lifetime.StopApplication();
-
         // brutally kill the host, as can't find any other way to signal it should stop
         foreach (var process in Process.GetProcessesByName("func"))
         {
@@ -85,10 +84,10 @@ public class AllTriggers
         using var s = SampleHelpers.CreateScope("Manual inside Trigger");
        
         _logger.LogInformation("Calling simple");
-        await Attempt("simple", _logger);
-        await Attempt("exception", _logger, expectFailure: true);
-        await Attempt("error", _logger, expectFailure: true);
-        await Attempt("badrequest", _logger, expectFailure: true);
+        await Attempt("simple");
+        await Attempt("exception", expectFailure: true);
+        await Attempt("error", expectFailure: true);
+        await Attempt("badrequest", expectFailure: true);
 
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -99,8 +98,7 @@ public class AllTriggers
 
     [Function("Exception")]
     public async Task<HttpResponseData> Exception(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "exception")] HttpRequestData req,
-        ILogger log)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "exception")] HttpRequestData req)
     {
         using var s = SampleHelpers.CreateScope("Manual inside Exception");
 
@@ -144,7 +142,7 @@ public class AllTriggers
         return simpleResponse;
     }
 
-    private async Task Attempt(string endpoint, ILogger log, bool expectFailure = false)
+    private async Task Attempt(string endpoint, bool expectFailure = false)
     {
         try
         {
@@ -154,11 +152,11 @@ public class AllTriggers
         {
             if (expectFailure)
             {
-                log.LogInformation(ex, "Trigger attempt failure for {endpoint} as expected", endpoint);
+                _logger.LogInformation(ex, "Trigger attempt failure for {endpoint} as expected", endpoint);
             }
             else
             {
-                log.LogError(ex, "Trigger attempt failure for {endpoint}", endpoint);
+                _logger.LogError(ex, "Trigger attempt failure for {endpoint}", endpoint);
             }
         }
     }

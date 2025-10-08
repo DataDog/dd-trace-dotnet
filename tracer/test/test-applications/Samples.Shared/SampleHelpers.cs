@@ -53,8 +53,8 @@ namespace Samples
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
-        private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>) }, null);
-        private static readonly MethodInfo TrackUserLoginFailureEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginFailureEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>) }, null);
+        private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>), TracerType }, null);
+        private static readonly MethodInfo TrackUserLoginFailureEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginFailureEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>), TracerType }, null);
 #if NETCOREAPP
         private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -368,15 +368,15 @@ namespace Samples
             SetExceptionMethod.Invoke(span, new object[] { new Exception() });
         }
 
-        public static IEnumerable<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
+        public static List<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
         {
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                           from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
+                          let key = (envVar.Key as string)?.ToUpperInvariant() // use ToUpperInvariant() because in .NET Framework string.Contains() doesn't have StringComparison overload
                           let value = envVar.Value as string
-                          where key.StartsWith(prefix)
+                          where key.StartsWith(prefix, StringComparison.Ordinal) && !key.Contains("API_KEY")
                           orderby key
                           select new KeyValuePair<string, string>(key, value);
 
@@ -416,12 +416,14 @@ namespace Samples
 
         public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
         {
-            TrackUserLoginSuccessEventMethod.Invoke(null, new object[] { userId, metadata });
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            TrackUserLoginSuccessEventMethod.Invoke(null, new object[] { userId, metadata, tracer });
         }
-        
+
         public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
         {
-            TrackUserLoginFailureEventMethod.Invoke(null, new object[] { userId, exists, metadata });
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            TrackUserLoginFailureEventMethod.Invoke(null, new object[] { userId, exists, metadata, tracer });
         }
 
         public static void SetUser(string userId)

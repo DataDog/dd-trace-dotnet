@@ -96,12 +96,12 @@ public:
         const char* name,
         std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         RawSampleTransformer* rawSampleTransformer,
-        std::unique_ptr<RingBuffer> ringBuffer,
+        RingBuffer* ringBuffer,
         MetricsRegistry& metricsRegistry) :
         ProviderBase(name),
         _valueOffsets{std::move(valueOffsets)},
         _rawSampleTransformer{rawSampleTransformer},
-        _collectedSamples{std::move(ringBuffer)},
+        _collectedSamples{ringBuffer},
         _failedReservationMetric{metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_raw_sample_failed_allocation")}
     {
     }
@@ -110,7 +110,7 @@ public:
 
     SampleHolder GetRawSample()
     {
-        return SampleHolder(_collectedSamples.get(), _failedReservationMetric.get());
+        return SampleHolder(_collectedSamples, _failedReservationMetric.get());
     }
     
     const char* GetName() override
@@ -182,6 +182,6 @@ private:
 
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
     RawSampleTransformer* _rawSampleTransformer;
-    std::unique_ptr<RingBuffer> _collectedSamples;
+    RingBuffer* _collectedSamples;
     std::shared_ptr<DiscardMetrics> _failedReservationMetric;
 };

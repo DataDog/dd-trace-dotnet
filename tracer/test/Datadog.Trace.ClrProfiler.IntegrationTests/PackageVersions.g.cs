@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> Quartz => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Quartz : PackageVersionsLatestSpecific.Quartz;
+
         public static IEnumerable<object[]> AwsSdk => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSdk : PackageVersionsLatestSpecific.AwsSdk;
 
         public static IEnumerable<object[]> AwsDynamoDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsDynamoDb : PackageVersionsLatestSpecific.AwsDynamoDb;
@@ -125,6 +127,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> Yarp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Yarp : PackageVersionsLatestSpecific.Yarp;
 
         public static IEnumerable<object[]> AzureServiceBus => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBus : PackageVersionsLatestSpecific.AzureServiceBus;
+
+        public static IEnumerable<object[]> AzureServiceBusAPM => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBusAPM : PackageVersionsLatestSpecific.AzureServiceBusAPM;
 
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
     }

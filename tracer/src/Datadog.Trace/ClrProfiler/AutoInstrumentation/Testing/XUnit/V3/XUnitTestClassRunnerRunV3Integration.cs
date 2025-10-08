@@ -36,7 +36,7 @@ public static class XUnitTestClassRunnerRunV3Integration
 
         if (TestModule.Current is { } testModule)
         {
-            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(context.TestClass.TestClassName ?? string.Empty));
+            return new CallTargetState(null, testModule.GetOrCreateSuite(context.TestClass.TestClassName ?? string.Empty));
         }
 
         Common.Log.Warning("Test module cannot be found.");

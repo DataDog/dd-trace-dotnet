@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/absolute-route,
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -28,6 +29,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

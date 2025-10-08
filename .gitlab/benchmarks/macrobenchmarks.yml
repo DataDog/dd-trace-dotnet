@@ -13,7 +13,7 @@ stages:
   - benchmarks-win
 
 variables:
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-5
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-6
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -467,6 +467,13 @@ profiler_cpu_timer_create-arm64:
       - platform/artifacts/
     expire_in: 3 months
   variables:
+    AWS_REGION: "us-east-1"
+    
+    # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
+    # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
+    # benchmarks (to be used by the ephemeral instances).
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
@@ -489,14 +496,17 @@ profiler_cpu_timer_create-arm64:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=dd-trace-dotnet/macro
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
     - |
-      bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
-        --region "${AWS_REGION}" \
-        --bypass-stack-destroy
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
+          --region "${AWS_REGION}" \
+          --bypass-stack-destroy
+      else
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
 
 baseline-win:
   extends: .benchmarks-win

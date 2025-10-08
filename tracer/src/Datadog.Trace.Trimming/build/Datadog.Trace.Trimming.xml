@@ -239,6 +239,10 @@
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
+      <type fullname="System.Diagnostics.Metrics.Instrument" />
+      <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />
+      <type fullname="System.Diagnostics.Metrics.Meter" />
+      <type fullname="System.Diagnostics.Metrics.MeterListener" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />
@@ -368,13 +372,16 @@
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
       <type fullname="System.Net.Http.Headers.NameValueHeaderValue" />
+      <type fullname="System.Net.Http.Headers.RetryConditionHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
       <type fullname="System.Net.Http.HttpContent" />
       <type fullname="System.Net.Http.HttpMessageHandler" />
+      <type fullname="System.Net.Http.HttpMessageInvoker" />
       <type fullname="System.Net.Http.HttpMethod" />
       <type fullname="System.Net.Http.HttpRequestMessage" />
       <type fullname="System.Net.Http.HttpResponseMessage" />
+      <type fullname="System.Net.Http.HttpVersionPolicy" />
       <type fullname="System.Net.Http.MultipartFormDataContent" />
       <type fullname="System.Net.Http.SocketsHttpConnectionContext" />
       <type fullname="System.Net.Http.SocketsHttpHandler" />
@@ -390,6 +397,7 @@
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />
+      <type fullname="System.Net.HttpVersion" />
       <type fullname="System.Net.ICredentials" />
       <type fullname="System.Net.IPAddress" />
       <type fullname="System.Net.IPEndPoint" />
@@ -738,6 +746,7 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
+      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
@@ -1035,7 +1044,6 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
-      <type fullname="System.Threading.SemaphoreFullException" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />

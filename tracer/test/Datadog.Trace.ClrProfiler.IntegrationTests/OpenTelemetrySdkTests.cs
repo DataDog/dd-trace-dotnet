@@ -84,6 +84,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
+#if NET6_0_OR_GREATER
+        public static IEnumerable<object[]> GetMetricsTestData()
+        {
+            foreach (var packageVersion in PackageVersions.OpenTelemetry)
+            {
+                yield return [packageVersion[0], "false", "true"];
+                yield return [packageVersion[0], "true", "false"];
+            }
+        }
+#endif
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
         [SkippableTheory]
@@ -202,15 +213,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
-        public async Task SubmitsOtlpMetrics(string packageVersion)
+        [MemberData(nameof(GetMetricsTestData))]
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
             var runtimeMajor = Environment.Version.Major;
 
             var snapshotName = runtimeMajor switch
             {
-                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => ".NET_6",
+                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => otelMetricsEnabled.Equals("true") ? ".NET_6_OTEL" : ".NET_6_DD",
                 7 or 8 when parsedVersion >= new Version("1.5.1") && parsedVersion < new Version("1.10.0") => ".NET_7_8",
                 >= 9 when parsedVersion >= new Version("1.10.0") => string.Empty,
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
@@ -218,18 +229,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var initialAgentPort = TcpPortProvider.GetOpenPort();
 
-            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_ENV", string.Empty);
+            SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
+            SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            // Up until Sdk version 1.6.0 Otel didn't support reading from the env var
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
 
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
             {
+                // Collect requests from both MockTracerAgent and MockOtlpGrpcServer
                 var metricRequests = agent.OtlpRequests
-                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics"))
+                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics") || r.PathAndQuery.Contains("MetricsService"))
                                           .ToList();
 
                 metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
@@ -273,6 +290,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (attribute.Key.Equals("telemetry.sdk.version"))
                     {
                         attribute.Value.StringValue = "sdk-version";
+                    }
+                    else if (attribute.Key.Equals("telemetry.sdk.name"))
+                    {
+                        attribute.Value.StringValue = "sdk-name";
                     }
                 }
 

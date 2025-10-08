@@ -4,7 +4,10 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Ci;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -32,9 +35,20 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public override Task FlakyRetries(string packageVersion)
+    public override Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
         return base.FlakyRetries(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    [Flaky("Under investigation", 5)]
+    public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
+    {
+        return base.FlakyRetriesWithExceptionReplay(packageVersion);
     }
 }
 

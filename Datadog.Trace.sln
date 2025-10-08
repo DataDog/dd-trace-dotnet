@@ -527,6 +527,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.Kinesis", "trac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.AzureServiceBus\Samples.AzureServiceBus.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus.APM", "tracer\test\test-applications\integrations\Samples.AzureServiceBus.APM\Samples.AzureServiceBus.APM.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D6}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.DataStreams.AzureServiceBus\Samples.DataStreams.AzureServiceBus.csproj", "{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet", "tracer\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj", "{B28A33A4-C694-4514-BC30-2680605B0B3D}"
@@ -612,6 +614,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.InstrumentedApi", "tracer\test\benchmarks\Benchmarks.OpenTelemetry.InstrumentedApi\Benchmarks.OpenTelemetry.InstrumentedApi.csproj", "{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AzureFunctions", "tracer\src\Datadog.AzureFunctions\Datadog.AzureFunctions.csproj", "{BB073E40-F46D-E52B-662E-395EED834111}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Quartz", "tracer\test\test-applications\integrations\Samples.Quartz\Samples.Quartz.csproj", "{CF69BC17-1527-425A-9B02-8E223BC31DB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.HostLogsDisabled", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.HostLogsDisabled\Samples.AzureFunctions.V4Isolated.HostLogsDisabled.csproj", "{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1321,6 +1327,10 @@ Global
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1477,6 +1487,14 @@ Global
 		{BB073E40-F46D-E52B-662E-395EED834111}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB073E40-F46D-E52B-662E-395EED834111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1677,6 +1695,7 @@ Global
 		{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{BC44A41F-1BED-4438-9F66-0EA5607906D6} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B28A33A4-C694-4514-BC30-2680605B0B3D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7} = {8CEC2042-F11C-49F5-A674-2355793B600A}
@@ -1717,6 +1736,8 @@ Global
 		{501AD343-1951-FF43-0C7F-3FE3FDF5A660} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BB073E40-F46D-E52B-662E-395EED834111} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{CF69BC17-1527-425A-9B02-8E223BC31DB8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1843,6 +1864,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c4abf344-3263-45d5-a074-03fb206ff309}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c4cdf6a6-40e5-4ccd-ac4c-143f9f4398ca}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c5e7978a-de2a-4944-86db-4721a110e720}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c770f9f8-0430-587d-eb7a-8bec2fe9b61c}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c7de0626-9eb6-475e-aa0c-cb9de21d4fae}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c861221d-9c3b-441f-bbd5-343f49b9dd10}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c94e0739-1da0-4657-8d53-fa4143f6fda3}*SharedItemsImports = 5

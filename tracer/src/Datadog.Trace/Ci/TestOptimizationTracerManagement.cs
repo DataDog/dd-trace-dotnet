@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci;
 
@@ -38,6 +39,14 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
                 if (Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue))
                 {
                     EventPlatformProxySupport = parsedValue;
+                    if (settings.DynamicInstrumentationEnabled == true)
+                    {
+                        DiscoveryService = getDiscoveryServiceFunc?.Invoke(settings) ?? NullDiscoveryService.Instance;
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("TestOptimizationTracerManagement: Discovery service set to {DiscoveryServiceType}.", DiscoveryService.GetType().Name);
+                        }
+                    }
                 }
                 else if (getDiscoveryServiceFunc != null)
                 {

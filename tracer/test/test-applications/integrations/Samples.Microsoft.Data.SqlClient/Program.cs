@@ -17,17 +17,9 @@ namespace Samples.Microsoft.Data.SqlClient
 
             using (var connection = OpenConnection(typeof(SqlConnection)))
             {
-                if (connection is null)
-                {
-                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
-                    return 13;
-                }
-                
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
-            // Version 4.0.0 causes a hard crash
-#if !SQLCLIENT_4
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
@@ -37,7 +29,7 @@ namespace Samples.Microsoft.Data.SqlClient
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
-#endif
+
             // allow time to flush
             await Task.Delay(2000, cts.Token);
             return 0;
@@ -45,28 +37,31 @@ namespace Samples.Microsoft.Data.SqlClient
 
         private static DbConnection OpenConnection(Type connectionType)
         {
-            int numAttempts = 3;
+            var remainingAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
 @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
-            for (int i = 0; i < numAttempts; i++)
+            DbConnection connection = null;
+            retry:
+            try
             {
-                DbConnection connection = null;
-
-                try
-                {
-                    connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
-                    connection.Open();
-                    return connection;
-                }
-                catch (Exception ex)
+                connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
+                connection.Open();
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                if (remainingAttempts > 0)
                 {
                     Console.WriteLine(ex);
                     connection?.Dispose();
+                    remainingAttempts--;
+                    goto retry;
                 }
-            }
 
-            return null;
+                // else
+                throw;
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ public:
     virtual const char* GetName() = 0;
     virtual bool Start() = 0;
     virtual bool Stop() = 0;
+    virtual bool IsStarted() = 0;
 
     virtual ~IService() = default;
 };

@@ -25,6 +25,9 @@ namespace Datadog.Trace.Activity.Handlers
             // Azure Service Bus handlers
             new AzureServiceBusActivityHandler(),
 
+            // Quartz handlers
+            new QuartzActivityHandler(),
+
             // The default handler catches an activity and creates a datadog span from it.
             new DefaultActivityHandler(),
         };

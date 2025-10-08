@@ -6,11 +6,12 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {
     public DateTimeOffset EnqueuedTime { get; }
+
+    IAmqpAnnotatedMessage? AmqpMessage { get; }
 }

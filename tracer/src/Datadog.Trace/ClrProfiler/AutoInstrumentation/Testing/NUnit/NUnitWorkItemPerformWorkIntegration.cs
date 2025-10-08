@@ -55,12 +55,12 @@ public static class NUnitWorkItemPerformWorkIntegration
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                 TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
-                var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
+                var newModule = TestModule.Create(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                NUnitIntegration.SetTestSuiteTo(item, module.InternalGetOrCreateSuite(item.FullName));
+                NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
                 break;
             case "TestMethod":
                 if (NUnitIntegration.ShouldSkip(item, out _, out _))

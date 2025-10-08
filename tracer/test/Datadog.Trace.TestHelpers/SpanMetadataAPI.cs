@@ -172,11 +172,32 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAzureServiceBusInboundV0(excludeTags),
             };
 
+        public static Result IsAzureServiceBusInboundAPM(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusInboundAPMV1(excludeTags),
+                _ => span.IsAzureServiceBusInboundAPMV0(excludeTags),
+            };
+
         public static Result IsAzureServiceBusOutbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
                 "v1" => span.IsAzureServiceBusOutboundV1(excludeTags),
                 _ => span.IsAzureServiceBusOutboundV0(excludeTags),
+            };
+
+        public static Result IsAzureServiceBusOutboundAPM(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusOutboundAPMV1(excludeTags),
+                _ => span.IsAzureServiceBusOutboundAPMV0(excludeTags),
+            };
+
+        public static Result IsAzureServiceBusCreateAPM(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusCreateV1(excludeTags),
+                _ => span.IsAzureServiceBusCreateV0(excludeTags),
             };
 
         public static Result IsAzureServiceBusRequest(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
@@ -417,6 +438,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 "v1" => span.IsWebRequestV1(),
                 _ => span.IsWebRequestV0(),
+            };
+
+        public static Result IsQuartz(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsQuartzV1(),
+                _ => span.IsQuartzV0(),
             };
     }
 }

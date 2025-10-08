@@ -65,7 +65,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
             }
 
             TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
-            var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
+            var module = TestModule.Create(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             module.EnableIpcClient();
             return new CallTargetState(null, module);
         }

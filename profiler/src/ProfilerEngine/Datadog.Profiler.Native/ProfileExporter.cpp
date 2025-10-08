@@ -160,6 +160,12 @@ void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
     _upscaledProviders.push_back(provider);
 }
 
+void ProfileExporter::RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider)
+{
+    assert(provider != nullptr);
+    _upscaledPoissonProviders.push_back(provider);
+}
+
 void ProfileExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
 {
     assert(provider != nullptr);
@@ -437,6 +443,19 @@ std::vector<UpscalingInfo> ProfileExporter::GetUpscalingInfos()
     return samplingInfos;
 }
 
+std::vector<UpscalingPoissonInfo> ProfileExporter::GetUpscalingPoissonInfos()
+{
+    std::vector<UpscalingPoissonInfo> samplingInfos;
+    samplingInfos.reserve(_upscaledPoissonProviders.size());
+
+    for (auto& provider : _upscaledPoissonProviders)
+    {
+        samplingInfos.push_back(provider->GetPoissonInfo());
+    }
+
+    return samplingInfos;
+}
+
 void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
@@ -460,6 +479,28 @@ void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vecto
             {
                 Log::Warn(succeeded.message());
             }
+        }
+    }
+}
+
+void ProfileExporter::AddUpscalingPoissonRules(libdatadog::Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos)
+{
+    for (auto const& upscalingInfo : upscalingInfos)
+    {
+        ddog_prof_Slice_Usize offsets_slice = { upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size() };
+
+        auto succeeded =
+            profile->AddUpscalingRulePoisson(
+                upscalingInfo.Offsets,
+                std::string(),  // TODO: see how to get the type names / count
+                std::string(),
+                upscalingInfo.SumOffset,
+                upscalingInfo.CountOffset,
+                upscalingInfo.SamplingDistance
+            );
+        if (!succeeded)
+        {
+            Log::Warn(succeeded.message());
         }
     }
 }
@@ -531,6 +572,7 @@ bool ProfileExporter::Export(bool lastCall)
     // As the profiler samples the events for the process, the upscaling rules are the same
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
+    auto upscalingPoissonInfos = GetUpscalingPoissonInfos();
 
     // Process-level samples
     auto processSamples = GetProcessSamples();
@@ -580,7 +622,7 @@ bool ProfileExporter::Export(bool lastCall)
         AddProcessSamples(profile.get(), processSamples);
 
         AddUpscalingRules(profile.get(), upscalingInfos);
-
+        AddUpscalingPoissonRules(profile.get(), upscalingPoissonInfos);
 
 
         auto additionalTags = libdatadog::Tags{{"env", applicationInfo.Environment},
@@ -791,8 +833,13 @@ std::string ProfileExporter::GetInfo() const
             builder << "auto";
         }
         else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
         {
-            builder << "injection";
+            builder << "standby"; // should never occur because the managed layer did not set the activation status
+        }
+        else
+        {
+            builder << "none";
         }
         builder << "\"";
     builder << "}}";
