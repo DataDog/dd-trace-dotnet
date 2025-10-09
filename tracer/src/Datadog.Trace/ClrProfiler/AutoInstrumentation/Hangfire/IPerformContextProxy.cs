@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
@@ -20,7 +21,7 @@ public interface IPerformContextProxy : IDuckType
     /// <summary>
     /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
     /// </summary>
-    object Items { get; }
+    IDictionary<string, object?> Items { get; }
 
     /// <summary>
     /// Gets a value of Hangfire.BackgroundJob
