@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -32,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ConfigureIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigureIntegration>();
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values)
     {
         ConfigureSettingsWithManualOverrides(values, useLegacySettings: false);
@@ -42,6 +44,14 @@ public class ConfigureIntegration
     internal static void ConfigureSettingsWithManualOverrides(Dictionary<string, object?> values, bool useLegacySettings)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
+
+        // If the current tracer manager is locked (e.g., CI Test Optimization),
+        // do not attempt to replace it to avoid throwing in CreateInitializedTracer.
+        if (TracerManager.Instance is ILockedTracer)
+        {
+            Log.Information("Skipping Tracer.Configure from manual instrumentation because the current tracer instance is locked and cannot be replaced.");
+            return;
+        }
 
         // Is this from calling new TracerSettings() or TracerSettings.Global?
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
