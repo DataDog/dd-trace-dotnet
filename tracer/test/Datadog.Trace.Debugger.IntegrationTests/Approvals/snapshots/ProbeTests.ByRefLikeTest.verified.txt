@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,8 +10,7 @@
             "10": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }
@@ -55,8 +54,7 @@
             "11": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }
@@ -100,8 +98,7 @@
             "12": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }

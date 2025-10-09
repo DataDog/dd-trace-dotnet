@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -14,8 +14,7 @@
                   "value": "1"
                 },
                 "this": {
-                  "type": "LineConditionFullSnapshot",
-                  "value": "LineConditionFullSnapshot"
+                  "type": "LineConditionFullSnapshot"
                 }
               },
               "locals": {
