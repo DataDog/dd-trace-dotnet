@@ -2,9 +2,10 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Hangfire.onPerform,
-    Resource: JOB TestJob.Execute,
+    Name: hangfire.perform,
+    Resource: job TestJob.Execute,
     Service: Samples.Hangfire,
+    Type: hangfire,
     ParentId: Id_3,
     Tags: {
       component: Hangfire,
@@ -26,9 +27,10 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: Hangfire.onPerform,
-    Resource: JOB TestJob.ThrowException,
+    Name: hangfire.perform,
+    Resource: job TestJob.ThrowException,
     Service: Samples.Hangfire,
+    Type: hangfire,
     ParentId: Id_3,
     Error: 1,
     Tags: {

@@ -21,6 +21,7 @@ internal static class HangfireCommon
 
     internal const string IntegrationName = nameof(IntegrationId.Hangfire);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.Hangfire;
+    internal const string IntegrationType = "hangfire";
 
     public static Scope? CreateScope(Tracer tracer, HangfireTags tags, IPerformingContextProxy performingContext, ISpanContext? parentContext = null, bool finishOnClose = true)
     {
@@ -36,6 +37,7 @@ internal static class HangfireCommon
         {
             scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, tags: tags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            scope.Span.Type = IntegrationType;
             scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
             tags.JobId = performingContext.JobId;
             tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");

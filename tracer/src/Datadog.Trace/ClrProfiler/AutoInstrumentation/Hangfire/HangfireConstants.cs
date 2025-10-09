@@ -11,10 +11,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// </summary>
 internal class HangfireConstants
 {
-    internal const string OnPerformOperation = "Hangfire.onPerform";
+    internal const string OnPerformOperation = "hangfire.perform";
     internal const string DatadogScopeKey = "datadog_scope_key";
     internal const string DatadogContextKey = "datadog_context_key";
-    internal const string JobIdTag = "job.ID";
-    internal const string JobCreatedAtTag = "job.CreatedAt";
-    internal const string ResourceNamePrefix = "JOB ";
+    internal const string JobIdTag = "job.id";
+    internal const string JobCreatedAtTag = "job.createdat";
+    internal const string ResourceNamePrefix = "job ";
 }
