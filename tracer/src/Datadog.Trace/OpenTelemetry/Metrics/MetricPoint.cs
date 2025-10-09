@@ -160,7 +160,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
                 var delta = _runningDoubleValue - previousCumulative;
 
-                sumForSnapshot = AggregationTemporality == Datadog.Trace.OpenTelemetry.Metrics.AggregationTemporality.Delta
+                sumForSnapshot = AggregationTemporality == Metrics.AggregationTemporality.Delta
                     ? delta
                     : _runningDoubleValue;
 
@@ -184,7 +184,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                 Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
             }
 
-            if (AggregationTemporality == Datadog.Trace.OpenTelemetry.Metrics.AggregationTemporality.Delta)
+            if (AggregationTemporality == Metrics.AggregationTemporality.Delta)
             {
                 _runningCountValue = 0;
                 _runningDoubleValue = 0.0;

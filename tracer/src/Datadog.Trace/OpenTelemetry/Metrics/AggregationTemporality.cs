@@ -13,7 +13,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics;
 /// Represents the aggregation temporality of a metric.
 /// Values match the OTLP protobuf specification.
 /// </summary>
-public enum AggregationTemporality
+internal enum AggregationTemporality
 {
     /// <summary>
     /// Delta temporality, representing changes since the last measurement.
