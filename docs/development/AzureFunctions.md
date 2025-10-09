@@ -1,5 +1,10 @@
 ﻿# Azure Functions Integration
 
+This document describes how dd-trace-dotnet integrates with Azure Functions for distributed tracing.
+
+**Related Documentation:**
+- [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md) - Detailed architectural information about Azure Functions Host and .NET Worker
+
 Azure functions operates in one of two ways:
 
 - In-process
@@ -16,6 +21,8 @@ We also instrument the `FunctionExecutor`. This provides all the details about t
 ## Isolated Azure Functions integration
 
 Isolated functions are the only supported model for Azure Functions going forward. In this model, instead of the customer's app being a class library, its a real ASP.NET Core application. The host `func.exe` starts the customer app as a sub process, and sets up a GRPC channel between the two apps. The `func.exe` host acts as a proxy for requests to the customer's app.
+
+For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
 
 `func.exe` sets up an in-process Azure Function for every function in the customer's app. Each of the functions in `func.exe` are simple calls that proxy the request to the customer app, and then return the response.
 
