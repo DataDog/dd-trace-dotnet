@@ -37,7 +37,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -57,7 +58,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -81,7 +83,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -106,7 +109,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -131,7 +135,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -156,7 +161,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true);
 
@@ -185,7 +191,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: dependencyCollectionEnabled,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionEnabled: true);
 
         // First controller
         var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
