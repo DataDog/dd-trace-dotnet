@@ -8,8 +8,9 @@
 #nullable enable
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.OTelMetrics;
 
@@ -19,22 +20,63 @@ namespace Datadog.Trace.OTelMetrics;
 /// </summary>
 internal readonly struct TagSet : IEquatable<TagSet>
 {
+    private static readonly IComparer<KeyValuePair<string, object?>> KeyComparer =
+        Comparer<KeyValuePair<string, object?>>.Create(static (a, b) => string.CompareOrdinal(a.Key, b.Key));
+
     private readonly string _key;
 
     private TagSet(string key) => _key = key;
 
     public static TagSet FromSpan(ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
-        if (tags.Length == 0)
+        var len = tags.Length;
+        if (len == 0)
         {
             return new TagSet(string.Empty);
         }
 
-        var sorted = tags.ToArray();
-        Array.Sort(sorted, (a, b) => string.CompareOrdinal(a.Key, b.Key));
+        if (len == 1)
+        {
+            var kv = tags[0];
+            var sb = StringBuilderCache.Acquire();
+            sb.Append(kv.Key).Append('=');
+            if (kv.Value is not null)
+            {
+                sb.Append(kv.Value);
+            }
 
-        var key = string.Join(";", sorted.Select(kv => $"{kv.Key}={kv.Value}"));
-        return new TagSet(key);
+            return new TagSet(StringBuilderCache.GetStringAndRelease(sb));
+        }
+
+        var sorted = ArrayPool<KeyValuePair<string, object?>>.Shared.Rent(len);
+        try
+        {
+            tags.CopyTo(sorted);
+            Array.Sort(sorted, 0, len, KeyComparer);
+
+            var sb = StringBuilderCache.Acquire();
+            for (int i = 0; i < len; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(';');
+                }
+
+                var kv = sorted[i];
+                sb.Append(kv.Key).Append('=');
+                if (kv.Value is not null)
+                {
+                    sb.Append(kv.Value);
+                }
+            }
+
+            var key = StringBuilderCache.GetStringAndRelease(sb);
+            return new TagSet(key);
+        }
+        finally
+        {
+            ArrayPool<KeyValuePair<string, object?>>.Shared.Return(sorted);
+        }
     }
 
     public bool Equals(TagSet other) => _key == other._key;
