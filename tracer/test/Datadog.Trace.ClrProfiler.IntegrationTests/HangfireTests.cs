@@ -47,7 +47,7 @@ public class HangfireTests : TracingIntegrationTest
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 
-            var myServiceNameSpans = spans.Where(s => s.Service == "Samples.Hangfire-hangfire");
+            var myServiceNameSpans = spans.Where(s => s.GetTag("component") == "hangfire");
 
             ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Hangfire", isExternalSpan: false);
             var settings = VerifyHelper.GetSpanVerifierSettings();
