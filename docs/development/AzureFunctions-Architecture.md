@@ -7,8 +7,8 @@ This document provides detailed architectural information about Azure Functions 
 - [AGENTS.md](../../AGENTS.md) - Repository structure and development guidelines
 
 **External Resources:**
-- [Azure Functions Host Repository](https://github.com/Azure/azure-functions-host) (`D:\source\azure\azure-functions-host`)
-- [Azure Functions .NET Worker Repository](https://github.com/Azure/azure-functions-dotnet-worker) (`D:\source\azure\azure-functions-dotnet-worker`)
+- [Azure Functions Host Repository](https://github.com/Azure/azure-functions-host)
+- [Azure Functions .NET Worker Repository](https://github.com/Azure/azure-functions-dotnet-worker)
 
 ---
 
@@ -51,7 +51,7 @@ Azure Functions uses a **host-worker architecture** where:
 
 ## Azure Functions Host
 
-**Repository**: `D:\source\azure\azure-functions-host`
+**Repository**: [azure-functions-host](https://github.com/Azure/azure-functions-host)
 **Solution**: `WebJobs.Script.sln`
 
 ### Core Components
@@ -175,7 +175,7 @@ Implements the gRPC service for bidirectional streaming:
 
 ## Azure Functions .NET Worker
 
-**Repository**: `D:\source\azure\azure-functions-dotnet-worker`
+**Repository**: [azure-functions-dotnet-worker](https://github.com/Azure/azure-functions-dotnet-worker)
 **Main Solution**: `DotNetWorker.sln`
 
 ### Core Components
