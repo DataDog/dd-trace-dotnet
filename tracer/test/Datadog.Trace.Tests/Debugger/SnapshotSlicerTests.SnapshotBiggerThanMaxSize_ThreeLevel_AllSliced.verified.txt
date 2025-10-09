@@ -7,7 +7,6 @@
           pruned: true
         },
         type: VeryComplexClass,
-        value: VeryComplexClass
       }
     }
   }
