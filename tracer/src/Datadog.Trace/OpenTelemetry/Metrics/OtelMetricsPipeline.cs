@@ -11,7 +11,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// Composition root for the OpenTelemetry Metrics pipeline.

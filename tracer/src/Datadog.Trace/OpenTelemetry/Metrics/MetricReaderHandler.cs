@@ -14,7 +14,7 @@ using System.Diagnostics.Metrics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Instance-based handler for MeterListener events.
