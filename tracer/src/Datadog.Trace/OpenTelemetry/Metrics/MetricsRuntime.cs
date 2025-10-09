@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// Static entry point for the OpenTelemetry Metrics pipeline.

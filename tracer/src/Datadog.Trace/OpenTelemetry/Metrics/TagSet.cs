@@ -12,7 +12,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Immutable key type for a set of attributes (tags).

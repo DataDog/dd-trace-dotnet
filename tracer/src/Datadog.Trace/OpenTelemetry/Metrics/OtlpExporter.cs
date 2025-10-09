@@ -21,7 +21,7 @@ using Datadog.Trace.Telemetry;
 
 #nullable enable
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// OTLP Exporter implementation that exports metrics using the OpenTelemetry Protocol.
