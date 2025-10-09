@@ -13,7 +13,7 @@ using Datadog.Trace.Configuration;
 
 #nullable enable
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// OTLP protobuf serializer that creates binary protobuf payloads

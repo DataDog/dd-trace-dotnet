@@ -7,7 +7,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Represents the aggregation temporality of a metric.

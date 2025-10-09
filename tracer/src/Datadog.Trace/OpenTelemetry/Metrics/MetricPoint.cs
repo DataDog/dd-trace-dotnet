@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 internal class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false)
 {
@@ -160,7 +160,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
                 var delta = _runningDoubleValue - previousCumulative;
 
-                sumForSnapshot = AggregationTemporality == OTelMetrics.AggregationTemporality.Delta
+                sumForSnapshot = AggregationTemporality == Datadog.Trace.OpenTelemetry.Metrics.AggregationTemporality.Delta
                     ? delta
                     : _runningDoubleValue;
 
@@ -184,7 +184,7 @@ internal class MetricPoint(string instrumentName, string meterName, string meter
                 Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
             }
 
-            if (AggregationTemporality == OTelMetrics.AggregationTemporality.Delta)
+            if (AggregationTemporality == Datadog.Trace.OpenTelemetry.Metrics.AggregationTemporality.Delta)
             {
                 _runningCountValue = 0;
                 _runningDoubleValue = 0.0;
