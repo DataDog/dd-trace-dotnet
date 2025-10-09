@@ -199,9 +199,13 @@ tracer/src/Datadog.Trace
 - **Setup**: Use Azure App Services Site Extension on Windows Premium/Elastic Premium/Dedicated plans; use `Datadog.AzureFunctions` NuGet package for Linux Consumption/Container Apps
 - **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
 - **Dependencies**: `Datadog.AzureFunctions` → `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)) contains agent executable
+- **Local Repos**: Azure Functions Host (`D:\source\azure\azure-functions-host`) and .NET Worker (`D:\source\azure\azure-functions-dotnet-worker`)
 
 📖 **Load when**: Working on Azure Functions instrumentation or debugging serverless issues
 - **`docs/development/AzureFunctions.md`** — In-process vs isolated worker models, instrumentation specifics, ASP.NET Core integration, GRPC context propagation, and debugging guide
+
+📖 **Load when**: Need detailed architectural understanding of Azure Functions internals
+- **`docs/development/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, middleware model, distributed tracing integration, environment variables, and instrumentation hook points
 
 📖 **Load when**: Working on AWS Lambda or general serverless instrumentation
 - **`docs/development/Serverless.md`** — Serverless instrumentation patterns across cloud providers
@@ -292,6 +296,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/AzureFunctions.md` — Azure Functions integration
+- `docs/development/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/Serverless.md` — Serverless instrumentation
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 
