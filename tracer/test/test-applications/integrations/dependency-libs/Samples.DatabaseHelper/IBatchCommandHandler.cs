@@ -1,8 +1,6 @@
 #if NET6_0_OR_GREATER
 using System.Collections.Generic;
 using System.Data;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Data.Common;
 
 namespace Samples.DatabaseHelper;
@@ -21,11 +19,5 @@ public interface IBatchCommandHandler
     DbBatch CreateBatch(IDbConnection connection);
 
     DbBatchCommand CreateBatchCommand(string commandText, params KeyValuePair<string, object>[] parameters);
-
-    void ExecuteBatch(DbBatch batch);
-
-    Task ExecuteBatchAsync(DbBatch batch);
-
-    Task ExecuteBatchAsync(DbBatch batch, CancellationToken cancellationToken);
 }
 #endif

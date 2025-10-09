@@ -54,12 +54,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<NpgsqlCommand>-netstandard: 7 spans (1 group * 7 spans)
             //
-            // BATCH (v6+): +3 spans
-            var expectedSpanCount = 150;
+            // BATCH (v6+): +6 spans
+            var expectedSpanCount = 153;
             var hasBatchSupport = (string.IsNullOrEmpty(packageVersion) || packageVersion[0] >= '6') && Environment.Version.Major >= 6;
             if (!hasBatchSupport)
             {
-                expectedSpanCount -= 3;
+                expectedSpanCount -= 6;
             }
 
             const string dbType = "postgres";

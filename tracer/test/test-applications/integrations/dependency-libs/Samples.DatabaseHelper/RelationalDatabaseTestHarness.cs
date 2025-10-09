@@ -291,33 +291,43 @@ namespace Samples.DatabaseHelper
                     SampleHelpers.TrySetResourceName(scope, batchName);
 
                     Console.WriteLine("  Synchronous batch");
-                    Console.WriteLine();
 
-                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
-                    batchCommandHandler.ExecuteBatch(batch);
+                    var batch1 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteNonQuery");
+                    batch1.ExecuteNonQuery();
+
+                    var batch2 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteScalar");
+                    batch2.ExecuteScalar();
+
+                    var batch3 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteReader");
+                    batch3.ExecuteReader().Dispose();
                 }
+
+                Console.WriteLine();
 
                 using (var scope = SampleHelpers.CreateScope("async"))
                 {
                     SampleHelpers.TrySetResourceName(scope, batchName);
 
                     Console.WriteLine("  Asynchronous batch");
-                    Console.WriteLine();
 
-                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
-                    await batchCommandHandler.ExecuteBatchAsync(batch);
+                    var batch1 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteNonQueryAsync");
+                    await batch1.ExecuteNonQueryAsync();
+
+                    var batch2 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteScalarAsync");
+                    await batch2.ExecuteScalarAsync();
+
+                    var batch3 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteReaderAsync");
+                    var r = await batch3.ExecuteReaderAsync(CommandBehavior.Default);
+                    await r.DisposeAsync();
                 }
 
-                using (var scope = SampleHelpers.CreateScope("async-with-cancellation"))
-                {
-                    SampleHelpers.TrySetResourceName(scope, batchName);
-
-                    Console.WriteLine("  Asynchronous batch with cancellation");
-                    Console.WriteLine();
-
-                    var batch = commandFactory.GetBatchCommand(connection, batchCommandHandler);
-                    await batchCommandHandler.ExecuteBatchAsync(batch, cancellationToken);
-                }
+                Console.WriteLine();
             }
         }
 #endif

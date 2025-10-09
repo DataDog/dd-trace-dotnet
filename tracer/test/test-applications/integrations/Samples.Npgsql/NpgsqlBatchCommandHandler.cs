@@ -1,8 +1,6 @@
 #if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
 using System.Collections.Generic;
 using System.Data;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Data.Common;
 using Npgsql;
 using Samples.DatabaseHelper;
@@ -29,21 +27,6 @@ public class NpgsqlBatchCommandHandler : IBatchCommandHandler
         }
 
         return batchCommand;
-    }
-
-    public void ExecuteBatch(DbBatch batch)
-    {
-        batch.ExecuteNonQuery();
-    }
-
-    public Task ExecuteBatchAsync(DbBatch batch)
-    {
-        return batch.ExecuteNonQueryAsync();
-    }
-
-    public Task ExecuteBatchAsync(DbBatch batch, CancellationToken cancellationToken)
-    {
-        return batch.ExecuteNonQueryAsync(cancellationToken);
     }
 }
 #endif
