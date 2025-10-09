@@ -86,6 +86,16 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
     return threads;
 }
 
+bool CanCollectManagedFrames(int32_t resolved, int32_t numberOfManagedFrames)
+{
+    return resolved <= 0 && numberOfManagedFrames > 0;
+}
+
+bool ShouldSkipNativeFrames(int32_t resolved, int32_t numberOfManagedFrames)
+{
+    return resolved < 0 && numberOfManagedFrames > 0;
+}
+
 std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* callbackContext)
 {
     std::vector<StackFrame> frames;
@@ -98,7 +108,7 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
 
     std::vector<StackFrame> managedFrames;
 
-    if (resolved == 0 && numberOfManagedFrames > 0)
+    if (CanCollectManagedFrames(resolved, numberOfManagedFrames))
     {
         managedFrames.reserve(numberOfManagedFrames);
 
@@ -116,6 +126,11 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
 
             managedFrames.push_back(std::move(stackFrame));
         }
+    }
+
+    if (ShouldSkipNativeFrames(resolved, numberOfManagedFrames))
+    {
+        return managedFrames;
     }
 
     CONTEXT context = {};
