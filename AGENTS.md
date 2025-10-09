@@ -199,7 +199,7 @@ tracer/src/Datadog.Trace
 - **Setup**: Use Azure App Services Site Extension on Windows Premium/Elastic Premium/Dedicated plans; use `Datadog.AzureFunctions` NuGet package for Linux Consumption/Container Apps
 - **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
 - **Dependencies**: `Datadog.AzureFunctions` → `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)) contains agent executable
-- **Local Repos**: Azure Functions Host (`D:\source\azure\azure-functions-host`) and .NET Worker (`D:\source\azure\azure-functions-dotnet-worker`)
+- **External Repos**: [Azure Functions Host](https://github.com/Azure/azure-functions-host) and [.NET Worker](https://github.com/Azure/azure-functions-dotnet-worker)
 
 📖 **Load when**: Working on Azure Functions instrumentation or debugging serverless issues
 - **`docs/development/AzureFunctions.md`** — In-process vs isolated worker models, instrumentation specifics, ASP.NET Core integration, GRPC context propagation, and debugging guide
