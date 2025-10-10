@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// In-memory exporter for testing purposes.

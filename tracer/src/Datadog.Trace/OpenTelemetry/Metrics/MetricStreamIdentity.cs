@@ -13,7 +13,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// Represents the identity of a metric stream, used for uniqueness and deduplication

@@ -12,7 +12,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Represents the state for a metric instrument, used to avoid ConcurrentDictionary contention

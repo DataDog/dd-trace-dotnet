@@ -36,6 +36,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
+            if (span?.Tags is WebTags { SpanKind: SpanKinds.Server })
+            {
+                // entry span
+                Log.Debug("SetCodeOriginForExitSpan: Skipping server entry span {SpanID}. Code origin will be added later. Service {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ServiceName, span.ResourceName, span.OperationName);
+                return;
+            }
+
             if (ShouldSkipExitSpan())
             {
                 return;
@@ -44,13 +51,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null)
             {
                 Log.Debug("Can not add code origin for exit span when span is null");
-                return;
-            }
-
-            if (span.Tags is WebTags { SpanKind: SpanKinds.Server })
-            {
-                // entry span
-                Log.Debug("Skipping span {SpanID}, we will add entry span code origin for it later. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
             }
 

@@ -9,7 +9,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.OTelMetrics;
+namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Duck type interface for accessing Meter.Tags (available in .NET 8+)

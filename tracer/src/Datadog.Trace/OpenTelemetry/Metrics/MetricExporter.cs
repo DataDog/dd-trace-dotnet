@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 #nullable enable
 
-namespace Datadog.Trace.OTelMetrics
+namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
     /// Result of an export operation.
