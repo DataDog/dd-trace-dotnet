@@ -30,16 +30,8 @@ internal static partial class ConfigurationKeys
         public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
 
         /// <summary>
-        /// Configuration key for setting the path to the .NET Tracer native log file.
-        /// This also determines the output folder of the .NET Tracer managed log files.
-        /// Overridden by <see cref="LogDirectory"/> if present.
-        /// </summary>
-        [Obsolete(DeprecationMessages.LogPath)]
-        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
-
-        /// <summary>
         /// Configuration key for setting the directory of the .NET Tracer logs.
-        /// Overrides the value in <see cref="ProfilerLogPath"/> if present.
+        /// Overrides the value in <see cref="DeprecationConstants.ProfilerLogPath"/> if present.
         /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows
         /// or "/var/log/datadog/dotnet/" on Linux.
         /// </summary>

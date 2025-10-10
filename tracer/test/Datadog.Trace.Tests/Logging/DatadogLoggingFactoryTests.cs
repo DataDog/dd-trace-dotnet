@@ -32,7 +32,7 @@ public class DatadogLoggingFactoryTests
                 {
                     { ConfigurationKeys.LogDirectory, logDirectory },
 #pragma warning disable CS0618
-                    { ConfigurationKeys.ProfilerLogPath, obsoleteLogDirectory },
+                    { DeprecationConstants.ProfilerLogPath, obsoleteLogDirectory },
 #pragma warning restore CS0618
                 });
 
@@ -55,7 +55,7 @@ public class DatadogLoggingFactoryTests
                 {
                     { ConfigurationKeys.LogDirectory, logDirectory },
 #pragma warning disable CS0618
-                    { ConfigurationKeys.ProfilerLogPath, obsoleteLogPath },
+                    { DeprecationConstants.ProfilerLogPath, obsoleteLogPath },
 #pragma warning restore CS0618
                 });
 
@@ -76,7 +76,7 @@ public class DatadogLoggingFactoryTests
                 {
                     { ConfigurationKeys.LogDirectory, logDirectory },
 #pragma warning disable CS0618
-                    { ConfigurationKeys.ProfilerLogPath, obsoleteLogDirectory },
+                    { DeprecationConstants.ProfilerLogPath, obsoleteLogDirectory },
 #pragma warning restore CS0618
                 });
 

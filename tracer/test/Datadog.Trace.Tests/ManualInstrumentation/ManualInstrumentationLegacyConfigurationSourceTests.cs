@@ -31,7 +31,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabled, name);
+        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabledKey, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationEnabled(enabledKey);
 
@@ -57,7 +57,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabled, name);
+        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabledKey, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationEnabled(enabledKey);
 
