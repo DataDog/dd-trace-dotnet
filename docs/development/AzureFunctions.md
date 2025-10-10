@@ -49,6 +49,56 @@ Isolated functions are the only supported model for Azure Functions going forwar
 
 For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
 
+### Detecting Host vs Worker Process
+
+The tracer provides utility methods in `EnvironmentHelpers` (`tracer/src/Datadog.Trace/Util/EnvironmentHelpers.cs`) to detect whether code is running in the host or worker process:
+
+**`EnvironmentHelpers.IsRunningInAzureFunctionsHost()`** (line 144)
+- Returns `true` when running in the **host process** (`func.exe` or `Microsoft.Azure.WebJobs.Script.WebHost`)
+- Checks:
+  1. Environment is Azure Functions (`IsAzureFunctions()`)
+  2. `FUNCTIONS_WORKER_RUNTIME` is set to `"dotnet-isolated"`
+  3. Command line does NOT contain `--functions-worker-id` or `--workerId` flags
+
+**`EnvironmentHelpers.IsAzureFunctionsIsolated()`** (line 170)
+- Returns `true` for **both host and worker processes** in isolated functions
+- Only checks:
+  1. Environment is Azure Functions (`IsAzureFunctions()`)
+  2. `FUNCTIONS_WORKER_RUNTIME` is set to `"dotnet-isolated"`
+
+**Usage examples:**
+
+```csharp
+// Detect host process
+if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+{
+    // This code runs only in func.exe
+}
+
+// Detect worker process
+if (EnvironmentHelpers.IsAzureFunctionsIsolated() && !EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+{
+    // This code runs only in the worker process
+}
+
+// Detect any isolated functions process (host or worker)
+if (EnvironmentHelpers.IsAzureFunctionsIsolated())
+{
+    // This code runs in both host and worker
+}
+```
+
+**Implementation details:**
+
+The detection relies on command-line arguments that differ between host and worker:
+- **Host process**: `Microsoft.Azure.WebJobs.Script.WebHost.dll` (no worker flags)
+- **Worker process**: `MyApp.dll --workerId <GUID> --functions-worker-id <GUID>`
+
+This mechanism is used throughout the tracer to:
+- Apply process-specific behavior (e.g., filtering spans by process)
+- Tag spans with `aas.function.process: host` or `aas.function.process: worker`
+- Enable/disable integrations based on the process type
+
 `func.exe` sets up an in-process Azure Function for every function in the customer's app. Each of the functions in `func.exe` are simple calls that proxy the request to the customer app, and then return the response.
 
 When an HTTP request is received by `func.exe`, it runs the in-process function as normal. As part of the in-process function execution, it creates a GRPC message (by serializing the incoming HTTP requests to a GRPC message), and forwards the request over GRPC to the customer app. The customer's app runs the _real_ Azure function, and returns the response back over GRPC, where it is deserialized and turned into an HTTP response.
