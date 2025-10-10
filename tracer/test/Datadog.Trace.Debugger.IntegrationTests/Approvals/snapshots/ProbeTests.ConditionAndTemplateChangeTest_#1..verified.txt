@@ -13,8 +13,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "ConditionAndTemplateChangeTest",
-                "value": "ConditionAndTemplateChangeTest"
+                "type": "ConditionAndTemplateChangeTest"
               }
             },
             "staticFields": {
@@ -43,8 +42,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "ConditionAndTemplateChangeTest",
-                "value": "ConditionAndTemplateChangeTest"
+                "type": "ConditionAndTemplateChangeTest"
               }
             },
             "locals": {
@@ -117,8 +115,7 @@
                   "value": "1"
                 },
                 "this": {
-                  "type": "ConditionAndTemplateChangeTest",
-                  "value": "ConditionAndTemplateChangeTest"
+                  "type": "ConditionAndTemplateChangeTest"
                 }
               },
               "locals": {
