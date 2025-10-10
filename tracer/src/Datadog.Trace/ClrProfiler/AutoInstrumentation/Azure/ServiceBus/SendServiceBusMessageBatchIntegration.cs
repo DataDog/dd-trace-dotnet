@@ -61,8 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             // Create TryAdd message spans for batch with links when enabled
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false) &&
-                Tracer.Instance.Settings.AzureServiceBusBatchLinksEnabled)
+            if (Tracer.Instance.Settings.AzureServiceBusBatchLinksEnabled)
             {
                 messageScope = CreateAddMessageSpan(instance, message);
             }

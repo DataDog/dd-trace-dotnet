@@ -38,7 +38,7 @@ public class EventDataBatchTryAddIntegration
         where TTarget : IEventDataBatch, IDuckType
         where TEventData : IEventData, IDuckType
     {
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false) ||
+        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) ||
             !Tracer.Instance.Settings.AzureEventHubsBatchLinksEnabled)
         {
             return CallTargetState.GetDefault();

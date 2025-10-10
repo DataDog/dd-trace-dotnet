@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using Datadog.Trace.Configuration;
@@ -33,31 +34,31 @@ namespace Datadog.Trace.Tagging
         public string MessagingSystem => "eventhubs";
 
         [Tag(Trace.Tags.MessagingOperation)]
-        public string MessagingOperation { get; set; }
+        public string? MessagingOperation { get; set; }
 
         [Tag(Trace.Tags.MessagingSourceName)]
-        public string MessagingSourceName { get; set; }
+        public string? MessagingSourceName { get; set; }
 
         [Tag(Trace.Tags.MessagingDestinationName)]
-        public string MessagingDestinationName { get; set; }
+        public string? MessagingDestinationName { get; set; }
 
         [Tag(Trace.Tags.LegacyMessageBusDestination)]
-        public string LegacyMessageBusDestination { get; set; }
+        public string? LegacyMessageBusDestination { get; set; }
 
         [Tag(Trace.Tags.NetworkDestinationName)]
-        public string NetworkDestinationName { get; set; }
+        public string? NetworkDestinationName { get; set; }
 
         [Tag(Trace.Tags.NetworkDestinationPort)]
-        public string NetworkDestinationPort { get; set; }
+        public string? NetworkDestinationPort { get; set; }
 
         [Tag(Trace.Tags.ServerAddress)]
-        public string ServerAddress { get; set; }
+        public string? ServerAddress { get; set; }
 
         [Tag(Trace.Tags.MessagingBatchMessageCount)]
-        public string MessagingBatchMessageCount { get; set; }
+        public string? MessagingBatchMessageCount { get; set; }
 
         [Tag(Trace.Tags.MessagingMessageId)]
-        public string MessagingMessageId { get; set; }
+        public string? MessagingMessageId { get; set; }
 
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Tagging
 
     internal partial class AzureEventHubsV1Tags : AzureEventHubsTags
     {
-        private string _peerServiceOverride = null;
+        private string? _peerServiceOverride = null;
 
         public AzureEventHubsV1Tags()
             : base()
@@ -83,7 +84,7 @@ namespace Datadog.Trace.Tagging
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService
+        public string? PeerService
         {
             get
             {
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource
+        public string? PeerServiceSource
         {
             get
             {

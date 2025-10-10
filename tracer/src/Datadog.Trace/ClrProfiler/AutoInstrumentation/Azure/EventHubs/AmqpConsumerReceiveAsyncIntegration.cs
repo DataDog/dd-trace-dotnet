@@ -46,7 +46,7 @@ public class AmqpConsumerReceiveAsyncIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TTarget : IAmqpConsumer, IDuckType
     {
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false) || exception != null)
+        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) || exception != null)
         {
             return returnValue;
         }

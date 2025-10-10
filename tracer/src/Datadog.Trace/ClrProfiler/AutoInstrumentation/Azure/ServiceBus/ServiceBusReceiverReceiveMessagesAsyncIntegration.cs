@@ -48,7 +48,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         where TTarget : IServiceBusReceiver, IDuckType
     {
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
         {
             return returnValue;
         }
