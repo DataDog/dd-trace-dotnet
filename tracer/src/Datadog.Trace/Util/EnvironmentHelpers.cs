@@ -157,6 +157,23 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Check if the current environment is an Azure Functions isolated worker process
+        /// (as opposed to in-process functions) by checking that:
+        ///
+        /// - <see cref="IsAzureFunctions"/> is <c>true</c>
+        /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
+        ///
+        /// This will return true for both the host process and worker process in isolated functions.
+        /// Use <see cref="IsRunningInAzureFunctionsHost"/> to distinguish between host and worker.
+        /// This method reads environment variables directly and bypasses the configuration system.
+        /// </summary>
+        public static bool IsAzureFunctionsIsolated()
+        {
+            return IsAzureFunctions()
+                   && string.Equals(GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Check if the current environment is AWS Lambda
         /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
         /// This method reads environment variables directly and bypasses the configuration system.
