@@ -116,7 +116,7 @@ internal partial class ProbeExpressionParser<T>
         return left;
     }
 
-    private static Expression Combine(Expression leftOperand, Expression rightOperand, Combiner combiner)
+    private Expression Combine(Expression leftOperand, Expression rightOperand, Combiner combiner)
     {
         return leftOperand is null ? AsBoolean(rightOperand) : combiner(AsBoolean(leftOperand), AsBoolean(rightOperand));
 
