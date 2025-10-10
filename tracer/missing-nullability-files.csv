@@ -187,7 +187,6 @@ src/Datadog.Trace/Tagging/AwsKinesisTags.cs
 src/Datadog.Trace/Tagging/AwsSdkTags.cs
 src/Datadog.Trace/Tagging/AwsSnsTags.cs
 src/Datadog.Trace/Tagging/AwsSqsTags.cs
-src/Datadog.Trace/Tagging/AzureEventHubsTags.cs
 src/Datadog.Trace/Tagging/AzureFunctionsTags.cs
 src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs

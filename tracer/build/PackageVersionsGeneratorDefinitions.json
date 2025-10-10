@@ -898,7 +898,7 @@
     "SampleProjectName": "Samples.AzureServiceBus.APM",
     "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
     "MinVersion": "7.18.0",
-    "MaxVersionExclusive": "7.21.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "7.18.*",
       "7.*.*"
@@ -909,7 +909,7 @@
     "SampleProjectName": "Samples.AzureEventHubs",
     "NugetPackageSearchName": "Azure.Messaging.EventHubs",
     "MinVersion": "5.11.0",
-    "MaxVersionExclusive": "5.13.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "5.11.*",
       "5.*.*"

@@ -238,11 +238,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
-                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
                         extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
-                    else if (triggerType == "EventHub" && tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs, false))
+                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
                     {
                         extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
