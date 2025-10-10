@@ -155,7 +155,7 @@ namespace Datadog.Trace.Debugger
         {
             if (IsDisposed)
             {
-                return;
+                return [];
             }
 
             lock (_instanceLock)
@@ -166,96 +166,98 @@ namespace Datadog.Trace.Debugger
                 }
 
                 Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
-				var result = new List<ConfigurationUpdater.UpdateResult>(addedProbes.Count);
+                var result = new List<ConfigurationUpdater.UpdateResult>(addedProbes.Count);
 
-lock (_instanceLock)
-            {
-                var methodProbes = new List<NativeMethodProbeDefinition>();
-                var lineProbes = new List<NativeLineProbeDefinition>();
-                var spanProbes = new List<NativeSpanProbeDefinition>();
-
-                var fetchProbeStatus = new List<FetchProbeStatus>();
-
-                foreach (var addedProbe in addedProbes)
+                lock (_instanceLock)
                 {
-				try
-                    {
-                    switch (GetProbeLocationType(addedProbe))
-                    {
-                        case ProbeLocationType.Line:
-                            {
-                                var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
-                                var status = lineProbeResult.Status;
-                                var message = lineProbeResult.Message;
+                    var methodProbes = new List<NativeMethodProbeDefinition>();
+                    var lineProbes = new List<NativeLineProbeDefinition>();
+                    var spanProbes = new List<NativeSpanProbeDefinition>();
 
-                                Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", addedProbe.Id, status, message);
-                                switch (status)
-                                {
-                                    case LiveProbeResolveStatus.Bound:
-                                        lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                    var fetchProbeStatus = new List<FetchProbeStatus>();
+
+                    foreach (var addedProbe in addedProbes)
+                    {
+                        try
+                        {
+                            switch (GetProbeLocationType(addedProbe))
+                            {
+                                case ProbeLocationType.Line:
+                                    {
+                                        var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
+                                        var status = lineProbeResult.Status;
+                                        var message = lineProbeResult.Message;
+
+                                        Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", addedProbe.Id, status, message);
+                                        switch (status)
+                                        {
+                                            case LiveProbeResolveStatus.Bound:
+                                                lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
+                                                ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                                SetRateLimit(addedProbe);
+                                                break;
+                                            case LiveProbeResolveStatus.Unbound:
+                                                Log.Information("ProbeID {ProbeID} is unbound.", addedProbe.Id);
+                                                _unboundProbes.Add(addedProbe);
+                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
+                                                break;
+                                            case LiveProbeResolveStatus.Error:
+                                                Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, message);
+                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
+                                                break;
+                                        }
+
+                                        break;
+                                    }
+
+                                case ProbeLocationType.Method:
+                                    {
+                                        SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
+
                                         fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
-                                        SetRateLimit(probe);
-                                        break;
-                                    case LiveProbeResolveStatus.Unbound:
-                                        Log.Information("ProbeID {ProbeID} is unbound.", addedProbe.Id);
-                                        _unboundProbes.Add(addedProbe);
-                                        fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
-                                        break;
-                                    case LiveProbeResolveStatus.Error:
-                                        Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, message);
-                                        fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
-                                        break;
-                                }
+                                        if (addedProbe is SpanProbe)
+                                        {
+                                            var spanDefinition = new NativeSpanProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
+                                            spanProbes.Add(spanDefinition);
+                                        }
+                                        else
+                                        {
+                                            var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
+                                            methodProbes.Add(nativeDefinition);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                            SetRateLimit(addedProbe);
+                                        }
 
-                                break;
+                                        break;
+                                    }
+
+                                case ProbeLocationType.Unrecognized:
+                                    fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
+                                    result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, "Unknown probe type"));
+                                    break;
                             }
 
-                        case ProbeLocationType.Method:
-                            {
-                                SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
-
-                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
-                                if (addedProbe is SpanProbe)
-                                {
-                                    var spanDefinition = new NativeSpanProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
-                                    spanProbes.Add(spanDefinition);
-                                }
-                                else
-                                {
-                                    var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
-                                    methodProbes.Add(nativeDefinition);
-                                    ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
-                                    SetRateLimit(addedProbe);
-                                }
-
-                                break;
-                            }
-
-                        case ProbeLocationType.Unrecognized:
-                            fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
-							result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, "Unknown probe type"));
-                            break;
+                            result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, null));
+                        }
+                        catch (Exception e)
+                        {
+                            result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, e.Message));
+                        }
                     }
-					result.Add(new UpdateResult(addedProbe.Id, null));
-					}
-                    catch (Exception e)
-                    {
-                        result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, e.Message));
-                    }
+
+                    using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
+                    using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
+                    DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+
+                    var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
+                    _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
+
+                    // This log entry is being checked in integration test
+                    Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.");
+
+                    return result;
                 }
-
-                using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
-                using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
-                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
-
-                var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
-                _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
-
-                // This log entry is being checked in integration test
-                Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.");
-
-                return result;
             }
         }
 
@@ -279,10 +281,10 @@ lock (_instanceLock)
         {
             if (IsDisposed)
             {
-                return;
+                return [];
             }
-			
-			var removedProbesIds = paths
+
+            var removedProbesIds = paths
                                   .Select(TrimProbeTypeFromPath)
                                   .ToArray();
             string TrimProbeTypeFromPath(RemoteConfigurationPath path)
@@ -298,7 +300,7 @@ lock (_instanceLock)
             Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
             var result = new ApplyDetails[paths.Count];
 
-lock (_instanceLock)
+            lock (_instanceLock)
             {
                 var boundedProbes = _probeStatusPoller.GetBoundedProbes();
                 var probesToRemoveFromNative = new List<string>();
@@ -330,8 +332,8 @@ lock (_instanceLock)
                         Log.Error(e, "Error remove probe {ID} instrumentation", id);
                     }
                 }
-				
-                            if (probesToRemoveFromNative.Any())
+
+                if (probesToRemoveFromNative.Any())
                 {
                     var revertProbes = probesToRemoveFromNative
                        .Select(probeId => new NativeRemoveProbeRequest(probeId));
@@ -411,8 +413,13 @@ lock (_instanceLock)
             }
         }
 
-        private ApplyDetails[] AcceptAddedConfiguration(List<RemoteConfiguration> configs)
+        private ApplyDetails[] AcceptAddedConfiguration(List<RemoteConfiguration>? configs)
         {
+            if (configs == null)
+            {
+                return [];
+            }
+
             var logs = new List<LogProbe>();
             var metrics = new List<MetricProbe>();
             var spanDecoration = new List<SpanDecorationProbe>();
@@ -430,32 +437,36 @@ lock (_instanceLock)
                     switch (namedRawFile.Path.Id)
                     {
                         case { } id when id.StartsWith(DefinitionPaths.LogProbe):
-						var logProbes = namedRawFile.Deserialize<LogProbe>().TypedFile;
+                            var logProbes = namedRawFile.Deserialize<LogProbe>().TypedFile;
                             if (logProbes != null)
                             {
                                 logs.Add(logProbes);
                             }
+
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.MetricProbe):
-						var metricProbes = namedRawFile.Deserialize<MetricProbe>().TypedFile;
+                            var metricProbes = namedRawFile.Deserialize<MetricProbe>().TypedFile;
                             if (metricProbes != null)
                             {
                                 metrics.Add(metricProbes);
                             }
+
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.SpanDecorationProbe):
-						var spanDecorationProbes = namedRawFile.Deserialize<SpanDecorationProbe>().TypedFile;
+                            var spanDecorationProbes = namedRawFile.Deserialize<SpanDecorationProbe>().TypedFile;
                             if (spanDecorationProbes != null)
                             {
                                 spanDecoration.Add(spanDecorationProbes);
                             }
+
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
-						var spanProbes = namedRawFile.Deserialize<SpanProbe>().TypedFile;
+                            var spanProbes = namedRawFile.Deserialize<SpanProbe>().TypedFile;
                             if (spanProbes != null)
                             {
                                 spans.Add(spanProbes);
                             }
+
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
                             serviceConfig = namedRawFile.Deserialize<ServiceConfiguration>().TypedFile;
@@ -506,11 +517,11 @@ lock (_instanceLock)
 
         private ApplyDetails[] AcceptRemovedConfiguration(List<RemoteConfigurationPath>? paths)
         {
-		if (paths == null)
+            if (paths == null)
             {
-                return;
+                return [];
             }
-			
+
             return _configurationUpdater.AcceptRemoved(paths);
         }
 

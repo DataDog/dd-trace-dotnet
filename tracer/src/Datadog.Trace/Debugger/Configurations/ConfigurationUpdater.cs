@@ -41,23 +41,23 @@ namespace Datadog.Trace.Debugger.Configurations
 
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
         {
-                var result = new List<UpdateResult>();
-                var filteredConfiguration = ApplyConfigurationFilters(configuration);
-                var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
+            var result = new List<UpdateResult>();
+            var filteredConfiguration = ApplyConfigurationFilters(configuration);
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
 
-                if (comparer.HasProbeRelatedChanges)
-                {
-                    result = HandleAddedProbesChanges(comparer);
-                }
+            if (comparer.HasProbeRelatedChanges)
+            {
+                result = HandleAddedProbesChanges(comparer);
+            }
 
-                if (comparer.HasRateLimitChanged)
-                {
-                    HandleRateLimitChanged(comparer);
-                }
+            if (comparer.HasRateLimitChanged)
+            {
+                HandleRateLimitChanged(comparer);
+            }
 
-                _currentConfiguration = configuration;
+            _currentConfiguration = configuration;
 
-                return result;
+            return result;
         }
 
         public ApplyDetails[] AcceptRemoved(List<RemoteConfigurationPath> paths)
@@ -118,12 +118,12 @@ namespace Datadog.Trace.Debugger.Configurations
 
         private List<UpdateResult> HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
+            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
         }
 
         private ApplyDetails[] HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
         {
-            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
+            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths) ?? [];
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
