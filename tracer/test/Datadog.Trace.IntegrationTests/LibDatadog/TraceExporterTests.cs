@@ -135,6 +135,10 @@ public class TraceExporterTests
                            .And.AllSatisfy(rates => rates.Should().BeEquivalentTo(expectedRates));
         sampleRateResponses.Should().ContainSingle();
 
+        // Assert telemetry payloads were sent
+        var telemetry = await agent.WaitForLatestTelemetryAsync(t => t != null);
+        telemetry.Should().NotBeNull();
+
         Dictionary<string, object> GetSettings()
         {
             var settingsMap = new Dictionary<string, object>
@@ -144,7 +148,6 @@ public class TraceExporterTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.TraceDataPipelineEnabled, "true" },
-                { ConfigurationKeys.Telemetry.Enabled, "false" },
             };
 
             switch (transport)
@@ -176,11 +179,11 @@ public class TraceExporterTests
         MockTracerAgent GetAgent()
             => transport switch
             {
-                TestTransports.Tcp => MockTracerAgent.Create(null),
-                TestTransports.WindowsNamedPipe => MockTracerAgent.Create(null, new WindowsPipesConfig(pipeName, null)),
+                TestTransports.Tcp => MockTracerAgent.Create(null, useTelemetry: true),
+                TestTransports.WindowsNamedPipe => MockTracerAgent.Create(null, new WindowsPipesConfig(pipeName, null) { UseTelemetry = true }),
 #if NETCOREAPP3_1_OR_GREATER
                 TestTransports.Uds
-                    => MockTracerAgent.Create(null, new UnixDomainSocketConfig(udsPath, null)),
+                    => MockTracerAgent.Create(null, new UnixDomainSocketConfig(udsPath, null) { UseTelemetry = true }),
 #endif
                 _ => throw new InvalidOperationException("Unsupported transport type " + transport),
             };
