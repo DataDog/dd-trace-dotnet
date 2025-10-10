@@ -462,9 +462,6 @@ namespace Datadog.Trace
             }
         }
 
-        protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => DiscoveryService.Create(settings.Exporter);
-
         internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
         {
             try
@@ -537,6 +534,11 @@ namespace Datadog.Trace
 
             return CreateDogStatsdClient(settings, serviceName, constantTags);
         }
+
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
+            => settings.DiscoveryServiceEnabled
+                   ? DiscoveryService.Create(settings.Exporter)
+                   : NullDiscoveryService.Instance;
 
         /// <summary>
         /// Gets an "application name" for the executing application by looking at

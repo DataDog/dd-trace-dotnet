@@ -376,6 +376,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            DiscoveryServiceEnabled = config
+                                     .WithKeys(ConfigurationKeys.DiscoveryServiceEnabled)
+                                     .AsBool(defaultValue: true);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -849,6 +853,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
         public bool AzureServiceBusBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the agent discovery service is enabled.
+        /// When disabled, the tracer will not query the agent for available endpoints.
+        /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
+        /// Default value is true (discovery service enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DiscoveryServiceEnabled"/>
+        public bool DiscoveryServiceEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
