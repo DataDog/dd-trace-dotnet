@@ -31,12 +31,13 @@ namespace UpdateVendors
             var libraryName = dependency.LibraryName;
             var downloadUrl = dependency.DownloadUrl;
             var pathToSrc = dependency.PathToSrc;
+            var pathToDestination = dependency.PathToDestination;
 
             Console.WriteLine($"Starting {libraryName} upgrade.");
 
             var zipLocation = Path.Combine(downloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(downloadDirectory, $"{libraryName}");
-            var vendorFinalPath = Path.Combine(vendorDirectory, libraryName);
+            var vendorFinalPath = Path.Combine(pathToDestination.Prepend(vendorDirectory).ToArray());
             var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading
@@ -67,9 +68,13 @@ namespace UpdateVendors
             var projFile = Path.Combine(sourceLocation, $"{libraryName}.csproj");
 
             // Rename the proj file to a txt for reference
-            File.Copy(projFile, projFile + ".txt");
-            File.Delete(projFile);
-            Console.WriteLine($"Renamed {libraryName} project file.");
+            // To vendor non-C# repos, the .csproj file must be optional
+            if (dependency.IsNugetPackage)
+            {
+                File.Copy(projFile, projFile + ".txt");
+                File.Delete(projFile);
+                Console.WriteLine($"Renamed {libraryName} project file.");
+            }
 
             // Delete the assembly info file
             var assemblyInfo = Path.Combine(sourceLocation, @"Properties", "AssemblyInfo.cs");
@@ -104,6 +109,7 @@ namespace UpdateVendors
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
             SafeDeleteDirectory(vendorFinalPath);
+            EnsureParentDirectoryExists(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
             File.WriteAllText(sourceUrlLocation, downloadUrl);
             Console.WriteLine($"Finished {libraryName} upgrade.");
@@ -131,6 +137,15 @@ namespace UpdateVendors
             if (Directory.Exists(directoryPath))
             {
                 Directory.Delete(directoryPath, recursive: true);
+            }
+        }
+
+        private static void EnsureParentDirectoryExists(string directoryPath)
+        {
+            var parentDirectory = Directory.GetParent(directoryPath).FullName;
+            if (!Directory.Exists(parentDirectory))
+            {
+                Directory.CreateDirectory(parentDirectory);
             }
         }
     }

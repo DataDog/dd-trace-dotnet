@@ -153,6 +153,15 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
                 pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
+
+            Add(
+                libraryName: "opentelemetry",
+                version: "1.7.0",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.7.0.zip",
+                pathToSrc: new[] { "opentelemetry-proto-1.7.0", "opentelemetry" },
+                transform: filePath => RewriteFileWithTransform(filePath, s => s),
+                pathToDestination: new[] { "protos", "opentelemetry" },
+                isNugetPackage: false);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -169,13 +178,19 @@ namespace UpdateVendors
 
         public string[] RelativePathsToExclude { get; set; }
 
+        public string[] PathToDestination { get; set; }
+
+        public bool IsNugetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
             Action<string> transform,
-            string[] relativePathsToExclude = null)
+            string[] relativePathsToExclude = null,
+            string[] pathToDestination = null,
+            bool isNugetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -185,6 +200,8 @@ namespace UpdateVendors
                 PathToSrc = pathToSrc,
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
+                PathToDestination = pathToDestination ?? new[] { libraryName },
+                IsNugetPackage = isNugetPackage,
             });
         }
 
