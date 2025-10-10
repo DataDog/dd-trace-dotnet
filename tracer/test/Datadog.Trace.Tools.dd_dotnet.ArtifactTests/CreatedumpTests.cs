@@ -630,9 +630,15 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var frame in frames)
             {
-                var moduleName = frame["function"].Value<string>().Split('!').First();
+                string moduleName = null;
 
-                if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                // we do not set the path for managed assemblies.
+                if (frame.ContainsKey("path"))
+                {
+                    moduleName = frame["path"].Value<string>();
+                }
+
+                if (!string.IsNullOrEmpty(moduleName) && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
                 {
                     if (!validatedModules.Add(moduleName))
                     {
