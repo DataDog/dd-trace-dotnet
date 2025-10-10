@@ -249,6 +249,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.isSuspicious = false;
 
             stackFrame.buildId = module->build_id;
+            stackFrame.modulePath = module->path;
 
             fs::path modulePath(module->path);
 
