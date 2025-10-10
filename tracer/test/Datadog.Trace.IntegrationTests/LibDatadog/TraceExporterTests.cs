@@ -144,6 +144,7 @@ public class TraceExporterTests
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
                 { ConfigurationKeys.TraceDataPipelineEnabled, "true" },
+                { ConfigurationKeys.Telemetry.Enabled, "false" },
             };
 
             switch (transport)
