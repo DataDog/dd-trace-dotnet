@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "Last"
               },
               "this": {
-                "type": "InstanceMethodWithArguments",
-                "value": "InstanceMethodWithArguments"
+                "type": "InstanceMethodWithArguments"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "Last"
               },
               "this": {
-                "type": "InstanceMethodWithArguments",
-                "value": "InstanceMethodWithArguments"
+                "type": "InstanceMethodWithArguments"
               }
             },
             "locals": {
@@ -77,8 +75,7 @@
                   "value": "Last"
                 },
                 "this": {
-                  "type": "InstanceMethodWithArguments",
-                  "value": "InstanceMethodWithArguments"
+                  "type": "InstanceMethodWithArguments"
                 }
               }
             }

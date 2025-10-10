@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,8 +10,7 @@
             "arguments": {
               "message": "ScrubbedValue",
               "this": {
-                "type": "TryFinallyMethodAndLine",
-                "value": "TryFinallyMethodAndLine"
+                "type": "TryFinallyMethodAndLine"
               }
             }
           },
@@ -19,14 +18,12 @@
             "arguments": {
               "message": "ScrubbedValue",
               "this": {
-                "type": "TryFinallyMethodAndLine",
-                "value": "TryFinallyMethodAndLine"
+                "type": "TryFinallyMethodAndLine"
               }
             },
             "locals": {
               "ctx": {
-                "type": "ParseContext",
-                "value": "ParseContext"
+                "type": "ParseContext"
               }
             }
           }
@@ -68,8 +65,7 @@
               "arguments": {
                 "message": "ScrubbedValue",
                 "this": {
-                  "type": "TryFinallyMethodAndLine",
-                  "value": "TryFinallyMethodAndLine"
+                  "type": "TryFinallyMethodAndLine"
                 }
               },
               "locals": {
@@ -120,14 +116,12 @@
               "arguments": {
                 "message": "ScrubbedValue",
                 "this": {
-                  "type": "TryFinallyMethodAndLine",
-                  "value": "TryFinallyMethodAndLine"
+                  "type": "TryFinallyMethodAndLine"
                 }
               },
               "locals": {
                 "ctx": {
-                  "type": "ParseContext",
-                  "value": "ParseContext"
+                  "type": "ParseContext"
                 }
               }
             }
@@ -172,14 +166,12 @@
               "arguments": {
                 "message": "ScrubbedValue",
                 "this": {
-                  "type": "TryFinallyMethodAndLine",
-                  "value": "TryFinallyMethodAndLine"
+                  "type": "TryFinallyMethodAndLine"
                 }
               },
               "locals": {
                 "ctx": {
-                  "type": "ParseContext",
-                  "value": "ParseContext"
+                  "type": "ParseContext"
                 }
               }
             }

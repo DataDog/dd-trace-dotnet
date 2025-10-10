@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "0"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "0"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -76,8 +74,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -88,8 +85,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -139,8 +135,7 @@
                 "value": "10"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -151,8 +146,7 @@
                 "value": "10"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -202,8 +196,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -214,8 +207,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -265,8 +257,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -277,8 +268,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -328,8 +318,7 @@
                 "value": "4"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -340,8 +329,7 @@
                 "value": "4"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -391,8 +379,7 @@
                 "value": "5"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -403,8 +390,7 @@
                 "value": "5"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -454,8 +440,7 @@
                 "value": "6"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -466,8 +451,7 @@
                 "value": "6"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -517,8 +501,7 @@
                 "value": "7"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -529,8 +512,7 @@
                 "value": "7"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -580,8 +562,7 @@
                 "value": "8"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -592,8 +573,7 @@
                 "value": "8"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -643,8 +623,7 @@
                 "value": "9"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             }
           },
@@ -655,8 +634,7 @@
                 "value": "9"
               },
               "this": {
-                "type": "RecursionWithInnerRefStructTest",
-                "value": "RecursionWithInnerRefStructTest"
+                "type": "RecursionWithInnerRefStructTest"
               }
             },
             "locals": {
@@ -728,12 +706,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -766,12 +742,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -849,12 +823,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -887,12 +859,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -970,12 +940,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1008,12 +976,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1091,12 +1057,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1129,12 +1093,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1212,12 +1174,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1250,12 +1210,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1333,12 +1291,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1371,12 +1327,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1454,12 +1408,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1492,12 +1444,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1575,12 +1525,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1613,12 +1561,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1696,12 +1642,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1734,12 +1678,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {
@@ -1817,12 +1759,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             }
           },
@@ -1855,12 +1795,10 @@
                     "value": "ScrubbedValue"
                   },
                   "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                    "type": "Object"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "Func`2"
               }
             },
             "locals": {

@@ -8,8 +8,7 @@
             pruned: true
           }
         },
-        type: ComplexClass,
-        value: ComplexClass
+        type: ComplexClass
       }
     }
   }

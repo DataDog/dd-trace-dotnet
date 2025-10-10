@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -72,16 +72,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncMethodInsideTaskRun",
-                "value": "AsyncMethodInsideTaskRun"
+                "type": "AsyncMethodInsideTaskRun"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncMethodInsideTaskRun",
-                "value": "AsyncMethodInsideTaskRun"
+                "type": "AsyncMethodInsideTaskRun"
               }
             },
             "locals": {

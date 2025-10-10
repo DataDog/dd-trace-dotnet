@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -23,12 +23,10 @@
                     "value": "Show Me!"
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               },
               "this": {
-                "type": "AsyncInterfaceProperties",
-                "value": "AsyncInterfaceProperties"
+                "type": "AsyncInterfaceProperties"
               }
             }
           },
@@ -49,12 +47,10 @@
                     "value": "Show Me!"
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               },
               "this": {
-                "type": "AsyncInterfaceProperties",
-                "value": "AsyncInterfaceProperties"
+                "type": "AsyncInterfaceProperties"
               }
             },
             "locals": {
@@ -77,8 +73,7 @@
                     "value": ""
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               }
             }
           }
@@ -133,12 +128,10 @@
                       "value": "Show Me!"
                     }
                   },
-                  "type": "Class",
-                  "value": "Class"
+                  "type": "Class"
                 },
                 "this": {
-                  "type": "AsyncInterfaceProperties",
-                  "value": "AsyncInterfaceProperties"
+                  "type": "AsyncInterfaceProperties"
                 }
               },
               "locals": {
@@ -157,8 +150,7 @@
                       "value": ""
                     }
                   },
-                  "type": "Class",
-                  "value": "Class"
+                  "type": "Class"
                 }
               }
             }
