@@ -469,25 +469,16 @@ namespace Datadog.Trace.ClrProfiler
             var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
             var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
 
-            // Check if this is an in-process Azure Function (not isolated)
-            // In-process: worker runtime is empty or "dotnet" (the host process itself)
-            // Isolated: worker runtime is "dotnet-isolated"
-            var isInProcessFunction = !string.IsNullOrEmpty(functionsExtensionVersion)
-                                   && !string.IsNullOrEmpty(functionsWorkerRuntime)
-                                   && !functionsWorkerRuntime.Equals("dotnet-isolated", StringComparison.OrdinalIgnoreCase);
-
-            if (isInProcessFunction)
+            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
                 // This is because user code is loaded within the functions host in a separate context.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in in-process Azure Functions.");
+                // Even in isolated functions, we don't want the AspNetCore spans to be created.
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
             }
             else
             {
-                // For isolated functions, enable AspNetCoreDiagnosticObserver to support ASP.NET Core integration
-                // which uses HTTP proxying for HTTP triggers. In this scenario, the worker receives actual HTTP
-                // requests that should be instrumented by the ASP.NET Core observer.
                 observers.Add(new AspNetCoreDiagnosticObserver());
                 observers.Add(new QuartzDiagnosticObserver());
             }
