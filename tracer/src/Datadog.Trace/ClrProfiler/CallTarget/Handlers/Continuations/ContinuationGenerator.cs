@@ -20,8 +20,6 @@ internal abstract class ContinuationGenerator<TTarget, TReturn>
 
     internal delegate Task<object?> AsyncObjectContinuationMethodDelegate(TTarget? target, object? returnValue, Exception? exception, in CallTargetState state);
 
-    public abstract TReturn? SetContinuation(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state);
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected static TReturn ToTReturn<TFrom>(TFrom returnValue)
     {
@@ -40,6 +38,20 @@ internal abstract class ContinuationGenerator<TTarget, TReturn>
 #else
             return VendoredUnsafe.As<TReturn, TTo>(ref returnValue);
 #endif
+    }
+
+    protected abstract TReturn? WrapWithContinuation(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state);
+
+    public TReturn? SetContinuation(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        // If skipContinuation is set, return the original task without wrapping
+        // This is necessary for Azure Durable Functions orchestrator functions
+        if (state.GetSkipContinuation())
+        {
+            return returnValue;
+        }
+
+        return WrapWithContinuation(instance, returnValue, exception, in state);
     }
 
     internal abstract class CallbackHandler

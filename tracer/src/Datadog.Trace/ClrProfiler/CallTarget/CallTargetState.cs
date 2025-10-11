@@ -26,6 +26,7 @@ public readonly struct CallTargetState
     private readonly IReadOnlyDictionary<string, string>? _previousDistributedSpanContext;
 
     private readonly bool _skipMethodBody;
+    private readonly bool _skipContinuation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
@@ -39,6 +40,7 @@ public readonly struct CallTargetState
         _startTime = null;
         _previousDistributedSpanContext = null;
         _skipMethodBody = false;
+        _skipContinuation = false;
     }
 
     /// <summary>
@@ -56,6 +58,7 @@ public readonly struct CallTargetState
         _startTime = null;
         _previousDistributedSpanContext = previousDistributedSpanContext;
         _skipMethodBody = skipMethodBody;
+        _skipContinuation = false;
     }
 
     /// <summary>
@@ -71,6 +74,7 @@ public readonly struct CallTargetState
         _startTime = null;
         _previousDistributedSpanContext = null;
         _skipMethodBody = false;
+        _skipContinuation = false;
     }
 
     /// <summary>
@@ -87,6 +91,7 @@ public readonly struct CallTargetState
         _startTime = null;
         _previousDistributedSpanContext = null;
         _skipMethodBody = skipMethodBody;
+        _skipContinuation = false;
     }
 
     /// <summary>
@@ -104,6 +109,7 @@ public readonly struct CallTargetState
         _startTime = startTime;
         _previousDistributedSpanContext = null;
         _skipMethodBody = skipMethodBody;
+        _skipContinuation = false;
     }
 
     /// <summary>
@@ -120,6 +126,25 @@ public readonly struct CallTargetState
         _startTime = state._startTime;
         _previousDistributedSpanContext = previousDistributedSpanContext;
         _skipMethodBody = state._skipMethodBody;
+        _skipContinuation = state._skipContinuation;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetState"/> struct with skipContinuation flag.
+    /// </summary>
+    /// <param name="scope">Scope instance</param>
+    /// <param name="state">Object state instance</param>
+    /// <param name="skipMethodBody">Flag to skip the original method body execution</param>
+    /// <param name="skipContinuation">Flag to skip task wrapping for incompatible Task methods</param>
+    internal CallTargetState(Scope? scope, object? state, bool skipMethodBody, bool skipContinuation)
+    {
+        _previousScope = null;
+        _scope = scope;
+        _state = state;
+        _startTime = null;
+        _previousDistributedSpanContext = null;
+        _skipMethodBody = skipMethodBody;
+        _skipContinuation = skipContinuation;
     }
 
     /// <summary>
@@ -164,11 +189,17 @@ public readonly struct CallTargetState
     public bool GetSkipMethodBody() => _skipMethodBody;
 
     /// <summary>
+    /// Gets a value indicating whether task continuation wrapping should be skipped
+    /// </summary>
+    /// <returns>True if continuation wrapping should be skipped; otherwise false.</returns>
+    internal bool GetSkipContinuation() => _skipContinuation;
+
+    /// <summary>
     /// ToString override
     /// </summary>
     /// <returns>String value</returns>
     public override string ToString()
     {
-        return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state}, {_skipMethodBody})";
+        return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state}, {_skipMethodBody}, {_skipContinuation})";
     }
 }

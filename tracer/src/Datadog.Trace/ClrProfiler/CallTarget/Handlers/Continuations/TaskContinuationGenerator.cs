@@ -46,7 +46,7 @@ internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn> : Conti
         }
     }
 
-    public override TReturn? SetContinuation(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    protected override TReturn? WrapWithContinuation(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         return Resolver.ExecuteCallback(instance, returnValue, exception, in state);
     }
