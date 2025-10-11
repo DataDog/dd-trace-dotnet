@@ -51,6 +51,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.LineProbesWithRevertTest",

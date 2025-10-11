@@ -52,6 +52,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodInsideTaskRun",
@@ -105,6 +107,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "RunInsideTask",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodInsideTaskRun",

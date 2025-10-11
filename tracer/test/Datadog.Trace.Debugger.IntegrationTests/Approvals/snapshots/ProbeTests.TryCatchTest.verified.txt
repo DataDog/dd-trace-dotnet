@@ -47,6 +47,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -105,6 +107,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -163,6 +167,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -221,6 +227,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",

@@ -20,6 +20,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     internal class DiscoveryService : IDiscoveryService
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";
+        private const string SupportedDebuggerV2Endpoint = "debugger/v2/input";
         private const string SupportedDiagnosticsEndpoint = "debugger/v1/diagnostics";
         private const string SupportedSymbolDbEndpoint = "symdb/v1/input";
         private const string SupportedConfigurationEndpoint = "v0.7/config";
@@ -66,6 +67,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             new[]
             {
                 SupportedDebuggerEndpoint,
+                SupportedDebuggerV2Endpoint,
                 SupportedDiagnosticsEndpoint,
                 SupportedSymbolDbEndpoint,
                 SupportedConfigurationEndpoint,
@@ -223,6 +225,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
+            string? debuggerV2Endpoint = null;
             string? diagnosticsEndpoint = null;
             string? symbolDbEndpoint = null;
             string? statsEndpoint = null;
@@ -245,6 +248,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     if (endpoint.Equals(SupportedDebuggerEndpoint, StringComparison.OrdinalIgnoreCase))
                     {
                         debuggerEndpoint = endpoint;
+                    }
+                    else if (endpoint.Equals(SupportedDebuggerV2Endpoint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        debuggerV2Endpoint = endpoint;
                     }
                     else if (endpoint.Equals(SupportedDiagnosticsEndpoint, StringComparison.OrdinalIgnoreCase))
                     {
@@ -290,7 +297,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var newConfig = new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
-                diagnosticsEndpoint: diagnosticsEndpoint ?? debuggerEndpoint,
+                debuggerV2Endpoint: debuggerV2Endpoint ?? diagnosticsEndpoint,
+                diagnosticsEndpoint: diagnosticsEndpoint,
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,

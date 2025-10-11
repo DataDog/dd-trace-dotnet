@@ -50,6 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -111,6 +113,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -172,6 +176,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -233,6 +239,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -294,6 +302,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -355,6 +365,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -416,6 +428,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -477,6 +491,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -538,6 +554,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -599,6 +617,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -660,6 +680,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
@@ -777,6 +799,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -894,6 +918,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1011,6 +1037,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1128,6 +1156,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1245,6 +1275,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1362,6 +1394,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1479,6 +1513,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1596,6 +1632,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1713,6 +1751,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
@@ -1830,6 +1870,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Me",
       "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",

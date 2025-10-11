@@ -42,6 +42,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "VoidTaskMethod",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid",

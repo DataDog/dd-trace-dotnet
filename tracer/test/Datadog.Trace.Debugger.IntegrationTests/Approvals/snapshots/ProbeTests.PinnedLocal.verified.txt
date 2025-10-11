@@ -42,6 +42,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodWithPinnedLocal",
       "name": "Samples.Probes.TestRuns.SmokeTests.PinnedLocal",
