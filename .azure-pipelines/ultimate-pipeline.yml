@@ -3382,6 +3382,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "CleanObjFiles"
+        retryCountForRunCommand: 3
 
     - template: steps/restore-working-directory.yml
       parameters:
