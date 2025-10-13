@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// A message type that has a custom string format for diagnostic purposes.

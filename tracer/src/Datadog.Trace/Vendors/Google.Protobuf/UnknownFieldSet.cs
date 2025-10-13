@@ -18,7 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Used to keep track of fields which were seen when parsing a protocol message

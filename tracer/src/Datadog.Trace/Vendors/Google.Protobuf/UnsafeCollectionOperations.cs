@@ -16,9 +16,9 @@
 
 using System;
 using System.Security;
-using Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
 
-namespace Google.Protobuf;
+namespace Datadog.Trace.Vendors.Google.Protobuf;
 
 /// <summary>
 /// An unsafe class that provides a set of methods to access the underlying data representations of

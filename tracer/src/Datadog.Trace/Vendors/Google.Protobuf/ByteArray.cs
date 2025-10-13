@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Provides a utility routine to copy small arrays much more quickly than Buffer.BlockCopy

@@ -16,7 +16,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Accessor for repeated fields.

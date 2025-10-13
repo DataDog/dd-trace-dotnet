@@ -16,7 +16,7 @@ using System;
 using System.Globalization;
 using System.Text;
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     internal partial class Timestamp : ICustomDiagnosticMessage, IComparable<Timestamp>
     {

@@ -17,7 +17,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// SecuritySafeCritical attribute can not be placed on types with async methods.

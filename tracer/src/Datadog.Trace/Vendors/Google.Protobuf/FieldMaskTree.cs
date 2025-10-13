@@ -15,10 +15,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Google.Protobuf.Reflection;
-using Google.Protobuf.WellKnownTypes;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// <para>A tree representation of a FieldMask. Each leaf node in this tree represent

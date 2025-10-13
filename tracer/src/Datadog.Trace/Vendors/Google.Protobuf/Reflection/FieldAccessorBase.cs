@@ -14,9 +14,9 @@
 
 using System;
 using System.Reflection;
-using Google.Protobuf.Compatibility;
+using Datadog.Trace.Vendors.Google.Protobuf.Compatibility;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Base class for field accessors.

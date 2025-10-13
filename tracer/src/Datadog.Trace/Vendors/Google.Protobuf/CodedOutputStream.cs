@@ -16,7 +16,7 @@ using System;
 using System.IO;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Encodes and writes protocol message fields.

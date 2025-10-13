@@ -277,7 +277,7 @@ partial class Build
         });
 
     Target UpdateVendoredCode => _ => _
-       .Description("Updates the vendored dependency code and dependabot template")
+       .Description("Updates the vendored dependency code (including .proto files) and dependabot template")
        .Executes(async () =>
        {
             var dependabotProj = TracerDirectory / "dependabot"  /  "Datadog.Dependabot.Vendors.csproj";
@@ -286,7 +286,7 @@ partial class Build
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
             EnsureCleanDirectory(downloadDirectory);
-            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory, Solution.GetProject(Projects.DatadogTrace).Directory);
        });
 
     Target UpdateVersion => _ => _

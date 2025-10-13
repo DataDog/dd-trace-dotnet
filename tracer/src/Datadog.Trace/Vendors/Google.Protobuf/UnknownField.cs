@@ -13,9 +13,9 @@
 #endregion
 
 using System.Collections.Generic;
-using Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Represents a single field in an UnknownFieldSet.

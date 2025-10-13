@@ -15,7 +15,7 @@
 using System;
 using System.IO;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Stream implementation which proxies another stream, only allowing a certain amount

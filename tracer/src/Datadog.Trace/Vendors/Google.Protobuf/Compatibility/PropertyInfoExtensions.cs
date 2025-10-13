@@ -14,7 +14,7 @@
 
 using System.Reflection;
 
-namespace Google.Protobuf.Compatibility
+namespace Datadog.Trace.Vendors.Google.Protobuf.Compatibility
 {
     /// <summary>
     /// Extension methods for <see cref="PropertyInfo"/>, effectively providing

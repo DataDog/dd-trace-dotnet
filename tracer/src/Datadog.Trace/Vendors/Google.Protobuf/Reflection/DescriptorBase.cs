@@ -15,7 +15,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     // Implementation note: The descriptors which don't derive from this class are FileDescriptor
     // and FeatureSetDescriptor - the latter of which isn't a descriptor in exactly the same way

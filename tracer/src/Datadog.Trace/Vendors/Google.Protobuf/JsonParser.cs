@@ -12,8 +12,8 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Reflection;
-using Google.Protobuf.WellKnownTypes;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Reflection-based converter from JSON to messages.

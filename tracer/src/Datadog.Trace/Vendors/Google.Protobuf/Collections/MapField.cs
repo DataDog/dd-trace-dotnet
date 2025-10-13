@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Compatibility;
+using Datadog.Trace.Vendors.Google.Protobuf.Compatibility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Security;
 
-namespace Google.Protobuf.Collections
+namespace Datadog.Trace.Vendors.Google.Protobuf.Collections
 {
     /// <summary>
     /// Representation of a map field in a Protocol Buffer message.

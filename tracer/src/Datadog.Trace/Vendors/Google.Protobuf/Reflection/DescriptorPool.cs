@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Contains lookup tables containing all the descriptors defined in a particular file.

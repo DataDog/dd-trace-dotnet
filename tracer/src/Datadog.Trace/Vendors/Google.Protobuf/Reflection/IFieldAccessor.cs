@@ -15,7 +15,7 @@
 using System;
 using System.Collections;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Allows fields to be reflectively accessed.

@@ -12,9 +12,9 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     internal partial class Any
     {

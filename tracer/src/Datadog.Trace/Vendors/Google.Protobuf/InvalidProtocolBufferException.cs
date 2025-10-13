@@ -15,7 +15,7 @@
 using System;
 using System.IO;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Thrown when a protocol message being parsed is invalid in some way,

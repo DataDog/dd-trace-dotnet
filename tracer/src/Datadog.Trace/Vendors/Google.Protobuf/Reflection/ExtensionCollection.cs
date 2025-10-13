@@ -17,7 +17,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// A collection to simplify retrieving the descriptors of extensions in a descriptor for a message

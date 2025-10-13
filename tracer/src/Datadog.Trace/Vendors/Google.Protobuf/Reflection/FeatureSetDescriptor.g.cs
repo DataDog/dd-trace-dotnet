@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-namespace Google.Protobuf.Reflection;
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 
 internal sealed partial class FeatureSetDescriptor
 {

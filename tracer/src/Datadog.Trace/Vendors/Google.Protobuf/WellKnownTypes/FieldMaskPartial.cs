@@ -18,9 +18,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     // Manually-written partial class for the FieldMask well-known type.
     internal partial class FieldMask : ICustomDiagnosticMessage

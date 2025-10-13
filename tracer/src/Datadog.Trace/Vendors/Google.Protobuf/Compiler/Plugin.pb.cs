@@ -10,11 +10,11 @@
 #pragma warning disable 1591, 0612, 3021, 8981
 #region Designer generated code
 
-using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
-using pbr = global::Google.Protobuf.Reflection;
+using pb = global::Datadog.Trace.Vendors.Google.Protobuf;
+using pbc = global::Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using pbr = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Google.Protobuf.Compiler {
+namespace Datadog.Trace.Vendors.Google.Protobuf.Compiler {
 
   /// <summary>Holder for reflection information generated from google/protobuf/compiler/plugin.proto</summary>
   internal static partial class PluginReflection {
@@ -52,11 +52,11 @@ namespace Google.Protobuf.Compiler {
             "Zy9wcm90b2J1Zi90eXBlcy9wbHVnaW5wYqoCGEdvb2dsZS5Qcm90b2J1Zi5D",
             "b21waWxlcg=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Compiler.Version), global::Google.Protobuf.Compiler.Version.Parser, new[]{ "Major", "Minor", "Patch", "Suffix" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Compiler.CodeGeneratorRequest), global::Google.Protobuf.Compiler.CodeGeneratorRequest.Parser, new[]{ "FileToGenerate", "Parameter", "ProtoFile", "SourceFileDescriptors", "CompilerVersion" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Compiler.CodeGeneratorResponse), global::Google.Protobuf.Compiler.CodeGeneratorResponse.Parser, new[]{ "Error", "SupportedFeatures", "MinimumEdition", "MaximumEdition", "File" }, null, new[]{ typeof(global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.Feature) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File), global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File.Parser, new[]{ "Name", "InsertionPoint", "Content", "GeneratedCodeInfo" }, null, null, null, null)})
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version), global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version.Parser, new[]{ "Major", "Minor", "Patch", "Suffix" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorRequest), global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorRequest.Parser, new[]{ "FileToGenerate", "Parameter", "ProtoFile", "SourceFileDescriptors", "CompilerVersion" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse), global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Parser, new[]{ "Error", "SupportedFeatures", "MinimumEdition", "MaximumEdition", "File" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.Feature) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File), global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File.Parser, new[]{ "Name", "InsertionPoint", "Content", "GeneratedCodeInfo" }, null, null, null, null)})
           }));
     }
     #endregion
@@ -82,7 +82,7 @@ namespace Google.Protobuf.Compiler {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -458,7 +458,7 @@ namespace Google.Protobuf.Compiler {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -539,9 +539,9 @@ namespace Google.Protobuf.Compiler {
 
     /// <summary>Field number for the "proto_file" field.</summary>
     public const int ProtoFileFieldNumber = 15;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FileDescriptorProto> _repeated_protoFile_codec
-        = pb::FieldCodec.ForMessage(122, global::Google.Protobuf.Reflection.FileDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> protoFile_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> _repeated_protoFile_codec
+        = pb::FieldCodec.ForMessage(122, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> protoFile_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto>();
     /// <summary>
     /// FileDescriptorProtos for all files in files_to_generate and everything
     /// they import.  The files will appear in topological order, so each file
@@ -565,15 +565,15 @@ namespace Google.Protobuf.Compiler {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> ProtoFile {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> ProtoFile {
       get { return protoFile_; }
     }
 
     /// <summary>Field number for the "source_file_descriptors" field.</summary>
     public const int SourceFileDescriptorsFieldNumber = 17;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FileDescriptorProto> _repeated_sourceFileDescriptors_codec
-        = pb::FieldCodec.ForMessage(138, global::Google.Protobuf.Reflection.FileDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> sourceFileDescriptors_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> _repeated_sourceFileDescriptors_codec
+        = pb::FieldCodec.ForMessage(138, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> sourceFileDescriptors_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto>();
     /// <summary>
     /// File descriptors with all options, including source-retention options.
     /// These descriptors are only provided for the files listed in
@@ -581,19 +581,19 @@ namespace Google.Protobuf.Compiler {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> SourceFileDescriptors {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> SourceFileDescriptors {
       get { return sourceFileDescriptors_; }
     }
 
     /// <summary>Field number for the "compiler_version" field.</summary>
     public const int CompilerVersionFieldNumber = 3;
-    private global::Google.Protobuf.Compiler.Version compilerVersion_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version compilerVersion_;
     /// <summary>
     /// The version number of protocol compiler.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Compiler.Version CompilerVersion {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version CompilerVersion {
       get { return compilerVersion_; }
       set {
         compilerVersion_ = value;
@@ -721,7 +721,7 @@ namespace Google.Protobuf.Compiler {
       sourceFileDescriptors_.Add(other.sourceFileDescriptors_);
       if (other.compilerVersion_ != null) {
         if (compilerVersion_ == null) {
-          CompilerVersion = new global::Google.Protobuf.Compiler.Version();
+          CompilerVersion = new global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version();
         }
         CompilerVersion.MergeFrom(other.CompilerVersion);
       }
@@ -754,7 +754,7 @@ namespace Google.Protobuf.Compiler {
           }
           case 26: {
             if (compilerVersion_ == null) {
-              CompilerVersion = new global::Google.Protobuf.Compiler.Version();
+              CompilerVersion = new global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version();
             }
             input.ReadMessage(CompilerVersion);
             break;
@@ -796,7 +796,7 @@ namespace Google.Protobuf.Compiler {
           }
           case 26: {
             if (compilerVersion_ == null) {
-              CompilerVersion = new global::Google.Protobuf.Compiler.Version();
+              CompilerVersion = new global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.Version();
             }
             input.ReadMessage(CompilerVersion);
             break;
@@ -835,7 +835,7 @@ namespace Google.Protobuf.Compiler {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.PluginReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1005,12 +1005,12 @@ namespace Google.Protobuf.Compiler {
 
     /// <summary>Field number for the "file" field.</summary>
     public const int FileFieldNumber = 15;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> _repeated_file_codec
-        = pb::FieldCodec.ForMessage(122, global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> file_ = new pbc::RepeatedField<global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> _repeated_file_codec
+        = pb::FieldCodec.ForMessage(122, global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> file_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> File {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Types.File> File {
       get { return file_; }
     }
 
@@ -1271,7 +1271,7 @@ namespace Google.Protobuf.Compiler {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Compiler.CodeGeneratorResponse.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Compiler.CodeGeneratorResponse.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1439,7 +1439,7 @@ namespace Google.Protobuf.Compiler {
 
         /// <summary>Field number for the "generated_code_info" field.</summary>
         public const int GeneratedCodeInfoFieldNumber = 16;
-        private global::Google.Protobuf.Reflection.GeneratedCodeInfo generatedCodeInfo_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo generatedCodeInfo_;
         /// <summary>
         /// Information describing the file content being inserted. If an insertion
         /// point is used, this information will be appropriately offset and inserted
@@ -1447,7 +1447,7 @@ namespace Google.Protobuf.Compiler {
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.GeneratedCodeInfo GeneratedCodeInfo {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo GeneratedCodeInfo {
           get { return generatedCodeInfo_; }
           set {
             generatedCodeInfo_ = value;
@@ -1589,7 +1589,7 @@ namespace Google.Protobuf.Compiler {
           }
           if (other.generatedCodeInfo_ != null) {
             if (generatedCodeInfo_ == null) {
-              GeneratedCodeInfo = new global::Google.Protobuf.Reflection.GeneratedCodeInfo();
+              GeneratedCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo();
             }
             GeneratedCodeInfo.MergeFrom(other.GeneratedCodeInfo);
           }
@@ -1626,7 +1626,7 @@ namespace Google.Protobuf.Compiler {
               }
               case 130: {
                 if (generatedCodeInfo_ == null) {
-                  GeneratedCodeInfo = new global::Google.Protobuf.Reflection.GeneratedCodeInfo();
+                  GeneratedCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo();
                 }
                 input.ReadMessage(GeneratedCodeInfo);
                 break;
@@ -1664,7 +1664,7 @@ namespace Google.Protobuf.Compiler {
               }
               case 130: {
                 if (generatedCodeInfo_ == null) {
-                  GeneratedCodeInfo = new global::Google.Protobuf.Reflection.GeneratedCodeInfo();
+                  GeneratedCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo();
                 }
                 input.ReadMessage(GeneratedCodeInfo);
                 break;

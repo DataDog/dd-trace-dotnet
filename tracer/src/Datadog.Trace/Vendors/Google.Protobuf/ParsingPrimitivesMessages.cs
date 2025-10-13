@@ -20,9 +20,9 @@ using System.Buffers;
 #endif
 using System.Collections.Generic;
 using System.Security;
-using Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Reading and skipping messages / groups

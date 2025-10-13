@@ -14,7 +14,7 @@
 
 using System.Collections.Generic;
 
-namespace Google.Protobuf.Collections
+namespace Datadog.Trace.Vendors.Google.Protobuf.Collections
 {
     /// <summary>
     /// Utility to compare if two Lists are the same, and the hash code

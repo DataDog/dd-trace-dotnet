@@ -12,10 +12,10 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
 using System;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Describes a single method in a service.

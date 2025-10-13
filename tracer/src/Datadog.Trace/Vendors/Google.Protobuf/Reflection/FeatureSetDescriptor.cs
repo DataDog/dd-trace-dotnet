@@ -16,9 +16,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using static Google.Protobuf.Reflection.FeatureSet.Types;
+using static Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types;
 
-namespace Google.Protobuf.Reflection;
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 
 /// <summary>
 /// A resolved set of features for a file, message etc.

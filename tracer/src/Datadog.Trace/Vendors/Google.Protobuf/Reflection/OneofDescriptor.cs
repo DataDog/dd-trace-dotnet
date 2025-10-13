@@ -16,10 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Google.Protobuf.Collections;
-using Google.Protobuf.Compatibility;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Compatibility;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Describes a "oneof" field collection in a message type: a set of

@@ -12,16 +12,16 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Collections;
-using Google.Protobuf.WellKnownTypes;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
+using static Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// The syntax of a .proto file

@@ -14,13 +14,13 @@
 
 using System;
 using System.Security;
-using Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
 
 // Note: The choice of the namespace here is important because it's rare that people will directly reference Google.Protobuf.Collections
 // in their app as they're typically using collections created by generated code. We are keeping the extension method in the Google.Protobuf
 // namespace so that it is discoverable by most users.
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// A set of extension methods on <see cref="RepeatedField{T}"/>

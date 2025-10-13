@@ -15,7 +15,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Class containing helpful workarounds for various platform compatibility

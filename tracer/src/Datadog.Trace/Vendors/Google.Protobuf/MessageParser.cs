@@ -21,7 +21,7 @@ using System.Buffers;
 using System.IO;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// A general message parser, typically used by reflection-based code as all the methods

@@ -35,7 +35,7 @@ using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServic
 #endif
 #endif
 
-namespace Google.Protobuf.Collections
+namespace Datadog.Trace.Vendors.Google.Protobuf.Collections
 {
     /// <summary>
     /// The contents of a repeated field: essentially, a collection with some extra

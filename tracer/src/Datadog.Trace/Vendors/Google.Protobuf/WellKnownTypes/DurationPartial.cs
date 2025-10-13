@@ -16,7 +16,7 @@ using System;
 using System.Globalization;
 using System.Text;
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     // Manually-written partial class for the Duration well-known type,
     // providing a conversion to TimeSpan and convenience operators.

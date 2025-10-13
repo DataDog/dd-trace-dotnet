@@ -13,9 +13,9 @@
 #endregion
 
 using System;
-using Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Interface for a Protocol Buffers message, supporting

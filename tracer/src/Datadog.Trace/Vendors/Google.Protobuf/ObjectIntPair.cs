@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Struct used to hold the keys for the fieldByNumber table in DescriptorPool and the keys for the 

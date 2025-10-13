@@ -19,9 +19,9 @@ using System.Runtime.CompilerServices;
 #if NETFRAMEWORK || NETSTANDARD2_0
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
-using Google.Protobuf.Compatibility;
+using Datadog.Trace.Vendors.Google.Protobuf.Compatibility;
 
-namespace Google.Protobuf.Reflection {
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection {
   /// <summary>
   /// The methods in this class are somewhat evil, and should not be tampered with lightly.
   /// Basically they allow the creation of relatively weakly typed delegates from MethodInfos

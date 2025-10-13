@@ -37,7 +37,7 @@ using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Interop
 using System.Security;
 using System.Text;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Primitives for parsing protobuf wire format.

@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     /// <summary>
     /// Extension methods on BCL time-related types, converting to protobuf types.

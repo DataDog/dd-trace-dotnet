@@ -10,11 +10,11 @@
 #pragma warning disable 1591, 0612, 3021, 8981
 #region Designer generated code
 
-using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
-using pbr = global::Google.Protobuf.Reflection;
+using pb = global::Datadog.Trace.Vendors.Google.Protobuf;
+using pbc = global::Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using pbr = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Google.Protobuf.WellKnownTypes {
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes {
 
   /// <summary>Holder for reflection information generated from google/protobuf/field_mask.proto</summary>
   internal static partial class FieldMaskReflection {
@@ -37,7 +37,7 @@ namespace Google.Protobuf.WellKnownTypes {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.FieldMask), global::Google.Protobuf.WellKnownTypes.FieldMask.Parser, new[]{ "Paths" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.FieldMask), global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.FieldMask.Parser, new[]{ "Paths" }, null, null, null, null)
           }));
     }
     #endregion
@@ -259,7 +259,7 @@ namespace Google.Protobuf.WellKnownTypes {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.WellKnownTypes.FieldMaskReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.FieldMaskReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

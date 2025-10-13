@@ -34,7 +34,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Security;
 using System.Text;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Primitives for encoding protobuf wire format.

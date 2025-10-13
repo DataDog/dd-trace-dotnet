@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-namespace Google.Protobuf.WellKnownTypes
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes
 {
     internal static partial class WrappersReflection
     {

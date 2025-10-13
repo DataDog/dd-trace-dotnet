@@ -14,7 +14,7 @@
 
 using System.IO;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Thrown when an attempt is made to parse invalid JSON, e.g. using

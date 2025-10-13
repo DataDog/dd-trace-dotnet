@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Specifies the original name (in the .proto file) of a named element,

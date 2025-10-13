@@ -12,11 +12,11 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Collections;
-using Google.Protobuf.Compatibility;
+using Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using Datadog.Trace.Vendors.Google.Protobuf.Compatibility;
 using System;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Descriptor for a field or extension within a message in a .proto file.

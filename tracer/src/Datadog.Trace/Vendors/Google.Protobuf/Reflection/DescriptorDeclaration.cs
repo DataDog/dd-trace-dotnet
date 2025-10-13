@@ -15,9 +15,9 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
+using static Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Provides additional information about the declaration of a descriptor,

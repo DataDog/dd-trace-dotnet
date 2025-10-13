@@ -346,10 +346,10 @@ namespace UpdateVendors
 
                         if (originalNamespace.StartsWith("Google.Protobuf"))
                         {
-                            // builder.Replace("global::Google.Protobuf", "global::Datadog.Trace.Vendors.Google.Protobuf");
+                            builder.Replace("global::Google.Protobuf", "global::Datadog.Trace.Vendors.Google.Protobuf");
                             builder.Replace("using System.Buffers;", "#if NETFRAMEWORK || NETSTANDARD2_0\nusing Datadog.Trace.VendoredMicrosoftCode.System.Buffers;\n#else\nusing System.Buffers;\n#endif");
                             builder.Replace("using System.Buffers.Binary;", "#if NETFRAMEWORK || NETSTANDARD2_0\nusing Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;\n#else\nusing System.Buffers.Binary;\n#endif");
-                            // builder.Replace("using static Google.Protobuf", "using static Datadog.Trace.Vendors.Google.Protobuf");
+                            builder.Replace("using static Google.Protobuf", "using static Datadog.Trace.Vendors.Google.Protobuf");
                             builder.Replace("public ref struct", "internal ref struct");
 
                             builder.Replace("using System.Runtime.InteropServices;", "using System.Runtime.InteropServices;\n#if NETFRAMEWORK || NETSTANDARD2_0\nusing MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;\n#endif");
@@ -368,43 +368,29 @@ namespace UpdateVendors
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");
 
-                        // To make the auto-generated code work with Google.Protobuf, we need to keep the namespace unchanged.
-                        if (originalNamespace.StartsWith("Google.Protobuf"))
-                        {
-                            string result = builder.ToString();
+                        string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
 
-                            // Don't expose anything we don't intend to
-                            // by replacing all "public" access modifiers with "internal"
-                            return Regex.Replace(
-                                result,
-                                @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
-                                match => $"internal{match.Groups[1]}");
-                        }
-                        else {
-                            string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
+                        // Prevent namespace conflicts
+                        builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
+                        builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
+                        builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
-                            // Prevent namespace conflicts
-                            builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
-                            builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
-                            builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
+                        // Fix namespace conflicts in `using alias` directives. For example, transform:
+                        //      using Foo = dnlib.A.B.C;
+                        // To:
+                        //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
+                        string result =
+                            Regex.Replace(
+                                builder.ToString(),
+                                @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
+                                match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
 
-                            // Fix namespace conflicts in `using alias` directives. For example, transform:
-                            //      using Foo = dnlib.A.B.C;
-                            // To:
-                            //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
-                            string result =
-                                Regex.Replace(
-                                    builder.ToString(),
-                                    @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
-                                    match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
-
-                            // Don't expose anything we don't intend to
-                            // by replacing all "public" access modifiers with "internal"
-                            return Regex.Replace(
-                                result,
-                                @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
-                                match => $"internal{match.Groups[1]}");
-                        }
+                        // Don't expose anything we don't intend to
+                        // by replacing all "public" access modifiers with "internal"
+                        return Regex.Replace(
+                            result,
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
+                            match => $"internal{match.Groups[1]}");
                     });
             }
         }

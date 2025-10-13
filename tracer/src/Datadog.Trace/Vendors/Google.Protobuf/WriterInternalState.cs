@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     // warning: this is a mutable struct, so it needs to be only passed as a ref!
     internal struct WriterInternalState

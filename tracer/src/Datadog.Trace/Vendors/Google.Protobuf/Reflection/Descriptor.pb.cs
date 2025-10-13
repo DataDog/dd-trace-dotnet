@@ -10,11 +10,11 @@
 #pragma warning disable 1591, 0612, 3021, 8981
 #region Designer generated code
 
-using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
-using pbr = global::Google.Protobuf.Reflection;
+using pb = global::Datadog.Trace.Vendors.Google.Protobuf;
+using pbc = global::Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using pbr = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Google.Protobuf.Reflection {
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection {
 
   /// <summary>Holder for reflection information generated from google/protobuf/descriptor.proto</summary>
   internal static partial class DescriptorReflection {
@@ -274,32 +274,32 @@ namespace Google.Protobuf.Reflection {
             "cm90b2J1Zi5SZWZsZWN0aW9u"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Google.Protobuf.Reflection.Edition), typeof(global::Google.Protobuf.Reflection.SymbolVisibility), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FileDescriptorSet), global::Google.Protobuf.Reflection.FileDescriptorSet.Parser, new[]{ "File" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FileDescriptorProto), global::Google.Protobuf.Reflection.FileDescriptorProto.Parser, new[]{ "Name", "Package", "Dependency", "PublicDependency", "WeakDependency", "OptionDependency", "MessageType", "EnumType", "Service", "Extension", "Options", "SourceCodeInfo", "Syntax", "Edition" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.DescriptorProto), global::Google.Protobuf.Reflection.DescriptorProto.Parser, new[]{ "Name", "Field", "Extension", "NestedType", "EnumType", "ExtensionRange", "OneofDecl", "Options", "ReservedRange", "ReservedName", "Visibility" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange), global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange.Parser, new[]{ "Start", "End", "Options" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange), global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange.Parser, new[]{ "Start", "End" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.ExtensionRangeOptions), global::Google.Protobuf.Reflection.ExtensionRangeOptions.Parser, new[]{ "UninterpretedOption", "Declaration", "Features", "Verification" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration), global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration.Parser, new[]{ "Number", "FullName", "Type", "Reserved", "Repeated" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FieldDescriptorProto), global::Google.Protobuf.Reflection.FieldDescriptorProto.Parser, new[]{ "Name", "Number", "Label", "Type", "TypeName", "Extendee", "DefaultValue", "OneofIndex", "JsonName", "Options", "Proto3Optional" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type), typeof(global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.OneofDescriptorProto), global::Google.Protobuf.Reflection.OneofDescriptorProto.Parser, new[]{ "Name", "Options" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.EnumDescriptorProto), global::Google.Protobuf.Reflection.EnumDescriptorProto.Parser, new[]{ "Name", "Value", "Options", "ReservedRange", "ReservedName", "Visibility" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange), global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange.Parser, new[]{ "Start", "End" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.EnumValueDescriptorProto), global::Google.Protobuf.Reflection.EnumValueDescriptorProto.Parser, new[]{ "Name", "Number", "Options" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.ServiceDescriptorProto), global::Google.Protobuf.Reflection.ServiceDescriptorProto.Parser, new[]{ "Name", "Method", "Options" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.MethodDescriptorProto), global::Google.Protobuf.Reflection.MethodDescriptorProto.Parser, new[]{ "Name", "InputType", "OutputType", "Options", "ClientStreaming", "ServerStreaming" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FileOptions), global::Google.Protobuf.Reflection.FileOptions.Parser, new[]{ "JavaPackage", "JavaOuterClassname", "JavaMultipleFiles", "JavaGenerateEqualsAndHash", "JavaStringCheckUtf8", "OptimizeFor", "GoPackage", "CcGenericServices", "JavaGenericServices", "PyGenericServices", "Deprecated", "CcEnableArenas", "ObjcClassPrefix", "CsharpNamespace", "SwiftPrefix", "PhpClassPrefix", "PhpNamespace", "PhpMetadataNamespace", "RubyPackage", "Features", "UninterpretedOption" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.MessageOptions), global::Google.Protobuf.Reflection.MessageOptions.Parser, new[]{ "MessageSetWireFormat", "NoStandardDescriptorAccessor", "Deprecated", "MapEntry", "DeprecatedLegacyJsonFieldConflicts", "Features", "UninterpretedOption" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FieldOptions), global::Google.Protobuf.Reflection.FieldOptions.Parser, new[]{ "Ctype", "Packed", "Jstype", "Lazy", "UnverifiedLazy", "Deprecated", "Weak", "DebugRedact", "Retention", "Targets", "EditionDefaults", "Features", "FeatureSupport", "UninterpretedOption" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.CType), typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.JSType), typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention), typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault), global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault.Parser, new[]{ "Edition", "Value" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport), global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport.Parser, new[]{ "EditionIntroduced", "EditionDeprecated", "DeprecationWarning", "EditionRemoved" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.OneofOptions), global::Google.Protobuf.Reflection.OneofOptions.Parser, new[]{ "Features", "UninterpretedOption" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.EnumOptions), global::Google.Protobuf.Reflection.EnumOptions.Parser, new[]{ "AllowAlias", "Deprecated", "DeprecatedLegacyJsonFieldConflicts", "Features", "UninterpretedOption" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.EnumValueOptions), global::Google.Protobuf.Reflection.EnumValueOptions.Parser, new[]{ "Deprecated", "Features", "DebugRedact", "FeatureSupport", "UninterpretedOption" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.ServiceOptions), global::Google.Protobuf.Reflection.ServiceOptions.Parser, new[]{ "Features", "Deprecated", "UninterpretedOption" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.MethodOptions), global::Google.Protobuf.Reflection.MethodOptions.Parser, new[]{ "Deprecated", "IdempotencyLevel", "Features", "UninterpretedOption" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.UninterpretedOption), global::Google.Protobuf.Reflection.UninterpretedOption.Parser, new[]{ "Name", "IdentifierValue", "PositiveIntValue", "NegativeIntValue", "DoubleValue", "StringValue", "AggregateValue" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart), global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart.Parser, new[]{ "NamePart_", "IsExtension" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FeatureSet), global::Google.Protobuf.Reflection.FeatureSet.Parser, new[]{ "FieldPresence", "EnumType", "RepeatedFieldEncoding", "Utf8Validation", "MessageEncoding", "JsonFormat", "EnforceNamingStyle", "DefaultSymbolVisibility" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat), typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature), global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Parser, null, null, new[]{ typeof(global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) }, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FeatureSetDefaults), global::Google.Protobuf.Reflection.FeatureSetDefaults.Parser, new[]{ "Defaults", "MinimumEdition", "MaximumEdition" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault), global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault.Parser, new[]{ "Edition", "OverridableFeatures", "FixedFeatures" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.SourceCodeInfo), global::Google.Protobuf.Reflection.SourceCodeInfo.Parser, new[]{ "Location" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location), global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location.Parser, new[]{ "Path", "Span", "LeadingComments", "TrailingComments", "LeadingDetachedComments" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.GeneratedCodeInfo), global::Google.Protobuf.Reflection.GeneratedCodeInfo.Parser, new[]{ "Annotation" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation), global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Parser, new[]{ "Path", "SourceFile", "Begin", "End", "Semantic" }, null, new[]{ typeof(global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) }, null, null)})
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorSet), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorSet.Parser, new[]{ "File" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto.Parser, new[]{ "Name", "Package", "Dependency", "PublicDependency", "WeakDependency", "OptionDependency", "MessageType", "EnumType", "Service", "Extension", "Options", "SourceCodeInfo", "Syntax", "Edition" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Parser, new[]{ "Name", "Field", "Extension", "NestedType", "EnumType", "ExtensionRange", "OneofDecl", "Options", "ReservedRange", "ReservedName", "Visibility" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange.Parser, new[]{ "Start", "End", "Options" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange.Parser, new[]{ "Start", "End" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Parser, new[]{ "UninterpretedOption", "Declaration", "Features", "Verification" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration.Parser, new[]{ "Number", "FullName", "Type", "Reserved", "Repeated" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Parser, new[]{ "Name", "Number", "Label", "Type", "TypeName", "Extendee", "DefaultValue", "OneofIndex", "JsonName", "Options", "Proto3Optional" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto.Parser, new[]{ "Name", "Options" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Parser, new[]{ "Name", "Value", "Options", "ReservedRange", "ReservedName", "Visibility" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange.Parser, new[]{ "Start", "End" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto.Parser, new[]{ "Name", "Number", "Options" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto.Parser, new[]{ "Name", "Method", "Options" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto.Parser, new[]{ "Name", "InputType", "OutputType", "Options", "ClientStreaming", "ServerStreaming" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Parser, new[]{ "JavaPackage", "JavaOuterClassname", "JavaMultipleFiles", "JavaGenerateEqualsAndHash", "JavaStringCheckUtf8", "OptimizeFor", "GoPackage", "CcGenericServices", "JavaGenericServices", "PyGenericServices", "Deprecated", "CcEnableArenas", "ObjcClassPrefix", "CsharpNamespace", "SwiftPrefix", "PhpClassPrefix", "PhpNamespace", "PhpMetadataNamespace", "RubyPackage", "Features", "UninterpretedOption" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions.Parser, new[]{ "MessageSetWireFormat", "NoStandardDescriptorAccessor", "Deprecated", "MapEntry", "DeprecatedLegacyJsonFieldConflicts", "Features", "UninterpretedOption" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Parser, new[]{ "Ctype", "Packed", "Jstype", "Lazy", "UnverifiedLazy", "Deprecated", "Weak", "DebugRedact", "Retention", "Targets", "EditionDefaults", "Features", "FeatureSupport", "UninterpretedOption" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault.Parser, new[]{ "Edition", "Value" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport.Parser, new[]{ "EditionIntroduced", "EditionDeprecated", "DeprecationWarning", "EditionRemoved" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions.Parser, new[]{ "Features", "UninterpretedOption" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions.Parser, new[]{ "AllowAlias", "Deprecated", "DeprecatedLegacyJsonFieldConflicts", "Features", "UninterpretedOption" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions.Parser, new[]{ "Deprecated", "Features", "DebugRedact", "FeatureSupport", "UninterpretedOption" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions.Parser, new[]{ "Features", "Deprecated", "UninterpretedOption" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Parser, new[]{ "Deprecated", "IdempotencyLevel", "Features", "UninterpretedOption" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser, new[]{ "Name", "IdentifierValue", "PositiveIntValue", "NegativeIntValue", "DoubleValue", "StringValue", "AggregateValue" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart.Parser, new[]{ "NamePart_", "IsExtension" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Parser, new[]{ "FieldPresence", "EnumType", "RepeatedFieldEncoding", "Utf8Validation", "MessageEncoding", "JsonFormat", "EnforceNamingStyle", "DefaultSymbolVisibility" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat), typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) }, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Parser, null, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) }, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Parser, new[]{ "Defaults", "MinimumEdition", "MaximumEdition" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault.Parser, new[]{ "Edition", "OverridableFeatures", "FixedFeatures" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Parser, new[]{ "Location" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location.Parser, new[]{ "Path", "Span", "LeadingComments", "TrailingComments", "LeadingDetachedComments" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Parser, new[]{ "Annotation" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation), global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Parser, new[]{ "Path", "SourceFile", "Begin", "End", "Semantic" }, null, new[]{ typeof(global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) }, null, null)})
           }));
     }
     #endregion
@@ -388,7 +388,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -421,12 +421,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "file" field.</summary>
     public const int FileFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FileDescriptorProto> _repeated_file_codec
-        = pb::FieldCodec.ForMessage(10, global::Google.Protobuf.Reflection.FileDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> file_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> _repeated_file_codec
+        = pb::FieldCodec.ForMessage(10, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> file_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FileDescriptorProto> File {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileDescriptorProto> File {
       get { return file_; }
     }
 
@@ -622,7 +622,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -784,57 +784,57 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "message_type" field.</summary>
     public const int MessageTypeFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.DescriptorProto> _repeated_messageType_codec
-        = pb::FieldCodec.ForMessage(34, global::Google.Protobuf.Reflection.DescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto> messageType_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> _repeated_messageType_codec
+        = pb::FieldCodec.ForMessage(34, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> messageType_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto>();
     /// <summary>
     /// All top-level definitions in this file.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto> MessageType {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> MessageType {
       get { return messageType_; }
     }
 
     /// <summary>Field number for the "enum_type" field.</summary>
     public const int EnumTypeFieldNumber = 5;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.EnumDescriptorProto> _repeated_enumType_codec
-        = pb::FieldCodec.ForMessage(42, global::Google.Protobuf.Reflection.EnumDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto> enumType_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> _repeated_enumType_codec
+        = pb::FieldCodec.ForMessage(42, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> enumType_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto> EnumType {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> EnumType {
       get { return enumType_; }
     }
 
     /// <summary>Field number for the "service" field.</summary>
     public const int ServiceFieldNumber = 6;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.ServiceDescriptorProto> _repeated_service_codec
-        = pb::FieldCodec.ForMessage(50, global::Google.Protobuf.Reflection.ServiceDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.ServiceDescriptorProto> service_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.ServiceDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto> _repeated_service_codec
+        = pb::FieldCodec.ForMessage(50, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto> service_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.ServiceDescriptorProto> Service {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceDescriptorProto> Service {
       get { return service_; }
     }
 
     /// <summary>Field number for the "extension" field.</summary>
     public const int ExtensionFieldNumber = 7;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_extension_codec
-        = pb::FieldCodec.ForMessage(58, global::Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> extension_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_extension_codec
+        = pb::FieldCodec.ForMessage(58, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> extension_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> Extension {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> Extension {
       get { return extension_; }
     }
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 8;
-    private global::Google.Protobuf.Reflection.FileOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FileOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -843,7 +843,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "source_code_info" field.</summary>
     public const int SourceCodeInfoFieldNumber = 9;
-    private global::Google.Protobuf.Reflection.SourceCodeInfo sourceCodeInfo_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo sourceCodeInfo_;
     /// <summary>
     /// This field contains optional information about the original source code.
     /// You may safely remove this entire field without harming runtime
@@ -852,7 +852,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.SourceCodeInfo SourceCodeInfo {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo SourceCodeInfo {
       get { return sourceCodeInfo_; }
       set {
         sourceCodeInfo_ = value;
@@ -896,9 +896,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "edition" field.</summary>
     public const int EditionFieldNumber = 14;
-    private readonly static global::Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-    private global::Google.Protobuf.Reflection.Edition edition_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition edition_;
     /// <summary>
     /// The edition of the proto file.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -907,7 +907,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.Edition Edition {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition Edition {
       get { if ((_hasBits0 & 1) != 0) { return edition_; } else { return EditionDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -1133,13 +1133,13 @@ namespace Google.Protobuf.Reflection {
       extension_.Add(other.extension_);
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.FileOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions();
         }
         Options.MergeFrom(other.Options);
       }
       if (other.sourceCodeInfo_ != null) {
         if (sourceCodeInfo_ == null) {
-          SourceCodeInfo = new global::Google.Protobuf.Reflection.SourceCodeInfo();
+          SourceCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo();
         }
         SourceCodeInfo.MergeFrom(other.SourceCodeInfo);
       }
@@ -1198,14 +1198,14 @@ namespace Google.Protobuf.Reflection {
           }
           case 66: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.FileOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions();
             }
             input.ReadMessage(Options);
             break;
           }
           case 74: {
             if (sourceCodeInfo_ == null) {
-              SourceCodeInfo = new global::Google.Protobuf.Reflection.SourceCodeInfo();
+              SourceCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo();
             }
             input.ReadMessage(SourceCodeInfo);
             break;
@@ -1225,7 +1225,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 112: {
-            Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
           case 122: {
@@ -1281,14 +1281,14 @@ namespace Google.Protobuf.Reflection {
           }
           case 66: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.FileOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions();
             }
             input.ReadMessage(Options);
             break;
           }
           case 74: {
             if (sourceCodeInfo_ == null) {
-              SourceCodeInfo = new global::Google.Protobuf.Reflection.SourceCodeInfo();
+              SourceCodeInfo = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo();
             }
             input.ReadMessage(SourceCodeInfo);
             break;
@@ -1308,7 +1308,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 112: {
-            Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
           case 122: {
@@ -1341,7 +1341,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1410,76 +1410,76 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "field" field.</summary>
     public const int FieldFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_field_codec
-        = pb::FieldCodec.ForMessage(18, global::Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> field_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_field_codec
+        = pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> field_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> Field {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> Field {
       get { return field_; }
     }
 
     /// <summary>Field number for the "extension" field.</summary>
     public const int ExtensionFieldNumber = 6;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_extension_codec
-        = pb::FieldCodec.ForMessage(50, global::Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> extension_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> _repeated_extension_codec
+        = pb::FieldCodec.ForMessage(50, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> extension_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldDescriptorProto> Extension {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto> Extension {
       get { return extension_; }
     }
 
     /// <summary>Field number for the "nested_type" field.</summary>
     public const int NestedTypeFieldNumber = 3;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.DescriptorProto> _repeated_nestedType_codec
-        = pb::FieldCodec.ForMessage(26, global::Google.Protobuf.Reflection.DescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto> nestedType_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> _repeated_nestedType_codec
+        = pb::FieldCodec.ForMessage(26, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> nestedType_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto> NestedType {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto> NestedType {
       get { return nestedType_; }
     }
 
     /// <summary>Field number for the "enum_type" field.</summary>
     public const int EnumTypeFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.EnumDescriptorProto> _repeated_enumType_codec
-        = pb::FieldCodec.ForMessage(34, global::Google.Protobuf.Reflection.EnumDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto> enumType_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> _repeated_enumType_codec
+        = pb::FieldCodec.ForMessage(34, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> enumType_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto> EnumType {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto> EnumType {
       get { return enumType_; }
     }
 
     /// <summary>Field number for the "extension_range" field.</summary>
     public const int ExtensionRangeFieldNumber = 5;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> _repeated_extensionRange_codec
-        = pb::FieldCodec.ForMessage(42, global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> extensionRange_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> _repeated_extensionRange_codec
+        = pb::FieldCodec.ForMessage(42, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> extensionRange_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> ExtensionRange {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ExtensionRange> ExtensionRange {
       get { return extensionRange_; }
     }
 
     /// <summary>Field number for the "oneof_decl" field.</summary>
     public const int OneofDeclFieldNumber = 8;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.OneofDescriptorProto> _repeated_oneofDecl_codec
-        = pb::FieldCodec.ForMessage(66, global::Google.Protobuf.Reflection.OneofDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.OneofDescriptorProto> oneofDecl_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.OneofDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto> _repeated_oneofDecl_codec
+        = pb::FieldCodec.ForMessage(66, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto> oneofDecl_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.OneofDescriptorProto> OneofDecl {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofDescriptorProto> OneofDecl {
       get { return oneofDecl_; }
     }
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 7;
-    private global::Google.Protobuf.Reflection.MessageOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.MessageOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -1488,12 +1488,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "reserved_range" field.</summary>
     public const int ReservedRangeFieldNumber = 9;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> _repeated_reservedRange_codec
-        = pb::FieldCodec.ForMessage(74, global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> reservedRange_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> _repeated_reservedRange_codec
+        = pb::FieldCodec.ForMessage(74, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> reservedRange_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> ReservedRange {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Types.ReservedRange> ReservedRange {
       get { return reservedRange_; }
     }
 
@@ -1514,15 +1514,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "visibility" field.</summary>
     public const int VisibilityFieldNumber = 11;
-    private readonly static global::Google.Protobuf.Reflection.SymbolVisibility VisibilityDefaultValue = global::Google.Protobuf.Reflection.SymbolVisibility.VisibilityUnset;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility VisibilityDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility.VisibilityUnset;
 
-    private global::Google.Protobuf.Reflection.SymbolVisibility visibility_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility visibility_;
     /// <summary>
     /// Support for `export` and `local` keywords on enums.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.SymbolVisibility Visibility {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility Visibility {
       get { if ((_hasBits0 & 1) != 0) { return visibility_; } else { return VisibilityDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -1704,7 +1704,7 @@ namespace Google.Protobuf.Reflection {
       oneofDecl_.Add(other.oneofDecl_);
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.MessageOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -1758,7 +1758,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 58: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.MessageOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -1776,7 +1776,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 88: {
-            Visibility = (global::Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
+            Visibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -1824,7 +1824,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 58: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.MessageOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MessageOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -1842,7 +1842,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 88: {
-            Visibility = (global::Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
+            Visibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -1871,7 +1871,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.DescriptorProto.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1966,10 +1966,10 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "options" field.</summary>
         public const int OptionsFieldNumber = 3;
-        private global::Google.Protobuf.Reflection.ExtensionRangeOptions options_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions options_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.ExtensionRangeOptions Options {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions Options {
           get { return options_; }
           set {
             options_ = value;
@@ -2095,7 +2095,7 @@ namespace Google.Protobuf.Reflection {
           }
           if (other.options_ != null) {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.ExtensionRangeOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions();
             }
             Options.MergeFrom(other.Options);
           }
@@ -2128,7 +2128,7 @@ namespace Google.Protobuf.Reflection {
               }
               case 26: {
                 if (options_ == null) {
-                  Options = new global::Google.Protobuf.Reflection.ExtensionRangeOptions();
+                  Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions();
                 }
                 input.ReadMessage(Options);
                 break;
@@ -2162,7 +2162,7 @@ namespace Google.Protobuf.Reflection {
               }
               case 26: {
                 if (options_ == null) {
-                  Options = new global::Google.Protobuf.Reflection.ExtensionRangeOptions();
+                  Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions();
                 }
                 input.ReadMessage(Options);
                 break;
@@ -2195,7 +2195,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.DescriptorProto.Descriptor.NestedTypes[1]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorProto.Descriptor.NestedTypes[1]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2475,7 +2475,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2512,23 +2512,23 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
     /// <summary>Field number for the "declaration" field.</summary>
     public const int DeclarationFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> _repeated_declaration_codec
-        = pb::FieldCodec.ForMessage(18, global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> declaration_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> _repeated_declaration_codec
+        = pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> declaration_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration>();
     /// <summary>
     /// For external users: DO NOT USE. We are in the process of open sourcing
     /// extension declaration and executing internal cleanups before it can be
@@ -2536,19 +2536,19 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> Declaration {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.Declaration> Declaration {
       get { return declaration_; }
     }
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 50;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -2557,9 +2557,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "verification" field.</summary>
     public const int VerificationFieldNumber = 3;
-    private readonly static global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState VerificationDefaultValue = global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState.Unverified;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState VerificationDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState.Unverified;
 
-    private global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState verification_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState verification_;
     /// <summary>
     /// The verification state of the range.
     /// TODO: flip the default to DECLARATION once all empty ranges
@@ -2567,7 +2567,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState Verification {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState Verification {
       get { if ((_hasBits0 & 1) != 0) { return verification_; } else { return VerificationDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -2714,7 +2714,7 @@ namespace Google.Protobuf.Reflection {
       declaration_.Add(other.declaration_);
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -2748,12 +2748,12 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 24: {
-            Verification = (global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) input.ReadEnum();
+            Verification = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) input.ReadEnum();
             break;
           }
           case 402: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -2788,12 +2788,12 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 24: {
-            Verification = (global::Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) input.ReadEnum();
+            Verification = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Types.VerificationState) input.ReadEnum();
             break;
           }
           case 402: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -2861,7 +2861,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.ExtensionRangeOptions.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ExtensionRangeOptions.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3311,7 +3311,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3407,12 +3407,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "label" field.</summary>
     public const int LabelFieldNumber = 4;
-    private readonly static global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label LabelDefaultValue = global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label.Optional;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label LabelDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label.Optional;
 
-    private global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label label_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label label_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label Label {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label Label {
       get { if ((_hasBits0 & 2) != 0) { return label_; } else { return LabelDefaultValue; } }
       set {
         _hasBits0 |= 2;
@@ -3434,16 +3434,16 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 5;
-    private readonly static global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type TypeDefaultValue = global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type.Double;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type TypeDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type.Double;
 
-    private global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type type_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type type_;
     /// <summary>
     /// If type_name is set, this need not be set.  If both this and type_name
     /// are set, this must be one of TYPE_ENUM, TYPE_MESSAGE or TYPE_GROUP.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type Type {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type Type {
       get { if ((_hasBits0 & 4) != 0) { return type_; } else { return TypeDefaultValue; } }
       set {
         _hasBits0 |= 4;
@@ -3623,10 +3623,10 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 8;
-    private global::Google.Protobuf.Reflection.FieldOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -3927,7 +3927,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.FieldOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -3966,11 +3966,11 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 32: {
-            Label = (global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) input.ReadEnum();
+            Label = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) input.ReadEnum();
             break;
           }
           case 40: {
-            Type = (global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type) input.ReadEnum();
+            Type = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type) input.ReadEnum();
             break;
           }
           case 50: {
@@ -3983,7 +3983,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 66: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.FieldOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4032,11 +4032,11 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 32: {
-            Label = (global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) input.ReadEnum();
+            Label = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Label) input.ReadEnum();
             break;
           }
           case 40: {
-            Type = (global::Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type) input.ReadEnum();
+            Type = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldDescriptorProto.Types.Type) input.ReadEnum();
             break;
           }
           case 50: {
@@ -4049,7 +4049,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 66: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.FieldOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4165,7 +4165,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4224,10 +4224,10 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 2;
-    private global::Google.Protobuf.Reflection.OneofOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.OneofOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -4337,7 +4337,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.OneofOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -4366,7 +4366,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 18: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.OneofOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4396,7 +4396,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 18: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.OneofOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.OneofOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4427,7 +4427,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4491,21 +4491,21 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "value" field.</summary>
     public const int ValueFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.EnumValueDescriptorProto> _repeated_value_codec
-        = pb::FieldCodec.ForMessage(18, global::Google.Protobuf.Reflection.EnumValueDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumValueDescriptorProto> value_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumValueDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto> _repeated_value_codec
+        = pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto> value_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumValueDescriptorProto> Value {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueDescriptorProto> Value {
       get { return value_; }
     }
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 3;
-    private global::Google.Protobuf.Reflection.EnumOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.EnumOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -4514,9 +4514,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "reserved_range" field.</summary>
     public const int ReservedRangeFieldNumber = 4;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> _repeated_reservedRange_codec
-        = pb::FieldCodec.ForMessage(34, global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> reservedRange_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> _repeated_reservedRange_codec
+        = pb::FieldCodec.ForMessage(34, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> reservedRange_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange>();
     /// <summary>
     /// Range of reserved numeric values. Reserved numeric values may not be used
     /// by enum values in the same enum declaration. Reserved ranges may not
@@ -4524,7 +4524,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> ReservedRange {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Types.EnumReservedRange> ReservedRange {
       get { return reservedRange_; }
     }
 
@@ -4545,15 +4545,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "visibility" field.</summary>
     public const int VisibilityFieldNumber = 6;
-    private readonly static global::Google.Protobuf.Reflection.SymbolVisibility VisibilityDefaultValue = global::Google.Protobuf.Reflection.SymbolVisibility.VisibilityUnset;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility VisibilityDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility.VisibilityUnset;
 
-    private global::Google.Protobuf.Reflection.SymbolVisibility visibility_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility visibility_;
     /// <summary>
     /// Support for `export` and `local` keywords on enums.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.SymbolVisibility Visibility {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility Visibility {
       get { if ((_hasBits0 & 1) != 0) { return visibility_; } else { return VisibilityDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -4705,7 +4705,7 @@ namespace Google.Protobuf.Reflection {
       value_.Add(other.value_);
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.EnumOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -4743,7 +4743,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.EnumOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4757,7 +4757,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 48: {
-            Visibility = (global::Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
+            Visibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -4789,7 +4789,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.EnumOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -4803,7 +4803,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 48: {
-            Visibility = (global::Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
+            Visibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -4840,7 +4840,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.EnumDescriptorProto.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumDescriptorProto.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5121,7 +5121,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5209,10 +5209,10 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 3;
-    private global::Google.Protobuf.Reflection.EnumValueOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.EnumValueOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -5338,7 +5338,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.EnumValueOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -5371,7 +5371,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.EnumValueOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -5405,7 +5405,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.EnumValueOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.EnumValueOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -5435,7 +5435,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5495,21 +5495,21 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "method" field.</summary>
     public const int MethodFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.MethodDescriptorProto> _repeated_method_codec
-        = pb::FieldCodec.ForMessage(18, global::Google.Protobuf.Reflection.MethodDescriptorProto.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.MethodDescriptorProto> method_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.MethodDescriptorProto>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto> _repeated_method_codec
+        = pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto> method_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.MethodDescriptorProto> Method {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodDescriptorProto> Method {
       get { return method_; }
     }
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 3;
-    private global::Google.Protobuf.Reflection.ServiceOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.ServiceOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -5625,7 +5625,7 @@ namespace Google.Protobuf.Reflection {
       method_.Add(other.method_);
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.ServiceOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -5658,7 +5658,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.ServiceOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -5692,7 +5692,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 26: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.ServiceOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.ServiceOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -5723,7 +5723,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5843,10 +5843,10 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "options" field.</summary>
     public const int OptionsFieldNumber = 4;
-    private global::Google.Protobuf.Reflection.MethodOptions options_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions options_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.MethodOptions Options {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions Options {
       get { return options_; }
       set {
         options_ = value;
@@ -6074,7 +6074,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.options_ != null) {
         if (options_ == null) {
-          Options = new global::Google.Protobuf.Reflection.MethodOptions();
+          Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions();
         }
         Options.MergeFrom(other.Options);
       }
@@ -6117,7 +6117,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 34: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.MethodOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -6163,7 +6163,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 34: {
             if (options_ == null) {
-              Options = new global::Google.Protobuf.Reflection.MethodOptions();
+              Options = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions();
             }
             input.ReadMessage(Options);
             break;
@@ -6201,7 +6201,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -6427,12 +6427,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "optimize_for" field.</summary>
     public const int OptimizeForFieldNumber = 9;
-    private readonly static global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode OptimizeForDefaultValue = global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode.Speed;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode OptimizeForDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode.Speed;
 
-    private global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode optimizeFor_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode optimizeFor_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode OptimizeFor {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode OptimizeFor {
       get { if ((_hasBits0 & 1) != 0) { return optimizeFor_; } else { return OptimizeForDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -6858,7 +6858,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 50;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -6867,7 +6867,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -6876,16 +6876,16 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here.
     /// See the documentation for the "Options" section above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -7300,7 +7300,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -7336,7 +7336,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 72: {
-            OptimizeFor = (global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) input.ReadEnum();
+            OptimizeFor = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) input.ReadEnum();
             break;
           }
           case 80: {
@@ -7405,7 +7405,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 402: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -7444,7 +7444,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 72: {
-            OptimizeFor = (global::Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) input.ReadEnum();
+            OptimizeFor = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FileOptions.Types.OptimizeMode) input.ReadEnum();
             break;
           }
           case 80: {
@@ -7513,7 +7513,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 402: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -7595,7 +7595,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -7839,7 +7839,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 12;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -7848,7 +7848,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -7857,15 +7857,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -8056,7 +8056,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -8105,7 +8105,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 98: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -8157,7 +8157,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 98: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -8213,7 +8213,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -8260,9 +8260,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "ctype" field.</summary>
     public const int CtypeFieldNumber = 1;
-    private readonly static global::Google.Protobuf.Reflection.FieldOptions.Types.CType CtypeDefaultValue = global::Google.Protobuf.Reflection.FieldOptions.Types.CType.String;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType CtypeDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType.String;
 
-    private global::Google.Protobuf.Reflection.FieldOptions.Types.CType ctype_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType ctype_;
     /// <summary>
     /// NOTE: ctype is deprecated. Use `features.(pb.cpp).string_type` instead.
     /// The ctype option instructs the C++ code generator to use a different
@@ -8274,7 +8274,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions.Types.CType Ctype {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType Ctype {
       get { if ((_hasBits0 & 1) != 0) { return ctype_; } else { return CtypeDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -8332,9 +8332,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "jstype" field.</summary>
     public const int JstypeFieldNumber = 6;
-    private readonly static global::Google.Protobuf.Reflection.FieldOptions.Types.JSType JstypeDefaultValue = global::Google.Protobuf.Reflection.FieldOptions.Types.JSType.JsNormal;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType JstypeDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType.JsNormal;
 
-    private global::Google.Protobuf.Reflection.FieldOptions.Types.JSType jstype_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType jstype_;
     /// <summary>
     /// The jstype option determines the JavaScript type used for values of the
     /// field.  The option is permitted only for 64 bit integral and fixed types
@@ -8350,7 +8350,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions.Types.JSType Jstype {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType Jstype {
       get { if ((_hasBits0 & 16) != 0) { return jstype_; } else { return JstypeDefaultValue; } }
       set {
         _hasBits0 |= 16;
@@ -8553,12 +8553,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "retention" field.</summary>
     public const int RetentionFieldNumber = 17;
-    private readonly static global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention RetentionDefaultValue = global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention.RetentionUnknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention RetentionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention.RetentionUnknown;
 
-    private global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention retention_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention retention_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention Retention {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention Retention {
       get { if ((_hasBits0 & 256) != 0) { return retention_; } else { return RetentionDefaultValue; } }
       set {
         _hasBits0 |= 256;
@@ -8580,29 +8580,29 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "targets" field.</summary>
     public const int TargetsFieldNumber = 19;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> _repeated_targets_codec
-        = pb::FieldCodec.ForEnum(152, x => (int) x, x => (global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType) x);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> targets_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> _repeated_targets_codec
+        = pb::FieldCodec.ForEnum(152, x => (int) x, x => (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType) x);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> targets_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> Targets {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionTargetType> Targets {
       get { return targets_; }
     }
 
     /// <summary>Field number for the "edition_defaults" field.</summary>
     public const int EditionDefaultsFieldNumber = 20;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> _repeated_editionDefaults_codec
-        = pb::FieldCodec.ForMessage(162, global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> editionDefaults_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> _repeated_editionDefaults_codec
+        = pb::FieldCodec.ForMessage(162, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> editionDefaults_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> EditionDefaults {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.EditionDefault> EditionDefaults {
       get { return editionDefaults_; }
     }
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 21;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -8611,7 +8611,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -8620,10 +8620,10 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "feature_support" field.</summary>
     public const int FeatureSupportFieldNumber = 22;
-    private global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport featureSupport_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport featureSupport_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport FeatureSupport {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport FeatureSupport {
       get { return featureSupport_; }
       set {
         featureSupport_ = value;
@@ -8632,15 +8632,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -8920,13 +8920,13 @@ namespace Google.Protobuf.Reflection {
       editionDefaults_.Add(other.editionDefaults_);
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
       if (other.featureSupport_ != null) {
         if (featureSupport_ == null) {
-          FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+          FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
         }
         FeatureSupport.MergeFrom(other.FeatureSupport);
       }
@@ -8954,7 +8954,7 @@ namespace Google.Protobuf.Reflection {
             }
             break;
           case 8: {
-            Ctype = (global::Google.Protobuf.Reflection.FieldOptions.Types.CType) input.ReadEnum();
+            Ctype = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -8970,7 +8970,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 48: {
-            Jstype = (global::Google.Protobuf.Reflection.FieldOptions.Types.JSType) input.ReadEnum();
+            Jstype = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType) input.ReadEnum();
             break;
           }
           case 80: {
@@ -8986,7 +8986,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 136: {
-            Retention = (global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention) input.ReadEnum();
+            Retention = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention) input.ReadEnum();
             break;
           }
           case 154:
@@ -9000,14 +9000,14 @@ namespace Google.Protobuf.Reflection {
           }
           case 170: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
           }
           case 178: {
             if (featureSupport_ == null) {
-              FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+              FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
             }
             input.ReadMessage(FeatureSupport);
             break;
@@ -9038,7 +9038,7 @@ namespace Google.Protobuf.Reflection {
             }
             break;
           case 8: {
-            Ctype = (global::Google.Protobuf.Reflection.FieldOptions.Types.CType) input.ReadEnum();
+            Ctype = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.CType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -9054,7 +9054,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 48: {
-            Jstype = (global::Google.Protobuf.Reflection.FieldOptions.Types.JSType) input.ReadEnum();
+            Jstype = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.JSType) input.ReadEnum();
             break;
           }
           case 80: {
@@ -9070,7 +9070,7 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 136: {
-            Retention = (global::Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention) input.ReadEnum();
+            Retention = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.OptionRetention) input.ReadEnum();
             break;
           }
           case 154:
@@ -9084,14 +9084,14 @@ namespace Google.Protobuf.Reflection {
           }
           case 170: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
           }
           case 178: {
             if (featureSupport_ == null) {
-              FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+              FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
             }
             input.ReadMessage(FeatureSupport);
             break;
@@ -9207,7 +9207,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.FieldOptions.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -9241,12 +9241,12 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "edition" field.</summary>
         public const int EditionFieldNumber = 3;
-        private readonly static global::Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-        private global::Google.Protobuf.Reflection.Edition edition_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition edition_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.Edition Edition {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition Edition {
           get { if ((_hasBits0 & 1) != 0) { return edition_; } else { return EditionDefaultValue; } }
           set {
             _hasBits0 |= 1;
@@ -9423,7 +9423,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 24: {
-                Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
             }
@@ -9450,7 +9450,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 24: {
-                Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
             }
@@ -9479,7 +9479,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.FieldOptions.Descriptor.NestedTypes[1]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Descriptor.NestedTypes[1]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -9515,9 +9515,9 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "edition_introduced" field.</summary>
         public const int EditionIntroducedFieldNumber = 1;
-        private readonly static global::Google.Protobuf.Reflection.Edition EditionIntroducedDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionIntroducedDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-        private global::Google.Protobuf.Reflection.Edition editionIntroduced_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition editionIntroduced_;
         /// <summary>
         /// The edition that this feature was first available in.  In editions
         /// earlier than this one, the default assigned to EDITION_LEGACY will be
@@ -9525,7 +9525,7 @@ namespace Google.Protobuf.Reflection {
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.Edition EditionIntroduced {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionIntroduced {
           get { if ((_hasBits0 & 1) != 0) { return editionIntroduced_; } else { return EditionIntroducedDefaultValue; } }
           set {
             _hasBits0 |= 1;
@@ -9547,16 +9547,16 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "edition_deprecated" field.</summary>
         public const int EditionDeprecatedFieldNumber = 2;
-        private readonly static global::Google.Protobuf.Reflection.Edition EditionDeprecatedDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionDeprecatedDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-        private global::Google.Protobuf.Reflection.Edition editionDeprecated_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition editionDeprecated_;
         /// <summary>
         /// The edition this feature becomes deprecated in.  Using this after this
         /// edition may trigger warnings.
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.Edition EditionDeprecated {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionDeprecated {
           get { if ((_hasBits0 & 2) != 0) { return editionDeprecated_; } else { return EditionDeprecatedDefaultValue; } }
           set {
             _hasBits0 |= 2;
@@ -9608,9 +9608,9 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "edition_removed" field.</summary>
         public const int EditionRemovedFieldNumber = 4;
-        private readonly static global::Google.Protobuf.Reflection.Edition EditionRemovedDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionRemovedDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-        private global::Google.Protobuf.Reflection.Edition editionRemoved_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition editionRemoved_;
         /// <summary>
         /// The edition this feature is no longer available in.  In editions after
         /// this one, the last default assigned will be used, and proto files will
@@ -9618,7 +9618,7 @@ namespace Google.Protobuf.Reflection {
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.Edition EditionRemoved {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionRemoved {
           get { if ((_hasBits0 & 4) != 0) { return editionRemoved_; } else { return EditionRemovedDefaultValue; } }
           set {
             _hasBits0 |= 4;
@@ -9794,11 +9794,11 @@ namespace Google.Protobuf.Reflection {
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
                 break;
               case 8: {
-                EditionIntroduced = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionIntroduced = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 16: {
-                EditionDeprecated = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionDeprecated = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 26: {
@@ -9806,7 +9806,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 32: {
-                EditionRemoved = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionRemoved = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
             }
@@ -9829,11 +9829,11 @@ namespace Google.Protobuf.Reflection {
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
                 break;
               case 8: {
-                EditionIntroduced = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionIntroduced = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 16: {
-                EditionDeprecated = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionDeprecated = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 26: {
@@ -9841,7 +9841,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 32: {
-                EditionRemoved = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                EditionRemoved = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
             }
@@ -9873,7 +9873,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -9907,7 +9907,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 1;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -9916,7 +9916,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -9925,15 +9925,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -10044,7 +10044,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -10073,7 +10073,7 @@ namespace Google.Protobuf.Reflection {
             break;
           case 10: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -10105,7 +10105,7 @@ namespace Google.Protobuf.Reflection {
             break;
           case 10: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -10161,7 +10161,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -10301,7 +10301,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 7;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -10310,7 +10310,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -10319,15 +10319,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -10486,7 +10486,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -10527,7 +10527,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 58: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -10571,7 +10571,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 58: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -10627,7 +10627,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -10698,7 +10698,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 2;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -10707,7 +10707,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -10748,13 +10748,13 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "feature_support" field.</summary>
     public const int FeatureSupportFieldNumber = 4;
-    private global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport featureSupport_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport featureSupport_;
     /// <summary>
     /// Information about the support window of a feature value.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport FeatureSupport {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport FeatureSupport {
       get { return featureSupport_; }
       set {
         featureSupport_ = value;
@@ -10763,15 +10763,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -10924,7 +10924,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -10933,7 +10933,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.featureSupport_ != null) {
         if (featureSupport_ == null) {
-          FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+          FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
         }
         FeatureSupport.MergeFrom(other.FeatureSupport);
       }
@@ -10966,7 +10966,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 18: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -10977,7 +10977,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 34: {
             if (featureSupport_ == null) {
-              FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+              FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
             }
             input.ReadMessage(FeatureSupport);
             break;
@@ -11013,7 +11013,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 18: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -11024,7 +11024,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 34: {
             if (featureSupport_ == null) {
-              FeatureSupport = new global::Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
+              FeatureSupport = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FieldOptions.Types.FeatureSupport();
             }
             input.ReadMessage(FeatureSupport);
             break;
@@ -11080,7 +11080,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -11116,7 +11116,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 34;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -11125,7 +11125,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -11167,15 +11167,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -11299,7 +11299,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -11335,7 +11335,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 274: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -11371,7 +11371,7 @@ namespace Google.Protobuf.Reflection {
           }
           case 274: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -11427,7 +11427,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[17]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -11497,12 +11497,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "idempotency_level" field.</summary>
     public const int IdempotencyLevelFieldNumber = 34;
-    private readonly static global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel IdempotencyLevelDefaultValue = global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel.IdempotencyUnknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel IdempotencyLevelDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel.IdempotencyUnknown;
 
-    private global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel idempotencyLevel_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel idempotencyLevel_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel IdempotencyLevel {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel IdempotencyLevel {
       get { if ((_hasBits0 & 2) != 0) { return idempotencyLevel_; } else { return IdempotencyLevelDefaultValue; } }
       set {
         _hasBits0 |= 2;
@@ -11524,7 +11524,7 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "features" field.</summary>
     public const int FeaturesFieldNumber = 35;
-    private global::Google.Protobuf.Reflection.FeatureSet features_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet features_;
     /// <summary>
     /// Any features defined in the specific edition.
     /// WARNING: This field should only be used by protobuf plugins or special
@@ -11533,7 +11533,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet Features {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet Features {
       get { return features_; }
       set {
         features_ = value;
@@ -11542,15 +11542,15 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "uninterpreted_option" field.</summary>
     public const int UninterpretedOptionFieldNumber = 999;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
-        = pb::FieldCodec.ForMessage(7994, global::Google.Protobuf.Reflection.UninterpretedOption.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> _repeated_uninterpretedOption_codec
+        = pb::FieldCodec.ForMessage(7994, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> uninterpretedOption_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption>();
     /// <summary>
     /// The parser stores options it doesn't recognize here. See above.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption> UninterpretedOption {
       get { return uninterpretedOption_; }
     }
 
@@ -11693,7 +11693,7 @@ namespace Google.Protobuf.Reflection {
       }
       if (other.features_ != null) {
         if (features_ == null) {
-          Features = new global::Google.Protobuf.Reflection.FeatureSet();
+          Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
         }
         Features.MergeFrom(other.Features);
       }
@@ -11725,12 +11725,12 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 272: {
-            IdempotencyLevel = (global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) input.ReadEnum();
+            IdempotencyLevel = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) input.ReadEnum();
             break;
           }
           case 282: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -11765,12 +11765,12 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 272: {
-            IdempotencyLevel = (global::Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) input.ReadEnum();
+            IdempotencyLevel = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.MethodOptions.Types.IdempotencyLevel) input.ReadEnum();
             break;
           }
           case 282: {
             if (features_ == null) {
-              Features = new global::Google.Protobuf.Reflection.FeatureSet();
+              Features = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             input.ReadMessage(Features);
             break;
@@ -11857,7 +11857,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[18]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -11896,12 +11896,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "name" field.</summary>
     public const int NameFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> _repeated_name_codec
-        = pb::FieldCodec.ForMessage(18, global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> name_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> _repeated_name_codec
+        = pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> name_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> Name {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Types.NamePart> Name {
       get { return name_; }
     }
 
@@ -12369,7 +12369,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.UninterpretedOption.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.UninterpretedOption.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -12650,7 +12650,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[19]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[19]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -12691,12 +12691,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "field_presence" field.</summary>
     public const int FieldPresenceFieldNumber = 1;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence FieldPresenceDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence FieldPresenceDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence fieldPresence_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence fieldPresence_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence FieldPresence {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence FieldPresence {
       get { if ((_hasBits0 & 1) != 0) { return fieldPresence_; } else { return FieldPresenceDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -12718,12 +12718,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "enum_type" field.</summary>
     public const int EnumTypeFieldNumber = 2;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType EnumTypeDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType EnumTypeDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType enumType_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType enumType_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType EnumType {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType EnumType {
       get { if ((_hasBits0 & 2) != 0) { return enumType_; } else { return EnumTypeDefaultValue; } }
       set {
         _hasBits0 |= 2;
@@ -12745,12 +12745,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "repeated_field_encoding" field.</summary>
     public const int RepeatedFieldEncodingFieldNumber = 3;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding RepeatedFieldEncodingDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding RepeatedFieldEncodingDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding repeatedFieldEncoding_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding repeatedFieldEncoding_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding RepeatedFieldEncoding {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding RepeatedFieldEncoding {
       get { if ((_hasBits0 & 4) != 0) { return repeatedFieldEncoding_; } else { return RepeatedFieldEncodingDefaultValue; } }
       set {
         _hasBits0 |= 4;
@@ -12772,12 +12772,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "utf8_validation" field.</summary>
     public const int Utf8ValidationFieldNumber = 4;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation Utf8ValidationDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation Utf8ValidationDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation utf8Validation_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation utf8Validation_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation Utf8Validation {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation Utf8Validation {
       get { if ((_hasBits0 & 8) != 0) { return utf8Validation_; } else { return Utf8ValidationDefaultValue; } }
       set {
         _hasBits0 |= 8;
@@ -12799,12 +12799,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "message_encoding" field.</summary>
     public const int MessageEncodingFieldNumber = 5;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding MessageEncodingDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding MessageEncodingDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding messageEncoding_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding messageEncoding_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding MessageEncoding {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding MessageEncoding {
       get { if ((_hasBits0 & 16) != 0) { return messageEncoding_; } else { return MessageEncodingDefaultValue; } }
       set {
         _hasBits0 |= 16;
@@ -12826,12 +12826,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "json_format" field.</summary>
     public const int JsonFormatFieldNumber = 6;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat JsonFormatDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat JsonFormatDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat jsonFormat_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat jsonFormat_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat JsonFormat {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat JsonFormat {
       get { if ((_hasBits0 & 32) != 0) { return jsonFormat_; } else { return JsonFormatDefaultValue; } }
       set {
         _hasBits0 |= 32;
@@ -12853,12 +12853,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "enforce_naming_style" field.</summary>
     public const int EnforceNamingStyleFieldNumber = 7;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle EnforceNamingStyleDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle EnforceNamingStyleDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle enforceNamingStyle_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle enforceNamingStyle_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle EnforceNamingStyle {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle EnforceNamingStyle {
       get { if ((_hasBits0 & 64) != 0) { return enforceNamingStyle_; } else { return EnforceNamingStyleDefaultValue; } }
       set {
         _hasBits0 |= 64;
@@ -12880,12 +12880,12 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "default_symbol_visibility" field.</summary>
     public const int DefaultSymbolVisibilityFieldNumber = 8;
-    private readonly static global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility DefaultSymbolVisibilityDefaultValue = global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility DefaultSymbolVisibilityDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility.Unknown;
 
-    private global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility defaultSymbolVisibility_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility defaultSymbolVisibility_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility DefaultSymbolVisibility {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility DefaultSymbolVisibility {
       get { if ((_hasBits0 & 128) != 0) { return defaultSymbolVisibility_; } else { return DefaultSymbolVisibilityDefaultValue; } }
       set {
         _hasBits0 |= 128;
@@ -13143,35 +13143,35 @@ namespace Google.Protobuf.Reflection {
             }
             break;
           case 8: {
-            FieldPresence = (global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence) input.ReadEnum();
+            FieldPresence = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence) input.ReadEnum();
             break;
           }
           case 16: {
-            EnumType = (global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType) input.ReadEnum();
+            EnumType = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType) input.ReadEnum();
             break;
           }
           case 24: {
-            RepeatedFieldEncoding = (global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding) input.ReadEnum();
+            RepeatedFieldEncoding = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding) input.ReadEnum();
             break;
           }
           case 32: {
-            Utf8Validation = (global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation) input.ReadEnum();
+            Utf8Validation = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation) input.ReadEnum();
             break;
           }
           case 40: {
-            MessageEncoding = (global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding) input.ReadEnum();
+            MessageEncoding = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding) input.ReadEnum();
             break;
           }
           case 48: {
-            JsonFormat = (global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat) input.ReadEnum();
+            JsonFormat = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat) input.ReadEnum();
             break;
           }
           case 56: {
-            EnforceNamingStyle = (global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) input.ReadEnum();
+            EnforceNamingStyle = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) input.ReadEnum();
             break;
           }
           case 64: {
-            DefaultSymbolVisibility = (global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) input.ReadEnum();
+            DefaultSymbolVisibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -13196,35 +13196,35 @@ namespace Google.Protobuf.Reflection {
             }
             break;
           case 8: {
-            FieldPresence = (global::Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence) input.ReadEnum();
+            FieldPresence = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.FieldPresence) input.ReadEnum();
             break;
           }
           case 16: {
-            EnumType = (global::Google.Protobuf.Reflection.FeatureSet.Types.EnumType) input.ReadEnum();
+            EnumType = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnumType) input.ReadEnum();
             break;
           }
           case 24: {
-            RepeatedFieldEncoding = (global::Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding) input.ReadEnum();
+            RepeatedFieldEncoding = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.RepeatedFieldEncoding) input.ReadEnum();
             break;
           }
           case 32: {
-            Utf8Validation = (global::Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation) input.ReadEnum();
+            Utf8Validation = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.Utf8Validation) input.ReadEnum();
             break;
           }
           case 40: {
-            MessageEncoding = (global::Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding) input.ReadEnum();
+            MessageEncoding = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.MessageEncoding) input.ReadEnum();
             break;
           }
           case 48: {
-            JsonFormat = (global::Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat) input.ReadEnum();
+            JsonFormat = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.JsonFormat) input.ReadEnum();
             break;
           }
           case 56: {
-            EnforceNamingStyle = (global::Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) input.ReadEnum();
+            EnforceNamingStyle = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.EnforceNamingStyle) input.ReadEnum();
             break;
           }
           case 64: {
-            DefaultSymbolVisibility = (global::Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) input.ReadEnum();
+            DefaultSymbolVisibility = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Types.VisibilityFeature.Types.DefaultSymbolVisibility) input.ReadEnum();
             break;
           }
         }
@@ -13317,7 +13317,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.FeatureSet.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -13520,7 +13520,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[20]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[20]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -13555,27 +13555,27 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "defaults" field.</summary>
     public const int DefaultsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> _repeated_defaults_codec
-        = pb::FieldCodec.ForMessage(10, global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> defaults_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> _repeated_defaults_codec
+        = pb::FieldCodec.ForMessage(10, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> defaults_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> Defaults {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Types.FeatureSetEditionDefault> Defaults {
       get { return defaults_; }
     }
 
     /// <summary>Field number for the "minimum_edition" field.</summary>
     public const int MinimumEditionFieldNumber = 4;
-    private readonly static global::Google.Protobuf.Reflection.Edition MinimumEditionDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition MinimumEditionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-    private global::Google.Protobuf.Reflection.Edition minimumEdition_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition minimumEdition_;
     /// <summary>
     /// The minimum supported edition (inclusive) when this was constructed.
     /// Editions before this will not have defaults.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.Edition MinimumEdition {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition MinimumEdition {
       get { if ((_hasBits0 & 1) != 0) { return minimumEdition_; } else { return MinimumEditionDefaultValue; } }
       set {
         _hasBits0 |= 1;
@@ -13597,16 +13597,16 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "maximum_edition" field.</summary>
     public const int MaximumEditionFieldNumber = 5;
-    private readonly static global::Google.Protobuf.Reflection.Edition MaximumEditionDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+    private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition MaximumEditionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-    private global::Google.Protobuf.Reflection.Edition maximumEdition_;
+    private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition maximumEdition_;
     /// <summary>
     /// The maximum known edition (inclusive) when this was constructed. Editions
     /// after this will not have reliable defaults.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.Reflection.Edition MaximumEdition {
+    public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition MaximumEdition {
       get { if ((_hasBits0 & 2) != 0) { return maximumEdition_; } else { return MaximumEditionDefaultValue; } }
       set {
         _hasBits0 |= 2;
@@ -13760,11 +13760,11 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 32: {
-            MinimumEdition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            MinimumEdition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
           case 40: {
-            MaximumEdition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            MaximumEdition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
         }
@@ -13791,11 +13791,11 @@ namespace Google.Protobuf.Reflection {
             break;
           }
           case 32: {
-            MinimumEdition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            MinimumEdition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
           case 40: {
-            MaximumEdition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+            MaximumEdition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
             break;
           }
         }
@@ -13830,7 +13830,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.FeatureSetDefaults.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSetDefaults.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -13865,12 +13865,12 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "edition" field.</summary>
         public const int EditionFieldNumber = 3;
-        private readonly static global::Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Google.Protobuf.Reflection.Edition.Unknown;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition EditionDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition.Unknown;
 
-        private global::Google.Protobuf.Reflection.Edition edition_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition edition_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.Edition Edition {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition Edition {
           get { if ((_hasBits0 & 1) != 0) { return edition_; } else { return EditionDefaultValue; } }
           set {
             _hasBits0 |= 1;
@@ -13892,13 +13892,13 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "overridable_features" field.</summary>
         public const int OverridableFeaturesFieldNumber = 4;
-        private global::Google.Protobuf.Reflection.FeatureSet overridableFeatures_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet overridableFeatures_;
         /// <summary>
         /// Defaults of features that can be overridden in this edition.
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.FeatureSet OverridableFeatures {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet OverridableFeatures {
           get { return overridableFeatures_; }
           set {
             overridableFeatures_ = value;
@@ -13907,13 +13907,13 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "fixed_features" field.</summary>
         public const int FixedFeaturesFieldNumber = 5;
-        private global::Google.Protobuf.Reflection.FeatureSet fixedFeatures_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet fixedFeatures_;
         /// <summary>
         /// Defaults of features that can't be overridden in this edition.
         /// </summary>
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.FeatureSet FixedFeatures {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet FixedFeatures {
           get { return fixedFeatures_; }
           set {
             fixedFeatures_ = value;
@@ -14036,13 +14036,13 @@ namespace Google.Protobuf.Reflection {
           }
           if (other.overridableFeatures_ != null) {
             if (overridableFeatures_ == null) {
-              OverridableFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+              OverridableFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             OverridableFeatures.MergeFrom(other.OverridableFeatures);
           }
           if (other.fixedFeatures_ != null) {
             if (fixedFeatures_ == null) {
-              FixedFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+              FixedFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
             }
             FixedFeatures.MergeFrom(other.FixedFeatures);
           }
@@ -14066,19 +14066,19 @@ namespace Google.Protobuf.Reflection {
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
                 break;
               case 24: {
-                Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 34: {
                 if (overridableFeatures_ == null) {
-                  OverridableFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+                  OverridableFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
                 }
                 input.ReadMessage(OverridableFeatures);
                 break;
               }
               case 42: {
                 if (fixedFeatures_ == null) {
-                  FixedFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+                  FixedFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
                 }
                 input.ReadMessage(FixedFeatures);
                 break;
@@ -14103,19 +14103,19 @@ namespace Google.Protobuf.Reflection {
                 _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
                 break;
               case 24: {
-                Edition = (global::Google.Protobuf.Reflection.Edition) input.ReadEnum();
+                Edition = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.Edition) input.ReadEnum();
                 break;
               }
               case 34: {
                 if (overridableFeatures_ == null) {
-                  OverridableFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+                  OverridableFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
                 }
                 input.ReadMessage(OverridableFeatures);
                 break;
               }
               case 42: {
                 if (fixedFeatures_ == null) {
-                  FixedFeatures = new global::Google.Protobuf.Reflection.FeatureSet();
+                  FixedFeatures = new global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.FeatureSet();
                 }
                 input.ReadMessage(FixedFeatures);
                 break;
@@ -14153,7 +14153,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[21]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[21]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -14186,9 +14186,9 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "location" field.</summary>
     public const int LocationFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> _repeated_location_codec
-        = pb::FieldCodec.ForMessage(10, global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> location_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> _repeated_location_codec
+        = pb::FieldCodec.ForMessage(10, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> location_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location>();
     /// <summary>
     /// A Location identifies a piece of source code in a .proto file which
     /// corresponds to a particular definition.  This information is intended
@@ -14236,7 +14236,7 @@ namespace Google.Protobuf.Reflection {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> Location {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Types.Location> Location {
       get { return location_; }
     }
 
@@ -14431,7 +14431,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.SourceCodeInfo.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.SourceCodeInfo.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -14867,7 +14867,7 @@ namespace Google.Protobuf.Reflection {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[22]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.DescriptorReflection.Descriptor.MessageTypes[22]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -14899,16 +14899,16 @@ namespace Google.Protobuf.Reflection {
 
     /// <summary>Field number for the "annotation" field.</summary>
     public const int AnnotationFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> _repeated_annotation_codec
-        = pb::FieldCodec.ForMessage(10, global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> annotation_ = new pbc::RepeatedField<global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> _repeated_annotation_codec
+        = pb::FieldCodec.ForMessage(10, global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> annotation_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation>();
     /// <summary>
     /// An Annotation connects some span of text in generated code to an element
     /// of its generating .proto file.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> Annotation {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation> Annotation {
       get { return annotation_; }
     }
 
@@ -15062,7 +15062,7 @@ namespace Google.Protobuf.Reflection {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Google.Protobuf.Reflection.GeneratedCodeInfo.Descriptor.NestedTypes[0]; }
+          get { return global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -15206,12 +15206,12 @@ namespace Google.Protobuf.Reflection {
 
         /// <summary>Field number for the "semantic" field.</summary>
         public const int SemanticFieldNumber = 5;
-        private readonly static global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic SemanticDefaultValue = global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic.None;
+        private readonly static global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic SemanticDefaultValue = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic.None;
 
-        private global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic semantic_;
+        private global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic semantic_;
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-        public global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic Semantic {
+        public global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic Semantic {
           get { if ((_hasBits0 & 4) != 0) { return semantic_; } else { return SemanticDefaultValue; } }
           set {
             _hasBits0 |= 4;
@@ -15410,7 +15410,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 40: {
-                Semantic = (global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) input.ReadEnum();
+                Semantic = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) input.ReadEnum();
                 break;
               }
             }
@@ -15450,7 +15450,7 @@ namespace Google.Protobuf.Reflection {
                 break;
               }
               case 40: {
-                Semantic = (global::Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) input.ReadEnum();
+                Semantic = (global::Datadog.Trace.Vendors.Google.Protobuf.Reflection.GeneratedCodeInfo.Types.Annotation.Types.Semantic) input.ReadEnum();
                 break;
               }
             }

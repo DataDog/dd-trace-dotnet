@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Thrown when building descriptors fails because the source DescriptorProtos

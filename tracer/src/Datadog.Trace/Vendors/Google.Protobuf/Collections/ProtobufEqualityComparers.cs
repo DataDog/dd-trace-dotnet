@@ -15,7 +15,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Google.Protobuf.Collections
+namespace Datadog.Trace.Vendors.Google.Protobuf.Collections
 {
     /// <summary>
     /// Provides a central place to implement equality comparisons, primarily for bitwise float/double equality.

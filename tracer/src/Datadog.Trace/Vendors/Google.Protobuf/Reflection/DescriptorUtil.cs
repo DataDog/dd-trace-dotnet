@@ -15,7 +15,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace Google.Protobuf.Reflection
+namespace Datadog.Trace.Vendors.Google.Protobuf.Reflection
 {
     /// <summary>
     /// Internal class containing utility methods when working with descriptors.

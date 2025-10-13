@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Helper methods for throwing exceptions when preconditions are not met.

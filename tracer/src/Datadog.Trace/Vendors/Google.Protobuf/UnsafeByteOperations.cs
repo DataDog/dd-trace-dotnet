@@ -15,7 +15,7 @@
 using System;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Provides a number of unsafe byte operations to be used by advanced applications with high performance

@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Represents a non-generic extension definition.

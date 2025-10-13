@@ -15,7 +15,7 @@
 using System;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Fast parsing primitives for wrapper types

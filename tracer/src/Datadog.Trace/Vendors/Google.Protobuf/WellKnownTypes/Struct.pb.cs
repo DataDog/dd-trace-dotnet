@@ -10,11 +10,11 @@
 #pragma warning disable 1591, 0612, 3021, 8981
 #region Designer generated code
 
-using pb = global::Google.Protobuf;
-using pbc = global::Google.Protobuf.Collections;
-using pbr = global::Google.Protobuf.Reflection;
+using pb = global::Datadog.Trace.Vendors.Google.Protobuf;
+using pbc = global::Datadog.Trace.Vendors.Google.Protobuf.Collections;
+using pbr = global::Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Google.Protobuf.WellKnownTypes {
+namespace Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes {
 
   /// <summary>Holder for reflection information generated from google/protobuf/struct.proto</summary>
   internal static partial class StructReflection {
@@ -46,10 +46,10 @@ namespace Google.Protobuf.WellKnownTypes {
             "YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Google.Protobuf.WellKnownTypes.NullValue), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.Struct), global::Google.Protobuf.WellKnownTypes.Struct.Parser, new[]{ "Fields" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.Value), global::Google.Protobuf.WellKnownTypes.Value.Parser, new[]{ "NullValue", "NumberValue", "StringValue", "BoolValue", "StructValue", "ListValue" }, new[]{ "Kind" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.ListValue), global::Google.Protobuf.WellKnownTypes.ListValue.Parser, new[]{ "Values" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.NullValue), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct), global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct.Parser, new[]{ "Fields" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value), global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value.Parser, new[]{ "NullValue", "NumberValue", "StringValue", "BoolValue", "StructValue", "ListValue" }, new[]{ "Kind" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue), global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue.Parser, new[]{ "Values" }, null, null, null, null)
           }));
     }
     #endregion
@@ -97,7 +97,7 @@ namespace Google.Protobuf.WellKnownTypes {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -129,15 +129,15 @@ namespace Google.Protobuf.WellKnownTypes {
 
     /// <summary>Field number for the "fields" field.</summary>
     public const int FieldsFieldNumber = 1;
-    private static readonly pbc::MapField<string, global::Google.Protobuf.WellKnownTypes.Value>.Codec _map_fields_codec
-        = new pbc::MapField<string, global::Google.Protobuf.WellKnownTypes.Value>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForMessage(18, global::Google.Protobuf.WellKnownTypes.Value.Parser), 10);
-    private readonly pbc::MapField<string, global::Google.Protobuf.WellKnownTypes.Value> fields_ = new pbc::MapField<string, global::Google.Protobuf.WellKnownTypes.Value>();
+    private static readonly pbc::MapField<string, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value>.Codec _map_fields_codec
+        = new pbc::MapField<string, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForMessage(18, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value.Parser), 10);
+    private readonly pbc::MapField<string, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value> fields_ = new pbc::MapField<string, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value>();
     /// <summary>
     /// Unordered map of dynamically typed values.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::MapField<string, global::Google.Protobuf.WellKnownTypes.Value> Fields {
+    public pbc::MapField<string, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value> Fields {
       get { return fields_; }
     }
 
@@ -295,7 +295,7 @@ namespace Google.Protobuf.WellKnownTypes {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -352,8 +352,8 @@ namespace Google.Protobuf.WellKnownTypes {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.WellKnownTypes.NullValue NullValue {
-      get { return HasNullValue ? (global::Google.Protobuf.WellKnownTypes.NullValue) kind_ : global::Google.Protobuf.WellKnownTypes.NullValue.NullValue; }
+    public global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.NullValue NullValue {
+      get { return HasNullValue ? (global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.NullValue) kind_ : global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.NullValue.NullValue; }
       set {
         kind_ = value;
         kindCase_ = KindOneofCase.NullValue;
@@ -468,8 +468,8 @@ namespace Google.Protobuf.WellKnownTypes {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.WellKnownTypes.Struct StructValue {
-      get { return kindCase_ == KindOneofCase.StructValue ? (global::Google.Protobuf.WellKnownTypes.Struct) kind_ : null; }
+    public global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct StructValue {
+      get { return kindCase_ == KindOneofCase.StructValue ? (global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct) kind_ : null; }
       set {
         kind_ = value;
         kindCase_ = value == null ? KindOneofCase.None : KindOneofCase.StructValue;
@@ -483,8 +483,8 @@ namespace Google.Protobuf.WellKnownTypes {
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Google.Protobuf.WellKnownTypes.ListValue ListValue {
-      get { return kindCase_ == KindOneofCase.ListValue ? (global::Google.Protobuf.WellKnownTypes.ListValue) kind_ : null; }
+    public global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue ListValue {
+      get { return kindCase_ == KindOneofCase.ListValue ? (global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue) kind_ : null; }
       set {
         kind_ = value;
         kindCase_ = value == null ? KindOneofCase.None : KindOneofCase.ListValue;
@@ -683,13 +683,13 @@ namespace Google.Protobuf.WellKnownTypes {
           break;
         case KindOneofCase.StructValue:
           if (StructValue == null) {
-            StructValue = new global::Google.Protobuf.WellKnownTypes.Struct();
+            StructValue = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct();
           }
           StructValue.MergeFrom(other.StructValue);
           break;
         case KindOneofCase.ListValue:
           if (ListValue == null) {
-            ListValue = new global::Google.Protobuf.WellKnownTypes.ListValue();
+            ListValue = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue();
           }
           ListValue.MergeFrom(other.ListValue);
           break;
@@ -732,7 +732,7 @@ namespace Google.Protobuf.WellKnownTypes {
             break;
           }
           case 42: {
-            global::Google.Protobuf.WellKnownTypes.Struct subBuilder = new global::Google.Protobuf.WellKnownTypes.Struct();
+            global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct subBuilder = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct();
             if (kindCase_ == KindOneofCase.StructValue) {
               subBuilder.MergeFrom(StructValue);
             }
@@ -741,7 +741,7 @@ namespace Google.Protobuf.WellKnownTypes {
             break;
           }
           case 50: {
-            global::Google.Protobuf.WellKnownTypes.ListValue subBuilder = new global::Google.Protobuf.WellKnownTypes.ListValue();
+            global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue subBuilder = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue();
             if (kindCase_ == KindOneofCase.ListValue) {
               subBuilder.MergeFrom(ListValue);
             }
@@ -786,7 +786,7 @@ namespace Google.Protobuf.WellKnownTypes {
             break;
           }
           case 42: {
-            global::Google.Protobuf.WellKnownTypes.Struct subBuilder = new global::Google.Protobuf.WellKnownTypes.Struct();
+            global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct subBuilder = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Struct();
             if (kindCase_ == KindOneofCase.StructValue) {
               subBuilder.MergeFrom(StructValue);
             }
@@ -795,7 +795,7 @@ namespace Google.Protobuf.WellKnownTypes {
             break;
           }
           case 50: {
-            global::Google.Protobuf.WellKnownTypes.ListValue subBuilder = new global::Google.Protobuf.WellKnownTypes.ListValue();
+            global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue subBuilder = new global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.ListValue();
             if (kindCase_ == KindOneofCase.ListValue) {
               subBuilder.MergeFrom(ListValue);
             }
@@ -830,7 +830,7 @@ namespace Google.Protobuf.WellKnownTypes {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.StructReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -862,15 +862,15 @@ namespace Google.Protobuf.WellKnownTypes {
 
     /// <summary>Field number for the "values" field.</summary>
     public const int ValuesFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Google.Protobuf.WellKnownTypes.Value> _repeated_values_codec
-        = pb::FieldCodec.ForMessage(10, global::Google.Protobuf.WellKnownTypes.Value.Parser);
-    private readonly pbc::RepeatedField<global::Google.Protobuf.WellKnownTypes.Value> values_ = new pbc::RepeatedField<global::Google.Protobuf.WellKnownTypes.Value>();
+    private static readonly pb::FieldCodec<global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value> _repeated_values_codec
+        = pb::FieldCodec.ForMessage(10, global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value.Parser);
+    private readonly pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value> values_ = new pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value>();
     /// <summary>
     /// Repeated field of dynamically typed values.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Google.Protobuf.WellKnownTypes.Value> Values {
+    public pbc::RepeatedField<global::Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes.Value> Values {
       get { return values_; }
     }
 

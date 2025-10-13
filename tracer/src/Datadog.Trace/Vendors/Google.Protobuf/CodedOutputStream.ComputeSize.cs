@@ -14,7 +14,7 @@
 
 using System;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     // This part of CodedOutputStream provides all the static entry points that are used
     // by generated code and internally to compute the size of messages prior to being

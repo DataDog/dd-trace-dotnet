@@ -18,7 +18,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Simple but strict JSON tokenizer, rigidly following RFC 7159.

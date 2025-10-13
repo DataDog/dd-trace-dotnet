@@ -25,7 +25,7 @@ using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServic
 #endif
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Abstraction for reading from a stream / read only sequence.

@@ -12,7 +12,7 @@
 // https://developers.google.com/open-source/licenses/bsd
 #endregion
 
-using Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
 #if NETFRAMEWORK || NETSTANDARD2_0
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 #else
@@ -24,7 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// Extension methods on <see cref="IMessage"/> and <see cref="IMessage{T}"/>.

@@ -22,10 +22,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Google.Protobuf.Reflection;
-using Google.Protobuf.WellKnownTypes;
+using Datadog.Trace.Vendors.Google.Protobuf.Reflection;
+using Datadog.Trace.Vendors.Google.Protobuf.WellKnownTypes;
 
-namespace Google.Protobuf {
+namespace Datadog.Trace.Vendors.Google.Protobuf {
   /// <summary>
   /// Reflection-based converter from messages to JSON.
   /// </summary>

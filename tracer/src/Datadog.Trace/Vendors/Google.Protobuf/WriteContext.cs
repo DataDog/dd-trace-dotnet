@@ -24,7 +24,7 @@ using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServic
 #endif
 using System.Security;
 
-namespace Google.Protobuf
+namespace Datadog.Trace.Vendors.Google.Protobuf
 {
     /// <summary>
     /// An opaque struct that represents the current serialization state and is passed along
