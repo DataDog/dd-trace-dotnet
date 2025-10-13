@@ -50,6 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -111,6 +113,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -172,6 +176,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -233,6 +239,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -294,6 +302,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -355,6 +365,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -416,6 +428,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -477,6 +491,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -538,6 +554,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
