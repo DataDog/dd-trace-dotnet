@@ -41,4 +41,6 @@ internal class NullConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         => ConfigurationResult<T>.NotFound();
+
+    public bool IsPresent(string key) => false;
 }

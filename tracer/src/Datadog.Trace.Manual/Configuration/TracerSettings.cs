@@ -214,7 +214,7 @@ public sealed class TracerSettings
     /// <see cref="Configuration.IntegrationSettings.AnalyticsEnabled"/> on some predetermined integrations.
     /// See the documentation for more details.
     /// </summary>
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     public bool AnalyticsEnabled
     {
         [Instrumented]

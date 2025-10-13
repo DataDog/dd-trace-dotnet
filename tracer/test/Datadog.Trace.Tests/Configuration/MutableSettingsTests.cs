@@ -518,7 +518,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 

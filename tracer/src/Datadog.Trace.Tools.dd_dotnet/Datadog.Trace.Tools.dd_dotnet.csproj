@@ -59,7 +59,7 @@
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="ConfigurationKeys.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.Exporter.cs" Link="ConfigurationKeys.Exporter.cs" />
-    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
+    <Compile Include="..\Datadog.Trace\Configuration\DeprecationConstants.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
   </ItemGroup>
 

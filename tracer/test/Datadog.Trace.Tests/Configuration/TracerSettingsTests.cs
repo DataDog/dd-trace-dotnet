@@ -582,7 +582,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, false)]
         public void IsRunningInAzureAppService(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, value));
             var settings = new TracerSettings(source);
 
             settings.IsRunningInAzureAppService.Should().Be(expected);
@@ -595,9 +595,9 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRunningInAzureFunctions(string value, bool expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.SiteNameKey, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
+                (PlatformKeys.AzureAppService.SiteNameKey, value),
+                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, value),
+                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, value));
 
             var settings = new TracerSettings(source);
 
@@ -667,7 +667,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (isRunningInAas)
             {
-                configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+                configPairs.Add((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             }
 
             var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));

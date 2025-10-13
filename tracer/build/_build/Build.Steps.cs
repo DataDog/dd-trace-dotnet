@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -2574,6 +2575,172 @@ partial class Build
            await LogParser.ReportNativeMetrics(logDirectory);
        });
 
+     public Target CheckConfigurationKeysAgainstJsonValidations => _ => _
+         .Description("Validates that all ConfigurationKeys constants are present in supported-configurations.json")
+         .After(CompileManagedSrc)
+         .Executes(() =>
+          {
+              var jsonPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.json";
+              if (!File.Exists(jsonPath))
+              {
+                  Logger.Error("supported-configurations.json file not found at {JsonPath}", jsonPath);
+                  return;
+              }
+
+              // Parse JSON to get supported configuration keys
+              var jsonContent = File.ReadAllText(jsonPath);
+              var jsonDoc = JsonDocument.Parse(jsonContent);
+              var canonicalKeysInJson = new HashSet<string>();
+              var aliasesInJson = new HashSet<string>();
+              var deprecationsInJson = new HashSet<string>();
+
+              // Add keys from supportedConfigurations section
+              if (jsonDoc.RootElement.TryGetProperty("supportedConfigurations", out var supportedConfigs))
+              {
+                  foreach (var property in supportedConfigs.EnumerateObject())
+                  {
+                      canonicalKeysInJson.Add(property.Name);
+                      deprecationsInJson.Add(property.Name);
+                  }
+              }
+
+              // Add keys from aliases section (add elements in the arrays)
+              if (jsonDoc.RootElement.TryGetProperty("aliases", out var aliases))
+              {
+                  foreach (var property in aliases.EnumerateObject())
+                  {
+                      // Add all alias keys from the array
+                      if (property.Value.ValueKind == JsonValueKind.Array)
+                      {
+                          foreach (var aliasElement in property.Value.EnumerateArray())
+                          {
+                              if (aliasElement.ValueKind == JsonValueKind.String)
+                              {
+                                  aliasesInJson.Add(aliasElement.GetString());
+                              }
+                          }
+                      }
+                  }
+              }
+
+              // Add keys from deprecations section (add the deprecated keys themselves)
+              if (jsonDoc.RootElement.TryGetProperty("deprecations", out var deprecations))
+              {
+                  foreach (var property in deprecations.EnumerateObject())
+                  {
+                      deprecationsInJson.Add(property.Name);
+                  }
+              }
+
+              // Load the net6.0 assembly for configuration key analysis
+              // Configuration keys are the same across all frameworks, so we only need one
+              const string targetFramework = "net6.0";
+              var assemblyPath = TracerDirectory / "src" / "Datadog.Trace" / "bin" / BuildConfiguration / targetFramework / "Datadog.Trace.dll";
+
+              if (!File.Exists(assemblyPath))
+              {
+                  throw new InvalidOperationException($"Assembly not found at {assemblyPath} for framework {targetFramework}. Make sure CompileManagedSrc has run.");
+              }
+
+              Assembly tracerAssembly;
+              try
+              {
+                  // Load the assembly directly - no complex resolution needed
+                  tracerAssembly = Assembly.LoadFrom(assemblyPath);
+                  Logger.Information("Using {Framework} assembly for configuration key analysis", targetFramework);
+              }
+              catch (Exception ex)
+              {
+                  throw new InvalidOperationException($"Failed to load assembly for {targetFramework}: {ex.Message}", ex);
+              }
+
+              // Use reflection to get all configuration keys from the ConfigurationKeys class
+              var configurationKeysInCode = new HashSet<string>();
+              var keyToFieldMap = new Dictionary<string, string>();
+
+              const string configKeysClassName = "Datadog.Trace.Configuration.ConfigurationKeys";
+              // Get the ConfigurationKeys type (includes all partial classes)
+              var configKeysType = tracerAssembly.GetType(configKeysClassName);
+              if (configKeysType == null)
+              {
+                  throw new InvalidOperationException($"Could not find {configKeysClassName} type in assembly for framework {targetFramework}");
+              }
+
+              // Get all public const string fields from the type and all nested types (one level deep)
+              var allTypes = new List<Type> { configKeysType };
+              allTypes.AddRange(configKeysType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic));
+
+              Logger.Information("Found {TypeCount} types to analyze (including nested classes)", allTypes.Count);
+
+              foreach (var type in allTypes)
+              {
+                  var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                                   .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string));
+
+                  Logger.Information("  Type {TypeName} has {FieldCount} const string fields", type.Name, fields.Count());
+
+                  foreach (var field in fields)
+                  {
+                      var value = (string)field.GetValue(null)!;
+                      configurationKeysInCode.Add(value);
+
+                      // Build a more descriptive path for nested classes
+                      var typeName = type.DeclaringType != null ? $"ConfigurationKeys.{type.Name}" : "ConfigurationKeys";
+                      keyToFieldMap[value] = $"{typeName}.{field.Name}";
+                  }
+              }
+
+              Logger.Information("Found {KeyCount} configuration keys in {Framework}", configurationKeysInCode.Count, targetFramework);
+
+              if (!configurationKeysInCode.Any())
+              {
+                  throw new InvalidOperationException($"Could not extract any configuration keys from {targetFramework} framework");
+              }
+
+              var canonicalAndDeprecationsInJson = canonicalKeysInJson.Concat(deprecationsInJson);
+              // Find keys that are in JSON but not defined in ConfigurationKeys
+              var missingFromCode = canonicalKeysInJson.Except(configurationKeysInCode).ToList();
+
+              var allKeysInJson = canonicalAndDeprecationsInJson.Concat(aliasesInJson);
+              // Find keys that are defined in ConfigurationKeys but missing from JSON
+              var missingFromJson = configurationKeysInCode.Except(allKeysInJson).ToList();
+              // Report results
+              if (missingFromJson.Any())
+              {
+                  Logger.Error("Configuration keys defined in ConfigurationKeys but missing from supported-configurations.json:");
+                  foreach (var key in missingFromJson.OrderBy(k => k))
+                  {
+                      var fieldInfo = keyToFieldMap.GetValueOrDefault(key, "Unknown");
+                      Logger.Error("  - {Key} (defined as {FieldInfo})", key, fieldInfo);
+                  }
+              }
+
+              if (missingFromCode.Any())
+              {
+                  Logger.Warning("Configuration keys in supported-configurations.json but not defined in ConfigurationKeys:");
+                  foreach (var key in missingFromCode.OrderBy(k => k))
+                  {
+                      Logger.Warning("  - {Key}", key);
+                  }
+              }
+
+              if (!missingFromJson.Any() && !missingFromCode.Any())
+              {
+                  Logger.Information("✅ All configuration keys are properly synchronized between ConfigurationKeys and supported-configurations.json");
+                  Logger.Information("Total unique configuration keys found across all frameworks: {TotalKeys}", configurationKeysInCode.Count);
+              }
+              else
+              {
+                  var totalIssues = missingFromJson.Count + missingFromCode.Count;
+                  Logger.Error("❌ Found {TotalIssues} configuration key synchronization issues", totalIssues);
+
+                  if (missingFromJson.Any())
+                  {
+                      throw new InvalidOperationException($"Found {missingFromJson.Count} configuration keys defined in ConfigurationKeys but missing from supported-configurations.json. Please add them to the JSON file.");
+                  }
+              }
+          });
+    
     private async Task CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel, List<(string IgnoreReasonTag, Regex Regex)> reportablePatterns)
     {
         var logDirectory = BuildDataDirectory / "logs";

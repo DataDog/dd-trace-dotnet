@@ -30,6 +30,8 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     protected IReadOnlyDictionary<string, object?> Dictionary { get; }
 
+    public bool IsPresent(string key) => Dictionary.ContainsKey(key);
+
     protected virtual bool TryGetValue(string key, out object? value)
         => Dictionary.TryGetValue(key, out value);
 

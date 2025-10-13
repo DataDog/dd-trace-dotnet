@@ -195,7 +195,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// See the documentation for more details.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     public bool AnalyticsEnabled { get; }
 
     /// <summary>
@@ -249,10 +249,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal IConfigurationTelemetry Telemetry { get; }
 
-    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder.HasKeys headerTagsKeys, bool headerTagsNormalizationFixEnabled)
     {
-        var configurationDictionary = config
-                                     .WithKeys(key)
+        var configurationDictionary = headerTagsKeys
                                      .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
 
         if (configurationDictionary == null)
@@ -525,7 +524,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         return false;
     }
 
-    [Obsolete(DeprecationMessages.AppAnalytics)]
+    [Obsolete(DeprecationConstants.AppAnalytics)]
     internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
     {
         var integrationSettings = Integrations[integration];
@@ -607,7 +606,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             };
 
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult(parser: updatedTagsParser)
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -621,7 +620,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         else
         {
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult()
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -642,7 +641,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .WithKeys(ConfigurationKeys.ServiceName)
                          .AsStringResult()
                          .OverrideWith(in otelServiceName, errorLog);
 
@@ -728,7 +727,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -746,10 +745,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.HeaderTags), headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.GrpcTags), headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
@@ -768,24 +767,20 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var kafkaCreateConsumerScopeEnabled = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
-        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+        var serviceNameMappings = TracerSettings.TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.ServiceNameMappings)) ?? ReadOnlyDictionary.Empty;
 
         var tracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
 
         var httpServerErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
                                               .AsString(defaultValue: "500-599");
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
         var httpClientErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
                                               .AsString(defaultValue: "400-499");
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
