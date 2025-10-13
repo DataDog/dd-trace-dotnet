@@ -5,8 +5,10 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
@@ -27,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class FunctionExecutionMiddlewareInvokeIntegration
 {
+    private const string OrchestrationTriggerType = "orchestrationTrigger";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FunctionExecutionMiddlewareInvokeIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TFunctionContext>(TTarget instance, TFunctionContext functionContext)
@@ -34,6 +37,7 @@ public class FunctionExecutionMiddlewareInvokeIntegration
     {
         if (HasOrchestrationTrigger(functionContext))
         {
+            Log.Debug("Skipping instrumentation for orchestrator function to preserve determinism");
             return new CallTargetState(scope: null, state: null, skipMethodBody: false, skipContinuation: true);
         }
 
@@ -67,22 +71,19 @@ public class FunctionExecutionMiddlewareInvokeIntegration
                 return false;
             }
 
-            foreach (System.Collections.DictionaryEntry binding in definition.InputBindings)
+            foreach (DictionaryEntry binding in definition.InputBindings)
             {
                 if (binding.Value == null)
                 {
                     continue;
                 }
 
-                var bindingType = binding.Value.GetType();
-                var typeProperty = bindingType.GetProperty("Type");
-                if (typeProperty == null)
+                if (!binding.Value.TryDuckCast<IBindingMetadata>(out var bindingMetadata))
                 {
                     continue;
                 }
 
-                var typeValue = typeProperty.GetValue(binding.Value);
-                if (typeValue != null && typeValue.ToString().Equals("orchestrationTrigger"))
+                if (bindingMetadata.Type != null && bindingMetadata.Type.Equals(OrchestrationTriggerType))
                 {
                     return true;
                 }
