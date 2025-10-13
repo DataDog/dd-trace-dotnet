@@ -939,17 +939,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("DELTA", OtlpTemporality.Delta)]
-        [InlineData("cumulative", OtlpTemporality.Cumulative)]
-        [InlineData("loWmemOry", OtlpTemporality.LowMemory)]
-        [InlineData(null, OtlpTemporality.Delta)]
-        [InlineData("bad-value", OtlpTemporality.Delta)]
-        public void OtlpTemporalityPreference(string value, object expected)
+        [InlineData("DELTA", OtlpTemporalityPreference.Delta)]
+        [InlineData("cumulative", OtlpTemporalityPreference.Cumulative)]
+        [InlineData("loWmemOry", OtlpTemporalityPreference.LowMemory)]
+        [InlineData(null, OtlpTemporalityPreference.Delta)]
+        [InlineData("bad-value", OtlpTemporalityPreference.Delta)]
+        public void OtlpMetricsTemporalityPreference(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, value));
             var settings = new TracerSettings(source);
 
-            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporality)expected);
+            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporalityPreference)expected);
         }
 
         [Theory]

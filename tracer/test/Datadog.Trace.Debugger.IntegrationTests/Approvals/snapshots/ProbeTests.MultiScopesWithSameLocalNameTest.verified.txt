@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,8 +10,7 @@
             "25": {
               "arguments": {
                 "this": {
-                  "type": "MultiScopesWithSameLocalNameTest",
-                  "value": "MultiScopesWithSameLocalNameTest"
+                  "type": "MultiScopesWithSameLocalNameTest"
                 }
               },
               "locals": {
@@ -65,8 +64,7 @@
             "25": {
               "arguments": {
                 "this": {
-                  "type": "MultiScopesWithSameLocalNameTest",
-                  "value": "MultiScopesWithSameLocalNameTest"
+                  "type": "MultiScopesWithSameLocalNameTest"
                 }
               },
               "locals": {
@@ -120,8 +118,7 @@
             "32": {
               "arguments": {
                 "this": {
-                  "type": "MultiScopesWithSameLocalNameTest",
-                  "value": "MultiScopesWithSameLocalNameTest"
+                  "type": "MultiScopesWithSameLocalNameTest"
                 }
               },
               "locals": {
@@ -175,8 +172,7 @@
             "32": {
               "arguments": {
                 "this": {
-                  "type": "MultiScopesWithSameLocalNameTest",
-                  "value": "MultiScopesWithSameLocalNameTest"
+                  "type": "MultiScopesWithSameLocalNameTest"
                 }
               },
               "locals": {

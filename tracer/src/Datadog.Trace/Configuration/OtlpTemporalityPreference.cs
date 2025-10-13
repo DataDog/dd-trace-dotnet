@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpTemporality.cs" company="Datadog">
+﻿// <copyright file="OtlpTemporalityPreference.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,22 +8,23 @@
 namespace Datadog.Trace.Configuration;
 
 /// <summary>
-/// Defines the OTLP metrics temporality to use when exporting.
+/// Defines the user's preference for OTLP metrics temporality when exporting.
+/// This configuration determines which AggregationTemporality to use for different metric types.
 /// </summary>
-internal enum OtlpTemporality
+internal enum OtlpTemporalityPreference
 {
     /// <summary>
-    /// Cumulative preference kind
+    /// Prefer cumulative temporality for all supported metric types
     /// </summary>
     Cumulative = 0,
 
     /// <summary>
-    /// Delta preference kind
+    /// Prefer delta temporality for all supported metric types
     /// </summary>
     Delta = 1,
 
     /// <summary>
-    /// LowMemory preference kind
+    /// Prefer delta temporality to reduce memory usage (same as Delta)
     /// </summary>
     LowMemory = 2,
 }

@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
@@ -98,6 +99,9 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
 
+            AzureFunctionsHostEnabled = config.WithKeys(ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled)
+                                              .AsBool(false);
+
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
             bool[]? enabledIntegrations = null;
 
@@ -138,6 +142,13 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             var isEnabled = enabledIntegrations is not null;
             _enabledIntegrations = enabledIntegrations;
+
+            if (!AzureFunctionsHostEnabled && EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+            {
+                // If we are in `dotnet-isolated` Azure Functions host customers may want to disable direct log submission
+                // because the host will re-log logs coming from the worker process causing duplicate logs.
+                isEnabled = false;
+            }
 
             if (string.IsNullOrWhiteSpace(Host))
             {
@@ -229,6 +240,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
         internal TimeSpan BatchPeriod { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether direct log submission is enabled for the Azure Functions host.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled"/>
+        internal bool AzureFunctionsHostEnabled { get; } = false;
 
         /// <summary>
         /// Gets the Datadog API key

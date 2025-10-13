@@ -13,7 +13,6 @@
       runtime-id: Guid_2,
       SpanDecorationSameTags: 3,
       version: 1.0.0,
-      _dd.code_origin.type: exit,
       _dd.di.SpanDecorationSameTags.probe_id: Guid_3
     },
     Metrics: {

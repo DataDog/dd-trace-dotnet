@@ -131,6 +131,32 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Check if the current environment is the Azure Functions host process
+        /// by checking that:
+        ///
+        /// - <see cref="IsAzureFunctions"/> is <c>true</c>
+        /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
+        /// - we DO NOT see EITHER "--functions-worker-id" or "--workerId" on the command line as flags.
+        /// The host and worker process will share the top two bullet points; however, only the worker process will have the flags
+        /// Note that his is a subset of IsAzureFunctions().
+        /// This method reads environment variables directly and bypasses the configuration system.
+        /// </summary>
+        public static bool IsRunningInAzureFunctionsHost()
+        {
+            var cmd = Environment.CommandLine ?? string.Empty;
+            // heuristic to detect the worker process
+            // the worker process would be the one to have these flags
+            // example in log output
+            // "CommandLine": "Samples.AzureFunctions.V4Isolated.AspNetCore.dll --workerId <GUID> --functions-worker-id <GUID>"
+            var hasWorkerId = cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                              cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            return IsAzureFunctions()
+                   && string.Equals(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
+                   && !hasWorkerId;
+        }
+
+        /// <summary>
         /// Check if the current environment is AWS Lambda
         /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
         /// This method reads environment variables directly and bypasses the configuration system.

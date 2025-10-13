@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -19,8 +19,7 @@
                     "value": "13"
                   }
                 },
-                "type": "GreaterThanFieldAsync",
-                "value": "GreaterThanFieldAsync"
+                "type": "GreaterThanFieldAsync"
               }
             },
             "locals": {

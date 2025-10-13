@@ -533,7 +533,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
+                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
                         CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                    }
+                    else
+                    {
+                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
                     }
                 }
 
@@ -633,9 +638,16 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (span is not null)
                 {
-                    if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    if (isCodeOriginEnabled)
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        if (TryGetTypeAndMethod(typedArg, out var type, out var method))
+                        {
+                            CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        }
+                        else
+                        {
+                            Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
+                        }
                     }
 
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
@@ -663,14 +675,22 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     foreach (var part in compiledPageActionDescriptor.HandlerMethods)
                     {
-                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc)
-                         && string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc))
                         {
-                            type = compiledPageActionDescriptor.HandlerTypeInfo;
-                            method = methodDesc.MethodInfo;
-                            return true;
+                            if (string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                            {
+                                type = compiledPageActionDescriptor.HandlerTypeInfo;
+                                method = methodDesc.MethodInfo;
+                                return true;
+                            }
+                            else
+                            {
+                                Log.Debug("Ignoring handler method {Method} for HTTP method {HttpMethod}", methodDesc.MethodInfo.Name, methodDesc.HttpMethod);
+                            }
                         }
                     }
+
+                    Log.Debug("No matching handler method found for HTTP method {HttpMethod}", beforeAction.HttpContext.Request.Method);
                 }
             }
             catch (Exception e)

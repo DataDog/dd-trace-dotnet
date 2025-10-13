@@ -1,2 +1,2 @@
-Read @AGENTS.md for more
+See @../AGENTS.md
 
