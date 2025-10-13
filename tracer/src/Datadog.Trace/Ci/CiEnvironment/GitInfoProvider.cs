@@ -45,5 +45,5 @@ internal abstract class GitInfoProvider : IGitInfoProvider
         return false;
     }
 
-    protected abstract bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo);
+    public abstract bool TryGetFrom(FileSystemInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo);
 }
