@@ -5,11 +5,8 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
@@ -29,18 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class FunctionExecutionMiddlewareInvokeIntegration
 {
-    private const string OrchestrationTriggerType = "orchestrationTrigger";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FunctionExecutionMiddlewareInvokeIntegration));
-
     internal static CallTargetState OnMethodBegin<TTarget, TFunctionContext>(TTarget instance, TFunctionContext functionContext)
         where TFunctionContext : IFunctionContext
     {
-        if (HasOrchestrationTrigger(functionContext))
-        {
-            Log.Debug("Skipping instrumentation for orchestrator function to preserve determinism");
-            return new CallTargetState(scope: null, state: null, skipMethodBody: false, skipContinuation: true);
-        }
-
         return AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext);
     }
 
@@ -54,48 +42,11 @@ public class FunctionExecutionMiddlewareInvokeIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+    [PreserveContext]
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
         state.Scope?.DisposeWithException(exception);
         return returnValue;
-    }
-
-    private static bool HasOrchestrationTrigger<TFunctionContext>(TFunctionContext functionContext)
-        where TFunctionContext : IFunctionContext
-    {
-        try
-        {
-            var definition = functionContext.FunctionDefinition;
-            if (definition.InputBindings == null)
-            {
-                return false;
-            }
-
-            foreach (DictionaryEntry binding in definition.InputBindings)
-            {
-                if (binding.Value == null)
-                {
-                    continue;
-                }
-
-                if (!binding.Value.TryDuckCast<IBindingMetadata>(out var bindingMetadata))
-                {
-                    continue;
-                }
-
-                if (bindingMetadata.Type != null && bindingMetadata.Type.Equals(OrchestrationTriggerType))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "Could not verify orchestration trigger");
-            return false;
-        }
     }
 }
 
