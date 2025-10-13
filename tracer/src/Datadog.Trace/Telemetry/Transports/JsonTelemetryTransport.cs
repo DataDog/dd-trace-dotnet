@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -127,8 +126,8 @@ namespace Datadog.Trace.Telemetry.Transports
         private static byte[] CompressGzip(byte[] input)
         {
             using var output = new MemoryStream();
-            // leaveOpen=true is not needed here, but harmless
-            using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+
+            using (var gzip = new GZipStream(output, CompressionLevel.Fastest))
             {
                 gzip.Write(input, 0, input.Length);
             }
