@@ -169,6 +169,11 @@ namespace Datadog.Trace.Configuration
         public const string GrpcTags = "DD_TRACE_GRPC_TAGS";
 
         /// <summary>
+        /// Propagate the process tags in every supported payload
+        /// </summary>
+        public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
+
+        /// <summary>
         /// Configuration key for a map of services to rename.
         /// </summary>
         /// <seealso cref="TracerSettings.ServiceNameMappings"/>
