@@ -336,7 +336,7 @@ partial class Build
         });
 
     Target RunProfilerCpuLimitTests => _ => _
-        .After(BuildProfilerSamples)
+        .After(BuildProfilerSamples, BuildProfilerCpuLimitTests)
         .Description("Runs the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
         .Executes(() =>
