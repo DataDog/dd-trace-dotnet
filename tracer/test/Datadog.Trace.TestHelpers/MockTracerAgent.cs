@@ -632,12 +632,11 @@ namespace Datadog.Trace.TestHelpers
                 {
                     request.Headers.TryGetValue(TelemetryConstants.ApiVersionHeader, out var apiVersion);
                     request.Headers.TryGetValue(TelemetryConstants.RequestTypeHeader, out var requestType);
-                    request.Headers.TryGetValue("Content-Encoding", out var contentEncoding);
-                    var compressed = contentEncoding?.Equals("gzip", StringComparison.OrdinalIgnoreCase) ?? false;
 
+                    // request.ReadStreamBody() already decompress the data if content-encoding is gzip
                     using var stream = new MemoryStream(request.ReadStreamBody());
 
-                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType, compressed);
+                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType, false);
                     Telemetry.Push(telemetry);
 
                     lock (this)

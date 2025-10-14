@@ -85,7 +85,7 @@ namespace Datadog.Trace.Telemetry.Transports
                 TelemetryFactory.Metrics.RecordCountTelemetryApiResponses(endpointMetricTag, response.GetTelemetryStatusCodeMetricTag());
                 if (response.StatusCode is >= 200 and < 300)
                 {
-                    Log.Debug("Telemetry sent successfully");
+                    Log.Debug("{Compress} Telemetry sent successfully", _compressPayload ? "Compressed" : "Non compressed");
                     return TelemetryPushResult.Success;
                 }
 
@@ -93,23 +93,23 @@ namespace Datadog.Trace.Telemetry.Transports
 
                 if (response.StatusCode == 404)
                 {
-                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", GetEndpointInfo());
+                    Log.Debug("Error sending {Compress} telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", _compressPayload ? "Compressed" : "Non compressed", GetEndpointInfo());
                     return TelemetryPushResult.FatalError;
                 }
 
-                Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", GetEndpointInfo(), response.StatusCode);
+                Log.Debug<string, string, int>("Error sending {Compress} telemetry to '{Endpoint}' {StatusCode} ", _compressPayload ? "Compressed" : "Non compressed", GetEndpointInfo(), response.StatusCode);
                 return TelemetryPushResult.TransientFailure;
             }
             catch (Exception ex) when (IsFatalException(ex))
             {
-                Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'", GetEndpointInfo());
+                Log.Information(ex, "Error sending {Compress} telemetry data, unable to communicate with '{Endpoint}'", _compressPayload ? "Compressed" : "Non compressed", GetEndpointInfo());
                 var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                 TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.FatalError;
             }
             catch (Exception ex)
             {
-                Log.Information(ex, "Error sending telemetry data to '{Endpoint}'", GetEndpointInfo());
+                Log.Information(ex, "Error sending {Compress} telemetry data to '{Endpoint}'", _compressPayload ? "Compressed" : "Non compressed", GetEndpointInfo());
                 var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                 TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.TransientFailure;
