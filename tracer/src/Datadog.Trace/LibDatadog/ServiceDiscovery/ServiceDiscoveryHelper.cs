@@ -22,6 +22,19 @@ internal class ServiceDiscoveryHelper
         Exception
     }
 
+    internal enum MetadataKind : int
+    {
+        RuntimeId = 0,
+        TracerLanguage = 1,
+        TracerVersion = 2,
+        Hostname = 3,
+        ServiceName = 4,
+        ServiceEnvironment = 5
+        ServiceVersion = 6,
+        ProcessTags = 7,
+        ContainerId = 8,
+    }
+
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
@@ -30,15 +43,16 @@ internal class ServiceDiscoveryHelper
         {
             try
             {
-                var result = StoreTracerMetadata(
-                    1,
-                    Tracer.RuntimeId,
-                    TracerConstants.Language,
-                    TracerConstants.ThreePartVersion,
-                    Environment.MachineName,
-                    tracerSettings.ServiceName,
-                    tracerSettings.Environment,
-                    tracerSettings.ServiceVersion);
+                var ptr = TracerMetadataNew();
+                TracerMetadataSet(ptr, MetadataKind.RuntimeId, Tracer.RuntimeId);
+                TracerMetadataSet(ptr, MetadataKind.TracerLanguage, TracerConstants.Language);
+                TracerMetadataSet(ptr, MetadataKind.Version, TracerConstants.ThreePartVersion);
+                TracerMetadataSet(ptr, MetadataKind.Hostname, Environment.MachineName);
+                TracerMetadataSet(ptr, MetadataKind.ServiceName, tracerSettings.ServiceName);
+                TracerMetadataSet(ptr, MetadataKind.ServiceEnvironment, tracerSettings.Environment);
+                TracerMetadataSet(ptr, MetadataKind.ServiceVersion, tracerSettings.ServiceVersion);
+                var result = StoreTracerMetadata(ptr);
+                TracerMetadataFree(ptr);
 
                 if (result.Tag == ResultTag.Error)
                 {
