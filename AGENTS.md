@@ -213,6 +213,7 @@ tracer/src/Datadog.Trace
 - Add missing `using` directives instead of fully-qualified type names
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
 - Prefer modern collection expressions (`[]`)
+- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
 
 **C/C++ style:**
