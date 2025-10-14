@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -65,13 +66,13 @@ namespace Datadog.Trace.Telemetry
 
             // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...
             var apiKey = config
-                        .WithKeys(ConfigurationKeys.ApiKey)
+                        .WithKeys<ConfigKeyDdApiKey>()
                         .AsRedactedString();
 
             var haveApiKey = !string.IsNullOrEmpty(apiKey);
 
             var agentlessEnabled = config
-                                  .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled)
+                                  .WithKeys<ConfigKeyDdInstrumentationTelemetryAgentlessEnabled>()
                                   .AsBool(
                                        defaultValue: haveApiKey, // if there's an API key, we can use agentless mode by default, otherwise we can only use the agent
                                        validator: isEnabled =>
@@ -86,12 +87,12 @@ namespace Datadog.Trace.Telemetry
                                        });
 
             var agentProxyEnabled = config
-                                   .WithKeys(ConfigurationKeys.Telemetry.AgentProxyEnabled)
+                                   .WithKeys<ConfigKeyDdInstrumentationTelemetryAgentProxyEnabled>()
                                    .AsBool(isAgentAvailable ?? true);
 
             // enabled by default if we have any transports
             var telemetryEnabled = config
-                                  .WithKeys(ConfigurationKeys.Telemetry.Enabled)
+                                  .WithKeys<ConfigKeyDdInstrumentationTelemetryEnabled>()
                                   .AsBool(agentlessEnabled || agentProxyEnabled);
 
             AgentlessSettings? agentless = null;
@@ -99,14 +100,14 @@ namespace Datadog.Trace.Telemetry
             {
                 // We have an API key, so try to send directly to intake
                 var agentlessUri = config
-                                  .WithKeys(ConfigurationKeys.Telemetry.Uri)
+                                  .WithKeys<ConfigKeyDdInstrumentationTelemetryUrl>()
                                   .AsString(
                                        getDefaultValue: () =>
                                        {
                                            // use the default intake. Use DD_SITE if provided, otherwise use default
                                            // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...
                                            var ddSite = config
-                                                       .WithKeys(ConfigurationKeys.Site)
+                                                       .WithKeys<ConfigKeyDdSite>()
                                                        .AsString(
                                                             defaultValue: "datadoghq.com",
                                                             validator: siteFromEnv => !string.IsNullOrEmpty(siteFromEnv));
@@ -133,14 +134,14 @@ namespace Datadog.Trace.Telemetry
             }
 
             var heartbeatInterval = config
-                                   .WithKeys(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds)
+                                   .WithKeys<ConfigKeyDdTelemetryHeartbeatInterval>()
                                    .AsDouble(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
-            var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
+            var dependencyCollectionEnabled = config.WithKeys<ConfigKeyDdTelemetryDependencyCollectionEnabled>().AsBool(true);
 
             // For testing purposes only
-            var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
+            var debugEnabled = config.WithKeys<ConfigKeyDdInternalTelemetryDebugEnabled>().AsBool(false);
 
             bool metricsEnabled;
             if (isServerless)
@@ -152,7 +153,7 @@ namespace Datadog.Trace.Telemetry
             else
             {
                 metricsEnabled = config
-                                .WithKeys(ConfigurationKeys.Telemetry.MetricsEnabled)
+                                .WithKeys<ConfigKeyDdTelemetryMetricsEnabled>()
                                 .AsBool(defaultValue: true);
             }
 
