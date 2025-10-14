@@ -181,30 +181,23 @@ namespace Datadog.Trace.Configuration
             // Phase 2: Handle new/updated configurations and implicit removals
             if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
             {
-                var receivedConfigIds = new HashSet<string>();
+                // if we have some config, then we will "overwrite" everything that's currently active
+                if (Log.IsEnabled(LogEventLevel.Debug) && activeConfigurations.Count > 0)
+                {
+                    Log.Debug<int, int>("Implicitly removing {RemovedCount} APM_TRACING configurations and replacing with {AddedCount}", activeConfigurations.Count, apmLibrary.Count);
+                }
+
+                activeConfigurations.Clear();
 
                 // Add/update configurations
                 foreach (var config in apmLibrary)
                 {
-                    receivedConfigIds.Add(config.Path.Id);
                     activeConfigurations[config.Path.Id] = config;
                     applyDetailsResult.Add(ApplyDetails.FromOk(config.Path.Path));
                 }
-
-                // Remove configurations not in this update
-                var configsToRemove = activeConfigurations.Keys
-                                                          .Where(configId => !receivedConfigIds.Contains(configId))
-                                                          .ToList();
-
-                foreach (var configId in configsToRemove)
-                {
-                    activeConfigurations.Remove(configId);
-                    Log.Debug("Implicitly removed APM_TRACING configuration {ConfigId} (not in update)", configId);
-                }
             }
 
-            var valuesToApply = activeConfigurations.Values.ToList();
-            return valuesToApply;
+            return [..activeConfigurations.Values];
         }
 
         private ApplyDetails[] ConfigurationUpdated(
