@@ -186,6 +186,7 @@ public class ConfigurationKeyGenerator : IIncrementalGenerator
         sb.AppendLine($"    internal const string Key = \"{key}\";");
         sb.AppendLine();
         sb.AppendLine("    /// <inheritdoc/>");
+        sb.AppendLine("    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
         sb.AppendLine("    public string GetKey() => Key;");
         sb.AppendLine("}");
         sb.AppendLine();
@@ -200,7 +201,7 @@ public class ConfigurationKeyGenerator : IIncrementalGenerator
 
         return string.Concat(
             input
-               .Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries)
+               .Split(['_'], StringSplitOptions.RemoveEmptyEntries)
                .Select(
                     part =>
                     {

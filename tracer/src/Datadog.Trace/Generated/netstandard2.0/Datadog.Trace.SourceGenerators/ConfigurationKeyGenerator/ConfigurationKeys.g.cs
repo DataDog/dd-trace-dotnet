@@ -13,6 +13,7 @@ internal readonly partial struct ConfigKeyDdInternalIsRunningInCivisibility : IC
     internal const string Key = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -24,6 +25,7 @@ internal readonly partial struct ConfigKeyDdTraceStatsComputationInterval : ICon
     internal const string Key = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -35,6 +37,7 @@ internal readonly partial struct ConfigKeyDdAasDotnetExtensionVersion : IConfigK
     internal const string Key = "DD_AAS_DOTNET_EXTENSION_VERSION";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -46,6 +49,7 @@ internal readonly partial struct ConfigKeyDdAasEnableCustomMetrics : IConfigKey
     internal const string Key = "DD_AAS_ENABLE_CUSTOM_METRICS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -57,6 +61,7 @@ internal readonly partial struct ConfigKeyDdAasEnableCustomTracing : IConfigKey
     internal const string Key = "DD_AAS_ENABLE_CUSTOM_TRACING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -68,6 +73,7 @@ internal readonly partial struct ConfigKeyDdAgentHost : IConfigKey
     internal const string Key = "DD_AGENT_HOST";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -79,6 +85,7 @@ internal readonly partial struct ConfigKeyDdApiKey : IConfigKey
     internal const string Key = "DD_API_KEY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -90,6 +97,7 @@ internal readonly partial struct ConfigKeyDdApiSecurityEnabled : IConfigKey
     internal const string Key = "DD_API_SECURITY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -101,6 +109,7 @@ internal readonly partial struct ConfigKeyDdApiSecurityEndpointCollectionEnabled
     internal const string Key = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -112,6 +121,7 @@ internal readonly partial struct ConfigKeyDdApiSecurityEndpointCollectionMessage
     internal const string Key = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -123,6 +133,7 @@ internal readonly partial struct ConfigKeyDdApiSecurityParseResponseBody : IConf
     internal const string Key = "DD_API_SECURITY_PARSE_RESPONSE_BODY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -134,6 +145,7 @@ internal readonly partial struct ConfigKeyDdApiSecuritySampleDelay : IConfigKey
     internal const string Key = "DD_API_SECURITY_SAMPLE_DELAY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -145,6 +157,7 @@ internal readonly partial struct ConfigKeyDdApmEnableRareSampler : IConfigKey
     internal const string Key = "DD_APM_ENABLE_RARE_SAMPLER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -156,6 +169,7 @@ internal readonly partial struct ConfigKeyDdApmReceiverPort : IConfigKey
     internal const string Key = "DD_APM_RECEIVER_PORT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -167,6 +181,7 @@ internal readonly partial struct ConfigKeyDdApmReceiverSocket : IConfigKey
     internal const string Key = "DD_APM_RECEIVER_SOCKET";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -178,6 +193,7 @@ internal readonly partial struct ConfigKeyDdApmTracingEnabled : IConfigKey
     internal const string Key = "DD_APM_TRACING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -189,6 +205,7 @@ internal readonly partial struct ConfigKeyDdApplicationMonitoringConfigFileEnabl
     internal const string Key = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -200,6 +217,7 @@ internal readonly partial struct ConfigKeyDdAppsecAutoUserInstrumentationMode : 
     internal const string Key = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -211,6 +229,7 @@ internal readonly partial struct ConfigKeyDdAppsecAutomatedUserEventsTracking : 
     internal const string Key = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -222,6 +241,7 @@ internal readonly partial struct ConfigKeyDdAppsecEnabled : IConfigKey
     internal const string Key = "DD_APPSEC_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -233,6 +253,7 @@ internal readonly partial struct ConfigKeyDdAppsecExtraHeaders : IConfigKey
     internal const string Key = "DD_APPSEC_EXTRA_HEADERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -244,6 +265,7 @@ internal readonly partial struct ConfigKeyDdAppsecHttpBlockedTemplateHtml : ICon
     internal const string Key = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -255,6 +277,7 @@ internal readonly partial struct ConfigKeyDdAppsecHttpBlockedTemplateJson : ICon
     internal const string Key = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -266,6 +289,7 @@ internal readonly partial struct ConfigKeyDdAppsecIpheader : IConfigKey
     internal const string Key = "DD_APPSEC_IPHEADER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -277,6 +301,7 @@ internal readonly partial struct ConfigKeyDdAppsecKeepTraces : IConfigKey
     internal const string Key = "DD_APPSEC_KEEP_TRACES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -288,6 +313,7 @@ internal readonly partial struct ConfigKeyDdAppsecMaxStackTraceDepth : IConfigKe
     internal const string Key = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -299,6 +325,7 @@ internal readonly partial struct ConfigKeyDdAppsecMaxStackTraceDepthTopPercent :
     internal const string Key = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -310,6 +337,7 @@ internal readonly partial struct ConfigKeyDdAppsecMaxStackTraces : IConfigKey
     internal const string Key = "DD_APPSEC_MAX_STACK_TRACES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -321,6 +349,7 @@ internal readonly partial struct ConfigKeyDdAppsecObfuscationParameterKeyRegexp 
     internal const string Key = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -332,6 +361,7 @@ internal readonly partial struct ConfigKeyDdAppsecObfuscationParameterValueRegex
     internal const string Key = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -343,6 +373,7 @@ internal readonly partial struct ConfigKeyDdAppsecRaspEnabled : IConfigKey
     internal const string Key = "DD_APPSEC_RASP_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -354,6 +385,7 @@ internal readonly partial struct ConfigKeyDdAppsecRules : IConfigKey
     internal const string Key = "DD_APPSEC_RULES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -365,6 +397,7 @@ internal readonly partial struct ConfigKeyDdAppsecScaEnabled : IConfigKey
     internal const string Key = "DD_APPSEC_SCA_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -376,6 +409,7 @@ internal readonly partial struct ConfigKeyDdAppsecStackTraceEnabled : IConfigKey
     internal const string Key = "DD_APPSEC_STACK_TRACE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -387,6 +421,7 @@ internal readonly partial struct ConfigKeyDdAppsecTraceRateLimit : IConfigKey
     internal const string Key = "DD_APPSEC_TRACE_RATE_LIMIT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -398,6 +433,7 @@ internal readonly partial struct ConfigKeyDdAppsecWafDebug : IConfigKey
     internal const string Key = "DD_APPSEC_WAF_DEBUG";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -409,6 +445,7 @@ internal readonly partial struct ConfigKeyDdAppsecWafTimeout : IConfigKey
     internal const string Key = "DD_APPSEC_WAF_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -420,6 +457,7 @@ internal readonly partial struct ConfigKeyDdAzureAppServices : IConfigKey
     internal const string Key = "DD_AZURE_APP_SERVICES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -431,6 +469,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityAgentlessEnabled : IConf
     internal const string Key = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -442,6 +481,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityAgentlessUrl : IConfigKe
     internal const string Key = "DD_CIVISIBILITY_AGENTLESS_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -453,6 +493,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoverageCollectorpat
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -464,6 +505,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoverageEnableJitOpt
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -475,6 +517,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoverageEnabled : IC
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -486,6 +529,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoverageMode : IConf
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_MODE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -497,6 +541,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoveragePath : IConf
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -508,6 +553,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityCodeCoverageSnkFilepath 
     internal const string Key = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -519,6 +565,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityDiEnabled : IConfigKey
     internal const string Key = "DD_CIVISIBILITY_DI_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -530,6 +577,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityEarlyFlakeDetectionEnabl
     internal const string Key = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -541,6 +589,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityEnabled : IConfigKey
     internal const string Key = "DD_CIVISIBILITY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -552,6 +601,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityExternalCodeCoveragePath
     internal const string Key = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -563,6 +613,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityFlakyRetryCount : IConfi
     internal const string Key = "DD_CIVISIBILITY_FLAKY_RETRY_COUNT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -574,6 +625,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityFlakyRetryEnabled : ICon
     internal const string Key = "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -585,6 +637,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityForceAgentEvpProxy : ICo
     internal const string Key = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -596,6 +649,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityGacInstallEnabled : ICon
     internal const string Key = "DD_CIVISIBILITY_GAC_INSTALL_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -607,6 +661,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityGitUploadEnabled : IConf
     internal const string Key = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -618,6 +673,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityImpactedTestsDetectionEn
     internal const string Key = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -629,6 +685,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityItrEnabled : IConfigKey
     internal const string Key = "DD_CIVISIBILITY_ITR_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -640,6 +697,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityKnownTestsEnabled : ICon
     internal const string Key = "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -651,6 +709,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityLogsEnabled : IConfigKey
     internal const string Key = "DD_CIVISIBILITY_LOGS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -662,6 +721,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityRumFlushWaitMillis : ICo
     internal const string Key = "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -673,6 +733,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityTestsskippingEnabled : I
     internal const string Key = "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -684,6 +745,7 @@ internal readonly partial struct ConfigKeyDdCivisibilityTotalFlakyRetryCount : I
     internal const string Key = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -695,6 +757,7 @@ internal readonly partial struct ConfigKeyDdCodeOriginForSpansEnabled : IConfigK
     internal const string Key = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -706,6 +769,7 @@ internal readonly partial struct ConfigKeyDdCodeOriginForSpansMaxUserFrames : IC
     internal const string Key = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -717,6 +781,7 @@ internal readonly partial struct ConfigKeyDdDataStreamsEnabled : IConfigKey
     internal const string Key = "DD_DATA_STREAMS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -728,6 +793,7 @@ internal readonly partial struct ConfigKeyDdDataStreamsLegacyHeaders : IConfigKe
     internal const string Key = "DD_DATA_STREAMS_LEGACY_HEADERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -739,6 +805,7 @@ internal readonly partial struct ConfigKeyDdDbmPropagationMode : IConfigKey
     internal const string Key = "DD_DBM_PROPAGATION_MODE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -750,6 +817,7 @@ internal readonly partial struct ConfigKeyDdDiagnosticSourceEnabled : IConfigKey
     internal const string Key = "DD_DIAGNOSTIC_SOURCE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -761,6 +829,7 @@ internal readonly partial struct ConfigKeyDdDisabledIntegrations : IConfigKey
     internal const string Key = "DD_DISABLED_INTEGRATIONS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -772,6 +841,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdArgs : IConfigKey
     internal const string Key = "DD_DOGSTATSD_ARGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -783,6 +853,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdPath : IConfigKey
     internal const string Key = "DD_DOGSTATSD_PATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -794,6 +865,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdPipeName : IConfigKey
     internal const string Key = "DD_DOGSTATSD_PIPE_NAME";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -805,6 +877,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdPort : IConfigKey
     internal const string Key = "DD_DOGSTATSD_PORT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -816,6 +889,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdSocket : IConfigKey
     internal const string Key = "DD_DOGSTATSD_SOCKET";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -827,6 +901,7 @@ internal readonly partial struct ConfigKeyDdDogstatsdUrl : IConfigKey
     internal const string Key = "DD_DOGSTATSD_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -838,6 +913,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationDiagnosticsInt
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -849,6 +925,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationEnabled : ICon
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -860,6 +937,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationMaxDepthToSeri
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -871,6 +949,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationMaxTimeToSeria
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -882,6 +961,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationRedactedExclud
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -893,6 +973,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationRedactedIdenti
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -904,6 +985,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationRedactedTypes 
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -915,6 +997,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationRedactionExclu
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -926,6 +1009,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationUploadBatchSiz
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -937,6 +1021,7 @@ internal readonly partial struct ConfigKeyDdDynamicInstrumentationUploadFlushInt
     internal const string Key = "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -948,6 +1033,7 @@ internal readonly partial struct ConfigKeyDdEnv : IConfigKey
     internal const string Key = "DD_ENV";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -959,6 +1045,7 @@ internal readonly partial struct ConfigKeyDdExceptionDebuggingEnabled : IConfigK
     internal const string Key = "DD_EXCEPTION_DEBUGGING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -970,6 +1057,7 @@ internal readonly partial struct ConfigKeyDdExceptionReplayCaptureFullCallstackE
     internal const string Key = "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -981,6 +1069,7 @@ internal readonly partial struct ConfigKeyDdExceptionReplayCaptureMaxFrames : IC
     internal const string Key = "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -992,6 +1081,7 @@ internal readonly partial struct ConfigKeyDdExceptionReplayEnabled : IConfigKey
     internal const string Key = "DD_EXCEPTION_REPLAY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1003,6 +1093,7 @@ internal readonly partial struct ConfigKeyDdExceptionReplayMaxExceptionAnalysisL
     internal const string Key = "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1014,6 +1105,7 @@ internal readonly partial struct ConfigKeyDdExceptionReplayRateLimitSeconds : IC
     internal const string Key = "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1025,6 +1117,7 @@ internal readonly partial struct ConfigKeyDdExperimentalAppsecUseUnsafeEncoder :
     internal const string Key = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1036,6 +1129,7 @@ internal readonly partial struct ConfigKeyDdGitCommitSha : IConfigKey
     internal const string Key = "DD_GIT_COMMIT_SHA";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1047,6 +1141,7 @@ internal readonly partial struct ConfigKeyDdGitRepositoryUrl : IConfigKey
     internal const string Key = "DD_GIT_REPOSITORY_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1058,6 +1153,7 @@ internal readonly partial struct ConfigKeyDdHttpServerTagQueryString : IConfigKe
     internal const string Key = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1069,6 +1165,7 @@ internal readonly partial struct ConfigKeyDdHttpServerTagQueryStringSize : IConf
     internal const string Key = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1080,6 +1177,7 @@ internal readonly partial struct ConfigKeyDdIastCookieFilterPattern : IConfigKey
     internal const string Key = "DD_IAST_COOKIE_FILTER_PATTERN";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1091,6 +1189,7 @@ internal readonly partial struct ConfigKeyDdIastDbRowsToTaint : IConfigKey
     internal const string Key = "DD_IAST_DB_ROWS_TO_TAINT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1102,6 +1201,7 @@ internal readonly partial struct ConfigKeyDdIastDeduplicationEnabled : IConfigKe
     internal const string Key = "DD_IAST_DEDUPLICATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1113,6 +1213,7 @@ internal readonly partial struct ConfigKeyDdIastEnabled : IConfigKey
     internal const string Key = "DD_IAST_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1124,6 +1225,7 @@ internal readonly partial struct ConfigKeyDdIastMaxConcurrentRequests : IConfigK
     internal const string Key = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1135,6 +1237,7 @@ internal readonly partial struct ConfigKeyDdIastMaxRangeCount : IConfigKey
     internal const string Key = "DD_IAST_MAX_RANGE_COUNT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1146,6 +1249,7 @@ internal readonly partial struct ConfigKeyDdIastRedactionEnabled : IConfigKey
     internal const string Key = "DD_IAST_REDACTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1157,6 +1261,7 @@ internal readonly partial struct ConfigKeyDdIastRedactionNamePattern : IConfigKe
     internal const string Key = "DD_IAST_REDACTION_NAME_PATTERN";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1168,6 +1273,7 @@ internal readonly partial struct ConfigKeyDdIastRedactionValuePattern : IConfigK
     internal const string Key = "DD_IAST_REDACTION_VALUE_PATTERN";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1179,6 +1285,7 @@ internal readonly partial struct ConfigKeyDdIastRegexpTimeout : IConfigKey
     internal const string Key = "DD_IAST_REGEXP_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1190,6 +1297,7 @@ internal readonly partial struct ConfigKeyDdIastRequestSampling : IConfigKey
     internal const string Key = "DD_IAST_REQUEST_SAMPLING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1201,6 +1309,7 @@ internal readonly partial struct ConfigKeyDdIastTelemetryVerbosity : IConfigKey
     internal const string Key = "DD_IAST_TELEMETRY_VERBOSITY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1212,6 +1321,7 @@ internal readonly partial struct ConfigKeyDdIastTruncationMaxValueLength : IConf
     internal const string Key = "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1223,6 +1333,7 @@ internal readonly partial struct ConfigKeyDdIastVulnerabilitiesPerRequest : ICon
     internal const string Key = "DD_IAST_VULNERABILITIES_PER_REQUEST";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1234,6 +1345,7 @@ internal readonly partial struct ConfigKeyDdIastWeakCipherAlgorithms : IConfigKe
     internal const string Key = "DD_IAST_WEAK_CIPHER_ALGORITHMS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1245,6 +1357,7 @@ internal readonly partial struct ConfigKeyDdIastWeakHashAlgorithms : IConfigKey
     internal const string Key = "DD_IAST_WEAK_HASH_ALGORITHMS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1256,6 +1369,7 @@ internal readonly partial struct ConfigKeyDdInjectionEnabled : IConfigKey
     internal const string Key = "DD_INJECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1267,6 +1381,7 @@ internal readonly partial struct ConfigKeyDdInstrumentationTelemetryAgentProxyEn
     internal const string Key = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1278,6 +1393,7 @@ internal readonly partial struct ConfigKeyDdInstrumentationTelemetryAgentlessEna
     internal const string Key = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1289,6 +1405,7 @@ internal readonly partial struct ConfigKeyDdInstrumentationTelemetryEnabled : IC
     internal const string Key = "DD_INSTRUMENTATION_TELEMETRY_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1300,6 +1417,7 @@ internal readonly partial struct ConfigKeyDdInstrumentationTelemetryUrl : IConfi
     internal const string Key = "DD_INSTRUMENTATION_TELEMETRY_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1311,6 +1429,7 @@ internal readonly partial struct ConfigKeyDdInternalRcmPollInterval : IConfigKey
     internal const string Key = "DD_INTERNAL_RCM_POLL_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1322,6 +1441,7 @@ internal readonly partial struct ConfigKeyDdInternalTelemetryDebugEnabled : ICon
     internal const string Key = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1333,6 +1453,7 @@ internal readonly partial struct ConfigKeyDdInternalWaitForDebuggerAttach : ICon
     internal const string Key = "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1344,6 +1465,7 @@ internal readonly partial struct ConfigKeyDdInternalWaitForNativeDebuggerAttach 
     internal const string Key = "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1355,6 +1477,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionAzureFunctionsHo
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1366,6 +1489,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionBatchPeriodSecon
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1377,6 +1501,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionHost : IConfigKe
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_HOST";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1388,6 +1513,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionIntegrations : I
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1399,6 +1525,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionMaxBatchSize : I
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1410,6 +1537,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionMaxQueueSize : I
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1421,6 +1549,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionMinimumLevel : I
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1432,6 +1561,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionSource : IConfig
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_SOURCE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1443,6 +1573,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionTags : IConfigKe
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_TAGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1454,6 +1585,7 @@ internal readonly partial struct ConfigKeyDdLogsDirectSubmissionUrl : IConfigKey
     internal const string Key = "DD_LOGS_DIRECT_SUBMISSION_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1465,6 +1597,7 @@ internal readonly partial struct ConfigKeyDdLogsInjection : IConfigKey
     internal const string Key = "DD_LOGS_INJECTION";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1476,6 +1609,7 @@ internal readonly partial struct ConfigKeyDdMaxLogfileSize : IConfigKey
     internal const string Key = "DD_MAX_LOGFILE_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1487,6 +1621,7 @@ internal readonly partial struct ConfigKeyDdMaxTracesPerSecond : IConfigKey
     internal const string Key = "DD_MAX_TRACES_PER_SECOND";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1498,6 +1633,7 @@ internal readonly partial struct ConfigKeyDdMetricsOtelEnabled : IConfigKey
     internal const string Key = "DD_METRICS_OTEL_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1509,6 +1645,7 @@ internal readonly partial struct ConfigKeyDdMetricsOtelMeterNames : IConfigKey
     internal const string Key = "DD_METRICS_OTEL_METER_NAMES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1520,6 +1657,7 @@ internal readonly partial struct ConfigKeyDdProfilingCodehotspotsEnabled : IConf
     internal const string Key = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1531,6 +1669,7 @@ internal readonly partial struct ConfigKeyDdProfilingEnabled : IConfigKey
     internal const string Key = "DD_PROFILING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1542,6 +1681,7 @@ internal readonly partial struct ConfigKeyDdProfilingEndpointCollectionEnabled :
     internal const string Key = "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1553,6 +1693,7 @@ internal readonly partial struct ConfigKeyDdProfilingManagedActivationEnabled : 
     internal const string Key = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1564,6 +1705,7 @@ internal readonly partial struct ConfigKeyDdProxyHttps : IConfigKey
     internal const string Key = "DD_PROXY_HTTPS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1575,6 +1717,7 @@ internal readonly partial struct ConfigKeyDdProxyNoProxy : IConfigKey
     internal const string Key = "DD_PROXY_NO_PROXY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1586,6 +1729,7 @@ internal readonly partial struct ConfigKeyDdRemoteConfigPollIntervalSeconds : IC
     internal const string Key = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1597,6 +1741,7 @@ internal readonly partial struct ConfigKeyDdRemoteConfigurationEnabled : IConfig
     internal const string Key = "DD_REMOTE_CONFIGURATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1608,6 +1753,7 @@ internal readonly partial struct ConfigKeyDdRuntimeMetricsEnabled : IConfigKey
     internal const string Key = "DD_RUNTIME_METRICS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1619,6 +1765,7 @@ internal readonly partial struct ConfigKeyDdService : IConfigKey
     internal const string Key = "DD_SERVICE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1630,6 +1777,7 @@ internal readonly partial struct ConfigKeyDdSite : IConfigKey
     internal const string Key = "DD_SITE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1641,6 +1789,7 @@ internal readonly partial struct ConfigKeyDdSpanSamplingRules : IConfigKey
     internal const string Key = "DD_SPAN_SAMPLING_RULES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1652,6 +1801,7 @@ internal readonly partial struct ConfigKeyDdSymbolDatabaseBatchSizeBytes : IConf
     internal const string Key = "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1663,6 +1813,7 @@ internal readonly partial struct ConfigKeyDdSymbolDatabaseCompressionEnabled : I
     internal const string Key = "DD_SYMBOL_DATABASE_COMPRESSION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1674,6 +1825,7 @@ internal readonly partial struct ConfigKeyDdSymbolDatabaseThirdPartyDetectionExc
     internal const string Key = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1685,6 +1837,7 @@ internal readonly partial struct ConfigKeyDdSymbolDatabaseThirdPartyDetectionInc
     internal const string Key = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1696,6 +1849,7 @@ internal readonly partial struct ConfigKeyDdSymbolDatabaseUploadEnabled : IConfi
     internal const string Key = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1707,6 +1861,7 @@ internal readonly partial struct ConfigKeyDdTags : IConfigKey
     internal const string Key = "DD_TAGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1718,6 +1873,7 @@ internal readonly partial struct ConfigKeyDdTelemetryDependencyCollectionEnabled
     internal const string Key = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1729,6 +1885,7 @@ internal readonly partial struct ConfigKeyDdTelemetryHeartbeatInterval : IConfig
     internal const string Key = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1740,6 +1897,7 @@ internal readonly partial struct ConfigKeyDdTelemetryLogCollectionEnabled : ICon
     internal const string Key = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1751,6 +1909,7 @@ internal readonly partial struct ConfigKeyDdTelemetryMetricsEnabled : IConfigKey
     internal const string Key = "DD_TELEMETRY_METRICS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1762,6 +1921,7 @@ internal readonly partial struct ConfigKeyDdTestManagementAttemptToFixRetries : 
     internal const string Key = "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1773,6 +1933,7 @@ internal readonly partial struct ConfigKeyDdTestManagementEnabled : IConfigKey
     internal const string Key = "DD_TEST_MANAGEMENT_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1784,6 +1945,7 @@ internal readonly partial struct ConfigKeyDdTestSessionName : IConfigKey
     internal const string Key = "DD_TEST_SESSION_NAME";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1795,6 +1957,7 @@ internal readonly partial struct ConfigKeyDdThirdPartyDetectionExcludes : IConfi
     internal const string Key = "DD_THIRD_PARTY_DETECTION_EXCLUDES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1806,6 +1969,7 @@ internal readonly partial struct ConfigKeyDdThirdPartyDetectionIncludes : IConfi
     internal const string Key = "DD_THIRD_PARTY_DETECTION_INCLUDES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1817,6 +1981,7 @@ internal readonly partial struct ConfigKeyDdTrace128BitTraceidGenerationEnabled 
     internal const string Key = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1828,6 +1993,7 @@ internal readonly partial struct ConfigKeyDdTrace128BitTraceidLoggingEnabled : I
     internal const string Key = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1839,6 +2005,7 @@ internal readonly partial struct ConfigKeyDdTraceActivityListenerEnabled : IConf
     internal const string Key = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1850,6 +2017,7 @@ internal readonly partial struct ConfigKeyDdTraceAgentArgs : IConfigKey
     internal const string Key = "DD_TRACE_AGENT_ARGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1861,6 +2029,7 @@ internal readonly partial struct ConfigKeyDdTraceAgentPath : IConfigKey
     internal const string Key = "DD_TRACE_AGENT_PATH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1872,6 +2041,7 @@ internal readonly partial struct ConfigKeyDdTraceAgentPort : IConfigKey
     internal const string Key = "DD_TRACE_AGENT_PORT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1883,6 +2053,7 @@ internal readonly partial struct ConfigKeyDdTraceAgentUrl : IConfigKey
     internal const string Key = "DD_TRACE_AGENT_URL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1894,6 +2065,7 @@ internal readonly partial struct ConfigKeyDdTraceAnalyticsEnabled : IConfigKey
     internal const string Key = "DD_TRACE_ANALYTICS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1905,6 +2077,7 @@ internal readonly partial struct ConfigKeyDdTraceAwsAddSpanPointers : IConfigKey
     internal const string Key = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1916,6 +2089,7 @@ internal readonly partial struct ConfigKeyDdTraceAzureServicebusBatchLinksEnable
     internal const string Key = "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1927,6 +2101,7 @@ internal readonly partial struct ConfigKeyDdTraceBaggageMaxBytes : IConfigKey
     internal const string Key = "DD_TRACE_BAGGAGE_MAX_BYTES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1938,6 +2113,7 @@ internal readonly partial struct ConfigKeyDdTraceBaggageMaxItems : IConfigKey
     internal const string Key = "DD_TRACE_BAGGAGE_MAX_ITEMS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1949,6 +2125,7 @@ internal readonly partial struct ConfigKeyDdTraceBaggageTagKeys : IConfigKey
     internal const string Key = "DD_TRACE_BAGGAGE_TAG_KEYS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1960,6 +2137,7 @@ internal readonly partial struct ConfigKeyDdTraceBatchInterval : IConfigKey
     internal const string Key = "DD_TRACE_BATCH_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1971,6 +2149,7 @@ internal readonly partial struct ConfigKeyDdTraceBufferSize : IConfigKey
     internal const string Key = "DD_TRACE_BUFFER_SIZE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1982,6 +2161,7 @@ internal readonly partial struct ConfigKeyDdTraceBypassHttpRequestUrlCachingEnab
     internal const string Key = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -1993,6 +2173,7 @@ internal readonly partial struct ConfigKeyDdTraceClientIpEnabled : IConfigKey
     internal const string Key = "DD_TRACE_CLIENT_IP_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2004,6 +2185,7 @@ internal readonly partial struct ConfigKeyDdTraceClientIpHeader : IConfigKey
     internal const string Key = "DD_TRACE_CLIENT_IP_HEADER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2015,6 +2197,7 @@ internal readonly partial struct ConfigKeyDdTraceCommandsCollectionEnabled : ICo
     internal const string Key = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2026,6 +2209,7 @@ internal readonly partial struct ConfigKeyDdTraceConfigFile : IConfigKey
     internal const string Key = "DD_TRACE_CONFIG_FILE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2037,6 +2221,7 @@ internal readonly partial struct ConfigKeyDdTraceDataPipelineEnabled : IConfigKe
     internal const string Key = "DD_TRACE_DATA_PIPELINE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2048,6 +2233,7 @@ internal readonly partial struct ConfigKeyDdTraceDebug : IConfigKey
     internal const string Key = "DD_TRACE_DEBUG";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2059,6 +2245,7 @@ internal readonly partial struct ConfigKeyDdTraceDebugLookupFallback : IConfigKe
     internal const string Key = "DD_TRACE_DEBUG_LOOKUP_FALLBACK";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2070,6 +2257,7 @@ internal readonly partial struct ConfigKeyDdTraceDebugLookupMdtoken : IConfigKey
     internal const string Key = "DD_TRACE_DEBUG_LOOKUP_MDTOKEN";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2081,6 +2269,7 @@ internal readonly partial struct ConfigKeyDdTraceDelayWcfInstrumentationEnabled 
     internal const string Key = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2092,6 +2281,7 @@ internal readonly partial struct ConfigKeyDdTraceDisabledActivitySources : IConf
     internal const string Key = "DD_TRACE_DISABLED_ACTIVITY_SOURCES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2103,6 +2293,7 @@ internal readonly partial struct ConfigKeyDdTraceDisabledAdonetCommandTypes : IC
     internal const string Key = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2114,6 +2305,7 @@ internal readonly partial struct ConfigKeyDdTraceEnabled : IConfigKey
     internal const string Key = "DD_TRACE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2125,6 +2317,7 @@ internal readonly partial struct ConfigKeyDdTraceExpandRouteTemplatesEnabled : I
     internal const string Key = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2136,6 +2329,7 @@ internal readonly partial struct ConfigKeyDdTraceExperimentalFeaturesEnabled : I
     internal const string Key = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2147,6 +2341,7 @@ internal readonly partial struct ConfigKeyDdTraceGitMetadataEnabled : IConfigKey
     internal const string Key = "DD_TRACE_GIT_METADATA_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2158,6 +2353,7 @@ internal readonly partial struct ConfigKeyDdTraceGraphqlErrorExtensions : IConfi
     internal const string Key = "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2169,6 +2365,7 @@ internal readonly partial struct ConfigKeyDdTraceGrpcTags : IConfigKey
     internal const string Key = "DD_TRACE_GRPC_TAGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2180,6 +2377,7 @@ internal readonly partial struct ConfigKeyDdTraceHeaderTagNormalizationFixEnable
     internal const string Key = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2191,6 +2389,7 @@ internal readonly partial struct ConfigKeyDdTraceHeaderTags : IConfigKey
     internal const string Key = "DD_TRACE_HEADER_TAGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2202,6 +2401,7 @@ internal readonly partial struct ConfigKeyDdTraceHttpClientErrorStatuses : IConf
     internal const string Key = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2213,6 +2413,7 @@ internal readonly partial struct ConfigKeyDdTraceHttpClientExcludedUrlSubstrings
     internal const string Key = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2224,6 +2425,7 @@ internal readonly partial struct ConfigKeyDdTraceHttpServerErrorStatuses : IConf
     internal const string Key = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2235,6 +2437,7 @@ internal readonly partial struct ConfigKeyDdTraceInferredProxyServicesEnabled : 
     internal const string Key = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2246,6 +2449,7 @@ internal readonly partial struct ConfigKeyDdTraceInjectContextIntoStoredProcedur
     internal const string Key = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2257,6 +2461,7 @@ internal readonly partial struct ConfigKeyDdTraceKafkaCreateConsumerScopeEnabled
     internal const string Key = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2268,6 +2473,7 @@ internal readonly partial struct ConfigKeyDdTraceLogDirectory : IConfigKey
     internal const string Key = "DD_TRACE_LOG_DIRECTORY";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2279,6 +2485,7 @@ internal readonly partial struct ConfigKeyDdTraceLogSinks : IConfigKey
     internal const string Key = "DD_TRACE_LOG_SINKS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2290,6 +2497,7 @@ internal readonly partial struct ConfigKeyDdTraceLogfileRetentionDays : IConfigK
     internal const string Key = "DD_TRACE_LOGFILE_RETENTION_DAYS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2301,6 +2509,7 @@ internal readonly partial struct ConfigKeyDdTraceLoggingRate : IConfigKey
     internal const string Key = "DD_TRACE_LOGGING_RATE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2312,6 +2521,7 @@ internal readonly partial struct ConfigKeyDdTraceMethods : IConfigKey
     internal const string Key = "DD_TRACE_METHODS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2323,6 +2533,7 @@ internal readonly partial struct ConfigKeyDdTraceMetricsEnabled : IConfigKey
     internal const string Key = "DD_TRACE_METRICS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2334,6 +2545,7 @@ internal readonly partial struct ConfigKeyDdTraceObfuscationQueryStringRegexp : 
     internal const string Key = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2345,6 +2557,7 @@ internal readonly partial struct ConfigKeyDdTraceObfuscationQueryStringRegexpTim
     internal const string Key = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2356,6 +2569,7 @@ internal readonly partial struct ConfigKeyDdTraceOtelEnabled : IConfigKey
     internal const string Key = "DD_TRACE_OTEL_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2367,6 +2581,7 @@ internal readonly partial struct ConfigKeyDdTracePartialFlushEnabled : IConfigKe
     internal const string Key = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2378,6 +2593,7 @@ internal readonly partial struct ConfigKeyDdTracePartialFlushMinSpans : IConfigK
     internal const string Key = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2389,6 +2605,7 @@ internal readonly partial struct ConfigKeyDdTracePeerServiceDefaultsEnabled : IC
     internal const string Key = "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2400,6 +2617,7 @@ internal readonly partial struct ConfigKeyDdTracePeerServiceMapping : IConfigKey
     internal const string Key = "DD_TRACE_PEER_SERVICE_MAPPING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2411,6 +2629,7 @@ internal readonly partial struct ConfigKeyDdTracePipeName : IConfigKey
     internal const string Key = "DD_TRACE_PIPE_NAME";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2422,6 +2641,7 @@ internal readonly partial struct ConfigKeyDdTracePipeTimeoutMs : IConfigKey
     internal const string Key = "DD_TRACE_PIPE_TIMEOUT_MS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2433,6 +2653,7 @@ internal readonly partial struct ConfigKeyDdTracePropagationBehaviorExtract : IC
     internal const string Key = "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2444,6 +2665,7 @@ internal readonly partial struct ConfigKeyDdTracePropagationExtractFirst : IConf
     internal const string Key = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2455,6 +2677,7 @@ internal readonly partial struct ConfigKeyDdTracePropagationStyle : IConfigKey
     internal const string Key = "DD_TRACE_PROPAGATION_STYLE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2466,6 +2689,7 @@ internal readonly partial struct ConfigKeyDdTracePropagationStyleExtract : IConf
     internal const string Key = "DD_TRACE_PROPAGATION_STYLE_EXTRACT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2477,6 +2701,7 @@ internal readonly partial struct ConfigKeyDdTracePropagationStyleInject : IConfi
     internal const string Key = "DD_TRACE_PROPAGATION_STYLE_INJECT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2488,6 +2713,7 @@ internal readonly partial struct ConfigKeyDdTraceRateLimit : IConfigKey
     internal const string Key = "DD_TRACE_RATE_LIMIT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2499,6 +2725,7 @@ internal readonly partial struct ConfigKeyDdTraceRemoveIntegrationServiceNamesEn
     internal const string Key = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2510,6 +2737,7 @@ internal readonly partial struct ConfigKeyDdTraceRouteTemplateResourceNamesEnabl
     internal const string Key = "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2521,6 +2749,7 @@ internal readonly partial struct ConfigKeyDdTraceSampleRate : IConfigKey
     internal const string Key = "DD_TRACE_SAMPLE_RATE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2532,6 +2761,7 @@ internal readonly partial struct ConfigKeyDdTraceSamplingRules : IConfigKey
     internal const string Key = "DD_TRACE_SAMPLING_RULES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2543,6 +2773,7 @@ internal readonly partial struct ConfigKeyDdTraceSamplingRulesFormat : IConfigKe
     internal const string Key = "DD_TRACE_SAMPLING_RULES_FORMAT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2554,6 +2785,7 @@ internal readonly partial struct ConfigKeyDdTraceServiceMapping : IConfigKey
     internal const string Key = "DD_TRACE_SERVICE_MAPPING";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2565,6 +2797,7 @@ internal readonly partial struct ConfigKeyDdTraceSpanAttributeSchema : IConfigKe
     internal const string Key = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2576,6 +2809,7 @@ internal readonly partial struct ConfigKeyDdTraceStartupLogs : IConfigKey
     internal const string Key = "DD_TRACE_STARTUP_LOGS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2587,6 +2821,7 @@ internal readonly partial struct ConfigKeyDdTraceStatsComputationEnabled : IConf
     internal const string Key = "DD_TRACE_STATS_COMPUTATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2598,6 +2833,7 @@ internal readonly partial struct ConfigKeyDdTraceWcfResourceObfuscationEnabled :
     internal const string Key = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2609,6 +2845,7 @@ internal readonly partial struct ConfigKeyDdTraceWcfWebHttpResourceNamesEnabled 
     internal const string Key = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2620,6 +2857,7 @@ internal readonly partial struct ConfigKeyDdTraceXDatadogTagsMaxLength : IConfig
     internal const string Key = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2631,6 +2869,7 @@ internal readonly partial struct ConfigKeyDdVersion : IConfigKey
     internal const string Key = "DD_VERSION";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2642,6 +2881,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpEndpoint : IConfigKey
     internal const string Key = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2653,6 +2893,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpHeaders : IConfigKey
     internal const string Key = "OTEL_EXPORTER_OTLP_HEADERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2664,6 +2905,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpMetricsEndpoint : ICon
     internal const string Key = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2675,6 +2917,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpMetricsHeaders : IConf
     internal const string Key = "OTEL_EXPORTER_OTLP_METRICS_HEADERS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2686,6 +2929,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpMetricsProtocol : ICon
     internal const string Key = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2697,6 +2941,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpMetricsTemporalityPref
     internal const string Key = "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2708,6 +2953,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpMetricsTimeout : IConf
     internal const string Key = "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2719,6 +2965,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpProtocol : IConfigKey
     internal const string Key = "OTEL_EXPORTER_OTLP_PROTOCOL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2730,6 +2977,7 @@ internal readonly partial struct ConfigKeyOtelExporterOtlpTimeout : IConfigKey
     internal const string Key = "OTEL_EXPORTER_OTLP_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2741,6 +2989,7 @@ internal readonly partial struct ConfigKeyOtelLogLevel : IConfigKey
     internal const string Key = "OTEL_LOG_LEVEL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2752,6 +3001,7 @@ internal readonly partial struct ConfigKeyOtelMetricExportInterval : IConfigKey
     internal const string Key = "OTEL_METRIC_EXPORT_INTERVAL";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2763,6 +3013,7 @@ internal readonly partial struct ConfigKeyOtelMetricExportTimeout : IConfigKey
     internal const string Key = "OTEL_METRIC_EXPORT_TIMEOUT";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2774,6 +3025,7 @@ internal readonly partial struct ConfigKeyOtelMetricsExporter : IConfigKey
     internal const string Key = "OTEL_METRICS_EXPORTER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2785,6 +3037,7 @@ internal readonly partial struct ConfigKeyOtelPropagators : IConfigKey
     internal const string Key = "OTEL_PROPAGATORS";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2796,6 +3049,7 @@ internal readonly partial struct ConfigKeyOtelResourceAttributes : IConfigKey
     internal const string Key = "OTEL_RESOURCE_ATTRIBUTES";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2807,6 +3061,7 @@ internal readonly partial struct ConfigKeyOtelSdkDisabled : IConfigKey
     internal const string Key = "OTEL_SDK_DISABLED";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2818,6 +3073,7 @@ internal readonly partial struct ConfigKeyOtelServiceName : IConfigKey
     internal const string Key = "OTEL_SERVICE_NAME";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2829,6 +3085,7 @@ internal readonly partial struct ConfigKeyOtelTracesExporter : IConfigKey
     internal const string Key = "OTEL_TRACES_EXPORTER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2840,6 +3097,7 @@ internal readonly partial struct ConfigKeyOtelTracesSampler : IConfigKey
     internal const string Key = "OTEL_TRACES_SAMPLER";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 
@@ -2851,6 +3109,7 @@ internal readonly partial struct ConfigKeyOtelTracesSamplerArg : IConfigKey
     internal const string Key = "OTEL_TRACES_SAMPLER_ARG";
 
     /// <inheritdoc/>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string GetKey() => Key;
 }
 

@@ -37,4 +37,9 @@ internal class TrackingNames
     public const string ConfigurationKeyMatcherDiagnostics = nameof(ConfigurationKeyMatcherDiagnostics);
     public const string ConfigurationKeyMatcherValidData = nameof(ConfigurationKeyMatcherValidData);
     public const string ConfigurationKeysAdditionalText = nameof(ConfigurationKeysAdditionalText);
+
+    // Configuration key generator
+    public const string ConfigurationKeyAdditionalText = nameof(ConfigurationKeyAdditionalText);
+    public const string ConfigurationKeySupportedSection = nameof(ConfigurationKeySupportedSection);
+    public const string ConfigurationKeyContent = nameof(ConfigurationKeyContent);
 }
