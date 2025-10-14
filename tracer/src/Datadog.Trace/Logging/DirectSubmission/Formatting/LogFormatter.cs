@@ -349,7 +349,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             EnrichTagsStringWithGitMetadata();
 
-            if (!string.IsNullOrEmpty(Tags) && !renderingDetails.HasRenderedTags)
+            if (!StringUtil.IsNullOrEmpty(Tags) && !renderingDetails.HasRenderedTags)
             {
                 writer.WritePropertyName(TagsPropertyName, escape: false);
                 writer.WriteValue(Tags);
