@@ -135,9 +135,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             // remove final joiner
             sb.Remove(sb.Length - 1, length: 1);
-            var aasTags = StringBuilderCache.GetStringAndRelease(sb);
+            if (!string.IsNullOrEmpty(globalTags))
+            {
+                sb.Append(TagSeparator)
+                  .Append(globalTags);
+            }
 
-            return string.IsNullOrEmpty(globalTags) ? aasTags : $"{aasTags}{TagSeparator}{globalTags}";
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private void EnrichTagsStringWithGitMetadata()
