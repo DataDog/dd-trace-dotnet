@@ -3,9 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -13,33 +11,16 @@ namespace Datadog.Trace.Tests;
 
 public class ProcessTagsTests
 {
-    public ProcessTagsTests()
-    {
-        ProcessTags.ResetForTests();
-    }
-
-    [Fact]
-    public void EmptyIfDisabled()
-    {
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object>()));
-
-        ProcessTags.SerializedTags.Should().BeEmpty();
-    }
-
     [Fact]
     public void TagsPresentWhenEnabled()
     {
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object>
-        {
-            [ConfigurationKeys.PropagateProcessTags] = "true"
-        }));
-
         var tags = ProcessTags.SerializedTags;
 
         tags.Should().ContainAll(ProcessTags.EntrypointName, ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
+
         tags.Split(',').Should().BeInAscendingOrder();
 
-        // assert on the format, which is key:values in a string, comma separated. 
+        // assert on the format, which is key:values in a string, comma separated.
         tags.Split(',')
             .Should()
             .AllSatisfy(s =>

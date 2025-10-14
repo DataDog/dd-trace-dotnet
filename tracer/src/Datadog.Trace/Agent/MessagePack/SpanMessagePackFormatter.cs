@@ -605,7 +605,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // Process tags will be sent only once per trace
-            if (model.IsFirstSpanInChunk)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.ShouldPropagateProcessTags)
             {
                 var processTags = ProcessTags.SerializedTags;
                 var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(processTags);

@@ -31,12 +31,6 @@ internal static class ProcessTags
     {
         var tags = new Dictionary<string, string>();
 
-        if (!Tracer.Instance.Settings.PropagateProcessTags)
-        {
-            // do not collect anything when disabled
-            return tags;
-        }
-
         var entrypointFullName = Assembly.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
         if (!string.IsNullOrEmpty(entrypointFullName))
         {
@@ -70,10 +64,5 @@ internal static class ProcessTags
         // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
         // which we don't want because we use it as a key/value separator.
         return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
-    }
-
-    internal static void ResetForTests()
-    {
-        _lazySerializedTags = new Lazy<string>(GetSerializedTags);
     }
 }

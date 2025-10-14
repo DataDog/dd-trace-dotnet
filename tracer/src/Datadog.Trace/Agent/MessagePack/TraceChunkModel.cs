@@ -63,6 +63,8 @@ internal readonly struct TraceChunkModel
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
+    public readonly bool ShouldPropagateProcessTags = true;
+
     public readonly bool IsApmEnabled = true;
 
     /// <summary>
@@ -108,6 +110,7 @@ internal readonly struct TraceChunkModel
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata;
+                    ShouldPropagateProcessTags = settings.PropagateProcessTags;
                     IsApmEnabled = settings.ApmTracingEnabled;
                 }
 
