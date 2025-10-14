@@ -102,8 +102,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var tracerSettings = TracerSettings.Create(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), "true" },
-                { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.AdoNet)), "false" },
+                { string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName), "true" },
+                { string.Format(IntegrationSettings.IntegrationEnabledKey, nameof(IntegrationId.AdoNet)), "false" },
             });
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
@@ -750,7 +750,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Set up tracer
             var tracerSettings = TracerSettings.Create(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), enabled },
+                { string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName), enabled },
             });
             return TracerHelper.Create(tracerSettings);
         }
