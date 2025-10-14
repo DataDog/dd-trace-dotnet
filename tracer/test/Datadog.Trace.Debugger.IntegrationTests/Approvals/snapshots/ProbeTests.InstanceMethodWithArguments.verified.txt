@@ -50,6 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InstanceMethodWithArguments",
@@ -98,6 +100,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InstanceMethodWithArguments",
