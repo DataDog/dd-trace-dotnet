@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -33,131 +34,147 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
     protected virtual bool TryGetValue(string key, out object? value)
         => Dictionary.TryGetValue(key, out value);
 
-    public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+    public ConfigurationResult<string> GetString<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        if (TryGetValue(keyString, out var objValue) && objValue is not null)
         {
             if (objValue is not string value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(keyString, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<string>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, recordValue, Origin);
+                telemetry.Record(keyString, value, recordValue, Origin);
                 return ConfigurationResult<string>.Valid(value);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
+            telemetry.Record(keyString, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<string>.Invalid(value);
         }
 
         return ConfigurationResult<string>.NotFound();
     }
 
-    public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+    public ConfigurationResult<int> GetInt32<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        if (TryGetValue(keyString, out var objValue) && objValue is not null)
         {
             if (objValue is not int value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(keyString, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<int>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
+                telemetry.Record(keyString, value, Origin);
                 return ConfigurationResult<int>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
+            telemetry.Record(keyString, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<int>.Invalid(value);
         }
 
         return ConfigurationResult<int>.NotFound();
     }
 
-    public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+    public ConfigurationResult<double> GetDouble<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        if (TryGetValue(keyString, out var objValue) && objValue is not null)
         {
             if (objValue is not double value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(keyString, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<double>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
+                telemetry.Record(keyString, value, Origin);
                 return ConfigurationResult<double>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
+            telemetry.Record(keyString, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<double>.Invalid(value);
         }
 
         return ConfigurationResult<double>.NotFound();
     }
 
-    public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+    public ConfigurationResult<bool> GetBool<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        if (TryGetValue(keyString, out var objValue) && objValue is not null)
         {
             if (objValue is not bool value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(keyString, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<bool>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
+                telemetry.Record(keyString, value, Origin);
                 return ConfigurationResult<bool>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
+            telemetry.Record(keyString, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<bool>.Invalid(value);
         }
 
         return ConfigurationResult<bool>.NotFound();
     }
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        where TKey : struct, IConfigKey
         => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        if (TryGetValue(keyString, out var objValue) && objValue is not null)
         {
             if (objValue is not IDictionary<string, string> value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(keyString, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
-            var dictAsString = string.Join($"{separator}", value.Select(x => $"{key}:{value}"));
+            var dictAsString = string.Join($"{separator}", value.Select(x => $"{keyString}:{value}"));
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, dictAsString, recordValue: true, Origin);
+                telemetry.Record(keyString, dictAsString, recordValue: true, Origin);
                 return ConfigurationResult<IDictionary<string, string>>.Valid(value, dictAsString);
             }
 
-            telemetry.Record(key, dictAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
-            return ConfigurationResult<IDictionary<string, string>>.Invalid(value);
+            telemetry.Record(keyString, dictAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
         }
 
         return ConfigurationResult<IDictionary<string, string>>.NotFound();
     }
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
-        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
-
-    public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        where TKey : struct, IConfigKey
     {
-        if (TryGetValue(key, out var objValue) && objValue is not null)
+        var keyString = key.GetKey();
+        return GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+    }
+
+    public ConfigurationResult<T> GetAs<TKey, T>(TKey key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        where TKey : struct, IConfigKey
+    {
+        var keyString = key.GetKey();
+        if (TryGetValue(key.GetKey(), out var objValue) && objValue is not null)
         {
             // Handle conversion
             var valueAsString = objValue.ToString()!;
@@ -172,15 +189,15 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
             {
                 if (validator is null || validator(result.Result))
                 {
-                    telemetry.Record(key, valueAsString, recordValue, Origin);
+                    telemetry.Record(keyString, valueAsString, recordValue, Origin);
                     return ConfigurationResult<T>.Valid(result.Result, valueAsString);
                 }
 
-                telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
+                telemetry.Record(keyString, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<T>.Invalid(result.Result);
             }
 
-            telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
+            telemetry.Record(keyString, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
             return ConfigurationResult<T>.ParseFailure();
         }
 

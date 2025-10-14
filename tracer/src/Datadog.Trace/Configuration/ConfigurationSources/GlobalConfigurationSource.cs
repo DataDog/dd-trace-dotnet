@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Telemetry;
@@ -54,7 +55,7 @@ internal class GlobalConfigurationSource
         var configurationSource = new CompositeConfigurationSource();
         var environmentSource = new EnvironmentConfigurationSource();
         var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
-        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(true);
+        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys<ConfigKeyDdApplicationMonitoringConfigFileEnabled>().AsBool(true);
         if (applicationMonitoringConfigFileEnabled)
         {
             var configsResult = ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
@@ -106,7 +107,7 @@ internal class GlobalConfigurationSource
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
-                                       .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
+                                       .WithKeys<ConfigKeyDdTraceConfigFile>()
                                        .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 
@@ -27,66 +28,77 @@ public interface IConfigurationSource
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<string> GetString(
-        string key,
+    ConfigurationResult<string> GetString<TKey>(
+        TKey key,
         IConfigurationTelemetry telemetry,
         Func<string, bool>? validator,
-        bool recordValue);
+        bool recordValue)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="int"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator);
+    ConfigurationResult<int> GetInt32<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="double"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator);
+    ConfigurationResult<double> GetDouble<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="bool"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator);
+    ConfigurationResult<bool> GetBool<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
@@ -94,24 +106,29 @@ public interface IConfigurationSource
     /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
     /// <param name="separator">Sets the character that separates keys and values in the input</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="parser">A user-provided parser that converts the input string into a dictionary</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        where TKey : struct, IConfigKey;
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
     /// the setting with the specified key.
     /// </summary>
+    /// <typeparam name="TKey">The type of configuration key</typeparam>
+    /// <typeparam name="T">The type of the value to retrieve</typeparam>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="converter">A converter that parses the "raw" string configuration value into the expected value.</param>
@@ -119,10 +136,11 @@ public interface IConfigurationSource
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<T> GetAs<T>(
-        string key,
+    ConfigurationResult<T> GetAs<TKey, T>(
+        TKey key,
         IConfigurationTelemetry telemetry,
         Func<string, ParsingResult<T>> converter,
         Func<T, bool>? validator,
-        bool recordValue);
+        bool recordValue)
+        where TKey : struct, IConfigKey;
 }
