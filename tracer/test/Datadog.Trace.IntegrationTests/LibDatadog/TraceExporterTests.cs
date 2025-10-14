@@ -136,7 +136,7 @@ public class TraceExporterTests
         sampleRateResponses.Should().ContainSingle();
 
         // Assert telemetry payloads were sent
-        await agent.WaitForLatestTelemetryAsync(t => t != null, 60000);
+        await agent.WaitForLatestTelemetryAsync(t => t != null);
         agent.Telemetry.Should().NotBeNull();
 
         Dictionary<string, object> GetSettings()
