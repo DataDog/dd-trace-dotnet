@@ -158,6 +158,55 @@ namespace Datadog.Trace.Configuration
                            .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        // Internal for testing
+        internal static List<RemoteConfiguration> CombineApmTracingConfiguration(
+            Dictionary<string, RemoteConfiguration> activeConfigurations,
+            Dictionary<string, List<RemoteConfiguration>> configByProduct,
+            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct,
+            List<ApplyDetails> applyDetailsResult)
+        {
+            // Phase 1: Handle explicit removals from removedConfigByProduct
+            if (removedConfigByProduct?.TryGetValue(ProductName, out var removedConfigs) == true)
+            {
+                foreach (var removedConfig in removedConfigs)
+                {
+                    if (activeConfigurations.Remove(removedConfig.Id))
+                    {
+                        Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
+                        applyDetailsResult.Add(ApplyDetails.FromOk(removedConfig.Path));
+                    }
+                }
+            }
+
+            // Phase 2: Handle new/updated configurations and implicit removals
+            if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
+            {
+                var receivedConfigIds = new HashSet<string>();
+
+                // Add/update configurations
+                foreach (var config in apmLibrary)
+                {
+                    receivedConfigIds.Add(config.Path.Id);
+                    activeConfigurations[config.Path.Id] = config;
+                    applyDetailsResult.Add(ApplyDetails.FromOk(config.Path.Path));
+                }
+
+                // Remove configurations not in this update
+                var configsToRemove = activeConfigurations.Keys
+                                                          .Where(configId => !receivedConfigIds.Contains(configId))
+                                                          .ToList();
+
+                foreach (var configId in configsToRemove)
+                {
+                    activeConfigurations.Remove(configId);
+                    Log.Debug("Implicitly removed APM_TRACING configuration {ConfigId} (not in update)", configId);
+                }
+            }
+
+            var valuesToApply = activeConfigurations.Values.ToList();
+            return valuesToApply;
+        }
+
         private ApplyDetails[] ConfigurationUpdated(
             Dictionary<string, List<RemoteConfiguration>> configByProduct,
             Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
@@ -168,46 +217,10 @@ namespace Datadog.Trace.Configuration
 
                 try
                 {
-                    // Phase 1: Handle explicit removals from removedConfigByProduct
-                    if (removedConfigByProduct?.TryGetValue(ProductName, out var removedConfigs) == true)
-                    {
-                        foreach (var removedConfig in removedConfigs)
-                        {
-                            if (_activeConfigurations.Remove(removedConfig.Id))
-                            {
-                                Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
-                                applyDetailsResult.Add(ApplyDetails.FromOk(removedConfig.Path));
-                            }
-                        }
-                    }
-
-                    // Phase 2: Handle new/updated configurations and implicit removals
-                    if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
-                    {
-                        var receivedConfigIds = new HashSet<string>();
-
-                        // Add/update configurations
-                        foreach (var config in apmLibrary)
-                        {
-                            receivedConfigIds.Add(config.Path.Id);
-                            _activeConfigurations[config.Path.Id] = config;
-                            applyDetailsResult.Add(ApplyDetails.FromOk(config.Path.Path));
-                        }
-
-                        // Remove configurations not in this update
-                        var configsToRemove = _activeConfigurations.Keys
-                                                                   .Where(configId => !receivedConfigIds.Contains(configId))
-                                                                   .ToList();
-
-                        foreach (var configId in configsToRemove)
-                        {
-                            _activeConfigurations.Remove(configId);
-                            Log.Debug("Implicitly removed APM_TRACING configuration {ConfigId} (not in update)", configId);
-                        }
-                    }
+                    var valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
 
                     // Phase 3: Apply merged configuration
-                    ApplyMergedConfiguration();
+                    ApplyMergedConfiguration(valuesToApply);
 
                     return applyDetailsResult.ToArray();
                 }
@@ -219,7 +232,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        private void ApplyMergedConfiguration()
+        private void ApplyMergedConfiguration(List<RemoteConfiguration> remoteConfigurations)
         {
             // Get current service/environment for filtering
             var currentSettings = Tracer.Instance.Settings;
@@ -227,7 +240,7 @@ namespace Datadog.Trace.Configuration
             var environment = currentSettings.Environment ?? Tracer.Instance.DefaultServiceName;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
-                _activeConfigurations.Values.ToList(),
+                remoteConfigurations,
                 serviceName,
                 environment);
 
