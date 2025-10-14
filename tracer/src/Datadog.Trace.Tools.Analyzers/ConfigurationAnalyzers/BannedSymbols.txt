@@ -1,0 +1,14 @@
+# Banned APIs for Datadog Trace Library
+# Use IConfigurationSource implementations instead of direct environment variable access
+
+# Ban direct access to Environment.GetEnvironmentVariable methods
+M:System.Environment.GetEnvironmentVariable(System.String); Use IConfigurationSource.GetString() instead for consistent configuration handling
+M:System.Environment.GetEnvironmentVariable(System.String,System.EnvironmentVariableTarget); Use IConfigurationSource.GetString() instead for consistent configuration handling
+
+# Ban direct access to EnvironmentConfigurationSource - only ConfigurationBuilder and PlatformConfigurationBuilder should access it
+M:Datadog.Trace.Configuration.EnvironmentConfigurationSource.ForConfigurationBuilder(); Use ConfigurationBuilder instead of direct EnvironmentConfigurationSource access
+M:Datadog.Trace.Configuration.EnvironmentConfigurationSource.ForPlatformConfigurationBuilder(); Use PlatformConfigurationBuilder instead of direct EnvironmentConfigurationSource access
+
+# Ban direct access to Environment.SetEnvironmentVariable methods (if needed)
+# M:System.Environment.SetEnvironmentVariable(System.String,System.String); Use configuration abstractions instead
+# M:System.Environment.SetEnvironmentVariable(System.String,System.String,System.EnvironmentVariableTarget); Use configuration abstractions instead
