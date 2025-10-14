@@ -11,6 +11,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Result = Datadog.Trace.LibDatadog.HandsOffConfiguration.Result;
@@ -41,15 +42,15 @@ public class GlobalConfigurationSourceTests
 #endif
         var fleetConfigSource = sources[0].Should().BeOfType<HandsOffConfigurationSource>().Subject;
         fleetConfigSource.Origin.Should().Be(ConfigurationOrigins.FleetStableConfig);
-        fleetConfigSource.GetString("KEY1", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_env");
-        fleetConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_service");
+        fleetConfigSource.GetString(new TestConfigKey("KEY1"), NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_env");
+        fleetConfigSource.GetString(new TestConfigKey("KEY5"), NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("fleet_file_service");
         sources[1].Should().BeOfType<EnvironmentConfigurationSource>();
         var localConfigSource = sources[2].Should().BeOfType<HandsOffConfigurationSource>().Subject;
         localConfigSource.Origin.Should().Be(ConfigurationOrigins.LocalStableConfig);
         // libdatadog already applies precedence so doesnt get these keys already defined by fleet, but we want to account for this in later stages where it should report everything for telemetry
-        localConfigSource.GetString("KEY1", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
-        localConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
-        localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
-        localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
+        localConfigSource.GetString(new TestConfigKey("KEY1"), NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
+        localConfigSource.GetString(new TestConfigKey("KEY5"), NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
+        localConfigSource.GetString(new TestConfigKey("KEY4"), NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
+        localConfigSource.GetBool(new TestConfigKey("KEY2"), NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
     }
 }
