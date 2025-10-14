@@ -211,13 +211,17 @@ namespace Datadog.Trace.Configuration
             Dictionary<string, List<RemoteConfiguration>> configByProduct,
             Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
-            lock (_configLock)
             {
                 var applyDetailsResult = new List<ApplyDetails>();
 
                 try
                 {
-                    var valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
+                    // Technically we're single threaded here so locking should not be necessary, but playing it safe
+                    List<RemoteConfiguration> valuesToApply;
+                    lock (_configLock)
+                    {
+                        valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
+                    }
 
                     // Phase 3: Apply merged configuration
                     ApplyMergedConfiguration(valuesToApply);
