@@ -56,9 +56,4 @@ public enum MockTracerResponseType
     /// The Tracer flare endpoint
     /// </summary>
     TracerFlare,
-
-    /// <summary>
-    /// The OTLP endpoint
-    /// </summary>
-    Otlp,
 }
