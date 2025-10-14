@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -72,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
-        private readonly Regex _timeUnixNanoRegexMetrics = new(@"TimeUnixNano: ([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
@@ -89,8 +90,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true"];
-                yield return [packageVersion[0], "true", "false"];
+                yield return [packageVersion[0], "false", "true", "grpc"];
+                yield return [packageVersion[0], "false", "true", "http/protobuf"];
+                yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
         }
 #endif
@@ -213,10 +215,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("RequiresDockerDependency", "true")]
         [MemberData(nameof(GetMetricsTestData))]
-        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled)
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
         {
-            var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.12.0");
+            var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.3.2");
             var runtimeMajor = Environment.Version.Major;
 
             var snapshotName = runtimeMajor switch
@@ -227,94 +230,71 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
             };
 
-            var initialAgentPort = TcpPortProvider.GetOpenPort();
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            var otlpPort = protocol == "grpc" ? 4317 : 4318;
+
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
+            }
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{initialAgentPort}");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
 
             // Up until Sdk version 1.6.0 Otel didn't support reading from the env var
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
 
-            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: initialAgentPort);
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.12.0"))
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.3.2"))
             {
-                // Collect requests from both MockTracerAgent and MockOtlpGrpcServer
-                var metricRequests = agent.OtlpRequests
-                                          .Where(r => r.PathAndQuery.StartsWith("/v1/metrics") || r.PathAndQuery.Contains("MetricsService"))
-                                          .ToList();
+                await Task.Delay(2000);
 
-                metricRequests.Should().NotBeEmpty("Expected OTLP metric requests were not received.");
+                using var httpClient = new System.Net.Http.HttpClient();
+                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
+                metricsResponse.EnsureSuccessStatusCode();
 
-                // Group the scope metrics by the resource metrics and schema URL (should only be one unique combination)
-                var resourceMetricByResource = metricRequests
-                                        .SelectMany(r => r.MetricsData.ResourceMetrics)
-                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Resource.V1.Resource, string>(r.Resource, r.SchemaUrl))
-                                        .Should()
-                                        .ContainSingle()
-                                        .Subject;
+                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
+                var metricsData = JToken.Parse(metricsJson);
 
-                // Group the individual metrics by scope metric and schema URL (should only be one unique combination since we're only using one ActivitySource)
-                // This may result in multiple entries for metrics that are repeated multiple times before the test exits
-                var scopeMetricsByResource = resourceMetricByResource
-                                        .SelectMany(r => r.ScopeMetrics)
-                                        .GroupBy(r => new Tuple<global::OpenTelemetry.Proto.Common.V1.InstrumentationScope, string>(r.Scope, r.SchemaUrl))
-                                        .OrderBy(group => group.Key.Item1.Name);
+                metricsData.Should().NotBeNullOrEmpty();
 
-                var scopeMetrics = new List<object>();
-                foreach (var scopeMetricByResource in scopeMetricsByResource)
+                foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
-                    var metrics = scopeMetricByResource
-                                    .SelectMany(r => r.Metrics)
-                                    .GroupBy(r => r.Name)
-                                    .OrderBy(group => group.Key)
-                                    .Select(group => group.First())
-                                    .ToList();
-
-                    scopeMetrics.Add(new
-                    {
-                        Scope = scopeMetricByResource.Key.Item1,
-                        Metrics = metrics,
-                        SchemaUrl = scopeMetricByResource.Key.Item2
-                    });
+                    attribute["value"]!["string_value"] = "sdk-version";
                 }
 
-                // Filter out the telemetry resource name, if any
-                foreach (var attribute in resourceMetricByResource.Key.Item1.Attributes)
+                foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.name')]"))
                 {
-                    if (attribute.Key.Equals("telemetry.sdk.version"))
+                    attribute["value"]!["string_value"] = "sdk-name";
+                }
+
+                foreach (var dataPoint in metricsData.SelectTokens("$..data_points[*]"))
+                {
+                    dataPoint["start_time_unix_nano"] = "0";
+                    dataPoint["time_unix_nano"] = "0";
+                }
+
+                foreach (var scopeMetric in metricsData.SelectTokens("$..scope_metrics[*]"))
+                {
+                    if (scopeMetric["metrics"] is JArray metricsArray)
                     {
-                        attribute.Value.StringValue = "sdk-version";
-                    }
-                    else if (attribute.Key.Equals("telemetry.sdk.name"))
-                    {
-                        attribute.Value.StringValue = "sdk-name";
+                        var sorted = new JArray(metricsArray.OrderBy(m => m["name"]?.ToString()));
+                        scopeMetric["metrics"] = sorted;
                     }
                 }
 
-                // Although there's only one resource, let's still emit snapshot data in the expected array format
-                var resourceMetrics = new object[]
-                {
-                    new
-                    {
-                        Resource = resourceMetricByResource.Key.Item1,
-                        ScopeMetrics = scopeMetrics,
-                        SchemaUrl = resourceMetricByResource.Key.Item2,
-                    }
-                };
-
+                var formattedJson = metricsData.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddRegexScrubber(_timeUnixNanoRegexMetrics, @"TimeUnixNano"": <DateTimeOffset.Now>");
-
                 var suffix = GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
 
-                await Verifier.Verify(resourceMetrics, settings)
+                await Verifier.Verify(formattedJson, settings)
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
             }
