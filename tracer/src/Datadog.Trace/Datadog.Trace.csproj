@@ -176,11 +176,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Generated\net461\Datadog.Trace.SourceGenerators\ConfigurationKeyMatcherGenerator\" />
-    <Folder Include="Generated\netcoreapp3.1\Datadog.Trace.SourceGenerators\ConfigurationKeyMatcherGenerator\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Configuration\supported-configurations.json" />
     <AdditionalFiles Include="Configuration\supported-configurations.json" />
   </ItemGroup>
