@@ -511,7 +511,7 @@ namespace Datadog.Trace
         /// <see cref="ProcessTags"/>
         /// </summary>
         internal const string ProcessTags = "_dd.tags.process";
-        
+
         /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>

@@ -75,6 +75,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
+        private readonly byte[] _processTagsNameBytes = StringEncoding.UTF8.GetBytes(Tags.ProcessTags);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -600,6 +601,19 @@ namespace Datadog.Trace.Agent.MessagePack
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
+                }
+            }
+
+            // Process tags will be sent only once per trace
+            if (model.IsFirstSpanInChunk)
+            {
+                var processTags = ProcessTags.SerializedTags;
+                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(processTags);
+                if (!string.IsNullOrEmpty(processTags))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processTagsNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
             }
 

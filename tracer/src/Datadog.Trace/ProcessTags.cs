@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Processors;
 
@@ -20,20 +20,32 @@ internal static class ProcessTags
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
-    private static Lazy<Dictionary<string, string>> _tags = new(LoadBaseTags);
+    private static Lazy<string> _lazySerializedTags = new(GetSerializedTags);
+
+    public static string SerializedTags
+    {
+        get => _lazySerializedTags.Value;
+    }
 
     private static Dictionary<string, string> LoadBaseTags()
     {
         var tags = new Dictionary<string, string>();
 
+        if (!Tracer.Instance.Settings.PropagateProcessTags)
+        {
+            // do not collect anything when disabled
+            return tags;
+        }
+
         var entrypointFullName = Assembly.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
         if (!string.IsNullOrEmpty(entrypointFullName))
         {
-            tags.Add(EntrypointName, entrypointFullName);
+            tags.Add(EntrypointName, entrypointFullName!);
         }
 
         tags.Add(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
-        tags.Add(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory)); // ⚠️ can be changed by the code, not constant
+        // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
+        tags.Add(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
 
         return tags;
     }
@@ -48,9 +60,9 @@ internal static class ProcessTags
         return Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
     }
 
-    public static string GetSerializedTags()
+    private static string GetSerializedTags()
     {
-        return string.Join(separator: ',', _tags.Value.Select(kv => $"{kv.Key}:{NormalizeTagValue(kv.Value)}"));
+        return string.Join(",", LoadBaseTags().OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}:{NormalizeTagValue(kv.Value)}"));
     }
 
     private static string NormalizeTagValue(string tagValue)
@@ -58,5 +70,10 @@ internal static class ProcessTags
         // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
         // which we don't want because we use it as a key/value separator.
         return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
+    }
+
+    internal static void ResetForTests()
+    {
+        _lazySerializedTags = new Lazy<string>(GetSerializedTags);
     }
 }
