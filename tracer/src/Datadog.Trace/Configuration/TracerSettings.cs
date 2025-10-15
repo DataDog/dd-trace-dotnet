@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -32,12 +33,10 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>()
-        {
-            "DD_TAGS"
-        };
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
 
         private readonly IConfigurationTelemetry _telemetry;
+        private readonly Lazy<string> _fallbackApplicationName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -646,6 +645,9 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
+            // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
+            _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
+
             InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
             MutableSettings = InitialMutableSettings;
         }
@@ -661,6 +663,8 @@ namespace Datadog.Trace.Configuration
         internal MutableSettings InitialMutableSettings { get; }
 
         internal MutableSettings MutableSettings { get; init; }
+
+        internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
