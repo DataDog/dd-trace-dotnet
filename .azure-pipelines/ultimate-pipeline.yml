@@ -62,7 +62,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100-rc.1.25451.107
+  dotnetCoreSdkLatestVersion: 10.0.100-rc.2.25502.107
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
   dotnetCoreSdkLatestVersionShort: 10.0.100-rc.1
