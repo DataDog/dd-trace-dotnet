@@ -36,11 +36,12 @@ public class DynamicInstrumentationTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
 
         // Wait for async initialization to complete
@@ -72,12 +73,12 @@ public class DynamicInstrumentationTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
-        var symbolsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         debugger.Initialize();
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
@@ -98,6 +99,7 @@ public class DynamicInstrumentationTests
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    debuggerV2Endpoint: "debuggerV2Endpoint",
                     diagnosticsEndpoint: "diagnosticsEndpoint",
                     symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
@@ -195,6 +197,13 @@ public class DynamicInstrumentationTests
     }
 
     private class SnapshotUploaderMock : UploaderMock, ISnapshotUploader
+    {
+        public void Add(string probeId, string snapshot)
+        {
+        }
+    }
+
+    private class LogUploaderMock : UploaderMock, ISnapshotUploader
     {
         public void Add(string probeId, string snapshot)
         {

@@ -35,8 +35,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             InstrumentType = instrumentType;
             IsHistogram = instrumentType == InstrumentType.Histogram;
 
-            IsLongType = instrument.GetType().IsGenericType &&
-                         instrument.GetType().GetGenericArguments()[0] == typeof(long);
+            Type? instrumentGenericType = instrument.GetType().IsGenericType ? instrument.GetType().GetGenericArguments()[0] : null;
+            IsLongType = instrumentGenericType == typeof(long) ||
+                         instrumentGenericType == typeof(int) ||
+                         instrumentGenericType == typeof(short) ||
+                         instrumentGenericType == typeof(byte);
 
             MetricStreamName = $"{MeterName}.{InstrumentName}.{InstrumentType}.{Unit}.{Description}";
         }
