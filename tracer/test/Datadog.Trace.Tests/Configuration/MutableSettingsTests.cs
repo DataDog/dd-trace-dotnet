@@ -670,7 +670,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static MutableSettings GetSettings(string key, object value)
         {
             var source = new DictionaryConfigurationSource(new Dictionary<string, string> { { key, value?.ToString() } });
-            return MutableSettings.Create(
+            return MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),
@@ -678,7 +678,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         private static MutableSettings GetMutableSettings(IConfigurationSource source, TracerSettings tracerSettings)
-            => MutableSettings.Create(
+            => MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),

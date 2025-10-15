@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -13,7 +12,6 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
-using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -231,8 +229,8 @@ namespace Datadog.Trace.Tests.Configuration
             var stringSource = new DynamicConfigConfigurationSource(json, ConfigurationOrigins.RemoteConfig);
             var jTokenSource = new DynamicConfigConfigurationSource(jToken, ConfigurationOrigins.RemoteConfig);
 
-            var stringBuilder = new ConfigurationBuilder(stringSource, Mock.Of<IConfigurationTelemetry>());
-            var jTokenBuilder = new ConfigurationBuilder(jTokenSource, Mock.Of<IConfigurationTelemetry>());
+            var stringBuilder = new ConfigurationBuilder(stringSource, NullConfigurationTelemetry.Instance);
+            var jTokenBuilder = new ConfigurationBuilder(jTokenSource, NullConfigurationTelemetry.Instance);
 
             // Assert - Both should produce identical configuration results
             stringBuilder.WithKeys(ConfigurationKeys.TraceEnabled).AsBool().Should()
@@ -258,7 +256,7 @@ namespace Datadog.Trace.Tests.Configuration
                 .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool());
         }
 
-        private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)
+        private static DynamicConfigConfigurationSource CreateConfig(params (string Key, object Value)[] settings)
         {
             var libConfigObj = new JObject();
             foreach (var (key, value) in settings)
@@ -271,8 +269,7 @@ namespace Datadog.Trace.Tests.Configuration
                 ["lib_config"] = libConfigObj
             };
 
-            var configurationSource = new DynamicConfigConfigurationSource(configObj, ConfigurationOrigins.RemoteConfig);
-            return new ConfigurationBuilder(configurationSource, Mock.Of<IConfigurationTelemetry>());
+            return new DynamicConfigConfigurationSource(configObj, ConfigurationOrigins.RemoteConfig);
         }
     }
 }
