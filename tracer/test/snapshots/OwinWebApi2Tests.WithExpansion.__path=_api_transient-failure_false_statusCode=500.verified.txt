@@ -10,6 +10,7 @@
     Tags: {
       aspnet.route: api/transient-failure/{value},
       baggage.user.id: doggo,
+      component: aspnet,
       env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack:

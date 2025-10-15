@@ -5,7 +5,7 @@
         {
           Key: telemetry.sdk.name,
           Value: {
-            StringValue: opentelemetry,
+            StringValue: sdk-name,
             HasStringValue: true,
             BytesValue: [],
             ValueCase: StringValue
@@ -44,7 +44,18 @@
       {
         Scope: {
           Name: OpenTelemetryMetricsMeter,
-          Version: 
+          Version: 1.0,
+          Attributes: [
+            {
+              Key: MeterTagKey,
+              Value: {
+                StringValue: MeterTagValue,
+                HasStringValue: true,
+                BytesValue: [],
+                ValueCase: StringValue
+              }
+            }
+          ]
         },
         Metrics: [
           {

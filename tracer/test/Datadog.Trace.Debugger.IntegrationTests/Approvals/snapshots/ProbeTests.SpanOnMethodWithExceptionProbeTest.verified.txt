@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -32,8 +32,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -48,8 +47,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -67,8 +65,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -83,8 +80,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -103,8 +99,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -119,8 +114,7 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "person2": {
                   "fields": {
@@ -141,8 +135,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -157,8 +150,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -176,8 +168,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -192,8 +183,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -212,8 +202,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -228,12 +217,10 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "this": {
-                  "type": "SpanOnMethodWithExceptionProbeTest",
-                  "value": "SpanOnMethodWithExceptionProbeTest"
+                  "type": "SpanOnMethodWithExceptionProbeTest"
                 }
               },
               "staticFields": {
@@ -262,6 +249,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.SpanOnMethodWithExceptionProbeTest",
@@ -305,8 +294,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -321,8 +309,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -340,8 +327,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -356,8 +342,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -376,8 +361,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -392,12 +376,10 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "this": {
-                  "type": "SpanOnMethodWithExceptionProbeTest",
-                  "value": "SpanOnMethodWithExceptionProbeTest"
+                  "type": "SpanOnMethodWithExceptionProbeTest"
                 }
               },
               "staticFields": {
@@ -426,6 +408,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Calculate",
       "name": "Samples.Probes.TestRuns.SmokeTests.SpanOnMethodWithExceptionProbeTest",

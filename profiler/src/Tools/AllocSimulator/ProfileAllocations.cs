@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -27,10 +28,29 @@ namespace AllocSimulator
             _profile = profile;
         }
 
+        private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
+
+        private static Stream GetStream(string filename)
+        {
+            var s = File.OpenRead(filename);
+            var buffer = new byte[4];
+            s.Read(buffer.AsSpan());
+            s.Position = 0;
+            if (Lz4MagicNumber.SequenceEqual(buffer))
+            {
+                return LZ4Stream.Decode(s);
+            }
+            else
+            {
+                return s;
+            }
+        }
+
         public static ProfileAllocations Load(string profileFilename)
         {
-            using var s = File.OpenRead(profileFilename);
+            using var s = GetStream(profileFilename);
             var profile = Profile.Parser.ParseFrom(s);
+
             var allocations = new ProfileAllocations(profile);
 
             allocations.Load();
@@ -94,7 +114,7 @@ namespace AllocSimulator
                 }
 
                 info.Size += size;
-                info.Count += 1;
+                info.Count += (int)sample.Value[countOffset];
             }
         }
 

@@ -216,7 +216,11 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
+            var defaultAgentHost = config
+                .WithKeys(ConfigurationKeys.AgentHost)
+                .AsString(defaultValue: "localhost");
+
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
@@ -251,13 +255,13 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
-                                   defaultValue: new(OtlpTemporality.Delta, "delta"),
+                                   defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
                                    converter: x => x switch
                                    {
-                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Cumulative,
-                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Delta,
-                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.LowMemory,
-                                       _ => ParsingResult<OtlpTemporality>.Failure(),
+                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Cumulative,
+                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Delta,
+                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.LowMemory,
+                                       _ => ParsingResult<OtlpTemporalityPreference>.Failure(),
                                    },
                                    validator: null);
 
@@ -595,7 +599,9 @@ namespace Datadog.Trace.Configuration
                                     .AsBool(defaultValue: false);
 
             var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
-            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
+                ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal);
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -640,7 +646,8 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
-            MutableSettings = MutableSettings.Create(source, telemetry, errorLog, this);
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
+            MutableSettings = InitialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -651,7 +658,9 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings MutableSettings { get; }
+        internal MutableSettings InitialMutableSettings { get; }
+
+        internal MutableSettings MutableSettings { get; init; }
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
@@ -676,7 +685,7 @@ namespace Datadog.Trace.Configuration
         internal bool GitMetadataEnabled { get; }
 
         /// <inheritdoc cref="MutableSettings.TraceEnabled"/>
-        public bool TraceEnabled => DynamicSettings.TraceEnabled ?? MutableSettings.TraceEnabled;
+        public bool TraceEnabled => MutableSettings.TraceEnabled;
 
         /// <summary>
         /// Gets a value indicating whether APM traces are enabled.
@@ -696,7 +705,7 @@ namespace Datadog.Trace.Configuration
 
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
-        internal string[] OpenTelemetryMeterNames { get; }
+        internal HashSet<string> OpenTelemetryMeterNames { get; }
 
         /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
@@ -760,7 +769,7 @@ namespace Datadog.Trace.Configuration
         /// Default is 'delta' for Datadog - deviates from OTel spec default of 'cumulative'.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
-        internal OtlpTemporality OtlpMetricsTemporalityPreference { get; }
+        internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
@@ -771,22 +780,22 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; }
+        public ExporterSettings Exporter { get; init; }
 
         /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
 
         /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? MutableSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => MutableSettings.LogsInjectionEnabled;
 
         /// <inheritdoc cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
         public int MaxTracesSubmittedPerSecond => MutableSettings.MaxTracesSubmittedPerSecond;
 
         /// <inheritdoc cref="MutableSettings.CustomSamplingRules"/>
-        public string? CustomSamplingRules => DynamicSettings.SamplingRules ?? MutableSettings.CustomSamplingRules;
+        public string? CustomSamplingRules => MutableSettings.CustomSamplingRules;
 
-        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
+        internal bool CustomSamplingRulesIsRemote => MutableSettings.CustomSamplingRulesIsRemote;
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
@@ -802,16 +811,16 @@ namespace Datadog.Trace.Configuration
         internal string? SpanSamplingRules { get; }
 
         /// <inheritdoc cref="MutableSettings.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate => DynamicSettings.GlobalSamplingRate ?? MutableSettings.GlobalSamplingRate;
+        public double? GlobalSamplingRate => MutableSettings.GlobalSamplingRate;
 
         /// <inheritdoc cref="MutableSettings.Integrations"/>
         public IntegrationSettingsCollection Integrations => MutableSettings.Integrations;
 
         /// <inheritdoc cref="MutableSettings.GlobalTags"/>
-        public IReadOnlyDictionary<string, string> GlobalTags => DynamicSettings.GlobalTags ?? MutableSettings.GlobalTags;
+        public IReadOnlyDictionary<string, string> GlobalTags => MutableSettings.GlobalTags;
 
         /// <inheritdoc cref="MutableSettings.HeaderTags"/>
-        public IReadOnlyDictionary<string, string> HeaderTags => DynamicSettings.HeaderTags ?? MutableSettings.HeaderTags;
+        public IReadOnlyDictionary<string, string> HeaderTags => MutableSettings.HeaderTags;
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -1158,8 +1167,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public int PartialFlushMinSpans { get; }
 
-        internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
-
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
@@ -1223,7 +1230,7 @@ namespace Datadog.Trace.Configuration
             => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
 
         internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => DynamicSettings.TraceEnabled != false && MutableSettings.IsIntegrationEnabled(integration, defaultValue);
+            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
 
         [Obsolete(DeprecationMessages.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)

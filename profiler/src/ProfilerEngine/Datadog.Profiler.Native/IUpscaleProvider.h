@@ -13,6 +13,7 @@
 
 using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
+// proportional upscaling
 struct UpscalingInfo
 {
 public:
@@ -27,4 +28,22 @@ public:
     virtual ~IUpscaleProvider() = default;
 
     virtual std::list<UpscalingInfo> GetInfos() = 0;
+};
+
+// Poisson upscaling
+struct UpscalingPoissonInfo
+{
+public:
+    std::vector<std::uintptr_t> const& Offsets;
+    uint64_t SamplingDistance;
+    std::uintptr_t SumOffset;
+    std::uintptr_t CountOffset;
+};
+
+class IUpscalePoissonProvider
+{
+public:
+    virtual ~IUpscalePoissonProvider() = default;
+
+    virtual UpscalingPoissonInfo GetPoissonInfo() = 0;
 };

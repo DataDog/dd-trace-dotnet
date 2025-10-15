@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -25,7 +24,6 @@ namespace Datadog.Trace.Debugger.Snapshots
     internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {
         private const string LoggerVersion = "2";
-        private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
 
 #pragma warning disable SA1401
@@ -67,6 +65,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             MethodScopeMembers = methodScopeMembers;
         }
+
+        internal virtual string DebuggerProduct => DebuggerTags.DebuggerProduct.DI;
 
         internal string SnapshotId
         {
@@ -874,13 +874,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteValue(service ?? UnknownValue);
 
             JsonWriter.WritePropertyName("ddsource");
-            JsonWriter.WriteValue(DDSource);
+            JsonWriter.WriteValue(DebuggerTags.DDSource);
 
             JsonWriter.WritePropertyName("dd.trace_id");
             JsonWriter.WriteValue(traceId);
 
             JsonWriter.WritePropertyName("dd.span_id");
             JsonWriter.WriteValue(spanId);
+
+            JsonWriter.WritePropertyName("debugger.type");
+            JsonWriter.WriteValue(DebuggerTags.DebuggerType.Snapshot);
+
+            JsonWriter.WritePropertyName("debugger.product");
+            JsonWriter.WriteValue(DebuggerProduct);
 
             return this;
         }
