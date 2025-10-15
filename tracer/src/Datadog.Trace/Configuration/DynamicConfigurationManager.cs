@@ -111,6 +111,7 @@ namespace Datadog.Trace.Configuration
                 telemetry,
                 errorLog);
 
+            TracerSettings newSettings;
             if (currentSettings.Equals(newMutableSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
@@ -118,18 +119,8 @@ namespace Datadog.Trace.Configuration
                 // need to be recorded (e.g. the customer set the value in code but it was already set via
                 // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
                 // which we'll resolve later anyway, so just have that gap for now (it's very niche).
-                // If there are changes, they're recorded automatically in ConfigureInternal
+                // If there are changes, they're recorded automatically in Tracer.Configure()
                 telemetry.CopyTo(TelemetryFactory.Config);
-                return;
-            }
-
-            // Needs to be done before returning, to feed the value to the telemetry
-            // var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
-
-            TracerSettings newSettings;
-            if (currentSettings.Equals(newMutableSettings))
-            {
-                Log.Debug("No changes detected in the new dynamic configuration");
                 newSettings = tracerSettings;
             }
             else
@@ -151,10 +142,8 @@ namespace Datadog.Trace.Configuration
                 Tracer.Configure(newSettings);
             }
 
-            // TODO: This should be refactored as it likely doesn't record the config in the correct order
-            // We could either take a similar MutableSettings approach, or alternatively, ensure that
-            // DebuggerManager.Instance.UpdateConfiguration explicitly records the configuration values itself
-            // instead of writing them to TelemetryFactory.Config
+            // TODO: This might not record the config in the correct order in future, but would require
+            // a big refactoring of debugger settings to resolve
             var settings = new ConfigurationBuilder(dynamicConfig, TelemetryFactory.Config);
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
             {
