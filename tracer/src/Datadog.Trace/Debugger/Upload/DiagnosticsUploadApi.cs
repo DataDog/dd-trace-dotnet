@@ -8,7 +8,6 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -16,10 +15,7 @@ namespace Datadog.Trace.Debugger.Upload
 {
     internal class DiagnosticsUploadApi : DebuggerUploadApiBase
     {
-        private const string LegacyEndpoint = "debugger/v1/input";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticsUploadApi>();
-
-        private readonly IApiRequestFactory _apiRequestFactory;
 
         private DiagnosticsUploadApi(
             IApiRequestFactory apiRequestFactory,
@@ -27,8 +23,11 @@ namespace Datadog.Trace.Debugger.Upload
             IGitMetadataTagsProvider gitMetadataTagsProvider)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(c => Endpoint = c.DiagnosticsEndpoint);
+            discoveryService.SubscribeToChanges(c =>
+            {
+                Endpoint = c.DiagnosticsEndpoint ?? c.DebuggerEndpoint;
+                Log.Debug("DiagnosticsUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+            });
         }
 
         public static DiagnosticsUploadApi Create(
@@ -42,13 +41,13 @@ namespace Datadog.Trace.Debugger.Upload
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
             var uri = BuildUri();
-            if (uri == null)
+            if (string.IsNullOrEmpty(uri))
             {
                 Log.Warning("Failed to upload diagnostics: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            using var response = await PostAsync(uri, data).ConfigureAwait(false);
+            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
             if (response.StatusCode is >= 200 and <= 299)
             {
                 return true;
@@ -57,19 +56,6 @@ namespace Datadog.Trace.Debugger.Upload
             var content = await response.ReadAsStringAsync().ConfigureAwait(false);
             Log.Warning<int, string>("Failed to upload diagnostics with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
             return false;
-        }
-
-        private Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
-        {
-            var request = _apiRequestFactory.Create(new Uri(uri));
-            var isLegacy = uri.Contains(LegacyEndpoint);
-
-            return isLegacy ?
-                request.PostAsync(data, MimeTypes.Json) :
-                request.PostAsync(new MultipartFormItem[]
-                {
-                    new("event", MimeTypes.Json, "event.json", data)
-                });
         }
     }
 }

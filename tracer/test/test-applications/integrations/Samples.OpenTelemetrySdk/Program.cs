@@ -3,6 +3,9 @@ using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+#if OTEL_1_2
+using OpenTelemetry.Metrics;
+#endif
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
@@ -35,6 +38,12 @@ public static class Program
             .AddConsoleExporter()
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
+
+#if OTEL_1_2
+        using var meterProvider = Sdk.CreateMeterProviderBuilder()
+            .AddOtlpExporterIfEnvironmentVariablePresent()
+            .Build();
+#endif
 
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
@@ -102,6 +111,10 @@ public static class Program
         {
             Thread.Sleep(100);
         }
+
+#if OTEL_1_2
+        meterProvider?.Dispose();
+#endif
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)

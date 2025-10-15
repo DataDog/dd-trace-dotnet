@@ -13,8 +13,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "ConditionAndTemplateChangeTest",
-                "value": "ConditionAndTemplateChangeTest"
+                "type": "ConditionAndTemplateChangeTest"
               }
             },
             "staticFields": {
@@ -43,8 +42,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "ConditionAndTemplateChangeTest",
-                "value": "ConditionAndTemplateChangeTest"
+                "type": "ConditionAndTemplateChangeTest"
               }
             },
             "locals": {
@@ -92,6 +90,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.ExpressionTests.ConditionAndTemplateChangeTest",
@@ -117,8 +117,7 @@
                   "value": "1"
                 },
                 "this": {
-                  "type": "ConditionAndTemplateChangeTest",
-                  "value": "ConditionAndTemplateChangeTest"
+                  "type": "ConditionAndTemplateChangeTest"
                 }
               },
               "locals": {
@@ -165,6 +164,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.ExpressionTests.ConditionAndTemplateChangeTest",

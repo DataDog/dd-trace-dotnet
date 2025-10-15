@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -37,8 +37,7 @@
                     "value": "PiiBase"
                   }
                 },
-                "type": "Pii2",
-                "value": "Pii2"
+                "type": "Pii2"
               },
               "value": {
                 "type": "String",
@@ -62,6 +61,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Pii",
       "name": "Samples.Probes.TestRuns.SmokeTests.BaseLocalWithConcreteTypeInAsyncMethod",

@@ -56,6 +56,11 @@ internal static class EndpointDetector
 
     internal static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
     {
+        if (datadogMetadataReader is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(datadogMetadataReader));
+        }
+
         var builder = ImmutableHashSet.CreateBuilder<int>();
         var metadataReader = datadogMetadataReader.MetadataReader;
         foreach (var typeHandle in metadataReader.TypeDefinitions)

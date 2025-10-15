@@ -19,11 +19,14 @@ public:
 
     SampleValueTypeProvider();
 
-    std::vector<Offset> GetOrRegister(std::vector<SampleValueType> const& valueType);
+    std::vector<Offset> GetOrRegister(std::vector<SampleValueType>& valueType);
     std::vector<SampleValueType> const& GetValueTypes();
 
 private:
     std::int8_t GetOffset(SampleValueType const& valueType);
 
     std::vector<SampleValueType> _sampleTypeDefinitions;
+
+    // Incremented each time a new vector of SampleValueType is registered via GetOrRegister
+    uint32_t _nextIndex = 0;
 };

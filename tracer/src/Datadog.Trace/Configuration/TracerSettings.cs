@@ -216,7 +216,11 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultUri = $"http://localhost:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
+            var defaultAgentHost = config
+                .WithKeys(ConfigurationKeys.AgentHost)
+                .AsString(defaultValue: "localhost");
+
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
@@ -251,13 +255,13 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsTemporalityPreference = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
-                                   defaultValue: new(OtlpTemporality.Delta, "delta"),
+                                   defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
                                    converter: x => x switch
                                    {
-                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Cumulative,
-                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.Delta,
-                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporality.LowMemory,
-                                       _ => ParsingResult<OtlpTemporality>.Failure(),
+                                       not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Cumulative,
+                                       not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Delta,
+                                       not null when string.Equals(x, "lowmemory", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.LowMemory,
+                                       _ => ParsingResult<OtlpTemporalityPreference>.Failure(),
                                    },
                                    validator: null);
 
@@ -595,7 +599,9 @@ namespace Datadog.Trace.Configuration
                                     .AsBool(defaultValue: false);
 
             var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
-            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+            OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
+                ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal);
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -696,7 +702,7 @@ namespace Datadog.Trace.Configuration
 
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
-        internal string[] OpenTelemetryMeterNames { get; }
+        internal HashSet<string> OpenTelemetryMeterNames { get; }
 
         /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
@@ -760,7 +766,7 @@ namespace Datadog.Trace.Configuration
         /// Default is 'delta' for Datadog - deviates from OTel spec default of 'cumulative'.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
-        internal OtlpTemporality OtlpMetricsTemporalityPreference { get; }
+        internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.

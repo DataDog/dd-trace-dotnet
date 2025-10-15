@@ -76,7 +76,8 @@ private:
     bool StopImpl() override;
 
 private:
-
+     // used to access the CLR to create weak handles
+     // and get object generation
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
     RawSampleTransformer* _rawSampleTransformer = nullptr;
 

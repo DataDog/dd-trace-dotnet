@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.10 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.10" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.11 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.11" />
   </ItemGroup>
 
 </Project>

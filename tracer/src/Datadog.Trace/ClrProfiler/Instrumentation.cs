@@ -376,25 +376,20 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
+                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
                 {
-                    if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
-                    {
-                        Log.Debug("Initializing OTel Metrics Exporter.");
-                        OTelMetrics.OtlpMetricsExporter.Initialize();
-                        Log.Debug("Initializing OTel Metrics Reader.");
-                        OTelMetrics.MetricReader.Initialize();
-                    }
+                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
+                    OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics Reader");
+                Log.Error(ex, "Error initializing OTel Metrics collection.");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
             {
-                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0.");
+                Log.Information("Unable to initialize Opentelemetry Protocol Metrics collection, this is only available starting with .NET 6.0.");
             }
 #endif
 
@@ -485,6 +480,7 @@ namespace Datadog.Trace.ClrProfiler
             else
             {
                 observers.Add(new AspNetCoreDiagnosticObserver());
+                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);

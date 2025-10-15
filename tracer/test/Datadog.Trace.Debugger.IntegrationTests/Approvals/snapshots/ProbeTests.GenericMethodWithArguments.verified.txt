@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -27,8 +27,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -43,8 +42,7 @@
                         "value": "Elsewhere"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -63,8 +61,7 @@
                     "value": "Alfred Hitchcock"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "this": {
                 "fields": {
@@ -73,8 +70,7 @@
                     "value": "GenericMethodWithArguments"
                   }
                 },
-                "type": "GenericMethodWithArguments",
-                "value": "GenericMethodWithArguments"
+                "type": "GenericMethodWithArguments"
               }
             }
           },
@@ -99,8 +95,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -115,8 +110,7 @@
                         "value": "Elsewhere"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -135,8 +129,7 @@
                     "value": "Alfred Hitchcock"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "this": {
                 "fields": {
@@ -145,8 +138,7 @@
                     "value": "GenericMethodWithArguments"
                   }
                 },
-                "type": "GenericMethodWithArguments",
-                "value": "GenericMethodWithArguments"
+                "type": "GenericMethodWithArguments"
               }
             },
             "locals": {
@@ -172,6 +164,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.GenericMethodWithArguments",
@@ -211,8 +205,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -227,8 +220,7 @@
                           "value": "Elsewhere"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -247,8 +239,7 @@
                       "value": "Alfred Hitchcock"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "this": {
                   "fields": {
@@ -257,8 +248,7 @@
                       "value": "GenericMethodWithArguments"
                     }
                   },
-                  "type": "GenericMethodWithArguments",
-                  "value": "GenericMethodWithArguments"
+                  "type": "GenericMethodWithArguments"
                 }
               }
             }
@@ -281,6 +271,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.GenericMethodWithArguments",

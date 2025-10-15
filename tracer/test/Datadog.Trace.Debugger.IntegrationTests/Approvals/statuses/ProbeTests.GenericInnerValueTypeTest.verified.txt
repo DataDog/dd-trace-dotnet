@@ -14,6 +14,8 @@
         "status": "ERROR"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "diagnostic",
     "message": "Error installing probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
     "service": "probes"
   }

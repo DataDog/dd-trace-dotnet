@@ -101,12 +101,20 @@ public static class ErrorHelpers
                         """;
 
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (response.StatusCode != HttpStatusCode.Accepted)
+        try
         {
-            outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.Accepted)
+            {
+                outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            }
+        }
+        catch (Exception ex)
+        {
+            outputHelper.WriteLine($"Failed to submit metric {metricName}. Exception: {ex.ToString()} Payload: \"{payload}\"");
         }
     }
 

@@ -13,8 +13,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "UndefinedValue",
-                "value": "UndefinedValue"
+                "type": "UndefinedValue"
               }
             },
             "locals": {
@@ -52,6 +51,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.ExpressionTests.UndefinedValue",

@@ -12,7 +12,6 @@ using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -20,8 +19,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
     internal class LogFormatter
     {
-        private const string KeyValueTagSeparator = ":";
-        private const string TagSeparator = ",";
+        private const char KeyValueTagSeparator = ':';
+        private const char TagSeparator = ',';
         private const string SourcePropertyName = "ddsource";
         private const string ServicePropertyName = "service";
         private const string HostPropertyName = "host";
@@ -76,9 +75,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             foreach (var tagPair in globalTags)
             {
                 sb.Append(tagPair.Key)
-                  .Append(':')
+                  .Append(KeyValueTagSeparator)
                   .Append(tagPair.Value)
-                  .Append(',');
+                  .Append(TagSeparator);
             }
 
             // remove final joiner
@@ -86,16 +85,63 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
+        private static string RemoveScheme(string url)
+        {
+            if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                return url.Substring("https://".Length);
+            }
+
+            if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            {
+                return url.Substring("http://".Length);
+            }
+
+            return url;
+        }
+
+        private static string EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
         {
             if (aasSettings is null)
             {
-                return string.IsNullOrEmpty(globalTags) ? null : globalTags;
+                return globalTags;
             }
 
-            var aasTags = $"{Trace.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
+            var hasResourceId = !string.IsNullOrEmpty(aasSettings.ResourceId);
+            var hasSiteKind = !string.IsNullOrEmpty(aasSettings.SiteKind);
 
-            return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
+            if (!hasResourceId && !hasSiteKind)
+            {
+                return globalTags;
+            }
+
+            var sb = StringBuilderCache.Acquire();
+
+            if (hasResourceId)
+            {
+                sb.Append(Trace.Tags.AzureAppServicesResourceId)
+                  .Append(KeyValueTagSeparator)
+                  .Append(aasSettings.ResourceId)
+                  .Append(TagSeparator);
+            }
+
+            if (hasSiteKind)
+            {
+                sb.Append(Trace.Tags.AzureAppServicesSiteKind)
+                  .Append(KeyValueTagSeparator)
+                  .Append(aasSettings.SiteKind)
+                  .Append(TagSeparator);
+            }
+
+            // remove final joiner
+            sb.Remove(sb.Length - 1, length: 1);
+            if (!string.IsNullOrEmpty(globalTags))
+            {
+                sb.Append(TagSeparator)
+                  .Append(globalTags);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private void EnrichTagsStringWithGitMetadata()
@@ -118,16 +164,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             }
 
             _gitMetadataAdded = true;
-        }
-
-        private string? RemoveScheme(string url)
-        {
-            return url switch
-            {
-                { } when url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => url.Substring("https://".Length),
-                { } when url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) => url.Substring("http://".Length),
-                _ => url
-            };
         }
 
         internal static bool IsSourceProperty(string? propertyName) =>
@@ -317,7 +353,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             EnrichTagsStringWithGitMetadata();
 
-            if (Tags is not null && !renderingDetails.HasRenderedTags)
+            if (!StringUtil.IsNullOrEmpty(Tags) && !renderingDetails.HasRenderedTags)
             {
                 writer.WritePropertyName(TagsPropertyName, escape: false);
                 writer.WriteValue(Tags);
