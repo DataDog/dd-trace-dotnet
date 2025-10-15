@@ -29,12 +29,12 @@ namespace Datadog.Trace.Telemetry.Transports
             => new AgentTelemetryTransport(
                 TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
-                compressTelemetry: telemetrySettings.CompressionEnabled);
+                telemetryCompressionMethod: telemetrySettings.CompressionMethod);
 
         private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, TelemetrySettings telemetrySettings)
             => new AgentlessTelemetryTransport(
                 TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
-                compressTelemetry: telemetrySettings.CompressionEnabled);
+                telemetryCompressionMethod: telemetrySettings.CompressionMethod);
     }
 }

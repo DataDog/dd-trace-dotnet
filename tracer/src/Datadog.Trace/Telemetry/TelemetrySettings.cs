@@ -24,7 +24,7 @@ namespace Datadog.Trace.Telemetry
             bool dependencyCollectionEnabled,
             bool metricsEnabled,
             bool debugEnabled,
-            bool compressionEnabled)
+            string compressionMethod)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
             DependencyCollectionEnabled = dependencyCollectionEnabled;
             MetricsEnabled = metricsEnabled;
             DebugEnabled = debugEnabled;
-            CompressionEnabled = compressionEnabled;
+            CompressionMethod = compressionMethod;
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Telemetry
 
         public bool MetricsEnabled { get; }
 
-        public bool CompressionEnabled { get; }
+        public string CompressionMethod { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, TracerSettings tracerSettings, bool? isAgentAvailable)
             => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Telemetry
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
 
-            var telemetryCompressionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionEnabled).AsBool(true);
+            var telemetryCompressionMethod = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionMethod).AsString("gzip");
 
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Telemetry
                 dependencyCollectionEnabled,
                 metricsEnabled,
                 debugEnabled,
-                telemetryCompressionEnabled);
+                telemetryCompressionMethod);
         }
 
         public class AgentlessSettings
