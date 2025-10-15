@@ -136,6 +136,9 @@ fault_tolerant_*.h                         @DataDog/debugger-dotnet
 Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 /tracer/build/_build/Build.Steps.Debugger.cs @DataDog/debugger-dotnet
 
+# Dynamic configuration (co-owned Debugger and tracing)
+/tracer/src/Datadog.Trace/Configuration/DynamicConfiguration/ @DataDog/debugger-dotnet @DataDog/tracing-dotnet
+
 # Exploration tests
 /tracer/build/_build/Build.ExplorationTests.cs @DataDog/debugger-dotnet @DataDog/tracing-dotnet @DataDog/profiling-dotnet
 
