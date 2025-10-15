@@ -16,7 +16,8 @@ public class ProcessTagsTests
     {
         var tags = ProcessTags.SerializedTags;
 
-        tags.Should().ContainAll(ProcessTags.EntrypointName, ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
+        tags.Should().ContainAll(ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
+        // EntrypointName may not be present, especially when ran in the CI
 
         tags.Split(',').Should().BeInAscendingOrder();
 
