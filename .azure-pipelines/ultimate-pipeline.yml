@@ -26,9 +26,15 @@ pr:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .github/
+      - .claude/
+      - .devcontainer/
+      - .vscode/
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - AGENTS.md
+      - LICENSE
+      - NOTICE
 
 schedules:
   - cron: "0 3 * * *"
@@ -128,7 +134,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.28.0
+  ToolVersion: 3.29.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -2771,6 +2777,7 @@ stages:
         useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2779,6 +2786,7 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2787,6 +2795,7 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -4233,7 +4242,7 @@ stages:
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
               exit 0
             fi
-            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._-/]+$ ]]; then
+            if ! [[ $BRANCH_NAME =~ ^[A-Za-z0-9._/-]+$ ]]; then
               echo "Exiting - Manages branches only if they contain letters, numbers and the following special characters: . - _ /"
               exit 1
             fi
@@ -4537,6 +4546,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
@@ -4619,6 +4629,7 @@ stages:
         DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
+      retryCountOnTaskFailure: 3
 
     - script: |
         mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)

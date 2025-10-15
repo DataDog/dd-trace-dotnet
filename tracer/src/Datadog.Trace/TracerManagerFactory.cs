@@ -465,7 +465,7 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
+        internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
         {
             try
             {
@@ -478,7 +478,7 @@ namespace Datadog.Trace
                     ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
                     Environment = settings.Environment,
                     ServiceVersion = settings.ServiceVersion,
-                    Advanced = { TelemetryFlushInterval = null }
+                    Advanced = { TelemetryFlushInterval = telemtryFlushInterval }
                 };
 
                 switch (settings.Exporter.MetricsTransport)

@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [PublicApi]
         public ExporterSettings()
-            : this(null, new ConfigurationTelemetry())
+            : this(source: null, new ConfigurationTelemetry())
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor);
         }
@@ -76,6 +77,11 @@ namespace Datadog.Trace.Configuration
 
         internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
             : this(source, File.Exists, telemetry)
+        {
+        }
+
+        internal ExporterSettings(Raw rawSettings, IConfigurationTelemetry telemetry)
+            : this(rawSettings, File.Exists, telemetry)
         {
         }
 
@@ -440,6 +446,7 @@ namespace Datadog.Trace.Configuration
             {
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
+                // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
                 TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
                 TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
@@ -467,7 +474,7 @@ namespace Datadog.Trace.Configuration
             /// Gets the Uri where the Tracer can connect to the Agent.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.AgentUri"/>
-            public string? TraceAgentUri { get; }
+            public string? TraceAgentUri { get; private init; }
 
             /// <summary>
             /// Gets the host where the Tracer can connect to the Agent.
@@ -523,6 +530,52 @@ namespace Datadog.Trace.Configuration
             /// Gets the port where the DogStatsd server is listening for connections.
             /// </summary>
             public int DogStatsdPort { get; }
+
+            /// <summary>
+            /// Creates a duplicate <see cref="Raw"/> instance, reading settings from a manual instrumentation
+            /// <see cref="IConfigurationSource"/>. Only settings which _can_ be changed in manual instrumentation
+            /// will be updated.
+            /// </summary>
+            /// <param name="rawSettings">The settings to base the new settings on</param>
+            /// <param name="manualConfig">The manual instrumentation configuration source</param>
+            /// <param name="telemetry">A telemetry instance to collect the updated telemetry</param>
+            /// <param name="useDefaultSources">If true, the current <see cref="Raw.TraceAgentUri"/> is used as a fallback,
+            /// otherwise <c>null</c> is used</param>
+            /// <returns>A new <see cref="Raw"/> instance.</returns>
+            internal static Raw CreateUpdatedFromManualConfig(
+                Raw rawSettings,
+                ManualInstrumentationConfigurationSourceBase manualConfig,
+                IConfigurationTelemetry telemetry,
+                bool useDefaultSources)
+            {
+                var config = new ConfigurationBuilder(manualConfig, telemetry);
+
+                var manualResult = config.WithKeys(ConfigurationKeys.AgentUri).AsStringResult();
+                var fallbackAgentUri = useDefaultSources ? rawSettings.TraceAgentUri : null;
+                var agentUri = GetResult(manualResult, telemetry, fallbackAgentUri);
+
+                return rawSettings with { TraceAgentUri = agentUri };
+
+                string? GetResult(
+                    ConfigurationBuilder.ClassConfigurationResultWithKey<string> classConfigurationResultWithKey,
+                    IConfigurationTelemetry configurationTelemetry,
+                    string? fallback)
+                {
+                    if (classConfigurationResultWithKey.ConfigurationResult is { IsValid: true, Result: var r1 })
+                    {
+                        return r1;
+                    }
+
+                    // Have to "re-record" the value so telemetry has the correct value
+                    // Ideally we would know the "real" source, but we don't
+                    if (classConfigurationResultWithKey.ConfigurationResult.IsPresent)
+                    {
+                        configurationTelemetry.Record(classConfigurationResultWithKey.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+                    }
+
+                    return fallback;
+                }
+            }
         }
     }
 }

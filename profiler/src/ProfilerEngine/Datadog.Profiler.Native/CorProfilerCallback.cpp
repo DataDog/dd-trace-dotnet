@@ -60,7 +60,6 @@
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
-#include "RingBuffer.h"
 #include "CpuSampleProvider.h"
 #endif
 
@@ -70,6 +69,30 @@
 #include "dd_profiler_version.h"
 
 #include <cmath>
+
+void LogServiceStart(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " started successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to start. This service might have been started earlier.");
+    }
+}
+
+void LogServiceStop(bool success, const char* name )
+{
+    if (success)
+    {
+        Log::Info(name, " stopped successfully.");
+    }
+    else
+    {
+        Log::Info(name, " failed to stopped. This service might have been stopped earlier.");
+    }
+}
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -222,8 +245,8 @@ void CorProfilerCallback::InitializeServices()
             // So, cpuAllocated will have to be over 37 trillion to have a value that cannot be represented by a std::size_t
             std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
             Log::Info("RingBuffer size estimate (bytes): ", rbSize);
-            auto ringBuffer = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
-            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), std::move(ringBuffer), _metricsRegistry);
+            _pCpuProfilerRb = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), _pCpuProfilerRb.get(), _metricsRegistry);
         }
 #else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
@@ -519,7 +542,9 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
+        // Other alternative in case of crash-at-shutdown, do not register it as a service
+        // we will have to start it by hand (already stopped by hand)
+        _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
             _pConfiguration.get(),
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
@@ -560,6 +585,15 @@ void CorProfilerCallback::InitializeServices()
     if (_pExceptionsProvider != nullptr)
     {
         _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
+    }
+
+    if (_pAllocationsProvider != nullptr)
+    {
+        // use Poisson upscaling for .NET 10+ based on AllocationSampled events
+        if (_pRuntimeInfo->GetMajorVersion() >= 10)
+        {
+            _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+        }
     }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
@@ -794,16 +828,22 @@ bool CorProfilerCallback::StartServices()
         }
 
         success = service->Start();
-        if (success)
-        {
-            Log::Info(name, " started successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to start. This service might have been started earlier.");
-        }
+        LogServiceStart(success, name);
         result &= success;
     }
+
+#ifdef LINUX
+    // We cannot add the timer_create-based CPU profiler to the _services list
+    // we have to control the Stop
+    // If we fail to stop, we shouldn't release the memory associated to it
+    // otherwise we might crash.
+    if (_pCpuProfiler != nullptr)
+    {
+        success = _pCpuProfiler->Start();
+        LogServiceStart(success, _pCpuProfiler->GetName());
+        result &= success;
+    }
+#endif
 
     return result;
 }
@@ -833,20 +873,26 @@ bool CorProfilerCallback::StopServices()
     bool result = true;
     bool success = true;
 
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        // if we failed at stopping the time_create-based CPU profiler,
+        // it's safer to not release the memory.
+        // Otherwise, we might crash the application.
+        // Reason: one thread could be executing the signal handler and accessing some field
+        success = _pCpuProfiler->Stop();
+        LogServiceStop(success, _pCpuProfiler->GetName());
+        result &= success;
+    }
+#endif
+
     // stop all services
     for (size_t i = _services.size(); i > 0; i--)
     {
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
         success = service->Stop();
-        if (success)
-        {
-            Log::Info(name, " stopped successfully.");
-        }
-        else
-        {
-            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
-        }
+        LogServiceStop(success, name);
         result &= success;
     }
 
@@ -1086,7 +1132,7 @@ void CorProfilerCallback::GetFullFrameworkVersion(ModuleID moduleId)
     if (FAILED(hr))
         return;
 
-    // look for .NET Framework main assembly
+    // look for the .NET Framework main assembly
     if (wcsstr(moduleName, L"mscorlib.dll") != nullptr)
     {
         uint16_t major = 0;
@@ -1430,7 +1476,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - ContentionStop_V1
         //  - GC related events
         //  - WaitHandle events for .NET 9+
-
+        //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
 
@@ -1441,8 +1488,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
-            // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-            verbosity = VerboseVerbosity;
+            if (major >= 10)
+            {
+                activatedKeywords |= ClrEventsParser::KEYWORD_ALLOCATION_SAMPLING;
+
+                Log::Debug("Listen to AllocationSampled event");
+            }
+            else
+            {
+                // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                verbosity = VerboseVerbosity;
+
+                Log::Debug("Listen to AllocationTick event");
+            }
         }
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
@@ -1595,13 +1653,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
-
-#ifdef LINUX
-    if (_pCpuProfiler != nullptr)
-    {
-        _pCpuProfiler->Stop();
-    }
-#endif
 
     // sanity check: ensure that the Stable Configuration has been set by the managed layer
     if (_pConfiguration->IsManagedActivationEnabled())
@@ -1871,7 +1922,7 @@ void CorProfilerCallback::OnThreadRoutineFinished()
         return;
     }
 
-    auto* cpuProfiler = myThis->_pCpuProfiler;
+    auto* cpuProfiler = myThis->_pCpuProfiler.get();
     if (cpuProfiler == nullptr)
     {
         return;

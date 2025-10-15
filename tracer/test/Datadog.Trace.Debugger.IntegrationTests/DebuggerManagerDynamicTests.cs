@@ -20,7 +20,8 @@ using Xunit.Abstractions;
 #nullable enable
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
-#if !NETCOREAPP2_1
+// These tests crashed on NETCOREAPP2_1 and often hang on .NET 8 or greater (mostly on x86 but sometimes also on x64).
+#if !NETCOREAPP2_1 && !NET8_0_OR_GREATER
 [CollectionDefinition(nameof(DebuggerManagerDynamicTests), DisableParallelization = true)]
 [Collection(nameof(DebuggerManagerDynamicTests))]
 [UsesVerify]

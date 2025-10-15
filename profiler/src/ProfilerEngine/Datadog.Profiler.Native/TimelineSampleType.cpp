@@ -3,5 +3,5 @@
 
 #include "TimelineSampleType.h"
 
-const std::vector<SampleValueType> TimelineSampleType::Definitions(
-    {{"timeline", "nanoseconds"}});
+std::vector<SampleValueType> TimelineSampleType::Definitions(
+    {{"timeline", "nanoseconds", -1}});

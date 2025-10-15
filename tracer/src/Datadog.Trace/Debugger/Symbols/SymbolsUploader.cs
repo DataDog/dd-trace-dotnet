@@ -228,6 +228,10 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 await UploadAssemblySymbols(assembly).ConfigureAwait(false);
             }
+            catch (OperationCanceledException)
+            {
+                // ignore
+            }
             catch (Exception e)
             {
                 Log.Error(e, "Error while trying to extract assembly symbol {Assembly}", assembly);
