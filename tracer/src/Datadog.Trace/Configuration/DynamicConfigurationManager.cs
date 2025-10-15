@@ -32,7 +32,6 @@ namespace Datadog.Trace.Configuration
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ConfigurationTelemetry _configurationTelemetry;
         private readonly Dictionary<string, RemoteConfiguration> _activeConfigurations = new();
-        private readonly object _configLock = new();
         private ISubscription? _subscription;
 
         public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
@@ -209,22 +208,19 @@ namespace Datadog.Trace.Configuration
 
                 try
                 {
-                    // Technically we're single threaded here so locking should not be necessary, but playing it safe
-                    List<RemoteConfiguration> valuesToApply;
-                    lock (_configLock)
-                    {
-                        valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
-                    }
+                    // This is all non-thread safe, but we're called in a single threaded way by
+                    // the RcmSubscriptionManager so that's fine
+                    var valuesToApply = CombineApmTracingConfiguration(_activeConfigurations, configByProduct, removedConfigByProduct, applyDetailsResult);
 
                     // Phase 3: Apply merged configuration
                     ApplyMergedConfiguration(valuesToApply);
 
-                    return applyDetailsResult.ToArray();
+                    return [..applyDetailsResult];
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error while applying dynamic configuration");
-                    return applyDetailsResult.Select(r => ApplyDetails.FromError(r.Filename, ex.ToString())).ToArray();
+                    return [..applyDetailsResult.Select(r => ApplyDetails.FromError(r.Filename, ex.ToString()))];
                 }
             }
         }
