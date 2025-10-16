@@ -33,50 +33,50 @@ namespace Datadog.Trace.AppSec
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplatePath = config
-                                 .WithKeys<ConfigKeyDdAppsecHttpBlockedTemplateHtml>()
+                                 .WithKeys(new ConfigKeyDdAppsecHttpBlockedTemplateHtml())
                                  .AsRedactedString(); // Redacted because it's huge
 
             BlockedJsonTemplatePath = config
-                                 .WithKeys<ConfigKeyDdAppsecHttpBlockedTemplateJson>()
+                                 .WithKeys(new ConfigKeyDdAppsecHttpBlockedTemplateJson())
                                  .AsString();
 
             // both should default to false
             var enabledEnvVar = config
-                               .WithKeys<ConfigKeyDdAppsecEnabled>()
+                               .WithKeys(new ConfigKeyDdAppsecEnabled())
                                .AsBoolResult();
 
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
             AppsecEnabled = enabledEnvVar.WithDefault(false);
 
-            ApmTracingEnabled = config.WithKeys<ConfigKeyDdApmTracingEnabled>().AsBool(true);
+            ApmTracingEnabled = config.WithKeys(new ConfigKeyDdApmTracingEnabled()).AsBool(true);
 
-            Rules = config.WithKeys<ConfigKeyDdAppsecRules>().AsString();
-            CustomIpHeader = config.WithKeys<ConfigKeyDdAppsecIpheader>().AsString();
-            var extraHeaders = config.WithKeys<ConfigKeyDdAppsecExtraHeaders>().AsString();
+            Rules = config.WithKeys(new ConfigKeyDdAppsecRules()).AsString();
+            CustomIpHeader = config.WithKeys(new ConfigKeyDdAppsecIpheader()).AsString();
+            var extraHeaders = config.WithKeys(new ConfigKeyDdAppsecExtraHeaders()).AsString();
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
-            KeepTraces = config.WithKeys<ConfigKeyDdAppsecKeepTraces>().AsBool(true);
+            KeepTraces = config.WithKeys(new ConfigKeyDdAppsecKeepTraces()).AsBool(true);
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
-            TraceRateLimit = config.WithKeys<ConfigKeyDdAppsecTraceRateLimit>().AsInt32(100);
+            TraceRateLimit = config.WithKeys(new ConfigKeyDdAppsecTraceRateLimit()).AsInt32(100);
 
             WafTimeoutMicroSeconds = (ulong)config
-                                           .WithKeys<ConfigKeyDdAppsecWafTimeout>()
+                                           .WithKeys(new ConfigKeyDdAppsecWafTimeout())
                                            .AsInt32(
                                                 defaultValue: 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
                                                 validator: wafTimeout => wafTimeout > 0);
 
             ObfuscationParameterKeyRegex = config
-                                          .WithKeys<ConfigKeyDdAppsecObfuscationParameterKeyRegexp>()
+                                          .WithKeys(new ConfigKeyDdAppsecObfuscationParameterKeyRegexp())
                                           .AsString(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
             ObfuscationParameterValueRegex = config
-                                            .WithKeys<ConfigKeyDdAppsecObfuscationParameterValueRegexp>()
+                                            .WithKeys(new ConfigKeyDdAppsecObfuscationParameterValueRegexp())
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
             var newConfig =
                 config
-                   .WithKeys<ConfigKeyDdAppsecAutoUserInstrumentationMode>()
+                   .WithKeys(new ConfigKeyDdAppsecAutoUserInstrumentationMode())
                    .AsStringResult(
                         val =>
                             val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
@@ -94,7 +94,7 @@ namespace Datadog.Trace.AppSec
             {
                 var oldConfig =
                     config
-                       .WithKeys<ConfigKeyDdAppsecAutomatedUserEventsTracking>()
+                       .WithKeys(new ConfigKeyDdAppsecAutomatedUserEventsTracking())
                        .AsStringResult(
                             val =>
                                 val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
@@ -125,55 +125,55 @@ namespace Datadog.Trace.AppSec
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
 
-            ApiSecurityEnabled = config.WithKeys<ConfigKeyDdApiSecurityEnabled>()
+            ApiSecurityEnabled = config.WithKeys(new ConfigKeyDdApiSecurityEnabled())
                                        .AsBool(true);
 
-            ApiSecuritySampleDelay = config.WithKeys<ConfigKeyDdApiSecuritySampleDelay>()
+            ApiSecuritySampleDelay = config.WithKeys(new ConfigKeyDdApiSecuritySampleDelay())
                                            .AsDouble(30.0, val => val >= 0.0)
                                            .Value;
 
-            ApiSecurityEndpointCollectionEnabled = config.WithKeys<ConfigKeyDdApiSecurityEndpointCollectionEnabled>()
+            ApiSecurityEndpointCollectionEnabled = config.WithKeys(new ConfigKeyDdApiSecurityEndpointCollectionEnabled())
                                            .AsBool(true);
 
-            ApiSecurityEndpointCollectionMessageLimit = config.WithKeys<ConfigKeyDdApiSecurityEndpointCollectionMessageLimit>()
+            ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(new ConfigKeyDdApiSecurityEndpointCollectionMessageLimit())
                                            .AsInt32(300, val => val >= 0)
                                            .Value;
 
             ApiSecurityParseResponseBody = config
-                                .WithKeys<ConfigKeyDdApiSecurityParseResponseBody>()
+                                .WithKeys(new ConfigKeyDdApiSecurityParseResponseBody())
                                 .AsBool(true);
 
-            UseUnsafeEncoder = config.WithKeys<ConfigKeyDdExperimentalAppsecUseUnsafeEncoder>()
+            UseUnsafeEncoder = config.WithKeys(new ConfigKeyDdExperimentalAppsecUseUnsafeEncoder())
                                      .AsBool(false);
 
             // For now, RASP is enabled by default.
-            RaspEnabled = config.WithKeys<ConfigKeyDdAppsecRaspEnabled>()
+            RaspEnabled = config.WithKeys(new ConfigKeyDdAppsecRaspEnabled())
                                 .AsBool(true) && AppsecEnabled;
 
-            StackTraceEnabled = config.WithKeys<ConfigKeyDdAppsecStackTraceEnabled>()
+            StackTraceEnabled = config.WithKeys(new ConfigKeyDdAppsecStackTraceEnabled())
                                       .AsBool(true);
 
             MaxStackTraces = config
-                                  .WithKeys<ConfigKeyDdAppsecMaxStackTraces>()
+                                  .WithKeys(new ConfigKeyDdAppsecMaxStackTraces())
                                   .AsInt32(defaultValue: 2, validator: val => val >= 1)
                                   .Value;
 
             MaxStackTraceDepth = config
-                                  .WithKeys<ConfigKeyDdAppsecMaxStackTraceDepth>()
+                                  .WithKeys(new ConfigKeyDdAppsecMaxStackTraceDepth())
                                   .AsInt32(defaultValue: 32, validator: val => val >= 1)
                                   .Value;
 
             MaxStackTraceDepthTopPercent = config
-                                  .WithKeys<ConfigKeyDdAppsecMaxStackTraceDepthTopPercent>()
+                                  .WithKeys(new ConfigKeyDdAppsecMaxStackTraceDepthTopPercent())
                                   .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
                                   .Value;
 
             WafDebugEnabled = config
-                             .WithKeys<ConfigKeyDdAppsecWafDebug>()
+                             .WithKeys(new ConfigKeyDdAppsecWafDebug())
                              .AsBool(defaultValue: false);
 
             ScaEnabled = config
-                             .WithKeys<ConfigKeyDdAppsecScaEnabled>()
+                             .WithKeys(new ConfigKeyDdAppsecScaEnabled())
                              .AsBool();
 
             NoCustomLocalRules = Rules == null;

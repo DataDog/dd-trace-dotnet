@@ -18,50 +18,53 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
     private readonly IConfigurationSource _source = source;
     private readonly IConfigurationTelemetry _telemetry = telemetry;
 
-    public HasKeys<TKey> WithKeys<TKey>()
-        where TKey : struct, IConfigKey
-        => new(_source, _telemetry, new TKey());
+    public HasKeys WithKeys(IConfigKey configKey)
+        => new(_source, _telemetry, configKey);
 
     /// <summary>
-    /// for test purposes
+    /// For test purposes
     /// </summary>
-    internal HasKeys<TKey> WithKeys<TKey>(TKey obj)
-        where TKey : struct, IConfigKey
-        => new(_source, _telemetry, obj);
+    internal HasKeys WithKeys(IConfigKey configKey, string[] aliases)
+        => new(_source, _telemetry, configKey, aliases);
 
-    public HasKeys<IntegrationNameConfigKey> WithIntegrationKey(string integrationName) => new(
-        _source,
-        _telemetry,
-        new IntegrationNameConfigKey(integrationName),
-        [
-            string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
-            $"DD_{integrationName}_ENABLED"
-        ]);
+    public HasKeys WithIntegrationKey(string integrationName)
+        => new(
+            _source,
+            _telemetry,
+            new IntegrationNameConfigKey(integrationName),
+            new[]
+            {
+                string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
+                $"DD_{integrationName}_ENABLED"
+            });
 
-    public HasKeys<IntegrationAnalyticsEnabledConfigKey> WithIntegrationAnalyticsKey(string integrationName) => new(
-        _source,
-        _telemetry,
-        new IntegrationAnalyticsEnabledConfigKey(integrationName),
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName)
+        => new(
+            _source,
+            _telemetry,
+            new IntegrationAnalyticsEnabledConfigKey(integrationName),
+            new[]
+            {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        [
-            string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
+                string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_ENABLED"
-        ]);
+                $"DD_{integrationName}_ANALYTICS_ENABLED"
+            });
 
-    public HasKeys<IntegrationAnalyticsSampleRateConfigKey> WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
-        _source,
-        _telemetry,
-        new IntegrationAnalyticsSampleRateConfigKey(integrationName),
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName)
+        => new(
+            _source,
+            _telemetry,
+            new IntegrationAnalyticsSampleRateConfigKey(integrationName),
+            new string[]
+            {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        [
-            string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
+                string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
-        ]);
+                $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+            });
 
-    internal readonly struct HasKeys<TKey>(IConfigurationSource source, IConfigurationTelemetry telemetry, TKey key, string[]? providedAliases = null)
-        where TKey : struct, IConfigKey
+    internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, IConfigKey key, string[]? providedAliases = null)
     {
         private readonly string[]? _providedAliases = providedAliases;
         private readonly string _keyString = key.GetKey(); // Cache the key string to avoid repeated GetKey() calls
@@ -70,7 +73,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         private IConfigurationTelemetry Telemetry { get; } = telemetry;
 
-        private TKey Key { get; } = key;
+        private IConfigKey Key { get; } = key;
 
         private string KeyString => _keyString;
 
@@ -484,12 +487,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return converter is null
                        ? GetResultWithFallback(
-                           key => source.GetString(key, telemetry, validator, recordValue),
+                           () => source.GetString(keyWrapper, telemetry, validator, recordValue),
                            alias => source.GetString(alias, telemetry, validator, recordValue))
                        : GetResultWithFallback(
-                           key => source.GetAs(key, telemetry, converter, validator, recordValue),
+                           () => source.GetAs(keyWrapper, telemetry, converter, validator, recordValue),
                            alias => source.GetAs(alias, telemetry, converter, validator, recordValue));
         }
 
@@ -497,12 +501,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return converter is null
                        ? GetResultWithFallback(
-                           key => source.GetBool(key, telemetry, validator),
+                           () => source.GetBool(keyWrapper, telemetry, validator),
                            alias => source.GetBool(alias, telemetry, validator))
                        : GetResultWithFallback(
-                           key => source.GetAs(key, telemetry, converter, validator, recordValue: true),
+                           () => source.GetAs(keyWrapper, telemetry, converter, validator, recordValue: true),
                            alias => source.GetAs(alias, telemetry, converter, validator, recordValue: true));
         }
 
@@ -510,12 +515,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return converter is null
                        ? GetResultWithFallback(
-                           key => source.GetInt32(key, telemetry, validator),
+                           () => source.GetInt32(keyWrapper, telemetry, validator),
                            alias => source.GetInt32(alias, telemetry, validator))
                        : GetResultWithFallback(
-                           key => source.GetAs(key, telemetry, converter, validator, recordValue: true),
+                           () => source.GetAs(keyWrapper, telemetry, converter, validator, recordValue: true),
                            alias => source.GetAs(alias, telemetry, converter, validator, recordValue: true));
         }
 
@@ -523,12 +529,13 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return converter is null
                        ? GetResultWithFallback(
-                           key => source.GetDouble(key, telemetry, validator),
+                           () => source.GetDouble(keyWrapper, telemetry, validator),
                            alias => source.GetDouble(alias, telemetry, validator))
                        : GetResultWithFallback(
-                           key => source.GetAs(key, telemetry, converter, validator, recordValue: true),
+                           () => source.GetAs(keyWrapper, telemetry, converter, validator, recordValue: true),
                            alias => source.GetAs(alias, telemetry, converter, validator, recordValue: true));
         }
 
@@ -536,8 +543,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return GetResultWithFallback(
-                key => source.GetAs(key, telemetry, converter, validator, recordValue: true),
+                () => source.GetAs(keyWrapper, telemetry, converter, validator, recordValue: true),
                 alias => source.GetAs(alias, telemetry, converter, validator, recordValue: true));
         }
 
@@ -545,8 +553,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return GetResultWithFallback(
-                key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator),
+                () => source.GetDictionary(keyWrapper, telemetry, validator: null, allowOptionalMappings, separator),
                 alias => source.GetDictionary(alias, telemetry, validator: null, allowOptionalMappings, separator));
         }
 
@@ -554,8 +563,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             var source = Source;
             var telemetry = Telemetry;
+            var keyWrapper = new ConfigKeyWrapper(Key);
             return GetResultWithFallback(
-                key => source.GetDictionary(key, telemetry, validator: null, parser),
+                () => source.GetDictionary(keyWrapper, telemetry, validator: null, parser),
                 alias => source.GetDictionary(alias, telemetry, validator: null, parser));
         }
 
@@ -567,10 +577,10 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         /// <typeparam name="T">The type being retrieved</typeparam>
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
         private ConfigurationResult<T> GetResultWithFallback<T>(
-            Func<TKey, ConfigurationResult<T>> selector,
+            Func<ConfigurationResult<T>> selector,
             Func<ConfigKeyAlias, ConfigurationResult<T>> aliasSelector)
         {
-            var result = selector(Key);
+            var result = selector();
             if (!result.ShouldFallBack)
             {
                 return result;
@@ -748,6 +758,24 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             Telemetry.Record(Key, defaultValue.Value.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Value.Result;
         }
+    }
+
+    private readonly struct ConfigKeyWrapper(IConfigKey key) : IConfigKey
+    {
+        private readonly IConfigKey _key = key;
+
+#pragma warning disable DD0010 // IConfigKey GetKey() must return constant - this is a wrapper struct
+        public string GetKey() => _key.GetKey();
+#pragma warning restore DD0010
+    }
+
+    private readonly struct StringConfigKey(string key) : IConfigKey
+    {
+        private readonly string _key = key;
+
+#pragma warning disable DD0010 // IConfigKey GetKey() must return constant - this is a simple string wrapper
+        public string GetKey() => _key;
+#pragma warning restore DD0010
     }
 
     private readonly struct ConfigKeyAlias(string alias) : IConfigKey

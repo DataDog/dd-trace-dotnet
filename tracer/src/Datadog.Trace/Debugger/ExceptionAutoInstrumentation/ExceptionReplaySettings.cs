@@ -23,27 +23,27 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var erEnabledResult = config.WithKeys<ConfigKeyDdExceptionReplayEnabled>().AsBoolResult();
+            var erEnabledResult = config.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBoolResult();
             Enabled = erEnabledResult.WithDefault(false);
             CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
-            CaptureFullCallStack = config.WithKeys<ConfigKeyDdExceptionReplayCaptureFullCallstackEnabled>().AsBool(false);
+            CaptureFullCallStack = config.WithKeys(new ConfigKeyDdExceptionReplayCaptureFullCallstackEnabled()).AsBool(false);
 
             var maximumFramesToCapture = config
-                                        .WithKeys<ConfigKeyDdExceptionReplayCaptureMaxFrames>()
+                                        .WithKeys(new ConfigKeyDdExceptionReplayCaptureMaxFrames())
                                         .AsInt32(DefaultMaxFramesToCapture, maxDepth => maxDepth > 0)
                                         .Value;
 
             MaximumFramesToCapture = CaptureFullCallStack ? short.MaxValue : maximumFramesToCapture;
 
             var seconds = config
-                         .WithKeys<ConfigKeyDdExceptionReplayRateLimitSeconds>()
+                         .WithKeys(new ConfigKeyDdExceptionReplayRateLimitSeconds())
                          .AsInt32(DefaultRateLimitSeconds);
 
             RateLimit = TimeSpan.FromSeconds(seconds);
 
             MaxExceptionAnalysisLimit = config
-                                       .WithKeys<ConfigKeyDdExceptionReplayMaxExceptionAnalysisLimit>()
+                                       .WithKeys(new ConfigKeyDdExceptionReplayMaxExceptionAnalysisLimit())
                                        .AsInt32(DefaultMaxExceptionAnalysisLimit, x => x > 0)
                                        .Value;
         }

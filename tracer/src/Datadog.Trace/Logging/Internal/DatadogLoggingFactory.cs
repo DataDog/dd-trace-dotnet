@@ -37,7 +37,7 @@ internal static class DatadogLoggingFactory
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
-                             .WithKeys<ConfigKeyDdTraceLogSinks>()
+                             .WithKeys(new ConfigKeyDdTraceLogSinks())
                              .AsString("file")
                              .Split([','], StringSplitOptions.RemoveEmptyEntries);
 
@@ -52,7 +52,7 @@ internal static class DatadogLoggingFactory
         var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
 
         var rateLimit = new ConfigurationBuilder(source, telemetry)
-                       .WithKeys<ConfigKeyDdTraceRateLimit>()
+                       .WithKeys(new ConfigKeyDdTraceRateLimit())
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
@@ -172,11 +172,11 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys<ConfigKeyDdTraceLogDirectory>().AsString();
+        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(new ConfigKeyDdTraceLogDirectory()).AsString();
         if (string.IsNullOrEmpty(logDirectory))
         {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys<ConfigKeyProfilerLogPath>().AsString();
+            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys(new ConfigKeyProfilerLogPath()).AsString();
 #pragma warning restore 618
 
             if (!string.IsNullOrEmpty(nativeLogFile))
@@ -267,7 +267,7 @@ internal static class DatadogLoggingFactory
 
         // get file details
         var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
-                            .WithKeys<ConfigKeyDdMaxLogfileSize>()
+                            .WithKeys(new ConfigKeyDdMaxLogfileSize())
                             .GetAs(
                                  defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
                                  converter: x => long.TryParse(x, out var maxLogSize)
@@ -276,7 +276,7 @@ internal static class DatadogLoggingFactory
                                  validator: x => x >= 0);
 
         var logFileRetentionDays = new ConfigurationBuilder(source, telemetry)
-                                  .WithKeys<ConfigKeyDdTraceLogfileRetentionDays>()
+                                  .WithKeys(new ConfigKeyDdTraceLogfileRetentionDays())
                                   .AsInt32(32, x => x >= 0)
                                   .Value;
 
@@ -289,10 +289,10 @@ internal static class DatadogLoggingFactory
 
         // We only check for the top-level key here, telemetry may be _indirectly_ disabled (because other keys are etc)
         // in which case the collector will be disabled later, but this is a preferable option.
-        var telemetryEnabled = config.WithKeys<ConfigKeyDdInstrumentationTelemetryEnabled>().AsBool(true);
+        var telemetryEnabled = config.WithKeys(new ConfigKeyDdInstrumentationTelemetryEnabled()).AsBool(true);
         if (telemetryEnabled)
         {
-            return config.WithKeys<ConfigKeyDdTelemetryLogCollectionEnabled>().AsBool(true)
+            return config.WithKeys(new ConfigKeyDdTelemetryLogCollectionEnabled()).AsBool(true)
                        ? new RedactedErrorLoggingConfiguration(TelemetryFactory.RedactedErrorLogs) // use the global collector
                        : null;
         }

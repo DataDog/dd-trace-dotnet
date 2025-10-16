@@ -38,19 +38,19 @@ namespace Datadog.Trace.Configuration
             var builder = new ConfigurationBuilder(source, telemetry);
 
             var otelConfig = builder
-                            .WithKeys<ConfigKeyOtelLogLevel>()
+                            .WithKeys(new ConfigKeyOtelLogLevel())
                             .AsBoolResult(
                                  value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
                                               ? ParsingResult<bool>.Success(result: true)
                                               : ParsingResult<bool>.Failure());
 
             DebugEnabledInternal = builder
-                                  .WithKeys<ConfigKeyDdTraceDebug>()
+                                  .WithKeys(new ConfigKeyDdTraceDebug())
                                   .AsBoolResult()
                                   .OverrideWith(in otelConfig, overrideHandler, false);
 
             DiagnosticSourceEnabled = builder
-                                     .WithKeys<ConfigKeyDdDiagnosticSourceEnabled>()
+                                     .WithKeys(new ConfigKeyDdDiagnosticSourceEnabled())
                                      .AsBool(true);
         }
 

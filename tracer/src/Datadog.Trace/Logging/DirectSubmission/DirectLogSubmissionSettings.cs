@@ -48,20 +48,20 @@ namespace Datadog.Trace.Logging.DirectSubmission
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
             Host = config
-                  .WithKeys<ConfigKeyDdLogsDirectSubmissionHost>()
+                  .WithKeys(new ConfigKeyDdLogsDirectSubmissionHost())
                   .AsString(HostMetadata.Instance.Hostname ?? string.Empty);
             Source = config
-                    .WithKeys<ConfigKeyDdLogsDirectSubmissionSource>()
+                    .WithKeys(new ConfigKeyDdLogsDirectSubmissionSource())
                     .AsString(DefaultSource);
 
             var directLogSubmissionUrl = config
-                                        .WithKeys<ConfigKeyDdLogsDirectSubmissionUrl>()
+                                        .WithKeys(new ConfigKeyDdLogsDirectSubmissionUrl())
                                         .AsString(
                                              getDefaultValue: () =>
                                              {
                                                  // They didn't provide a URL, use the default (With DD_SITE if provided)
                                                  var ddSite = config
-                                                             .WithKeys<ConfigKeyDdSite>()
+                                                             .WithKeys(new ConfigKeyDdSite())
                                                              .AsString(DefaultSite, x => !string.IsNullOrEmpty(x));
 
                                                  return $"{IntakePrefix}{ddSite}{IntakeSuffix}";
@@ -69,14 +69,14 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                              validator: x => !string.IsNullOrEmpty(x));
 
             MinimumLevel = config
-                          .WithKeys<ConfigKeyDdLogsDirectSubmissionMinimumLevel>()
+                          .WithKeys(new ConfigKeyDdLogsDirectSubmissionMinimumLevel())
                           .GetAs(
                                defaultValue: new(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
                                converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                validator: null);
 
             var globalTags = config
-                            .WithKeys<ConfigKeyDdLogsDirectSubmissionTags>()
+                            .WithKeys(new ConfigKeyDdLogsDirectSubmissionTags())
                             .AsDictionary()
                            ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
@@ -84,31 +84,31 @@ namespace Datadog.Trace.Logging.DirectSubmission
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
             BatchSizeLimit = config
-                            .WithKeys<ConfigKeyDdLogsDirectSubmissionMaxBatchSize>()
+                            .WithKeys(new ConfigKeyDdLogsDirectSubmissionMaxBatchSize())
                             .AsInt32(DefaultBatchSizeLimit, x => x > 0)
                             .Value;
 
             QueueSizeLimit = config
-                            .WithKeys<ConfigKeyDdLogsDirectSubmissionMaxQueueSize>()
+                            .WithKeys(new ConfigKeyDdLogsDirectSubmissionMaxQueueSize())
                             .AsInt32(DefaultQueueSizeLimit, x => x > 0)
                             .Value;
 
             var seconds = config
-                         .WithKeys<ConfigKeyDdLogsDirectSubmissionBatchPeriodSeconds>()
+                         .WithKeys(new ConfigKeyDdLogsDirectSubmissionBatchPeriodSeconds())
                          .AsInt32(DefaultBatchPeriodSeconds, x => x > 0)
                          .Value;
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
 
-            AzureFunctionsHostEnabled = config.WithKeys<ConfigKeyDdLogsDirectSubmissionAzureFunctionsHostEnabled>()
+            AzureFunctionsHostEnabled = config.WithKeys(new ConfigKeyDdLogsDirectSubmissionAzureFunctionsHostEnabled())
                                               .AsBool(false);
 
-            ApiKey = config.WithKeys<ConfigKeyDdApiKey>().AsRedactedString() ?? string.Empty;
+            ApiKey = config.WithKeys(new ConfigKeyDdApiKey()).AsRedactedString() ?? string.Empty;
             bool[]? enabledIntegrations = null;
 
             List<string> validationErrors = [];
             var logSubmissionIntegrations = config
-                                           .WithKeys<ConfigKeyDdLogsDirectSubmissionIntegrations>()
+                                           .WithKeys(new ConfigKeyDdLogsDirectSubmissionIntegrations())
                                            .AsString()
                                           ?.Split([';'], StringSplitOptions.RemoveEmptyEntries);
 

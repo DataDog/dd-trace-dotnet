@@ -55,7 +55,7 @@ internal class GlobalConfigurationSource
         var configurationSource = new CompositeConfigurationSource();
         var environmentSource = new EnvironmentConfigurationSource();
         var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
-        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys<ConfigKeyDdApplicationMonitoringConfigFileEnabled>().AsBool(true);
+        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(new ConfigKeyDdApplicationMonitoringConfigFileEnabled()).AsBool(true);
         if (applicationMonitoringConfigFileEnabled)
         {
             var configsResult = ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
@@ -107,7 +107,7 @@ internal class GlobalConfigurationSource
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
-                                       .WithKeys<ConfigKeyDdTraceConfigFile>()
+                                       .WithKeys(new ConfigKeyDdTraceConfigFile())
                                        .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);

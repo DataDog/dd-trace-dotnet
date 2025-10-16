@@ -23,12 +23,12 @@ namespace Datadog.Trace.Configuration
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var deprecatedFunctionKey = config.WithKeys<PlatformKeyDepFunctionName>().AsString();
-            var deprecatedProjectKey = config.WithKeys<PlatformKeyDepGcpProject>().AsString();
+            var deprecatedFunctionKey = config.WithKeys(new PlatformKeyDepFunctionName()).AsString();
+            var deprecatedProjectKey = config.WithKeys(new PlatformKeyDepGcpProject()).AsString();
             IsDeprecatedFunction = deprecatedFunctionKey != null && deprecatedProjectKey != null;
 
-            var functionNameKey = config.WithKeys<PlatformKeyFunctionNameKey>().AsString();
-            var functionTargetKey = config.WithKeys<PlatformKeyFunctionTarget>().AsString();
+            var functionNameKey = config.WithKeys(new PlatformKeyFunctionNameKey()).AsString();
+            var functionTargetKey = config.WithKeys(new PlatformKeyFunctionTarget()).AsString();
             IsNewerFunction = functionNameKey != null && functionTargetKey != null;
 
             IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;

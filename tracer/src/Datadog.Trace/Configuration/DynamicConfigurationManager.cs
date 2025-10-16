@@ -148,9 +148,9 @@ namespace Datadog.Trace.Configuration
             var settings = new ConfigurationBuilder(dynamicConfig, TelemetryFactory.Config);
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
             {
-                DynamicInstrumentationEnabled = settings.WithKeys<ConfigKeyDdDynamicInstrumentationEnabled>().AsBool(),
-                ExceptionReplayEnabled = settings.WithKeys<ConfigKeyDdExceptionReplayEnabled>().AsBool(),
-                CodeOriginEnabled = settings.WithKeys<ConfigKeyDdCodeOriginForSpansEnabled>().AsBool(),
+                DynamicInstrumentationEnabled = settings.WithKeys(new ConfigKeyDdDynamicInstrumentationEnabled()).AsBool(),
+                ExceptionReplayEnabled = settings.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBool(),
+                CodeOriginEnabled = settings.WithKeys(new ConfigKeyDdCodeOriginForSpansEnabled()).AsBool(),
             };
 
             var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;

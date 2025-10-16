@@ -96,7 +96,7 @@ namespace Datadog.Trace.Configuration
             var config = new ConfigurationBuilder(source, _telemetry);
 
             ExperimentalFeaturesEnabled = config
-                    .WithKeys<ConfigKeyDdTraceExperimentalFeaturesEnabled>()
+                    .WithKeys(new ConfigKeyDdTraceExperimentalFeaturesEnabled())
                     .AsString()?.Trim() switch
                     {
                         null or "none" => new HashSet<string>(),
@@ -109,7 +109,7 @@ namespace Datadog.Trace.Configuration
 
             // We don't want/need to record this value, so explicitly use null telemetry
             IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
-                                     .WithKeys<ConfigKeyDdInternalIsRunningInCivisibility>()
+                                     .WithKeys(new ConfigKeyDdInternalIsRunningInCivisibility())
                                      .AsBool(false);
 
             LambdaMetadata = LambdaMetadata.Create();
@@ -120,40 +120,40 @@ namespace Datadog.Trace.Configuration
             }
 
             GitMetadataEnabled = config
-                                .WithKeys<ConfigKeyDdTraceGitMetadataEnabled>()
+                                .WithKeys(new ConfigKeyDdTraceGitMetadataEnabled())
                                 .AsBool(defaultValue: true);
 
             ApmTracingEnabled = config
-                                      .WithKeys<ConfigKeyDdApmTracingEnabled>()
+                                      .WithKeys(new ConfigKeyDdApmTracingEnabled())
                                       .AsBool(defaultValue: true);
 
             var otelActivityListenerEnabled = config
-                                             .WithKeys<ConfigKeyOtelSdkDisabled>()
+                                             .WithKeys(new ConfigKeyOtelSdkDisabled())
                                              .AsBoolResult(
                                                   value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
-                                       .WithKeys<ConfigKeyDdTraceOtelEnabled>()
+                                       .WithKeys(new ConfigKeyDdTraceOtelEnabled())
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
             Exporter = new ExporterSettings(source, _telemetry);
 
             PeerServiceTagsEnabled = config
-               .WithKeys<ConfigKeyDdTracePeerServiceDefaultsEnabled>()
+               .WithKeys(new ConfigKeyDdTracePeerServiceDefaultsEnabled())
                .AsBool(defaultValue: false);
             RemoveClientServiceNamesEnabled = config
-               .WithKeys<ConfigKeyDdTraceRemoveIntegrationServiceNamesEnabled>()
+               .WithKeys(new ConfigKeyDdTraceRemoveIntegrationServiceNamesEnabled())
                .AsBool(defaultValue: false);
             SpanPointersEnabled = config
-               .WithKeys<ConfigKeyDdTraceAwsAddSpanPointers>()
+               .WithKeys(new ConfigKeyDdTraceAwsAddSpanPointers())
                .AsBool(defaultValue: true);
 
-            PeerServiceNameMappings = InitializeServiceNameMappings<ConfigKeyDdTracePeerServiceMapping>(config);
+            PeerServiceNameMappings = InitializeServiceNameMappings(config, new ConfigKeyDdTracePeerServiceMapping());
 
             MetadataSchemaVersion = config
-                                   .WithKeys<ConfigKeyDdTraceSpanAttributeSchema>()
+                                   .WithKeys(new ConfigKeyDdTraceSpanAttributeSchema())
                                    .GetAs(
                                         defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
                                         converter: x => x switch
@@ -164,10 +164,10 @@ namespace Datadog.Trace.Configuration
                                         },
                                         validator: null);
 
-            StatsComputationInterval = config.WithKeys<ConfigKeyDdTraceStatsComputationInterval>().AsInt32(defaultValue: 10);
+            StatsComputationInterval = config.WithKeys(new ConfigKeyDdTraceStatsComputationInterval()).AsInt32(defaultValue: 10);
 
             var otelMetricsExporter = config
-               .WithKeys<ConfigKeyOtelMetricsExporter>();
+               .WithKeys(new ConfigKeyOtelMetricsExporter());
 
             OtelMetricsExporterEnabled = string.Equals(otelMetricsExporter.AsString(defaultValue: "otlp"), "otlp", StringComparison.OrdinalIgnoreCase);
 
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Configuration
                     });
 
             var runtimeMetricsEnabledResult = config
-                                             .WithKeys<ConfigKeyDdRuntimeMetricsEnabled>()
+                                             .WithKeys(new ConfigKeyDdRuntimeMetricsEnabled())
                                              .AsBoolResult();
 
             if (runtimeMetricsEnabledResult.ConfigurationResult.IsPresent && otelExporterResult.ConfigurationResult.IsPresent)
@@ -197,15 +197,15 @@ namespace Datadog.Trace.Configuration
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
             OtelMetricExportIntervalMs = config
-                            .WithKeys<ConfigKeyOtelMetricExportInterval>()
+                            .WithKeys(new ConfigKeyOtelMetricExportInterval())
                             .AsInt32(defaultValue: 10_000);
 
             OtelMetricExportTimeoutMs = config
-                            .WithKeys<ConfigKeyOtelMetricExportTimeout>()
+                            .WithKeys(new ConfigKeyOtelMetricExportTimeout())
                             .AsInt32(defaultValue: 7_500);
 
             OtlpMetricsProtocol = config
-                                 .WithKeys<ConfigKeyOtelExporterOtlpMetricsProtocol>()
+                                 .WithKeys(new ConfigKeyOtelExporterOtlpMetricsProtocol())
                                  .GetAs(
                                       defaultValue: new(OtlpProtocol.HttpProtobuf, "http/protobuf"),
                                       converter: x => x switch
@@ -218,19 +218,19 @@ namespace Datadog.Trace.Configuration
                                       validator: null);
 
             var defaultAgentHost = config
-                .WithKeys<ConfigKeyDdAgentHost>()
+                .WithKeys(new ConfigKeyDdAgentHost())
                 .AsString(defaultValue: "localhost");
 
             var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
-                .WithKeys<ConfigKeyOtelExporterOtlpEndpoint>()
+                .WithKeys(new ConfigKeyOtelExporterOtlpEndpoint())
                 .GetAs(
                     defaultValue: new DefaultResult<Uri>(result: new Uri(defaultUri), telemetryValue: defaultUri),
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
             OtlpMetricsEndpoint = config
-                .WithKeys<ConfigKeyOtelExporterOtlpMetricsEndpoint>()
+                .WithKeys(new ConfigKeyOtelExporterOtlpMetricsEndpoint())
                 .GetAs(
                     defaultValue: new DefaultResult<Uri>(
                         result: OtlpMetricsProtocol switch
@@ -243,18 +243,18 @@ namespace Datadog.Trace.Configuration
                     converter: uriString => new Uri(uriString));
 
             OtlpMetricsHeaders = config
-                            .WithKeys<ConfigKeyOtelExporterOtlpMetricsHeaders>()
+                            .WithKeys(new ConfigKeyOtelExporterOtlpMetricsHeaders())
                             .AsDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpMetricsTimeoutMs = config
-                            .WithKeys<ConfigKeyOtelExporterOtlpMetricsTimeout>()
+                            .WithKeys(new ConfigKeyOtelExporterOtlpMetricsTimeout())
                             .AsInt32(defaultValue: 10_000);
 
             OtlpMetricsTemporalityPreference = config
-                            .WithKeys<ConfigKeyOtelExporterOtlpMetricsTemporalityPreference>()
+                            .WithKeys(new ConfigKeyOtelExporterOtlpMetricsTemporalityPreference())
                             .GetAs(
                                    defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
                                    converter: x => x switch
@@ -267,7 +267,7 @@ namespace Datadog.Trace.Configuration
                                    validator: null);
 
             DataPipelineEnabled = config
-                                  .WithKeys<ConfigKeyDdTraceDataPipelineEnabled>()
+                                  .WithKeys(new ConfigKeyDdTraceDataPipelineEnabled())
                                   .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
 
             if (DataPipelineEnabled)
@@ -324,7 +324,7 @@ namespace Datadog.Trace.Configuration
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
-            CustomSamplingRulesFormat = config.WithKeys<ConfigKeyDdTraceSamplingRulesFormat>()
+            CustomSamplingRulesFormat = config.WithKeys(new ConfigKeyDdTraceSamplingRulesFormat())
                                               .GetAs(
                                                    defaultValue: new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
                                                    converter: value =>
@@ -351,10 +351,10 @@ namespace Datadog.Trace.Configuration
                     recordValue: true,
                     origin: ConfigurationOrigins.Calculated);
 
-            SpanSamplingRules = config.WithKeys<ConfigKeyDdSpanSamplingRules>().AsString();
+            SpanSamplingRules = config.WithKeys(new ConfigKeyDdSpanSamplingRules()).AsString();
 
             TraceBufferSize = config
-                             .WithKeys<ConfigKeyDdTraceBufferSize>()
+                             .WithKeys(new ConfigKeyDdTraceBufferSize())
                              .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
             // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
@@ -362,51 +362,51 @@ namespace Datadog.Trace.Configuration
             // This can artificially increase the execution time of functions.
             var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
             TraceBatchInterval = config
-                                .WithKeys<ConfigKeyDdTraceBatchInterval>()
+                                .WithKeys(new ConfigKeyDdTraceBatchInterval())
                                 .AsInt32(defaultTraceBatchInterval);
 
             RouteTemplateResourceNamesEnabled = config
-                                               .WithKeys<ConfigKeyDdTraceRouteTemplateResourceNamesEnabled>()
+                                               .WithKeys(new ConfigKeyDdTraceRouteTemplateResourceNamesEnabled())
                                                .AsBool(defaultValue: true);
 
             ExpandRouteTemplatesEnabled = config
-                                         .WithKeys<ConfigKeyDdTraceExpandRouteTemplatesEnabled>()
+                                         .WithKeys(new ConfigKeyDdTraceExpandRouteTemplatesEnabled())
                                          .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
 
             AzureServiceBusBatchLinksEnabled = config
-                                             .WithKeys<ConfigKeyDdTraceAzureServicebusBatchLinksEnabled>()
+                                             .WithKeys(new ConfigKeyDdTraceAzureServicebusBatchLinksEnabled())
                                              .AsBool(defaultValue: true);
 
             DelayWcfInstrumentationEnabled = config
-                                            .WithKeys<ConfigKeyDdTraceDelayWcfInstrumentationEnabled>()
+                                            .WithKeys(new ConfigKeyDdTraceDelayWcfInstrumentationEnabled())
                                             .AsBool(defaultValue: true);
 
             WcfWebHttpResourceNamesEnabled = config
-                                            .WithKeys<ConfigKeyDdTraceWcfWebHttpResourceNamesEnabled>()
+                                            .WithKeys(new ConfigKeyDdTraceWcfWebHttpResourceNamesEnabled())
                                             .AsBool(defaultValue: true);
 
             WcfObfuscationEnabled = config
-                                   .WithKeys<ConfigKeyDdTraceWcfResourceObfuscationEnabled>()
+                                   .WithKeys(new ConfigKeyDdTraceWcfResourceObfuscationEnabled())
                                    .AsBool(defaultValue: true);
 
             InferredProxySpansEnabled = config
-                                      .WithKeys<ConfigKeyDdTraceInferredProxyServicesEnabled>()
+                                      .WithKeys(new ConfigKeyDdTraceInferredProxyServicesEnabled())
                                       .AsBool(defaultValue: false);
 
             ObfuscationQueryStringRegex = config
-                                         .WithKeys<ConfigKeyDdTraceObfuscationQueryStringRegexp>()
+                                         .WithKeys(new ConfigKeyDdTraceObfuscationQueryStringRegexp())
                                          .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
-                                         .WithKeys<ConfigKeyDdHttpServerTagQueryString>()
+                                         .WithKeys(new ConfigKeyDdHttpServerTagQueryString())
                                          .AsBool(defaultValue: true);
 
             QueryStringReportingSize = config
-                                      .WithKeys<ConfigKeyDdHttpServerTagQueryStringSize>()
+                                      .WithKeys(new ConfigKeyDdHttpServerTagQueryStringSize())
                                       .AsInt32(defaultValue: 5000); // 5000 being the tag value length limit
 
             ObfuscationQueryStringRegexTimeout = config
-                                                .WithKeys<ConfigKeyDdTraceObfuscationQueryStringRegexpTimeout>()
+                                                .WithKeys(new ConfigKeyDdTraceObfuscationQueryStringRegexpTimeout())
                                                 .AsDouble(200, val1 => val1 is > 0).Value;
 
             Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
@@ -424,31 +424,31 @@ namespace Datadog.Trace.Configuration
 
             // Same otel config is used for both injection and extraction
             var otelPropagation = config
-                            .WithKeys<ConfigKeyOtelPropagators>()
+                            .WithKeys(new ConfigKeyOtelPropagators())
                             .GetAsClassResult(
                                  validator: injectionValidator, // invalid individual values are rejected later
                                  converter: otelConverter);
 
             PropagationStyleInject = config
-               .WithKeys<ConfigKeyDdTracePropagationStyleInject>()
+               .WithKeys(new ConfigKeyDdTracePropagationStyleInject())
                .GetAsClassResult(
                     validator: injectionValidator, // invalid individual values are rejected later
                     converter: style => TrimSplitString(style, commaSeparator))
                .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
-                                     .WithKeys<ConfigKeyDdTracePropagationStyleExtract>()
+                                     .WithKeys(new ConfigKeyDdTracePropagationStyleExtract())
                                      .GetAsClassResult(
                                           validator: injectionValidator, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator))
                                      .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationExtractFirstOnly = config
-                                         .WithKeys<ConfigKeyDdTracePropagationExtractFirst>()
+                                         .WithKeys(new ConfigKeyDdTracePropagationExtractFirst())
                                          .AsBool(false);
 
             PropagationBehaviorExtract = config
-                                         .WithKeys<ConfigKeyDdTracePropagationBehaviorExtract>()
+                                         .WithKeys(new ConfigKeyDdTracePropagationBehaviorExtract())
                                          .GetAs(
                                              defaultValue: new(ExtractBehavior.Continue, "continue"),
                                              converter: x => x.ToLowerInvariant() switch
@@ -461,43 +461,43 @@ namespace Datadog.Trace.Configuration
                                              validator: null);
 
             BaggageMaximumItems = config
-                                 .WithKeys<ConfigKeyDdTraceBaggageMaxItems>()
+                                 .WithKeys(new ConfigKeyDdTraceBaggageMaxItems())
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageItems);
 
             BaggageMaximumBytes = config
-                                 .WithKeys<ConfigKeyDdTraceBaggageMaxBytes>()
+                                 .WithKeys(new ConfigKeyDdTraceBaggageMaxBytes())
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
             BaggageTagKeys = new HashSet<string>(
                             config
-                            .WithKeys<ConfigKeyDdTraceBaggageTagKeys>()
+                            .WithKeys(new ConfigKeyDdTraceBaggageTagKeys())
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
             TraceMethods = config
-                          .WithKeys<ConfigKeyDdTraceMethods>()
+                          .WithKeys(new ConfigKeyDdTraceMethods())
                           .AsString(string.Empty);
 
             OutgoingTagPropagationHeaderMaxLength = config
-                                                   .WithKeys<ConfigKeyDdTraceXDatadogTagsMaxLength>()
+                                                   .WithKeys(new ConfigKeyDdTraceXDatadogTagsMaxLength())
                                                    .AsInt32(
                                                         Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength,
                                                         x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
                                                    .Value;
 
             IpHeader = config
-                      .WithKeys<ConfigKeyDdTraceClientIpHeader>()
+                      .WithKeys(new ConfigKeyDdTraceClientIpHeader())
                       .AsString();
 
             IpHeaderEnabled = config
-                             .WithKeys<ConfigKeyDdTraceClientIpEnabled>()
+                             .WithKeys(new ConfigKeyDdTraceClientIpEnabled())
                              .AsBool(false);
 
             // DSM is now enabled by default in non-serverless environments
             IsDataStreamsMonitoringEnabled = config
-                                            .WithKeys<ConfigKeyDdDataStreamsEnabled>()
+                                            .WithKeys(new ConfigKeyDdDataStreamsEnabled())
                                             .AsBool(
                                                   !EnvironmentHelpers.IsAwsLambda() &&
                                                   !EnvironmentHelpers.IsAzureAppServices() &&
@@ -505,20 +505,20 @@ namespace Datadog.Trace.Configuration
                                                   !EnvironmentHelpers.IsGoogleCloudFunctions());
 
             IsDataStreamsMonitoringInDefaultState = config
-                                                    .WithKeys<ConfigKeyDdDataStreamsEnabled>()
+                                                    .WithKeys(new ConfigKeyDdDataStreamsEnabled())
                                                     .AsBool() == null;
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
-                                               .WithKeys<ConfigKeyDdDataStreamsLegacyHeaders>()
+                                               .WithKeys(new ConfigKeyDdDataStreamsLegacyHeaders())
                                                .AsBool(!IsDataStreamsMonitoringInDefaultState);
 
             IsRareSamplerEnabled = config
-                                  .WithKeys<ConfigKeyDdApmEnableRareSampler>()
+                                  .WithKeys(new ConfigKeyDdApmEnableRareSampler())
                                   .AsBool(false);
 
             StatsComputationEnabled = config
-                                     .WithKeys<ConfigKeyDdTraceStatsComputationEnabled>()
+                                     .WithKeys(new ConfigKeyDdTraceStatsComputationEnabled())
                                      .AsBool(false); // default is false, but user config can be overridden below
 
             if (StatsComputationEnabled && !ApmTracingEnabled)
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Configuration
             }
 
             var urlSubstringSkips = config
-                                   .WithKeys<ConfigKeyDdTraceHttpClientExcludedUrlSubstrings>()
+                                   .WithKeys(new ConfigKeyDdTraceHttpClientExcludedUrlSubstrings())
                                    .AsString(GetDefaultHttpClientExclusions());
 
             if (IsRunningInCiVisibility)
@@ -547,33 +547,33 @@ namespace Datadog.Trace.Configuration
                                                   : [];
 
             DbmPropagationMode = config
-                                .WithKeys<ConfigKeyDdDbmPropagationMode>()
+                                .WithKeys(new ConfigKeyDdDbmPropagationMode())
                                 .GetAs(
                                      defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
-            RemoteConfigurationEnabled = config.WithKeys<ConfigKeyDdRemoteConfigurationEnabled>().AsBool(true);
+            RemoteConfigurationEnabled = config.WithKeys(new ConfigKeyDdRemoteConfigurationEnabled()).AsBool(true);
 
             TraceId128BitGenerationEnabled = config
-                                            .WithKeys<ConfigKeyDdTrace128BitTraceidGenerationEnabled>()
+                                            .WithKeys(new ConfigKeyDdTrace128BitTraceidGenerationEnabled())
                                             .AsBool(true);
             TraceId128BitLoggingEnabled = config
-                                         .WithKeys<ConfigKeyDdTrace128BitTraceidLoggingEnabled>()
+                                         .WithKeys(new ConfigKeyDdTrace128BitTraceidLoggingEnabled())
                                          .AsBool(TraceId128BitGenerationEnabled);
 
             CommandsCollectionEnabled = config
-                                       .WithKeys<ConfigKeyDdTraceCommandsCollectionEnabled>()
+                                       .WithKeys(new ConfigKeyDdTraceCommandsCollectionEnabled())
                                        .AsBool(false);
 
-            BypassHttpRequestUrlCachingEnabled = config.WithKeys<ConfigKeyDdTraceBypassHttpRequestUrlCachingEnabled>()
+            BypassHttpRequestUrlCachingEnabled = config.WithKeys(new ConfigKeyDdTraceBypassHttpRequestUrlCachingEnabled())
                                                        .AsBool(false);
 
-            InjectContextIntoStoredProceduresEnabled = config.WithKeys<ConfigKeyDdTraceInjectContextIntoStoredProceduresEnabled>()
+            InjectContextIntoStoredProceduresEnabled = config.WithKeys(new ConfigKeyDdTraceInjectContextIntoStoredProceduresEnabled())
                                                        .AsBool(false);
 
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
-            var userDisabledAdoNetCommandTypes = config.WithKeys<ConfigKeyDdTraceDisabledAdonetCommandTypes>().AsString();
+            var userDisabledAdoNetCommandTypes = config.WithKeys(new ConfigKeyDdTraceDisabledAdonetCommandTypes()).AsString();
 
             DisabledAdoNetCommandTypes = new HashSet<string>(defaultDisabledAdoNetCommandTypes, StringComparer.OrdinalIgnoreCase);
 
@@ -596,15 +596,15 @@ namespace Datadog.Trace.Configuration
             }
 
             OpenTelemetryMetricsEnabled = config
-                                    .WithKeys<ConfigKeyDdMetricsOtelEnabled>()
+                                    .WithKeys(new ConfigKeyDdMetricsOtelEnabled())
                                     .AsBool(defaultValue: false);
 
-            var enabledMeters = config.WithKeys<ConfigKeyDdMetricsOtelMeterNames>().AsString();
+            var enabledMeters = config.WithKeys(new ConfigKeyDdMetricsOtelMeterNames()).AsString();
             OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
-            var disabledActivitySources = config.WithKeys<ConfigKeyDdTraceDisabledActivitySources>().AsString();
+            var disabledActivitySources = config.WithKeys(new ConfigKeyDdTraceDisabledActivitySources()).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
@@ -638,13 +638,13 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
-            PartialFlushEnabled = config.WithKeys<ConfigKeyDdTracePartialFlushEnabled>().AsBool(false);
+            PartialFlushEnabled = config.WithKeys(new ConfigKeyDdTracePartialFlushEnabled()).AsBool(false);
             PartialFlushMinSpans = config
-                                  .WithKeys<ConfigKeyDdTracePartialFlushMinSpans>()
+                                  .WithKeys(new ConfigKeyDdTracePartialFlushMinSpans())
                                   .AsInt32(500, value => value > 0).Value;
 
             GraphQLErrorExtensions = TrimSplitString(
-                config.WithKeys<ConfigKeyDdTraceGraphqlErrorExtensions>().AsString(),
+                config.WithKeys(new ConfigKeyDdTraceGraphqlErrorExtensions()).AsString(),
                 commaSeparator);
 
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
@@ -1197,11 +1197,10 @@ namespace Datadog.Trace.Configuration
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 
-        internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings<TKey>(ConfigurationBuilder config)
-        where TKey : struct, IConfigKey
+        internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, IConfigKey configKey)
         {
             var mappings = config
-               .WithKeys<TKey>()
+               .WithKeys(configKey)
                .AsDictionary()
               ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());

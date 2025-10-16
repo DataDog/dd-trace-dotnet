@@ -36,36 +36,36 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var diEnabledResult = config.WithKeys<ConfigKeyDdDynamicInstrumentationEnabled>().AsBoolResult();
+            var diEnabledResult = config.WithKeys(new ConfigKeyDdDynamicInstrumentationEnabled()).AsBoolResult();
             DynamicInstrumentationEnabled = diEnabledResult.WithDefault(false);
             DynamicInstrumentationCanBeEnabled = diEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
-            SymbolDatabaseUploadEnabled = config.WithKeys<ConfigKeyDdSymbolDatabaseUploadEnabled>().AsBool(DynamicInstrumentationCanBeEnabled);
+            SymbolDatabaseUploadEnabled = config.WithKeys(new ConfigKeyDdSymbolDatabaseUploadEnabled()).AsBool(DynamicInstrumentationCanBeEnabled);
 
             MaximumDepthOfMembersToCopy = config
-                                         .WithKeys<ConfigKeyDdDynamicInstrumentationMaxDepthToSerialize>()
+                                         .WithKeys(new ConfigKeyDdDynamicInstrumentationMaxDepthToSerialize())
                                          .AsInt32(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
                                          .Value;
 
             MaxSerializationTimeInMilliseconds = config
-                                                .WithKeys<ConfigKeyDdDynamicInstrumentationMaxTimeToSerialize>()
+                                                .WithKeys(new ConfigKeyDdDynamicInstrumentationMaxTimeToSerialize())
                                                 .AsInt32(
                                                      DefaultMaxSerializationTimeInMilliseconds,
                                                      serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
 
             UploadBatchSize = config
-                             .WithKeys<ConfigKeyDdDynamicInstrumentationUploadBatchSize>()
+                             .WithKeys(new ConfigKeyDdDynamicInstrumentationUploadBatchSize())
                              .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
                              .Value;
 
             SymbolDatabaseBatchSizeInBytes = config
-                                         .WithKeys<ConfigKeyDdSymbolDatabaseBatchSizeBytes>()
+                                         .WithKeys(new ConfigKeyDdSymbolDatabaseBatchSizeBytes())
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
             var thirdPartyIncludes = config
-                                  .WithKeys<ConfigKeyDdThirdPartyDetectionIncludes>()
+                                  .WithKeys(new ConfigKeyDdThirdPartyDetectionIncludes())
                                   .AsString()?
                                   .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                    Enumerable.Empty<string>();
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger
             ThirdPartyDetectionIncludes = thirdPartyIncludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
             var thirdPartyExcludes = config
-                                    .WithKeys<ConfigKeyDdThirdPartyDetectionExcludes>()
+                                    .WithKeys(new ConfigKeyDdThirdPartyDetectionExcludes())
                                     .AsString()?
                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                      Enumerable.Empty<string>();
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Debugger
             ThirdPartyDetectionExcludes = thirdPartyExcludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
             var symDb3rdPartyIncludeLibraries = config
-                                               .WithKeys<ConfigKeyDdSymbolDatabaseThirdPartyDetectionIncludes>()
+                                               .WithKeys(new ConfigKeyDdSymbolDatabaseThirdPartyDetectionIncludes())
                                                .AsString()?
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Debugger
             SymDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]).ToImmutableHashSet();
 
             var symDb3rdPartyExcludeLibraries = config
-                                               .WithKeys<ConfigKeyDdSymbolDatabaseThirdPartyDetectionExcludes>()
+                                               .WithKeys(new ConfigKeyDdSymbolDatabaseThirdPartyDetectionExcludes())
                                                .AsString()?
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
@@ -97,17 +97,17 @@ namespace Datadog.Trace.Debugger
             SymDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]).ToImmutableHashSet();
 
             DiagnosticsIntervalSeconds = config
-                                        .WithKeys<ConfigKeyDdDynamicInstrumentationDiagnosticsInterval>()
+                                        .WithKeys(new ConfigKeyDdDynamicInstrumentationDiagnosticsInterval())
                                         .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
                                         .Value;
 
             UploadFlushIntervalMilliseconds = config
-                                             .WithKeys<ConfigKeyDdDynamicInstrumentationUploadFlushInterval>()
+                                             .WithKeys(new ConfigKeyDdDynamicInstrumentationUploadFlushInterval())
                                              .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
                                              .Value;
 
             var redactedIdentifiers = config
-                                 .WithKeys<ConfigKeyDdDynamicInstrumentationRedactedIdentifiers>()
+                                 .WithKeys(new ConfigKeyDdDynamicInstrumentationRedactedIdentifiers())
                                  .AsString()?
                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                   Enumerable.Empty<string>();
@@ -116,36 +116,36 @@ namespace Datadog.Trace.Debugger
 
             RedactedExcludedIdentifiers = new HashSet<string>(
                 (config
-                .WithKeys<ConfigKeyDdDynamicInstrumentationRedactedExcludedIdentifiers>()
+                .WithKeys(new ConfigKeyDdDynamicInstrumentationRedactedExcludedIdentifiers())
                 .AsString()?
                 .Split([','], StringSplitOptions.RemoveEmptyEntries) ??
                  Enumerable.Empty<string>())
                .Union(
                     config
-                       .WithKeys<ConfigKeyDdDynamicInstrumentationRedactionExcludedIdentifiers>()
+                       .WithKeys(new ConfigKeyDdDynamicInstrumentationRedactionExcludedIdentifiers())
                        .AsString()?
                        .Split([','], StringSplitOptions.RemoveEmptyEntries) ??
                     Enumerable.Empty<string>()),
                 StringComparer.OrdinalIgnoreCase);
 
             var redactedTypes = config
-                                     .WithKeys<ConfigKeyDdDynamicInstrumentationRedactedTypes>()
+                                     .WithKeys(new ConfigKeyDdDynamicInstrumentationRedactedTypes())
                                      .AsString()?
                                      .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                       Enumerable.Empty<string>();
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
-            var coEnabledResult = config.WithKeys<ConfigKeyDdCodeOriginForSpansEnabled>().AsBoolResult();
+            var coEnabledResult = config.WithKeys(new ConfigKeyDdCodeOriginForSpansEnabled()).AsBoolResult();
             CodeOriginForSpansCanBeEnabled = coEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
             CodeOriginForSpansEnabled = CodeOriginForSpansCanBeEnabled && (coEnabledResult.WithDefault(false) || DynamicInstrumentationEnabled);
 
             CodeOriginMaxUserFrames = config
-                                         .WithKeys<ConfigKeyDdCodeOriginForSpansMaxUserFrames>()
+                                         .WithKeys(new ConfigKeyDdCodeOriginForSpansMaxUserFrames())
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
-            SymbolDatabaseCompressionEnabled = config.WithKeys<ConfigKeyDdSymbolDatabaseCompressionEnabled>().AsBool(true);
+            SymbolDatabaseCompressionEnabled = config.WithKeys(new ConfigKeyDdSymbolDatabaseCompressionEnabled()).AsBool(true);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
