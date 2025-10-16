@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             IEnumerable<SpanLink>? spanLinks)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 return new CallTargetState(null);
             }
@@ -170,6 +170,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 tags.NetworkDestinationPort = networkDestinationPort;
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
 
             return new CallTargetState(scope);
         }
