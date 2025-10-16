@@ -191,7 +191,6 @@ namespace Datadog.Trace.Configuration
                     if (activeConfigurations.Remove(removedConfig.Id))
                     {
                         Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
-                        applyDetailsResult.Add(ApplyDetails.FromOk(removedConfig.Path));
                     }
                 }
             }
