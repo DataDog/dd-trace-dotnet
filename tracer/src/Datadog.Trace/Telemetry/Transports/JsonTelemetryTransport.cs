@@ -54,16 +54,18 @@ namespace Datadog.Trace.Telemetry.Transports
 
             try
             {
-                // have to buffer in memory so we know the content length
-                var serializedData = SerializeTelemetry(data);
-                var bytes = Encoding.UTF8.GetBytes(serializedData);
-                var request = _requestFactory.Create(_endpoint);
+                byte[] bytes;
 
                 if (_telemetryGzipCompressionEnabled)
                 {
-                    bytes = CompressGzip(bytes);
+                    bytes = SerializeTelemetryWithGzip(data);
+                }
+                else
+                {
+                    bytes = Encoding.UTF8.GetBytes(SerializeTelemetry(data));
                 }
 
+                var request = _requestFactory.Create(_endpoint);
                 request.AddHeader(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
                 request.AddHeader(TelemetryConstants.RequestTypeHeader, data.RequestType);
 
@@ -126,16 +128,19 @@ namespace Datadog.Trace.Telemetry.Transports
 
         protected abstract MetricTags.TelemetryEndpoint GetEndpointMetricTag();
 
-        private static byte[] CompressGzip(byte[] input)
+        internal static byte[] SerializeTelemetryWithGzip<T>(T data)
         {
-            using var output = new MemoryStream();
-
-            using (var gzip = new GZipStream(output, CompressionLevel.Fastest))
+            using var memStream = new MemoryStream();
+            using (var zipStream = new GZipStream(memStream, CompressionMode.Compress, true))
             {
-                gzip.Write(input, 0, input.Length);
+                using var streamWriter = new StreamWriter(zipStream);
+                using var jsonWriter = new JsonTextWriter(streamWriter);
+                var serializer = new JsonSerializer { NullValueHandling = NullValueHandling.Ignore, ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy(), }, Formatting = Formatting.None };
+
+                serializer.Serialize(jsonWriter, data);
             }
 
-            return output.ToArray();
+            return memStream.ToArray();
         }
 
         private static bool IsFatalException(Exception ex)
