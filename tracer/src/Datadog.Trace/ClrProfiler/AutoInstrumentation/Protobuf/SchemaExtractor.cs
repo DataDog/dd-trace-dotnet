@@ -35,8 +35,8 @@ internal class SchemaExtractor
     {
         var tracer = Tracer.Instance;
 
-        var settings = tracer.Settings;
-        if (!settings.IsDataStreamsSchemaExtractionEnabled || !settings.IsIntegrationEnabled(IntegrationId.Protobuf))
+        var settings = tracer.CurrentTraceSettings;
+        if (!tracer.Settings.IsDataStreamsSchemaExtractionEnabled || !settings.Settings.IsIntegrationEnabled(IntegrationId.Protobuf))
         {
             return;
         }

@@ -30,7 +30,8 @@ public class KafkaConsumerConstructorIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TConsumerBuilder>(TTarget instance, TConsumerBuilder consumer)
         where TConsumerBuilder : IConsumerBuilder
     {
-        if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+        var tracer = Tracer.Instance;
+        if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
         {
             string groupId = null;
             string bootstrapServers = null;
@@ -53,7 +54,7 @@ public class KafkaConsumerConstructorIntegration
                 }
             }
 
-            if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            if (tracer.TracerManager.DataStreamsManager.IsEnabled)
             {
                 // add handler to track committed offsets
                 consumer.OffsetsCommittedHandler = consumer.OffsetsCommittedHandler.Instrument(new OffsetsCommittedCallbacks(groupId));
