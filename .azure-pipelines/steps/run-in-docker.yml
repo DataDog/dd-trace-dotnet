@@ -69,8 +69,8 @@ steps:
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \
         --env IncludeAllTestFrameworks \
-        --env TestAllPackageVersions="${TestAllPackageVersions:-}" \
-        --env IncludeMinorPackageVersions="${IncludeMinorPackageVersions:-}" \
+        --env TestAllPackageVersions=$(TestAllPackageVersions) \
+        --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
         --env DD_COLLECTOR_CPU_USAGE="1" \
@@ -111,5 +111,3 @@ steps:
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
-    TestAllPackageVersions: $(TestAllPackageVersions)
-    IncludeMinorPackageVersions: $(IncludeMinorPackageVersions)
