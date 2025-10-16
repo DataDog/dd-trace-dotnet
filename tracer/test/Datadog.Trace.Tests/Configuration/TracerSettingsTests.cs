@@ -891,9 +891,9 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("invalid", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", null, OtlpProtocol.Grpc)]
+        [InlineData(null, null, OtlpProtocol.Grpc)]
+        [InlineData("invalid", null, OtlpProtocol.Grpc)]
+        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
         [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
         public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
