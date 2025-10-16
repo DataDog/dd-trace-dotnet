@@ -156,9 +156,9 @@ namespace UpdateVendors
             
             Add(
                 libraryName: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
-                version: "core-1.13.0",
-                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.0.zip",
-                pathToSrc: new[] { "opentelemetry-dotnet-core-1.13.0", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
+                version: "core-1.13.1",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.13.1", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
                 transform: filePath => RewriteCsFileWithStandardTransform(
                     filePath,
                     originalNamespace: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
@@ -447,29 +447,28 @@ namespace UpdateVendors
 
         private static string AddOpenTelemetryUsings(string filePath, string contents)
         {
-            // Add common using directives needed by OTel files
-            var usings = new[]
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ");
+            if (namespaceIndex < 0)
             {
-                "using System;",
-                "using System.Net.Http;",
-                "using System.Net.Http.Headers;",
-                "using System.Threading;",
-                "using System.Threading.Tasks;"
-            };
-
-            foreach (var usingDirective in usings)
-            {
-                if (!contents.Contains(usingDirective))
-                {
-                    var namespaceIndex = contents.IndexOf("namespace ");
-                    if (namespaceIndex > 0)
-                    {
-                        contents = contents.Insert(namespaceIndex, usingDirective + "\n");
-                    }
-                }
+                return contents; // No namespace found, skip
             }
 
-            return contents;
+            // Move to the start of the line  
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives needed by OTel files
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            var usings = 
+                "using System;\n" +
+                "using System.Collections.Generic;\n" +
+                "using System.IO;\n" +
+                "using System.Linq;\n" +
+                "using System.Net.Http;\n" +
+                "using System.Threading;\n" +
+                "using System.Threading.Tasks;\n\n";
+
+            return contents.Insert(namespaceIndex, usings);
         }
     }
 }
