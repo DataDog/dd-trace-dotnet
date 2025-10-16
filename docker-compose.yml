@@ -445,7 +445,6 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
-      - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
@@ -474,6 +473,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
+      - TEST_AGENT_HOST=test-agent
     hostname: integrationtests
     depends_on:
       - servicestackredis
@@ -749,6 +749,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
+      - TEST_AGENT_HOST=test-agent
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -761,6 +762,7 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -776,9 +778,10 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
 
   IntegrationTests.ARM64.Debugger:
     build:
