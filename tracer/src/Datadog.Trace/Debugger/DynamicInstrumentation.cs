@@ -79,8 +79,8 @@ namespace Datadog.Trace.Debugger
                 (updates, removals) =>
                 {
                     var addedResult = AcceptAddedConfiguration(updates?.Values.SelectMany(u => u).ToList());
-                    var removedResult = AcceptRemovedConfiguration(removals?.Values.SelectMany(u => u).ToList());
-                    return addedResult.Concat(removedResult).ToArray();
+                    AcceptRemovedConfiguration(removals?.Values.SelectMany(u => u).ToList());
+                    return addedResult;
                 },
                 RcmProducts.LiveDebugging);
         }
@@ -277,11 +277,11 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal ApplyDetails[] UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
+        internal void UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
         {
             if (IsDisposed)
             {
-                return [];
+                return;
             }
 
             var removedProbesIds = paths
@@ -294,11 +294,10 @@ namespace Datadog.Trace.Debugger
 
             if (removedProbesIds.Length == 0)
             {
-                return [];
+                return;
             }
 
             Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
-            var result = new ApplyDetails[paths.Count];
 
             lock (_instanceLock)
             {
@@ -319,16 +318,10 @@ namespace Datadog.Trace.Debugger
                         if (boundedProbes.Contains(id))
                         {
                             probesToRemoveFromNative.Add(id);
-                            result[i] = ApplyDetails.FromOk(paths[i].Path);
-                        }
-                        else
-                        {
-                            result[i] = ApplyDetails.FromError(paths[i].Path, "Probe ID does not have a native representation so no request revert will call for him");
                         }
                     }
                     catch (Exception e)
                     {
-                        result[i] = ApplyDetails.FromError(paths[i].Path, e.Message);
                         Log.Error(e, "Error remove probe {ID} instrumentation", id);
                     }
                 }
@@ -344,8 +337,6 @@ namespace Datadog.Trace.Debugger
                 // This log entry is being checked in integration test
                 Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
             }
-
-            return result;
         }
 
         private ProbeLocationType GetProbeLocationType(ProbeDefinition probe)
@@ -515,14 +506,14 @@ namespace Datadog.Trace.Debugger
             return result.ToArray();
         }
 
-        private ApplyDetails[] AcceptRemovedConfiguration(List<RemoteConfigurationPath>? paths)
+        private void AcceptRemovedConfiguration(List<RemoteConfigurationPath>? paths)
         {
             if (paths == null)
             {
-                return [];
+                return;
             }
 
-            return _configurationUpdater.AcceptRemoved(paths);
+            _configurationUpdater.AcceptRemoved(paths);
         }
 
         internal void AddSnapshot(ProbeInfo probe, string snapshot)

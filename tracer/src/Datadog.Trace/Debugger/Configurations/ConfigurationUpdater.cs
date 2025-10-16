@@ -60,16 +60,15 @@ namespace Datadog.Trace.Debugger.Configurations
             return result;
         }
 
-        public ApplyDetails[] AcceptRemoved(List<RemoteConfigurationPath> paths)
+        public void AcceptRemoved(List<RemoteConfigurationPath> paths)
         {
             try
             {
-                return HandleRemovedProbesChanges(paths);
+                HandleRemovedProbesChanges(paths);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to remove configurations");
-                return [];
             }
         }
 
@@ -121,9 +120,9 @@ namespace Datadog.Trace.Debugger.Configurations
             return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
         }
 
-        private ApplyDetails[] HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
+        private void HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
         {
-            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths) ?? [];
+            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
