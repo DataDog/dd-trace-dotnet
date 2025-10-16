@@ -36,7 +36,7 @@ internal class ServiceDiscoveryHelper
                     TracerConstants.Language,
                     TracerConstants.ThreePartVersion,
                     Environment.MachineName,
-                    tracerSettings.ServiceName,
+                    tracerSettings.MutableSettings.DefaultServiceName,
                     tracerSettings.Environment,
                     tracerSettings.ServiceVersion);
 
