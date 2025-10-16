@@ -958,7 +958,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key to allow telemetry compression.
             /// <see cref="TelemetrySettings.CompressionMethod"/>
             /// </summary>
-            public const string TelemetryCompressionMethod = "DD_TELEMETRY_COMPRESSION_METHOD";
+            public const string TelemetryCompressionMethod = "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD";
 
             /// <summary>
             /// Configuration key for whether to enable redacted error log collection.
