@@ -13,6 +13,29 @@ namespace Datadog.FleetInstaller;
 
 internal static class AppHostHelper
 {
+    public static bool AreIisManagementToolsAvailable(ILogger log)
+    {
+        // We can only manipulate the app pools if they have installed IIS with `-IncludeManagementTools`
+        // There are other ways we _could_ try to identify it, by using System.Management but
+        // this crude check just calls the APIs that we will call later in Microsoft.Web.Administration,
+        // if the components aren't installed, this will fail.
+        try
+        {
+            log.WriteInfo("Checking for presence of IIS Management Tools");
+
+            using var serverManager = new ServerManager();
+            serverManager.GetApplicationHostConfiguration();
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, "Error checking for presence of IIS Management Tools - tools are not available");
+            return false;
+        }
+
+        log.WriteInfo("IIS Management Tools are available");
+        return true;
+    }
+
     public static bool SetAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Setting app pool environment variables");

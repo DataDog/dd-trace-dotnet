@@ -53,6 +53,12 @@ internal abstract class CommandBase : Command
             return false;
         }
 
+        if (!AppHostHelper.AreIisManagementToolsAvailable(Log.Instance))
+        {
+            errorMessage = "This installer requires the IIS Management Tools to enable IIS instrumentation. Ensure you install IIS with -IncludeManagementTools";
+            return false;
+        }
+
         errorMessage = null;
         return true;
     }
