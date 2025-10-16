@@ -1684,6 +1684,7 @@ stages:
       workingDirectory: $(Build.Repository.LocalPath)
 
     - powershell: |
+        mkdir -Force ./artifacts/build_data/snapshots
         docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
       displayName: Start test agent
       retryCountOnTaskFailure: 3
@@ -1704,7 +1705,6 @@ stages:
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
-        TEST_AGENT_HOST: test-agent
 
     - script: docker compose -f docker-compose.windows.yml down
       displayName: Stop test agent
