@@ -6,10 +6,7 @@
 #if NET6_0_OR_GREATER
 
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -18,7 +15,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-
+using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol;
+using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient;
 #nullable enable
 
 namespace Datadog.Trace.OpenTelemetry.Metrics
@@ -26,13 +24,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     /// <summary>
     /// OTLP Exporter implementation that exports metrics using the OpenTelemetry Protocol.
     /// This is the concrete implementation of the MetricExporter base class that handles OTLP protocol specifics.
-    /// Supports both grpc and http/protobuf transports as specified in the RFC.
     /// This is a Push Metric Exporter that sends metrics via the OpenTelemetry Protocol.
     /// </summary>
     internal class OtlpExporter : MetricExporter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
         private readonly HttpClient _httpClient;
+        private readonly OtlpGrpcExportClient? _grpcClient;
         private readonly Telemetry.Metrics.MetricTags.Protocol _protocolTag;
         private readonly Telemetry.Metrics.MetricTags.MetricEncoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
@@ -51,8 +49,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             _protocolTag = _protocol switch
             {
                 Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Protocol.Grpc,
-                Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.Protocol.Http,
-                Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.Protocol.Http,
                 _ => Telemetry.Metrics.MetricTags.Protocol.Http
             };
 
@@ -65,8 +61,26 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             };
 
             _serializer = new OtlpMetricsSerializer(settings);
-
             _httpClient = CreateHttpClient(_endpoint);
+
+            if (_protocol == Configuration.OtlpProtocol.Grpc)
+            {
+                var opt = new OtlpExporterOptions
+                {
+                    Endpoint = _endpoint,
+                    TimeoutMilliseconds = _timeoutMs,
+                    Protocol = (OtlpExportProtocol)_protocol,
+                    AppendSignalPathToEndpoint = true
+                };
+
+                foreach (var kvp in _headers)
+                {
+                    opt.Headers[kvp.Key] = kvp.Value;
+                }
+
+                const string metricsGrpcPath = "opentelemetry.proto.collector.metrics.v1.MetricsService/Export";
+                _grpcClient = new OtlpGrpcExportClient(opt, _httpClient, metricsGrpcPath);
+            }
         }
 
         private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers);
@@ -143,7 +157,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 var handler = new SocketsHttpHandler
                 {
                     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                    ConnectCallback = async (context, cancellationToken) =>
+                    ConnectCallback = async (_, cancellationToken) =>
                     {
                         var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                         var udsEndpoint = new UnixDomainSocketEndPoint(socketPath);
@@ -177,8 +191,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             try
             {
                 // Serialize metrics to protobuf format
+                // For gRPC, reserve 5 bytes at the start for the frame header (added later)
+                // For HTTP, start at position 0
                 // Note: JSON serialization is not yet implemented, so we always use protobuf ATM
-                var otlpPayload = _serializer.SerializeMetrics(metrics);
+                var startPosition = _protocol == Configuration.OtlpProtocol.Grpc ? 5 : 0;
+                var otlpPayload = _serializer.SerializeMetrics(metrics, startPosition);
 
                 return _protocol switch
                 {
@@ -226,8 +243,38 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         private async Task<bool> SendGrpcRequest(byte[] otlpPayload)
         {
-            Log.Warning("GRPC protocol is not yet implemented, falling back to HTTP/protobuf");
-            return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
+            if (_grpcClient is null)
+            {
+                Log.Warning("GRPC selected but gRPC client is not initialized; falling back to HTTP/protobuf.");
+                return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
+            }
+
+            try
+            {
+                // gRPC requires a 5-byte message frame prefix:
+                // byte 0: compression flag (0 = no compression)
+                // bytes 1-4: message length in big-endian format
+                // bytes 5+: the actual protobuf payload (already serialized at position 5)
+                otlpPayload[0] = 0; // No compression
+
+                // Write message length in big-endian format (payload length - 5 header bytes)
+                var dataLength = otlpPayload.Length - 5;
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(
+                    new System.Span<byte>(otlpPayload, 1, 4),
+                    (uint)dataLength);
+
+                var resp = await Task.Run(() => _grpcClient.SendExportRequest(
+                                            otlpPayload,
+                                            otlpPayload.Length,
+                                            default))
+                                    .ConfigureAwait(false);
+                return resp.Success;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception when sending metrics OTLP gRPC request.");
+                return false;
+            }
         }
 
         private async Task<bool> SendWithRetry(byte[] otlpPayload, HttpRequestFactory requestFactory)
@@ -279,10 +326,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
                             await Task.Delay(retryDelay).ConfigureAwait(false);
                             continue;
-                        }
-                        else
-                        {
-                            return false;
                         }
                     }
 

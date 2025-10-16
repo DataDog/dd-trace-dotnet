@@ -91,6 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
                 yield return [packageVersion[0], "false", "true", "grpc"];
+                yield return [packageVersion[0], "true", "false", "grpc"];
                 yield return [packageVersion[0], "false", "true", "http/protobuf"];
                 yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
