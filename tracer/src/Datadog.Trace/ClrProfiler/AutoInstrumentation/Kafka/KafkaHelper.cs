@@ -72,9 +72,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = (topicPartition?.Partition).ToString();
                 }
 
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
                 {
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                    }
                 }
 
                 if (isTombstone)
@@ -212,10 +216,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var clusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                    }
                 }
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
@@ -361,6 +369,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
             }
+        }
+
+        internal static string? GetClusterId(object consumerOrProducer)
+        {
+            try
+            {
+                // Try to duck type to IConsumer or IProducer and call GetMetadata
+                // Use a short timeout to avoid blocking
+                var timeout = TimeSpan.FromMilliseconds(100);
+
+                if (consumerOrProducer.TryDuckCast<IConsumer>(out var consumer))
+                {
+                    var metadata = consumer.GetMetadata(timeout);
+                    return metadata?.ClusterId;
+                }
+                else if (consumerOrProducer.TryDuckCast<IProducer>(out var producer))
+                {
+                    var metadata = producer.GetMetadata(timeout);
+                    return metadata?.ClusterId;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting cluster_id from Kafka metadata");
+            }
+
+            return null;
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)

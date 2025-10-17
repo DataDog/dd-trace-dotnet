@@ -59,7 +59,8 @@ public class KafkaProducerConstructorIntegration
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
                 // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
+                // cluster_id will be populated in OnMethodEnd after the producer is fully constructed
+                ProducerCache.AddBootstrapServers(instance, bootstrapServers, string.Empty);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -74,6 +75,19 @@ public class KafkaProducerConstructorIntegration
         if (exception is not null && state is { State: { } producer })
         {
             ProducerCache.RemoveProducer(producer);
+        }
+        else if (exception is null && state is { State: { } producerObj })
+        {
+            // Extract cluster_id from metadata
+            var clusterId = KafkaHelper.GetClusterId(producerObj);
+            if (!string.IsNullOrEmpty(clusterId))
+            {
+                // Update the cache with cluster_id
+                if (ProducerCache.TryGetProducer(producerObj, out var bootstrapServers, out _))
+                {
+                    ProducerCache.AddBootstrapServers(producerObj, bootstrapServers, clusterId);
+                }
+            }
         }
 
         return CallTargetReturn.GetDefault();

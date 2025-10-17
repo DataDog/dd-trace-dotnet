@@ -16,14 +16,17 @@ internal static class ProducerCache
 {
     // A map between Kafka Producer<TKey,TValue> and the corresponding producer bootstrap servers
     private static readonly ConditionalWeakTable<object, string> ProducerToBootstrapServersMap = new();
+    private static readonly ConditionalWeakTable<object, string> ProducerToClusterIdMap = new();
     private static readonly ConditionalWeakTable<object, Delegate?> ProducerToDefaultDeliveryHandlerMap = new();
 
-    public static void AddBootstrapServers(object producer, string bootstrapServers)
+    public static void AddBootstrapServers(object producer, string bootstrapServers, string clusterId)
     {
 #if NETCOREAPP3_1_OR_GREATER
         ProducerToBootstrapServersMap.AddOrUpdate(producer, bootstrapServers);
+        ProducerToClusterIdMap.AddOrUpdate(producer, clusterId);
 #else
         ProducerToBootstrapServersMap.GetValue(producer, x => bootstrapServers);
+        ProducerToClusterIdMap.GetValue(producer, x => clusterId);
 #endif
     }
 
@@ -55,8 +58,14 @@ internal static class ProducerCache
         return null;
     }
 
-    public static bool TryGetProducer(object producer, out string? bootstrapServers)
-        => ProducerToBootstrapServersMap.TryGetValue(producer, out bootstrapServers);
+    public static bool TryGetProducer(object producer, out string? bootstrapServers, out string? clusterId)
+    {
+        bootstrapServers = null;
+        clusterId = null;
+
+        return ProducerToBootstrapServersMap.TryGetValue(producer, out bootstrapServers)
+            && ProducerToClusterIdMap.TryGetValue(producer, out clusterId);
+    }
 
     public static bool TryGetDefaultDeliveryHandler(object producer, out Delegate? handler)
     {
@@ -66,6 +75,7 @@ internal static class ProducerCache
     public static void RemoveProducer(object producer)
     {
         ProducerToBootstrapServersMap.Remove(producer);
+        ProducerToClusterIdMap.Remove(producer);
         ProducerToDefaultDeliveryHandlerMap.Remove(producer);
     }
 }
