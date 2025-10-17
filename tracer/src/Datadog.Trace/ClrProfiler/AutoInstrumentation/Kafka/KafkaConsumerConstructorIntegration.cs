@@ -63,7 +63,8 @@ public class KafkaConsumerConstructorIntegration
             if (groupId is not null)
             {
                 // Save the map between this consumer and a consumer group
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
+                // cluster_id will be populated in OnMethodEnd after the consumer is fully constructed
+                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, string.Empty);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -78,6 +79,19 @@ public class KafkaConsumerConstructorIntegration
         if (exception is not null && state is { State: { } consumer })
         {
             ConsumerCache.RemoveConsumerGroup(consumer);
+        }
+        else if (exception is null && state is { State: { } consumerObj })
+        {
+            // Extract cluster_id from metadata
+            var clusterId = KafkaHelper.GetClusterId(consumerObj);
+            if (!string.IsNullOrEmpty(clusterId))
+            {
+                // Update the cache with cluster_id
+                if (ConsumerCache.TryGetConsumerGroup(consumerObj, out var groupId, out var bootstrapServers, out _))
+                {
+                    ConsumerCache.SetConsumerGroup(consumerObj, groupId, bootstrapServers, clusterId);
+                }
+            }
         }
 
         return CallTargetReturn.GetDefault();
