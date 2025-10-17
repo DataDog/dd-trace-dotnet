@@ -254,8 +254,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                await Task.Delay(2000);
-
                 using var httpClient = new System.Net.Http.HttpClient();
                 var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsResponse.EnsureSuccessStatusCode();
