@@ -190,20 +190,20 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         {
             try
             {
-                // Serialize metrics to protobuf format
-                // For gRPC, reserve 5 bytes at the start for the frame header (added later)
-                // For HTTP, start at position 0
-                // Note: JSON serialization is not yet implemented, so we always use protobuf ATM
-                var startPosition = _protocol == Configuration.OtlpProtocol.Grpc ? 5 : 0;
-                var otlpPayload = _serializer.SerializeMetrics(metrics, startPosition);
-
-                return _protocol switch
+                // OTEL-style: serialize per protocol so we never leak the gRPC 5-byte reservation into HTTP.
+                var task = _protocol switch
                 {
-                    Configuration.OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),
-                    Configuration.OtlpProtocol.HttpJson => await SendHttpJsonRequest(otlpPayload).ConfigureAwait(false),
-                    Configuration.OtlpProtocol.Grpc => await SendGrpcRequest(otlpPayload).ConfigureAwait(false),
-                    _ => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false)
+                    Configuration.OtlpProtocol.Grpc =>
+                        SendGrpcRequest(_serializer.SerializeMetrics(metrics, startPosition: 5)),
+                    Configuration.OtlpProtocol.HttpProtobuf =>
+                        SendHttpProtobufRequest(_serializer.SerializeMetrics(metrics, startPosition: 0)),
+                    Configuration.OtlpProtocol.HttpJson =>
+                        SendHttpJsonRequest(_serializer.SerializeMetrics(metrics, startPosition: 0)),
+                    _ =>
+                        SendHttpProtobufRequest(_serializer.SerializeMetrics(metrics, startPosition: 0))
                 };
+
+                return await task.ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -246,7 +246,27 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             if (_grpcClient is null)
             {
                 Log.Warning("GRPC selected but gRPC client is not initialized; falling back to HTTP/protobuf.");
-                return await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false);
+                // otlpPayload was serialized with startPosition=5 => slice off the 5-byte reservation.
+                return await SendWithRetry(
+                        otlpPayload,
+                        (p, endpoint, headers) =>
+                        {
+                            var content = new ByteArrayContent(p, 5, p.Length - 5);
+                            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
+
+                            var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                            {
+                                Content = content
+                            };
+
+                            foreach (var header in headers)
+                            {
+                                httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                            }
+
+                            return httpRequest;
+                        })
+                    .ConfigureAwait(false);
             }
 
             try
