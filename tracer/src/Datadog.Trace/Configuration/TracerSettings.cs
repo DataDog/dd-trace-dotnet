@@ -205,11 +205,11 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.HttpProtobuf, "http/protobuf"),
+                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
                                       converter: x => x switch
                                       {
-                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                                           not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
                                           _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
                                       },
@@ -1279,7 +1279,7 @@ namespace Datadog.Trace.Configuration
 
         private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
         {
-            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'http/protobuf', 'grpc', 'http/json'. Using default: http/protobuf", inputValue);
+            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
 

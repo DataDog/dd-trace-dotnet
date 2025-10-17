@@ -91,6 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
                 yield return [packageVersion[0], "false", "true", "grpc"];
+                yield return [packageVersion[0], "true", "false", "grpc"];
                 yield return [packageVersion[0], "false", "true", "http/protobuf"];
                 yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
@@ -213,8 +214,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
+        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         [Trait("RequiresDockerDependency", "true")]
         [MemberData(nameof(GetMetricsTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
@@ -253,8 +254,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                await Task.Delay(2000);
-
                 using var httpClient = new System.Net.Http.HttpClient();
                 var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsResponse.EnsureSuccessStatusCode();
