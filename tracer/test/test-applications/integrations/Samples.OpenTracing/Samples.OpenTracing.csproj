@@ -6,4 +6,9 @@
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj" />
     <PackageReference Include="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
 </Project>
