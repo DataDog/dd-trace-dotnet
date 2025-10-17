@@ -156,4 +156,7 @@
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
 
+  <!--Google.Protobuf-->
+  <!-- There are some $(DefineConstants) that we have not yet applied. -->
+
 </Project>

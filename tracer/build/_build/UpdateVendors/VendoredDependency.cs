@@ -153,6 +153,23 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
                 pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
+
+            Add(
+                libraryName: "opentelemetry",
+                version: "1.7.0",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.7.0.zip",
+                pathToSrc: new[] { "opentelemetry-proto-1.7.0", "opentelemetry" },
+                transform: filePath => RewriteFileWithTransform(filePath, s => s),
+                pathToDestination: new[] { "protos", "opentelemetry" },
+                isNugetPackage: false);
+
+            Add(
+                libraryName: "Google.Protobuf",
+                version: "3.34.0",
+                downloadUrl: "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v32.1.zip",
+                pathToSrc: new[] { "protobuf-32.1", "csharp", "src", "Google.Protobuf"},
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Google.Protobuf"),
+                relativePathsToExclude: new[] { "Compatibility/DynamicallyAccessedMembersAttribute.cs", "Compatibility/DynamicallyAccessedMemberTypes.cs", "Compatibility/RequiresUnreferencedCodeAttribute.cs", "Compatibility/TypeExtensions.cs", "Compatibility/UnconditionalSuppressMessageAttribute.cs" });
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -169,13 +186,19 @@ namespace UpdateVendors
 
         public string[] RelativePathsToExclude { get; set; }
 
+        public string[] PathToDestination { get; set; }
+
+        public bool IsNugetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
             Action<string> transform,
-            string[] relativePathsToExclude = null)
+            string[] relativePathsToExclude = null,
+            string[] pathToDestination = null,
+            bool isNugetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -185,6 +208,8 @@ namespace UpdateVendors
                 PathToSrc = pathToSrc,
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
+                PathToDestination = pathToDestination ?? new[] { libraryName },
+                IsNugetPackage = isNugetPackage,
             });
         }
 
@@ -319,6 +344,26 @@ namespace UpdateVendors
                             builder.Replace("using static ICSharpCode.SharpZipLib", "using static Datadog.Trace.Vendors.ICSharpCode.SharpZipLib");
                         }
 
+                        if (originalNamespace.StartsWith("Google.Protobuf"))
+                        {
+                            builder.Replace("global::Google.Protobuf", "global::Datadog.Trace.Vendors.Google.Protobuf");
+                            builder.Replace("using System.Buffers;", "#if NETFRAMEWORK || NETSTANDARD2_0\nusing Datadog.Trace.VendoredMicrosoftCode.System.Buffers;\n#else\nusing System.Buffers;\n#endif");
+                            builder.Replace("using System.Buffers.Binary;", "#if NETFRAMEWORK || NETSTANDARD2_0\nusing Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;\n#else\nusing System.Buffers.Binary;\n#endif");
+                            builder.Replace("using static Google.Protobuf", "using static Datadog.Trace.Vendors.Google.Protobuf");
+                            builder.Replace("public ref struct", "internal ref struct");
+
+                            builder.Replace("using System.Runtime.InteropServices;", "using System.Runtime.InteropServices;\n#if NETFRAMEWORK || NETSTANDARD2_0\nusing MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;\n#endif");
+                            builder.Replace("using System.Runtime.CompilerServices;", "using System.Runtime.CompilerServices;\n#if NETFRAMEWORK || NETSTANDARD2_0\nusing Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;\n#endif");
+                            builder.Replace(
+                                @"            Span<byte> floatSpan = stackalloc byte[length];",
+                                @"#if NETCOREAPP
+            Span<byte> floatSpan = stackalloc byte[length];
+#else
+            byte* ptr = stackalloc byte[length];
+            var floatSpan = new global::Datadog.Trace.VendoredMicrosoftCode.System.Span<byte>(ptr, length);
+#endif");
+                        }
+
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");
@@ -339,7 +384,6 @@ namespace UpdateVendors
                                 builder.ToString(),
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
                                 match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
-
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"

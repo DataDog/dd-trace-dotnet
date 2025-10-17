@@ -1,0 +1,1 @@
+https://github.com/protocolbuffers/protobuf/archive/refs/tags/v32.1.zip

@@ -1,0 +1,1 @@
+https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v1.7.0.zip
