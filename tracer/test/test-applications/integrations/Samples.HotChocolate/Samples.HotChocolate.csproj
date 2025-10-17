@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <!-- override to remove not supported platforms -->
@@ -24,8 +24,13 @@
     <PackageReference Include="HotChocolate.AspNetCore" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <!-- Use a 3.1.x targeting pack whose DI.Abstractions ref is 3.1.4.0 or newer -->
+    <AspNetCoreTargetingPackVersion>3.1.32</AspNetCoreTargetingPackVersion>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.4" />
   </ItemGroup>
-
+  
 </Project>
