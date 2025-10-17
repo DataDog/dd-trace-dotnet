@@ -158,6 +158,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" Condition="$(TargetFramework.StartsWith('netcoreapp')) OR $(TargetFramework.StartsWith('net5.'))" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
