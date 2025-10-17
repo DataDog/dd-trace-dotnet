@@ -215,7 +215,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         [Trait("RequiresDockerDependency", "true")]
         [MemberData(nameof(GetMetricsTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
