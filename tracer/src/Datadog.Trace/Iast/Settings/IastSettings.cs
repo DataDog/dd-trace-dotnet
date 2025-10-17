@@ -99,7 +99,7 @@ internal class IastSettings
 
         DataBaseRowsToTaint = config
             .WithKeys(new ConfigKeyDdIastDbRowsToTaint())
-            .AsInt32(DataBaseRowsToTaintDefault, x => x > 0)
+            .AsInt32(DataBaseRowsToTaintDefault, x => x >= 0)
             .Value;
 
         CookieFilterRegex = config
