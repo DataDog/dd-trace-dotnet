@@ -151,7 +151,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
-        public string DefaultServiceName => TracerManager.DefaultServiceName;
+        public string DefaultServiceName => CurrentTraceSettings.Settings.DefaultServiceName;
 
         /// <summary>
         /// Gets the git metadata provider.

@@ -3,7 +3,8 @@
     <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
     <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">1.12.0</ApiVersion>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">1.13.1</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     </PropertyGroup>

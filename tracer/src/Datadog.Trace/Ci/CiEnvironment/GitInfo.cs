@@ -192,6 +192,11 @@ internal class GitInfo : IGitInfo
                 Log.Warning(ex, "Get directories failed with DirectoryNotFoundException");
                 return null;
             }
+            catch (IOException ex)
+            {
+                Log.Warning(ex, "Get directories failed with IOException");
+                return null;
+            }
             catch (UnauthorizedAccessException ex)
             {
                 Log.Warning(ex, "Get directories failed with UnauthorizedAccessException");

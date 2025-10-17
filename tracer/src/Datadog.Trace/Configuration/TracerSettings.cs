@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -32,12 +33,10 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>()
-        {
-            "DD_TAGS"
-        };
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
 
         private readonly IConfigurationTelemetry _telemetry;
+        private readonly Lazy<string> _fallbackApplicationName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -646,7 +645,11 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
-            MutableSettings = MutableSettings.Create(source, telemetry, errorLog, this);
+            // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
+            _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
+
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
+            MutableSettings = InitialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -657,7 +660,11 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings MutableSettings { get; }
+        internal MutableSettings InitialMutableSettings { get; }
+
+        internal MutableSettings MutableSettings { get; init; }
+
+        internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
@@ -682,7 +689,7 @@ namespace Datadog.Trace.Configuration
         internal bool GitMetadataEnabled { get; }
 
         /// <inheritdoc cref="MutableSettings.TraceEnabled"/>
-        public bool TraceEnabled => DynamicSettings.TraceEnabled ?? MutableSettings.TraceEnabled;
+        public bool TraceEnabled => MutableSettings.TraceEnabled;
 
         /// <summary>
         /// Gets a value indicating whether APM traces are enabled.
@@ -777,22 +784,22 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; }
+        public ExporterSettings Exporter { get; init; }
 
         /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
 
         /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? MutableSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => MutableSettings.LogsInjectionEnabled;
 
         /// <inheritdoc cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
         public int MaxTracesSubmittedPerSecond => MutableSettings.MaxTracesSubmittedPerSecond;
 
         /// <inheritdoc cref="MutableSettings.CustomSamplingRules"/>
-        public string? CustomSamplingRules => DynamicSettings.SamplingRules ?? MutableSettings.CustomSamplingRules;
+        public string? CustomSamplingRules => MutableSettings.CustomSamplingRules;
 
-        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
+        internal bool CustomSamplingRulesIsRemote => MutableSettings.CustomSamplingRulesIsRemote;
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
@@ -808,16 +815,16 @@ namespace Datadog.Trace.Configuration
         internal string? SpanSamplingRules { get; }
 
         /// <inheritdoc cref="MutableSettings.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate => DynamicSettings.GlobalSamplingRate ?? MutableSettings.GlobalSamplingRate;
+        public double? GlobalSamplingRate => MutableSettings.GlobalSamplingRate;
 
         /// <inheritdoc cref="MutableSettings.Integrations"/>
         public IntegrationSettingsCollection Integrations => MutableSettings.Integrations;
 
         /// <inheritdoc cref="MutableSettings.GlobalTags"/>
-        public IReadOnlyDictionary<string, string> GlobalTags => DynamicSettings.GlobalTags ?? MutableSettings.GlobalTags;
+        public IReadOnlyDictionary<string, string> GlobalTags => MutableSettings.GlobalTags;
 
         /// <inheritdoc cref="MutableSettings.HeaderTags"/>
-        public IReadOnlyDictionary<string, string> HeaderTags => DynamicSettings.HeaderTags ?? MutableSettings.HeaderTags;
+        public IReadOnlyDictionary<string, string> HeaderTags => MutableSettings.HeaderTags;
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -1164,8 +1171,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public int PartialFlushMinSpans { get; }
 
-        internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
-
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
@@ -1229,7 +1234,7 @@ namespace Datadog.Trace.Configuration
             => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
 
         internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => DynamicSettings.TraceEnabled != false && MutableSettings.IsIntegrationEnabled(integration, defaultValue);
+            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
 
         [Obsolete(DeprecationMessages.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)

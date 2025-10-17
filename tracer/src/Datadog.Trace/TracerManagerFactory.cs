@@ -42,7 +42,6 @@ namespace Datadog.Trace
 {
     internal class TracerManagerFactory
     {
-        private const string UnknownServiceName = "UnknownService";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerManagerFactory>();
 
         public static readonly TracerManagerFactory Instance = new();
@@ -75,7 +74,7 @@ namespace Datadog.Trace
             {
                 if (Profiler.Instance.Status.IsProfilerReady)
                 {
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.PerTraceSettings.Settings.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
                 }
             }
             catch (Exception ex)
@@ -122,9 +121,7 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            var defaultServiceName = settings.ServiceName ??
-                GetApplicationName(settings) ??
-                UnknownServiceName;
+            var defaultServiceName = settings.MutableSettings.DefaultServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
 
@@ -186,7 +183,7 @@ namespace Datadog.Trace
                     var rcmApi = RemoteConfigurationApiFactory.Create(settings.Exporter, rcmSettings, discoveryService);
 
                     // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                    var serviceName = TraceUtil.NormalizeTag(settings.ServiceName ?? defaultServiceName);
+                    var serviceName = TraceUtil.NormalizeTag(defaultServiceName);
 
                     remoteConfigurationManager =
                         RemoteConfigurationManager.Create(
@@ -228,7 +225,6 @@ namespace Datadog.Trace
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
@@ -264,7 +260,6 @@ namespace Datadog.Trace
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -272,7 +267,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
@@ -426,7 +421,7 @@ namespace Datadog.Trace
                         TraceVersion = TracerConstants.AssemblyVersion,
                         Env = settings.Environment,
                         Version = settings.ServiceVersion,
-                        Service = settings.ServiceName,
+                        Service = settings.MutableSettings.DefaultServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
@@ -536,72 +531,6 @@ namespace Datadog.Trace
             }
 
             return CreateDogStatsdClient(settings, serviceName, constantTags);
-        }
-
-        /// <summary>
-        /// Gets an "application name" for the executing application by looking at
-        /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
-        /// </summary>
-        /// <returns>The default service name.</returns>
-        private static string GetApplicationName(TracerSettings settings)
-        {
-            try
-            {
-                if ((settings.IsRunningInAzureAppService || settings.IsRunningInAzureFunctions) &&
-                    settings.AzureAppServiceMetadata?.SiteName is { } siteName)
-                {
-                    return siteName;
-                }
-
-                if (settings.LambdaMetadata is { IsRunningInLambda: true, ServiceName: var serviceName })
-                {
-                    return serviceName;
-                }
-
-                try
-                {
-                    if (TryLoadAspNetSiteName(out siteName))
-                    {
-                        return siteName;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Unable to call into System.Web.dll
-                    Log.Error(ex, "Unable to get application name through ASP.NET settings");
-                }
-
-                return Assembly.GetEntryAssembly()?.GetName().Name ??
-                       ProcessHelpers.GetCurrentProcessName();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating default service name.");
-                return null;
-            }
-        }
-
-        private static bool TryLoadAspNetSiteName(out string siteName)
-        {
-#if NETFRAMEWORK
-            try
-            {
-                // System.Web.dll is only available on .NET Framework
-                if (System.Web.Hosting.HostingEnvironment.IsHosted)
-                {
-                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                    // note that ApplicationVirtualPath includes a leading slash.
-                    siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
-                    return true;
-                }
-            }
-            catch (TypeLoadException ex)
-            {
-                Log.Warning(ex, "Unable to determine ASP.NET site name: HostingEnvironment type could not be loaded. This is expected when running ASP.NET Core on the .NET Framework CLR, which is not supported.");
-            }
-#endif
-            siteName = default;
-            return false;
         }
     }
 }

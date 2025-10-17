@@ -63,7 +63,6 @@ namespace Datadog.Trace
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -78,7 +77,6 @@ namespace Datadog.Trace
             ScopeManager = scopeManager;
             Statsd = statsd;
             RuntimeMetrics = runtimeMetricsWriter;
-            DefaultServiceName = defaultServiceName;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
             DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
@@ -102,8 +100,8 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
-            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
-            PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
+            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
+            PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema, settings.MutableSettings);
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
         }
@@ -122,11 +120,6 @@ namespace Datadog.Trace
                     () => CreateInitializedTracer(settings: null, TracerManagerFactory.Instance));
             }
         }
-
-        /// <summary>
-        /// Gets the default service name for traces where a service name is not specified.
-        /// </summary>
-        public string DefaultServiceName { get; }
 
         public IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
@@ -390,7 +383,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.TraceEnabled);
 
                     writer.WritePropertyName("service");
-                    writer.WriteValue(instance.DefaultServiceName);
+                    writer.WriteValue(instance.PerTraceSettings.Settings.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.TraceAgentUriBase);

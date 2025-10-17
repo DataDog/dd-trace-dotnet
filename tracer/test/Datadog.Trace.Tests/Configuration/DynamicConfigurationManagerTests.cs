@@ -216,16 +216,12 @@ public class DynamicConfigurationManagerTests
         Dictionary<string, List<RemoteConfiguration>> configByProduct,
         Dictionary<string, List<RemoteConfigurationPath>> removedConfigByProduct)
     {
-        var removed = removedConfigByProduct
-                     .Where(x => x.Key == ProductName)
-                     .SelectMany(x => x.Value)
-                     .Where(x => originalConfig.ContainsKey(x.Id)) // Only acknowledge the configs that we actually have
-                     .Select(x => ApplyDetails.FromOk(x.Path));
+        // Only acknowledge added configs, not removed ones
         var added = configByProduct
                    .Where(x => x.Key == ProductName)
                    .SelectMany(x => x.Value)
                    .Select(x => ApplyDetails.FromOk(x.Path.Path));
-        List<ApplyDetails> expected = [..removed, ..added];
+        List<ApplyDetails> expected = [..added];
 
         applyDetails.Should().BeEquivalentTo(expected);
     }

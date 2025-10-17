@@ -32,6 +32,8 @@ services:
     - ./artifacts/build_data/snapshots:c:/debug_snapshots
     ports:
     - "8126"
+    - "4317:4317"
+    - "4318:4318"
     environment:
     - SNAPSHOT_CI=1
       # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux

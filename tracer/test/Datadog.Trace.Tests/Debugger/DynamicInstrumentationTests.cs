@@ -239,10 +239,10 @@ public class DynamicInstrumentationTests
             Called = true;
         }
 
-        public string[] GetBoundedProbes(string[] candidateProbeIds)
+        public string[] GetBoundedProbes()
         {
             Called = true;
-            return candidateProbeIds;
+            return [];
         }
 
         public void Dispose()

@@ -473,6 +473,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
+      - TEST_AGENT_HOST=test-agent
     hostname: integrationtests
     depends_on:
       - servicestackredis
@@ -494,6 +495,7 @@ services:
       - localstack
       - couchbase
       - azureservicebus-emulator
+      - test-agent
 
   IntegrationTests.Debugger:
     build:
@@ -675,9 +677,10 @@ services:
       - localstack
       - couchbase
       - azureservicebus-emulator
+      - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672  # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672 test-agent:8126  # oracle:1521
 
   IntegrationTests.ARM64:
     build:
@@ -746,6 +749,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
+      - TEST_AGENT_HOST=test-agent
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -758,6 +762,7 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -773,9 +778,10 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -841,6 +847,8 @@ services:
     - ./artifacts/build_data/snapshots:/debug_snapshots
     ports:
     - "8126:8126"
+    - "4317:4317"
+    - "4318:4318"
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
