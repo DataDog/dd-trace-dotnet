@@ -1,4 +1,4 @@
-﻿// <copyright file="MutableSettings.cs" company="Datadog">
+// <copyright file="MutableSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,6 +16,8 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Processors;
@@ -265,9 +267,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal IConfigurationTelemetry Telemetry { get; }
 
-    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, IConfigKey configKey, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
-            config.WithKeys(key).AsDictionaryResult(allowOptionalMappings: true),
+            config.WithKeys(configKey).AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled);
 
     private static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
@@ -585,19 +587,19 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]), telemetry);
 
         var traceEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceEnabled()).AsBoolResult().ConfigurationResult,
             initialSettings.TraceEnabled);
 
         var logsInjectionEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdLogsInjection()).AsBoolResult().ConfigurationResult,
             initialSettings.LogsInjectionEnabled);
 
         // We can't use the `GetResult` helper because of nullability annoyances. Meh.
-        var globalSamplingRateResult = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult().ConfigurationResult;
+        var globalSamplingRateResult = config.WithKeys(new ConfigKeyDdTraceSampleRate()).AsDoubleResult().ConfigurationResult;
         var globalSamplingRate = globalSamplingRateResult is { IsValid: true, Result: var result } ? result : initialSettings.GlobalSamplingRate;
 
         var headerTags = GetHeaderTagsResult(
-            config.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult(allowOptionalMappings: true),
+            config.WithKeys(new ConfigKeyDdTraceHeaderTags()).AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled: true,
             initialSettings.HeaderTags);
 
@@ -606,28 +608,28 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // Also, note that this _prevents_ customers from setting service etc via the tags collection
         // They have to set it via the specific properties instead
         var globalTags = GetDictionaryResult(
-            config.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult(),
+            config.WithKeys(new ConfigKeyDdTags()).AsDictionaryResult(),
             initialSettings.GlobalTags,
             removeGlobalTags: true);
 
         // The remaining properties are only exposed via manual config, so that's all we need to check
         var startupDiagnosticLogEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceStartupLogs()).AsBoolResult().ConfigurationResult,
             initialSettings.StartupDiagnosticLogEnabled);
 
         var environment = GetResult(
-            config.WithKeys(ConfigurationKeys.Environment).AsStringResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdEnv()).AsStringResult().ConfigurationResult,
             initialSettings.Environment);
 
         var serviceName = GetResult(
-            config.WithKeys(ConfigurationKeys.ServiceName).AsStringResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdService()).AsStringResult().ConfigurationResult,
             initialSettings.ServiceName);
 
         var serviceVersion = GetResult(
-            config.WithKeys(ConfigurationKeys.ServiceVersion).AsStringResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdVersion()).AsStringResult().ConfigurationResult,
             initialSettings.ServiceVersion);
 
-        var disabledIntegrationNameResult = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+        var disabledIntegrationNameResult = config.WithKeys(new ConfigKeyDdDisabledIntegrations())
                                                         .AsStringResult();
         var disabledIntegrationNames = initialSettings.DisabledIntegrationNames;
         if (disabledIntegrationNameResult.ConfigurationResult is { IsValid: true, Result: var stringResult })
@@ -642,39 +644,39 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var integrations = new IntegrationSettingsCollection(manualSource, disabledIntegrationNames, initialSettings.Integrations);
 
         var grpcTags = GetHeaderTagsResult(
-            config.WithKeys(ConfigurationKeys.GrpcTags).AsDictionaryResult(allowOptionalMappings: true),
+            config.WithKeys(new ConfigKeyDdTraceGrpcTags()).AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled: true,
             initialSettings.GrpcTags);
 
         var tracerMetricsEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.TracerMetricsEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceMetricsEnabled()).AsBoolResult().ConfigurationResult,
             initialSettings.TracerMetricsEnabled);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
         var analyticsEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceAnalyticsEnabled()).AsBoolResult().ConfigurationResult,
             initialSettings.AnalyticsEnabled);
 #pragma warning restore 618
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = GetResult(
-            config.WithKeys(ConfigurationKeys.MaxTracesSubmittedPerSecond).AsInt32Result().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceRateLimit()).AsInt32Result().ConfigurationResult,
             initialSettings.MaxTracesSubmittedPerSecond);
 #pragma warning restore 618
 
         var kafkaCreateConsumerScopeEnabled = GetResult(
-            config.WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled).AsBoolResult().ConfigurationResult,
+            config.WithKeys(new ConfigKeyDdTraceKafkaCreateConsumerScopeEnabled()).AsBoolResult().ConfigurationResult,
             initialSettings.KafkaCreateConsumerScopeEnabled);
 
         var httpServerErrorStatusCodes = GetStatusCodesResult(
-            config.WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes).AsStringResult(),
+            config.WithKeys(new ConfigKeyDdTraceHttpServerErrorStatuses()).AsStringResult(),
             initialSettings.HttpServerErrorStatusCodes);
 
         var httpClientErrorStatusCodes = GetStatusCodesResult(
-            config.WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes).AsStringResult(),
+            config.WithKeys(new ConfigKeyDdTraceHttpClientErrorStatuses()).AsStringResult(),
             initialSettings.HttpClientErrorStatusCodes);
 
-        var serviceNamesResult = config.WithKeys(ConfigurationKeys.ServiceNameMappings).AsDictionaryResult();
+        var serviceNamesResult = config.WithKeys(new ConfigKeyDdTraceServiceMapping()).AsDictionaryResult();
         var serviceNameMappings = GetDictionaryResult(
             serviceNamesResult,
             initialSettings.ServiceNameMappings,
@@ -684,10 +686,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // Reading the manual value first is important to ensure correct telemetry
         var manualConfig = new ConfigurationBuilder(manualSource, telemetry);
         var dynamicConfig = new ConfigurationBuilder(dynamicSource, telemetry);
-        var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
+        var manualCustomSamplingRules = manualConfig.WithKeys(new ConfigKeyDdTraceSamplingRules()).AsStringResult();
         // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
         // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
-        var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
+        var remoteCustomSamplingRules = dynamicConfig.WithKeys(new ConfigKeyDdTraceSamplingRules()).GetAsClassResult<string>(validator: null, converter: s => s);
         string? customSamplingRules;
         bool customSamplingRulesIsRemote;
 
@@ -808,11 +810,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var config = new ConfigurationBuilder(source, telemetry);
 
         var logsInjectionEnabled = config
-                                  .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
+                                  .WithKeys(new ConfigKeyDdLogsInjection())
                                   .AsBool(defaultValue: true);
 
         var otelTags = config
-                      .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
+                      .WithKeys(new ConfigKeyOtelResourceAttributes())
                       .AsDictionaryResult(separator: '=');
 
         Dictionary<string, string>? globalTags;
@@ -866,7 +868,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             };
 
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(new ConfigKeyDdTags(), new[] { "DD_TRACE_GLOBAL_TAGS" })
                         .AsDictionaryResult(parser: updatedTagsParser)
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -880,7 +882,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         else
         {
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(new ConfigKeyDdTags(), new[] { "DD_TRACE_GLOBAL_TAGS" })
                         .AsDictionaryResult()
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -893,15 +895,15 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
 
         var environment = config
-                         .WithKeys(ConfigurationKeys.Environment)
+                         .WithKeys(new ConfigKeyDdEnv())
                          .AsString();
 
         // DD_ENV has precedence over DD_TAGS
         environment = GetExplicitSettingOrTag(environment, globalTags, Tags.Env, ConfigurationKeys.Environment, telemetry);
 
-        var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
+        var otelServiceName = config.WithKeys(new ConfigKeyOtelServiceName()).AsStringResult();
         var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .WithKeys(new ConfigKeyDdService(), new[] { "DD_SERVICE_NAME" })
                          .AsStringResult()
                          .OverrideWith(in otelServiceName, errorLog);
 
@@ -932,33 +934,33 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
 
         var serviceVersion = config
-                            .WithKeys(ConfigurationKeys.ServiceVersion)
+                            .WithKeys(new ConfigKeyDdVersion())
                             .AsString();
 
         // DD_VERSION has precedence over DD_TAGS
         serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
 
         var gitCommitSha = config
-                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .WithKeys(new ConfigKeyDdGitCommitSha())
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
         gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha, telemetry);
 
         var gitRepositoryUrl = config
-                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .WithKeys(new ConfigKeyDdGitRepositoryUrl())
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
         gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl, telemetry);
 
         var otelTraceEnabled = config
-                              .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
+                              .WithKeys(new ConfigKeyOtelTracesExporter())
                               .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                          ? ParsingResult<bool>.Success(result: false)
                                                          : ParsingResult<bool>.Failure());
         var traceEnabled = config
-                          .WithKeys(ConfigurationKeys.TraceEnabled)
+                          .WithKeys(new ConfigKeyDdTraceEnabled())
                           .AsBoolResult()
                           .OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
 
@@ -968,7 +970,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             traceEnabled = false;
         }
 
-        var disabledIntegrationNamesArray = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+        var disabledIntegrationNamesArray = config.WithKeys(new ConfigKeyDdDisabledIntegrations())
                                                   .AsString()
                                                  ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
@@ -981,13 +983,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         RecordDisabledIntegrationsTelemetry(integrations, telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        var analyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+        var analyticsEnabled = config.WithKeys(new ConfigKeyDdTraceAnalyticsEnabled())
                                      .AsBool(defaultValue: false);
 #pragma warning restore 618
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(new ConfigKeyDdTraceRateLimit(), new[] { "DD_MAX_TRACES_PER_SECOND" })
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -997,16 +999,16 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         RemoveDisallowedGlobalTags(globalTags);
 
         var headerTagsNormalizationFixEnabled = config
-                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                               .WithKeys(new ConfigKeyDdTraceHeaderTagNormalizationFixEnabled())
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTags = InitializeHeaderTags(config, new ConfigKeyDdTraceHeaderTags(), headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTags = InitializeHeaderTags(config, new ConfigKeyDdTraceGrpcTags(), headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
-        var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
+        var customSamplingRules = config.WithKeys(new ConfigKeyDdTraceSamplingRules()).AsString();
 
         var globalSamplingRate = BuildSampleRate(errorLog, in config);
 
@@ -1018,20 +1020,20 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
         }
 
-        var startupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
+        var startupDiagnosticLogEnabled = config.WithKeys(new ConfigKeyDdTraceStartupLogs()).AsBool(defaultValue: true);
 
         var kafkaCreateConsumerScopeEnabled = config
-                                             .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
+                                             .WithKeys(new ConfigKeyDdTraceKafkaCreateConsumerScopeEnabled())
                                              .AsBool(defaultValue: true);
-        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, new ConfigKeyDdTraceServiceMapping()) ?? ReadOnlyDictionary.Empty;
 
         var tracerMetricsEnabled = config
-                                  .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
+                                  .WithKeys(new ConfigKeyDdTraceMetricsEnabled())
                                   .AsBool(defaultValue: false);
 
         var httpServerErrorStatusCodesString = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+                                              .WithKeys(new ConfigKeyDdTraceHttpServerErrorStatuses(), new[] { "DD_HTTP_SERVER_ERROR_STATUSES" })
 #pragma warning restore 618
                                               .AsString(defaultValue: "500-599");
 
@@ -1039,7 +1041,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var httpClientErrorStatusCodesString = config
 #pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+                                              .WithKeys(new ConfigKeyDdTraceHttpClientErrorStatuses(), new[] { "DD_HTTP_CLIENT_ERROR_STATUSES" })
 #pragma warning restore 618
                                               .AsString(defaultValue: "400-499");
 
@@ -1138,9 +1140,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
     {
         // The "overriding" is complex, so we can't use the usual `OverrideWith()` approach
-        var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
-        var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
-        var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+        var ddSampleRate = config.WithKeys(new ConfigKeyDdTraceSampleRate()).AsDoubleResult();
+        var otelSampleType = config.WithKeys(new ConfigKeyOtelTracesSampler()).AsStringResult();
+        var otelSampleRate = config.WithKeys(new ConfigKeyOtelTracesSamplerArg()).AsDoubleResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 

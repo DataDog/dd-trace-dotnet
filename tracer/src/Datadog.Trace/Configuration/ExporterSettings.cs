@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -447,25 +448,25 @@ namespace Datadog.Trace.Configuration
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
                 // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
-                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
-                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
-                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
+                TraceAgentUri = config.WithKeys(new ConfigKeyDdTraceAgentUrl()).AsString();
+                TracesPipeName = config.WithKeys(new ConfigKeyDdTracePipeName()).AsString();
+                TracesUnixDomainSocketPath = config.WithKeys(new ConfigKeyDdApmReceiverSocket()).AsString();
 
                 TraceAgentHost = config
-                               .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
+                               .WithKeys(new ConfigKeyDdAgentHost(), new[] { "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME" })
                                .AsString();
 
                 TraceAgentPort = config
-                               .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
+                               .WithKeys(new ConfigKeyDdTraceAgentPort(), new[] { "DATADOG_TRACE_AGENT_PORT" })
                                .AsInt32();
 
-                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString();
-                DogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
-                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
-                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
+                MetricsUrl = config.WithKeys(new ConfigKeyDdDogstatsdUrl()).AsString();
+                DogStatsdPort = config.WithKeys(new ConfigKeyDdDogstatsdPort()).AsInt32(0);
+                MetricsPipeName = config.WithKeys(new ConfigKeyDdDogstatsdPipeName()).AsString();
+                MetricsUnixDomainSocketPath = config.WithKeys(new ConfigKeyDdDogstatsdSocket()).AsString();
 
                 TracesPipeTimeoutMs = config
-                                     .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
+                                     .WithKeys(new ConfigKeyDdTracePipeTimeoutMs())
                                      .AsInt32(500, value => value > 0)
                                      .Value;
             }
@@ -550,7 +551,7 @@ namespace Datadog.Trace.Configuration
             {
                 var config = new ConfigurationBuilder(manualConfig, telemetry);
 
-                var manualResult = config.WithKeys(ConfigurationKeys.AgentUri).AsStringResult();
+                var manualResult = config.WithKeys(new ConfigKeyDdTraceAgentUrl()).AsStringResult();
                 var fallbackAgentUri = useDefaultSources ? rawSettings.TraceAgentUri : null;
                 var agentUri = GetResult(manualResult, telemetry, fallbackAgentUri);
 

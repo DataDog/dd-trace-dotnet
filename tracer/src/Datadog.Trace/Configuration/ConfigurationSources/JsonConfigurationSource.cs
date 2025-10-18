@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -108,9 +109,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
 
             try
             {
@@ -119,17 +122,17 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value))
                     {
-                        telemetry.Record(key, value, recordValue, Origin);
+                        telemetry.Record(keyString, value, recordValue, Origin);
                         return ConfigurationResult<string>.Valid(value);
                     }
 
-                    telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
+                    telemetry.Record(keyString, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<string>.Invalid(value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
+                telemetry.Record(keyString, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Existing behaviour
             }
 
@@ -137,9 +140,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
 
             try
             {
@@ -148,17 +153,17 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
+                        telemetry.Record(keyString, value.Value, Origin);
                         return ConfigurationResult<int>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
+                    telemetry.Record(keyString, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<int>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonInt32Error);
+                telemetry.Record(keyString, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonInt32Error);
                 throw; // Exising behaviour
             }
 
@@ -166,9 +171,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
 
             try
             {
@@ -177,17 +184,17 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
+                        telemetry.Record(keyString, value.Value, Origin);
                         return ConfigurationResult<double>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
+                    telemetry.Record(keyString, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<double>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonDoubleError);
+                telemetry.Record(keyString, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonDoubleError);
                 throw; // Exising behaviour
             }
 
@@ -195,9 +202,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
 
             try
             {
@@ -206,17 +215,17 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
+                        telemetry.Record(keyString, value.Value, Origin);
                         return ConfigurationResult<bool>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
+                    telemetry.Record(keyString, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<bool>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonBooleanError);
+                telemetry.Record(keyString, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonBooleanError);
                 throw; // Exising behaviour
             }
 
@@ -224,9 +233,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<TKey, T>(TKey key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
 
             try
             {
@@ -239,20 +250,20 @@ namespace Datadog.Trace.Configuration
                     {
                         if (validator is null || validator(value.Result))
                         {
-                            telemetry.Record(key, valueAsString, recordValue, Origin);
+                            telemetry.Record(keyString, valueAsString, recordValue, Origin);
                             return ConfigurationResult<T>.Valid(value.Result, valueAsString);
                         }
 
-                        telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
+                        telemetry.Record(keyString, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                         return ConfigurationResult<T>.Invalid(value.Result);
                     }
 
-                    telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
+                    telemetry.Record(keyString, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
+                telemetry.Record(keyString, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -274,12 +285,15 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+            where TKey : struct, IConfigKey
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
             if (token == null)
             {
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
@@ -298,7 +312,7 @@ namespace Datadog.Trace.Configuration
                 {
                     try
                     {
-                        var dictionary = ConvertToDictionary(key, token);
+                        var dictionary = ConvertToDictionary(keyString, token);
                         if (dictionary is null)
                         {
                             // AFAICT this should never return null in practice - we
@@ -311,8 +325,8 @@ namespace Datadog.Trace.Configuration
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                        telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                        Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", keyString);
+                        telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                         return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
                     }
                 }
@@ -322,7 +336,7 @@ namespace Datadog.Trace.Configuration
             }
             catch (InvalidCastException)
             {
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -330,18 +344,20 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    telemetry.Record(key, tokenAsString, recordValue: true, Origin);
+                    telemetry.Record(keyString, tokenAsString, recordValue: true, Origin);
                     return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
+                telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
         }
 
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+            where TKey : struct, IConfigKey
         {
-            var token = SelectToken(key);
+            var keyString = key.GetKey();
+            var token = SelectToken(keyString);
             if (token == null)
             {
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
@@ -360,7 +376,7 @@ namespace Datadog.Trace.Configuration
                 {
                     try
                     {
-                        var dictionary = ConvertToDictionary(key, token);
+                        var dictionary = ConvertToDictionary(keyString, token);
                         if (dictionary is null)
                         {
                             // AFAICT this should never return null in practice - we
@@ -373,8 +389,8 @@ namespace Datadog.Trace.Configuration
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                        telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                        Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", keyString);
+                        telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                         return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
                     }
                 }
@@ -384,7 +400,7 @@ namespace Datadog.Trace.Configuration
             }
             catch (InvalidCastException)
             {
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -392,11 +408,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    telemetry.Record(key, tokenAsString, recordValue: true, Origin);
+                    telemetry.Record(keyString, tokenAsString, recordValue: true, Origin);
                     return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
+                telemetry.Record(keyString, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
         }

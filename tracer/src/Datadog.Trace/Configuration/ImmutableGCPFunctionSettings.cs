@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -22,12 +23,12 @@ namespace Datadog.Trace.Configuration
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            var deprecatedFunctionKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey).AsString();
-            var deprecatedProjectKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedProjectKey).AsString();
+            var deprecatedFunctionKey = config.WithKeys(new PlatformKeyDepFunctionName()).AsString();
+            var deprecatedProjectKey = config.WithKeys(new PlatformKeyDepGcpProject()).AsString();
             IsDeprecatedFunction = deprecatedFunctionKey != null && deprecatedProjectKey != null;
 
-            var functionNameKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionNameKey).AsString();
-            var functionTargetKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionTargetKey).AsString();
+            var functionNameKey = config.WithKeys(new PlatformKeyFunctionNameKey()).AsString();
+            var functionTargetKey = config.WithKeys(new PlatformKeyFunctionTarget()).AsString();
             IsNewerFunction = functionNameKey != null && functionTargetKey != null;
 
             IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;

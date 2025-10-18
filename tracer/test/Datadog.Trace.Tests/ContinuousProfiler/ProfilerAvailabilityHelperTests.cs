@@ -17,9 +17,9 @@ namespace Datadog.Trace.Tests.ContinuousProfiler;
 [EnvironmentRestorer(
     "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
     LambdaMetadata.FunctionNameEnvVar,
-    ConfigurationKeys.AzureAppService.SiteNameKey,
-    ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime,
-    ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion,
+    PlatformKeys.AzureAppService.SiteNameKey,
+    PlatformKeys.AzureFunctions.FunctionsWorkerRuntime,
+    PlatformKeys.AzureFunctions.FunctionsExtensionVersion,
     ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)]
 public class ProfilerAvailabilityHelperTests
 {
@@ -80,9 +80,9 @@ public class ProfilerAvailabilityHelperTests
     public void IsContinuousProfilerAvailable_InAzureFunctions_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.SiteNameKey, "MyApp");
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
     }
 

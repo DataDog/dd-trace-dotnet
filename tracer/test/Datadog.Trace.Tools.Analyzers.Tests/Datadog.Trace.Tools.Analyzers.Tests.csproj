@@ -15,4 +15,8 @@
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ConfigurationAnalyzers\" />
+  </ItemGroup>
+
 </Project>

@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -233,27 +234,27 @@ namespace Datadog.Trace.Tests.Configuration
             var jTokenBuilder = new ConfigurationBuilder(jTokenSource, NullConfigurationTelemetry.Instance);
 
             // Assert - Both should produce identical configuration results
-            stringBuilder.WithKeys(ConfigurationKeys.TraceEnabled).AsBool().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.TraceEnabled).AsBool());
+            stringBuilder.WithKeys(new ConfigKeyDdTraceEnabled()).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdTraceEnabled()).AsBool());
 
-            stringBuilder.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool());
+            stringBuilder.WithKeys(new ConfigKeyDdLogsInjection()).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdLogsInjection()).AsBool());
 
-            stringBuilder.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble());
+            stringBuilder.WithKeys(new ConfigKeyDdTraceSampleRate()).AsDouble().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdTraceSampleRate()).AsDouble());
 
-            var stringTags = stringBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
-            var jTokenTags = jTokenBuilder.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
+            var stringTags = stringBuilder.WithKeys(new ConfigKeyDdTags()).AsDictionary();
+            var jTokenTags = jTokenBuilder.WithKeys(new ConfigKeyDdTags()).AsDictionary();
             stringTags.Should().BeEquivalentTo(jTokenTags);
 
-            stringBuilder.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool());
+            stringBuilder.WithKeys(new ConfigKeyDdDynamicInstrumentationEnabled()).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdDynamicInstrumentationEnabled()).AsBool());
 
-            stringBuilder.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool());
+            stringBuilder.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBool());
 
-            stringBuilder.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool().Should()
-                .Be(jTokenBuilder.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool());
+            stringBuilder.WithKeys(new ConfigKeyDdCodeOriginForSpansEnabled()).AsBool().Should()
+                .Be(jTokenBuilder.WithKeys(new ConfigKeyDdCodeOriginForSpansEnabled()).AsBool());
         }
 
         private static DynamicConfigConfigurationSource CreateConfig(params (string Key, object Value)[] settings)

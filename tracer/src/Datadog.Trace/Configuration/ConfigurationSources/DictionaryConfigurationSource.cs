@@ -1,4 +1,4 @@
-﻿// <copyright file="DictionaryConfigurationSource.cs" company="Datadog">
+// <copyright file="DictionaryConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,9 +21,9 @@ internal class DictionaryConfigurationSource : StringConfigurationSource
 
     public override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
 
-    protected override string? GetString(string key)
+    protected override string? GetString<TKey>(TKey key)
     {
-        _dictionary.TryGetValue(key, out var value);
+        _dictionary.TryGetValue(key.GetKey(), out var value);
         return value;
     }
 }

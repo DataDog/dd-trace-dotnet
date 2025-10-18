@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.Shared;
 
@@ -50,12 +52,12 @@ namespace Datadog.Trace.Tools.Runner
 
             var config = new ConfigurationBuilder(applicationConfigurationSource, NullConfigurationTelemetry.Instance);
 
-            var logDirectory = config.WithKeys(ConfigurationKeys.LogDirectory).AsString();
+            var logDirectory = config.WithKeys(new ConfigKeyDdTraceLogDirectory()).AsString();
 
             if (logDirectory == null)
             {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-                var nativeLogFile = config.WithKeys(ConfigurationKeys.ProfilerLogPath).AsString();
+                var nativeLogFile = config.WithKeys(new ConfigKeyProfilerLogPath()).AsString();
 #pragma warning restore 618
                 if (!string.IsNullOrEmpty(nativeLogFile))
                 {

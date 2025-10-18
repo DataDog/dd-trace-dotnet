@@ -82,3 +82,31 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Rider
 csharp_keep_existing_initializer_arrangement=true
 csharp_keep_existing_arrangement=true
+
+# Config registry banned api configuration
+# Error when static analyzers aren't respected
+dotnet_diagnostic.RS0030.severity = error
+
+# Disables static analyzer errors for a specific folder
+[/tracer/src/Datadog.Trace/Vendors/**.*]
+dotnet_diagnostic.RS0030.severity = none
+
+# Allow Environment.GetEnvironmentVariable in EnvironmentConfigurationSource (it's the one place that needs it)
+[/tracer/src/Datadog.Trace/Configuration/ConfigurationSources/EnvironmentConfigurationSource.cs]
+dotnet_diagnostic.RS0030.severity = none
+
+# TODO: the rest now should eventually go
+# Allow Environment.GetEnvironmentVariable in helper utilities that wrap it
+# this one needs quite some work to change for config registry
+[/tracer/src/Datadog.Trace/Util/EnvironmentHelpers*.cs]
+dotnet_diagnostic.RS0030.severity = none
+
+# Allow Environment.GetEnvironmentVariable in specific low-level infrastructure code
+[/tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs]
+dotnet_diagnostic.RS0030.severity = none
+
+[/tracer/src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs]
+dotnet_diagnostic.RS0030.severity = none
+
+[/tracer/src/Datadog.Trace/Logging/Internal/DatadogLoggingFactory.cs]
+dotnet_diagnostic.RS0030.severity = none

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("test1+test2", "test1")]
         public void SubscriptionId(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.WebsiteOwnerNameKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SubscriptionId.Should().Be(expected);
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void ResourceGroup(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.ResourceGroupKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.ResourceGroupKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ResourceGroup.Should().Be(expected);
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void SiteName(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SiteName.Should().Be(expected);
@@ -72,9 +72,9 @@ namespace Datadog.Trace.Tests.Configuration
         public void ResourceId(string subscriptionId, string siteName, string resourceGroup, string expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.SiteNameKey, siteName),
-                (ConfigurationKeys.AzureAppService.ResourceGroupKey, resourceGroup),
-                (ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, subscriptionId));
+                (PlatformKeys.AzureAppService.SiteNameKey, siteName),
+                (PlatformKeys.AzureAppService.ResourceGroupKey, resourceGroup),
+                (PlatformKeys.AzureAppService.WebsiteOwnerNameKey, subscriptionId));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), "unknown", Strings.AllowEmpty)]
         public void InstanceId(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.InstanceIdKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.InstanceIdKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.InstanceId.Should().Be(expected);
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), "unknown", Strings.AllowEmpty)]
         public void InstanceName(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.InstanceNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.InstanceNameKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.InstanceName.Should().Be(expected);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), "unknown", Strings.AllowEmpty)]
         public void OperatingSystem(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.OperatingSystemKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.OperatingSystemKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.OperatingSystem.Should().Be(expected);
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsWorkerRuntime(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsWorkerRuntime.Should().Be(expected);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases))]
         public void FunctionsExtensionVersion(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureFunctions.FunctionsExtensionVersion, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsExtensionVersion.Should().Be(expected);
@@ -150,8 +150,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsFunctionsApp(string functionsWorkerRuntime, string functionsExtensionVersion, bool expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsWorkerRuntime),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsExtensionVersion));
+                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, functionsWorkerRuntime),
+                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, functionsExtensionVersion));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsFunctionsApp.Should().Be(expected);

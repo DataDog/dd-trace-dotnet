@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -45,17 +46,17 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);                          // 15
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);                      // 14
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);                       // 13
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);                          // 12
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);                      // 19
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);                         // 29
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabledDynamicInstrumentation, true);       // 38
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, true);               // 39
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, true);                    // 40
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, true);                 // 41
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);                         // 45
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true); // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true); // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true); // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true); // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true); // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabledDynamicInstrumentation, true); // 38
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, true); // 39
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, true); // 40
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, true); // 41
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true); // 45
             }
         }
 
@@ -147,9 +148,9 @@ namespace Datadog.Trace.Configuration
             var settings = new ConfigurationBuilder(dynamicConfig, TelemetryFactory.Config);
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
             {
-                DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
-                ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
-                CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
+                DynamicInstrumentationEnabled = settings.WithKeys(new ConfigKeyDdDynamicInstrumentationEnabled()).AsBool(),
+                ExceptionReplayEnabled = settings.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBool(),
+                CodeOriginEnabled = settings.WithKeys(new ConfigKeyDdCodeOriginForSpansEnabled()).AsBool(),
             };
 
             var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;

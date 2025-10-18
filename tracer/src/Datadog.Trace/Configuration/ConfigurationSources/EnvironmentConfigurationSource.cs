@@ -20,11 +20,11 @@ namespace Datadog.Trace.Configuration
         public override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
 
         /// <inheritdoc />
-        protected override string? GetString(string key)
+        protected override string? GetString<TKey>(TKey key)
         {
             try
             {
-                return Environment.GetEnvironmentVariable(key);
+                return Environment.GetEnvironmentVariable(key.GetKey());
             }
             catch
             {
