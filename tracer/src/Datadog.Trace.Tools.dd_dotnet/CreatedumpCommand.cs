@@ -258,9 +258,18 @@ internal class CreatedumpCommand : Command
                 return 5;
             }
 
-            var frames = thread.EnumerateStackTrace()
+            List<ClrStackFrame>? frames = null;
+
+            if (thread.CurrentException != null)
+            {
+                frames = thread.CurrentException.StackTrace.ToList();
+            }
+            else
+            {
+                frames = thread.EnumerateStackTrace()
                                .Where(f => f.Kind == ClrStackFrameKind.ManagedMethod)
                                .ToList();
+            }
 
             var nativeMemory = NativeMemory.Alloc((nuint)frames.Count, (nuint)sizeof(ResolveMethodData));
             bag.Add((IntPtr)nativeMemory);
@@ -302,6 +311,12 @@ internal class CreatedumpCommand : Command
             }
 
             *numberOfFrames = frames.Count;
+
+            if (thread.CurrentException != null)
+            {
+                // Instruct native side to skip native frames
+                return -1;
+            }
 
             return 0;
         }

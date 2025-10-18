@@ -139,6 +139,17 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
+
+bool CanCollectManagedFrames(int32_t resolved, int32_t numberOfManagedFrames)
+{
+    return resolved <= 0 && numberOfManagedFrames > 0;
+}
+
+bool ShouldSkipNativeFrames(int32_t resolved, int32_t numberOfManagedFrames)
+{
+    return resolved < 0 && numberOfManagedFrames > 0;
+}
+
 std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context)
 {
     std::vector<StackFrame> frames;
@@ -162,7 +173,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
     std::vector<StackFrame> managedFrames;
 
-    if (resolved == 0 && numberOfManagedFrames > 0)
+    if (CanCollectManagedFrames(resolved, numberOfManagedFrames))
     {
         managedFrames.reserve(numberOfManagedFrames);
 
@@ -180,6 +191,11 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
             managedFrames.push_back(std::move(stackFrame));
         }
+    }
+
+    if (ShouldSkipNativeFrames(resolved, numberOfManagedFrames))
+    {
+        return managedFrames;
     }
 
     unw_word_t ip;

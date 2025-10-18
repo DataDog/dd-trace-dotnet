@@ -632,13 +632,19 @@ public class CreatedumpTests : ConsoleTestHelper
             {
                 var moduleName = frame["function"].Value<string>().Split('!').First();
 
-                if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                if (moduleName.Length > 0 && !moduleName.StartsWith("<"))
                 {
                     if (!validatedModules.Add(moduleName))
                     {
                         continue;
                     }
+                }
 
+                // On linux we can face cases where the build_id is not available:
+                // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
+                // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
+                if (Path.IsPathRooted(moduleName) && frame["build_id"] != null)
+                {
                     var expectedBuildId = string.Empty;
 
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -656,14 +662,6 @@ public class CreatedumpTests : ConsoleTestHelper
                     }
                     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     {
-                        if (frame["build_id"] == null)
-                        {
-                            // On linux we can face cases where the build_id is not available:
-                            // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
-                            // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
-                            continue;
-                        }
-
                         frame["build_id_type"].Value<string>().Should().Be("GNU"); // or SHA1??
 
                         using var elf = ELFReader.Load(moduleName);
