@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
             distributedTracer.Setup(t => t.GetSpanContext()).Returns(spanContext);
             distributedTracer.Setup(t => t.GetRuntimeId()).Returns(Guid.NewGuid().ToString());
 
-            ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
+            Datadog.Trace.ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
 
             using var parentScope = Tracer.Instance.StartActive("Parent");
             using var scope = (Scope)Tracer.Instance.StartActive("Test");
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             distributedTracer.Setup(t => t.GetRuntimeId()).Returns(Guid.NewGuid().ToString());
 
-            ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
+            Datadog.Trace.ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
 
             using (var scope = (Scope)Tracer.Instance.StartActive("Test"))
             {
