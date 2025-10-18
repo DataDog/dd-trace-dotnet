@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigureIntegration.cs" company="Datadog">
+// <copyright file="ConfigureIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -45,6 +45,14 @@ public class ConfigureIntegration
     internal static void ConfigureSettingsWithManualOverrides(Dictionary<string, object?> values, bool useLegacySettings)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
+
+        // If the current tracer manager is locked (e.g., CI Test Optimization),
+        // do not attempt to replace it to avoid throwing in CreateInitializedTracer.
+        if (TracerManager.Instance is ILockedTracer)
+        {
+            Log.Information("Skipping Tracer.Configure from manual instrumentation because the current tracer instance is locked and cannot be replaced.");
+            return;
+        }
 
         // Is this from calling new TracerSettings() or TracerSettings.Global?
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
