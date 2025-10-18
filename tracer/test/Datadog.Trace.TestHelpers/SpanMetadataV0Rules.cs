@@ -608,6 +608,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
                 .Matches("db.type", "postgres")
+                .IsOptional("db.operation.batch.size")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client")
                 .IsOptional("_dd.dbm_trace_injected"));
