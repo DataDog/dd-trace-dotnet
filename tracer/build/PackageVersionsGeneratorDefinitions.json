@@ -1,5 +1,16 @@
 [
   {
+    "IntegrationName": "Hangfire",
+    "SampleProjectName": "Samples.Hangfire",
+    "NugetPackageSearchName": "Hangfire.Core",
+    "MinVersion": "1.7.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.7.*",
+      "1.8.*"
+    ]
+  },
+  {
     "IntegrationName": "Quartz",
     "SampleProjectName": "Samples.Quartz",
     "NugetPackageSearchName": "Quartz",

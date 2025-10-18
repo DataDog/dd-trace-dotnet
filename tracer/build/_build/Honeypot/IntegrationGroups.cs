@@ -120,6 +120,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
             NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
             NugetPackages.Add("RestSharp", Array.Empty<string>());
+            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire" });
 
             // Manual instrumentation
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
