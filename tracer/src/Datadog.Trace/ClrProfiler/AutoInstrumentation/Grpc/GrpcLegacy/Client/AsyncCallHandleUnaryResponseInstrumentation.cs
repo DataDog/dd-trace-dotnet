@@ -42,7 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             // receivedStatus can change in the middle of this method, so we need to wait for the method to finish,
             // to grab the final status.
             var tracer = Tracer.Instance;
-            if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (GrpcCoreApiVersionHelper.IsSupported && settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 // using CreateFrom to avoid boxing ClientSideStatus struct
                 var receivedStatus = DuckType.CreateCache<ClientSideStatusWithMetadataStruct>.CreateFrom(clientSideStatus);
@@ -53,14 +54,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 {
                     if (receivedStatus.Trailers is { Count: > 0 })
                     {
-                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                     }
                     else if (responseHeaders is not null)
                     {
                         var responseMetadata = responseHeaders.DuckCast<IMetadata>();
                         if (responseMetadata.Count > 0)
                         {
-                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                         }
                     }
                 }

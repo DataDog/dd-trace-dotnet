@@ -94,12 +94,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
 
                     if (proxyScope?.Span != null)
                     {
                         HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                     }
 
                     scope.Dispose();
@@ -129,12 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (proxyScope?.Span != null)
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                     proxyScope.Span.Finish(finishTime);
                 }
 
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                 scope.Span.Finish(finishTime);
             }
             catch (Exception ex)
