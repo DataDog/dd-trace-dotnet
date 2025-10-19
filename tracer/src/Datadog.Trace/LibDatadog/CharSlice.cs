@@ -67,4 +67,12 @@ internal readonly struct CharSlice : IDisposable
 
         Marshal.FreeHGlobal(Ptr);
     }
+
+    public override string ToString()
+    {
+        unsafe
+        {
+            return StringEncoding.UTF8.GetString((byte*)Ptr, (int)Len);
+        }
+    }
 }
