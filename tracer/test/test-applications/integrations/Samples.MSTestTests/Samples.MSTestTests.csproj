@@ -3,12 +3,16 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">3.11.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$(ApiVersion.StartsWith('4.'))">
+    <DefineConstants>$(DefineConstants);MSTEST_ASYNC</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

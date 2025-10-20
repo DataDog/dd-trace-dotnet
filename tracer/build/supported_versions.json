@@ -920,8 +920,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.0.0",
-        "maxVersionAvailableInclusive": "4.0.0",
+        "maxVersionSupportedInclusive": "4.0.1",
+        "maxVersionAvailableInclusive": "4.0.1",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -937,8 +937,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.0.0",
-        "maxVersionAvailableInclusive": "4.0.0",
+        "maxVersionSupportedInclusive": "4.0.1",
+        "maxVersionAvailableInclusive": "4.0.1",
         "maxVersionTestedInclusive": null
       }
     ]

@@ -613,11 +613,12 @@
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ]
   },
   {
@@ -625,11 +626,12 @@
     "SampleProjectName": "Samples.MSTestTests2",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ]
   },
   {
@@ -637,11 +639,12 @@
     "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ]
   },
   {

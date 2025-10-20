@@ -115,6 +115,8 @@
    </assembly>
    <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
+   <assembly fullname="MSTest.TestFramework" />
+   <assembly fullname="MSTestAdapter.PlatformServices" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
    <assembly fullname="netstandard" />
