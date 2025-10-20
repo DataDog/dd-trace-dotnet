@@ -35,44 +35,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override void OnNext(string eventName, object arg)
         {
-            HandleEvent(eventName, arg);
-        }
-
-        /// <summary>
-        /// Handles Quartz diagnostic events. This method is shared between .NET Framework and modern .NET.
-        /// </summary>
-        private static void HandleEvent(string eventName, object arg)
-        {
-            switch (eventName)
-            {
-                case "Quartz.Job.Execute.Start":
-                case "Quartz.Job.Veto.Start":
-                    var currentActivity = ActivityListener.GetCurrentActivity();
-                    if (currentActivity is IActivity5 activity5)
-                    {
-                        QuartzCommon.EnhanceActivityMetadata(activity5);
-                        QuartzCommon.SetActivityKind(activity5);
-                    }
-                    else
-                    {
-                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable to enhance the span metadata.");
-                    }
-
-                    break;
-                case "Quartz.Job.Execute.Stop":
-                case "Quartz.Job.Veto.Stop":
-                    break;
-                case "Quartz.Job.Execute.Exception":
-                case "Quartz.Job.Veto.Exception":
-                    // setting an exception manually
-                    var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity?.Instance is not null)
-                    {
-                        QuartzCommon.AddException(arg, closingActivity);
-                    }
-
-                    break;
-            }
+            QuartzCommon.HandleDiagnosticEvent(eventName, arg);
         }
     }
 #else
@@ -253,43 +216,6 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// Handles Quartz diagnostic events for .NET Framework.
-        /// </summary>
-        private static void HandleEvent(string eventName, object arg)
-        {
-            switch (eventName)
-            {
-                case "Quartz.Job.Execute.Start":
-                case "Quartz.Job.Veto.Start":
-                    var currentActivity = ActivityListener.GetCurrentActivity();
-                    if (currentActivity is IActivity5 activity5)
-                    {
-                        QuartzCommon.EnhanceActivityMetadata(activity5);
-                        QuartzCommon.SetActivityKind(activity5);
-                    }
-                    else
-                    {
-                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable to enhance the span metadata.");
-                    }
-
-                    break;
-                case "Quartz.Job.Execute.Stop":
-                case "Quartz.Job.Veto.Stop":
-                    break;
-                case "Quartz.Job.Execute.Exception":
-                case "Quartz.Job.Veto.Exception":
-                    // setting an exception manually
-                    var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity?.Instance is not null)
-                    {
-                        QuartzCommon.AddException(arg, closingActivity);
-                    }
-
-                    break;
-            }
-        }
-
-        /// <summary>
         /// Observer class that handles Quartz diagnostic events.
         /// This class implements IObserver&lt;KeyValuePair&lt;string, object&gt;&gt; directly
         /// because on .NET Framework we have System.Diagnostics.DiagnosticSource available at runtime.
@@ -308,7 +234,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 try
                 {
-                    HandleEvent(value.Key, value.Value);
+                    QuartzCommon.HandleDiagnosticEvent(value.Key, value.Value);
                 }
                 catch (Exception ex)
                 {

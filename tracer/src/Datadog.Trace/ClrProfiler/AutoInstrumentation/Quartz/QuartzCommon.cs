@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
         }
 
-        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        internal static void EnhanceActivityMetadata5(IActivity5 activity)
         {
             activity.AddTag("operation.name", activity.DisplayName);
             var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
@@ -52,6 +52,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             }
 
             activity.DisplayName = CreateResourceName(activity.DisplayName, jobName);
+        }
+
+        internal static void EnhanceActivityMetadata(IActivity activity)
+        {
+            if (activity is IActivity5 activity5)
+            {
+                EnhanceActivityMetadata5(activity5);
+                return;
+            }
+
+            if (activity.OperationName is not null)
+            {
+                // enhancing span metadata for < IActivity5
+                activity.AddTag("operation.name", activity.OperationName);
+                activity.AddTag("resource.name", CreateResourceName(activity.OperationName, activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty));
+            }
         }
 
         internal static void AddException(object exceptionArg, IActivity activity)
@@ -66,6 +82,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
             activity.AddTag(Tags.ErrorStack, exception.ToString());
             activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
+        }
+
+        /// <summary>
+        /// Handles Quartz diagnostic events.
+        /// This method is shared between the DiagnosticObserver (modern .NET) and reflection-based observer (.NET Framework).
+        /// </summary>
+        internal static void HandleDiagnosticEvent(string eventName, object arg)
+        {
+            switch (eventName)
+            {
+                case "Quartz.Job.Execute.Start":
+                case "Quartz.Job.Veto.Start":
+                    var activity = ActivityListener.GetCurrentActivity();
+                    if (activity is IActivity5 activity5)
+                    {
+                        SetActivityKind(activity5);
+                    }
+                    else
+                    {
+                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable to set span kind.");
+                    }
+
+                    if (activity?.Instance is not null)
+                    {
+                        EnhanceActivityMetadata(activity);
+                    }
+
+                    break;
+                case "Quartz.Job.Execute.Stop":
+                case "Quartz.Job.Veto.Stop":
+                    break;
+                case "Quartz.Job.Execute.Exception":
+                case "Quartz.Job.Veto.Exception":
+                    // setting an exception manually
+                    var closingActivity = ActivityListener.GetCurrentActivity();
+                    if (closingActivity?.Instance is not null)
+                    {
+                        AddException(arg, closingActivity);
+                    }
+
+                    break;
+            }
         }
     }
 }
