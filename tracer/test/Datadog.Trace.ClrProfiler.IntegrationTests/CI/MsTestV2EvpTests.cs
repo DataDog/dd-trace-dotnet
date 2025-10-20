@@ -32,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             SetServiceName("mstest-tests-evp");
             SetServiceVersion("1.0.0");
-            SetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.DebugEnabled, "1");
         }
 
         public static IEnumerable<object[]> GetData()

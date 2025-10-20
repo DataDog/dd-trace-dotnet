@@ -44,7 +44,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 public static class TestMethodAttributeExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
-        where TTestMethod : ITestMethod
         => TestMethodAttributeExecuteAsyncIntegration.OnMethodBegin(instance, testMethod);
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
@@ -328,7 +327,6 @@ public static class TestMethodAttributeExecuteAsyncIntegration
     }
 
     private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, RetryState retryState)
-        where TTestMethod : ITestMethod
         where TTestResult : ITestResult
     {
         var testException = testResult.TestFailureException?.InnerException ??
@@ -351,7 +349,13 @@ public static class TestMethodAttributeExecuteAsyncIntegration
         if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
         {
             test.SetName(testResult.DisplayName!);
-            MsTestIntegration.UpdateTestParameters(test, testMethod, testResult.DisplayName);
+            var testMethodProxy = (ITestMethod?)testMethod.DuckAs<ITestMethodV4>() ?? testMethod.DuckAs<ITestMethodV3>();
+            if (testMethodProxy is null)
+            {
+                DuckTypeException.Throw("Failed to duck type the test method instance to ITestMethodV3 or ITestMethodV4.");
+            }
+
+            MsTestIntegration.UpdateTestParameters(test, testMethodProxy, testResult.DisplayName);
         }
 
         try
