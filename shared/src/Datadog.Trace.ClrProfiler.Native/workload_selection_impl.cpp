@@ -94,7 +94,7 @@ namespace
 
         if (tokenized_command_line[1].empty() || !tokenized_command_line[1].ends_with(L".dll"))
         {
-            return "":
+            return "";
         }
 
         auto dll_path = fs::path(::shared::ToString(tokenized_command_line[1]));
