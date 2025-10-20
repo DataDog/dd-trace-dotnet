@@ -301,8 +301,12 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
 
-            var otelLogsExporterEnabled = config
-               .WithKeys(ConfigurationKeys.OpenTelemetry.LogsExporter)
+            var otelLogsExporter = config
+                    .WithKeys(ConfigurationKeys.OpenTelemetry.LogsExporter);
+
+            OtelLogsExporterEnabled = string.Equals(otelLogsExporter.AsString(defaultValue: "otlp"), "otlp", StringComparison.OrdinalIgnoreCase);
+
+            var otelLogsExporterResult = otelLogsExporter
                .AsBoolResult(
                     null,
                     value => value switch
@@ -310,12 +314,18 @@ namespace Datadog.Trace.Configuration
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
                         not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
                         _ => ParsingResult<bool>.Failure()
-                    })
-                    .WithDefault(true);
+                    });
+
+            if (otelLogsExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
+            {
+                ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogsExporter);
+            }
 
             OpenTelemetryLogsEnabled = config
-                            .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
-                            .AsBool(defaultValue: false) && otelLogsExporterEnabled;
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
+                                    .AsBool(defaultValue: false);
+
+            OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled is true && OtelLogsExporterEnabled is true;
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
@@ -525,7 +535,7 @@ namespace Datadog.Trace.Configuration
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry, OpenTelemetryLogsEnabled);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
@@ -827,6 +837,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
         internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
+
+       /// <summary>
+        /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
+        /// This is derived from <see cref="ConfigurationKeys.OpenTelemetry.LogsExporter"/> config where 'otlp' enables the exporter
+        /// and 'none' disables it and runtime metrics if related DD env var is not set.
+        /// Default is enabled (true).
+        /// </summary>
+        internal bool OtelLogsExporterEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether Datadog's OTLP logs feature is enabled.

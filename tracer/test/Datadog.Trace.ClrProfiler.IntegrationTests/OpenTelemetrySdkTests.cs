@@ -85,8 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
-#if NET6_0_OR_GREATER
-        public static IEnumerable<object[]> GetMetricsTestData()
+        public static IEnumerable<object[]> GetOtlpTestData()
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
@@ -96,18 +95,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
         }
-
-        public static IEnumerable<object[]> GetLogsTestData()
-        {
-            foreach (var packageVersion in PackageVersions.OpenTelemetry)
-            {
-                yield return [packageVersion[0], "false", "true", "grpc"];
-                yield return [packageVersion[0], "false", "true", "http/protobuf"];
-                // yield return [packageVersion[0], "true", "false", "grpc"];
-                // yield return [packageVersion[0], "true", "false", "http/protobuf"];
-            }
-        }
-#endif
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
@@ -228,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
-        [MemberData(nameof(GetMetricsTestData))]
+        [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
@@ -314,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("RequiresDockerDependency", "true")]
-        [MemberData(nameof(GetLogsTestData))]
+        [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
         {
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";

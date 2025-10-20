@@ -5,11 +5,16 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.OpenTelemetry.Logs;
+#endif
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -57,26 +62,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return;
             }
 
-            // We render the event to a string immediately as we need to capture the properties
+            // Datadog Direct Log Submission: render the event to a string immediately
             // This is more expensive from a CPU perspective, but saves having to persist the
             // properties to a dictionary and rendering later
+            if (_sink is DirectSubmissionLogSink)
+            {
+                var logEntry = new LogEntry<TState>(
+                    DateTime.UtcNow,
+                    logLevel,
+                    _name,
+                    eventId.GetHashCode(),
+                    state,
+                    exception,
+                    formatter,
+                    _scopeProvider);
+                var logFormatter = _logFormatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
+                var serializedLog = LoggerLogFormatter.FormatLogEvent(logFormatter, logEntry);
 
-            var logEntry = new LogEntry<TState>(
-                DateTime.UtcNow,
-                logLevel,
-                _name,
-                eventId.GetHashCode(),
-                state,
-                exception,
-                formatter,
-                _scopeProvider);
-            var logFormatter = _logFormatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
-            var serializedLog = LoggerLogFormatter.FormatLogEvent(logFormatter, logEntry);
+                var log = new LoggerDirectSubmissionLogEvent(serializedLog);
 
-            var log = new LoggerDirectSubmissionLogEvent(serializedLog);
+                TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
+                _sink.EnqueueLog(log);
+                return;
+            }
 
-            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
-            _sink.EnqueueLog(log);
+#if NETCOREAPP3_1_OR_GREATER
+            // OTLP logs: use structured data directly
+            if (_sink is Datadog.Trace.Logging.DirectSubmission.Sink.OtlpSubmissionLogSink)
+            {
+                var log = Formatting.OtlpLogEventBuilder.CreateLogEvent(logLevel, _name, eventId, state, exception, formatter);
+                TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
+                _sink.EnqueueLog(log);
+                return;
+            }
+#endif
         }
 
         /// <summary>
