@@ -48,6 +48,14 @@ public static class TestMethodAttributeExecuteIntegration
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // Restore previous scope and the previous DistributedTrace if there is a continuation
+        // This is used to mimic the ExecutionContext copy from the StateMachine
+        if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+        {
+            rawAccess.Active = state.PreviousScope;
+            DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
+        }
+
         returnValue = TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(instance, returnValue, exception, state).SafeGetResult();
         return new CallTargetReturn<TReturn?>(returnValue);
     }
@@ -109,9 +117,10 @@ public static class TestMethodAttributeExecuteAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test })
+        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test } scope)
         {
             // Avoid a test inside another test
+            Common.Log.Warning("Avoid a test inside another test: {Span}.", scope.Span.ResourceName);
             return CallTargetState.GetDefault();
         }
 
@@ -121,7 +130,13 @@ public static class TestMethodAttributeExecuteAsyncIntegration
             DuckTypeException.Throw("Failed to duck type the test method instance to ITestMethodV3 or ITestMethodV4.");
         }
 
-        return new CallTargetState(null, new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: false)));
+        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: false));
+        return new CallTargetState(Tracer.Instance.InternalActiveScope, testRunnerState);
+    }
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 
     internal static async Task<TReturn?> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
