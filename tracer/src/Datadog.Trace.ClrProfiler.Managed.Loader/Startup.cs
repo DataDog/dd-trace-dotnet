@@ -145,7 +145,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         internal static string? ManagedProfilerDirectory { get; }
 
-        internal static string? GetTracerHomePath(IEnvironmentVariableProvider envVars)
+        internal static string? GetTracerHomePath<TEnvVars>(TEnvVars envVars)
+            where TEnvVars : IEnvironmentVariableProvider
         {
             // allow override with DD_DOTNET_TRACER_HOME
             var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
@@ -175,7 +176,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        internal static string? ComputeTracerHomePathFromProfilerPath(IEnvironmentVariableProvider envVars, string envVarName)
+        internal static string? ComputeTracerHomePathFromProfilerPath<TEnvVars>(TEnvVars envVars, string envVarName)
+            where TEnvVars : IEnvironmentVariableProvider
         {
             var envVarValue = envVars.GetEnvironmentVariable(envVarName)?.Trim();
 
