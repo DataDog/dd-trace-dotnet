@@ -1,0 +1,1 @@
+https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip

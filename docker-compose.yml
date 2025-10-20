@@ -445,6 +445,7 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs

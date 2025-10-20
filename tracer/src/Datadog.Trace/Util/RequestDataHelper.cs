@@ -44,7 +44,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the values from a request NameValueCollection
+    // Gets the values from a request NameValueCollection
     internal static string[]? GetNameValueCollectionValues(NameValueCollection queryString, string key)
     {
         try

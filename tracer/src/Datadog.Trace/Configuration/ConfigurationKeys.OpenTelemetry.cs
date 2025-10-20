@@ -88,7 +88,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to set the OTLP protocol for metrics export.
             /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-            /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to grpc.
             /// </summary>
             public const string ExporterOtlpMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL";
 
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to set the OTLP protocol (fallback for metrics-specific protocol).
             /// Used when <see cref="ExporterOtlpMetricsProtocol"/> is not set.
-            /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to grpc.
             /// </summary>
             public const string ExporterOtlpProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL";
 

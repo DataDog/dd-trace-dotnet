@@ -583,10 +583,18 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         /// <summary>
         /// Serializes metrics to OTLP MetricsData binary format
         /// </summary>
-        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics)
+        /// <param name="metrics">The metrics to serialize</param>
+        /// <param name="startPosition">Optional start position to leave empty bytes at the beginning (e.g., for gRPC 5-byte frame header)</param>
+        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics, int startPosition = 0)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
+
+            // Reserve space at the beginning if requested (e.g., for gRPC frame header)
+            if (startPosition > 0)
+            {
+                writer.Write(new byte[startPosition]);
+            }
 
             var resourceMetricsData = SerializeResourceMetrics(metrics);
             WriteTag(writer, FieldNumbers.ResourceMetrics, LengthDelimited);
