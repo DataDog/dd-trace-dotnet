@@ -25,7 +25,7 @@ internal static class AdministratorHelper
 #if WINDOWS_BUILD
             _isElevated ??= new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 #else
-            _isElevated=false;
+            _isElevated = false;
 #endif
             return _isElevated.Value;
         }
