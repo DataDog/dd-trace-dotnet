@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -25,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaProducerConstructorIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaProducerConstructorIntegration));
+
     internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder consumer)
         where TProducerBuilder : IProducerBuilder
     {
@@ -86,7 +89,16 @@ public class KafkaProducerConstructorIntegration
                 if (ProducerCache.TryGetProducer(producerObj, out var bootstrapServers, out _))
                 {
                     ProducerCache.AddBootstrapServers(producerObj, bootstrapServers, clusterId);
+                    Log.Information("ROBC: Kafka producer initialized - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
                 }
+                else
+                {
+                    Log.Information("ROBC: Unable to retrieve producer bootstrap servers for cluster_id caching");
+                }
+            }
+            else
+            {
+                Log.Information("ROBC: Kafka producer initialized but no cluster_id could be retrieved");
             }
         }
 

@@ -59,6 +59,9 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService, defaultServiceName)
                          : null;
 
+        Log.Information("ROBC Cluster ID Branch DataStreamsManager Create");
+        Console.WriteLine("ROBC Cluster ID Branch DataStreamsManager Create");
+
         return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
     }
 

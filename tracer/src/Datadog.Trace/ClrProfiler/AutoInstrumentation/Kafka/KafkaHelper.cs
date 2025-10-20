@@ -78,6 +78,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     if (!string.IsNullOrEmpty(clusterId))
                     {
                         tags.ClusterId = clusterId;
+                        Log.Information("ROBC: Added cluster_id tag to Kafka producer span: {ClusterId}", clusterId);
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: No cluster_id available for Kafka producer span");
                     }
                 }
 
@@ -223,6 +228,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     if (!string.IsNullOrEmpty(clusterId))
                     {
                         tags.ClusterId = clusterId;
+                        Log.Information("ROBC: Added cluster_id tag to Kafka consumer span: {ClusterId}", clusterId);
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: No cluster_id available for Kafka consumer span");
                     }
                 }
 
@@ -381,18 +391,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (consumerOrProducer.TryDuckCast<IConsumer>(out var consumer))
                 {
+                    Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka consumer via GetMetadata");
                     var metadata = consumer.GetMetadata(timeout);
-                    return metadata?.ClusterId;
+                    if (metadata?.ClusterId != null)
+                    {
+                        Log.Information("ROBC: Successfully retrieved cluster_id from Kafka consumer: {ClusterId}", metadata.ClusterId);
+                        return metadata.ClusterId;
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: GetMetadata returned null or empty cluster_id for Kafka consumer");
+                    }
                 }
                 else if (consumerOrProducer.TryDuckCast<IProducer>(out var producer))
                 {
+                    Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka producer via GetMetadata");
                     var metadata = producer.GetMetadata(timeout);
-                    return metadata?.ClusterId;
+                    if (metadata?.ClusterId != null)
+                    {
+                        Log.Information("ROBC: Successfully retrieved cluster_id from Kafka producer: {ClusterId}", metadata.ClusterId);
+                        return metadata.ClusterId;
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: GetMetadata returned null or empty cluster_id for Kafka producer");
+                    }
+                }
+                else
+                {
+                    Log.Information("ROBC: Unable to duck-cast Kafka object to IConsumer or IProducer for cluster_id extraction");
                 }
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error extracting cluster_id from Kafka metadata");
+                Log.Warning(ex, "ROBC: Error extracting cluster_id from Kafka metadata");
             }
 
             return null;

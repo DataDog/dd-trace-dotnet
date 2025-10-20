@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
@@ -27,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaConsumerConstructorIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaConsumerConstructorIntegration));
+
     internal static CallTargetState OnMethodBegin<TTarget, TConsumerBuilder>(TTarget instance, TConsumerBuilder consumer)
         where TConsumerBuilder : IConsumerBuilder
     {
@@ -90,7 +93,16 @@ public class KafkaConsumerConstructorIntegration
                 if (ConsumerCache.TryGetConsumerGroup(consumerObj, out var groupId, out var bootstrapServers, out _))
                 {
                     ConsumerCache.SetConsumerGroup(consumerObj, groupId, bootstrapServers, clusterId);
+                    Log.Information("ROBC: Kafka consumer initialized - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
                 }
+                else
+                {
+                    Log.Information("ROBC: Unable to retrieve consumer group info for cluster_id caching");
+                }
+            }
+            else
+            {
+                Log.Information("ROBC: Kafka consumer initialized but no cluster_id could be retrieved");
             }
         }
 
