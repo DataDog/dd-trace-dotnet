@@ -102,7 +102,7 @@ public class QuartzTests : TracingIntegrationTest
 #if NETCOREAPP3_0 || NETCOREAPP3_1
             return new("V3NETCOREAPP3X", 2);
 #elif NETFRAMEWORK
-            return new("V3NETFRAMEWORK3X", 2);
+            return new("V3NETFRAMEWORK", 2);
 #else
             return new("V3", 2);
 #endif
@@ -114,7 +114,7 @@ public class QuartzTests : TracingIntegrationTest
 #if NETCOREAPP3_0 || NETCOREAPP3_1
             { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP3X", 2),
 #elif  NETFRAMEWORK
-            { } v when v >= new Version("3.0.0") => new("V3NETFRAMEWORK3X", 2),
+            { } v when v >= new Version("3.0.0") => new("V3NETFRAMEWORK", 2),
 #endif
             _ => new("V3", 2)
         };
