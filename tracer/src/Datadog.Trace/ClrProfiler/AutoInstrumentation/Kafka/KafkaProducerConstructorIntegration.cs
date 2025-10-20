@@ -61,9 +61,20 @@ public class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                // Save the map between this producer and its bootstrap server config
-                // cluster_id will be populated in OnMethodEnd after the producer is fully constructed
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers, string.Empty);
+                // Extract cluster_id using AdminClient API with bootstrap servers
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    Log.Information("ROBC: Kafka producer config retrieved - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
+                }
+                else
+                {
+                    Log.Information("ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {BootstrapServers}", bootstrapServers);
+                }
+
+                // Save the map between this producer and its metadata
+                ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -78,28 +89,6 @@ public class KafkaProducerConstructorIntegration
         if (exception is not null && state is { State: { } producer })
         {
             ProducerCache.RemoveProducer(producer);
-        }
-        else if (exception is null && state is { State: { } producerObj })
-        {
-            // Extract cluster_id from metadata
-            var clusterId = KafkaHelper.GetClusterId(producerObj);
-            if (!string.IsNullOrEmpty(clusterId))
-            {
-                // Update the cache with cluster_id
-                if (ProducerCache.TryGetProducer(producerObj, out var bootstrapServers, out _))
-                {
-                    ProducerCache.AddBootstrapServers(producerObj, bootstrapServers, clusterId);
-                    Log.Information("ROBC: Kafka producer initialized - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
-                }
-                else
-                {
-                    Log.Information("ROBC: Unable to retrieve producer bootstrap servers for cluster_id caching");
-                }
-            }
-            else
-            {
-                Log.Information("ROBC: Kafka producer initialized but no cluster_id could be retrieved");
-            }
         }
 
         return CallTargetReturn.GetDefault();
