@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     assemblies.Add(new CachedAssembly(file, null));
                 }
 
-                _assemblies = assemblies.ToArray();
+                _assemblies = [..assemblies];
                 StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
             }
 
