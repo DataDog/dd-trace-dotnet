@@ -20,9 +20,17 @@ std::vector<SampleValueType> WallTimeProvider::SampleTypeDefinitions(
 WallTimeProvider::WallTimeProvider(
     SampleValueTypeProvider& sampleValueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource
-    )
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore
+)
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", sampleValueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", sampleValueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
+}
+
+
+std::int64_t WallTimeProvider::GetGroupingId() const
+{
+    // Log::Warn("-- WallTime provider grouping : ", SampleTypeDefinitions[0].Index);
+    return SampleTypeDefinitions[0].Index;
 }

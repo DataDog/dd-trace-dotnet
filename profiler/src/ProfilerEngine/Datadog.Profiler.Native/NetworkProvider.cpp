@@ -9,6 +9,8 @@
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
 
+#include "SymbolsStore.h"
+
 #include <chrono>
 
 std::vector<SampleValueType> NetworkProvider::SampleTypeDefinitions(
@@ -25,13 +27,15 @@ NetworkProvider::NetworkProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     CollectorBase<RawNetworkSample>(
         "NetworkProvider",
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         rawSampleTransformer,
-        memoryResource),
+        memoryResource,
+        symbolsStore),
     _pCorProfilerInfo{ pCorProfilerInfo },
     _pManagedThreadList{ pManagedThreadList },
     _pConfiguration{ pConfiguration },
@@ -576,3 +580,8 @@ bool NetworkProvider::MonitorRequest(NetworkRequestInfo*& pInfo, LPCGUID pActivi
     return true;
 }
 
+std::int64_t NetworkProvider::GetGroupingId() const
+{
+    //Log::Warn("-- Network provider grouping : ", SampleTypeDefinitions[0].Index);
+    return SampleTypeDefinitions[0].Index;
+}

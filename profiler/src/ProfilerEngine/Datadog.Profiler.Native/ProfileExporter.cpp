@@ -24,6 +24,7 @@
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
+#include "SymbolsStore.h"
 #include "dd_profiler_version.h"
 
 #include <cassert>
@@ -78,7 +79,8 @@ ProfileExporter::ProfileExporter(
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
     ISsiManager* ssiManager,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    libdatadog::SymbolsStore* symbolsStore) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
@@ -86,7 +88,8 @@ ProfileExporter::ProfileExporter(
     _metadataProvider{metadataProvider},
     _configuration{configuration},
     _runtimeInfo{runtimeInfo},
-    _ssiManager{ssiManager}
+    _ssiManager{ssiManager},
+    _symbolsStore{symbolsStore}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -151,7 +154,7 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 
 std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName), _symbolsStore);
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
@@ -424,7 +427,7 @@ void ProfileExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId
     profile->SetEndpoint(traceId, endpoint);
 
     // This method is called only once: when the trace closes
-    profile->AddEndpointCount(endpoint, 1);
+    //profile->AddEndpointCount(endpoint, 1);
 }
 
 std::vector<UpscalingInfo> ProfileExporter::GetUpscalingInfos()
@@ -474,7 +477,7 @@ void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vecto
             {
                 real = group.RealValue;
             }
-            auto succeeded = profile->AddUpscalingRuleProportional(upscalingInfo.Offsets, upscalingInfo.LabelName, group.Group, sampled, real);
+            auto succeeded = profile->AddUpscalingRuleProportional(upscalingInfo.GroupingIndex, upscalingInfo.LabelName, group.Group, sampled, real);
             if (!succeeded)
             {
                 Log::Warn(succeeded.message());
@@ -487,11 +490,9 @@ void ProfileExporter::AddUpscalingPoissonRules(libdatadog::Profile* profile, std
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
-        ddog_prof_Slice_Usize offsets_slice = { upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size() };
-
         auto succeeded =
             profile->AddUpscalingRulePoisson(
-                upscalingInfo.Offsets,
+                upscalingInfo.GroupingIndex,
                 std::string(),  // TODO: see how to get the type names / count
                 std::string(),
                 upscalingInfo.SumOffset,
@@ -504,7 +505,6 @@ void ProfileExporter::AddUpscalingPoissonRules(libdatadog::Profile* profile, std
         }
     }
 }
-
 std::list<std::shared_ptr<Sample>> ProfileExporter::GetProcessSamples()
 {
     std::list<std::shared_ptr<Sample>> samples;
@@ -623,6 +623,7 @@ bool ProfileExporter::Export(bool lastCall)
 
         AddUpscalingRules(profile.get(), upscalingInfos);
         AddUpscalingPoissonRules(profile.get(), upscalingPoissonInfos);
+
 
 
         auto additionalTags = libdatadog::Tags{{"env", applicationInfo.Environment},
@@ -833,13 +834,8 @@ std::string ProfileExporter::GetInfo() const
             builder << "auto";
         }
         else
-        if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
         {
-            builder << "standby"; // should never occur because the managed layer did not set the activation status
-        }
-        else
-        {
-            builder << "none";
+            builder << "injection";
         }
         builder << "\"";
     builder << "}}";

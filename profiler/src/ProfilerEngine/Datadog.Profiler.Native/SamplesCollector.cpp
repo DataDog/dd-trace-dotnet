@@ -16,12 +16,13 @@ SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
     IThreadsCpuManager* pThreadsCpuManager,
     IExporter* exporter,
-    IMetricsSender* metricsSender) :
+    IMetricsSender* metricsSender,
+    libdatadog::SymbolsStore* symbolsStore) :
     _uploadInterval{configuration->GetUploadInterval()},
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
-    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, Callstack::MaxFrames)}
+    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, Callstack::MaxFrames, symbolsStore)}
 {
 }
 

@@ -19,7 +19,7 @@ constexpr ddog_CharSlice to_char_slice(const char* str)
 {
     return {str, std::char_traits<char>::length(str)};
 }
-ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit);
+ddog_prof_ValueType CreateValueType(ddog_prof_StringId typeId, ddog_prof_StringId unitId);
 
 std::string GetErrorMessage(ddog_Error& error);
 std::string GetErrorMessage(ddog_MaybeError& error);
@@ -27,5 +27,6 @@ std::string GetErrorMessage(ddog_MaybeError& error);
 Success make_error(ddog_Error error);
 Success make_error(std::string error);
 Success make_error(ddog_MaybeError error);
+Success make_error(ddog_prof_Status status);
 Success make_success();
 } // namespace libdatadog

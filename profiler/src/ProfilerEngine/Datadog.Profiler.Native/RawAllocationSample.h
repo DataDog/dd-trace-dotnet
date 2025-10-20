@@ -6,6 +6,10 @@
 #include "RawSample.h"
 #include "Sample.h"
 
+namespace libdatadog {
+    class SymbolsStore;
+}
+
 class RawAllocationSample : public RawSample
 {
 public:
@@ -34,7 +38,7 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* symbolsStore) const override
     {
         auto allocationCountIndex = valueOffsets[0];
         sample->AddValue(1, allocationCountIndex);
@@ -46,7 +50,7 @@ public:
             sample->AddValue(AllocationSize, allocationSizeIndex);
         }
 
-        sample->AddLabel(StringLabel(Sample::AllocationClassLabel, AllocationClass));
+        sample->AddLabel(StringLabel(symbolsStore->GetAllocationClass(), AllocationClass));
     }
 
     std::string AllocationClass;

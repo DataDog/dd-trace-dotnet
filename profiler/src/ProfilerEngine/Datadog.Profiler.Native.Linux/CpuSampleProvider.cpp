@@ -12,9 +12,16 @@ CpuSampleProvider::CpuSampleProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
     RingBuffer* ringBuffer,
-    MetricsRegistry& metricsRegistry
+    MetricsRegistry& metricsRegistry,
+    libdatadog::SymbolsStore* symbolsStore
     )
     :
-    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, ringBuffer, metricsRegistry)
+    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, ringBuffer, metricsRegistry, symbolsStore)
 {
+}
+
+std::int64_t CpuSampleProvider::GetGroupingId() const
+{
+    // Log::Warn("-- CpuSampleProvider grouping : ", CpuTimeProvider::SampleTypeDefinitions[0].Index);
+    return CpuTimeProvider::SampleTypeDefinitions[0].Index;
 }

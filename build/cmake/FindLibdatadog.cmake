@@ -73,13 +73,13 @@ else()
             set(SHA256_LIBDATADOG "bcf85135fea719aa192d176b08bb62056beff5d96ddbd114dfc28e50fcfea08c" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
         else()
-            set(SHA256_LIBDATADOG "b4acc82a7fc18dcf0a9758e5223f3aa1028b528886a601a4cafb0a0e38149fcb" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "7c2d403dac73d44819400abea369b03db991837fc17d57a8b7d6255e51c8931d" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
         endif()
     endif()
 
     FetchContent_Declare(libdatadog-install
-        URL     /home/greg/repos/dd-trace-dotnet/temp/libdatadog_v20.0.0.tar
+        URL     /home/greg/repos/dd-trace-dotnet/temp/libdatadog_v21.0.0.tar.gz
         URL_HASH SHA256=${SHA256_LIBDATADOG}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
     )

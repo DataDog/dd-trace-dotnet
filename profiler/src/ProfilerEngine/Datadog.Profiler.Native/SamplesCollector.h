@@ -10,6 +10,7 @@
 #include "ISamplesCollector.h"
 #include "IThreadsCpuManager.h"
 #include "ServiceBase.h"
+#include "SymbolsStore.h"
 
 #include <forward_list>
 #include <mutex>
@@ -24,7 +25,7 @@ class SamplesCollector
     public ServiceBase
 {
 public:
-    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender, libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via IService
     const char* GetName() override;

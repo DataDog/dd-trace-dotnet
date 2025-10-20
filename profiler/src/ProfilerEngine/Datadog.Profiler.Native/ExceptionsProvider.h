@@ -17,10 +17,15 @@
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <memory>
+
+extern "C" {
+    #include "datadog/common.h"
+}
 
 class IConfiguration;
 class SampleValueTypeProvider;
@@ -40,12 +45,15 @@ public:
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         CallstackProvider pool,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
     std::list<UpscalingInfo> GetInfos() override;
+
+    std::int64_t GetGroupingId() const override;
 
 private:
     struct ExceptionBucket
@@ -79,4 +87,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
     CallstackProvider _callstackProvider;
     MetricsRegistry& _metricsRegistry;
+    ddog_prof_StringId _exceptionLabelStringId;
 };

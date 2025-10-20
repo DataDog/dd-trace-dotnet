@@ -17,6 +17,7 @@
 #include "RawSampleTransformer.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
+#include "SymbolsStore.h"
 
 #include <math.h>
 
@@ -38,9 +39,10 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, symbolsStore),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     // keep at least 1 sampled lock contention per bucket so we will at least see long one if any
@@ -296,7 +298,14 @@ void ContentionProvider::AddContentionSample(
 std::list<UpscalingInfo> ContentionProvider::GetInfos()
 {
     return {
-        {GetValueOffsets(), RawContentionSample::BucketLabelName, _samplerLock.GetGroups()},
-        {GetValueOffsets(), RawContentionSample::WaitBucketLabelName, _samplerWait.GetGroups()}
+        {GetValueOffsets(), _symbolsStore->GetBucketLabelName(), _samplerLock.GetGroups(), ContentionProvider::SampleTypeDefinitions[0].Index},
+        {GetValueOffsets(), _symbolsStore->GetWaitBucketLabelName(), _samplerWait.GetGroups(), ContentionProvider::SampleTypeDefinitions[0].Index}
         };
+}
+
+std::int64_t ContentionProvider::GetGroupingId() const
+{
+    // Log::Warn("-- Contention provider grouping : ", ContentionProvider::SampleTypeDefinitions[0].Index);
+    // Log::Warn("-- Contention provider grouping #2 : ", ContentionProvider::SampleTypeDefinitions[1].Index);
+    return ContentionProvider::SampleTypeDefinitions[0].Index;
 }

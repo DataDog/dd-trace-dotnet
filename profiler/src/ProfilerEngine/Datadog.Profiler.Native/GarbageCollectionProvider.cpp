@@ -6,14 +6,16 @@
 #include "RawSampleTransformer.h"
 #include "SampleValueTypeProvider.h"
 #include "TimelineSampleType.h"
+#include "SymbolsStore.h"
 
 GarbageCollectionProvider::GarbageCollectionProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
-    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
 
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
@@ -123,4 +125,10 @@ void GarbageCollectionProvider::OnGarbageCollectionStart(
     GCType type
     )
 {
+}
+
+std::int64_t GarbageCollectionProvider::GetGroupingId() const
+{
+    // Log::Warn("-- GarbageCollection provider grouping : ", TimelineSampleType::Definitions[0].Index);
+    return TimelineSampleType::Definitions[0].Index;
 }

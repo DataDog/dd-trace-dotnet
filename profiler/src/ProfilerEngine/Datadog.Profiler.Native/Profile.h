@@ -16,14 +16,20 @@ class Sample;
 struct SampleValueType;
 class IConfiguration;
 
+extern "C" {
+    #include "datadog/profiling.h"
+    #include "datadog/common.h"	
+}
+
 namespace libdatadog {
 
 struct ProfileImpl;
+class SymbolsStore;
 
 class Profile
 {
 public:
-    Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName);
+    Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName, SymbolsStore* symbolsStore);
     ~Profile();
 
     Profile(Profile const&) = delete;
@@ -32,8 +38,8 @@ public:
     Success Add(std::shared_ptr<Sample> const& sample);
     void SetEndpoint(int64_t traceId, std::string const& endpoint);
     void AddEndpointCount(std::string const& endpoint, int64_t count);
-    Success AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uint64_t sampled, uint64_t real);
-    Success AddUpscalingRulePoisson(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance);
+    Success AddUpscalingRuleProportional(std::uint64_t groupingIndex, ddog_prof_StringId labelName, std::string_view groupName, uint64_t sampled, uint64_t real);
+    Success AddUpscalingRulePoisson(std::uint64_t groupingIndex, std::string_view labelName, std::string_view groupName, uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance);
     std::string const& GetApplicationName() const;
 
 private:
@@ -41,5 +47,6 @@ private:
     std::unique_ptr<ProfileImpl> _impl;
     std::string _applicationName;
     bool _addTimestampOnSample;
+    SymbolsStore* _symbolsStore;
 };
 } // namespace libdatadog

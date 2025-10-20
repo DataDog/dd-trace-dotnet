@@ -169,40 +169,20 @@ private:
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
-    {
-        auto l = std::shared_lock(_threadIdMutex);
-        if (!_profileThreadId.empty())
-        {
-            return _profileThreadId;
-        }
-    }
-
-    auto id = BuildProfileThreadId();
-    std::unique_lock l(_threadIdMutex);
-    if (_profileThreadId.empty())
-    {
-        _profileThreadId = std::move(id);
-    }
-
+    static std::once_flag profileThreadIdOnceFlag;
+    std::call_once(profileThreadIdOnceFlag, [this]() {
+        _profileThreadId = BuildProfileThreadId();
+    });
     return _profileThreadId;
 }
 
 std::string ManagedThreadInfo::GetProfileThreadName()
 {
-    {
-        std::shared_lock l(_threadNameMutex);
-        if (!_profileThreadName.empty())
-        {
-            return _profileThreadName;
-        }
-    }
+    static std::once_flag profileThreadNameOnceFlag;
+    std::call_once(profileThreadNameOnceFlag, [this]() {
+        _profileThreadName = BuildProfileThreadName();;
+    });
 
-    auto s = BuildProfileThreadName();
-    std::unique_lock l(_threadNameMutex);
-    if (_profileThreadName.empty())
-    {
-        _profileThreadName = std::move(s);
-    }
     return _profileThreadName;
 }
 

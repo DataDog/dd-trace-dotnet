@@ -125,7 +125,7 @@ private:
         }
 
         auto uncompressed_files_view = ddog_prof_Exporter_Slice_File_empty();
-        ddog_prof_Exporter_Slice_File to_compress_files_view = {to_compress_files.data(), to_compress_files.size()};
+        ddog_prof_Slice_Exporter_File to_compress_files_view = {to_compress_files.data(), to_compress_files.size()};
 
         ddog_CharSlice* pMetadata = nullptr;
         ddog_CharSlice ffi_metadata{};

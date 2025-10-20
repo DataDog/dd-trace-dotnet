@@ -16,24 +16,19 @@ extern "C"
 
 struct EncodedProfile
 {
-    EncodedProfile(ddog_prof_EncodedProfile* p) :
+    EncodedProfile(ddog_prof_EncodedProfile p) :
         _profile(p)
     {
     }
 
-    struct EncodedProfileDeleter
+    ~EncodedProfile()
     {
-        void operator()(ddog_prof_EncodedProfile* o)
-        {
-            ddog_prof_EncodedProfile_drop(o);
-        }
-    };
+        ddog_prof_EncodedProfile_drop(&_profile);
+    }
 
-    using encoded_profile_ptr = std::unique_ptr<ddog_prof_EncodedProfile, EncodedProfileDeleter>;
-
-    operator ddog_prof_EncodedProfile*() const
+    operator ddog_prof_EncodedProfile*	()
     {
-        return _profile.get();
+        return &_profile;
     }
 
     // The id is used only when saving file on disk, so make its computation lazy
@@ -57,6 +52,6 @@ struct EncodedProfile
     }
 
 private:
-    encoded_profile_ptr _profile;
+        ddog_prof_EncodedProfile _profile;
     std::string _id;
 };

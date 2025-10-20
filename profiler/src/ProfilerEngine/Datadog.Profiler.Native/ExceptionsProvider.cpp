@@ -14,6 +14,7 @@
 #include "SampleValueTypeProvider.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
+#include "SymbolsStore.h"
 
 
 std::vector<SampleValueType> ExceptionsProvider::SampleTypeDefinitions(
@@ -30,9 +31,10 @@ ExceptionsProvider::ExceptionsProvider(
     RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, symbolsStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -49,6 +51,7 @@ ExceptionsProvider::ExceptionsProvider(
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
+    _exceptionLabelStringId = symbolsStore->GetExceptionType();
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
@@ -207,7 +210,7 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
 
 std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 {
-    return {{GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()}};
+    return {{GetValueOffsets(), _exceptionLabelStringId, _sampler.GetGroups(), ExceptionsProvider::SampleTypeDefinitions[0].Index}};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()
@@ -255,4 +258,10 @@ bool ExceptionsProvider::LoadExceptionMetadata()
     }
 
     return false;
+}
+
+std::int64_t ExceptionsProvider::GetGroupingId() const
+{
+    // Log::Warn("-- Exceptions provider grouping : ", SampleTypeDefinitions[0].Index);
+    return SampleTypeDefinitions[0].Index;
 }

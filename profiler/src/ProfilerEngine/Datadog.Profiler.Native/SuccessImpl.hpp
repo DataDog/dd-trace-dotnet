@@ -38,6 +38,12 @@ struct SuccessImpl
     {
     }
 
+    SuccessImpl(ddog_prof_Status status) :
+        SuccessImpl(status.err)
+    {
+        ddog_prof_Status_drop(&status);
+    }
+
     std::string const& message() const
     {
         return _message;

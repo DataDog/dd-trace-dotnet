@@ -49,7 +49,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -61,7 +62,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -88,6 +90,8 @@ public:
 
     // IUpscalePoissonProvider
     UpscalingPoissonInfo GetPoissonInfo() override;
+
+    std::int64_t GetGroupingId() const override;
 
 private:
     uint64_t AllocTickThreshold = 100 * 1024; // this is also used for AllocationSampled as the mean of the distribution

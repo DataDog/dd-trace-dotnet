@@ -9,13 +9,15 @@
 #include "NativeThreadsCpuProviderBase.h"
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
+#include "SymbolsStore.h"
 
 class RawSampleTransformer;
+
 
 class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
 {
 public:
-    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
+    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry, libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;
@@ -32,4 +34,5 @@ private:
     std::vector<std::shared_ptr<IThreadInfo>> _gcThreads;
     std::uint8_t _number_of_attempts = 0;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
+    libdatadog::SymbolsStore* _symbolsStore;
 };

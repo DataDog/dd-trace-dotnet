@@ -19,12 +19,13 @@ std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegis
 
     for (auto& valueType : valueTypes)
     {
-        // set the same index for all
-        valueType.Index = _nextIndex;
 
+        // add test on the grouping id for shared sample types
         size_t idx = GetOffset(valueType);
         if (idx == -1)
         {
+            // set the same index for all
+            valueType.Index = _nextIndex;
             idx = _sampleTypeDefinitions.size();
             _sampleTypeDefinitions.push_back(valueType);
         }

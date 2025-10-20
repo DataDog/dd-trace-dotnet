@@ -3,57 +3,14 @@
 
 #include "Sample.h"
 
-// define well known label string constants
-const std::string Sample::ThreadIdLabel = "thread id";
-const std::string Sample::ThreadNameLabel = "thread name";
-const std::string Sample::AppDomainNameLabel = "appdomain name";
-const std::string Sample::ProcessIdLabel = "appdomain process id";
-const std::string Sample::LocalRootSpanIdLabel = "local root span id";
-const std::string Sample::SpanIdLabel = "span id";
-const std::string Sample::ExceptionTypeLabel = "exception type";
-const std::string Sample::ExceptionMessageLabel = "exception message";
-const std::string Sample::AllocationClassLabel = "allocation class";
-
-// garbage collection related labels
-const std::string Sample::TimelineEventTypeLabel = "event";
-    const std::string Sample::TimelineEventTypeThreadStart = "thread start";
-    const std::string Sample::TimelineEventTypeThreadStop = "thread stop";
-    const std::string Sample::TimelineEventTypeStopTheWorld = "stw";
-    const std::string Sample::TimelineEventTypeGarbageCollection = "gc";
-        const std::string Sample::GarbageCollectionReasonLabel = "gc reason";   // look at GCReason enumeration
-        const std::string Sample::GarbageCollectionTypeLabel = "gc type";       // look at GCType enumeration
-        const std::string Sample::GarbageCollectionCompactingLabel = "gc compacting"; // true or false
-const std::string Sample::GarbageCollectionGenerationLabel = "gc generation";
-const std::string Sample::GarbageCollectionNumberLabel = "gc number";
-
-// life object related labels
-const std::string Sample::ObjectLifetimeLabel = "object lifetime";
-const std::string Sample::ObjectIdLabel = "object id";
-const std::string Sample::ObjectGenerationLabel = "object generation";
-
-// network requests related labels
-const std::string Sample::RequestUrlLabel = "request url";
-const std::string Sample::RequestStatusCodeLabel = "response status code";
-const std::string Sample::RequestErrorLabel = "response error";
-const std::string Sample::RequestRedirectUrlLabel = "redirect url";
-const std::string Sample::RequestDnsWaitLabel = "dns.wait";
-const std::string Sample::RequestDnsDurationLabel = "dns.duration";
-const std::string Sample::RequestDnsSuccessLabel = "dns.success";
-const std::string Sample::RequestHandshakeWaitLabel = "tls.wait";
-const std::string Sample::RequestHandshakeDurationLabel = "tls.duration";
-const std::string Sample::RequestHandshakeErrorLabel = "tls.error";
-const std::string Sample::RequestSocketDurationLabel = "socket.duration";
-const std::string Sample::RequestDurationLabel = "request.duration";
-const std::string Sample::ResponseContentDurationLabel = "response_content.duration";
-const std::string Sample::RequestResponseThreadIdLabel = "response.thread_id";
-const std::string Sample::RequestResponseThreadNameLabel = "response.thread_name";
+#include "SymbolsStore.h"
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
 
 
-Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount) :
-    Sample(runtimeId)
+Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount, libdatadog::SymbolsStore* symbolsStore) :
+    Sample(runtimeId, symbolsStore)
 {
     _timestamp = timestamp;
     _runtimeId = runtimeId;
@@ -61,12 +18,13 @@ Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, s
     _allLabels.reserve(10);
 }
 
-Sample::Sample(std::string_view runtimeId) :
+Sample::Sample(std::string_view runtimeId, libdatadog::SymbolsStore* symbolsStore) :
     _values(ValuesCount),
     _timestamp{0},
     _allLabels{},
     _callstack{},
-    _runtimeId{runtimeId}
+    _runtimeId{runtimeId},
+    _symbolsStore{symbolsStore}
 {
 }
 

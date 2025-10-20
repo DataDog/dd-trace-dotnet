@@ -10,6 +10,7 @@
 
 #include "GroupSampler.h"
 #include "SampleValueTypeProvider.h"
+#include "SymbolsStore.h"
 
 using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
@@ -18,8 +19,9 @@ struct UpscalingInfo
 {
 public:
     std::vector<SampleValueTypeProvider::Offset> const& Offsets;
-    std::string LabelName;
+    ddog_prof_StringId LabelName;
     std::vector<UpscaleStringGroup> UpscaleGroups;
+    std::uint64_t GroupingIndex;
 };
 
 class IUpscaleProvider
@@ -38,6 +40,7 @@ public:
     uint64_t SamplingDistance;
     std::uintptr_t SumOffset;
     std::uintptr_t CountOffset;
+    std::uint64_t GroupingIndex;
 };
 
 class IUpscalePoissonProvider

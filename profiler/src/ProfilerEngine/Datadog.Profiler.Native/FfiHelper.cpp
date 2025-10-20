@@ -34,12 +34,9 @@ ddog_CharSlice to_char_slice(std::string_view str)
     return {str.data(), str.size()};
 }
 
-ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit)
+ddog_prof_ValueType CreateValueType(ddog_prof_StringId typeId, ddog_prof_StringId unitId)
 {
-    auto valueType = ddog_prof_ValueType{};
-    valueType.type_ = to_char_slice(type);
-    valueType.unit = to_char_slice(unit);
-    return valueType;
+    return {.type_id = typeId, .unit_id = unitId};
 }
 
 std::string GetErrorMessage(ddog_Error& error)
@@ -55,17 +52,22 @@ std::string GetErrorMessage(ddog_MaybeError& error)
 
 Success make_error(ddog_Error error)
 {
-    return Success(std::make_unique<SuccessImpl>(error));
+    return Success(new SuccessImpl(error));
+}
+
+Success make_error(ddog_prof_Status status)
+{
+    return Success(new SuccessImpl(status));
 }
 
 Success make_error(std::string error)
 {
-    return Success(std::make_unique<SuccessImpl>(std::move(error)));
+    return Success(new SuccessImpl(std::move(error)));
 }
 
 Success make_error(ddog_MaybeError error)
 {
-    return Success(std::make_unique<SuccessImpl>(error));
+    return Success(new SuccessImpl(error));
 }
 
 Success make_success()

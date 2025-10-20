@@ -21,6 +21,10 @@ class ISampledAllocationsListener;
 class RawSampleTransformer;
 class SampleValueTypeProvider;
 
+namespace libdatadog {
+    class SymbolsStore;
+}
+
 class LiveObjectsProvider : public ServiceBase,
                             public IBatchedSamplesProvider,
                             public ISampledAllocationsListener,
@@ -31,7 +35,8 @@ public:
         ICorProfilerInfo13* pCorProfilerInfo,
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        libdatadog::SymbolsStore* symbolsStore);
 
 public:
 
@@ -88,4 +93,5 @@ private:
 
     static const std::string Gen1;
     static const std::string Gen2;
+    libdatadog::SymbolsStore* _symbolsStore = nullptr;
 };

@@ -8,6 +8,8 @@
 
 #include "RawSample.h"
 
+#include "SymbolsStore.h"
+
 class RawWallTimeSample : public RawSample
 {
 public:
@@ -30,7 +32,7 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* symbolsStore) const override
     {
         assert(valueOffsets.size() == 1);
         sample->AddValue(Duration.count(), valueOffsets[0]);

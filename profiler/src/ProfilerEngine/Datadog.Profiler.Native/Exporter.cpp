@@ -12,6 +12,7 @@
 #include "Profile.h"
 #include "ProfileImpl.hpp"
 #include "Tags.h"
+#include "FfiHelper.h"
 
 #include <cassert>
 
@@ -27,14 +28,14 @@ Exporter::~Exporter() = default;
 
 libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
 {
-    auto s = ddog_prof_Profile_serialize(*profile->_impl, nullptr, nullptr);
-
-    if (s.tag == DDOG_PROF_PROFILE_SERIALIZE_RESULT_ERR)
+    ddog_prof_EncodedProfile encodeProfile;
+    auto status = ddog_prof_ProfileAdapter_build_compressed(&encodeProfile, *profile->_impl, nullptr, nullptr);
+    if (status.flags != 0)
     {
-        return make_error(s.err);
+        return make_error(status);
     }
 
-    auto ep = EncodedProfile(&s.ok);
+    auto ep = EncodedProfile(encodeProfile);
     if (_fileSaver != nullptr)
     {
         auto success = _fileSaver->WriteToDisk(ep, profile->GetApplicationName(), files, metadata, info);

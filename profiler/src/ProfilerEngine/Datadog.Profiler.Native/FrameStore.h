@@ -42,11 +42,18 @@ public:
     static const uintptr_t FakeUnknownIP = 0;
     static const uintptr_t FakeLockContentionIP = 1;
     static const uintptr_t FakeAllocationIP = 2;
+    static const uintptr_t ClrModule = 3;
+    static const uintptr_t Gen0Frame = 4;
+    static const uintptr_t Gen1Frame = 5;
+    static const uintptr_t Gen2Frame = 6;
+    static const uintptr_t GCRootFrame = 7;
+    static const uintptr_t UnknownGenerationFrame = 8;
+    static const uintptr_t DotNetRootFrame = 9;
     // !!  If you add more fake IPs, update this and add new strings in FrameStore.cpp  !!
-    static const uintptr_t MaxFakeIP = 2;
+    static const uintptr_t MaxFakeIP = 9;
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore, libdatadog::SymbolsStore* symbolsStore);
 
 public:
     std::pair<bool, MyFrameInfo> GetFrame(uintptr_t instructionPointer) override;

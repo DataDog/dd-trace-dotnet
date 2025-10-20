@@ -21,8 +21,11 @@ public:
     WallTimeProvider(
         SampleValueTypeProvider& sampleTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore
         );
+
+    std::int64_t GetGroupingId() const override;
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;

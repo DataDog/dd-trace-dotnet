@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "SymbolsStore.h"
+
 class RawGarbageCollectionSample : public GCBaseRawSample
 {
 public:
@@ -46,14 +48,15 @@ public:
         return TotalDuration.count();
     }
 
-    inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* symbolsStore) const override
     {
-        sample->AddLabel(StringLabel(Sample::GarbageCollectionReasonLabel, GetReasonText()));
-        sample->AddLabel(StringLabel(Sample::GarbageCollectionTypeLabel, GetTypeText()));
-        sample->AddLabel(StringLabel(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
+        sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionReason(), GetReasonText()));
+        sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionType(), GetTypeText()));
+        sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionCompacting(), (IsCompacting ? "true" : "false")));
 
+        static const std::string TimelineEventTypeGarbageCollection = "gc";
         // set event type
-        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeGarbageCollection));
+        sample->AddLabel(StringLabel(symbolsStore->GetTimelineEventType(), TimelineEventTypeGarbageCollection));
     }
 
 public:

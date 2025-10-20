@@ -16,6 +16,12 @@
 #include <variant>
 #include <vector>
 
+#include "Log.h"
+
+extern "C" {
+    #include "datadog/common.h"
+}
+
 struct SampleValueType
 {
     std::string Name;
@@ -28,8 +34,8 @@ struct SampleValueType
 };
 
 typedef std::vector<int64_t> Values;
-typedef std::pair<std::string_view, std::string> StringLabel;
-typedef std::pair<std::string_view, int64_t> NumericLabel;
+typedef std::pair<ddog_prof_StringId, std::string> StringLabel;
+typedef std::pair<ddog_prof_StringId, int64_t> NumericLabel;
 typedef std::vector<NumericLabel> NumericLabels;
 typedef std::vector<std::variant<StringLabel, NumericLabel>> Labels;
 
@@ -40,14 +46,17 @@ LabelsVisitor(Ts...) -> LabelsVisitor<Ts...>;
 
 using namespace std::chrono_literals;
 
+#include "SymbolsStore.h"
+
+
 class Sample final
 {
 public:
     static size_t ValuesCount;
 
 public:
-    Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount);
-    Sample(std::string_view runtimeId); // only for tests
+    Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount, libdatadog::SymbolsStore* symbolsStore);
+    Sample(std::string_view runtimeId, libdatadog::SymbolsStore* symbolsStore); // only for tests
 
 #ifndef DD_TEST
 private:
@@ -86,7 +95,7 @@ public:
         auto it = std::find_if(_allLabels.rbegin(), _allLabels.rend(),
                                [&label](auto& item) {
                                    T* elt = std::get_if<T>(&item);
-                                   return elt != nullptr && elt->first == label.first;
+                                   return elt != nullptr;// && elt->first == label.first;
                                });
 
         if (it != _allLabels.rend())
@@ -100,25 +109,25 @@ public:
     template <typename T>
     void SetPid(T&& pid)
     {
-        AddLabel(NumericLabel{ProcessIdLabel, std::forward<T>(pid)});
+        AddLabel(NumericLabel{_symbolsStore->GetProcessId(), std::forward<T>(pid)});
     }
 
     template <typename T>
     void SetAppDomainName(T&& name)
     {
-        AddLabel(StringLabel{AppDomainNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{_symbolsStore->GetAppDomainName(), std::forward<T>(name)});
     }
 
     template <typename T>
     void SetThreadId(T&& tid)
     {
-        AddLabel(StringLabel{ThreadIdLabel, std::forward<T>(tid)});
+        AddLabel(StringLabel{_symbolsStore->GetThreadId(), std::forward<T>(tid)});
     }
 
     template <typename T>
     void SetThreadName(T&& name)
     {
-        AddLabel(StringLabel{ThreadNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{_symbolsStore->GetThreadName(), std::forward<T>(name)});
     }
 
     void SetTimestamp(std::chrono::nanoseconds timestamp)
@@ -131,53 +140,28 @@ public:
         _runtimeId = runtimeId;
     }
 
+    void SetGroupingId(std::int64_t groupingId)
+    {
+        // Log::Warn("++++++++ grouping id ", groupingId);
+        _groupingId = groupingId;
+    }
+
+    std::int64_t GetGroupingId() const
+    {
+        return _groupingId;
+    }
+
     void Reset()
     {
         _timestamp = 0ns;
         _callstack.clear();
         _runtimeId = {};
         _allLabels.clear();
+        _groupingId = -1;
         std::fill(_values.begin(), _values.end(), 0);
     }
     // well known labels
 public:
-    static const std::string ThreadIdLabel;
-    static const std::string ThreadNameLabel;
-    static const std::string ProcessIdLabel;
-    static const std::string AppDomainNameLabel;
-    static const std::string LocalRootSpanIdLabel;
-    static const std::string SpanIdLabel;
-    static const std::string ExceptionTypeLabel;
-    static const std::string ExceptionMessageLabel;
-    static const std::string AllocationClassLabel;
-    static const std::string GarbageCollectionGenerationLabel;
-    static const std::string GarbageCollectionNumberLabel;
-    static const std::string TimelineEventTypeLabel;
-    static const std::string TimelineEventTypeStopTheWorld;
-    static const std::string TimelineEventTypeGarbageCollection;
-    static const std::string TimelineEventTypeThreadStart;
-    static const std::string TimelineEventTypeThreadStop;
-    static const std::string GarbageCollectionReasonLabel;
-    static const std::string GarbageCollectionTypeLabel;
-    static const std::string GarbageCollectionCompactingLabel;
-    static const std::string ObjectLifetimeLabel;
-    static const std::string ObjectIdLabel;
-    static const std::string ObjectGenerationLabel;
-    static const std::string RequestUrlLabel;
-    static const std::string RequestStatusCodeLabel;
-    static const std::string RequestErrorLabel;
-    static const std::string RequestRedirectUrlLabel;
-    static const std::string RequestDnsWaitLabel;
-    static const std::string RequestDnsDurationLabel;
-    static const std::string RequestDnsSuccessLabel;
-    static const std::string RequestHandshakeWaitLabel;
-    static const std::string RequestHandshakeDurationLabel;
-    static const std::string RequestHandshakeErrorLabel;
-    static const std::string RequestSocketDurationLabel;
-    static const std::string RequestResponseThreadIdLabel;
-    static const std::string RequestResponseThreadNameLabel;
-    static const std::string RequestDurationLabel;
-    static const std::string ResponseContentDurationLabel;
 
 private:
     std::chrono::nanoseconds _timestamp;
@@ -185,4 +169,6 @@ private:
     Values _values;
     Labels _allLabels;
     std::string_view _runtimeId;
+    std::int64_t _groupingId;
+    libdatadog::SymbolsStore* _symbolsStore;
 };

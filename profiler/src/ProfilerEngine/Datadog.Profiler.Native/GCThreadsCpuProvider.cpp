@@ -7,8 +7,11 @@
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
 
-GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry) :
-    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer)
+#include "SymbolsStore.h"
+
+GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry, libdatadog::SymbolsStore* symbolsStore) :
+    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer, symbolsStore),
+    _symbolsStore(symbolsStore)
 {
     _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_cpu_duration");
 }
@@ -60,7 +63,7 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
 
 Labels GCThreadsCpuProvider::GetLabels()
 {
-    return Labels{StringLabel{"gc_cpu_sample", "true"}};
+    return Labels{StringLabel{_symbolsStore->GetGcCpuThread(), "true"}};
 }
 
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()

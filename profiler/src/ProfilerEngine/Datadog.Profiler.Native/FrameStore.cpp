@@ -29,10 +29,12 @@ void FixGenericSyntax(char* name);
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore,
+libdatadog::SymbolsStore* symbolsStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
+    _pSymbolsStore{symbolsStore}
 {
 }
 
@@ -86,6 +88,30 @@ std::pair<bool, MyFrameInfo> FrameStore::GetFrame(uintptr_t instructionPointer)
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
             return { true, MyFrameInfo{_pSymbolsStore->GetFakeAllocationFrameId(), _pSymbolsStore->GetFakeModuleId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::ClrModule)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetClrModuleId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen0Frame)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetGen0FrameId(), _pSymbolsStore->GetGen0FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen1Frame)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetGen1FrameId(), _pSymbolsStore->GetGen1FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen2Frame)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetGen2FrameId(), _pSymbolsStore->GetGen2FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::GCRootFrame)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetGCRootFrameId(), _pSymbolsStore->GetGCRootFrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::DotNetRootFrame)
+        {
+            return { true, MyFrameInfo{_pSymbolsStore->GetDotNetRootFrameId(), _pSymbolsStore->GetDotNetRootFrameId(), 0} };
         }
         else
         {

@@ -23,6 +23,9 @@ class IManagedThreadList;
 class IThreadsCpuManager;
 class IConfiguration;
 class RawSampleTransformer;
+namespace libdatadog {
+    class SymbolsStore;
+}
 
 
 class NetworkProvider :
@@ -38,7 +41,8 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
 public:
     // Inherited via INetworkListener
@@ -58,6 +62,8 @@ public:
     void OnResponseHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
     void OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+
+    std::int64_t GetGroupingId() const override;
 
 private:
     bool MonitorRequest(NetworkRequestInfo*& info, LPCGUID pActivityId, bool isRoot = true);

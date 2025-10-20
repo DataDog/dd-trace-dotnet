@@ -4,12 +4,15 @@ set -euox pipefail
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$(dirname -- "$SCRIPT_DIR" )"
 BUILD_DIR="$ROOT_DIR/tracer/build/_build"
-IMAGE_NAME="dd-trace-dotnet/alpine-base"
+IMAGE_NAME="dd-trace-dotnet/centos7-base"
+
+echo $SCRIPT_DIR 
+echo $ROOT_DIR
 
 docker build \
-   --build-arg DOTNETSDK_VERSION=10.0.100-rc.1.25451.107 \
+   --build-arg DOTNETSDK_VERSION=7.0.306 \
    --tag $IMAGE_NAME \
-   --file "$BUILD_DIR/docker/alpine.dockerfile" \
+   --file "$BUILD_DIR/docker/centos7.dockerfile" \
    "$BUILD_DIR"
 
 docker run -it --rm \

@@ -48,7 +48,8 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     AllocationsProvider(
         isFramework
@@ -60,7 +61,8 @@ AllocationsProvider::AllocationsProvider(
         pListener,
         metricsRegistry,
         std::move(pool),
-        memoryResource)
+        memoryResource,
+        symbolsStore)
 {
 }
 
@@ -74,8 +76,9 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
-    shared::pmr::memory_resource* memoryResource) :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), rawSampleTransformer, memoryResource),
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore) :
+    CollectorBase<RawAllocationSample>("AllocationsProvider", valueTypes, rawSampleTransformer, memoryResource, symbolsStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -356,6 +359,13 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
 UpscalingPoissonInfo AllocationsProvider::GetPoissonInfo()
 {
     auto const& offsets = GetValueOffsets(); //              sum(size)       count
-    UpscalingPoissonInfo info{ offsets, AllocTickThreshold, offsets[1], offsets[0] };
+    UpscalingPoissonInfo info{ offsets, AllocTickThreshold, offsets[1], offsets[0] , AllocationsProvider::SampleTypeDefinitions[0].Index};
     return info;
+}
+
+std::int64_t AllocationsProvider::GetGroupingId() const
+{
+    // Log::Warn("-- Allocation provider grouping : ", AllocationsProvider::SampleTypeDefinitions[0].Index);
+    // Log::Warn("-- Allocation provider grouping #2 : ", AllocationsProvider::SampleTypeDefinitions[1].Index);
+    return AllocationsProvider::SampleTypeDefinitions[0].Index;
 }

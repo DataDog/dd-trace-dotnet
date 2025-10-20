@@ -8,6 +8,8 @@
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
+#include "SymbolsStore.h"
+
 // forward declarations
 class IConfiguration;
 class SampleValueTypeProvider;
@@ -21,7 +23,10 @@ public:
     CpuTimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     static std::vector<SampleValueType> SampleTypeDefinitions;
+
+    std::int64_t GetGroupingId() const override;
 };

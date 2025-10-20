@@ -43,6 +43,7 @@
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 #include "PInvoke.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -291,6 +292,8 @@ private :
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
+
+    libdatadog::SymbolsStore* _symbolsStore = nullptr;
 
 private:
     static void ConfigureDebugLog();

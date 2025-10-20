@@ -8,6 +8,7 @@
 
 #include "RawSample.h"
 #include "Sample.h"
+#include "SymbolsStore.h"
 
 //forward declarations
 class IAppDomainStore;
@@ -20,10 +21,12 @@ public:
     RawSampleTransformer(
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore) :
+        IRuntimeIdStore* pRuntimeIdStore,
+        libdatadog::SymbolsStore* symbolsStore) :
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
-        _pRuntimeIdStore{pRuntimeIdStore}
+        _pRuntimeIdStore{pRuntimeIdStore},
+        _symbolsStore{symbolsStore}
     {
     }
 
@@ -34,9 +37,9 @@ public:
     RawSampleTransformer(RawSampleTransformer&&) = delete;
     RawSampleTransformer& operator=(RawSampleTransformer&&) = delete;
 
-    std::shared_ptr<Sample> Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets);
+    std::shared_ptr<Sample> Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets, std::int64_t groupingId, libdatadog::SymbolsStore* symbolsStore);
 
-    void Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets);
+    void Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets, std::int64_t groupingId, libdatadog::SymbolsStore* symbolsStore);
 
 private:
     void SetAppDomainDetails(const RawSample& rawSample, std::shared_ptr<Sample>& sample);
@@ -46,4 +49,5 @@ private:
     IFrameStore* _pFrameStore;
     IAppDomainStore* _pAppDomainStore;
     IRuntimeIdStore* _pRuntimeIdStore;
+    libdatadog::SymbolsStore* _symbolsStore;
 };

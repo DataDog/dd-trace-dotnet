@@ -14,10 +14,10 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     _gcCount(0)
 {
     auto id = s_nextObjectId++;
-    sample->AddLabel(StringLabel{Sample::ObjectIdLabel, std::to_string(id)});
-
-    sample->AddLabel(StringLabel{Sample::ObjectGenerationLabel, std::to_string(0)});
-    sample->AddLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string(0)});
+    //sample->AddLabel(StringLabel{Sample::ObjectIdLabel, std::to_string(id)});
+//
+    //sample->AddLabel(StringLabel{Sample::ObjectGenerationLabel, std::to_string(0)});
+    //sample->AddLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string(0)});
     _sample = sample;
 }
 

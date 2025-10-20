@@ -6,14 +6,16 @@
 #include "OpSysTools.h"
 #include "RawSampleTransformer.h"
 #include "TimelineSampleType.h"
+#include "SymbolsStore.h"
 
 ThreadLifetimeProvider::ThreadLifetimeProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     CollectorBase<RawThreadLifetimeSample>(
-        "ThreadLifetimeProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
+        "ThreadLifetimeProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
 }
 
@@ -38,4 +40,10 @@ RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<Man
     rawSample.Kind = kind;
 
     return rawSample;
+}
+
+std::int64_t ThreadLifetimeProvider::GetGroupingId() const
+{
+    // Log::Warn("-- ThreadLifetime provider grouping : ", TimelineSampleType::Definitions[0].Index);
+    return TimelineSampleType::Definitions[0].Index;
 }

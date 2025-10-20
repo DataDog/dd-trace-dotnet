@@ -3,6 +3,7 @@
 
 #include "Profile.h"
 
+#include "SymbolsStore.h"
 #include "FfiHelper.h"
 #include "IConfiguration.h"
 #include "Log.h"
@@ -15,199 +16,394 @@ namespace libdatadog {
 
 using namespace std::chrono_literals;
 
-libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, libdatadog::SymbolsStore* symbolsStore);
 
-Profile::Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
+Profile::Profile(
+    IConfiguration* configuration,
+    std::vector<SampleValueType> const& valueTypes,
+    std::string const& periodType,
+    std::string const& periodUnit,
+    std::string applicationName,
+    libdatadog::SymbolsStore* symbolsStore)
+    :
     _applicationName{std::move(applicationName)},
-    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()}
+    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()},
+    _symbolsStore{symbolsStore}
 {
-    _impl = CreateProfile(valueTypes, periodType, periodUnit);
+    _impl = CreateProfile(valueTypes, periodType, periodUnit, _symbolsStore);
 }
 
 Profile::~Profile() = default;
+
+class SampleBuilder 
+{
+public:
+    SampleBuilder(ddog_prof_ProfileAdapter* adapter, std::uint64_t grouping, ddog_Slice_I64 values_slice)
+    {
+        auto status = ddog_prof_ProfileAdapter_add_sample(&_inner, adapter, grouping, values_slice);
+        if (status.flags != 0)
+        {
+            auto error = make_error(status);
+            LogOnce(Warn, "Failed to create sample builder:", error.message(), " grouping id: ", grouping);
+        }
+        _isValid = status.flags == 0;
+    }
+
+    ~SampleBuilder()
+    {
+        if (_isValid)
+        {
+            ddog_prof_SampleBuilder_drop(&_inner);
+        }
+    }
+
+    operator bool() const{
+        return _isValid;
+    }
+
+    Success AddTimestamp(ddog_Timespec ts)
+    {
+        auto status = ddog_prof_SampleBuilder_timestamp(_inner, ts);
+        if (status.flags != 0)
+        {
+            return make_error(status);
+        }
+        return make_success();
+    }
+
+    Success AddAttributeInt(ddog_prof_StringId nameId, std::int64_t value)
+    {
+        auto status = ddog_prof_SampleBuilder_attribute_int(_inner, nameId, value);
+        if (status.flags != 0)
+        {
+            return make_error(status);
+        }
+        return make_success();
+    }
+
+    Success AddAttributeStr(ddog_prof_StringId nameId, ddog_CharSlice value)
+    {
+        auto status = ddog_prof_SampleBuilder_attribute_str(_inner, nameId, value, DDOG_PROF_UTF8_OPTION_ASSUME);
+        if (status.flags != 0)
+        {
+            return make_error(status);
+        }
+        return make_success();
+    }
+
+    Success AddStackId(ddog_prof_StackId stackId)
+    {
+        auto status = ddog_prof_SampleBuilder_stack_id(_inner, stackId);
+        if (status.flags != 0) {
+            return make_error(status);
+        }
+        return make_success();
+    }
+
+    Success Finish()
+    {
+        _isValid = false;
+        auto status = ddog_prof_SampleBuilder_finish(&_inner);
+        if (status.flags != 0)
+        {
+            return make_error(status);
+        }
+        return make_success();
+    }
+private:
+    ddog_prof_SampleBuilderHandle _inner;
+    bool _isValid;
+};
 
 libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 {
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
-    auto& [locations, locationsSize, profile] = *_impl;
+    auto& [locations, locationsSize, profilerAdapterHandle, scratchpad] = *_impl;
+
+    auto groupingId = sample->GetGroupingId();
+    // values
+    auto const& values = sample->GetValues();
+    ddog_Slice_I64 values_slice = {values.data(), values.size()};
+    auto sampleBuilder = SampleBuilder(&profilerAdapterHandle, groupingId, values_slice);
+    if (!sampleBuilder)
+    {
+        return make_error("No sample builder");
+    }
 
     if (nbFrames > locationsSize)
     {
         locationsSize = nbFrames;
-        locations.resize(locationsSize);
+        locations.resize(nbFrames);
     }
 
-    std::size_t idx = 0UL;
-    for (auto const& frame : callstack)
+    std::size_t idx = 0;
+    for(auto const& frame : callstack)
     {
-        auto& location = locations[idx];
-
-        location.mapping = {};
-        location.mapping.filename = to_char_slice(frame.ModuleName);
-        location.function.filename = to_char_slice(frame.Filename);
-        location.line = frame.StartLine; // For now we only have the start line of the function.
-        location.function.name = to_char_slice(frame.Frame);
-        location.address = 0; // TODO check if we can get that information in the provider
-
-        ++idx;
+        ddog_prof_Line line = {.function_id = frame.FunctionId, .line_number = frame.StartLine};
+        ddog_prof_Location loc = {.mapping_id = frame.ModuleId, .line = line};
+        ddog_prof_LocationId locationId;
+        auto status = ddog_prof_ScratchPad_insert_location(&locationId, scratchpad, &loc);
+        if (status.flags != 0)
+        {
+            return make_error(status);
+        }
+        locations[idx] = locationId;
+        idx++;
     }
 
-    auto ffiSample = ddog_prof_Sample{};
-    ffiSample.locations = {locations.data(), nbFrames};
-
-    // Labels
-    auto const& labels = sample->GetLabels();
-    std::vector<ddog_prof_Label> ffiLabels;
-    ffiLabels.reserve(labels.size());
-
-    for (auto const& label : labels)
+    ddog_prof_Slice_LocationId loc_slice = {locations.data(), nbFrames};
+    ddog_prof_StackId stackId;
+    auto status = ddog_prof_ScratchPad_insert_stack(&stackId, scratchpad, loc_slice);
+    if (status.flags != 0)
     {
-        auto ffiLabel = std::visit(
-            LabelsVisitor{
-                [](NumericLabel const& l) -> ddog_prof_Label {
-                    auto const& [name, value] = l;
-                    return ddog_prof_Label {
-                        .key = {name.data(), name.size()},
-                        .num = value
-                    };
-                },
-                [](StringLabel const& l) -> ddog_prof_Label {
-                    auto const& [name, value] = l;
-                    return ddog_prof_Label {
-                        .key = {name.data(), name.size()},
-                        .str = {value.data(), value.size()}
-                    };
-                }
-            }, label);
-        ffiLabels.push_back(ffiLabel);
+        return make_error(status);
+    }
+    auto addStackSuccess = sampleBuilder.AddStackId(stackId);
+    if (!addStackSuccess)
+    {
+        return addStackSuccess;
     }
 
-    ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
-
-    // values
-    auto const& values = sample->GetValues();
-    ffiSample.values = {values.data(), values.size()};
-
+    
     // add timestamp
-    auto timestamp = 0ns;
     if (_addTimestampOnSample)
     {
-        // All timestamps give the time when "something" ends and the associated duration
-        // happened in the past
-        ddog_prof_SampleBuilder_timestamp
-        timestamp = sample->GetTimeStamp();
+        ddog_Timespec ts {};
+        ts.seconds = sample->GetTimeStamp().count() / 1'000'000'000;
+        ts.nanoseconds = sample->GetTimeStamp().count() % 1'000'000'000;
+        auto success = sampleBuilder.AddTimestamp(ts);
+        if (!success)
+        {
+            LogOnce(Error, "Unable to add timestamp to sample: ", success.message());
+        }
     }
 
-    //ddog_prof_SampleBuilder_build_into_profile
-    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
-    if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto labelsVisitor = LabelsVisitor{
+        [&sampleBuilder, this](NumericLabel const& l) {
+            auto const& [name, value] = l;
+            // TODO back handle the case where there no nameId
+            auto success = sampleBuilder.AddAttributeInt(
+                name,
+                value
+            );
+            if (!success)
+            {
+                LogOnce(Error, "Unable to add numeric label 'name' to sample: ", success.message());
+            }
+        },
+        [&sampleBuilder, this](StringLabel const& l) {
+            auto const& [name, value] = l;
+            // TODO: check if we need to validate
+            // TODO back handle the case where there no nameId
+            auto success = sampleBuilder.AddAttributeStr(
+                name,
+                {value.data(), value.size()}
+            );
+            if (!success)
+            {
+                // TODO
+                LogOnce(Error, "Unable to add string  label '' to sample: ", success.message());
+            }
+        }
+    };
+
+    
+struct LabelsMyVisitor
+{
+    SampleBuilder* _sampleBuilder;
+
+    void operator()(NumericLabel const& label)
     {
-        return make_error(add_res.err);
+        auto const& [name, value] = label;
+        // TODO back handle the case where there no nameId
+        auto success = _sampleBuilder->AddAttributeInt(
+            name,
+            value
+        );
+        if (!success)
+        {
+            LogOnce(Error, "Unable to add numeric label 'name' to sample: ", success.message());
+        }
     }
-    return make_success();
+    
+    void operator()(StringLabel const& label)
+    {
+        auto const& [name, value] = label;
+        // TODO: check if we need to validate
+        // TODO back handle the case where there no nameId
+        auto success = _sampleBuilder->AddAttributeStr(
+            name,
+            {value.data(), value.size()}
+        );
+        if (!success)
+        {
+            // TODO
+            LogOnce(Error, "Unable to add string  label '' to sample: ", success.message());
+        }
+    }
+};
+
+    LabelsMyVisitor labelsMyVisitor(&sampleBuilder);
+    for (auto const& label : sample->GetLabels())
+    {
+        std::visit(labelsMyVisitor, label);
+    }
+    // todo: pass the symbols store
+    //for (auto const& label : sample->GetLabels())
+    //{
+    //    std::visit(labelsVisitor, label);
+    //}
+
+    return sampleBuilder.Finish();
 }
 
 void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
 {
     auto endpointName = to_char_slice(endpoint);
 
-    auto res = ddog_prof_Profile_set_endpoint(*_impl, traceId, endpointName);
-    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
-    {
-        // this is needed even though we already logged: to free the allocated error message
-        auto error = libdatadog::make_error(res.err);
-        LogOnce(Info, "Unable to associate endpoint '", endpoint, "' to traced id '", traceId, "': ", error.message());
-    }
+    auto& [_, __, ___, scratchpad] = *_impl;
+    ddog_prof_StringId endpointId;
+    ddog_prof_ScratchPad_add_trace_endpoint_with_count(&endpointId, scratchpad, traceId, endpointName, DDOG_PROF_UTF8_OPTION_ASSUME, 1);
+    //auto res = ddog_prof_Profile_set_endpoint(*_impl, traceId, endpointName);
+    //if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    //{
+    //    // this is needed even though we already logged: to free the allocated error message
+    //    auto error = libdatadog::make_error(res.err);
+    //    LogOnce(Info, "Unable to associate endpoint '", endpoint, "' to traced id '", traceId, "': ", error.message());
+    //}
 }
 
+
+// definitly dead
 void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 {
-    auto endpointName = to_char_slice(endpoint);
+    //auto endpointName = to_char_slice(endpoint);
 
-    auto res = ddog_prof_Profile_add_endpoint_count(*_impl, endpointName, 1);
-    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
-    {
-        // this is needed even though we already logged: to free the allocated error message
-        auto error = libdatadog::make_error(res.err);
-        LogOnce(Info, "Unable to add count for endpoint '", endpoint, "': ", error.message());
-    }
+    //ddog_prof_ScratchPad_add_endpoint_count(_scratchpad, endpointName, count);
+    //auto res = ddog_prof_Profile_add_endpoint_count(*_impl, endpointName, 1);
+    //if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    //{
+    //    // this is needed even though we already logged: to free the allocated error message
+    //    auto error = libdatadog::make_error(res.err);
+    //    LogOnce(Info, "Unable to add count for endpoint '", endpoint, "': ", error.message());
+    //}
 }
 
-libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
+libdatadog::Success Profile::AddUpscalingRuleProportional(std::uint64_t groupingIndex, ddog_prof_StringId labelName, std::string_view groupName,
                                                           uint64_t sampled, uint64_t real)
 {
-    ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
-    ddog_CharSlice labelName_slice = to_char_slice(labelName);
+    return make_success();
     ddog_CharSlice groupName_slice = to_char_slice(groupName);
 
-    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
-    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    ddog_prof_GroupByLabel groupByLabel = {
+        .key = labelName,
+        .value = groupName_slice,
+    };
+    ddog_prof_ProportionalUpscalingRule upscalingRule = {
+        .group_by_label = groupByLabel,
+        .sampled = sampled,
+        .real = real
+    };
+
+    struct ddog_prof_Slice_ProportionalUpscalingRule upscalingRule_slice = {&upscalingRule, 1};
+ 
+    auto status = ddog_prof_ProfileAdapter_add_proportional_upscaling(*_impl, groupingIndex, upscalingRule_slice);
+    if (status.flags != 0)
     {
-        // not great, we create 2 Success
-        // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
-        // - the second one is to provide the caller with the actual error.
-        // TODO: have a make_error(<format>, vars, ...) approach ?
-        auto error = make_error(upscalingRuleAdd.err);
-        std::stringstream ss;
-        ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
-           << error.message();
-        return make_error(ss.str());
+        return make_error(status);
     }
+
+//    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
+//    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+//    {
+//        // not great, we create 2 Success
+//        // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
+//        // - the second one is to provide the caller with the actual error.
+//        // TODO: have a make_error(<format>, vars, ...) approach ?
+//        auto error = make_error(upscalingRuleAdd.err);
+//        std::stringstream ss;
+//        ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
+//           << error.message();
+//        return make_error(ss.str());
+//    }
 
     return make_success();
 }
 
-libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
+libdatadog::Success Profile::AddUpscalingRulePoisson(std::uint64_t groupingIndex, std::string_view labelName, std::string_view groupName,
                                                           uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance)
 {
-    ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
-    ddog_CharSlice labelName_slice = to_char_slice(labelName);
-    ddog_CharSlice groupName_slice = to_char_slice(groupName);
-
-    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_poisson(*_impl, offsets_slice, labelName_slice, groupName_slice, sumValueOffset, countValueOffset, sampling_distance);
-    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    ddog_prof_PoissonUpscalingRule upscalingRule = {.sum_offset = sumValueOffset, .count_offset = countValueOffset, .sampling_distance = sampling_distance};
+    
+    auto status = ddog_prof_ProfileAdapter_add_poisson_upscaling(*_impl, groupingIndex, upscalingRule);
+    if (status.flags != 0)
     {
-        auto error = make_error(upscalingRuleAdd.err);
-        std::stringstream ss;
-        ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sumValueOffset) << ", " << std::to_string(countValueOffset) << ", " << std::to_string(sampling_distance) << "]:"
-           << error.message();
-        return make_error(ss.str());
+        return make_error(status);
     }
 
     return make_success();
 }
 
-libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, SymbolsStore* symbolsStore)
 {
     std::vector<ddog_prof_ValueType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
 
     // TODO: create a vector<int32> containing the indexes of the valueTypes
-    std::vector<int32_t> indexes;
-    indexes.reserve(valueTypes.size());
+    std::vector<std::int64_t> groupings;
+    groupings.reserve(valueTypes.size());
 
     for (auto const& type : valueTypes)
     {
-        samplesTypes.push_back(CreateValueType(type.Name, type.Unit));
-        indexes.push_back(type.Index);
+        auto typeId = symbolsStore->InternString(type.Name);
+        if (!typeId)
+        {
+            return nullptr;
+        }
+        auto unitId = symbolsStore->InternString(type.Unit);
+        if (!unitId)
+        {
+            return nullptr;
+        }
+
+        samplesTypes.push_back(
+            CreateValueType(
+                typeId.value(),
+                unitId.value()
+            )
+        );
+
+        Log::Info("--- Grouping added: ", type.Index, " For ", type.Name);
+        groupings.push_back(type.Index);
     }
 
     struct ddog_prof_Slice_ValueType sample_types = {samplesTypes.data(), samplesTypes.size()};
+    struct ddog_Slice_I64 groupings_slice = {groupings.data(), groupings.size()};
 
-    auto period_value_type = CreateValueType(periodType, periodUnit);
-
-    auto period = ddog_prof_Period{};
-    period.type_ = period_value_type;
-    period.value = 1;
-
-    auto res = ddog_prof_Profile_new(sample_types, &period);
-    if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
+    // wrapped into something that will hande its lifecycle
+    ddog_prof_ScratchPadHandle scratchpad;
+    auto status = ddog_prof_ScratchPad_new(&scratchpad);
+    if (status.flags != 0)
     {
+        auto error = make_error(status);
+        LogOnce(Error, "Unable to create scratchpad: ", error.message());
         return nullptr;
     }
-    return std::make_unique<ProfileImpl>(res.ok);
+
+    // handle status
+    ddog_prof_ProfileAdapter adapter;
+    status = ddog_prof_ProfileAdapter_new(&adapter, symbolsStore->GetDictionary(), scratchpad, sample_types, groupings_slice);
+    if (status.flags != 0)
+    {
+        auto error = make_error(status);
+        LogOnce(Error, "Unable to create profile adapter: ", error.message());
+        ddog_prof_ScratchPad_drop(&scratchpad);
+        return nullptr;
+    }
+
+    return std::make_unique<ProfileImpl>(adapter, scratchpad);
 }
 
 std::string const& Profile::GetApplicationName() const

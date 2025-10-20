@@ -12,6 +12,8 @@
 #include "MeanMaxMetric.h"
 #include "ProxyMetric.h"
 
+#include "SymbolsStore.h"
+	
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 class RawSampleTransformer;
@@ -26,7 +28,8 @@ public:
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(
@@ -49,6 +52,8 @@ public:
         uint64_t gen2Size,
         uint64_t lohSize,
         uint64_t pohSize) override;
+
+    std::int64_t GetGroupingId() const override;
 
 private:
     std::shared_ptr<CounterMetric> _gen0CountMetric;

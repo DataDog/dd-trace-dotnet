@@ -20,13 +20,15 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
+#include "SymbolsStore.h"
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
 }
 
@@ -44,4 +46,10 @@ void StopTheWorldGCProvider::OnSuspension(std::chrono::nanoseconds timestamp, in
     rawSample.Duration = pauseDuration;
 
     Add(std::move(rawSample));
+}
+
+std::int64_t StopTheWorldGCProvider::GetGroupingId() const
+{
+    // Log::Warn("-- StopTheWorldGC provider grouping : ", TimelineSampleType::Definitions[0].Index);
+    return TimelineSampleType::Definitions[0].Index;
 }

@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO try making it forward declaration only
+#include "SymbolsStore.h"
+
 // forward declarations
 class Sample;
 class IMetricsSender;
@@ -33,6 +36,7 @@ namespace libdatadog {
 class Exporter;
 class Profile;
 class Tags;
+class SymbolsStore;
 } // namespace libdatadog
 
 class ProfileExporter : public IExporter
@@ -47,7 +51,8 @@ public:
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
         ISsiManager* ssiManager,
-        IAllocationsRecorder* allocationsRecorder);
+        IAllocationsRecorder* allocationsRecorder,
+        libdatadog::SymbolsStore* symbolsStore);
     ~ProfileExporter() override;
 
     bool Export(bool lastCall = false) override;
@@ -145,6 +150,7 @@ private:
     IConfiguration* _configuration;
     IRuntimeInfo* _runtimeInfo;
     ISsiManager* _ssiManager;
+    libdatadog::SymbolsStore* _symbolsStore;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

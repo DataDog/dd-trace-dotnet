@@ -10,6 +10,7 @@
 #include "RawSampleTransformer.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
+#include "SymbolsStore.h"
 
 std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
 {
@@ -20,9 +21,16 @@ std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
 CpuTimeProvider::CpuTimeProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource
-    )
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
+}
+
+std::int64_t CpuTimeProvider::GetGroupingId() const
+{
+    // Log::Warn("-- CpuTime provider grouping : ", SampleTypeDefinitions[0].Index);
+    // Log::Warn("-- CpuTime provider grouping #2 : ", SampleTypeDefinitions[1].Index);
+    return SampleTypeDefinitions[0].Index;
 }
