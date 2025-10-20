@@ -7,6 +7,7 @@
 
 using System;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
@@ -381,45 +382,81 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
-        internal static string? GetClusterId(object consumerOrProducer)
+        internal static string? GetClusterId(string bootstrapServers)
         {
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                Log.Information("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                return null;
+            }
+
             try
             {
-                // Try to duck type to IConsumer or IProducer and call GetMetadata
+                Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {BootstrapServers}", bootstrapServers);
+
+                // Create AdminClientConfig
+                var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+                if (configType == null)
+                {
+                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
+                    return null;
+                }
+
+                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
+                var config = Activator.CreateInstance(configType);
+
+                if (config == null || !config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
+                {
+                    Log.Information("ROBC: Unable to create or duck-cast AdminClientConfig");
+                    return null;
+                }
+
+                adminConfig.BootstrapServers = bootstrapServers;
+
+                // Create AdminClientBuilder
+                var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+                if (builderType == null)
+                {
+                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    return null;
+                }
+
+                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
+                var builder = Activator.CreateInstance(builderType, config);
+                if (builder == null || !builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                {
+                    Log.Information("ROBC: Unable to create or duck-cast AdminClientBuilder");
+                    return null;
+                }
+
                 // Use a short timeout to avoid blocking
                 var timeout = TimeSpan.FromMilliseconds(100);
+                using var cts = new CancellationTokenSource(timeout);
 
-                if (consumerOrProducer.TryDuckCast<IConsumer>(out var consumer))
+                // Build and use AdminClient
+                using (var adminClient = adminBuilder.Build())
                 {
-                    Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka consumer via GetMetadata");
-                    var metadata = consumer.GetMetadata(timeout);
-                    if (metadata?.ClusterId != null)
+                    // Call DescribeClusterAsync with timeout
+                    var describeTask = adminClient.DescribeClusterAsync(cts.Token);
+
+                    // Wait synchronously with timeout (we're in a constructor, can't be async)
+                    if (describeTask.Wait(timeout))
                     {
-                        Log.Information("ROBC: Successfully retrieved cluster_id from Kafka consumer: {ClusterId}", metadata.ClusterId);
-                        return metadata.ClusterId;
+                        var clusterResult = describeTask.Result;
+                        if (clusterResult?.ClusterId != null)
+                        {
+                            Log.Information("ROBC: Successfully retrieved cluster_id from Kafka: {ClusterId}", clusterResult.ClusterId);
+                            return clusterResult.ClusterId;
+                        }
+                        else
+                        {
+                            Log.Information("ROBC: DescribeClusterAsync returned null or empty cluster_id");
+                        }
                     }
                     else
                     {
-                        Log.Information("ROBC: GetMetadata returned null or empty cluster_id for Kafka consumer");
+                        Log.Information("ROBC: DescribeClusterAsync timed out after {TimeoutMs}ms", timeout.TotalMilliseconds);
                     }
-                }
-                else if (consumerOrProducer.TryDuckCast<IProducer>(out var producer))
-                {
-                    Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka producer via GetMetadata");
-                    var metadata = producer.GetMetadata(timeout);
-                    if (metadata?.ClusterId != null)
-                    {
-                        Log.Information("ROBC: Successfully retrieved cluster_id from Kafka producer: {ClusterId}", metadata.ClusterId);
-                        return metadata.ClusterId;
-                    }
-                    else
-                    {
-                        Log.Information("ROBC: GetMetadata returned null or empty cluster_id for Kafka producer");
-                    }
-                }
-                else
-                {
-                    Log.Information("ROBC: Unable to duck-cast Kafka object to IConsumer or IProducer for cluster_id extraction");
                 }
             }
             catch (Exception ex)

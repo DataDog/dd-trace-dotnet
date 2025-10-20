@@ -65,9 +65,20 @@ public class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                // Save the map between this consumer and a consumer group
-                // cluster_id will be populated in OnMethodEnd after the consumer is fully constructed
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, string.Empty);
+                // Extract cluster_id using AdminClient API with bootstrap servers
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    Log.Information("ROBC: Kafka consumer config retrieved - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
+                }
+                else
+                {
+                    Log.Information("ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}", groupId, bootstrapServers);
+                }
+
+                // Save the map between this consumer and its metadata
+                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -82,28 +93,6 @@ public class KafkaConsumerConstructorIntegration
         if (exception is not null && state is { State: { } consumer })
         {
             ConsumerCache.RemoveConsumerGroup(consumer);
-        }
-        else if (exception is null && state is { State: { } consumerObj })
-        {
-            // Extract cluster_id from metadata
-            var clusterId = KafkaHelper.GetClusterId(consumerObj);
-            if (!string.IsNullOrEmpty(clusterId))
-            {
-                // Update the cache with cluster_id
-                if (ConsumerCache.TryGetConsumerGroup(consumerObj, out var groupId, out var bootstrapServers, out _))
-                {
-                    ConsumerCache.SetConsumerGroup(consumerObj, groupId, bootstrapServers, clusterId);
-                    Log.Information("ROBC: Kafka consumer initialized - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
-                }
-                else
-                {
-                    Log.Information("ROBC: Unable to retrieve consumer group info for cluster_id caching");
-                }
-            }
-            else
-            {
-                Log.Information("ROBC: Kafka consumer initialized but no cluster_id could be retrieved");
-            }
         }
 
         return CallTargetReturn.GetDefault();

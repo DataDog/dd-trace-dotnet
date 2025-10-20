@@ -1,19 +1,17 @@
-// <copyright file="IConsumer.cs" company="Datadog">
+// <copyright file="IAdminClientConfig.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
-/// Duck Type for IConsumer[TKey, TValue]
-/// Used to access GetMetadata method for cluster_id extraction
+/// Duck Type for Confluent.Kafka.AdminClientConfig
+/// Used to create an AdminClient for cluster_id extraction
 /// </summary>
-internal interface IConsumer
+internal interface IAdminClientConfig
 {
-    IMetadata GetMetadata(TimeSpan timeout);
+    string BootstrapServers { get; set; }
 }
