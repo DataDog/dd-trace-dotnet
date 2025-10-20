@@ -92,12 +92,13 @@ namespace
             return "";
         }
 
-        if (tokenized_command_line[1].ends_with(L".dll"))
+        if (tokenized_command_line[1].empty() || !tokenized_command_line[1].ends_with(L".dll"))
         {
-            return ::shared::ToString(tokenized_command_line[1]);
+            return "":
         }
 
-        return "";
+        auto dll_path = fs::path(::shared::ToString(tokenized_command_line[1]));
+        return dll_path.filename().string();
     }
 
 } // namespace
