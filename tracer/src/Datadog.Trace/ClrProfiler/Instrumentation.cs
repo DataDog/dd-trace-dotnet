@@ -360,6 +360,32 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
+#if NETFRAMEWORK
+            // For .NET Framework, initialize Quartz diagnostic observer using reflection
+            try
+            {
+                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
+                {
+                    // check if DiagnosticSource is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                    if (type == null)
+                    {
+                        Log.Debug("DiagnosticSource type could not be loaded. Skipping Quartz diagnostic observer for .NET Framework.");
+                    }
+                    else
+                    {
+                        Log.Debug("Initializing Quartz diagnostic observer for .NET Framework.");
+                        DiagnosticListeners.QuartzDiagnosticObserver.Initialize();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error initializing Quartz diagnostic observer for .NET Framework.");
+            }
+#endif
+
             try
             {
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
