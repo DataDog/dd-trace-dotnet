@@ -1,4 +1,4 @@
-﻿// <copyright file="GacNativeMethods.cs" company="Datadog">
+// <copyright file="GacNativeMethods.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -53,6 +53,7 @@ internal sealed partial class GacNativeMethods : IDisposable
 
     private static string GetFusionFullPath()
     {
+ #if WINDOWS_BUILD
         string fusionFullPath;
         using (var ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32).OpenSubKey(NetFrameworkSubKey))
         {
@@ -71,6 +72,9 @@ internal sealed partial class GacNativeMethods : IDisposable
         }
 
         return fusionFullPath;
+#else
+        return string.Empty;
+#endif
     }
 
     private IntPtr GetPointer()
