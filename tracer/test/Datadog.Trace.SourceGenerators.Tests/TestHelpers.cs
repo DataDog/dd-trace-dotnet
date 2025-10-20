@@ -9,10 +9,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.SourceGenerators.Helpers;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.SourceGenerators.Tests
 {
@@ -37,7 +39,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TTrackingNames>(sources, assertOutput: true);
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput, (string Path, string Content)[] additionalFiles = null)
             where TGenerator : IIncrementalGenerator, new()
         {
             // get all the const string fields
@@ -48,10 +50,10 @@ namespace Datadog.Trace.SourceGenerators.Tests
                                .Where(x => !string.IsNullOrEmpty(x))
                                .ToArray();
 
-            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput);
+            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput: assertOutput, additionalFiles: additionalFiles);
         }
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, bool assertOutput = true)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true)
             where T : IIncrementalGenerator, new()
         {
             IEnumerable<SyntaxTree> syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
@@ -66,12 +68,12 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, assertOutput);
+            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, additionalFiles ?? Array.Empty<(string, string)>(), assertOutput);
 
             return (runResult.Diagnostics, runResult.GeneratedTrees.Select(x => x.ToString()).ToArray());
         }
 
-        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, bool assertOutput = true)
+        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true)
             where T : IIncrementalGenerator, new()
         {
             ISourceGenerator generator = new T().AsSourceGenerator();
@@ -80,7 +82,9 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 disabledOutputs: IncrementalGeneratorOutputKind.None,
                 trackIncrementalGeneratorSteps: true);
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], driverOptions: opts);
+            var additionalTexts = additionalFiles?.Select(f => (AdditionalText)new TestAdditionalText(f.Path, f.Content)).ToImmutableArray();
+
+            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], additionalTexts: additionalTexts, driverOptions: opts);
 
             var clone = compilation.Clone();
             // Run twice, once with a clone of the compilation
@@ -226,6 +230,24 @@ namespace Datadog.Trace.SourceGenerators.Tests
                         queue.Enqueue(fieldValue);
                     }
                 }
+            }
+        }
+
+        private class TestAdditionalText : AdditionalText
+        {
+            private readonly string _text;
+
+            public TestAdditionalText(string path, string text)
+            {
+                Path = path;
+                _text = text;
+            }
+
+            public override string Path { get; }
+
+            public override SourceText GetText(CancellationToken cancellationToken = default)
+            {
+                return SourceText.From(_text);
             }
         }
     }
