@@ -6,6 +6,7 @@
     <RequiresDockerDependency>true</RequiresDockerDependency>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.13.1</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.5.0'">$(DefineConstants);OTEL_1_5</DefineConstants>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     </PropertyGroup>
 

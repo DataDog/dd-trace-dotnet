@@ -264,6 +264,59 @@ namespace Datadog.Trace.Configuration
                                    },
                                    validator: null);
 
+            OtlpLogsProtocol = config
+                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                             .GetAs(
+                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  converter: x => x switch
+                                  {
+                                      not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                      not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
+                                      not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                                      _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
+                                  },
+                                  validator: null);
+
+            OtlpLogsEndpoint = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
+                .GetAs(
+                    defaultValue: new DefaultResult<Uri>(
+                        result: OtlpLogsProtocol switch
+                        {
+                            OtlpProtocol.Grpc => OtlpEndpoint,
+                            _ => new Uri(OtlpEndpoint, "/v1/logs")
+                        },
+                        telemetryValue: $"{OtlpEndpoint}{(!OtlpLogsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/logs" : string.Empty)}"),
+                    validator: null,
+                    converter: uriString => new Uri(uriString));
+
+            OtlpLogsHeaders = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .AsDictionaryResult(separator: '=')
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+
+            OtlpLogsTimeoutMs = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .AsInt32(defaultValue: 10_000);
+
+            var otelLogsExporterEnabled = config
+               .WithKeys(ConfigurationKeys.OpenTelemetry.LogsExporter)
+               .AsBoolResult(
+                    null,
+                    value => value switch
+                    {
+                        not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
+                        not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
+                        _ => ParsingResult<bool>.Failure()
+                    })
+                    .WithDefault(true);
+
+            OpenTelemetryLogsEnabled = config
+                            .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
+                            .AsBool(defaultValue: false) && otelLogsExporterEnabled;
+
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
                                   .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
@@ -774,6 +827,43 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
         internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether Datadog's OTLP logs feature is enabled.
+        /// This is set via DD_LOGS_OTEL_ENABLED (parallel to DD_METRICS_OTEL_ENABLED).
+        /// Default is disabled (false).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>
+        internal bool OpenTelemetryLogsEnabled { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for logs export with fallback behavior.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpLogsProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for logs export fallbacks on <see cref="OtlpEndpoint"/>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+        internal Uri OtlpLogsEndpoint { get; }
+
+        /// <summary>
+        /// Gets the OTLP headers for logs export with fallback behavior.
+        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+        internal IReadOnlyDictionary<string, string> OtlpLogsHeaders { get; }
+
+        /// <summary>
+        /// Gets the OTLP request timeout (in milliseconds) for logs.
+        /// Default is 10000ms (10s).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
+        internal int OtlpLogsTimeoutMs { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
