@@ -5,9 +5,11 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
@@ -37,45 +39,36 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ConfigurationUpdater(environment, serviceVersion);
         }
 
-        public bool AcceptAdded(ProbeConfiguration configuration)
+        public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
         {
-            try
+            var result = new List<UpdateResult>();
+            var filteredConfiguration = ApplyConfigurationFilters(configuration);
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
+
+            if (comparer.HasProbeRelatedChanges)
             {
-                var filteredConfiguration = ApplyConfigurationFilters(configuration);
-                var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
-
-                if (comparer.HasProbeRelatedChanges)
-                {
-                    HandleAddedProbesChanges(comparer);
-                }
-
-                if (comparer.HasRateLimitChanged)
-                {
-                    HandleRateLimitChanged(comparer);
-                }
-
-                _currentConfiguration = configuration;
-
-                return true;
+                result = HandleAddedProbesChanges(comparer);
             }
-            catch (Exception ex)
+
+            if (comparer.HasRateLimitChanged)
             {
-                Log.Error(ex, "Failed to add configurations");
-                return false;
+                HandleRateLimitChanged(comparer);
             }
+
+            _currentConfiguration = configuration;
+
+            return result;
         }
 
-        public bool AcceptRemoved(string[] removedProbesIds)
+        public void AcceptRemoved(List<RemoteConfigurationPath> paths)
         {
             try
             {
-                HandleRemovedProbesChanges(removedProbesIds);
-                return true;
+                HandleRemovedProbesChanges(paths);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to remove configurations");
-                return false;
             }
         }
 
@@ -122,19 +115,21 @@ namespace Datadog.Trace.Debugger.Configurations
             }
         }
 
-        private void HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
+        private List<UpdateResult> HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
+            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
         }
 
-        private void HandleRemovedProbesChanges(string[] removedProbesIds)
+        private void HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(removedProbesIds);
+            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
         {
             // todo handle rate limited changes
         }
+
+        internal record UpdateResult(string Id, string? Error);
     }
 }

@@ -368,8 +368,11 @@
    <assembly fullname="System.Messaging" />
    <assembly fullname="System.Net.Http">
       <type fullname="System.Net.Http.ByteArrayContent" />
+      <type fullname="System.Net.Http.Headers.HeaderStringValues" />
+      <type fullname="System.Net.Http.Headers.HeaderStringValues/Enumerator" />
       <type fullname="System.Net.Http.Headers.HttpContentHeaders" />
       <type fullname="System.Net.Http.Headers.HttpHeaders" />
+      <type fullname="System.Net.Http.Headers.HttpHeadersNonValidated" />
       <type fullname="System.Net.Http.Headers.HttpRequestHeaders" />
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
@@ -381,6 +384,7 @@
       <type fullname="System.Net.Http.HttpMessageHandler" />
       <type fullname="System.Net.Http.HttpMessageInvoker" />
       <type fullname="System.Net.Http.HttpMethod" />
+      <type fullname="System.Net.Http.HttpRequestException" />
       <type fullname="System.Net.Http.HttpRequestMessage" />
       <type fullname="System.Net.Http.HttpResponseMessage" />
       <type fullname="System.Net.Http.HttpVersionPolicy" />
@@ -647,6 +651,7 @@
       <type fullname="System.IO.FileStream" />
       <type fullname="System.IO.FileSystemInfo" />
       <type fullname="System.IO.HandleInheritability" />
+      <type fullname="System.IO.InvalidDataException" />
       <type fullname="System.IO.IOException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
@@ -913,6 +918,7 @@
       <type fullname="System.IO.BinaryReader" />
       <type fullname="System.IO.BinaryWriter" />
       <type fullname="System.IO.EndOfStreamException" />
+      <type fullname="System.IO.InvalidDataException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
       <type fullname="System.IO.StreamReader" />
