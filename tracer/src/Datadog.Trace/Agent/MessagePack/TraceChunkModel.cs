@@ -33,6 +33,8 @@ internal readonly struct TraceChunkModel
 
     public readonly int? SamplingPriority = null;
 
+    public readonly bool IsFirstChunkInBuffer = false;
+
     public readonly string? SamplingMechanism = null;
 
     public readonly double? AppliedSamplingRate = null;
@@ -72,8 +74,9 @@ internal readonly struct TraceChunkModel
     /// </summary>
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
-    public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null)
-        : this(spans, TraceContext.GetTraceContext(spans), samplingPriority)
+    /// <param name="isFirstChunkInBuffer">marks if this is the first chunk being written to the buffer that then gets sent to the agent</param>
+    public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null, bool isFirstChunkInBuffer = false)
+        : this(spans, TraceContext.GetTraceContext(spans), samplingPriority, isFirstChunkInBuffer)
     {
         // since all we have is an array of spans, use the trace context from the first span
         // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
@@ -82,11 +85,12 @@ internal readonly struct TraceChunkModel
     }
 
     // used only to chain constructors
-    private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority)
+    private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInBuffer)
         : this(spans, traceContext?.RootSpan)
     {
         // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;
+        IsFirstChunkInBuffer = isFirstChunkInBuffer;
 
         if (traceContext is not null)
         {
@@ -203,9 +207,10 @@ internal readonly struct TraceChunkModel
         return new SpanModel(
             span,
             this,
-            isLocalRoot: isLocalRoot,
-            isChunkOrphan: isChunkOrphan,
-            isFirstSpanInChunk: isFirstSpan);
+            isLocalRoot,
+            isChunkOrphan,
+            isFirstSpan,
+            IsFirstChunkInBuffer);
     }
 
     /// <summary>

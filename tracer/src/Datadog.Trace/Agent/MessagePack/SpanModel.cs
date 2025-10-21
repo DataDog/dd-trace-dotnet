@@ -31,17 +31,21 @@ internal readonly struct SpanModel
 
     public readonly bool IsFirstSpanInChunk;
 
+    public readonly bool IsInFirstChunkOfBuffer;
+
     public SpanModel(
         Span span,
         in TraceChunkModel traceChunk,
         bool isLocalRoot,
         bool isChunkOrphan,
-        bool isFirstSpanInChunk)
+        bool isFirstSpanInChunk,
+        bool isInFirstChunkOfBuffer)
     {
         Span = span;
         TraceChunk = traceChunk;
         IsLocalRoot = isLocalRoot;
         IsChunkOrphan = isChunkOrphan;
         IsFirstSpanInChunk = isFirstSpanInChunk;
+        IsInFirstChunkOfBuffer = isInFirstChunkOfBuffer;
     }
 }
