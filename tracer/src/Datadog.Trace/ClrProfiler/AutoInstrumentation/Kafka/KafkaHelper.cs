@@ -27,6 +27,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
 
+        // Thread-local flag to prevent infinite recursion when AdminClient creates internal Producer
+        [ThreadStatic]
+        private static bool _isGettingClusterId;
+
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             object producer,
@@ -384,6 +388,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static string? GetClusterId(string bootstrapServers)
         {
+            // Prevent re-entrancy: AdminClient internally creates a Producer, which would trigger our instrumentation again
+            if (_isGettingClusterId)
+            {
+                Log.Information("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                return null;
+            }
+
             if (string.IsNullOrEmpty(bootstrapServers))
             {
                 Log.Information("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
@@ -392,6 +403,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                _isGettingClusterId = true;
                 Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {BootstrapServers}", bootstrapServers);
 
                 // Create AdminClientConfig
@@ -462,6 +474,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             catch (Exception ex)
             {
                 Log.Warning(ex, "ROBC: Error extracting cluster_id from Kafka metadata");
+            }
+            finally
+            {
+                _isGettingClusterId = false;
             }
 
             return null;
