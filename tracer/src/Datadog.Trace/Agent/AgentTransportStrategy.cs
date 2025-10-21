@@ -72,13 +72,8 @@ internal static class AgentTransportStrategy
 #endif
             case TracesTransportType.Default:
             default:
-#if NETCOREAPP
                 Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
                 return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
-#else
-                Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
-                return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
-#endif
         }
     }
 }

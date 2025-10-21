@@ -5,7 +5,6 @@
 
 #nullable enable
 
-#if NETCOREAPP
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -47,5 +46,3 @@ internal class GzipCompressedContent : HttpContent
         return false;
     }
 }
-
-#endif

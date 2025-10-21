@@ -17,13 +17,8 @@ namespace Datadog.Trace.Debugger
 
         public static IApiRequestFactory Get(Uri baseEndpoint)
         {
-#if NETCOREAPP
             Log.Information("Using {FactoryType} for debugger transport.", nameof(HttpClientRequestFactory));
             return new HttpClientRequestFactory(baseEndpoint, AgentHttpHeaderNames.DefaultHeaders);
-#else
-            Log.Information("Using {FactoryType} for debugger transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(baseEndpoint, AgentHttpHeaderNames.DefaultHeaders);
-#endif
         }
     }
 }

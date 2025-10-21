@@ -172,17 +172,13 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
         }
         else
         {
-#if NETCOREAPP
             Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
             factory = new HttpClientRequestFactory(
                 exporterSettings.AgentUri,
                 AgentHttpHeaderNames.DefaultHeaders,
                 handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
                 timeout: timeout);
-#else
-            Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
-#endif
+
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {
                 var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps!);
