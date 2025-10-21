@@ -92,10 +92,6 @@ internal static class OtlpLogsSerializer
 
     private static int WriteResource(byte[] buffer, int writePosition, TracerSettings settings)
     {
-        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.name", "datadog");
-        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.language", "dotnet");
-        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
-
         var serviceName = settings.ServiceName ?? "unknown_service:dotnet";
         writePosition = WriteResourceAttribute(buffer, writePosition, "service.name", serviceName);
 
@@ -108,6 +104,11 @@ internal static class OtlpLogsSerializer
         {
             writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment!);
         }
+
+        // Write telemetry SDK attributes
+        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.name", "datadog");
+        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.language", "dotnet");
+        writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
         if (settings.GlobalTags.Count > 0)
         {

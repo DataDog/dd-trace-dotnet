@@ -24,7 +24,7 @@ namespace Datadog.Trace.OpenTelemetry.Logs;
 /// Supports both gRPC and HTTP/Protobuf transports using vendored export clients.
 /// This is a Push Log Exporter that sends logs via the OpenTelemetry Protocol.
 /// </summary>
-internal class OtlpExporter
+internal class OtlpExporter : IOtlpExporter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
     private readonly HttpClient _httpClient;

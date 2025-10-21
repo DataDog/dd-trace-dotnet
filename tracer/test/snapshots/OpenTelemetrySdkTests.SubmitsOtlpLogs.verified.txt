@@ -5,6 +5,18 @@
         "resource": {
           "attributes": [
             {
+              "key": "service.name",
+              "value": {
+                "string_value": "OtlpLogsService"
+              }
+            },
+            {
+              "key": "deployment.environment",
+              "value": {
+                "string_value": "testing"
+              }
+            },
+            {
               "key": "telemetry.sdk.name",
               "value": {
                 "string_value": "sdk-name"
@@ -20,12 +32,6 @@
               "key": "telemetry.sdk.version",
               "value": {
                 "string_value": "sdk-version"
-              }
-            },
-            {
-              "key": "service.name",
-              "value": {
-                "string_value": "unknown_service:dotnet"
               }
             }
           ]

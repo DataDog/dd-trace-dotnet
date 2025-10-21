@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +16,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -34,12 +34,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
@@ -61,7 +62,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             int batchCount = 0;
 
             var options = new BatchingSinkOptions(batchSizeLimit: 3, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 Interlocked.Increment(ref batchCount);
@@ -72,6 +73,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
@@ -93,17 +95,18 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var spanId = ActivitySpanId.CreateRandom();
+            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: true);
+            var spanId = RandomIdGenerator.Shared.NextSpanId();
             var logEvent = CreateTestLogEvent("Log with trace context", logLevel: 4, traceId: traceId, spanId: spanId);
 
             sink.EnqueueLog(logEvent);
@@ -121,12 +124,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
@@ -156,7 +160,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 if (capturedLogs.Count > 0)
@@ -166,6 +170,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
@@ -189,7 +194,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 6, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new TestOtlpSink(options, logs =>
+            var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
                 if (capturedLogs.Count >= 6)
@@ -199,6 +204,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
                 return Task.FromResult(ExportResult.Success);
             });
+            var sink = new OtlpSubmissionLogSink(options, exporter);
 
             sink.Start();
 
@@ -217,8 +223,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static LoggerDirectSubmissionLogEvent CreateTestLogEvent(
             string message,
             int logLevel,
-            ActivityTraceId? traceId = null,
-            ActivitySpanId? spanId = null,
+            TraceId? traceId = null,
+            ulong? spanId = null,
             Dictionary<string, object> attributes = null,
             string categoryName = "TestCategory")
         {
@@ -231,59 +237,33 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                     CategoryName = categoryName,
                     Timestamp = DateTime.UtcNow,
                     Attributes = attributes ?? new Dictionary<string, object>(),
-                    TraceId = traceId,
-                    SpanId = spanId,
+                    TraceId = traceId ?? TraceId.Zero,
+                    SpanId = spanId ?? 0,
                     Flags = traceId.HasValue ? 1 : 0
                 }
             };
         }
 
         /// <summary>
-        /// Test sink that allows injecting a test exporter
+        /// Test exporter that allows controlling export behavior via delegate
         /// </summary>
-        internal class TestOtlpSink : OtlpSubmissionLogSink
+        internal class TestOtlpExporter : IOtlpExporter
         {
             private readonly Func<IReadOnlyList<LogPoint>, Task<ExportResult>> _exportFunc;
 
-            public TestOtlpSink(
-                BatchingSinkOptions sinkOptions,
-                Func<IReadOnlyList<LogPoint>, Task<ExportResult>> exportFunc,
-                TracerSettings settings = null)
-                : base(sinkOptions, settings ?? new TracerSettings())
+            public TestOtlpExporter(Func<IReadOnlyList<LogPoint>, Task<ExportResult>> exportFunc)
             {
                 _exportFunc = exportFunc;
             }
 
-            protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
+            public async Task<ExportResult> ExportAsync(IReadOnlyList<LogPoint> logs)
             {
-                if (events.Count == 0)
-                {
-                    return true;
-                }
+                return await _exportFunc(logs).ConfigureAwait(false);
+            }
 
-                try
-                {
-                    var logRecords = new List<LogPoint>();
-                    foreach (var ev in events)
-                    {
-                        if (ev is LoggerDirectSubmissionLogEvent { OtlpLog: { } logPoint })
-                        {
-                            logRecords.Add(logPoint);
-                        }
-                    }
-
-                    if (logRecords.Count == 0)
-                    {
-                        return true;
-                    }
-
-                    var result = await _exportFunc(logRecords).ConfigureAwait(false);
-                    return result == ExportResult.Success;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
+            public bool Shutdown(int timeoutMilliseconds)
+            {
+                return true;
             }
         }
     }

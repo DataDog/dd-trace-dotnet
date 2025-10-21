@@ -19,12 +19,17 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink;
 internal class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
 {
     private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<OtlpSubmissionLogSink>();
-    private readonly OtlpExporter _otlpExporter;
+    private readonly IOtlpExporter _otlpExporter;
 
     public OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, TracerSettings settings)
+        : this(sinkOptions, new OtlpExporter(settings))
+    {
+    }
+
+    internal OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, IOtlpExporter exporter)
         : base(sinkOptions, null)
     {
-        _otlpExporter = new OtlpExporter(settings);
+        _otlpExporter = exporter;
     }
 
     protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)

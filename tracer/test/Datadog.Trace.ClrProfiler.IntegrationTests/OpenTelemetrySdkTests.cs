@@ -312,8 +312,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
             }
 
-            SetEnvironmentVariable("DD_ENV", string.Empty);
-            SetEnvironmentVariable("DD_SERVICE", string.Empty);
+            SetEnvironmentVariable("DD_ENV", "testing");
+            SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
+            SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=OtlpLogsService,deployment.environment=testing");
             SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
