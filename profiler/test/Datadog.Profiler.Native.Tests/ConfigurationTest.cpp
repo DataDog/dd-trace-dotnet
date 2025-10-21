@@ -1418,3 +1418,23 @@ TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsWaitHandleProfilingEnabled(), false);
 }
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
+}
