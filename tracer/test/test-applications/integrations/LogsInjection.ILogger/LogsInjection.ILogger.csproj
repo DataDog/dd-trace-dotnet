@@ -5,6 +5,10 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
+  </PropertyGroup>
+  
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
