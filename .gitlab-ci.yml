@@ -226,3 +226,7 @@ dsm_throughput:
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: on_success
+    - when: never

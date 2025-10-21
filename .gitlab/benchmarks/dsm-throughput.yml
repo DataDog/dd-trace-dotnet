@@ -22,9 +22,7 @@ check_azure_pipeline:
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
-    - if: '$CI_COMMIT_BRANCH'
-      when: on_success
-    - when: never
+    - when: on_success
 
 dsm_throughput:
   stage: benchmarks
