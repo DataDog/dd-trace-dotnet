@@ -9,6 +9,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Delegates;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -71,10 +72,12 @@ public class KafkaConsumerConstructorIntegration
                 if (!string.IsNullOrEmpty(clusterId))
                 {
                     Log.Information("ROBC: Kafka consumer config retrieved - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
+                    Console.WriteLine($"ROBC: Kafka consumer config retrieved - GroupId: {groupId}, BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
                 }
                 else
                 {
                     Log.Information("ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}", groupId, bootstrapServers);
+                    Console.WriteLine($"ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {groupId}, BootstrapServers: {bootstrapServers}");
                 }
 
                 // Save the map between this consumer and its metadata

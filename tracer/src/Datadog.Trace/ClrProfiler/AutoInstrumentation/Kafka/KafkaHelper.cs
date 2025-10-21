@@ -14,6 +14,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -84,10 +85,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     {
                         tags.ClusterId = clusterId;
                         Log.Information("ROBC: Added cluster_id tag to Kafka producer span: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka producer span: {clusterId}");
                     }
                     else
                     {
                         Log.Information("ROBC: No cluster_id available for Kafka producer span");
+                        Console.WriteLine("ROBC: No cluster_id available for Kafka producer span");
                     }
                 }
 
@@ -234,10 +237,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     {
                         tags.ClusterId = clusterId;
                         Log.Information("ROBC: Added cluster_id tag to Kafka consumer span: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka consumer span: {clusterId}");
                     }
                     else
                     {
                         Log.Information("ROBC: No cluster_id available for Kafka consumer span");
+                        Console.WriteLine("ROBC: No cluster_id available for Kafka consumer span");
                     }
                 }
 
@@ -392,12 +397,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             if (_isGettingClusterId)
             {
                 Log.Information("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                Console.WriteLine("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
                 return null;
             }
 
             if (string.IsNullOrEmpty(bootstrapServers))
             {
                 Log.Information("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                Console.WriteLine("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
                 return null;
             }
 
@@ -405,12 +412,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 _isGettingClusterId = true;
                 Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {BootstrapServers}", bootstrapServers);
+                Console.WriteLine($"ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {bootstrapServers}");
 
                 // Create AdminClientConfig
                 var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
                 if (configType == null)
                 {
                     Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
+                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
                     return null;
                 }
 
@@ -420,6 +429,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (config == null || !config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
                 {
                     Log.Information("ROBC: Unable to create or duck-cast AdminClientConfig");
+                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientConfig");
                     return null;
                 }
 
@@ -430,6 +440,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (builderType == null)
                 {
                     Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
                     return null;
                 }
 
@@ -438,6 +449,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (builder == null || !builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
                 {
                     Log.Information("ROBC: Unable to create or duck-cast AdminClientBuilder");
+                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientBuilder");
                     return null;
                 }
 
@@ -458,22 +470,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         if (clusterResult?.ClusterId != null)
                         {
                             Log.Information("ROBC: Successfully retrieved cluster_id from Kafka: {ClusterId}", clusterResult.ClusterId);
+                            Console.WriteLine($"ROBC: Successfully retrieved cluster_id from Kafka: {clusterResult.ClusterId}");
                             return clusterResult.ClusterId;
                         }
                         else
                         {
                             Log.Information("ROBC: DescribeClusterAsync returned null or empty cluster_id");
+                            Console.WriteLine("ROBC: DescribeClusterAsync returned null or empty cluster_id");
                         }
                     }
                     else
                     {
                         Log.Information("ROBC: DescribeClusterAsync timed out after {TimeoutMs}ms", timeout.TotalMilliseconds);
+                        Console.WriteLine($"ROBC: DescribeClusterAsync timed out after {timeout.TotalMilliseconds}ms");
                     }
                 }
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "ROBC: Error extracting cluster_id from Kafka metadata");
+                Console.WriteLine($"ROBC: Error extracting cluster_id from Kafka metadata: {ex}");
             }
             finally
             {

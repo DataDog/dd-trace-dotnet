@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -67,10 +68,12 @@ public class KafkaProducerConstructorIntegration
                 if (!string.IsNullOrEmpty(clusterId))
                 {
                     Log.Information("ROBC: Kafka producer config retrieved - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
+                    Console.WriteLine($"ROBC: Kafka producer config retrieved - BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
                 }
                 else
                 {
                     Log.Information("ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {BootstrapServers}", bootstrapServers);
+                    Console.WriteLine($"ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {bootstrapServers}");
                 }
 
                 // Save the map between this producer and its metadata
