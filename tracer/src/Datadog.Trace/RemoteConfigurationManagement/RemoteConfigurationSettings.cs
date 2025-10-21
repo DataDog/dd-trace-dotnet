@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 
@@ -24,9 +25,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             TracerVersion = TracerConstants.ThreePartVersion;
 
             var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
-#pragma warning disable CS0618
-                              .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
-#pragma warning restore CS0618
+                              .WithKeys(new ConfigKeyDdRemoteConfigPollIntervalSeconds())
                               .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);

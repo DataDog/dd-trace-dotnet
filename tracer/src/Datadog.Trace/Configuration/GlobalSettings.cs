@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
@@ -37,19 +38,19 @@ namespace Datadog.Trace.Configuration
             var builder = new ConfigurationBuilder(source, telemetry);
 
             var otelConfig = builder
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
+                            .WithKeys(new ConfigKeyOtelLogLevel())
                             .AsBoolResult(
                                  value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
                                               ? ParsingResult<bool>.Success(result: true)
                                               : ParsingResult<bool>.Failure());
 
             DebugEnabledInternal = builder
-                                  .WithKeys(ConfigurationKeys.DebugEnabled)
+                                  .WithKeys(new ConfigKeyDdTraceDebug())
                                   .AsBoolResult()
                                   .OverrideWith(in otelConfig, overrideHandler, false);
 
             DiagnosticSourceEnabled = builder
-                                     .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
+                                     .WithKeys(new ConfigKeyDdDiagnosticSourceEnabled())
                                      .AsBool(true);
         }
 

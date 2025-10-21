@@ -19,9 +19,9 @@ internal sealed class HandsOffConfigurationSource(Dictionary<string, string> con
 
     public override ConfigurationOrigins Origin => _localFile ? ConfigurationOrigins.LocalStableConfig : ConfigurationOrigins.FleetStableConfig;
 
-    protected override string? GetString(string key)
+    protected override string? GetString<TKey>(TKey key)
     {
-        _configurations.TryGetValue(key, out var value);
+        _configurations.TryGetValue(key.GetKey(), out var value);
         return value;
     }
 }

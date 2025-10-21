@@ -42,9 +42,9 @@ namespace Datadog.Trace.Configuration
         public override ConfigurationOrigins Origin { get; }
 
         /// <inheritdoc />
-        protected override string? GetString(string key)
+        protected override string? GetString<TKey>(TKey key)
         {
-            return _nameValueCollection[key];
+            return _nameValueCollection[key.GetKey()];
         }
     }
 }

@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Telemetry;
@@ -42,43 +43,43 @@ internal class IastSettings
     public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var config = new ConfigurationBuilder(source, telemetry);
-        WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
+        WeakCipherAlgorithms = config.WithKeys(new ConfigKeyDdIastWeakCipherAlgorithms()).AsString(WeakCipherAlgorithmsDefault);
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
+        WeakHashAlgorithms = config.WithKeys(new ConfigKeyDdIastWeakHashAlgorithms()).AsString(WeakHashAlgorithmsDefault);
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
-        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
+        Enabled = config.WithKeys(new ConfigKeyDdIastEnabled()).AsBool(false);
+        DeduplicationEnabled = config.WithKeys(new ConfigKeyDdIastDeduplicationEnabled()).AsBool(true);
         RequestSampling = config
-                         .WithKeys(ConfigurationKeys.Iast.RequestSampling)
+                         .WithKeys(new ConfigKeyDdIastRequestSampling())
                          .AsInt32(RequestSamplingDefault, x => x is > 0 and <= 100)
                          .Value;
         MaxConcurrentRequests = config
-                               .WithKeys(ConfigurationKeys.Iast.MaxConcurrentRequests)
+                               .WithKeys(new ConfigKeyDdIastMaxConcurrentRequests())
                                .AsInt32(MaxConcurrentRequestDefault, x => x > 0)
                                .Value;
         MaxRangeCount = config
-                        .WithKeys(ConfigurationKeys.Iast.MaxRangeCount)
+                        .WithKeys(new ConfigKeyDdIastMaxRangeCount())
                         .AsInt32(MaxRangeCountDefault, x => x > 0)
                         .Value;
         VulnerabilitiesPerRequest = config
-                                   .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
+                                   .WithKeys(new ConfigKeyDdIastVulnerabilitiesPerRequest())
                                    .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
                                    .Value;
         RedactionEnabled = config
-                           .WithKeys(ConfigurationKeys.Iast.RedactionEnabled)
+                           .WithKeys(new ConfigKeyDdIastRedactionEnabled())
                            .AsBool(true);
         RedactionKeysRegex = config
-                             .WithKeys(ConfigurationKeys.Iast.RedactionKeysRegex)
+                             .WithKeys(new ConfigKeyDdIastRedactionNamePattern())
                              .AsString(DefaultRedactionKeysRegex);
         RedactionValuesRegex = config
-                               .WithKeys(ConfigurationKeys.Iast.RedactionValuesRegex)
+                               .WithKeys(new ConfigKeyDdIastRedactionValuePattern())
                                .AsString(DefaultRedactionValuesRegex);
         RegexTimeout = config
-                                .WithKeys(ConfigurationKeys.Iast.RegexTimeout)
+                                .WithKeys(new ConfigKeyDdIastRegexpTimeout())
                                 .AsDouble(200, val1 => val1 is >= 0).Value;
 
         TelemetryVerbosity = config
-            .WithKeys(ConfigurationKeys.Iast.TelemetryVerbosity)
+            .WithKeys(new ConfigKeyDdIastTelemetryVerbosity())
             .GetAs(
                 defaultValue: new(IastMetricsVerbosityLevel.Information, "information"),
                 converter: value => value.ToLowerInvariant() switch
@@ -92,17 +93,17 @@ internal class IastSettings
                 validator: null);
 
         TruncationMaxValueLength = config
-            .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
+            .WithKeys(new ConfigKeyDdIastTruncationMaxValueLength())
             .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
             .Value;
 
         DataBaseRowsToTaint = config
-            .WithKeys(ConfigurationKeys.Iast.DataBaseRowsToTaint)
+            .WithKeys(new ConfigKeyDdIastDbRowsToTaint())
             .AsInt32(DataBaseRowsToTaintDefault, x => x >= 0)
             .Value;
 
         CookieFilterRegex = config
-            .WithKeys(ConfigurationKeys.Iast.CookieFilterRegex)
+            .WithKeys(new ConfigKeyDdIastCookieFilterPattern())
             .AsString(DefaultCookieFilterRegex);
     }
 

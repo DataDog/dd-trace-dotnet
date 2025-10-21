@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
@@ -25,9 +26,9 @@ namespace Datadog.Trace.Ci.Configuration
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
-            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
-            Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
+            Enabled = config.WithKeys(new ConfigKeyDdCivisibilityEnabled()).AsBool();
+            Agentless = config.WithKeys(new ConfigKeyDdCivisibilityAgentlessEnabled()).AsBool(false);
+            Site = config.WithKeys(new ConfigKeyDdSite()).AsString("datadoghq.com");
 
             if (Enabled == false)
             {
@@ -39,57 +40,57 @@ namespace Datadog.Trace.Ci.Configuration
                 return;
             }
 
-            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
-            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
-            AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
+            Logs = config.WithKeys(new ConfigKeyDdCivisibilityLogsEnabled()).AsBool(false);
+            ApiKey = config.WithKeys(new ConfigKeyDdApiKey()).AsRedactedString();
+            AgentlessUrl = config.WithKeys(new ConfigKeyDdCivisibilityAgentlessUrl()).AsString();
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
 
-            ProxyHttps = config.WithKeys(ConfigurationKeys.Proxy.ProxyHttps).AsString();
-            var proxyNoProxy = config.WithKeys(ConfigurationKeys.Proxy.ProxyNoProxy).AsString() ?? string.Empty;
+            ProxyHttps = config.WithKeys(new ConfigKeyDdProxyHttps()).AsString();
+            var proxyNoProxy = config.WithKeys(new ConfigKeyDdProxyNoProxy()).AsString() ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(true);
+            IntelligentTestRunnerEnabled = config.WithKeys(new ConfigKeyDdCivisibilityItrEnabled()).AsBool(true);
 
             // Tests skipping
-            TestsSkippingEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestsSkippingEnabled).AsBool();
+            TestsSkippingEnabled = config.WithKeys(new ConfigKeyDdCivisibilityTestsskippingEnabled()).AsBool();
 
             // Code coverage
-            CodeCoverageEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverage).AsBool();
-            CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
-            CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
-            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
-            CodeCoverageMode = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageMode).AsString();
+            CodeCoverageEnabled = config.WithKeys(new ConfigKeyDdCivisibilityCodeCoverageEnabled()).AsBool();
+            CodeCoverageSnkFilePath = config.WithKeys(new ConfigKeyDdCivisibilityCodeCoverageSnkFilepath()).AsString();
+            CodeCoveragePath = config.WithKeys(new ConfigKeyDdCivisibilityCodeCoveragePath()).AsString();
+            CodeCoverageEnableJitOptimizations = config.WithKeys(new ConfigKeyDdCivisibilityCodeCoverageEnableJitOptimizations()).AsBool(true);
+            CodeCoverageMode = config.WithKeys(new ConfigKeyDdCivisibilityCodeCoverageMode()).AsString();
 
             // Git upload
-            GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
+            GitUploadEnabled = config.WithKeys(new ConfigKeyDdCivisibilityGitUploadEnabled()).AsBool();
 
             // Force evp proxy
-            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsString();
+            ForceAgentsEvpProxy = config.WithKeys(new ConfigKeyDdCivisibilityForceAgentEvpProxy()).AsString();
 
             // Check if Datadog.Trace should be installed in the GAC
-            InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
+            InstallDatadogTraceInGac = config.WithKeys(new ConfigKeyDdCivisibilityGacInstallEnabled()).AsBool(true);
 
             // Known tests feature
-            KnownTestsEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.KnownTestsEnabled).AsBool();
+            KnownTestsEnabled = config.WithKeys(new ConfigKeyDdCivisibilityKnownTestsEnabled()).AsBool();
 
             // Early flake detection
-            EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
+            EarlyFlakeDetectionEnabled = config.WithKeys(new ConfigKeyDdCivisibilityEarlyFlakeDetectionEnabled()).AsBool();
             if (KnownTestsEnabled == false)
             {
                 EarlyFlakeDetectionEnabled = false;
             }
 
             // Dynamic Instrumentation
-            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled).AsBool(false);
+            DynamicInstrumentationEnabled = config.WithKeys(new ConfigKeyDdCivisibilityDiEnabled()).AsBool(false);
 
             // RUM flush milliseconds
-            RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
+            RumFlushWaitMillis = config.WithKeys(new ConfigKeyDdCivisibilityRumFlushWaitMillis()).AsInt32(500);
 
             // Test session name
-            TestSessionName = config.WithKeys(ConfigurationKeys.CIVisibility.TestSessionName).AsString(
+            TestSessionName = config.WithKeys(new ConfigKeyDdTestSessionName()).AsString(
                 getDefaultValue: () =>
                 {
                     // We try to get the command from the active test session or test module
@@ -122,20 +123,20 @@ namespace Datadog.Trace.Ci.Configuration
                 validator: null);
 
             // Flaky retry
-            FlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryEnabled).AsBool();
+            FlakyRetryEnabled = config.WithKeys(new ConfigKeyDdCivisibilityFlakyRetryEnabled()).AsBool();
 
             // Maximum number of retry attempts for a single test case.
-            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
+            FlakyRetryCount = config.WithKeys(new ConfigKeyDdCivisibilityFlakyRetryCount()).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
 
             // Maximum number of retry attempts for the entire session.
-            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
+            TotalFlakyRetryCount = config.WithKeys(new ConfigKeyDdCivisibilityTotalFlakyRetryCount()).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
 
             // Test Impact Analysis enablement
-            ImpactedTestsDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled).AsBool();
+            ImpactedTestsDetectionEnabled = config.WithKeys(new ConfigKeyDdCivisibilityImpactedTestsDetectionEnabled()).AsBool();
 
             // Test Management enablement
-            TestManagementEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementEnabled).AsBool();
-            TestManagementAttemptToFixRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementAttemptToFixRetries).AsInt32();
+            TestManagementEnabled = config.WithKeys(new ConfigKeyDdTestManagementEnabled()).AsBool();
+            TestManagementAttemptToFixRetryCount = config.WithKeys(new ConfigKeyDdTestManagementAttemptToFixRetries()).AsInt32();
         }
 
         /// <summary>
@@ -374,7 +375,7 @@ namespace Datadog.Trace.Ci.Configuration
             {
                 // fetch the "original" values, and update them with the CI Visibility settings
                 var enabledDirectLogSubmissionIntegrations = new ConfigurationBuilder(source, telemetry)
-                                                            .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
+                                                            .WithKeys(new ConfigKeyDdLogsDirectSubmissionIntegrations())
                                                             .AsString();
                 var logIntegrations = enabledDirectLogSubmissionIntegrations + ";XUnit";
                 additionalSource[ConfigurationKeys.DirectLogSubmission.EnabledIntegrations] = logIntegrations;

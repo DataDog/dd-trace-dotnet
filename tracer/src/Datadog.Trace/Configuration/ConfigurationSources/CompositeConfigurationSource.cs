@@ -7,7 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
@@ -59,7 +59,8 @@ namespace Datadog.Trace.Configuration
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -86,14 +87,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, recordValue, origin);
+                telemetry.Record(key.GetKey(), result.Result, recordValue, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -118,14 +120,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
+                telemetry.Record(key.GetKey(), result.Result, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -150,14 +153,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
+                telemetry.Record(key.GetKey(), result.Result, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -182,14 +186,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
+                telemetry.Record(key.GetKey(), result.Result, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -214,14 +219,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                telemetry.Record(key.GetKey(), result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -246,14 +252,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                telemetry.Record(key.GetKey(), result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary<TKey>(TKey key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -278,14 +285,15 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                telemetry.Record(key.GetKey(), result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
             }
 
             return result;
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<TKey, T>(TKey key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+            where TKey : struct, IConfigKey
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -310,7 +318,7 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                telemetry.Record(key.GetKey(), result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
             }
 
             return result;

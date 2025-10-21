@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 
@@ -22,29 +23,27 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-#pragma warning disable CS0612 // Type or member is obsolete
-            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled, fallbackKey: ConfigurationKeys.Debugger.ExceptionDebuggingEnabled).AsBoolResult();
-#pragma warning restore CS0612 // Type or member is obsolete
+            var erEnabledResult = config.WithKeys(new ConfigKeyDdExceptionReplayEnabled()).AsBoolResult();
             Enabled = erEnabledResult.WithDefault(false);
             CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
-            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
+            CaptureFullCallStack = config.WithKeys(new ConfigKeyDdExceptionReplayCaptureFullCallstackEnabled()).AsBool(false);
 
             var maximumFramesToCapture = config
-                                        .WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureMaxFrames)
+                                        .WithKeys(new ConfigKeyDdExceptionReplayCaptureMaxFrames())
                                         .AsInt32(DefaultMaxFramesToCapture, maxDepth => maxDepth > 0)
                                         .Value;
 
             MaximumFramesToCapture = CaptureFullCallStack ? short.MaxValue : maximumFramesToCapture;
 
             var seconds = config
-                         .WithKeys(ConfigurationKeys.Debugger.RateLimitSeconds)
+                         .WithKeys(new ConfigKeyDdExceptionReplayRateLimitSeconds())
                          .AsInt32(DefaultRateLimitSeconds);
 
             RateLimit = TimeSpan.FromSeconds(seconds);
 
             MaxExceptionAnalysisLimit = config
-                                       .WithKeys(ConfigurationKeys.Debugger.MaxExceptionAnalysisLimit)
+                                       .WithKeys(new ConfigKeyDdExceptionReplayMaxExceptionAnalysisLimit())
                                        .AsInt32(DefaultMaxExceptionAnalysisLimit, x => x > 0)
                                        .Value;
         }

@@ -1,4 +1,4 @@
-﻿// <copyright file="CompositeConfigurationSourceTests.cs" company="Datadog">
+// <copyright file="CompositeConfigurationSourceTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -126,7 +127,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("string4", "source4_value4")]
     public void GetsTheExpectedStringInAllCases(string key, string expected)
     {
-        var actual = _source.GetString(key, _telemetry, validator: null, recordValue: true);
+        var actual = _source.GetString(new TestConfigKey(key), _telemetry, validator: null, recordValue: true);
         actual.Result.Should().Be(expected);
     }
 
@@ -138,7 +139,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabStringFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
-        var actual = _source.GetString(key, telemetry, validator: null, recordValue: true);
+        var actual = _source.GetString(new TestConfigKey(key), telemetry, validator: null, recordValue: true);
         telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
@@ -149,7 +150,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("int4", 44)]
     public void GetsTheExpectedIntInAllCases(string key, int expected)
     {
-        var actual = _source.GetInt32(key, _telemetry, validator: null);
+        var actual = _source.GetInt32(new TestConfigKey(key), _telemetry, validator: null);
         actual.Result.Should().Be(expected);
     }
 
@@ -161,7 +162,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabIntFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
-        var actual = _source.GetInt32(key, telemetry, validator: null);
+        var actual = _source.GetInt32(new TestConfigKey(key), telemetry, validator: null);
         telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
@@ -172,7 +173,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("double4", 4.4)]
     public void GetsTheExpectedDoubleInAllCases(string key, double expected)
     {
-        var actual = _source.GetDouble(key, _telemetry, validator: null);
+        var actual = _source.GetDouble(new TestConfigKey(key), _telemetry, validator: null);
         actual.Result.Should().Be(expected);
     }
 
@@ -184,7 +185,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabDoubleFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
-        var actual = _source.GetDouble(key, telemetry, validator: null);
+        var actual = _source.GetDouble(new TestConfigKey(key), telemetry, validator: null);
         telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
@@ -195,7 +196,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("bool4", false)]
     public void GetsTheExpectedBoolInAllCases(string key, bool expected)
     {
-        var actual = _source.GetBool(key, _telemetry, validator: null);
+        var actual = _source.GetBool(new TestConfigKey(key), _telemetry, validator: null);
         actual.Result.Should().Be(expected);
     }
 
@@ -207,7 +208,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabBoolFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
-        var actual = _source.GetBool(key, telemetry, validator: null);
+        var actual = _source.GetBool(new TestConfigKey(key), telemetry, validator: null);
         telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
@@ -218,7 +219,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("dict4", "source4_a", "source4_b")]
     public void GetsTheExpectedDictionaryInAllCases(string key, params string[] expectedKeys)
     {
-        var actual = _source.GetDictionary(key, _telemetry, validator: null);
+        var actual = _source.GetDictionary(new TestConfigKey(key), _telemetry, validator: null);
         actual.Result.Should().ContainKeys(expectedKeys);
     }
 
@@ -230,7 +231,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabDictionaryFromEverySourceAndRecordsAllOccurrences(string key, int occurrences)
     {
         var telemetry = new StubTelemetry();
-        var actual = _source.GetDictionary(key, telemetry, validator: null);
+        var actual = _source.GetDictionary(new TestConfigKey(key), telemetry, validator: null);
         telemetry.GetInstanceCount(key).Should().Be(occurrences);
     }
 
@@ -247,7 +248,7 @@ public class CompositeConfigurationSourceTests
         };
 
         // not present
-        var actual = source.GetInt32(key, telemetry, validator: null);
+        var actual = source.GetInt32(new TestConfigKey(key), telemetry, validator: null);
         actual.Should().Be(ConfigurationResult<int>.NotFound());
 
         // final telemetry value should be the "real" value
@@ -267,7 +268,7 @@ public class CompositeConfigurationSourceTests
         };
 
         // no valid value
-        var actual = source.GetInt32(key, telemetry, validator: null);
+        var actual = source.GetInt32(new TestConfigKey(key), telemetry, validator: null);
         actual.Should().Be(ConfigurationResult<int>.NotFound());
 
         // only telemetry value should be the error
@@ -294,7 +295,7 @@ public class CompositeConfigurationSourceTests
 
         // first wins
         var expected = 123;
-        var actual = source.GetInt32(key, telemetry, validator: null);
+        var actual = source.GetInt32(new TestConfigKey(key), telemetry, validator: null);
         actual.Should().Be(ConfigurationResult<int>.Valid(expected));
 
         // final telemetry value should be the "real" value

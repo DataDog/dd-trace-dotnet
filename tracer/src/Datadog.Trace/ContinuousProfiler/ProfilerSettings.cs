@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Registry.Generated;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 
@@ -32,7 +33,7 @@ internal class ProfilerSettings
         // as that's all that applies
         var envConfigBuilder = new ConfigurationBuilder(envConfig, telemetry);
         var managedActivationEnabled = envConfigBuilder
-                                      .WithKeys(ConfigurationKeys.ProfilerManagedActivationEnabled)
+                                      .WithKeys(new ConfigKeyDdProfilingManagedActivationEnabled())
                                       .AsBool(true);
 
         // If we're using managed activation, we use the "full" config source set.
@@ -45,7 +46,7 @@ internal class ProfilerSettings
         // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed. If it is non-empty, then the
         // profiler is "active", though won't begin profiling until 30 seconds have passed + at least 1 span has been generated.
         var profilingEnabled = profilingConfig
-                              .WithKeys(ConfigurationKeys.ProfilingEnabled)
+                              .WithKeys(new ConfigKeyDdProfilingEnabled())
                                // We stick with strings here instead of using the `GetAs` method,
                                // so that telemetry continues to store true/false/auto, instead of the enum values.
                               .AsString(

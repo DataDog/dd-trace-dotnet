@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
@@ -182,7 +183,7 @@ public class ConfigurationBuilderTests
                     value,
                     expectedTelemetry,
                     (source, telemetry) => new ConfigurationBuilder(source, telemetry)
-                                          .WithKeys(Key)
+                                          .WithKeys(new TestConfigKey(Key))
                                           .AsString(Default, x => !string.IsNullOrEmpty(x)));
             }
         }
@@ -238,7 +239,7 @@ public class ConfigurationBuilderTests
                     value,
                     expectedTelemetry,
                     (source, telemetry) => new ConfigurationBuilder(source, telemetry)
-                                          .WithKeys(Key)
+                                          .WithKeys(new TestConfigKey(Key))
                                           .AsBool(true, x => x));
             }
         }
@@ -305,7 +306,7 @@ public class ConfigurationBuilderTests
                     value,
                     expectedTelemetry,
                     (source, telemetry) => new ConfigurationBuilder(source, telemetry)
-                                          .WithKeys(Key)
+                                          .WithKeys(new TestConfigKey(Key))
                                           .AsInt32(Default, x => x > 0));
             }
         }
@@ -380,7 +381,7 @@ public class ConfigurationBuilderTests
                     value,
                     expectedTelemetry,
                     (source, telemetry) => new ConfigurationBuilder(source, telemetry)
-                                          .WithKeys(Key)
+                                          .WithKeys(new TestConfigKey(Key))
                                           .AsDouble(Default, x => x > 0));
 
                 static bool TryParse(string txt, out double value)
@@ -423,7 +424,7 @@ public class ConfigurationBuilderTests
                 var allowOptionalMappings = true;
                 var expected = _collection.TryGetValue(key, out var e) ? (e ?? new Dictionary<string, object>()) : null;
                 var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
+                            .WithKeys(new TestConfigKey(key))
                             .AsDictionary(allowOptionalMappings);
                 if (expected is null)
                 {
@@ -449,7 +450,7 @@ public class ConfigurationBuilderTests
                 var allowOptionalMappings = false;
                 var expected = _collection.TryGetValue(key, out var e) ? (e ?? new Dictionary<string, object>()) : null;
                 var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
+                            .WithKeys(new TestConfigKey(key))
                             .AsDictionary(allowOptionalMappings);
                 if (expected is null)
                 {
@@ -509,7 +510,7 @@ public class ConfigurationBuilderTests
 
             string Builder(string key)
                 => new ConfigurationBuilder(_source, _telemetry)
-                  .WithKeys(key)
+                  .WithKeys(new TestConfigKey(key))
                   .AsString(Default);
         }
 
@@ -528,7 +529,7 @@ public class ConfigurationBuilderTests
 
             string Builder(string key)
                 => new ConfigurationBuilder(_source, _telemetry)
-                  .WithKeys(key)
+                  .WithKeys(new TestConfigKey(key))
                   .AsString(Default, x => !string.IsNullOrEmpty(x));
         }
 
@@ -544,7 +545,7 @@ public class ConfigurationBuilderTests
             var collection = new Dictionary<string, object> { { key, value } };
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsString(() => Default, validator: null, converter: _converter);
 
             actual.Should().Be(expected);
@@ -581,7 +582,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys("key")
+                        .WithKeys(new TestConfigKey("key"))
                         .GetAs<Guid>(
                              defaultValue: new(_default, Default),
                              validator: null,
@@ -601,7 +602,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys("key")
+                        .WithKeys(new TestConfigKey("key"))
                         .GetAs<Guid?>(
                              defaultValue: new(_default, Default),
                              validator: null,
@@ -622,7 +623,7 @@ public class ConfigurationBuilderTests
 
             var telemetry = new ConfigurationTelemetry();
             var actual = new ConfigurationBuilder(source, telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .GetAs<Guid?>(
                              defaultValue: new(_default, Default),
                              validator: null,
@@ -650,7 +651,7 @@ public class ConfigurationBuilderTests
 
             var telemetry = new ConfigurationTelemetry();
             var actual = new ConfigurationBuilder(source, telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .GetAs<Guid?>(
                              getDefaultValue: () => new DefaultResult<Guid?>(_default, stringifiedDefault),
                              validator: null,
@@ -675,7 +676,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys("key")
+                        .WithKeys(new TestConfigKey("key"))
                         .GetAsStruct(
                              validator: null,
                              converter: _converter);
@@ -694,7 +695,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys("key")
+                        .WithKeys(new TestConfigKey("key"))
                         .GetAs<Guid>(
                              defaultValue: new(_default, Default),
                              validator: x => x.ToString()[0] != '5',
@@ -745,7 +746,7 @@ public class ConfigurationBuilderTests
             actual.Should().Be(expected, $"using key '{key}'");
 
             bool Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
-                                       .WithKeys(key)
+                                       .WithKeys(new TestConfigKey(key))
                                        .AsBool(Default);
         }
 
@@ -763,7 +764,7 @@ public class ConfigurationBuilderTests
             bool Builder(string key)
             {
                 return new ConfigurationBuilder(_source, _telemetry)
-                      .WithKeys(key)
+                      .WithKeys(new TestConfigKey(key))
                       .AsBool(Default, x => x);
             }
         }
@@ -780,7 +781,7 @@ public class ConfigurationBuilderTests
             var collection = new Dictionary<string, object> { { key, value } };
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsBool(() => Default, validator: null, converter: _converter);
 
             actual.Should().Be(expected);
@@ -844,7 +845,7 @@ public class ConfigurationBuilderTests
             actual.Should().Be(expected, $"using key '{key}'");
 
             int Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
-                                      .WithKeys(key)
+                                      .WithKeys(new TestConfigKey(key))
                                       .AsInt32(Default);
         }
 
@@ -870,7 +871,7 @@ public class ConfigurationBuilderTests
             int? Builder(string key)
             {
                 return new ConfigurationBuilder(_source, _telemetry)
-                      .WithKeys(key)
+                      .WithKeys(new TestConfigKey(key))
                       .AsInt32(Default, x => x > 0);
             }
         }
@@ -891,7 +892,7 @@ public class ConfigurationBuilderTests
             var collection = new Dictionary<string, object> { { key, value } };
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsInt32(Default, validator: null, converter: _absConverter);
 
             actual.Should().Be(expected);
@@ -904,7 +905,7 @@ public class ConfigurationBuilderTests
             const int expected = 23;
             const string key = "unknown";
             var actual = new ConfigurationBuilder(_source, telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsInt32Result()
                         .WithDefault(expected);
 
@@ -988,7 +989,7 @@ public class ConfigurationBuilderTests
             double Builder(string key)
             {
                 return new ConfigurationBuilder(_source, _telemetry)
-                      .WithKeys(key)
+                      .WithKeys(new TestConfigKey(key))
                       .AsDouble(Default);
             }
         }
@@ -1018,7 +1019,7 @@ public class ConfigurationBuilderTests
             double? Builder(string key)
             {
                 return new ConfigurationBuilder(_source, _telemetry)
-                      .WithKeys(key)
+                      .WithKeys(new TestConfigKey(key))
                       .AsDouble(Default, x => x > 0);
             }
         }
@@ -1040,7 +1041,7 @@ public class ConfigurationBuilderTests
             var collection = new Dictionary<string, object> { { key, value } };
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsDouble(Default, validator: null, converter: _absConverter);
 
             actual.Should().Be(expected);
@@ -1109,7 +1110,7 @@ public class ConfigurationBuilderTests
             var allowOptionalMappings = true;
             var expected = _withOptional.TryGetValue(key, out var e) ? e : null;
             var actual = new ConfigurationBuilder(_source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsDictionary(allowOptionalMappings);
             if (expected is null)
             {
@@ -1135,7 +1136,7 @@ public class ConfigurationBuilderTests
             var allowOptionalMappings = false;
             var expected = _withoutOptional.TryGetValue(key, out var e) ? e : null;
             var actual = new ConfigurationBuilder(_source, _telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsDictionary(allowOptionalMappings);
             if (expected is null)
             {
@@ -1154,7 +1155,7 @@ public class ConfigurationBuilderTests
             const string expected = "[]";
             const string key = "unknown";
             var actual = new ConfigurationBuilder(_source, telemetry)
-                        .WithKeys(key)
+                        .WithKeys(new TestConfigKey(key))
                         .AsDictionaryResult()
                         .WithDefault(new(null, expected));
 

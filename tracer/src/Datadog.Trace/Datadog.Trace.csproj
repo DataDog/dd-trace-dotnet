@@ -40,10 +40,29 @@
     <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
       <DependentUpon>SecurityReporter.cs</DependentUpon>
     </Compile>
+    <Compile Update="Configuration\PlatformKeys.Aws.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureAppService.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureFunctions.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.GCPFunction.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles
+      Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Tools.Analyzers\ConfigurationAnalyzers\BannedSymbols.txt"
+      Visible="false"/>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -155,5 +174,10 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Configuration\supported-configurations.json" />
+    <AdditionalFiles Include="Configuration\supported-configurations.json" />
+  </ItemGroup>
 
 </Project>

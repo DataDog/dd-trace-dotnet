@@ -17,6 +17,23 @@ namespace Datadog.Trace.Configuration
     public class IntegrationSettings : IEquatable<IntegrationSettings>
     {
         /// <summary>
+        /// Configuration key pattern for enabling or disabling an integration.
+        /// </summary>
+        public const string IntegrationEnabledKey = "DD_TRACE_{0}_ENABLED";
+
+        /// <summary>
+        /// Configuration key pattern for enabling or disabling Analytics in an integration.
+        /// </summary>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public const string AnalyticsEnabledKey = "DD_TRACE_{0}_ANALYTICS_ENABLED";
+
+        /// <summary>
+        /// Configuration key pattern for setting Analytics sampling rate in an integration.
+        /// </summary>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public const string AnalyticsSampleRateKey = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.
         /// </summary>
         /// <param name="integrationName">The integration name.</param>
@@ -34,29 +51,19 @@ namespace Datadog.Trace.Configuration
 
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
-            var upperName = integrationName.ToUpperInvariant();
-            Enabled = isExplicitlyDisabled ? false : (config
-                                                  .WithKeys(
-                                                       string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
-                                                       string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                                                       $"DD_{integrationName}_ENABLED")
-                                                  .AsBool()
-                                                   ?? fallback?.Enabled);
+            Enabled = isExplicitlyDisabled
+                          ? false
+                          : config
+                           .WithIntegrationKey(integrationName)
+                           .AsBool() ?? fallback?.AnalyticsEnabled;
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
-                              .WithKeys(
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, upperName),
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
-                                   $"DD_{integrationName}_ANALYTICS_ENABLED")
-                              .AsBool()
-                            ?? fallback?.AnalyticsEnabled;
+                              .WithIntegrationAnalyticsKey(integrationName)
+                              .AsBool() ?? fallback?.AnalyticsEnabled;
 
             AnalyticsSampleRate = config
-                                 .WithKeys(
-                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, upperName),
-                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
-                                      $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
+                                 .WithIntegrationAnalyticsSampleRateKey(integrationName)
                                  .AsDouble(fallback?.AnalyticsSampleRate ?? 1.0);
 #pragma warning restore 618
         }
