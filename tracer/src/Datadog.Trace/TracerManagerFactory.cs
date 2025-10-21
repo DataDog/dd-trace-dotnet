@@ -458,9 +458,6 @@ namespace Datadog.Trace
             }
         }
 
-        protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => DiscoveryService.Create(settings.Exporter);
-
         internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
         {
             try
@@ -506,6 +503,11 @@ namespace Datadog.Trace
                 return new NoOpStatsd();
             }
         }
+
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
+            => settings.AgentFeaturePollingEnabled ?
+                   DiscoveryService.Create(settings.Exporter) :
+                   NullDiscoveryService.Instance;
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
