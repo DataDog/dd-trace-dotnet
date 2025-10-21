@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_MultipartTest");
         }
 
         [Theory]
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_MultipartTest");
         }
 #endif
 
