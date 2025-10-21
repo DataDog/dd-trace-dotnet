@@ -3,7 +3,7 @@
 namespace datadog::shared::nativeloader
 {
 
-inline bool wls()
+inline bool is_workload_allowed()
 {
     return true;
 }

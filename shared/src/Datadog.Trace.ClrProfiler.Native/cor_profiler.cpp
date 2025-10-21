@@ -320,7 +320,7 @@ namespace datadog::shared::nativeloader
         if (IsSingleStepInstrumentation())
         {
             Log::Info("CorProfiler::Initialize: Evaluating workload selection.");
-            if (wls() == false)
+            if (is_workload_allowed() == false)
             {
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
