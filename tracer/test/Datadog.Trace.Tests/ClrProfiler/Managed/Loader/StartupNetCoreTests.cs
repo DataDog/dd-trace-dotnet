@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.Managed.Loader
             Startup.ComputeTfmDirectory(tracerHome).Should().Be(expectedDirectory);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(Architecture.X64, "CORECLR_PROFILER_PATH_64")]
         [InlineData(Architecture.X86, "CORECLR_PROFILER_PATH_32")]
         [InlineData(Architecture.Arm64, "CORECLR_PROFILER_PATH_ARM64")]
@@ -61,10 +61,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.Managed.Loader
         public void GetProfilerPathEnvVarNameForArch_ReturnsCorrectName(Architecture architecture, string expected)
         {
             // Skip the test if the current architecture doesn't match
-            if (RuntimeInformation.ProcessArchitecture != architecture)
-            {
-                return;
-            }
+            Skip.If(RuntimeInformation.ProcessArchitecture != architecture, $"Skipping test for {architecture}");
 
             Startup.GetProfilerPathEnvVarNameForArch().Should().Be(expected);
         }
