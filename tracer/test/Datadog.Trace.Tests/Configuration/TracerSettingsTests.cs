@@ -895,7 +895,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("invalid", null, OtlpProtocol.Grpc)]
         [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
         public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(
@@ -911,8 +910,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
         [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
         [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
-        [InlineData("http/json", "http://base:4333/", "http://base:4333/", "http://metrics:4333/", "http://metrics:4333/")]
-        [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/metrics", "http://localhost:4318/proxy/metrics")]
         public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
         {
             var source = CreateConfigurationSource(
@@ -993,7 +990,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("invalid", null, OtlpProtocol.Grpc)]
         [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
         public void OtlpLogsProtocolFallbacks(string logsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(
@@ -1009,8 +1005,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
         [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/logs")]
         [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/logs")]
-        [InlineData("http/json", "http://base:4333/", "http://base:4333/", "http://logs:4333/", "http://logs:4333/")]
-        [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/logs", "http://localhost:4318/proxy/logs")]
         public void OtlpLogsEndpoint(string protocol, string baseInput, string baseOutput, string logsInput, string logsOutput)
         {
             var source = CreateConfigurationSource(

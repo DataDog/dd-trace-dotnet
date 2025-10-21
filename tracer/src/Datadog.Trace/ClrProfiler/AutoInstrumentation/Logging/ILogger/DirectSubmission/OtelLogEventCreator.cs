@@ -25,5 +25,19 @@ internal class OtelLogEventCreator : ILogEventCreator
     {
         return OtlpLogEventBuilder.CreateLogEvent(logLevel, categoryName, eventId, state, exception, formatter);
     }
+
+    public IDisposable BeginScope<TState>(TState state)
+    {
+        return NullDisposable.Instance;
+    }
+
+    private class NullDisposable : IDisposable
+    {
+        public static readonly NullDisposable Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
 }
 #endif

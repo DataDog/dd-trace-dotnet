@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var ddSpan = Tracer.Instance.ActiveScope?.Span as Span;
             if (ddSpan != null)
             {
-                return (ddSpan.TraceId128, ddSpan.SpanId, 1);
+                return (ddSpan.TraceId128, ddSpan.SpanId, SamplingPriorityValues.IsKeep(ddSpan.Context.SamplingPriority!.Value) ? 1 : 0);
             }
 
             var activity = System.Diagnostics.Activity.Current;

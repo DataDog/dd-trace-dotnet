@@ -72,15 +72,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
         /// <returns>An <see cref="IDisposable"/> that ends the logical operation scope on dispose.</returns>
         [DuckReverseMethod(ParameterTypeNames = new[] { "TState" })]
-        public IDisposable BeginScope<TState>(TState state) => NullDisposable.Instance;
-
-        private class NullDisposable : IDisposable
-        {
-            public static readonly NullDisposable Instance = new();
-
-            public void Dispose()
-            {
-            }
-        }
+        public IDisposable BeginScope<TState>(TState state) => _logEventCreator.BeginScope(state);
     }
 }

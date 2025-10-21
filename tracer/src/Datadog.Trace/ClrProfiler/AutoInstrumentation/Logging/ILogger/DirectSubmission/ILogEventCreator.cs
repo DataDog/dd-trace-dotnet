@@ -20,4 +20,6 @@ internal interface ILogEventCreator
         TState state,
         Exception? exception,
         Func<TState, Exception?, string> formatter);
+
+    IDisposable BeginScope<TState>(TState state);
 }

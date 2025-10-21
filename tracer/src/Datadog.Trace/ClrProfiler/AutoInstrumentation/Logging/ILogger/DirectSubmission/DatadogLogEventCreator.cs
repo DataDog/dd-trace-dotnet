@@ -45,4 +45,18 @@ internal class DatadogLogEventCreator : ILogEventCreator
         var serializedLog = LoggerLogFormatter.FormatLogEvent(_logFormatter, logEntry);
         return new LoggerDirectSubmissionLogEvent(serializedLog);
     }
+
+    public IDisposable BeginScope<TState>(TState state)
+    {
+        return _scopeProvider?.Push(state) ?? NullDisposable.Instance;
+    }
+
+    private class NullDisposable : IDisposable
+    {
+        public static readonly NullDisposable Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
 }

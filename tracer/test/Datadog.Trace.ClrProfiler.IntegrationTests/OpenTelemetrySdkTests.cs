@@ -306,6 +306,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
         {
+            var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
+            var runtimeMajor = Environment.Version.Major;
+
+            _ = runtimeMajor switch
+            {
+                >= 8 when parsedVersion >= new Version("1.9.0") => string.Empty,
+                6 or 7 when parsedVersion >= new Version("1.9.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry in .NET {runtimeMajor}."),
+                6 or 7 when parsedVersion >= new Version("1.9.0") => string.Empty,
+                _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
+            };
+
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 

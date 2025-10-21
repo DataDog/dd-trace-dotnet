@@ -4,7 +4,7 @@ using OpenTelemetry.Trace;
 #if OTEL_1_2
 using OpenTelemetry.Metrics;
 #endif
-#if OTEL_1_5
+#if OTEL_1_9
 using OpenTelemetry.Logs;
 #endif
 using Microsoft.Extensions.Logging;
@@ -58,7 +58,7 @@ public static class CustomMeterProviderBuilderExtensions
 }
 #endif
 
-#if OTEL_1_5
+#if OTEL_1_9
 public static class CustomLoggerFactoryBuilderExtensions
 {
     public static ILoggerFactory AddOtlpExporterIfEnvironmentVariablePresent()
@@ -70,7 +70,7 @@ public static class CustomLoggerFactoryBuilderExtensions
             return LoggerFactory.Create(builder =>
             {
                 builder.SetMinimumLevel(LogLevel.Trace);
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
                 builder.AddOpenTelemetry(
                     options =>
                     {

@@ -6,7 +6,7 @@ using OpenTelemetry.Resources;
 #if OTEL_1_2
 using OpenTelemetry.Metrics;
 #endif
-#if OTEL_1_5
+#if OTEL_1_9
 using OpenTelemetry.Logs;
 #endif
 using System.Collections.Generic;
@@ -49,7 +49,7 @@ public static class Program
             .Build();
 #endif
 
-#if OTEL_1_5
+#if OTEL_1_9
         using var loggerFactory = CustomLoggerFactoryBuilderExtensions
             .AddOtlpExporterIfEnvironmentVariablePresent();
 #endif
@@ -57,7 +57,7 @@ public static class Program
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
 
-#if OTEL_1_5
+#if OTEL_1_9
         var logger = loggerFactory.CreateLogger("LogServiceName");
 #endif
 
@@ -68,7 +68,7 @@ public static class Program
             Activity.Current.TraceStateString = "app=hello";
             PrintSpanStartedInformation(span);
 
-#if OTEL_1_5
+#if OTEL_1_9
             logger.LogInformation("Hello from OpenTelemetry logger within span context");
             logger.LogTrace("This is a trace message within span context");
             logger.LogWarning("This is a warning message");
@@ -88,7 +88,7 @@ public static class Program
             {
                 PrintSpanStartedInformation(otherSpan);
                 
-#if OTEL_1_5
+#if OTEL_1_9
                 var otherLogger = loggerFactory.CreateLogger("OtherLibrary");
                 otherLogger.LogInformation("Response from other library");
                 otherLogger.LogDebug("Debug information from other library");
@@ -100,7 +100,7 @@ public static class Program
 
         PrintSpanClosedInformation(span);
 
-#if OTEL_1_5
+#if OTEL_1_9
         logger.LogInformation("Hello from OpenTelemetry logger outside span context");
         logger.LogCritical("This is a critical message");
 #endif
@@ -146,7 +146,7 @@ public static class Program
 #if OTEL_1_2
         meterProvider?.Dispose();
 #endif
-#if OTEL_1_5
+#if OTEL_1_9
 
         loggerFactory?.Dispose();
 #endif
