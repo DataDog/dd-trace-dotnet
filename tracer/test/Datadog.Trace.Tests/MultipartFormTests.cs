@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_MultipartTest");
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_ValidationTest");
         }
 #endif
 
