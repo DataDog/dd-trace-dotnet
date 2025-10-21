@@ -46,13 +46,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             if (sink is OtlpSubmissionLogSink)
             {
                 _logEventCreator = new OtelLogEventCreator();
+                return;
             }
-            else
 #endif
-            {
-                _logFormatter = formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
-                _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
-            }
+
+            _logFormatter = formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
+            _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
         }
 
         /// <summary>
