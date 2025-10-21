@@ -70,12 +70,14 @@ public static class CustomLoggerFactoryBuilderExtensions
             return LoggerFactory.Create(builder =>
             {
                 builder.SetMinimumLevel(LogLevel.Trace);
+#if NETCOREAPP3_1_OR_GREATER
                 builder.AddOpenTelemetry(
                     options =>
                     {
                         options.AddOtlpExporter();
                     }
                 );
+#endif
             });
         }
         else

@@ -296,7 +296,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
+#endif
 
+#if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
