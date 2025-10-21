@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
 #if NET6_0_OR_GREATER
-        [SkippableTheory(Skip = "Temporarily disabled due to Docker Hub rate limits on test-agent.windows image")]
+        [SkippableTheory]
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
