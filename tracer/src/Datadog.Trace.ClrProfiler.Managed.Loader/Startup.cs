@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             "win-x64",
             "win-x86",
+#if NETCOREAPP
             "linux-x64",
             "linux-arm64",
             "linux-musl-x64",
@@ -33,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             "osx",
             "osx-arm64",
             "osx-x64"
+#endif
         };
 
         private static int _startupCtorInitialized;

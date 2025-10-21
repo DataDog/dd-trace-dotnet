@@ -111,13 +111,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.Managed.Loader
         [Theory]
         [InlineData("win-x64")]
         [InlineData("win-x86")]
-        [InlineData("linux-x64")]
-        [InlineData("linux-arm64")]
-        [InlineData("linux-musl-x64")]
-        [InlineData("linux-musl-arm64")]
-        [InlineData("osx")]
-        [InlineData("osx-arm64")]
-        [InlineData("osx-x64")]
         public void ComputeTracerHomePathFromProfilerPath_WithAllArchDirectories_ReturnsTracerHome(string archDir)
         {
             const string tracerHome = @"C:\path\to\tracer";
