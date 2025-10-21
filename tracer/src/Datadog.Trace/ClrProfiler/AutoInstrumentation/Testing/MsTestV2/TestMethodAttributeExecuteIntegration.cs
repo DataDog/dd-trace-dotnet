@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -48,15 +49,8 @@ public static class TestMethodAttributeExecuteIntegration
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        // Restore previous scope and the previous DistributedTrace if there is a continuation
-        // This is used to mimic the ExecutionContext copy from the StateMachine
-        if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
-        {
-            rawAccess.Active = state.PreviousScope;
-            DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
-        }
-
         returnValue = TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(instance, returnValue, exception, state).SafeGetResult();
+        IntegrationOptions.RestoreScopeFromAsyncExecution(in state);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
