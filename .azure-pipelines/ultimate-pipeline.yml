@@ -25,6 +25,7 @@ pr:
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
+      - .gitignore
       - .github/
       - .claude/
       - .devcontainer/
