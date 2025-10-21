@@ -13,6 +13,7 @@
 
   <PropertyGroup Condition="$(ApiVersion.StartsWith('4.'))">
     <DefineConstants>$(DefineConstants);MSTEST_ASYNC</DefineConstants>
+    <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
 
   <Choose>
