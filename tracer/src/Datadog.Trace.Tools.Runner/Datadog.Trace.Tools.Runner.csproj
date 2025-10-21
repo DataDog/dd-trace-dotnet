@@ -23,6 +23,7 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <BuildInParallel>false</BuildInParallel>
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
   </PropertyGroup>
 
   <Choose>
@@ -164,10 +165,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
   </ItemGroup>
-  
-  <PropertyGroup Condition="$(OS.StartsWith('Windows'))">
-    <DefineConstants>$(DefineConstants);WINDOWS_BUILD</DefineConstants>
-  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />

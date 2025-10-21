@@ -53,7 +53,6 @@ internal sealed partial class GacNativeMethods : IDisposable
 
     private static string GetFusionFullPath()
     {
- #if WINDOWS_BUILD
         string fusionFullPath;
         using (var ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32).OpenSubKey(NetFrameworkSubKey))
         {
@@ -72,9 +71,6 @@ internal sealed partial class GacNativeMethods : IDisposable
         }
 
         return fusionFullPath;
-#else
-        return string.Empty;
-#endif
     }
 
     private IntPtr GetPointer()
