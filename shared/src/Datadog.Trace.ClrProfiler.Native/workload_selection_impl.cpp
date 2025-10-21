@@ -103,7 +103,7 @@ namespace
 
 } // namespace
 
-bool wls()
+bool is_workload_allowed()
 {
     const auto process_name = ::shared::ToString(::shared::GetCurrentProcessName());
 
@@ -130,7 +130,7 @@ bool wls()
     {
         Log::Error(__func__, ": An error occured while evaluating workload selection policies (errno: ", *maybe_error,
                    ")");
-        return false;
+        return true;
     }
 
     // We enable or disable instrumentation depending on the context:

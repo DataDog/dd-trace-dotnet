@@ -10,6 +10,6 @@ namespace datadog::shared::nativeloader
 {
 
 /// TBD
-bool wls();
+bool is_workload_allowed();
 
 } // namespace datadog::shared::nativeloader
