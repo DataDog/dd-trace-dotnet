@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETCOREAPP3_1_OR_GREATER
+#nullable enable
 
 using System;
 using System.Collections.Generic;
