@@ -58,7 +58,7 @@ public static class Program
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
 
 #if OTEL_1_5
-        var logger = loggerFactory.CreateLogger(string.Empty);
+        var logger = loggerFactory.CreateLogger("LogServiceName");
 #endif
 
         TelemetrySpan span = null;
@@ -89,8 +89,9 @@ public static class Program
                 PrintSpanStartedInformation(otherSpan);
                 
 #if OTEL_1_5
-                logger.LogInformation("Response from other library");
-                logger.LogDebug("Debug information from other library");
+                var otherLogger = loggerFactory.CreateLogger("OtherLibrary");
+                otherLogger.LogInformation("Response from other library");
+                otherLogger.LogDebug("Debug information from other library");
 #endif
             }
 

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
@@ -246,8 +247,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             public TestOtlpSink(
                 BatchingSinkOptions sinkOptions,
-                Func<IReadOnlyList<LogPoint>, Task<ExportResult>> exportFunc)
-                : base(sinkOptions)
+                Func<IReadOnlyList<LogPoint>, Task<ExportResult>> exportFunc,
+                TracerSettings settings = null)
+                : base(sinkOptions, settings ?? new TracerSettings())
             {
                 _exportFunc = exportFunc;
             }

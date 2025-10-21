@@ -4,80 +4,73 @@
 // </copyright>
 
 #if NETCOREAPP3_1_OR_GREATER
-#nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
-{
-    internal class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
-    {
-        private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<OtlpSubmissionLogSink>();
-        private OtlpExporter? _otlpExporter;
+namespace Datadog.Trace.Logging.DirectSubmission.Sink;
 
-        public OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions)
-            : base(sinkOptions, null)
+internal class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
+{
+    private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<OtlpSubmissionLogSink>();
+    private readonly OtlpExporter _otlpExporter;
+
+    public OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, TracerSettings settings)
+        : base(sinkOptions, null)
+    {
+        _otlpExporter = new OtlpExporter(settings);
+    }
+
+    protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
+    {
+        if (events.Count == 0)
         {
+            return true;
         }
 
-        protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
+        try
         {
-            if (events.Count == 0)
+            var logRecords = new List<LogPoint>();
+            foreach (var ev in events)
+            {
+                if (ev is LoggerDirectSubmissionLogEvent { OtlpLog: { } logPoint })
+                {
+                    logRecords.Add(logPoint);
+                }
+            }
+
+            if (logRecords.Count == 0)
             {
                 return true;
             }
 
-            try
-            {
-                if (_otlpExporter == null)
-                {
-                    _otlpExporter = new OtlpExporter(Tracer.Instance.Settings);
-                }
-
-                var logRecords = new List<LogPoint>();
-                foreach (var ev in events)
-                {
-                    if (ev is LoggerDirectSubmissionLogEvent { OtlpLog: { } logPoint })
-                    {
-                        logRecords.Add(logPoint);
-                    }
-                }
-
-                if (logRecords.Count == 0)
-                {
-                    return true;
-                }
-
-                var result = await _otlpExporter.ExportAsync(logRecords).ConfigureAwait(false);
-                return result == ExportResult.Success;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "An error occurred sending OTLP logs.");
-                return false;
-            }
+            var result = await _otlpExporter.ExportAsync(logRecords).ConfigureAwait(false);
+            return result == ExportResult.Success;
         }
-
-        protected override void FlushingEvents(int queueSizeBeforeFlush)
+        catch (Exception e)
         {
-        }
-
-        protected override void DelayEvents(TimeSpan delayUntilNextFlush)
-        {
-        }
-
-        public override async Task DisposeAsync()
-        {
-            await DisposeAsync(true).ConfigureAwait(false);
+            _logger.Error(e, "An error occurred sending OTLP logs.");
+            return false;
         }
     }
+
+    protected override void FlushingEvents(int queueSizeBeforeFlush)
+    {
+    }
+
+    protected override void DelayEvents(TimeSpan delayUntilNextFlush)
+    {
+    }
+
+    public override async Task DisposeAsync()
+    {
+        await DisposeAsync(true).ConfigureAwait(false);
+    }
 }
-
 #endif
-

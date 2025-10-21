@@ -8,8 +8,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting
 {
@@ -53,12 +53,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
         private static Dictionary<string, object?> ExtractAttributes<TState>(TState state, object eventId)
         {
-            Dictionary<string, object?>? attributes = null;
+            var attributes = new Dictionary<string, object?>();
 
             // Extract structured properties from ILogger state
             if (state is IReadOnlyList<KeyValuePair<string, object?>> properties)
             {
-                attributes = new Dictionary<string, object?>();
                 foreach (var property in properties)
                 {
                     if (!string.IsNullOrEmpty(property.Key) && property.Key != "{OriginalFormat}")
@@ -71,23 +70,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             // Add EventId if present
             if (eventId.GetHashCode() != 0)
             {
-                attributes ??= new Dictionary<string, object?>();
                 attributes["EventId"] = eventId.GetHashCode();
             }
 
-            return attributes ?? new Dictionary<string, object?>();
+            return attributes;
         }
 
-        private static (ActivityTraceId? TraceId, ActivitySpanId? SpanId, int Flags) ExtractTraceContext()
+        private static (TraceId TraceId, ulong SpanId, int Flags) ExtractTraceContext()
         {
-            var activity = System.Diagnostics.Activity.Current;
-            if (activity != null && activity.IdFormat == ActivityIdFormat.W3C)
+            // Prefer Datadog's trace context for accurate correlation with DD spans
+            // Fallback to Activity if Datadog tracing is not active
+            var ddSpan = Tracer.Instance.ActiveScope?.Span as Span;
+            if (ddSpan != null)
             {
-                var flags = activity.Recorded ? 1 : 0;
-                return (activity.TraceId, activity.SpanId, flags);
+                return (ddSpan.TraceId128, ddSpan.SpanId, 1);
             }
 
-            return (null, null, 0);
+            var activity = System.Diagnostics.Activity.Current;
+            if (activity != null && activity.IdFormat == System.Diagnostics.ActivityIdFormat.W3C)
+            {
+                if (HexString.TryParseTraceId(activity.TraceId.ToHexString(), out var activityTraceId) &&
+                    HexString.TryParseUInt64(activity.SpanId.ToHexString(), out var activitySpanId))
+                {
+                    var flags = activity.Recorded ? 1 : 0;
+                    return (activityTraceId, activitySpanId, flags);
+                }
+            }
+
+            return (TraceId.Zero, 0, 0);
         }
     }
 }

@@ -32,7 +32,9 @@
         },
         "scope_logs": [
           {
-            "scope": {},
+            "scope": {
+              "name": "LogServiceName"
+            },
             "log_records": [
               {
                 "time_unix_nano": "0",
@@ -87,6 +89,31 @@
                 "severity_number": "SEVERITY_NUMBER_INFO",
                 "severity_text": "Information",
                 "body": {
+                  "string_value": "Hello from OpenTelemetry logger outside span context"
+                },
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_FATAL",
+                "severity_text": "Critical",
+                "body": {
+                  "string_value": "This is a critical message"
+                },
+                "observed_time_unix_nano": "0"
+              }
+            ]
+          },
+          {
+            "scope": {
+              "name": "OtherLibrary"
+            },
+            "log_records": [
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
+                "body": {
                   "string_value": "Response from other library"
                 },
                 "flags": 1,
@@ -104,24 +131,6 @@
                 "flags": 1,
                 "trace_id": "normalized-trace-id",
                 "span_id": "normalized-span-id",
-                "observed_time_unix_nano": "0"
-              },
-              {
-                "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_INFO",
-                "severity_text": "Information",
-                "body": {
-                  "string_value": "Hello from OpenTelemetry logger outside span context"
-                },
-                "observed_time_unix_nano": "0"
-              },
-              {
-                "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_FATAL",
-                "severity_text": "Critical",
-                "body": {
-                  "string_value": "This is a critical message"
-                },
                 "observed_time_unix_nano": "0"
               }
             ]

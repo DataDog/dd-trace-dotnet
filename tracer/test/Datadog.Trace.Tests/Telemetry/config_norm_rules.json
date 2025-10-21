@@ -691,6 +691,7 @@
   "OTEL_EXPORTER_OTLP_METRICS_HEADERS": "otel_exporter_otlp_metrics_headers",
   "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": "otel_exporter_otlp_metrics_timeout",
   "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "otel_exporter_otlp_metrics_temporality_preference",
+  "DD_LOGS_OTEL_ENABLED": "logs_otel_enabled",
   "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "otel_exporter_otlp_logs_protocol",
   "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "otel_exporter_otlp_logs_endpoint",
   "OTEL_EXPORTER_OTLP_LOGS_HEADERS": "otel_exporter_otlp_logs_headers",

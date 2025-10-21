@@ -5,16 +5,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.OpenTelemetry.Logs;
-#endif
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -26,22 +19,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     internal class DirectSubmissionLogger
     {
         private readonly string _name;
-        private readonly IExternalScopeProvider? _scopeProvider;
         private readonly IDirectSubmissionLogSink _sink;
-        private readonly LogFormatter? _logFormatter;
+        private readonly ILogEventCreator _logEventCreator;
         private readonly int _minimumLogLevel;
 
         internal DirectSubmissionLogger(
             string name,
-            IExternalScopeProvider? scopeProvider,
             IDirectSubmissionLogSink sink,
-            LogFormatter? logFormatter,
+            ILogEventCreator logEventCreator,
             DirectSubmissionLogLevel minimumLogLevel)
         {
             _name = name;
-            _scopeProvider = scopeProvider;
             _sink = sink;
-            _logFormatter = logFormatter;
+            _logEventCreator = logEventCreator;
             _minimumLogLevel = (int)minimumLogLevel;
         }
 
@@ -62,40 +52,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return;
             }
 
-            // Datadog Direct Log Submission: render the event to a string immediately
-            // This is more expensive from a CPU perspective, but saves having to persist the
-            // properties to a dictionary and rendering later
-            if (_sink is DirectSubmissionLogSink)
-            {
-                var logEntry = new LogEntry<TState>(
-                    DateTime.UtcNow,
-                    logLevel,
-                    _name,
-                    eventId.GetHashCode(),
-                    state,
-                    exception,
-                    formatter,
-                    _scopeProvider);
-                var logFormatter = _logFormatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
-                var serializedLog = LoggerLogFormatter.FormatLogEvent(logFormatter, logEntry);
-
-                var log = new LoggerDirectSubmissionLogEvent(serializedLog);
-
-                TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
-                _sink.EnqueueLog(log);
-                return;
-            }
-
-#if NETCOREAPP3_1_OR_GREATER
-            // OTLP logs: use structured data directly
-            if (_sink is Datadog.Trace.Logging.DirectSubmission.Sink.OtlpSubmissionLogSink)
-            {
-                var log = Formatting.OtlpLogEventBuilder.CreateLogEvent(logLevel, _name, eventId, state, exception, formatter);
-                TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
-                _sink.EnqueueLog(log);
-                return;
-            }
-#endif
+            var log = _logEventCreator.CreateLogEvent(logLevel, _name, eventId, state, exception, formatter);
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
+            _sink.EnqueueLog(log);
         }
 
         /// <summary>
@@ -113,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
         /// <returns>An <see cref="IDisposable"/> that ends the logical operation scope on dispose.</returns>
         [DuckReverseMethod(ParameterTypeNames = new[] { "TState" })]
-        public IDisposable BeginScope<TState>(TState state) => _scopeProvider?.Push(state) ?? NullDisposable.Instance;
+        public IDisposable BeginScope<TState>(TState state) => NullDisposable.Instance;
 
         private class NullDisposable : IDisposable
         {

@@ -202,6 +202,22 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
                             .AsInt32(defaultValue: 7_500);
 
+            var defaultAgentHost = config
+                .WithKeys(ConfigurationKeys.AgentHost)
+                .AsString(defaultValue: "localhost");
+
+            OtlpGeneralProtocol = config
+                                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                                .GetAs(
+                                    defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                    converter: x => x switch
+                                    {
+                                        not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                        not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                                        _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
+                                    },
+                                    validator: null);
+
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                                  .GetAs(
@@ -215,11 +231,8 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultAgentHost = config
-                .WithKeys(ConfigurationKeys.AgentHost)
-                .AsString(defaultValue: "localhost");
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpGeneralProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
 
-            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
@@ -304,8 +317,6 @@ namespace Datadog.Trace.Configuration
             var otelLogsExporter = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.LogsExporter);
 
-            OtelLogsExporterEnabled = string.Equals(otelLogsExporter.AsString(defaultValue: "otlp"), "otlp", StringComparison.OrdinalIgnoreCase);
-
             var otelLogsExporterResult = otelLogsExporter
                .AsBoolResult(
                     null,
@@ -316,6 +327,14 @@ namespace Datadog.Trace.Configuration
                         _ => ParsingResult<bool>.Failure()
                     });
 
+            // Per OpenTelemetry spec, OTEL_LOGS_EXPORTER defaults to "otlp" if not set
+            OtelLogsExporterEnabled = otelLogsExporterResult.ConfigurationResult switch
+            {
+                { IsPresent: true, IsValid: true, Result: true } => true,
+                { IsPresent: true, IsValid: true, Result: false } => false,
+                _ => true // Default to otlp per spec
+            };
+
             if (otelLogsExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
             {
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogsExporter);
@@ -325,7 +344,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
                                     .AsBool(defaultValue: false);
 
-            OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled is true && OtelLogsExporterEnabled is true;
+            OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
@@ -882,6 +901,12 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
         internal int OtlpLogsTimeoutMs { get; }
+
+       /// <summary>
+        /// Gets the non siganl specific OTLP protocol.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpGeneralProtocol { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.

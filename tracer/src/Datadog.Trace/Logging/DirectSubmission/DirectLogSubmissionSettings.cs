@@ -23,14 +23,15 @@ namespace Datadog.Trace.Logging.DirectSubmission
     /// </summary>
     internal class DirectLogSubmissionSettings
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectLogSubmissionSettings>();
+
         internal const string DefaultSource = "csharp";
         internal const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
-        internal const int DefaultBatchSizeLimit = 1000;
-        internal const int DefaultQueueSizeLimit = 100_000;
-        internal const int DefaultBatchPeriodSeconds = 2;
+        internal const int DatadogDefaultBatchSizeLimit = 1000;
+        internal const int DatadogDefaultQueueSizeLimit = 100_000;
+        internal const int DatadogDefaultBatchPeriodSeconds = 2;
 
         // OpenTelemetry OTLP logs defaults (OTEL_BLRP_* environment variables)
-        internal const DirectSubmissionLogLevel OtlpMinimumLevel = DirectSubmissionLogLevel.Verbose;
         internal const int OtlpBatchSizeLimit = 512;        // OTEL_BLRP_MAX_EXPORT_BATCH_SIZE
         internal const int OtlpQueueSizeLimit = 2048;       // OTEL_BLRP_MAX_QUEUE_SIZE
         internal const int OtlpBatchPeriodSeconds = 1;      // OTEL_BLRP_SCHEDULE_DELAY
@@ -74,13 +75,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                          },
                                          validator: x => !string.IsNullOrEmpty(x));
 
-            var defaultMinLevel = otlpLogsEnabled ? OtlpMinimumLevel : DefaultMinimumLevel;
-            var defaultMinLevelName = otlpLogsEnabled ? nameof(OtlpMinimumLevel) : nameof(DefaultMinimumLevel);
-
             MinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
                                              .GetAs(
-                                                  defaultValue: new(defaultMinLevel, defaultMinLevelName),
+                                                  defaultValue: new(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
                                                   converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                                   validator: null);
 
@@ -92,23 +90,23 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
-            var actualBatchSize = otlpLogsEnabled ? OtlpBatchSizeLimit : DefaultBatchSizeLimit;
-            var actualQueueSize = otlpLogsEnabled ? OtlpQueueSizeLimit : DefaultQueueSizeLimit;
-            var actualBatchPeriod = otlpLogsEnabled ? OtlpBatchPeriodSeconds : DefaultBatchPeriodSeconds;
+            var defaultBatchSize = otlpLogsEnabled ? OtlpBatchSizeLimit : DatadogDefaultBatchSizeLimit;
+            var defaultQueueSize = otlpLogsEnabled ? OtlpQueueSizeLimit : DatadogDefaultQueueSizeLimit;
+            var defaultBatchPeriod = otlpLogsEnabled ? OtlpBatchPeriodSeconds : DatadogDefaultBatchPeriodSeconds;
 
             BatchSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
-                                               .AsInt32(actualBatchSize, x => x > 0)
+                                               .AsInt32(defaultBatchSize, x => x > 0)
                                                .Value;
 
             QueueSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
-                                               .AsInt32(actualQueueSize, x => x > 0)
+                                               .AsInt32(defaultQueueSize, x => x > 0)
                                                .Value;
 
             var seconds = config
                      .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
-                     .AsInt32(actualBatchPeriod, x => x > 0)
+                     .AsInt32(defaultBatchPeriod, x => x > 0)
                      .Value;
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
@@ -154,11 +152,19 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 }
             }
 
-            // For OTLP logs, automatically enable ILogger integration
             if (otlpLogsEnabled)
             {
-                enabledIntegrations ??= new bool[IntegrationRegistry.Ids.Count];
+                enabledIntegrations = new bool[IntegrationRegistry.Ids.Count];
+
+                // Explicitly disable other log integrations to avoid duplicate log submission
+                foreach (var integrationId in SupportedIntegrations)
+                {
+                    enabledIntegrations[(int)integrationId] = false;
+                }
+
                 enabledIntegrations[(int)IntegrationId.ILogger] = true;
+
+                Log.Information("OTLP logs enabled: ILogger integration is enabled, other log integrations (Serilog, NLog, Log4Net) are disabled to prevent duplicate log submission.");
             }
 
             _enabledIntegrations = enabledIntegrations;
