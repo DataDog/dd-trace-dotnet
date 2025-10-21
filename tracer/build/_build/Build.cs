@@ -509,6 +509,7 @@ partial class Build : NukeBuild
                 .SetProject(Solution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoDependencies()
+                .EnableNoBuild()
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
