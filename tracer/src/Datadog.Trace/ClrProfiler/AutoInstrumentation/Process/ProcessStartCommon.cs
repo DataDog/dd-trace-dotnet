@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = filename;
