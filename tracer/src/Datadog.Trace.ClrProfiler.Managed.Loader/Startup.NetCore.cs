@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETCOREAPP
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,50 +19,55 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static CachedAssembly[] _assemblies;
+        private static readonly System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext = new ManagedProfilerAssemblyLoadContext();
 
-        internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
+        private static CachedAssembly[]? _assemblies;
 
-        private static string ResolveManagedProfilerDirectory()
+        internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
-            string tracerFrameworkDirectory = "netstandard2.0";
-
             var version = Environment.Version;
+            string managedLibrariesDirectory;
 
-            // Old versions of .net core have a major version of 4
-            if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
+            if (version.Major >= 6)
             {
-                tracerFrameworkDirectory = version.Major >= 6 ? "net6.0" : "netcoreapp3.1";
+                // version > 6.0
+                managedLibrariesDirectory = "net6.0";
+            }
+            else if (version is { Major: 3, Minor: >= 1 } || version.Major == 5)
+            {
+                // version is 3.1 or 5.0
+                managedLibrariesDirectory = "netcoreapp3.1";
+            }
+            else
+            {
+                // version < 3.1 (note: previous versions of .NET Core had major version 4)
+                managedLibrariesDirectory = "netstandard2.0";
             }
 
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory));
+            var fullPath = Path.Combine(Path.GetFullPath(tracerHomeDirectory), managedLibrariesDirectory);
 
-            if (!Directory.Exists(fullPath))
+            if (Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}' and current directory {Environment.CurrentDirectory}");
-                return null;
-            }
+                // We use the List/Array approach due to the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
+                var assemblies = new List<CachedAssembly>();
+                foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
+                {
+                    assemblies.Add(new CachedAssembly(file, null));
+                }
 
-            // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
-            var assemblies = new List<CachedAssembly>();
-            foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
-            {
-                assemblies.Add(new CachedAssembly(file, null));
+                _assemblies = [..assemblies];
+                StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
             }
-
-            _assemblies = assemblies.ToArray();
-            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
 
             return fullPath;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             return ResolveAssembly(args.Name);
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly? ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
 
@@ -67,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // to enter the AssemblyResolve event when searching for resources
             // in its satellite assemblies. This seems to have been fixed in
             // .NET Core in the 2.0 servicing branch, so we should not see this
-            // occur, but guard against it anyways. If we do see it, exit early
+            // occur but guard against it anyway. If we do see it, exit early
             // so we don't cause infinite recursion.
             if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
@@ -76,9 +84,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-            StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
+            StartupLogger.Debug("Assembly Resolve event received for: {0}. Searching in: {1}", name, ManagedProfilerDirectory);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-            StartupLogger.Debug("Looking for: {0}", path);
 
             if (IsDatadogAssembly(path, out var cachedAssembly))
             {
@@ -90,15 +97,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     return cachedAssembly;
                 }
 
-                // Only load the main profiler into the default Assembly Load Context.
-                // If Datadog.Trace or other libraries are provided by the NuGet package their loads are handled in the following two ways.
-                // 1) The AssemblyVersion is greater than or equal to the version used by Datadog.Trace, the assembly
+                // Only load the main profiler into the default AssemblyLoadContext.
+                // If the NuGet package provides Datadog.Trace or other libraries, loading them is handled in the following two ways:
+                // 1) If the AssemblyVersion is greater than or equal to the version used by Datadog.Trace, the assembly
                 //    will load successfully and will not invoke this resolve event.
-                // 2) The AssemblyVersion is lower than the version used by Datadog.Trace, the assembly will fail to load
+                // 2) If the AssemblyVersion is lower than the version used by Datadog.Trace, the assembly will fail to load
                 //    and invoke this resolve event. It must be loaded in a separate AssemblyLoadContext since the application will only
-                //    load the originally referenced version
-                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
-                var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
+                //    load the originally referenced version.
+                StartupLogger.Debug("Calling DependencyLoadContext.LoadFromAssemblyPath(\"{0}\")", path);
+                var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom AssemblyLoadContext
                 SetDatadogAssembly(path, assembly);
                 return assembly;
             }
@@ -108,9 +115,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static bool IsDatadogAssembly(string path, out Assembly cachedAssembly)
+        private static bool IsDatadogAssembly(string path, out Assembly? cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
                 var assembly = _assemblies[i];
                 if (assembly.Path == path)
@@ -126,12 +133,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static void SetDatadogAssembly(string path, Assembly cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
                 if (_assemblies[i].Path == path)
                 {
                     _assemblies[i] = new CachedAssembly(path, cachedAssembly);
-                    break;
+                    return;
                 }
             }
         }
@@ -139,9 +146,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private readonly struct CachedAssembly
         {
             public readonly string Path;
-            public readonly Assembly Assembly;
+            public readonly Assembly? Assembly;
 
-            public CachedAssembly(string path, Assembly assembly)
+            public CachedAssembly(string path, Assembly? assembly)
             {
                 Path = path;
                 Assembly = assembly;

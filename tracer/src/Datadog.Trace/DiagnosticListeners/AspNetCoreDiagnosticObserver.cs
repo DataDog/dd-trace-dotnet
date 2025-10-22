@@ -423,7 +423,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldTrace = tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
 
             if (!shouldTrace && !shouldSecure)
@@ -456,7 +456,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -604,7 +604,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldTrace = tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
             var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
@@ -707,7 +707,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -749,7 +749,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -768,7 +768,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }

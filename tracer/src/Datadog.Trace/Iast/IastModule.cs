@@ -567,7 +567,7 @@ internal static partial class IastModule
     private static IastModuleResponse AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
-        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;
@@ -654,7 +654,7 @@ internal static partial class IastModule
         bool autoCloseScopeWhenSingleSpan = true)
     {
         var tracer = Tracer.Instance;
-        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;

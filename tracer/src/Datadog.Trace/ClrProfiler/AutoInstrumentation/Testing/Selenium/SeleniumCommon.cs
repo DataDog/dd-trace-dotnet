@@ -40,7 +40,7 @@ internal static class SeleniumCommon
     private static Type? _seleniumCookieType;
     private static long _openPageCount;
 
-    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static void OnBeforePageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy => PreClose(instance);

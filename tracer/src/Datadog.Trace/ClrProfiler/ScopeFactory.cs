@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) ||
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId) ||
                 PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.InternalActiveScope) ||
                 HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
             }
             catch (Exception ex)

@@ -31,6 +31,77 @@
 
 
 
+
+## [Release 3.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.29.0)
+
+## Summary
+
+- [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+- [Azure Functions] Add aas.site.kind tag to agentless logs (https://github.com/DataDog/dd-trace-dotnet/pull/7623)
+- [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+- Various other fixes and improvements
+
+## Changes
+
+### Tracer
+* Rebuild `MutableSettings` on dynamic config changes (#7525)
+* Move `DefaultServiceName` to `MutableSettings` (#7530)
+* Simplify `PerTraceSettings.GetServiceName()` (#7532)
+* [PDB] Handle exception during opening a pdb file (#7573)
+
+### CI Visibility
+* [TestOptimization] Catch IOException on the Git folder discovery (#7658)
+
+### Continuous Profiler
+* [crashtracker/profiler] Notify profiler the application is crashing (#7657)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3695 Return correct RC apply details (#6890)
+* [Dynamic Instrumentation] Skip some debugger tests on .NET 8 or greater (#7631)
+* Minor fix in DynamicConfigurationManager update process (#7664)
+* [Dynamic Instrumentation] DEBUG 3794 Stabilize snapshot enumerable serializing (#6910)
+* [Dynamic Instrumentation] DEBUG-3959 Guard against undefined value expression (#7008)
+* [Debugger Default-On] DEBUG-4341 Forward snapshots to debugger intake (#7388)
+* [Dynamic Instrumentation] Ensure DI metric probe does not send automatic telemetry (#7621)
+* [Dynamic Instrumentation] Remove reference types value property from snapshot (#7635)
+
+### Serverless
+* [Azure Functions] Add `aas.site.kind` tag to agentless logs (#7623)
+*  [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+* [internal docs] Add CI troubleshooting documentation (#7634)
+* [OTEL] Moves OTelMetrics Under OpenTelemetry.Metrics (#7638)
+* Minor refactor and added tests for `DynamicConfigurationManager` (#7652)
+* [OTEL] Vendoring OtlpGrpcExportClient And Enabling OTLP Metrics gRPC Tests (#7666)
+* [Code Origin] Add debug logs to code origin for entry span (#7612)
+* [Code Origin] Performance: Add Assembly Filter Caching for Code Origin (#7667)
+* Small OpenTelemetry Metrics fixes and optimizations (#7632)
+
+### Build / Test
+* Optimize `AGENTS.md` with contextual load guidance (#7625)
+* Bump timeit to v0.4.6 (#7647)
+* Improve and simplify the microbenchmarks CI setup (#7613)
+* Capture Exception when sending metrics (#7614)
+* [Test Package Versions Bump] Updating package versions (#7617)
+* Fix profiler_execution_benchmarks flakiness (#7622)
+* Fix the code freeze action (#7626)
+* Revert "[SINT-4157] sanitise ultimate-pipeline.yml" (#7627)
+* Increase Docker run step resiliency for Profiler integration tests (#7629)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7630)
+* [Azure Functions] Add `Build-AzureFunctionsNuget.ps1` helper script for local developement (#7633)
+* Update `CODEOWNERS` for consistent ownership of managed loader files (#7643)
+* [Test Package Versions Bump] Updating package versions (#7644)
+* Clone the prod dd-trace-dotnet microbenchmark branch for microbenchmarks (#7646)
+* Fix CleanObjFiles job (#7648)
+* [Test Package Versions Bump] Updating package versions (#7655)
+* [OTEL] Switches OTLP Tests To dd-apm-test-agent Instead of MockTracerAgent (#7656)
+* Fix nuget installer smoke tests (#7619)
+
+
+[Changes since 3.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.28.0...v3.29.0)
+
 ## [Release 3.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.28.0)
 
 ## Summary
