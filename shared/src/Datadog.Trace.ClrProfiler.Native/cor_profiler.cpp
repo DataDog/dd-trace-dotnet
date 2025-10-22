@@ -320,7 +320,14 @@ namespace datadog::shared::nativeloader
         if (IsSingleStepInstrumentation())
         {
             Log::Info("CorProfiler::Initialize: Evaluating workload selection.");
-            if (is_workload_allowed() == false)
+
+            WSTRING application_pool{L""};
+            if (auto maybe_application_pool = GetApplicationPool())
+            {
+                application_pool = std::move(*maybe_application_pool);
+            }
+
+            if (is_workload_allowed(process_name, tokenized_command_line, application_pool) == false)
             {
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
