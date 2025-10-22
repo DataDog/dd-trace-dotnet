@@ -151,7 +151,7 @@ namespace Datadog.Trace
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.InitialMutableSettings, scopeManager, telemetry);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings,
