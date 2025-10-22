@@ -40,9 +40,10 @@ internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibil
 
     public CIEventMessagePackFormatter(TracerSettings tracerSettings)
     {
-        if (!string.IsNullOrEmpty(tracerSettings.MutableSettings.Environment))
+        // we don't subscribe, because we assume this _can't_ change in CI Visibility
+        if (!string.IsNullOrEmpty(tracerSettings.Manager.InitialMutableSettings.Environment))
         {
-            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.MutableSettings.Environment);
+            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Manager.InitialMutableSettings.Environment);
         }
 
         var testOptimization = TestOptimization.Instance;
