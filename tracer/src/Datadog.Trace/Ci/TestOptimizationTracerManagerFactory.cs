@@ -53,15 +53,16 @@ namespace Datadog.Trace.Ci
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            SettingsManager settingsManager)
         {
             telemetry.RecordTestOptimizationSettings(_settings);
             if (_testOptimizationTracerManagement.UseLockedTracerManager)
             {
-                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, settingsManager);
             }
 
-            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, settingsManager);
         }
 
         protected override ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
