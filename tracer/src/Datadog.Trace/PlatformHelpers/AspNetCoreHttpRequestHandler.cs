@@ -151,7 +151,7 @@ namespace Datadog.Trace.PlatformHelpers
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();
             }
 
-            tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
+            tags.SetAnalyticsSampleRate(_integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
 
             return scope;
