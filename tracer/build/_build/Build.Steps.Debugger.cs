@@ -86,7 +86,7 @@ partial class Build
             if (!IsWin)
             {
                 // The sample helper in the test library assumes that the sample has
-                // been published when running on Linux
+                // been published when running on Linux.
                 DotNetPublish(x => x
                     .SetFramework(Framework)
                     .SetConfiguration(BuildConfiguration)
