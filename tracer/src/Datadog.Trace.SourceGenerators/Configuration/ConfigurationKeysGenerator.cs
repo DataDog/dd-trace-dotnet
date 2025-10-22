@@ -25,7 +25,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     private const string SupportedConfigurationsFileName = "supported-configurations.json";
     private const string SupportedConfigurationsDocsFileName = "supported-configurations-docs.yaml";
     private const string ConfigurationKeysMappingFileName = "configuration_keys_mapping.json";
-    private const string GeneratedClassName = "ConfigurationKeys2";
+    private const string GeneratedClassName = "ConfigurationKeys";
     private const string Namespace = "Datadog.Trace.Configuration";
 
     /// <inheritdoc />
