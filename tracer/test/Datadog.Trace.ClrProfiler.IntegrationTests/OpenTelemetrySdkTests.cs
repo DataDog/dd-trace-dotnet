@@ -300,8 +300,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
+        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         [Trait("RequiresDockerDependency", "true")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
