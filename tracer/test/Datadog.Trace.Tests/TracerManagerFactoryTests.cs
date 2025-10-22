@@ -142,8 +142,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
-            spanEventsManager: null,
-            settingsManager: null);
+            spanEventsManager: null);
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(

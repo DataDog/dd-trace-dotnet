@@ -78,7 +78,7 @@ public class ConfigureIntegration
         GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
         var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
 
-        var wasUpdated = Datadog.Trace.Tracer.Instance.TracerManager.SettingsManager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
+        var wasUpdated = Datadog.Trace.Tracer.Instance.Settings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
         if (wasUpdated)
         {
             Log.Information("Setting updates made via configuration in code were applied");
