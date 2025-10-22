@@ -257,7 +257,7 @@ internal class TestOptimization : ITestOptimization
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.MutableSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.Manager.InitialMutableSettings.ServiceName);
 
         // Initialize Tracer
         Log.Information("TestOptimization: Initialize Test Tracer instance");
@@ -308,7 +308,7 @@ internal class TestOptimization : ITestOptimization
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.MutableSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.Manager.InitialMutableSettings.ServiceName);
 
         // Initialize Tracer
         Log.Information("TestOptimization: Initialize Test Tracer instance");
