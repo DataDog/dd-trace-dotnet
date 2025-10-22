@@ -461,7 +461,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 using (var adminClient = adminBuilder.Build())
                 {
                     // Call DescribeClusterAsync with timeout
-                    var describeTask = adminClient.DescribeClusterAsync(cts.Token);
+                    var describeTask = adminClient.DescribeClusterAsync();
 
                     // Wait synchronously with timeout (we're in a constructor, can't be async)
                     if (describeTask.Wait(timeout))

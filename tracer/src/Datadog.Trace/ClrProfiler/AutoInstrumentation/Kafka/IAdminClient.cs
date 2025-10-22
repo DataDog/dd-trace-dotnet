@@ -6,16 +6,16 @@
 #nullable enable
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.IAdminClient
-/// Used to access DescribeClusterAsync method for cluster_id extraction
+/// Used to access DescribeClusterAsync extension method for cluster_id extraction
+/// Duck typing can see extension methods as if they were instance methods
 /// </summary>
 internal interface IAdminClient : IDisposable
 {
-    Task<IDescribeClusterResult> DescribeClusterAsync(CancellationToken cancellationToken = default);
+    Task<IDescribeClusterResult> DescribeClusterAsync(IDescribeClusterOptions? options = null);
 }
