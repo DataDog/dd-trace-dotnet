@@ -328,11 +328,41 @@ partial class Build
 
     Target BuildAndRunProfilerCpuLimitTests => _ => _
         .After(BuildProfilerSamples)
-        .Description("Run the profiler container tests")
+        .Description("Builds and runs the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
         .Executes(() =>
         {
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
+        });
+
+    Target RunProfilerCpuLimitTests => _ => _
+        .After(BuildProfilerSamples, BuildProfilerCpuLimitTests)
+        .Description("Runs the profiler container tests")
+        .Requires(() => IsLinux && !IsArm64)
+        .Executes(() =>
+        {
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)", false);
+        });
+
+    Target BuildProfilerCpuLimitTests => _ => _
+        .After(BuildProfilerSamples)
+        .Description("Builds the profiler container tests")
+        .Requires(() => !IsArm64)
+        .Executes(() =>
+        {
+            var integrationTestProjects = ProfilerDirectory
+                .GlobFiles("test/*.IntegrationTests/*.csproj")
+                .Select(x => ProfilerSolution.GetProject(x))
+                .ToList();
+
+            // Pure build (no test execution)
+            DotNetBuild(s => s
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(TargetPlatform)
+                .SetDotnetPath(TargetPlatform)
+                .SetNoWarnDotNetCore3()
+                .CombineWith(integrationTestProjects, (cfg, project) => cfg
+                    .SetProjectFile(project)));
         });
 
     Target BuildAndRunProfilerIntegrationTests => _ => _
@@ -346,7 +376,7 @@ partial class Build
             BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
-    private void BuildAndRunProfilerIntegrationTestsInternal(string filter)
+    private void BuildAndRunProfilerIntegrationTestsInternal(string filter, bool build = true)
     {
         var isDebugRun = IsDebugRun();
 
@@ -364,6 +394,7 @@ partial class Build
                                 .SetTargetPlatform(TargetPlatform)
                                 .SetDotnetPath(TargetPlatform)
                                 .SetNoWarnDotNetCore3()
+                                .SetNoBuild(!build)
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                                 .EnableCrashDumps()
