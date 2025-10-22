@@ -21,13 +21,18 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
     private readonly ITelemetryController _telemetry;
     private readonly TracerSettings _immutableTracerSettings;
+    private readonly string? _gitCommitSha;
+    private readonly string? _gitRepositoryUrl;
     private readonly IScopeManager _scopeManager;
     private GitMetadata? _cachedGitTags = null;
     private int _tryCount = 0;
 
-    public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, IScopeManager scopeManager, ITelemetryController telemetry)
+    public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, MutableSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
     {
         _immutableTracerSettings = immutableTracerSettings;
+        // These never change, even though they are exposed on MutableSettings, so we can safely grab them once here
+        _gitCommitSha = settings.GitCommitSha;
+        _gitRepositoryUrl = settings.GitRepositoryUrl;
         _scopeManager = scopeManager;
         _telemetry = telemetry;
     }
@@ -65,14 +70,14 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 
             // Get the tag from configuration. These may originate from the DD_GIT_REPOSITORY_URL and DD_GIT_COMMIT_SHA environment variables,
             // but if those were not available, they may have been extracted from the DD_TAGS environment variable.
-            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha))
+            if (!StringUtil.IsNullOrWhiteSpace(_gitCommitSha))
             {
-                gitCommitSha = _immutableTracerSettings.GitCommitSha!;
+                gitCommitSha = _gitCommitSha;
             }
 
-            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
+            if (!StringUtil.IsNullOrWhiteSpace(_gitRepositoryUrl))
             {
-                gitRespositoryUrl = _immutableTracerSettings.GitRepositoryUrl!;
+                gitRespositoryUrl = _gitRepositoryUrl;
             }
 
             if (gitCommitSha is not null && gitRespositoryUrl is not null)

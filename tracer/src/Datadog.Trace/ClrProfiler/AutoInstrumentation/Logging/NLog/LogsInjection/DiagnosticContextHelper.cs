@@ -118,6 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             hasTraceIds = false;
 
+            var mutableSettings = tracer.CurrentTraceSettings.Settings;
             if (tracer.DistributedSpanContext is { } context &&
                 LogContext.TryGetValues(context, out var traceId, out var spanId, tracer.Settings.TraceId128BitLoggingEnabled))
             {
@@ -125,9 +126,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
                 return
                 [
-                    new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                    new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty),
-                    new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, mutableSettings.DefaultServiceName),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, mutableSettings.ServiceVersion ?? string.Empty),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, mutableSettings.Environment ?? string.Empty),
                     new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
                     new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
                 ];
@@ -135,9 +136,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             return
             [
-                new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty)
+                new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, mutableSettings.DefaultServiceName),
+                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, mutableSettings.ServiceVersion ?? string.Empty),
+                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, mutableSettings.Environment ?? string.Empty)
             ];
         }
 

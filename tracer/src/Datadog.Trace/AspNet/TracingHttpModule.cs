@@ -103,14 +103,14 @@ namespace Datadog.Trace.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -134,7 +134,7 @@ namespace Datadog.Trace.AspNet
             {
                 var tracer = Tracer.Instance;
 
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -198,7 +198,7 @@ namespace Datadog.Trace.AspNet
                                        ? BuildResourceName(tracer, httpRequest)
                                        : null;
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
-                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
                 tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.AspNet
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
@@ -276,7 +276,8 @@ namespace Datadog.Trace.AspNet
             try
             {
                 var tracer = Tracer.Instance;
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                var settings = tracer.CurrentTraceSettings.Settings;
+                if (!settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -386,21 +387,21 @@ namespace Datadog.Trace.AspNet
                         // add "http.status_code" tag to the root span
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            rootSpan.SetHttpStatusCode(status, isServer: true, settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
                         }
 
                         // also add "http.status_code" tag to the current span if it's not the root
                         if (currentSpan != rootSpan && !currentSpan.HasHttpStatusCode())
                         {
-                            currentSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            currentSpan.SetHttpStatusCode(status, isServer: true, settings);
                             AddHeaderTagsFromHttpResponse(app.Context, scope);
                         }
 
                         // also add "http.status_code" tag to the inferred proxy span
                         if (proxyScope?.Span is { } proxySpan && proxySpan != rootSpan && !proxySpan.HasHttpStatusCode())
                         {
-                            proxySpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            proxySpan.SetHttpStatusCode(status, isServer: true, settings);
                             AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
@@ -435,7 +436,8 @@ namespace Datadog.Trace.AspNet
             {
                 var tracer = Tracer.Instance;
 
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                var settings = tracer.CurrentTraceSettings.Settings;
+                if (!settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -465,8 +467,8 @@ namespace Datadog.Trace.AspNet
                         {
                             // in classic mode, the exception won't cause the correct status code to be set
                             // even though a 500 response will be sent ultimately, so set it manually
-                            scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
-                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
+                            scope.Span.SetHttpStatusCode(500, isServer: true, settings);
+                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, settings);
                         }
                     }
                 }
