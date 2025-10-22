@@ -191,7 +191,6 @@ namespace Datadog.Trace.Configuration
                     if (activeConfigurations.Remove(removedConfig.Id))
                     {
                         Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
-                        applyDetailsResult.Add(ApplyDetails.FromOk(removedConfig.Path));
                     }
                 }
             }
@@ -247,14 +246,12 @@ namespace Datadog.Trace.Configuration
         private void ApplyMergedConfiguration(List<RemoteConfiguration> remoteConfigurations)
         {
             // Get current service/environment for filtering
-            var currentSettings = Tracer.Instance.Settings;
-            var serviceName = currentSettings.ServiceName;
-            var environment = currentSettings.Environment ?? Tracer.Instance.DefaultServiceName;
+            var currentSettings = Tracer.Instance.CurrentTraceSettings.Settings;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 remoteConfigurations,
-                serviceName,
-                environment);
+                serviceName: currentSettings.ServiceName,
+                environment: currentSettings.Environment);
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
 
