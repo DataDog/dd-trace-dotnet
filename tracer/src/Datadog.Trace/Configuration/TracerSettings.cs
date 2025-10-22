@@ -30,7 +30,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains Tracer settings.
     /// </summary>
-    public record TracerSettings
+    public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
         private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
@@ -732,6 +732,7 @@ namespace Datadog.Trace.Configuration
 
             InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
             MutableSettings = InitialMutableSettings;
+            Manager = new(this, InitialMutableSettings, Exporter);
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -1303,6 +1304,8 @@ namespace Datadog.Trace.Configuration
         /// Gets the minimum number of closed spans in a trace before it's partially flushed
         /// </summary>
         public int PartialFlushMinSpans { get; }
+
+        internal SettingsManager Manager { get; }
 
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
