@@ -169,7 +169,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
             {
                 // Safe to use ! here because we just checked !string.IsNullOrWhiteSpace above
-                return tracerHomeDirectory!.Trim();
+                var trimmedPath = tracerHomeDirectory!.Trim();
+                StartupLogger.Debug("Using tracer home from {0}=\"{1}\"", TracerHomePathKey, trimmedPath);
+                return trimmedPath;
             }
 
             // try to compute the path from the architecture-specific "COR_PROFILER_PATH_*" or "CORECLR_PROFILER_PATH_*"
@@ -177,6 +179,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (ComputeTracerHomePathFromProfilerPath(envVars, archEnvVarName) is { } archTracerHomePath)
             {
+                StartupLogger.Debug("Derived tracer home from {0}=\"{1}\"", archEnvVarName, archTracerHomePath);
                 return archTracerHomePath;
             }
 
@@ -185,6 +188,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (ComputeTracerHomePathFromProfilerPath(envVars, fallbackEnvVarName) is { } fallbackTracerHomePath)
             {
+                StartupLogger.Debug("Derived tracer home from {0}=\"{1}\"", fallbackEnvVarName, fallbackTracerHomePath);
                 return fallbackTracerHomePath;
             }
 
