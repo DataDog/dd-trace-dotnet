@@ -27,7 +27,7 @@ namespace
 
     InjectionStatus injection_status;
 
-    std::optional<plcs_errors> evaluatePolicies()
+    std::optional<std::vector<uint8_t>> readPolicies()
     {
         const auto policies_file = GetPoliciesPath();
 
@@ -35,7 +35,7 @@ namespace
         fopen_s(&file, policies_file.string().c_str(), "rb");
         if (!file)
         {
-            return PLCS_ENO_DATA;
+            return std::nullopt;
         }
 
         fseek(file, 0, SEEK_END);
@@ -49,16 +49,10 @@ namespace
 
         if (read_size != file_size)
         {
-            return PLCS_ENO_DATA;
+            return std::nullopt;
         }
 
-        auto res = plcs_evaluate_buffer(buffer.data(), buffer.size());
-        if (res != PLCS_ESUCCESS)
-        {
-            return res;
-        }
-
-        return std::nullopt;
+        return buffer;
     }
 
     plcs_errors onInjectionAllow(plcs_evaluation_result eval_result, char**, size_t, const char* policy, int)
@@ -79,57 +73,67 @@ namespace
         return PLCS_ESUCCESS;
     }
 
-    std::string GetDotnetDll()
+    std::string GetDotnetDll(const std::vector<::shared::WSTRING>& argv)
     {
-        const auto [_, tokenized_command_line] = ::shared::GetCurrentProcessCommandLine();
-        if (tokenized_command_line.size() < 2)
+        if (argv.size() < 2)
         {
             return "";
         }
 
-        if (tokenized_command_line[0] != L"dotnet" && tokenized_command_line[0] != L"dotnet.exe")
+        if (argv[0] != L"dotnet" && argv[0] != L"dotnet.exe")
         {
             return "";
         }
 
-        if (tokenized_command_line[1].empty() || !tokenized_command_line[1].ends_with(L".dll"))
+        auto dll_arg = argv[1];
+        if (argv[1] == L"exec")
+        {
+            if (argv.size() <= 2)
+            {
+                return "";
+            }
+            dll_arg = argv[2];
+        }
+
+        if (dll_arg.empty() || !dll_arg.ends_with(L".dll"))
         {
             return "";
         }
 
-        auto dll_path = fs::path(::shared::ToString(tokenized_command_line[1]));
+        auto dll_path = fs::path(::shared::ToString(dll_arg));
         return dll_path.filename().string();
     }
 
 } // namespace
 
-bool is_workload_allowed()
+bool is_workload_allowed(const ::shared::WSTRING& process_name, const std::vector<::shared::WSTRING>& argv,
+                         const ::shared::WSTRING& application_pool);
 {
-    const auto process_name = ::shared::ToString(::shared::GetCurrentProcessName());
+    const auto process_name_str = ::shared::ToString(process_name);
+    const auto application_pool_str = ::shared::ToString(application_pool);
 
-    std::string application_pool = "";
-    if (auto maybe_application_pool = GetApplicationPool())
-    {
-        application_pool = std::move(::shared::ToString(*maybe_application_pool));
-    }
-
-    const auto dotnet_dll = GetDotnetDll();
+    const auto dotnet_dll = GetDotnetDll(argv);
 
     plcs_eval_ctx_init();
     plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_RUNTIME_LANGUAGE, "dotnet");
-    plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_PROCESS_EXE, process_name.c_str());
-    plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_IIS_APPLICATION_POOL, application_pool.c_str());
+    plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_PROCESS_EXE, process_name_str.c_str());
+    plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_IIS_APPLICATION_POOL, application_pool_str.c_str());
     plcs_eval_ctx_set_str_eval_param(PLCS_STR_EVAL_RUNTIME_ENTRY_POINT_FILE, dotnet_dll.c_str());
 
     plcs_eval_ctx_register_action(onInjectionDeny, PLCS_ACTION_INJECT_DENY);
     plcs_eval_ctx_register_action(onInjectionAllow, PLCS_ACTION_INJECT_ALLOW);
 
     injection_status = InjectionStatus::UNKNOWN;
-    auto maybe_error = evaluatePolicies();
-    if (maybe_error)
+
+    auto buffer = readPolicies();
+    if (!buffer)
     {
-        Log::Error(__func__, ": An error occured while evaluating workload selection policies (errno: ", *maybe_error,
-                   ")");
+        return true;
+    }
+
+    if (auto res = plcs_evaluate_buffer(*buffer.data(), *buffer.size()); res != PLCS_ESUCCESS)
+    {
+        Log::Error(__func__, ": An error occured while evaluating workload selection policies (errno: ", res, ")");
         return true;
     }
 

@@ -10,6 +10,7 @@ namespace datadog::shared::nativeloader
 {
 
 /// TBD
-bool is_workload_allowed();
+bool is_workload_allowed(const ::shared::WSTRING& process_name, const std::vector<::shared::WSTRING>& argv,
+                         const ::shared::WSTRING& application_pool);
 
 } // namespace datadog::shared::nativeloader
