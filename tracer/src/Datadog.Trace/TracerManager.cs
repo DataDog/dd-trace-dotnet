@@ -70,6 +70,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
+            SettingsManager settingsManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -98,6 +99,7 @@ namespace Datadog.Trace
             RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
+            SettingsManager = settingsManager;
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.MutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
@@ -157,6 +159,8 @@ namespace Datadog.Trace
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
         public ITracerFlareManager TracerFlareManager { get; }
+
+        public SettingsManager SettingsManager { get; }
 
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 

@@ -44,7 +44,8 @@ namespace Datadog.Trace.Ci
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            SettingsManager settingsManager)
             : base(
                 settings,
                 agentWriter,
@@ -62,6 +63,7 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
+                settingsManager,
                 GetProcessors(settings.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
@@ -160,7 +162,8 @@ namespace Datadog.Trace.Ci
                 IRemoteConfigurationManager remoteConfigurationManager,
                 IDynamicConfigurationManager dynamicConfigurationManager,
                 ITracerFlareManager tracerFlareManager,
-                ISpanEventsManager spanEventsManager)
+                ISpanEventsManager spanEventsManager,
+                SettingsManager settingsManager)
             : base(
                 settings,
                 agentWriter,
@@ -177,7 +180,8 @@ namespace Datadog.Trace.Ci
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager)
+                spanEventsManager,
+                settingsManager)
             {
             }
         }

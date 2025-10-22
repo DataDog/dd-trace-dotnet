@@ -68,7 +68,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
-                spanEventsManager: null);
+                spanEventsManager: null,
+                settingsManager: previous?.SettingsManager);
 
             try
             {
@@ -107,7 +108,8 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            SettingsManager settingsManager)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -115,6 +117,9 @@ namespace Datadog.Trace
             {
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
+
+            // TODO: Move the initial settings from TracerSettings to be created in SettingsManager here and not exposed in TracerSettings
+            settingsManager ??= new SettingsManager(settings, settings.InitialMutableSettings, settings.Exporter);
 
             var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (libdatadogAvailaibility.Exception is not null)
@@ -232,7 +237,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager);
+                spanEventsManager,
+                settingsManager);
         }
 
         protected virtual ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
@@ -267,8 +273,9 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            ISpanEventsManager spanEventsManager,
+            SettingsManager settingsManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, settingsManager);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
