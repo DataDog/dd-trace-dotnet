@@ -218,6 +218,7 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
+        // PERF: use a synchronized pool to avoid race conditions when adding samples to the profile.
         auto pool = _memoryResourceManager.GetSynchronizedPool(1000, sizeof(RawWallTimeSample));
         _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool);
     }

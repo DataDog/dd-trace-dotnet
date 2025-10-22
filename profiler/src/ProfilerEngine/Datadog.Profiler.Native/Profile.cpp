@@ -59,9 +59,13 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     ffiSample.locations = {locations.data(), nbFrames};
 
     // Labels
-    auto const& labels = sample->GetLabels();
+    // PERF: since adding to a profile is done by only one thread (SamplesCollector worker thread),
+    // we can reuse the same ffi labels vector for all samples.
     static std::vector<ddog_prof_Label> ffiLabels;
+    auto const& labels = sample->GetLabels();
     ffiLabels.reserve(labels.size());
+
+    // PERF: clear the vector when the scope is left to avoid memory leaks.
     on_leave {
         ffiLabels.clear();
     };

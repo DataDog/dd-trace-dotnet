@@ -167,6 +167,10 @@ private:
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
+    // PERF: use once flag to compute the profile thread id only once.
+    // This is safe in case of multiple threads calling this method.
+    // Only one thread will compute the profile thread id, and
+    // the other threads will wait for the thread id to be computed.
     static std::once_flag profileThreadIdOnceFlag;
     std::call_once(profileThreadIdOnceFlag, [this]() {
         _profileThreadId = BuildProfileThreadId();
@@ -177,6 +181,10 @@ std::string ManagedThreadInfo::GetProfileThreadId()
 
 std::string ManagedThreadInfo::GetProfileThreadName()
 {
+    // PERF: use once flag to compute the profile thread name only once.
+    // This is safe in case of multiple threads calling this method.
+    // Only one thread will compute the profile thread name, and
+    // the other threads will wait for the thread name to be computed.
     static std::once_flag threadNameOnceFlag;
     std::call_once(threadNameOnceFlag, [this]() {
         _profileThreadName = BuildProfileThreadName();
