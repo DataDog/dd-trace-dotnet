@@ -128,22 +128,22 @@ public class SpanMessagePackFormatterTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void ProcessTags_Serialization(bool enabled)
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void ProcessTags_Serialization(bool enabled, bool firstChunk)
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
 
         var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.PropagateProcessTags, enabled ? "true" : "false" } }));
-        var tracerMock = new Mock<IDatadogTracer>();
-        tracerMock.Setup(t => t.Settings).Returns(settings);
+        var tracer = TracerHelper.Create(settings);
 
         var parentContext = new SpanContext(new TraceId(Upper: 0, Lower: 1), spanId: 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
 
         var spans = new[]
         {
-            new Span(new SpanContext(parentContext, new TraceContext(tracerMock.Object), "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(tracerMock.Object), "ServiceName1"), DateTimeOffset.UtcNow)
+            new Span(new SpanContext(parentContext, new TraceContext(tracer), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new SpanContext(parentContext, new TraceContext(tracer), "ServiceName1"), DateTimeOffset.UtcNow)
         };
 
         foreach (var span in spans)
@@ -151,14 +151,14 @@ public class SpanMessagePackFormatterTests
             span.SetDuration(TimeSpan.FromSeconds(1));
         }
 
-        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans));
+        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), isFirstChunkInBuffer: firstChunk);
 
         byte[] bytes = [];
 
         var length = formatter.Serialize(ref bytes, offset: 0, traceChunk, SpanFormatterResolver.Instance);
         var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, offset: 0, length));
 
-        if (enabled)
+        if (enabled && firstChunk)
         {
             result[0].Tags.Should().ContainKey(Tags.ProcessTags);
         }
