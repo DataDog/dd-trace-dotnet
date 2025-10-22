@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tests
     [UsesVerify]
     public class MultipartFormTests
     {
+        private const string AwrMultipartTest = "ApiWebRequest_MultipartTest";
+        private const string AwrValidationTest = "ApiWebRequest_ValidationTest";
         private static readonly Uri Localhost = new Uri("http://localhost");
         private readonly ITestOutputHelper _output;
 
@@ -92,7 +94,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_MultipartTest");
+            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrMultipartTest);
         }
 
         [Theory]
@@ -104,7 +106,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, "ApiWebRequest_ValidationTest");
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrValidationTest);
         }
 #endif
 
@@ -141,7 +143,7 @@ namespace Datadog.Trace.Tests
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
                     new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                     Localhost);
-                await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+                await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrMultipartTest);
             }
         }
 
@@ -178,7 +180,7 @@ namespace Datadog.Trace.Tests
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
                     new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                     Localhost);
-                await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+                await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrValidationTest);
             }
         }
 
