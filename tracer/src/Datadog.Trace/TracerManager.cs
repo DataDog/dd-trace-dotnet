@@ -71,7 +71,6 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            SettingsManager settingsManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -100,7 +99,6 @@ namespace Datadog.Trace
             RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
-            SettingsManager = settingsManager;
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.MutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
@@ -160,8 +158,6 @@ namespace Datadog.Trace
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
         public ITracerFlareManager TracerFlareManager { get; }
-
-        public SettingsManager SettingsManager { get; }
 
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -670,7 +666,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup(newManager.Settings, newManager.SettingsManager);
+                OneTimeSetup(newManager.Settings);
             }
 
             if (newManager.PerTraceSettings.Settings.StartupDiagnosticLogEnabled)
@@ -681,7 +677,7 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup(TracerSettings tracerSettings, SettingsManager settingsManager)
+        private static void OneTimeSetup(TracerSettings tracerSettings)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
@@ -695,13 +691,13 @@ namespace Datadog.Trace
             // Register for rebuilding the settings on changes
             // TODO: This is only temporary, we want to _stop_ rebuilding everything whenever settings change in the future
             // We also don't bother to dispose this because we never unsubscribe
-            settingsManager.SubscribeToChanges(updatedSettings =>
+            tracerSettings.Manager.SubscribeToChanges(updatedSettings =>
             {
                 var newSettings = updatedSettings switch
                 {
-                    { Exporter: { } e, Mutable: { } m } => Tracer.Instance.Settings with { Exporter = e, MutableSettings = m },
-                    { Exporter: { } e } => Tracer.Instance.Settings with { Exporter = e },
-                    { Mutable: { } m } => Tracer.Instance.Settings with { MutableSettings = m },
+                    { UpdatedExporter: { } e, UpdatedMutable: { } m } => Tracer.Instance.Settings with { Exporter = e, MutableSettings = m },
+                    { UpdatedExporter: { } e } => Tracer.Instance.Settings with { Exporter = e },
+                    { UpdatedMutable: { } m } => Tracer.Instance.Settings with { MutableSettings = m },
                     _ => null,
                 };
                 if (newSettings != null)

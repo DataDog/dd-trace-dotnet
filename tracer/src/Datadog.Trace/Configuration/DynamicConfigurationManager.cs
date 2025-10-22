@@ -80,7 +80,7 @@ namespace Datadog.Trace.Configuration
             // so that it can be picked up by other configuration updaters, e.g. config in code
             GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
 
-            var wasUpdated = Tracer.Instance.TracerManager.SettingsManager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
+            var wasUpdated = Tracer.Instance.Settings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
             if (wasUpdated)
             {
                 Log.Information("Setting updates made via configuration in code were applied");
