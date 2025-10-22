@@ -28,7 +28,7 @@ internal struct CString : IDisposable
         {
             var encoding = StringEncoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str.Length);
-            Ptr = Marshal.AllocHGlobal(maxBytesCount);
+            Ptr = Marshal.AllocHGlobal(maxBytesCount + 1); // +1 for null terminator
             unsafe
             {
                 fixed (char* strPtr = str)
@@ -36,6 +36,7 @@ internal struct CString : IDisposable
                     try
                     {
                         Length = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                        *((byte*)Ptr + Length) = 0; // Add null terminator
                     }
                     catch
                     {
