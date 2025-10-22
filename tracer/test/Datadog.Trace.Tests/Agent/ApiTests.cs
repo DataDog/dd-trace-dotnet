@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -167,7 +168,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload());
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             await api.SendStatsAsync(statsBuffer, 1);
 
@@ -190,7 +191,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload());
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             await api.SendStatsAsync(statsBuffer, 1);
 

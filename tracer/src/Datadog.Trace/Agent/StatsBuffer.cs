@@ -16,7 +16,7 @@ namespace Datadog.Trace.Agent
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        private readonly ClientStatsPayload _header;
+        private ClientStatsPayload _header;
 
         public StatsBuffer(ClientStatsPayload header)
         {
@@ -64,11 +64,12 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
+            var details = _header.Details;
             MessagePackBinary.WriteString(stream, "Env");
-            MessagePackBinary.WriteString(stream, _header.Environment ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Version");
-            MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);
