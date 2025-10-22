@@ -51,14 +51,12 @@
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
-    <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
-    <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="ConfigurationKeys.cs" />
-    <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.Exporter.cs" Link="ConfigurationKeys.Exporter.cs" />
+    <Compile Include="..\Datadog.Trace\Generated\net6.0\**\ConfigurationKeys*.g.cs" Link="Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
   </ItemGroup>
