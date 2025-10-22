@@ -416,12 +416,12 @@ namespace Datadog.Trace
             };
 
             // Apply any global tags
-            if (Settings.GlobalTags.Count > 0)
+            if (Settings.MutableSettings.GlobalTags.Count > 0)
             {
                 // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
                 // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
-                foreach (var entry in Settings.GlobalTags)
+                foreach (var entry in Settings.MutableSettings.GlobalTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }

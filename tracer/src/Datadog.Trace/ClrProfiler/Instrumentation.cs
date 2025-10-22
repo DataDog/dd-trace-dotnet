@@ -93,14 +93,14 @@ namespace Datadog.Trace.ClrProfiler
                     _ => NativeInterop.ProfilingEnabled.Disabled
                 },
 
-                TracingEnabled = tracerSettings.TraceEnabled,
+                TracingEnabled = tracerSettings.MutableSettings.TraceEnabled,
                 IastEnabled = Iast.Iast.Instance.Settings.Enabled,
                 RaspEnabled = Security.Instance.Settings.RaspEnabled,
                 DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
                 RuntimeId = RuntimeId.Get(),
-                Environment = tracerSettings.Environment,
+                Environment = tracerSettings.MutableSettings.Environment,
                 ServiceName = tracer.DefaultServiceName,
-                Version = tracerSettings.ServiceVersion
+                Version = tracerSettings.MutableSettings.ServiceVersion
             };
 
             // Make sure nothing bubbles up, even if there are issues

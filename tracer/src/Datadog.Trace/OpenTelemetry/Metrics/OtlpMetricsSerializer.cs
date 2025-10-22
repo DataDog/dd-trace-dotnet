@@ -124,31 +124,31 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             WriteVarInt(writer, sdkVersionAttr.Length);
             writer.Write(sdkVersionAttr);
 
-            var serviceName = settings.ServiceName ?? "unknown_service:dotnet";
+            var serviceName = settings.MutableSettings.ServiceName ?? "unknown_service:dotnet";
             var serviceNameAttr = SerializeKeyValue("service.name", serviceName);
             WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
             WriteVarInt(writer, serviceNameAttr.Length);
             writer.Write(serviceNameAttr);
 
-            if (!string.IsNullOrEmpty(settings.Environment))
+            if (!string.IsNullOrEmpty(settings.MutableSettings.Environment))
             {
-                var envAttr = SerializeKeyValue("deployment.environment.name", settings.Environment);
+                var envAttr = SerializeKeyValue("deployment.environment.name", settings.MutableSettings.Environment);
                 WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
                 WriteVarInt(writer, envAttr.Length);
                 writer.Write(envAttr);
             }
 
-            if (!string.IsNullOrEmpty(settings.ServiceVersion))
+            if (!string.IsNullOrEmpty(settings.MutableSettings.ServiceVersion))
             {
-                var versionAttr = SerializeKeyValue("service.version", settings.ServiceVersion);
+                var versionAttr = SerializeKeyValue("service.version", settings.MutableSettings.ServiceVersion);
                 WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
                 WriteVarInt(writer, versionAttr.Length);
                 writer.Write(versionAttr);
             }
 
-            if (settings.GlobalTags.Count > 0)
+            if (settings.MutableSettings.GlobalTags.Count > 0)
             {
-                foreach (var tag in settings.GlobalTags)
+                foreach (var tag in settings.MutableSettings.GlobalTags)
                 {
                     if (IsHandledResourceAttribute(tag.Key))
                     {
