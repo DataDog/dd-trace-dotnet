@@ -727,9 +727,10 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
-            MutableSettings = InitialMutableSettings;
-            Manager = new(this, InitialMutableSettings, Exporter);
+            // Move the creation of these settings inside SettingsManager?
+            var initialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
+            Manager = new(this, initialMutableSettings, Exporter);
+            MutableSettings = initialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
