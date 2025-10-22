@@ -6,9 +6,13 @@ using OpenTelemetry.Resources;
 #if OTEL_1_2
 using OpenTelemetry.Metrics;
 #endif
+#if OTEL_1_9
+using OpenTelemetry.Logs;
+#endif
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Samples.OpenTelemetrySdk;
 
@@ -45,8 +49,17 @@ public static class Program
             .Build();
 #endif
 
+#if OTEL_1_9
+        using var loggerFactory = CustomLoggerFactoryBuilderExtensions
+            .AddOtlpExporterIfEnvironmentVariablePresent();
+#endif
+
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
+
+#if OTEL_1_9
+        var logger = loggerFactory.CreateLogger("LogServiceName");
+#endif
 
         TelemetrySpan span = null;
         using (span = _tracer.StartActiveSpan("SayHello"))
@@ -54,6 +67,13 @@ public static class Program
             // Change tracestate before print statement so previous<->current comparison is accurate
             Activity.Current.TraceStateString = "app=hello";
             PrintSpanStartedInformation(span);
+
+#if OTEL_1_9
+            logger.LogInformation("Hello from OpenTelemetry logger within span context");
+            logger.LogTrace("This is a trace message within span context");
+            logger.LogWarning("This is a warning message");
+            logger.LogError("This is an error message");
+#endif
 
             await RunStartSpanOverloadsAsync(span);
             RunSetAttributeOverloads(span);
@@ -67,12 +87,23 @@ public static class Program
             using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
             {
                 PrintSpanStartedInformation(otherSpan);
+                
+#if OTEL_1_9
+                var otherLogger = loggerFactory.CreateLogger("OtherLibrary");
+                otherLogger.LogInformation("Response from other library");
+                otherLogger.LogDebug("Debug information from other library");
+#endif
             }
 
             PrintSpanClosedInformation(otherSpan);
         }
 
         PrintSpanClosedInformation(span);
+
+#if OTEL_1_9
+        logger.LogInformation("Hello from OpenTelemetry logger outside span context");
+        logger.LogCritical("This is a critical message");
+#endif
 
         // There is no active span, so the default behavior will result in a new trace
         // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
@@ -114,6 +145,10 @@ public static class Program
 
 #if OTEL_1_2
         meterProvider?.Dispose();
+#endif
+#if OTEL_1_9
+
+        loggerFactory?.Dispose();
 #endif
     }
 
