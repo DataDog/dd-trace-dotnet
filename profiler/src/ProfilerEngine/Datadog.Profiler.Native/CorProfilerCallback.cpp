@@ -218,7 +218,8 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+        auto pool = _memoryResourceManager.GetSynchronizedPool(1000, sizeof(RawWallTimeSample));
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool);
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())

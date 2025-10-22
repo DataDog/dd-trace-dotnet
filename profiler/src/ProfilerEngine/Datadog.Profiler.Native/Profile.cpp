@@ -8,6 +8,7 @@
 #include "Log.h"
 #include "ProfileImpl.hpp"
 #include "Sample.h"
+#include "ScopeFinalizer.h"
 
 #include <chrono>
 
@@ -59,28 +60,32 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 
     // Labels
     auto const& labels = sample->GetLabels();
-    std::vector<ddog_prof_Label> ffiLabels;
+    static std::vector<ddog_prof_Label> ffiLabels;
     ffiLabels.reserve(labels.size());
+    on_leave {
+        ffiLabels.clear();
+    };
+
+    auto labelsVisitor = LabelsVisitor{
+        [](NumericLabel const& l) -> ddog_prof_Label {
+            auto const& [name, value] = l;
+            return ddog_prof_Label {
+                .key = {name.data(), name.size()},
+                .num = value
+            };
+        },
+        [](StringLabel const& l) -> ddog_prof_Label {
+            auto const& [name, value] = l;
+            return ddog_prof_Label {
+                .key = {name.data(), name.size()},
+                .str = {value.data(), value.size()}
+            };
+        }
+    };
 
     for (auto const& label : labels)
     {
-        auto ffiLabel = std::visit(
-            LabelsVisitor{
-                [](NumericLabel const& l) -> ddog_prof_Label {
-                    auto const& [name, value] = l;
-                    return ddog_prof_Label {
-                        .key = {name.data(), name.size()},
-                        .num = value
-                    };
-                },
-                [](StringLabel const& l) -> ddog_prof_Label {
-                    auto const& [name, value] = l;
-                    return ddog_prof_Label {
-                        .key = {name.data(), name.size()},
-                        .str = {value.data(), value.size()}
-                    };
-                }
-            }, label);
+        auto ffiLabel = std::visit(labelsVisitor, label);
         ffiLabels.push_back(ffiLabel);
     }
 

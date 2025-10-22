@@ -147,8 +147,6 @@ private:
     std::string _profileThreadName;
 
     ICorProfilerInfo4* _info;
-    std::shared_mutex _threadIdMutex;
-    std::shared_mutex _threadNameMutex;
 #ifdef LINUX
     // Linux only
     // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWrapper library.
@@ -169,40 +167,20 @@ private:
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
-    {
-        auto l = std::shared_lock(_threadIdMutex);
-        if (!_profileThreadId.empty())
-        {
-            return _profileThreadId;
-        }
-    }
-
-    auto id = BuildProfileThreadId();
-    std::unique_lock l(_threadIdMutex);
-    if (_profileThreadId.empty())
-    {
-        _profileThreadId = std::move(id);
-    }
+    static std::once_flag profileThreadIdOnceFlag;
+    std::call_once(profileThreadIdOnceFlag, [this]() {
+        _profileThreadId = BuildProfileThreadId();
+    });
 
     return _profileThreadId;
 }
 
 std::string ManagedThreadInfo::GetProfileThreadName()
 {
-    {
-        std::shared_lock l(_threadNameMutex);
-        if (!_profileThreadName.empty())
-        {
-            return _profileThreadName;
-        }
-    }
-
-    auto s = BuildProfileThreadName();
-    std::unique_lock l(_threadNameMutex);
-    if (_profileThreadName.empty())
-    {
-        _profileThreadName = std::move(s);
-    }
+    static std::once_flag threadNameOnceFlag;
+    std::call_once(threadNameOnceFlag, [this]() {
+        _profileThreadName = BuildProfileThreadName();
+    });
     return _profileThreadName;
 }
 
@@ -270,12 +248,8 @@ inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle
     _osThreadId = osThreadId;
     _osThreadHandle = ScopedHandle(osThreadHandle);
 
-    auto id = BuildProfileThreadId();
-    std::unique_lock l(_threadIdMutex);
-    if (_profileThreadId.empty())
-    {
-        _profileThreadId = std::move(id);
-    }
+    // why do we compute the profile thread id here ?
+    GetProfileThreadId();
 }
 
 inline const shared::WSTRING& ManagedThreadInfo::GetThreadName() const
@@ -287,12 +261,8 @@ inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
 {
     _pThreadName = std::move(pThreadName);
 
-    auto s = BuildProfileThreadName();
-    std::unique_lock l(_threadNameMutex);
-    if (_profileThreadName.empty())
-    {
-        _profileThreadName = std::move(s);
-    }
+    // why computing thread name here ?
+    GetProfileThreadName();
 }
 
 inline std::chrono::nanoseconds ManagedThreadInfo::SetLastSampleTimestamp(std::chrono::nanoseconds value)
