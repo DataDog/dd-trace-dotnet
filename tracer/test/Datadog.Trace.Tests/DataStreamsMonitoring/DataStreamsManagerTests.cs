@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -312,12 +313,14 @@ public class DataStreamsManagerTests
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
-        return new DataStreamsManager(
-            env: "foo",
-            defaultServiceName: "bar",
-            writer,
-            isInDefaultState: false,
-            processTags: null);
+        var settings = TracerSettings.Create(
+            new()
+            {
+                { ConfigurationKeys.Environment, "foo" },
+                { ConfigurationKeys.ServiceName, "bar" },
+                { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
+            });
+        return new DataStreamsManager(settings, writer, processTags: null);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

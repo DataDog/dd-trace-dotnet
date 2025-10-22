@@ -176,7 +176,7 @@ namespace Datadog.Trace
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
-            dataStreamsManager ??= DataStreamsManager.Create(settings, profiler.Settings, discoveryService, defaultServiceName);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, profiler.Settings, discoveryService);
 
             if (ShouldEnableRemoteConfiguration(settings))
             {
