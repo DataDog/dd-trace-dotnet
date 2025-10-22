@@ -66,12 +66,12 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        internal static void OnlyForTests_ApplyConfiguration(IConfigurationSource dynamicConfig)
+        internal static void OnlyForTests_ApplyConfiguration(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
         {
-            OnConfigurationChanged(dynamicConfig);
+            OnConfigurationChanged(dynamicConfig, tracerSettings);
         }
 
-        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig)
+        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
         {
             var manualConfig = GlobalConfigurationSource.ManualConfigurationSource;
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Configuration
             // so that it can be picked up by other configuration updaters, e.g. config in code
             GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
 
-            var wasUpdated = Tracer.Instance.Settings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
+            var wasUpdated = tracerSettings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
             if (wasUpdated)
             {
                 Log.Information("Setting updates made via configuration in code were applied");
@@ -189,7 +189,8 @@ namespace Datadog.Trace.Configuration
         private void ApplyMergedConfiguration(List<RemoteConfiguration> remoteConfigurations)
         {
             // Get current service/environment for filtering
-            var currentSettings = Tracer.Instance.CurrentTraceSettings.Settings;
+            var tracer = Tracer.Instance;
+            var currentSettings = tracer.CurrentTraceSettings.Settings;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 remoteConfigurations,
@@ -198,7 +199,7 @@ namespace Datadog.Trace.Configuration
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
 
-            OnConfigurationChanged(configurationSource);
+            OnConfigurationChanged(configurationSource, tracer.Settings);
         }
     }
 }
