@@ -74,7 +74,8 @@ namespace Datadog.Trace
             {
                 if (Profiler.Instance.Status.IsProfilerReady)
                 {
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.PerTraceSettings.Settings.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                    var mutableSettings = tracer.PerTraceSettings.Settings;
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion);
                 }
             }
             catch (Exception ex)
@@ -149,7 +150,7 @@ namespace Datadog.Trace
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager, telemetry);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings,
@@ -239,9 +240,9 @@ namespace Datadog.Trace
             return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager, telemetry);
+            return new GitMetadataTagsProvider(settings, initialMutableSettings, scopeManager, telemetry);
         }
 
         protected virtual bool ShouldEnableRemoteConfiguration(TracerSettings settings)

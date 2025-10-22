@@ -426,6 +426,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
+            tracer.Setup(x => x.PerTraceSettings).Returns(new PerTraceSettings(null, null, null!, MutableSettings.CreateWithoutDefaultSources(new(NullConfigurationSource.Instance))));
             var traceContext = new TraceContext(tracer.Object);
             var rootSpanContext = new SpanContext(null, traceContext, null);
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
