@@ -207,15 +207,15 @@ public class SettingsInstrumentationTests
         var automatic = new TracerSettings(configSource);
 
         AssertEquivalent(manual, automatic);
-        automatic.MutableSettings.ServiceNameMappings.Should().Equal(mappings);
-        automatic.MutableSettings.HttpClientErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
-        automatic.MutableSettings.HttpServerErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+        automatic.Manager.InitialMutableSettings.ServiceNameMappings.Should().Equal(mappings);
+        automatic.Manager.InitialMutableSettings.HttpClientErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
+        automatic.Manager.InitialMutableSettings.HttpServerErrorStatusCodes.Should().Equal(MutableSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
 
-        automatic.MutableSettings.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
-        automatic.MutableSettings.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
-        automatic.MutableSettings.Integrations[IntegrationId.Aerospike].Enabled.Should().BeFalse();
-        automatic.MutableSettings.Integrations[IntegrationId.Grpc].AnalyticsEnabled.Should().BeTrue();
-        automatic.MutableSettings.Integrations[IntegrationId.Couchbase].AnalyticsSampleRate.Should().Be(0.5);
+        automatic.Manager.InitialMutableSettings.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
+        automatic.Manager.InitialMutableSettings.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
+        automatic.Manager.InitialMutableSettings.Integrations[IntegrationId.Aerospike].Enabled.Should().BeFalse();
+        automatic.Manager.InitialMutableSettings.Integrations[IntegrationId.Grpc].AnalyticsEnabled.Should().BeTrue();
+        automatic.Manager.InitialMutableSettings.Integrations[IntegrationId.Couchbase].AnalyticsSampleRate.Should().Be(0.5);
     }
 
     [Fact]
@@ -230,26 +230,26 @@ public class SettingsInstrumentationTests
 
         manual.AgentUri.Should().Be(automatic.Exporter.AgentUri);
         manual.Exporter.AgentUri.Should().Be(automatic.Exporter.AgentUri);
-        manual.AnalyticsEnabled.Should().Be(automatic.MutableSettings.AnalyticsEnabled);
-        manual.CustomSamplingRules.Should().Be(automatic.MutableSettings.CustomSamplingRules);
-        manual.Environment.Should().Be(automatic.MutableSettings.Environment);
-        manual.GlobalSamplingRate.Should().Be(automatic.MutableSettings.GlobalSamplingRate);
-        manual.GlobalTags.Should().BeEquivalentTo(automatic.MutableSettings.GlobalTags);
-        manual.HeaderTags.Should().BeEquivalentTo(automatic.MutableSettings.HeaderTags);
+        manual.AnalyticsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.AnalyticsEnabled);
+        manual.CustomSamplingRules.Should().Be(automatic.Manager.InitialMutableSettings.CustomSamplingRules);
+        manual.Environment.Should().Be(automatic.Manager.InitialMutableSettings.Environment);
+        manual.GlobalSamplingRate.Should().Be(automatic.Manager.InitialMutableSettings.GlobalSamplingRate);
+        manual.GlobalTags.Should().BeEquivalentTo(automatic.Manager.InitialMutableSettings.GlobalTags);
+        manual.HeaderTags.Should().BeEquivalentTo(automatic.Manager.InitialMutableSettings.HeaderTags);
         // force fluent assertions to just compare the properties, not use the `Equals` implementation
         manual.Integrations.Settings.Should()
               .BeEquivalentTo(
-                   automatic.MutableSettings.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x),
+                   automatic.Manager.InitialMutableSettings.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x),
                    options => options.ComparingByMembers(typeof(IntegrationSettings)));
-        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.MutableSettings.KafkaCreateConsumerScopeEnabled);
-        manual.LogsInjectionEnabled.Should().Be(automatic.MutableSettings.LogsInjectionEnabled);
-        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MutableSettings.MaxTracesSubmittedPerSecond);
-        manual.ServiceName.Should().Be(automatic.MutableSettings.ServiceName);
-        manual.ServiceVersion.Should().Be(automatic.MutableSettings.ServiceVersion);
-        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.MutableSettings.StartupDiagnosticLogEnabled);
+        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.Manager.InitialMutableSettings.KafkaCreateConsumerScopeEnabled);
+        manual.LogsInjectionEnabled.Should().Be(automatic.Manager.InitialMutableSettings.LogsInjectionEnabled);
+        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond);
+        manual.ServiceName.Should().Be(automatic.Manager.InitialMutableSettings.ServiceName);
+        manual.ServiceVersion.Should().Be(automatic.Manager.InitialMutableSettings.ServiceVersion);
+        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled);
         manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
-        manual.TraceEnabled.Should().Be(automatic.MutableSettings.TraceEnabled);
-        manual.TracerMetricsEnabled.Should().Be(automatic.MutableSettings.TracerMetricsEnabled);
+        manual.TraceEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TraceEnabled);
+        manual.TracerMetricsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TracerMetricsEnabled);
 
         manual.Integrations[nameof(IntegrationId.OpenTelemetry)].Enabled.Should().BeFalse();
         manual.Integrations[nameof(IntegrationId.Kafka)].Enabled.Should().BeFalse();
@@ -264,26 +264,26 @@ public class SettingsInstrumentationTests
         GetTransformedAgentUri(manual.AgentUri).Should().Be(automatic.Exporter.AgentUri);
         GetTransformedAgentUri(manual.Exporter.AgentUri).Should().Be(automatic.Exporter.AgentUri);
 
-        manual.AnalyticsEnabled.Should().Be(automatic.MutableSettings.AnalyticsEnabled);
-        manual.CustomSamplingRules.Should().Be(automatic.MutableSettings.CustomSamplingRules);
+        manual.AnalyticsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.AnalyticsEnabled);
+        manual.CustomSamplingRules.Should().Be(automatic.Manager.InitialMutableSettings.CustomSamplingRules);
         manual.DiagnosticSourceEnabled.Should().Be(GlobalSettings.Instance.DiagnosticSourceEnabled);
-        manual.Environment.Should().Be(automatic.MutableSettings.Environment);
-        manual.GlobalSamplingRate.Should().Be(automatic.MutableSettings.GlobalSamplingRate);
-        manual.GlobalTags.Should().BeEquivalentTo(automatic.MutableSettings.GlobalTags);
+        manual.Environment.Should().Be(automatic.Manager.InitialMutableSettings.Environment);
+        manual.GlobalSamplingRate.Should().Be(automatic.Manager.InitialMutableSettings.GlobalSamplingRate);
+        manual.GlobalTags.Should().BeEquivalentTo(automatic.Manager.InitialMutableSettings.GlobalTags);
         // These _aren't_ necessarily equivalent because of DisabledIntegrations.
         // If you add an integration to the manual.DisabledIntegrations, then the automatic.Integrations
         // will include it, but the original manual.Integrations _won't_. All a bit of a mess, but
         // essentially due to the legacy design of the TracerSettings object
         // manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
-        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.MutableSettings.KafkaCreateConsumerScopeEnabled);
-        manual.LogsInjectionEnabled.Should().Be(automatic.MutableSettings.LogsInjectionEnabled);
-        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MutableSettings.MaxTracesSubmittedPerSecond);
-        manual.ServiceName.Should().Be(automatic.MutableSettings.ServiceName);
-        manual.ServiceVersion.Should().Be(automatic.MutableSettings.ServiceVersion);
-        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.MutableSettings.StartupDiagnosticLogEnabled);
+        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.Manager.InitialMutableSettings.KafkaCreateConsumerScopeEnabled);
+        manual.LogsInjectionEnabled.Should().Be(automatic.Manager.InitialMutableSettings.LogsInjectionEnabled);
+        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond);
+        manual.ServiceName.Should().Be(automatic.Manager.InitialMutableSettings.ServiceName);
+        manual.ServiceVersion.Should().Be(automatic.Manager.InitialMutableSettings.ServiceVersion);
+        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled);
         manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
-        manual.TraceEnabled.Should().Be(automatic.MutableSettings.TraceEnabled);
-        manual.TracerMetricsEnabled.Should().Be(automatic.MutableSettings.TracerMetricsEnabled);
+        manual.TraceEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TraceEnabled);
+        manual.TracerMetricsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.TracerMetricsEnabled);
 
         Uri GetTransformedAgentUri(Uri agentUri)
             => ExporterSettings.Create(new()
@@ -347,29 +347,29 @@ public class SettingsInstrumentationTests
         });
 
         // verify that all the settings are as expected
-        automatic.MutableSettings.AnalyticsEnabled.Should().Be(true);
-        automatic.MutableSettings.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
+        automatic.Manager.InitialMutableSettings.AnalyticsEnabled.Should().Be(true);
+        automatic.Manager.InitialMutableSettings.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
         GlobalSettings.Instance.DiagnosticSourceEnabled.Should().Be(true);
-        automatic.MutableSettings.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry", "Kafka"]);
-        automatic.MutableSettings.Environment.Should().Be("my-test-env");
-        automatic.MutableSettings.GlobalSamplingRate.Should().Be(0.5);
-        automatic.MutableSettings.GlobalTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "tag1", "value" } });
-        automatic.MutableSettings.GrpcTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "grpc1", "grpc-value" } });
-        automatic.MutableSettings.HeaderTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "header1", "header-value" } });
-        automatic.MutableSettings.KafkaCreateConsumerScopeEnabled.Should().Be(false);
-        automatic.MutableSettings.LogsInjectionEnabled.Should().Be(true);
-        automatic.MutableSettings.MaxTracesSubmittedPerSecond.Should().Be(50);
-        automatic.MutableSettings.ServiceName.Should().Be("my-test-service");
-        automatic.MutableSettings.ServiceVersion.Should().Be("1.2.3");
-        automatic.MutableSettings.StartupDiagnosticLogEnabled.Should().Be(false);
+        automatic.Manager.InitialMutableSettings.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry", "Kafka"]);
+        automatic.Manager.InitialMutableSettings.Environment.Should().Be("my-test-env");
+        automatic.Manager.InitialMutableSettings.GlobalSamplingRate.Should().Be(0.5);
+        automatic.Manager.InitialMutableSettings.GlobalTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "tag1", "value" } });
+        automatic.Manager.InitialMutableSettings.GrpcTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "grpc1", "grpc-value" } });
+        automatic.Manager.InitialMutableSettings.HeaderTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "header1", "header-value" } });
+        automatic.Manager.InitialMutableSettings.KafkaCreateConsumerScopeEnabled.Should().Be(false);
+        automatic.Manager.InitialMutableSettings.LogsInjectionEnabled.Should().Be(true);
+        automatic.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond.Should().Be(50);
+        automatic.Manager.InitialMutableSettings.ServiceName.Should().Be("my-test-service");
+        automatic.Manager.InitialMutableSettings.ServiceVersion.Should().Be("1.2.3");
+        automatic.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled.Should().Be(false);
         automatic.StatsComputationEnabled.Should().Be(true);
-        automatic.MutableSettings.TraceEnabled.Should().Be(false);
-        automatic.MutableSettings.TracerMetricsEnabled.Should().Be(true);
+        automatic.Manager.InitialMutableSettings.TraceEnabled.Should().Be(false);
+        automatic.Manager.InitialMutableSettings.TracerMetricsEnabled.Should().Be(true);
         automatic.Exporter.AgentUri.Should().Be(new Uri("http://127.0.0.1:1234"));
-        automatic.MutableSettings.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
-        automatic.MutableSettings.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
-        automatic.MutableSettings.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
-        automatic.MutableSettings.Integrations[nameof(IntegrationId.Kafka)].Enabled.Should().BeFalse();
+        automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
+        automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
+        automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
+        automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Kafka)].Enabled.Should().BeFalse();
 
         return automatic;
     }
