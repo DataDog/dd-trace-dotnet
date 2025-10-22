@@ -120,15 +120,15 @@ namespace Datadog.Trace.Tests.Configuration
             using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             // tracing is enabled by default
-            tracerManager.Settings.TraceEnabled.Should().BeTrue();
+            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeTrue();
 
             // disable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", false)), tracerSettings);
-            tracerManager.Settings.TraceEnabled.Should().BeFalse();
+            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeFalse();
 
             // re-enable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)), tracerSettings);
-            tracerManager.Settings.TraceEnabled.Should().BeTrue();
+            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeTrue();
         }
 
         [Fact]
@@ -150,8 +150,8 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
             using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
-            tracerManager.Settings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
-            tracerManager.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
+            tracerManager.Settings.MutableSettings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
+            tracerManager.Settings.MutableSettings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
             var rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
@@ -181,8 +181,8 @@ namespace Datadog.Trace.Tests.Configuration
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             var remoteSamplingRulesJson = JsonConvert.SerializeObject(remoteSamplingRulesConfig);
-            tracerManager.Settings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
-            tracerManager.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
+            tracerManager.Settings.MutableSettings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
+            tracerManager.Settings.MutableSettings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
             rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 

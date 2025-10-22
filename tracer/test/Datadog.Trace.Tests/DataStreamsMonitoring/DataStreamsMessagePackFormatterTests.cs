@@ -109,7 +109,7 @@ public class DataStreamsMessagePackFormatterTests
 
         var expected = new MockDataStreamsPayload
         {
-            Env = settings.Environment,
+            Env = settings.MutableSettings.Environment,
             Service = service,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,

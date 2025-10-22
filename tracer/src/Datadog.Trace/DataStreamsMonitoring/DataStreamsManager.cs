@@ -59,7 +59,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
+        return new DataStreamsManager(settings.MutableSettings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
     }
 
     public async Task DisposeAsync()

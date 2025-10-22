@@ -92,17 +92,17 @@ internal static class OtlpLogsSerializer
 
     private static int WriteResource(byte[] buffer, int writePosition, TracerSettings settings)
     {
-        var serviceName = settings.ServiceName ?? "unknown_service:dotnet";
+        var serviceName = settings.MutableSettings.ServiceName ?? "unknown_service:dotnet";
         writePosition = WriteResourceAttribute(buffer, writePosition, "service.name", serviceName);
 
-        if (!StringUtil.IsNullOrEmpty(settings.ServiceVersion))
+        if (!StringUtil.IsNullOrEmpty(settings.MutableSettings.ServiceVersion))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "service.version", settings.ServiceVersion!);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "service.version", settings.MutableSettings.ServiceVersion!);
         }
 
-        if (!StringUtil.IsNullOrEmpty(settings.Environment))
+        if (!StringUtil.IsNullOrEmpty(settings.MutableSettings.Environment))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment!);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.MutableSettings.Environment!);
         }
 
         // Write telemetry SDK attributes
@@ -110,9 +110,9 @@ internal static class OtlpLogsSerializer
         writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.language", "dotnet");
         writePosition = WriteResourceAttribute(buffer, writePosition, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
-        if (settings.GlobalTags.Count > 0)
+        if (settings.MutableSettings.GlobalTags.Count > 0)
         {
-            foreach (var tag in settings.GlobalTags)
+            foreach (var tag in settings.MutableSettings.GlobalTags)
             {
                 if (IsHandledResourceAttribute(tag.Key))
                 {
