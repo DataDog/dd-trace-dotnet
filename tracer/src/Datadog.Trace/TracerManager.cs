@@ -670,7 +670,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup(newManager.Settings);
+                OneTimeSetup(newManager.Settings, newManager.SettingsManager);
             }
 
             if (newManager.PerTraceSettings.Settings.StartupDiagnosticLogEnabled)
@@ -681,7 +681,7 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup(TracerSettings tracerSettings)
+        private static void OneTimeSetup(TracerSettings tracerSettings, SettingsManager settingsManager)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
@@ -691,6 +691,25 @@ namespace Datadog.Trace
 
             // Record the service discovery metadata
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
+
+            // Register for rebuilding the settings on changes
+            // TODO: This is only temporary, we want to _stop_ rebuilding everything whenever settings change in the future
+            // We also don't bother to dispose this because we never unsubscribe
+            settingsManager.SubscribeToChanges(updatedSettings =>
+            {
+                var newSettings = updatedSettings switch
+                {
+                    { Exporter: { } e, Mutable: { } m } => Tracer.Instance.Settings with { Exporter = e, MutableSettings = m },
+                    { Exporter: { } e } => Tracer.Instance.Settings with { Exporter = e },
+                    { Mutable: { } m } => Tracer.Instance.Settings with { MutableSettings = m },
+                    _ => null,
+                };
+                if (newSettings != null)
+                {
+                    // Update the global instance
+                    Trace.Tracer.Configure(newSettings);
+                }
+            });
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
