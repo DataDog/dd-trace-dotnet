@@ -189,7 +189,7 @@ public class DataStreamsMessagePackFormatterTests
     {
         var bucketDuration = 10_000_000_000;
         var settings = TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.Environment, "my-env" }, { ConfigurationKeys.PropagateProcessTags, "true" } });
-        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), "service=name");
+        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         using var ms = new MemoryStream();
         formatter.Serialize(ms, bucketDuration, [], []);
