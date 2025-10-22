@@ -33,8 +33,11 @@ public class PopulateDictionaryIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values, bool useDefaultSources)
     {
+        // This creates a "one off", "throw away" instance of the tracer settings, which ignores previous configuration etc
+        // However, we _can_ reuse the existing "global" tracer settings if they use default sources, and just use the "initial"
+        // settings for the "mutable" settings
         var settings = useDefaultSources
-                           ? Trace.Configuration.TracerSettings.FromDefaultSourcesInternal()
+                           ? Datadog.Trace.Tracer.Instance.Settings
                            : new Trace.Configuration.TracerSettings(null, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         PopulateSettings(values, settings);
@@ -46,31 +49,33 @@ public class PopulateDictionaryIntegration
     internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Configuration.TracerSettings settings)
     {
         // record all the settings in the dictionary
-        values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUri;
+        var mutableSettings = settings.Manager.InitialMutableSettings;
+        var exporterSettings = settings.Manager.InitialExporterSettings;
+        values[TracerSettingKeyConstants.AgentUriKey] = exporterSettings.AgentUri;
 #pragma warning disable CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.MutableSettings.AnalyticsEnabled;
+        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = mutableSettings.AnalyticsEnabled;
 #pragma warning restore CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.MutableSettings.CustomSamplingRules;
+        values[TracerSettingKeyConstants.CustomSamplingRules] = mutableSettings.CustomSamplingRules;
         values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
-        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.MutableSettings.DisabledIntegrationNames;
-        values[TracerSettingKeyConstants.EnvironmentKey] = settings.MutableSettings.Environment;
-        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.MutableSettings.GlobalSamplingRate;
-        values[TracerSettingKeyConstants.GrpcTags] = settings.MutableSettings.GrpcTags;
-        values[TracerSettingKeyConstants.HeaderTags] = settings.MutableSettings.HeaderTags;
-        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.MutableSettings.KafkaCreateConsumerScopeEnabled;
+        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = mutableSettings.DisabledIntegrationNames;
+        values[TracerSettingKeyConstants.EnvironmentKey] = mutableSettings.Environment;
+        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = mutableSettings.GlobalSamplingRate;
+        values[TracerSettingKeyConstants.GrpcTags] = mutableSettings.GrpcTags;
+        values[TracerSettingKeyConstants.HeaderTags] = mutableSettings.HeaderTags;
+        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = mutableSettings.KafkaCreateConsumerScopeEnabled;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.MutableSettings.LogsInjectionEnabled;
+        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = mutableSettings.LogsInjectionEnabled;
 #pragma warning restore DD0002
-        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MutableSettings.MaxTracesSubmittedPerSecond;
-        values[TracerSettingKeyConstants.ServiceNameKey] = settings.MutableSettings.ServiceName;
-        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.MutableSettings.ServiceVersion;
-        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.MutableSettings.StartupDiagnosticLogEnabled;
+        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = mutableSettings.MaxTracesSubmittedPerSecond;
+        values[TracerSettingKeyConstants.ServiceNameKey] = mutableSettings.ServiceName;
+        values[TracerSettingKeyConstants.ServiceVersionKey] = mutableSettings.ServiceVersion;
+        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = mutableSettings.StartupDiagnosticLogEnabled;
         values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabled;
-        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.MutableSettings.TraceEnabled;
-        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.MutableSettings.TracerMetricsEnabled;
+        values[TracerSettingKeyConstants.TraceEnabledKey] = mutableSettings.TraceEnabled;
+        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = mutableSettings.TracerMetricsEnabled;
 
-        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.MutableSettings.GlobalTags;
-        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.MutableSettings.Integrations);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = mutableSettings.GlobalTags;
+        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(mutableSettings.Integrations);
     }
 
     private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
