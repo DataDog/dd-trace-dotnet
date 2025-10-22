@@ -22,7 +22,7 @@ internal class ServiceDiscoveryHelper
         Exception
     }
 
-    internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
+    internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings, MutableSettings mutableSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
         var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
@@ -36,9 +36,9 @@ internal class ServiceDiscoveryHelper
                     TracerConstants.Language,
                     TracerConstants.ThreePartVersion,
                     Environment.MachineName,
-                    tracerSettings.MutableSettings.DefaultServiceName,
-                    tracerSettings.Environment,
-                    tracerSettings.ServiceVersion);
+                    mutableSettings.DefaultServiceName,
+                    mutableSettings.Environment,
+                    mutableSettings.ServiceVersion);
 
                 if (result.Tag == ResultTag.Error)
                 {
