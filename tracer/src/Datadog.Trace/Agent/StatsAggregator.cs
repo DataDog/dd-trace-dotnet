@@ -43,6 +43,7 @@ namespace Datadog.Trace.Agent
         private readonly ErrorSampler _errorSampler;
         private readonly RareSampler _rareSampler;
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
+        private readonly IDisposable _settingSubscription;
 
         private int _currentBuffer;
 
@@ -63,12 +64,18 @@ namespace Datadog.Trace.Agent
             _rareSampler = new RareSampler(settings);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
-            var header = new ClientStatsPayload
+            // Create with the initial mutable settings, but be aware that this could change later
+            var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
             {
-                Environment = settings.MutableSettings.Environment,
-                Version = settings.MutableSettings.ServiceVersion,
                 HostName = HostMetadata.Instance.Hostname
             };
+            _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    header.UpdateDetails(mutable);
+                }
+            });
 
             for (int i = 0; i < _buffers.Length; i++)
             {
@@ -100,6 +107,7 @@ namespace Datadog.Trace.Agent
         {
             _discoveryService.RemoveSubscription(HandleConfigUpdate);
             _processExit.TrySetResult(true);
+            _settingSubscription.Dispose();
             return _flushTask;
         }
 
