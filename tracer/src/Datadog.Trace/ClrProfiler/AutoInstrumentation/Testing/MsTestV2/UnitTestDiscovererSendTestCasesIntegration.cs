@@ -6,7 +6,6 @@
 
 using System.Collections;
 using System.ComponentModel;
-using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -29,8 +28,14 @@ public class UnitTestDiscovererSendTestCasesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref string? source, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {
-        if (testElements?.Cast<object>().Count() is { } count)
+        if (testElements is not null)
         {
+            var count = 0;
+            foreach (var ele in testElements)
+            {
+                count++;
+            }
+
             MsTestIntegration.AddTotalTestCases(count);
         }
 
@@ -58,8 +63,14 @@ public class UnitTestDiscovererSendTestCasesIntegrationV4
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {
-        if (testElements?.Cast<object>().Count() is { } count)
+        if (testElements is not null)
         {
+            var count = 0;
+            foreach (var ele in testElements)
+            {
+                count++;
+            }
+
             MsTestIntegration.AddTotalTestCases(count);
         }
 
