@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.Admin.DescribeClusterOptions
-/// Used as an optional parameter for DescribeClusterAsync
+/// Used as an optional parameter for DescribeClusterAsync extension method
 /// </summary>
 internal interface IDescribeClusterOptions
 {
