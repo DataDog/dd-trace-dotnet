@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -25,12 +25,10 @@
                         "value": "First"
                       }
                     },
-                    "type": "Lazy`1",
-                    "value": "Lazy`1"
+                    "type": "Lazy`1"
                   }
                 },
-                "type": "HasFieldLazyValueInitialized",
-                "value": "HasFieldLazyValueInitialized"
+                "type": "HasFieldLazyValueInitialized"
               }
             }
           },
@@ -53,12 +51,10 @@
                         "value": "First"
                       }
                     },
-                    "type": "Lazy`1",
-                    "value": "Lazy`1"
+                    "type": "Lazy`1"
                   }
                 },
-                "type": "HasFieldLazyValueInitialized",
-                "value": "HasFieldLazyValueInitialized"
+                "type": "HasFieldLazyValueInitialized"
               }
             },
             "locals": {
@@ -84,6 +80,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasFieldLazyValueInitialized",

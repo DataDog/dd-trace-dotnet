@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "ManyLocals",
-                "value": "ManyLocals"
+                "type": "ManyLocals"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "ManyLocals",
-                "value": "ManyLocals"
+                "type": "ManyLocals"
               }
             },
             "locals": {
@@ -4040,6 +4038,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodWith1000Variables",
       "name": "Samples.Probes.TestRuns.SmokeTests.ManyLocals",

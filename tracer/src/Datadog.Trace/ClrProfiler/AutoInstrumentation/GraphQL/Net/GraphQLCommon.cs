@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             try
             {
                 var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
+                string serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
                 scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;

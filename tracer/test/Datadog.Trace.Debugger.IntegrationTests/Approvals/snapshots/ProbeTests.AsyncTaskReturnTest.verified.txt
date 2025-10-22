@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -27,8 +27,7 @@
                         "value": "Maintenance"
                       }
                     },
-                    "type": "Room",
-                    "value": "Room"
+                    "type": "Room"
                   },
                   {
                     "fields": {
@@ -41,8 +40,7 @@
                         "value": "Ready"
                       }
                     },
-                    "type": "Room",
-                    "value": "Room"
+                    "type": "Room"
                   }
                 ],
                 "size": 2,
@@ -73,8 +71,7 @@
                     "value": "Maintenance"
                   }
                 },
-                "type": "Room",
-                "value": "Room"
+                "type": "Room"
               }
             },
             "staticFields": {
@@ -91,8 +88,7 @@
                         "value": "Maintenance"
                       }
                     },
-                    "type": "Room",
-                    "value": "Room"
+                    "type": "Room"
                   },
                   {
                     "fields": {
@@ -105,8 +101,7 @@
                         "value": "Ready"
                       }
                     },
-                    "type": "Room",
-                    "value": "Room"
+                    "type": "Room"
                   }
                 ],
                 "size": 2,
@@ -130,6 +125,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnTest",

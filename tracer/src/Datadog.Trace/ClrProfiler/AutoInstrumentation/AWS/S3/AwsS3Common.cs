@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
             try
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsS3Tags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsS3ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(DatadogAwsS3ServiceName);
                 var operationName = GetOperationName(tracer);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;

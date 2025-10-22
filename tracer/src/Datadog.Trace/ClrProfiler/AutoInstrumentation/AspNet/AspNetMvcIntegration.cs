@@ -180,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     if (headers is not null)
                     {
-                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
 
                     tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);

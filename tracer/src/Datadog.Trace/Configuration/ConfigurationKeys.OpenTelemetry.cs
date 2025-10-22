@@ -88,7 +88,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to set the OTLP protocol for metrics export.
             /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-            /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to grpc.
             /// </summary>
             public const string ExporterOtlpMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL";
 
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to set the OTLP protocol (fallback for metrics-specific protocol).
             /// Used when <see cref="ExporterOtlpMetricsProtocol"/> is not set.
-            /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to grpc.
             /// </summary>
             public const string ExporterOtlpProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL";
 
@@ -151,6 +151,43 @@ namespace Datadog.Trace.Configuration
             /// Default value is 10000ms.
             /// </summary>
             public const string ExporterOtlpTimeoutMs = "OTEL_EXPORTER_OTLP_TIMEOUT";
+
+            /// <summary>
+            /// Configuration key to set the exporter for logs.
+            /// We only recognize the values of 'otlp' and 'none', a value of
+            /// 'none' disables the emission of logs.
+            /// </summary>
+            public const string LogsExporter = "OTEL_LOGS_EXPORTER";
+
+            /// <summary>
+            /// Configuration key to set the OTLP protocol for logs export.
+            /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
+            /// Valid values: grpc, http/protobuf, http/json, defaults to grpc.
+            /// </summary>
+            public const string ExporterOtlpLogsProtocol = "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL";
+
+            /// <summary>
+            /// Configuration key to set the OTLP endpoint URL for logs.
+            /// Takes precedence over <see cref="ExporterOtlpEndpoint"/>.
+            /// This value typically ends with v1/logs when using OTLP/HTTP.
+            /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
+            /// Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/logs
+            /// </summary>
+            public const string ExporterOtlpLogsEndpoint = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT";
+
+            /// <summary>
+            /// Configuration key to set custom headers for OTLP logs export.
+            /// Takes precedence over <see cref="ExporterOtlpHeaders"/>.
+            /// Format: api-key=key,other=value.
+            /// </summary>
+            public const string ExporterOtlpLogsHeaders = "OTEL_EXPORTER_OTLP_LOGS_HEADERS";
+
+            /// <summary>
+            /// Configuration key to set the request timeout for OTLP logs export in milliseconds.
+            /// Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
+            /// Default value is 10000ms.
+            /// </summary>
+            public const string ExporterOtlpLogsTimeoutMs = "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT";
         }
     }
 }

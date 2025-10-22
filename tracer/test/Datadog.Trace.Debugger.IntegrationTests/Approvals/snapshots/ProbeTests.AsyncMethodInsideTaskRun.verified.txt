@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -52,6 +52,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodInsideTaskRun",
@@ -72,16 +74,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncMethodInsideTaskRun",
-                "value": "AsyncMethodInsideTaskRun"
+                "type": "AsyncMethodInsideTaskRun"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncMethodInsideTaskRun",
-                "value": "AsyncMethodInsideTaskRun"
+                "type": "AsyncMethodInsideTaskRun"
               }
             },
             "locals": {
@@ -107,6 +107,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "RunInsideTask",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodInsideTaskRun",

@@ -14,12 +14,10 @@
                 pruned: true
               }
             },
-            type: ComplexClass,
-            value: ComplexClass
+            type: ComplexClass
           }
         },
-        type: VeryComplexClass,
-        value: VeryComplexClass
+        type: VeryComplexClass
       }
     }
   }

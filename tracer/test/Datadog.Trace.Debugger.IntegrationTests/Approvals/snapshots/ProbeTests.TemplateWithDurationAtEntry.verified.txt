@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "TemplateWithDurationAtEntry",
-                "value": "TemplateWithDurationAtEntry"
+                "type": "TemplateWithDurationAtEntry"
               }
             },
             "staticFields": {
@@ -31,8 +30,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "TemplateWithDurationAtEntry",
-                "value": "TemplateWithDurationAtEntry"
+                "type": "TemplateWithDurationAtEntry"
               }
             },
             "locals": {
@@ -68,6 +66,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.ExpressionTests.TemplateWithDurationAtEntry",
