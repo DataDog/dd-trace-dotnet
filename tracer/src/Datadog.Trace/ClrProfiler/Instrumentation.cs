@@ -379,7 +379,7 @@ namespace Datadog.Trace.ClrProfiler
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
                 {
                     Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
-                    OTelMetrics.MetricsRuntime.Start(Tracer.Instance.Settings);
+                    OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
                 }
             }
             catch (Exception ex)

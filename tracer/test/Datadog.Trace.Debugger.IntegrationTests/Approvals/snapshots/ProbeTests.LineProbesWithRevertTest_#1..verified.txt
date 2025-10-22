@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "Run"
               },
               "this": {
-                "type": "LineProbesWithRevertTest",
-                "value": "LineProbesWithRevertTest"
+                "type": "LineProbesWithRevertTest"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "Run"
               },
               "this": {
-                "type": "LineProbesWithRevertTest",
-                "value": "LineProbesWithRevertTest"
+                "type": "LineProbesWithRevertTest"
               }
             },
             "locals": {
@@ -60,6 +58,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.LineProbesWithRevertTest",
@@ -85,8 +85,7 @@
                   "value": "Run"
                 },
                 "this": {
-                  "type": "LineProbesWithRevertTest",
-                  "value": "LineProbesWithRevertTest"
+                  "type": "LineProbesWithRevertTest"
                 }
               },
               "locals": {
@@ -123,6 +122,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.LineProbesWithRevertTest",
@@ -148,8 +149,7 @@
                   "value": "Run"
                 },
                 "this": {
-                  "type": "LineProbesWithRevertTest",
-                  "value": "LineProbesWithRevertTest"
+                  "type": "LineProbesWithRevertTest"
                 }
               },
               "locals": {
@@ -186,6 +186,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.LineProbesWithRevertTest",
@@ -211,8 +213,7 @@
                   "value": "Run"
                 },
                 "this": {
-                  "type": "LineProbesWithRevertTest",
-                  "value": "LineProbesWithRevertTest"
+                  "type": "LineProbesWithRevertTest"
                 }
               },
               "locals": {
@@ -249,6 +250,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.LineProbesWithRevertTest",

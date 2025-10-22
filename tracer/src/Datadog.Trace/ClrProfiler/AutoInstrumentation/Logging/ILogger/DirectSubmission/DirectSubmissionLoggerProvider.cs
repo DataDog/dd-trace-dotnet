@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -23,9 +22,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         private readonly Func<string, DirectSubmissionLogger> _createLoggerFunc;
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
         private readonly IDirectSubmissionLogSink _sink;
-        private readonly LogFormatter? _formatter;
         private readonly DirectSubmissionLogLevel _minimumLogLevel;
-        private IExternalScopeProvider? _scopeProvider;
+        private readonly LogFormatter? _logFormatter;
+        private ILogEventCreator _logEventCreator;
 
         internal DirectSubmissionLoggerProvider(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLogLevel, IExternalScopeProvider? scopeProvider)
             : this(sink, formatter: null, minimumLogLevel, scopeProvider)
@@ -40,10 +39,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             IExternalScopeProvider? scopeProvider)
         {
             _sink = sink;
-            _formatter = formatter;
             _minimumLogLevel = minimumLogLevel;
             _createLoggerFunc = CreateLoggerImplementation;
-            _scopeProvider = scopeProvider;
+
+#if NETCOREAPP3_1_OR_GREATER
+            if (sink is OtlpSubmissionLogSink)
+            {
+                _logEventCreator = new OtelLogEventCreator();
+                return;
+            }
+#endif
+
+            _logFormatter = formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
+            _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
         }
 
         /// <summary>
@@ -59,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
         private DirectSubmissionLogger CreateLoggerImplementation(string name)
         {
-            return new DirectSubmissionLogger(name, _scopeProvider, _sink, _formatter, _minimumLogLevel);
+            return new DirectSubmissionLogger(name, _sink, _logEventCreator, _minimumLogLevel);
         }
 
         /// <inheritdoc cref="IDisposable.Dispose"/>
@@ -75,7 +83,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [DuckReverseMethod(ParameterTypeNames = new[] { "Microsoft.Extensions.Logging.IExternalScopeProvider, Microsoft.Extensions.Logging.Abstractions" })]
         public void SetScopeProvider(IExternalScopeProvider scopeProvider)
         {
-            _scopeProvider = scopeProvider;
+            if (_logFormatter != null)
+            {
+                _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
+            }
         }
     }
 }

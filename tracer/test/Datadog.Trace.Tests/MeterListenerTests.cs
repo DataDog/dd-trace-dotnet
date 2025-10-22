@@ -10,7 +10,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.OTelMetrics;
+using Datadog.Trace.OpenTelemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;

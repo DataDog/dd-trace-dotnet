@@ -153,6 +153,60 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
                 pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
+            
+            Add(
+                libraryName: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
+                version: "core-1.13.1",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.13.1", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
+                transform: filePath => RewriteCsFileWithStandardTransform(
+                    filePath,
+                    originalNamespace: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
+                    AddIfNetcoreapp31OrGreater,
+                    AddNullableDirectiveTransform,
+                    AddOpenTelemetryUsings),
+                relativePathsToExclude: new[]
+                {
+                    // Vendor gRPC and HTTP export clients for logs and metrics
+                    // Vendor low-level protobuf utilities: ProtobufSerializer, ProtobufWireType
+                    // Vendor ONLY field constants we actually use (Logs and Common)
+                    // EXCLUDE high-level serializers that depend on OpenTelemetry SDK types
+                    ".publicApi/",
+                    "Builder/",
+                    "PersistentStorage/",
+                    "Implementation/Serializer/ProtobufOtlpLogSerializer.cs",          
+                    "Implementation/Serializer/ProtobufOtlpMetricSerializer.cs",        
+                    "Implementation/Serializer/ProtobufOtlpTraceSerializer.cs",        
+                    "Implementation/Serializer/ProtobufOtlpResourceSerializer.cs",     
+                    "Implementation/Serializer/ProtobufOtlpTagWriter.cs",              
+                    "Implementation/Serializer/ProtobufOtlpMetricFieldNumberConstants.cs",  // Not used - metrics has own FieldNumbers ATM
+                    "Implementation/Serializer/ProtobufOtlpTraceFieldNumberConstants.cs",
+                    "Implementation/Transmission/",
+                    "Implementation/ActivityExtensions.cs",
+                    "Implementation/ExperimentalOptions.cs",
+                    "Implementation/SdkLimitOptions.cs",
+                    "Implementation/TelemetryType.cs",
+                    "Implementation/OpenTelemetryProtocolExporterEventSource.cs",
+                    "Implementation/OtlpServiceCollectionExtensions.cs",
+                    "Implementation/OtlpExporterOptionsConfigurationType.cs",
+                    "Implementation/OtlpSpecConfigDefinitions.cs",
+                    "Implementation/TimestampHelpers.cs",
+                    "Implementation/ExportClient/OtlpRetry.cs",
+                    "CHANGELOG.md",
+                    "README.md",
+                    "IOtlpExporterOptions.cs",
+                    "OtlpExporterOptions.cs",
+                    "OtlpExporterOptionsExtensions.cs",
+                    "OtlpExportProtocol.cs",  // In parent namespace OpenTelemetry.Exporter; keep in stub instead
+                    "OtlpExportProtocolParser.cs",
+                    "OtlpLogExporter.cs",
+                    "OtlpLogExporterHelperExtensions.cs",
+                    "OtlpMetricExporter.cs",
+                    "OtlpMetricExporterExtensions.cs",
+                    "OtlpSignalType.cs",
+                    "OtlpTraceExporter.cs",
+                    "OtlpTraceExporterHelperExtensions.cs"
+                });
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -397,6 +451,32 @@ namespace UpdateVendors
                 filePath,
                 fileContent,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+
+        private static string AddOpenTelemetryUsings(string filePath, string contents)
+        {
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ");
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line  
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives needed by OTel files
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            var usings = 
+                "using System;\n" +
+                "using System.Collections.Generic;\n" +
+                "using System.IO;\n" +
+                "using System.Linq;\n" +
+                "using System.Net.Http;\n" +
+                "using System.Threading;\n" +
+                "using System.Threading.Tasks;\n\n";
+
+            return contents.Insert(namespaceIndex, usings);
         }
     }
 }

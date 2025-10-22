@@ -8,6 +8,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -17,12 +18,12 @@ namespace Datadog.Trace.Tests
 {
     public class TraceContextTests
     {
-        private readonly Mock<IDatadogTracer> _tracerMock = new();
+        private readonly StubDatadogTracer _tracerMock = new();
 
         [Fact]
         public void UtcNow_GivesLegitTime()
         {
-            var traceContext = new TraceContext(_tracerMock.Object);
+            var traceContext = new TraceContext(_tracerMock);
 
             var now = traceContext.Clock.UtcNow;
             var expectedNow = DateTimeOffset.UtcNow;
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UtcNow_IsMonotonic()
         {
-            var traceContext = new TraceContext(_tracerMock.Object);
+            var traceContext = new TraceContext(_tracerMock);
 
             var t1 = traceContext.Clock.UtcNow;
             DateTimeOffset t2;
@@ -62,6 +63,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.PartialFlushEnabled, partialFlush },
                 { ConfigurationKeys.PartialFlushMinSpans, 5 },
             }));
+            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
 
             var traceContext = new TraceContext(tracer.Object);
 
@@ -139,6 +141,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.PartialFlushEnabled, true },
                 { ConfigurationKeys.PartialFlushMinSpans, partialFlushThreshold },
             }));
+            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
 
             ArraySegment<Span>? spans = null;
 
@@ -193,6 +196,7 @@ namespace Datadog.Trace.Tests
 
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>((s) => spans = s);
+            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
 
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);

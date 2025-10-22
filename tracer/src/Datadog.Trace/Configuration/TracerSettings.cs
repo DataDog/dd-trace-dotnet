@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -32,12 +33,10 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>()
-        {
-            "DD_TAGS"
-        };
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
 
         private readonly IConfigurationTelemetry _telemetry;
+        private readonly Lazy<string> _fallbackApplicationName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -203,24 +202,37 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
                             .AsInt32(defaultValue: 7_500);
 
+            var defaultAgentHost = config
+                .WithKeys(ConfigurationKeys.AgentHost)
+                .AsString(defaultValue: "localhost");
+
+            OtlpGeneralProtocol = config
+                                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                                .GetAs(
+                                    defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                    converter: x => x switch
+                                    {
+                                        not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                        not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                                        _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
+                                    },
+                                    validator: null);
+
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.HttpProtobuf, "http/protobuf"),
+                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
                                       converter: x => x switch
                                       {
-                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                                           not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
                                           _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
                                       },
                                       validator: null);
 
-            var defaultAgentHost = config
-                .WithKeys(ConfigurationKeys.AgentHost)
-                .AsString(defaultValue: "localhost");
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpGeneralProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
 
-            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                 .GetAs(
@@ -264,6 +276,75 @@ namespace Datadog.Trace.Configuration
                                        _ => ParsingResult<OtlpTemporalityPreference>.Failure(),
                                    },
                                    validator: null);
+
+            OtlpLogsProtocol = config
+                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                             .GetAs(
+                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  converter: x => x switch
+                                  {
+                                      not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                                      not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
+                                      not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                                      _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
+                                  },
+                                  validator: null);
+
+            OtlpLogsEndpoint = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
+                .GetAs(
+                    defaultValue: new DefaultResult<Uri>(
+                        result: OtlpLogsProtocol switch
+                        {
+                            OtlpProtocol.Grpc => OtlpEndpoint,
+                            _ => new Uri(OtlpEndpoint, "/v1/logs")
+                        },
+                        telemetryValue: $"{OtlpEndpoint}{(!OtlpLogsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/logs" : string.Empty)}"),
+                    validator: null,
+                    converter: uriString => new Uri(uriString));
+
+            OtlpLogsHeaders = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .AsDictionaryResult(separator: '=')
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+
+            OtlpLogsTimeoutMs = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .AsInt32(defaultValue: 10_000);
+
+            var otelLogsExporter = config
+                    .WithKeys(ConfigurationKeys.OpenTelemetry.LogsExporter);
+
+            var otelLogsExporterResult = otelLogsExporter
+               .AsBoolResult(
+                    null,
+                    value => value switch
+                    {
+                        not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
+                        not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
+                        _ => ParsingResult<bool>.Failure()
+                    });
+
+            // Per OpenTelemetry spec, OTEL_LOGS_EXPORTER defaults to "otlp" if not set
+            OtelLogsExporterEnabled = otelLogsExporterResult.ConfigurationResult switch
+            {
+                { IsPresent: true, IsValid: true, Result: true } => true,
+                { IsPresent: true, IsValid: true, Result: false } => false,
+                _ => true // Default to otlp per spec
+            };
+
+            if (otelLogsExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
+            {
+                ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogsExporter);
+            }
+
+            OpenTelemetryLogsEnabled = config
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
+                                    .AsBool(defaultValue: false);
+
+            OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
@@ -473,7 +554,7 @@ namespace Datadog.Trace.Configuration
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry, OpenTelemetryLogsEnabled);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
@@ -646,7 +727,11 @@ namespace Datadog.Trace.Configuration
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
                 commaSeparator);
 
-            MutableSettings = MutableSettings.Create(source, telemetry, errorLog, this);
+            // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
+            _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
+
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
+            MutableSettings = InitialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -657,7 +742,11 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings MutableSettings { get; }
+        internal MutableSettings InitialMutableSettings { get; }
+
+        internal MutableSettings MutableSettings { get; init; }
+
+        internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
         /// <inheritdoc cref="MutableSettings.Environment"/>
         public string? Environment => MutableSettings.Environment;
@@ -682,7 +771,7 @@ namespace Datadog.Trace.Configuration
         internal bool GitMetadataEnabled { get; }
 
         /// <inheritdoc cref="MutableSettings.TraceEnabled"/>
-        public bool TraceEnabled => DynamicSettings.TraceEnabled ?? MutableSettings.TraceEnabled;
+        public bool TraceEnabled => MutableSettings.TraceEnabled;
 
         /// <summary>
         /// Gets a value indicating whether APM traces are enabled.
@@ -768,6 +857,57 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference"/>
         internal OtlpTemporalityPreference OtlpMetricsTemporalityPreference { get; }
 
+       /// <summary>
+        /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
+        /// This is derived from <see cref="ConfigurationKeys.OpenTelemetry.LogsExporter"/> config where 'otlp' enables the exporter
+        /// and 'none' disables it and runtime metrics if related DD env var is not set.
+        /// Default is enabled (true).
+        /// </summary>
+        internal bool OtelLogsExporterEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether Datadog's OTLP logs feature is enabled.
+        /// This is set via DD_LOGS_OTEL_ENABLED (parallel to DD_METRICS_OTEL_ENABLED).
+        /// Default is disabled (false).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>
+        internal bool OpenTelemetryLogsEnabled { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for logs export with fallback behavior.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpLogsProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for logs export fallbacks on <see cref="OtlpEndpoint"/>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+        internal Uri OtlpLogsEndpoint { get; }
+
+        /// <summary>
+        /// Gets the OTLP headers for logs export with fallback behavior.
+        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+        internal IReadOnlyDictionary<string, string> OtlpLogsHeaders { get; }
+
+        /// <summary>
+        /// Gets the OTLP request timeout (in milliseconds) for logs.
+        /// Default is 10000ms (10s).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
+        internal int OtlpLogsTimeoutMs { get; }
+
+       /// <summary>
+        /// Gets the non siganl specific OTLP protocol.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpGeneralProtocol { get; }
+
         /// <summary>
         /// Gets the names of disabled ActivitySources.
         /// </summary>
@@ -777,22 +917,22 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; }
+        public ExporterSettings Exporter { get; init; }
 
         /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
 
         /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? MutableSettings.LogsInjectionEnabled;
+        public bool LogsInjectionEnabled => MutableSettings.LogsInjectionEnabled;
 
         /// <inheritdoc cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
         public int MaxTracesSubmittedPerSecond => MutableSettings.MaxTracesSubmittedPerSecond;
 
         /// <inheritdoc cref="MutableSettings.CustomSamplingRules"/>
-        public string? CustomSamplingRules => DynamicSettings.SamplingRules ?? MutableSettings.CustomSamplingRules;
+        public string? CustomSamplingRules => MutableSettings.CustomSamplingRules;
 
-        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
+        internal bool CustomSamplingRulesIsRemote => MutableSettings.CustomSamplingRulesIsRemote;
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
@@ -808,16 +948,16 @@ namespace Datadog.Trace.Configuration
         internal string? SpanSamplingRules { get; }
 
         /// <inheritdoc cref="MutableSettings.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate => DynamicSettings.GlobalSamplingRate ?? MutableSettings.GlobalSamplingRate;
+        public double? GlobalSamplingRate => MutableSettings.GlobalSamplingRate;
 
         /// <inheritdoc cref="MutableSettings.Integrations"/>
         public IntegrationSettingsCollection Integrations => MutableSettings.Integrations;
 
         /// <inheritdoc cref="MutableSettings.GlobalTags"/>
-        public IReadOnlyDictionary<string, string> GlobalTags => DynamicSettings.GlobalTags ?? MutableSettings.GlobalTags;
+        public IReadOnlyDictionary<string, string> GlobalTags => MutableSettings.GlobalTags;
 
         /// <inheritdoc cref="MutableSettings.HeaderTags"/>
-        public IReadOnlyDictionary<string, string> HeaderTags => DynamicSettings.HeaderTags ?? MutableSettings.HeaderTags;
+        public IReadOnlyDictionary<string, string> HeaderTags => MutableSettings.HeaderTags;
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -1164,8 +1304,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public int PartialFlushMinSpans { get; }
 
-        internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
-
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
@@ -1225,16 +1363,6 @@ namespace Datadog.Trace.Configuration
             return list.ToArray();
         }
 
-        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
-            => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
-
-        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => DynamicSettings.TraceEnabled != false && MutableSettings.IsIntegrationEnabled(integration, defaultValue);
-
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
-            => MutableSettings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
-
         internal string GetDefaultHttpClientExclusions()
         {
             if (IsRunningInAzureAppService)
@@ -1274,7 +1402,7 @@ namespace Datadog.Trace.Configuration
 
         private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
         {
-            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'http/protobuf', 'grpc', 'http/json'. Using default: http/protobuf", inputValue);
+            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
 

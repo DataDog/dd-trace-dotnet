@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -71,8 +71,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = filename;
                 scope.Span.Type = SpanTypes.System;

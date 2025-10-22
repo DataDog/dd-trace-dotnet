@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
 
         public static Scope? CreateServerSpan<T>(Tracer tracer, T instance, HttpRequest requestMessage)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 return null;
             }

@@ -1,0 +1,148 @@
+﻿[
+  {
+    "resource_logs": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "string_value": "OtlpLogsService"
+              }
+            },
+            {
+              "key": "deployment.environment",
+              "value": {
+                "string_value": "testing"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "string_value": "sdk-name"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "string_value": "dotnet"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "string_value": "sdk-version"
+              }
+            }
+          ]
+        },
+        "scope_logs": [
+          {
+            "scope": {
+              "name": "LogServiceName"
+            },
+            "log_records": [
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
+                "body": {
+                  "string_value": "Hello from OpenTelemetry logger within span context"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_TRACE",
+                "severity_text": "Trace",
+                "body": {
+                  "string_value": "This is a trace message within span context"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_WARN",
+                "severity_text": "Warning",
+                "body": {
+                  "string_value": "This is a warning message"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_ERROR",
+                "severity_text": "Error",
+                "body": {
+                  "string_value": "This is an error message"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
+                "body": {
+                  "string_value": "Hello from OpenTelemetry logger outside span context"
+                },
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_FATAL",
+                "severity_text": "Critical",
+                "body": {
+                  "string_value": "This is a critical message"
+                },
+                "observed_time_unix_nano": "0"
+              }
+            ]
+          },
+          {
+            "scope": {
+              "name": "OtherLibrary"
+            },
+            "log_records": [
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
+                "body": {
+                  "string_value": "Response from other library"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_DEBUG",
+                "severity_text": "Debug",
+                "body": {
+                  "string_value": "Debug information from other library"
+                },
+                "flags": 1,
+                "trace_id": "normalized-trace-id",
+                "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

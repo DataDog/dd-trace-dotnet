@@ -29,7 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -39,8 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
             try
             {
-                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsEventBridgeServiceName);
+                tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
+                var serviceName = perTraceSettings.GetServiceName(DatadogAwsEventBridgeServiceName);
                 var operationName = GetOperationName(tracer);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
                 tags.Service = EventBridgeServiceName;
                 tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
