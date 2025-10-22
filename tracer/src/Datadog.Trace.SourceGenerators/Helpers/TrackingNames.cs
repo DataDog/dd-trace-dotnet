@@ -44,4 +44,5 @@ internal class TrackingNames
     public const string ConfigurationKeysGenMatcherValidData = nameof(ConfigurationKeysGenMatcherValidData);
     public const string ConfigurationKeysGenAdditionalText = nameof(ConfigurationKeysGenAdditionalText);
     public const string ConfigurationKeysGenYamlAdditionalText = nameof(ConfigurationKeysGenYamlAdditionalText);
+    public const string ConfigurationKeysGenMappingAdditionalText = nameof(ConfigurationKeysGenMappingAdditionalText);
 }
