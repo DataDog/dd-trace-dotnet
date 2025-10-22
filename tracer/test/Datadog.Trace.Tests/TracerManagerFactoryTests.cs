@@ -138,7 +138,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager("env", "service", Mock.Of<IDataStreamsWriter>(), isInDefaultState: false),
+            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
