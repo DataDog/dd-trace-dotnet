@@ -48,29 +48,29 @@ public class PopulateDictionaryIntegration
         // record all the settings in the dictionary
         values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUri;
 #pragma warning disable CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabled;
+        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.MutableSettings.AnalyticsEnabled;
 #pragma warning restore CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRules;
+        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.MutableSettings.CustomSamplingRules;
         values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
-        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.DisabledIntegrationNames;
-        values[TracerSettingKeyConstants.EnvironmentKey] = settings.Environment;
-        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRate;
-        values[TracerSettingKeyConstants.GrpcTags] = settings.GrpcTags;
-        values[TracerSettingKeyConstants.HeaderTags] = settings.HeaderTags;
-        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabled;
+        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.MutableSettings.DisabledIntegrationNames;
+        values[TracerSettingKeyConstants.EnvironmentKey] = settings.MutableSettings.Environment;
+        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.MutableSettings.GlobalSamplingRate;
+        values[TracerSettingKeyConstants.GrpcTags] = settings.MutableSettings.GrpcTags;
+        values[TracerSettingKeyConstants.HeaderTags] = settings.MutableSettings.HeaderTags;
+        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.MutableSettings.KafkaCreateConsumerScopeEnabled;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogsInjectionEnabled;
+        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.MutableSettings.LogsInjectionEnabled;
 #pragma warning restore DD0002
-        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecond;
-        values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceName;
-        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.ServiceVersion;
-        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.StartupDiagnosticLogEnabled;
+        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MutableSettings.MaxTracesSubmittedPerSecond;
+        values[TracerSettingKeyConstants.ServiceNameKey] = settings.MutableSettings.ServiceName;
+        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.MutableSettings.ServiceVersion;
+        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.MutableSettings.StartupDiagnosticLogEnabled;
         values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabled;
-        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabled;
-        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabled;
+        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.MutableSettings.TraceEnabled;
+        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.MutableSettings.TracerMetricsEnabled;
 
-        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.GlobalTags;
-        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.Integrations);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.MutableSettings.GlobalTags;
+        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.MutableSettings.Integrations);
     }
 
     private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)

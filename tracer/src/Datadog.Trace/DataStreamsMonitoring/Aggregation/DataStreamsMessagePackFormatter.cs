@@ -56,7 +56,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings, string defaultServiceName)
         {
-            var env = tracerSettings.Environment;
+            var env = tracerSettings.MutableSettings.Environment;
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
             _environmentValueBytes = string.IsNullOrEmpty(env)
