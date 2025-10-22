@@ -17,7 +17,8 @@
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-
+    <!-- Required to fix package pruning errors introduced in rc2. Should be removed in NET 10 GA -->
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
     <!--  Workaround known issue with RouteHandlerAnalyer: https://github.com/dotnet/aspnetcore/issues/50836  -->
     <NoWarn>$(NoWarn);AD0001</NoWarn>
   </PropertyGroup>

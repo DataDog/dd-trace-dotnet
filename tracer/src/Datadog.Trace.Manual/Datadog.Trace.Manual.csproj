@@ -58,6 +58,10 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+  </ItemGroup>
+  
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
