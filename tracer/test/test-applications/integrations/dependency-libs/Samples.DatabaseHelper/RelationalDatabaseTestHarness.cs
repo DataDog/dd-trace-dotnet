@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET6_0_OR_GREATER
+using System.Data.Common;
+#endif
 
 // ReSharper disable MethodHasAsyncOverloadWithCancellation
 // ReSharper disable MethodSupportsCancellation
@@ -14,6 +17,7 @@ namespace Samples.DatabaseHelper
         /// <summary>
         /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
         /// in addition to other built-in implementations.
+        /// Does NOT run batch commands, this is done in <see cref="RunBatchAsync"/>
         /// </summary>
         /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
         /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
@@ -263,5 +267,69 @@ namespace Samples.DatabaseHelper
                 }
             }
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// Runs batch command tests for the specified batch command handler.
+        /// Not all DBs support this, and it's only available on .NET 6.0+
+        /// </summary>
+        public static async Task RunBatchAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IBatchCommandHandler batchCommandHandler,
+            CancellationToken cancellationToken)
+        {
+            var batchName = batchCommandHandler.BatchTypeName;
+            Console.WriteLine($"BATCH command: {batchName}");
+
+            using (var parentScope = SampleHelpers.CreateScope("batch"))
+            {
+                SampleHelpers.TrySetResourceName(parentScope, batchName);
+
+                using (var scope = SampleHelpers.CreateScope("sync"))
+                {
+                    SampleHelpers.TrySetResourceName(scope, batchName);
+
+                    Console.WriteLine("  Synchronous batch");
+
+                    var batch1 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteNonQuery");
+                    batch1.ExecuteNonQuery();
+
+                    var batch2 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteScalar");
+                    batch2.ExecuteScalar();
+
+                    var batch3 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteReader");
+                    batch3.ExecuteReader().Dispose();
+                }
+
+                Console.WriteLine();
+
+                using (var scope = SampleHelpers.CreateScope("async"))
+                {
+                    SampleHelpers.TrySetResourceName(scope, batchName);
+
+                    Console.WriteLine("  Asynchronous batch");
+
+                    var batch1 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteNonQueryAsync");
+                    await batch1.ExecuteNonQueryAsync();
+
+                    var batch2 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteScalarAsync");
+                    await batch2.ExecuteScalarAsync();
+
+                    var batch3 = commandFactory.GetBatchCommand(connection, batchCommandHandler);
+                    Console.WriteLine("    ExecuteReaderAsync");
+                    var r = await batch3.ExecuteReaderAsync(CommandBehavior.Default);
+                    await r.DisposeAsync();
+                }
+
+                Console.WriteLine();
+            }
+        }
+#endif
     }
 }

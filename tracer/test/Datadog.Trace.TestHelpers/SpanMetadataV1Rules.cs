@@ -881,6 +881,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.name")
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
+                .IsOptional("db.operation.batch.size")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")

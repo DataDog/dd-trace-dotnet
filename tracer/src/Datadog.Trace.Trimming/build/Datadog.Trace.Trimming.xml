@@ -210,9 +210,15 @@
    <assembly fullname="System.Data" />
    <assembly fullname="System.Data.Common">
       <type fullname="System.Data.CommandType" />
+      <type fullname="System.Data.Common.DbBatch" />
+      <type fullname="System.Data.Common.DbBatchCommand" />
+      <type fullname="System.Data.Common.DbBatchCommandCollection" />
       <type fullname="System.Data.Common.DbCommand" />
+      <type fullname="System.Data.Common.DbConnection" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
       <type fullname="System.Data.Common.DbParameter" />
+      <type fullname="System.Data.Common.DbParameterCollection" />
+      <type fullname="System.Data.Common.DbTransaction" />
       <type fullname="System.Data.ConnectionState" />
       <type fullname="System.Data.DbType" />
       <type fullname="System.Data.IDataParameter" />
