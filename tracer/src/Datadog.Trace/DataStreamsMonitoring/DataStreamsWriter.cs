@@ -74,12 +74,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     public static DataStreamsWriter Create(
         TracerSettings settings,
         ProfilerSettings profilerSettings,
-        IDiscoveryService discoveryService,
-        string defaultServiceName)
+        IDiscoveryService discoveryService)
         => new(
             settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, profilerSettings, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings, profilerSettings),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
