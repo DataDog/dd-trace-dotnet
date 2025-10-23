@@ -228,7 +228,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
     private int IndexObject(object objectStored)
     {
-        return Index(PositiveHashCode(objectStored.GetHashCode()));
+        return Index(PositiveHashCode(IastUtils.IdentityHashCode(objectStored)));
     }
 
     private int PositiveHashCode(int hash)
