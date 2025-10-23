@@ -32,12 +32,6 @@ namespace Datadog.Trace.Telemetry
         void IntegrationDisabledDueToError(IntegrationId integrationId, string error);
 
         /// <summary>
-        /// Called when a tracer is initialized to record the tracer's settings
-        /// Only the first tracer registered is recorded
-        /// </summary>
-        void RecordTracerSettings(TracerSettings settings, string defaultServiceName);
-
-        /// <summary>
         /// Called to record profiler-related telemetry
         /// </summary>
         public void RecordProfilerSettings(Profiler profiler);

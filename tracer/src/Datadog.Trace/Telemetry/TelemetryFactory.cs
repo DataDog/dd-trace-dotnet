@@ -110,7 +110,7 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 log.Debug("Creating telemetry controller v2");
-                return CreateController(telemetryTransports, settings, discoveryService);
+                return CreateController(tracerSettings, telemetryTransports, settings, discoveryService);
             }
             catch (Exception ex)
             {
@@ -155,6 +155,7 @@ namespace Datadog.Trace.Telemetry
         }
 
         private ITelemetryController CreateController(
+            TracerSettings tracerSettings,
             TelemetryTransports telemetryTransports,
             TelemetrySettings settings,
             IDiscoveryService discoveryService)
@@ -171,6 +172,7 @@ namespace Datadog.Trace.Telemetry
                 lock (_sync)
                 {
                     _controller ??= new TelemetryController(
+                        tracerSettings,
                         Config,
                         _dependencies!,
                         Metrics,
