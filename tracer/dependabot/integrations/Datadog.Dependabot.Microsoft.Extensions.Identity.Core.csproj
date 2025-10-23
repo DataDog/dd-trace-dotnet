@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!--    Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.8 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.8" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.10 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.10" />
   </ItemGroup>
 
 </Project>

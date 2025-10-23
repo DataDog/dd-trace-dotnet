@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
@@ -22,11 +23,19 @@ namespace Datadog.Trace.Logging.DirectSubmission
     /// </summary>
     internal class DirectLogSubmissionSettings
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectLogSubmissionSettings>();
+
         internal const string DefaultSource = "csharp";
         internal const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
-        internal const int DefaultBatchSizeLimit = 1000;
-        internal const int DefaultQueueSizeLimit = 100_000;
-        internal const int DefaultBatchPeriodSeconds = 2;
+        internal const int DatadogDefaultBatchSizeLimit = 1000;
+        internal const int DatadogDefaultQueueSizeLimit = 100_000;
+        internal const int DatadogDefaultBatchPeriodSeconds = 2;
+
+        // OpenTelemetry OTLP logs defaults (OTEL_BLRP_* environment variables)
+        internal const int OtlpBatchSizeLimit = 512;        // OTEL_BLRP_MAX_EXPORT_BATCH_SIZE
+        internal const int OtlpQueueSizeLimit = 2048;       // OTEL_BLRP_MAX_QUEUE_SIZE
+        internal const int OtlpBatchPeriodSeconds = 1;      // OTEL_BLRP_SCHEDULE_DELAY
+
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
         private const string IntakeSuffix = ":443";
@@ -41,7 +50,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             IntegrationId.XUnit,
         };
 
-        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, bool otlpLogsEnabled = false)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -81,22 +90,29 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
+            var defaultBatchSize = otlpLogsEnabled ? OtlpBatchSizeLimit : DatadogDefaultBatchSizeLimit;
+            var defaultQueueSize = otlpLogsEnabled ? OtlpQueueSizeLimit : DatadogDefaultQueueSizeLimit;
+            var defaultBatchPeriod = otlpLogsEnabled ? OtlpBatchPeriodSeconds : DatadogDefaultBatchPeriodSeconds;
+
             BatchSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
-                                               .AsInt32(DefaultBatchSizeLimit, x => x > 0)
+                                               .AsInt32(defaultBatchSize, x => x > 0)
                                                .Value;
 
             QueueSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
-                                               .AsInt32(DefaultQueueSizeLimit, x => x > 0)
+                                               .AsInt32(defaultQueueSize, x => x > 0)
                                                .Value;
 
             var seconds = config
                      .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
-                     .AsInt32(DefaultBatchPeriodSeconds, x => x > 0)
+                     .AsInt32(defaultBatchPeriod, x => x > 0)
                      .Value;
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
+
+            AzureFunctionsHostEnabled = config.WithKeys(ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled)
+                                              .AsBool(false);
 
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
             bool[]? enabledIntegrations = null;
@@ -136,35 +152,59 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 }
             }
 
-            var isEnabled = enabledIntegrations is not null;
+            if (otlpLogsEnabled)
+            {
+                enabledIntegrations = new bool[IntegrationRegistry.Ids.Count];
+
+                // Explicitly disable other log integrations to avoid duplicate log submission
+                foreach (var integrationId in SupportedIntegrations)
+                {
+                    enabledIntegrations[(int)integrationId] = false;
+                }
+
+                enabledIntegrations[(int)IntegrationId.ILogger] = true;
+
+                Log.Information("OTLP logs enabled: ILogger integration is enabled, other log integrations (Serilog, NLog, Log4Net) are disabled to prevent duplicate log submission.");
+            }
+
             _enabledIntegrations = enabledIntegrations;
 
-            if (string.IsNullOrWhiteSpace(Host))
+            var isEnabled = enabledIntegrations is not null;
+
+            if (!AzureFunctionsHostEnabled && EnvironmentHelpers.IsRunningInAzureFunctionsHost())
             {
                 isEnabled = false;
-                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
             }
 
-            if (string.IsNullOrWhiteSpace(Source))
+            if (!otlpLogsEnabled)
             {
-                isEnabled = false;
-                validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
-            }
+                if (string.IsNullOrWhiteSpace(Host))
+                {
+                    isEnabled = false;
+                    validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
+                }
 
-            if (!Uri.TryCreate(directLogSubmissionUrl, UriKind.Absolute, out var uri))
-            {
-                isEnabled = false;
-                validationErrors.Add($"The intake url '{directLogSubmissionUrl}' was not a valid URL.");
-            }
-            else
-            {
-                IntakeUrl = uri;
-            }
+                if (string.IsNullOrWhiteSpace(Source))
+                {
+                    isEnabled = false;
+                    validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
+                }
 
-            if (string.IsNullOrWhiteSpace(ApiKey))
-            {
-                isEnabled = false;
-                validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
+                if (!Uri.TryCreate(directLogSubmissionUrl, UriKind.Absolute, out var uri))
+                {
+                    isEnabled = false;
+                    validationErrors.Add($"The intake url '{directLogSubmissionUrl}' was not a valid URL.");
+                }
+                else
+                {
+                    IntakeUrl = uri;
+                }
+
+                if (string.IsNullOrWhiteSpace(ApiKey))
+                {
+                    isEnabled = false;
+                    validationErrors.Add($"Missing required settings '{ConfigurationKeys.ApiKey}'.");
+                }
             }
 
             ValidationErrors = validationErrors;
@@ -229,6 +269,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
         internal TimeSpan BatchPeriod { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether direct log submission is enabled for the Azure Functions host.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled"/>
+        internal bool AzureFunctionsHostEnabled { get; } = false;
 
         /// <summary>
         /// Gets the Datadog API key

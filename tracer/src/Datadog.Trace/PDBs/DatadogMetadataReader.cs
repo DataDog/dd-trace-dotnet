@@ -73,33 +73,45 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            // For metadata we are always using System.Reflection.Metadata
-            // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for windows PDB
-            var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
-            MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
-            MetadataReader? pdbReader;
-            if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
+            try
             {
-                pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
-            }
+                // For metadata we are always using System.Reflection.Metadata
+                // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for windows PDB
+                var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
+                MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
+                if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
+                {
+                    var pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
+                    return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
+                }
 
-            if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
+                if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
+                {
+                    return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                }
+
+                var module = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+                var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
+                var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
+                if (dnlibReader == null)
+                {
+                    return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                }
+
+                dnlibReader.Initialize(module);
+                module.LoadPdb(dnlibReader);
+                return new DatadogMetadataReader(peReader, metadataReader, null, pdbFullPath, dnlibReader, module);
+            }
+            catch (IOException e)
             {
-                return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                Logger.Debug("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                return null;
             }
-
-            var module = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-            var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
-            var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
-            if (dnlibReader == null)
+            catch (Exception e)
             {
-                return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                Logger.Error(e, "Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                return null;
             }
-
-            dnlibReader.Initialize(module);
-            module.LoadPdb(dnlibReader);
-            return new DatadogMetadataReader(peReader, metadataReader, null, pdbFullPath, dnlibReader, module);
         }
 
         private static bool TryFindPdbFile(string assemblyLocation, [NotNullWhen(true)] out string? pdbFullPath)

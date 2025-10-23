@@ -5,10 +5,8 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -21,22 +19,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     internal class DirectSubmissionLogger
     {
         private readonly string _name;
-        private readonly IExternalScopeProvider? _scopeProvider;
         private readonly IDirectSubmissionLogSink _sink;
-        private readonly LogFormatter? _logFormatter;
+        private readonly ILogEventCreator _logEventCreator;
         private readonly int _minimumLogLevel;
 
         internal DirectSubmissionLogger(
             string name,
-            IExternalScopeProvider? scopeProvider,
             IDirectSubmissionLogSink sink,
-            LogFormatter? logFormatter,
+            ILogEventCreator logEventCreator,
             DirectSubmissionLogLevel minimumLogLevel)
         {
             _name = name;
-            _scopeProvider = scopeProvider;
             _sink = sink;
-            _logFormatter = logFormatter;
+            _logEventCreator = logEventCreator;
             _minimumLogLevel = (int)minimumLogLevel;
         }
 
@@ -57,24 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return;
             }
 
-            // We render the event to a string immediately as we need to capture the properties
-            // This is more expensive from a CPU perspective, but saves having to persist the
-            // properties to a dictionary and rendering later
-
-            var logEntry = new LogEntry<TState>(
-                DateTime.UtcNow,
-                logLevel,
-                _name,
-                eventId.GetHashCode(),
-                state,
-                exception,
-                formatter,
-                _scopeProvider);
-            var logFormatter = _logFormatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
-            var serializedLog = LoggerLogFormatter.FormatLogEvent(logFormatter, logEntry);
-
-            var log = new LoggerDirectSubmissionLogEvent(serializedLog);
-
+            var log = _logEventCreator.CreateLogEvent(logLevel, _name, eventId, state, exception, formatter);
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
             _sink.EnqueueLog(log);
         }
@@ -94,15 +72,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
         /// <returns>An <see cref="IDisposable"/> that ends the logical operation scope on dispose.</returns>
         [DuckReverseMethod(ParameterTypeNames = new[] { "TState" })]
-        public IDisposable BeginScope<TState>(TState state) => _scopeProvider?.Push(state) ?? NullDisposable.Instance;
-
-        private class NullDisposable : IDisposable
-        {
-            public static readonly NullDisposable Instance = new();
-
-            public void Dispose()
-            {
-            }
-        }
+        public IDisposable BeginScope<TState>(TState state) => _logEventCreator.BeginScope(state);
     }
 }

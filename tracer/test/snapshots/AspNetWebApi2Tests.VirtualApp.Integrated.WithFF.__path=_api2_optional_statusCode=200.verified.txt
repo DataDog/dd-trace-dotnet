@@ -11,6 +11,7 @@
       aspnet.action: optional,
       aspnet.controller: conventions,
       aspnet.route: api2/{action}/{value},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -30,6 +31,7 @@
     Service: sample/my-app,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

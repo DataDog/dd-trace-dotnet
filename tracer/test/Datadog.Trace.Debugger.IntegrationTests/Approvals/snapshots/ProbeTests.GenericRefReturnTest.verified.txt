@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "GenericRefReturnTest",
-                "value": "GenericRefReturnTest"
+                "type": "GenericRefReturnTest"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "GenericRefReturnTest",
-                "value": "GenericRefReturnTest"
+                "type": "GenericRefReturnTest"
               }
             },
             "locals": {
@@ -46,8 +44,7 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "NullReferenceException",
-                "value": "NullReferenceException"
+                "type": "NullReferenceException"
               },
               "whatever": {
                 "fields": {
@@ -62,8 +59,7 @@
                         "value": "City"
                       }
                     },
-                    "type": "Place",
-                    "value": "Place"
+                    "type": "Place"
                   },
                   "HomeType": {
                     "type": "BuildingType",
@@ -78,8 +74,7 @@
                     "type": "String"
                   }
                 },
-                "type": "Address",
-                "value": "Address"
+                "type": "Address"
               }
             },
             "throwable": {
@@ -109,6 +104,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "CallMe",
       "name": "Samples.Probes.TestRuns.SmokeTests.GenericRefReturnTest",

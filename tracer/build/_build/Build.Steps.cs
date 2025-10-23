@@ -52,6 +52,7 @@ partial class Build
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
+    AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
@@ -794,17 +795,27 @@ partial class Build
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
-            // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .CombineWith(targetFrameworks, (p, framework) => p
-                    .SetFramework(framework)
-                    .SetOutput(MonitoringHomeDirectory / framework))
-            );
+            try
+            {
+                // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
+                DotNetPublish(s => s
+                    .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .CombineWith(targetFrameworks, (p, framework) => p
+                        .SetFramework(framework)
+                        .SetOutput(MonitoringHomeDirectory / framework)
+                    .SetProcessEnvironmentVariable("MSBUILDDEBUGPATH", MsbuildDebugPath))
+                );
+            }
+            catch
+            {
+                // Print tail of MSBuild failure notes, if any, then rethrow
+                MSBuildLogHelper.DumpMsBuildChildFailures(MsbuildDebugPath);
+                throw;
+            }
         });
 
     Target PublishManagedTracerR2R => _ => _
@@ -1355,6 +1366,7 @@ partial class Build
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));

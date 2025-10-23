@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -78,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net10.0" })]
         public void MeasureAllocations(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureAllocation);
@@ -94,6 +95,27 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
             allocationSamples.Should().NotBeEmpty();
+
+            // check that we use the new .NET 10 AllocationSampled event if running on .NET 10
+            // and AllocationTick otherwise
+            string expectedLog = (framework == "net10.0")
+                ? "Listen to AllocationSampled event"
+                : "Listen to AllocationTick event";
+            bool containsExpectedLog = false;
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                            .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            foreach (var line in File.ReadLines(logFile))
+            {
+                if (line.Contains(expectedLog))
+                {
+                    containsExpectedLog = true;
+                    break;
+                }
+            }
+
+            containsExpectedLog.Should().BeTrue();
 
             // this test always succeeds: it is used to display the differences between sampled and real allocations
             Dictionary<string, AllocStats> profiledAllocations = GetProfiledAllocations(allocationSamples);

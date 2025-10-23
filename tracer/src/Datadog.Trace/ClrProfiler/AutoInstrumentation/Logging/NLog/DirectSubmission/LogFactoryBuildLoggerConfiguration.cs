@@ -36,7 +36,8 @@ public class LogFactoryBuildLoggerConfiguration
     {
         var tracerManager = TracerManager.Instance;
 
-        if (!tracerManager.Settings.LogsInjectionEnabled &&
+        var logsInjectionEnabled = tracerManager.PerTraceSettings.Settings.LogsInjectionEnabled;
+        if (!logsInjectionEnabled &&
             !tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog))
         {
             return CallTargetState.GetDefault();
@@ -55,7 +56,7 @@ public class LogFactoryBuildLoggerConfiguration
 
         // we don't want to do logs injection with our custom configuration that we create as there won't be any targets
         var alreadyAddedOurTarget = false;
-        if (tracerManager.Settings.LogsInjectionEnabled)
+        if (logsInjectionEnabled)
         {
             LogsInjectionHelper<TTarget>.ConfigureLogsInjectionForLoggingRules(loggingRules, out alreadyAddedOurTarget);
         }

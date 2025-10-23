@@ -30,6 +30,170 @@
 
 
 
+
+
+## [Release 3.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.29.0)
+
+## Summary
+
+- [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+- [Azure Functions] Add aas.site.kind tag to agentless logs (https://github.com/DataDog/dd-trace-dotnet/pull/7623)
+- [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+- Various other fixes and improvements
+
+## Changes
+
+### Tracer
+* Rebuild `MutableSettings` on dynamic config changes (#7525)
+* Move `DefaultServiceName` to `MutableSettings` (#7530)
+* Simplify `PerTraceSettings.GetServiceName()` (#7532)
+* [PDB] Handle exception during opening a pdb file (#7573)
+
+### CI Visibility
+* [TestOptimization] Catch IOException on the Git folder discovery (#7658)
+
+### Continuous Profiler
+* [crashtracker/profiler] Notify profiler the application is crashing (#7657)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3695 Return correct RC apply details (#6890)
+* [Dynamic Instrumentation] Skip some debugger tests on .NET 8 or greater (#7631)
+* Minor fix in DynamicConfigurationManager update process (#7664)
+* [Dynamic Instrumentation] DEBUG 3794 Stabilize snapshot enumerable serializing (#6910)
+* [Dynamic Instrumentation] DEBUG-3959 Guard against undefined value expression (#7008)
+* [Debugger Default-On] DEBUG-4341 Forward snapshots to debugger intake (#7388)
+* [Dynamic Instrumentation] Ensure DI metric probe does not send automatic telemetry (#7621)
+* [Dynamic Instrumentation] Remove reference types value property from snapshot (#7635)
+
+### Serverless
+* [Azure Functions] Add `aas.site.kind` tag to agentless logs (#7623)
+*  [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+* [internal docs] Add CI troubleshooting documentation (#7634)
+* [OTEL] Moves OTelMetrics Under OpenTelemetry.Metrics (#7638)
+* Minor refactor and added tests for `DynamicConfigurationManager` (#7652)
+* [OTEL] Vendoring OtlpGrpcExportClient And Enabling OTLP Metrics gRPC Tests (#7666)
+* [Code Origin] Add debug logs to code origin for entry span (#7612)
+* [Code Origin] Performance: Add Assembly Filter Caching for Code Origin (#7667)
+* Small OpenTelemetry Metrics fixes and optimizations (#7632)
+
+### Build / Test
+* Optimize `AGENTS.md` with contextual load guidance (#7625)
+* Bump timeit to v0.4.6 (#7647)
+* Improve and simplify the microbenchmarks CI setup (#7613)
+* Capture Exception when sending metrics (#7614)
+* [Test Package Versions Bump] Updating package versions (#7617)
+* Fix profiler_execution_benchmarks flakiness (#7622)
+* Fix the code freeze action (#7626)
+* Revert "[SINT-4157] sanitise ultimate-pipeline.yml" (#7627)
+* Increase Docker run step resiliency for Profiler integration tests (#7629)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7630)
+* [Azure Functions] Add `Build-AzureFunctionsNuget.ps1` helper script for local developement (#7633)
+* Update `CODEOWNERS` for consistent ownership of managed loader files (#7643)
+* [Test Package Versions Bump] Updating package versions (#7644)
+* Clone the prod dd-trace-dotnet microbenchmark branch for microbenchmarks (#7646)
+* Fix CleanObjFiles job (#7648)
+* [Test Package Versions Bump] Updating package versions (#7655)
+* [OTEL] Switches OTLP Tests To dd-apm-test-agent Instead of MockTracerAgent (#7656)
+* Fix nuget installer smoke tests (#7619)
+
+
+[Changes since 3.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.28.0...v3.29.0)
+
+## [Release 3.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.28.0)
+
+## Summary
+
+* [Tracer] Add Azure Service Bus instrumentation (#7413)
+* [Tracer] add OTEL quartz autoinstrumentation (#7192)
+* [Tracer] Add Azure Service Bus batching support  (#7553)
+* [Test Optimization] Failed Test Replay (#7102)
+* [AAP] Enable by default API Security Endpoints collection when appsec enabled (#7569)
+* [Tracer] Fix for sending duplicate logs when using Agentless Logging in Azure Function host (#7383)
+* [Code Origin] Disable code origin for exit spans (#7610)
+* Revert "Revert "[Profiler] Make `timer_create`-based CPU profiler default (#7322)"" (#7578)
+
+## Changes
+
+### Tracer
+* No longer forgive `spans.Array` from being `null` (#6878)
+* Update Datadog.Sketches vendored code (#7299)
+* [Debugger Default-On] DEBUG-3322 Debugger in-product enablement (#7366)
+* Extract `MutableSettings` from `TracerSettings` (#7522)
+* Protect against UriFormatException (#7550)
+* Update the `ProfilerSettings` enablement to ignore SSI (#7557)
+* [DI-EL] Add debug log in case evaluation result is null and it shouldn't be null (#7558)
+* [SymbDB] Ignore canceled exception (#7572)
+* [ER]- Fix ER system tests (#7576)
+
+### CI Visibility
+* [Test Optimization] Failed Test Replay (#7102)
+* fix(ci): recycle stale ServicePoint connections (#7593)
+
+### ASM
+* [AAP] Enable by default API Security Endpoints collection when appsec enabled (#7569)
+
+### Continuous Profiler
+* [Profiler] Leverage new .NET 10 allocation sampling (#6930)
+* [Profiler] Support Stable Config (#7287)
+* Update profiler availability helper to assume Windows always sets the env var (#7555)
+* [Profiler] Add Index to samples and build index vector for libdatadog (#7559)
+* Revert "Revert "[Profiler] Make `timer_create`-based CPU profiler default (#7322)"" (#7578)
+
+### Debugger
+* [Debugger Default-On] DEBUG-4406 Support multi-config merging with priorities (#7536)
+* [Debugger Default-On] Add debuger dynamic configurations keys (#7595)
+* [Dynamic Instrumentation] Skip dynamic config test net8 (#7608)
+* [Code Origin] Disable code origin for exit spans (#7610)
+
+### Serverless
+* [Azure Functions] Add Nuke targets to build local nuget for testing (#7537)
+
+### Fixes
+* Set "component" tag for ASP.NET (#6010)
+* Fix for sending duplicate logs when using Agentless Logging in Azure Function host (#7383)
+* Remove duplicate "public" APIs and `Internal` prefix/suffixes (#7546)
+* Fix log directory location for managed code in Windows nano server (#7561)
+
+### Miscellaneous
+* Fallback to `OperationName` instead of `string.Empty` for ElasticSearch `ResourceName` (#5610)
+* [tracing] add OTEL quartz autoinstrumentation (#7192)
+* [Tracer] Add Azure Service Bus instrumentation (#7413)
+* Add a code fix provider for invalid DuckType null checks (#7448)
+* [OTEL] Metrics API Support - Collection Implementation (#7511)
+* [Tracer] Add Azure Service Bus batching support  (#7553)
+* [crashtracking] Change Crashtracking filtering default value (#7598)
+* add `CLAUDE.md`, updates to `AGENTS.md` (#7602)
+* Add performance, testing, logging, Azure Functions, and glossary to `AGENTS.md` (#7609)
+
+### Build / Test
+* Replace `code-freeze/action.yml` with `pr-status-updater/action.yml` (#6702)
+* Build and run tests against .NET 10 RC 1 (#7499)
+* [Test Package Versions Bump] Updating package versions (#7515)
+* Remove the guards around M.D.SqlClient V4 in tests (#7541)
+* Skip failing TraceAnnotationsTests in .NET 6.0 (#7551)
+* Skip failing TraceAnnotationsTests in .NET 6.0 (#7552)
+* Fix flakiness in the `TraceAnnotation` tests (#7554)
+* Update CODEOWNERS (rename apm-sdk-api to apm-sdk-capabilities) (#7563)
+* Fix smoke tests for nuget tool (#7564)
+* Output MSBuild errors when publishing (#7566)
+* Improve and simplify the microbenchmarks CI setup (#7571)
+* [SINT-2273] update workflow steps (#7579)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7582)
+* Escape all paths in DownloadLibDatadog (#7583)
+* exclude api keys from sample app logs (#7592)
+* [SINT-4157] improve workflow (#7599)
+* Bump the gh-actions-packages group across 2 directories with 5 updates (#7600)
+* Mark FlakyRetriesWithExceptionReplay as flaky (#7603)
+* Increase the Gitlab Build timeout (#7604)
+* Update .gitlab/one-pipeline.locked.yaml (#7605)
+* Revert "Improve and simplify the microbenchmarks CI setup" (#7606)
+
+
+[Changes since 3.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.27.0...v3.28.0)
+
 ## [Release 3.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.27.0)
 
 ## Summary
