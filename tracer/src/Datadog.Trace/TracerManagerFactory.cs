@@ -155,13 +155,9 @@ namespace Datadog.Trace
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
-                logSubmissionManager,
                 settings,
                 settings.LogSubmissionSettings,
                 settings.AzureAppServiceMetadata,
-                defaultServiceName,
-                settings.MutableSettings.Environment,
-                settings.MutableSettings.ServiceVersion,
                 gitMetadataTagsProvider);
 
             telemetry.RecordTracerSettings(settings, defaultServiceName);

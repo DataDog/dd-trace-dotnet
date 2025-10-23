@@ -146,13 +146,14 @@ public class TracerManagerFactoryTests : IAsyncLifetime
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
-                previous: null,
-                settings: new TracerSettings(NullConfigurationSource.Instance),
+                settings: TracerSettings.Create(new()
+                {
+                    { ConfigurationKeys.Environment, "test" },
+                    { ConfigurationKeys.ServiceName, "test" },
+                    { ConfigurationKeys.ServiceVersion, "test" },
+                }),
                 directLogSettings: new TracerSettings().LogSubmissionSettings,
                 azureAppServiceSettings: null,
-                serviceName: "test",
-                env: "test",
-                serviceVersion: "test",
                 gitMetadataTagsProvider: Mock.Of<IGitMetadataTagsProvider>());
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()

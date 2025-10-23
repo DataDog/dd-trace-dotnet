@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 name: "TestLogger",
                 logEventCreator: new DatadogLogEventCreator(LogSettingsHelper.GetFormatter(), scopeProvider: new NullScopeProvider()),
                 sink: sink,
-                minimumLogLevel: settings.MinimumLevel);
+                minimumLogLevel: settings.LogSubmissionSettings.MinimumLevel);
         }
 
         internal class TestSink : IDirectSubmissionLogSink
