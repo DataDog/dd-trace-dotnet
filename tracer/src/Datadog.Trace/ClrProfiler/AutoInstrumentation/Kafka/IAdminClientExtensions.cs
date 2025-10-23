@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// Duck Type for Confluent.Kafka.IAdminClientExtensions
 /// We only need this to get the underlying instance for reflection calls to extension methods
 /// </summary>
-internal interface IAdminClientExtensions : IDuckType, IDisposable
+internal interface IAdminClientExtensions : IDuckType
 {
     Task<IDescribeClusterResult> DescribeClusterAsync(IAdminClient adminClient, IDescribeClusterOptions? options = null);
 }
