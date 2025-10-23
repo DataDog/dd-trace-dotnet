@@ -29,6 +29,16 @@ public class KafkaProducerConstructorIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaProducerConstructorIntegration));
 
+    private static void DebugLog(string message)
+    {
+        var envVar = Environment.GetEnvironmentVariable("DD_TRACE_CUSTOM_DEBUG_LOGS");
+        if (!string.IsNullOrEmpty(envVar))
+        {
+            Log.Information("KAFKA-CLUSTER-ID: {Message}", message);
+            Console.WriteLine($"KAFKA-CLUSTER-ID: {message}");
+        }
+    }
+
     internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder consumer)
         where TProducerBuilder : IProducerBuilder
     {
@@ -67,13 +77,11 @@ public class KafkaProducerConstructorIntegration
 
                 if (!string.IsNullOrEmpty(clusterId))
                 {
-                    Log.Information("ROBC: Kafka producer config retrieved - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
-                    Console.WriteLine($"ROBC: Kafka producer config retrieved - BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
+                    DebugLog($"Kafka producer config retrieved - BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
                 }
                 else
                 {
-                    Log.Information("ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {BootstrapServers}", bootstrapServers);
-                    Console.WriteLine($"ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {bootstrapServers}");
+                    DebugLog($"Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {bootstrapServers}");
                 }
 
                 // Save the map between this producer and its metadata

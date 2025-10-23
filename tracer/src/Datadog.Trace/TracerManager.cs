@@ -592,9 +592,7 @@ namespace Datadog.Trace
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
-                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-                Log.Information("ROBC CLUSTER ID BRANCH");
-                Console.Out.WriteLine("ROBC CLUSTER ID BRANCH");
+                Console.WriteLine("Datadog Custom Tracer - Kafka Cluster ID");
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
                 instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
             }

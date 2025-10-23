@@ -31,6 +31,16 @@ public class KafkaConsumerConstructorIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaConsumerConstructorIntegration));
 
+    private static void DebugLog(string message)
+    {
+        var envVar = Environment.GetEnvironmentVariable("DD_TRACE_CUSTOM_DEBUG_LOGS");
+        if (!string.IsNullOrEmpty(envVar))
+        {
+            Log.Information("KAFKA-CLUSTER-ID: {Message}", message);
+            Console.WriteLine($"KAFKA-CLUSTER-ID: {message}");
+        }
+    }
+
     internal static CallTargetState OnMethodBegin<TTarget, TConsumerBuilder>(TTarget instance, TConsumerBuilder consumer)
         where TConsumerBuilder : IConsumerBuilder
     {
@@ -72,13 +82,11 @@ public class KafkaConsumerConstructorIntegration
 
                 if (!string.IsNullOrEmpty(clusterId))
                 {
-                    Log.Information("ROBC: Kafka consumer config retrieved - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
-                    Console.WriteLine($"ROBC: Kafka consumer config retrieved - GroupId: {groupId}, BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
+                    DebugLog($"Kafka consumer config retrieved - GroupId: {groupId}, BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
                 }
                 else
                 {
-                    Log.Information("ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}", groupId, bootstrapServers);
-                    Console.WriteLine($"ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {groupId}, BootstrapServers: {bootstrapServers}");
+                    DebugLog($"Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {groupId}, BootstrapServers: {bootstrapServers}");
                 }
 
                 // Save the map between this consumer and its metadata

@@ -86,13 +86,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     if (!string.IsNullOrEmpty(clusterId))
                     {
                         tags.ClusterId = clusterId;
-                        Log.Information("ROBC: Added cluster_id tag to Kafka producer span: {ClusterId}", clusterId);
-                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka producer span: {clusterId}");
+                        DebugLog($"Added cluster_id tag to Kafka producer span: {clusterId}");
                     }
                     else
                     {
-                        Log.Information("ROBC: No cluster_id available for Kafka producer span");
-                        Console.WriteLine("ROBC: No cluster_id available for Kafka producer span");
+                        DebugLog("No cluster_id available for Kafka producer span");
                     }
                 }
 
@@ -238,13 +236,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     if (!string.IsNullOrEmpty(clusterId))
                     {
                         tags.ClusterId = clusterId;
-                        Log.Information("ROBC: Added cluster_id tag to Kafka consumer span: {ClusterId}", clusterId);
-                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka consumer span: {clusterId}");
+                        DebugLog($"Added cluster_id tag to Kafka consumer span: {clusterId}");
                     }
                     else
                     {
-                        Log.Information("ROBC: No cluster_id available for Kafka consumer span");
-                        Console.WriteLine("ROBC: No cluster_id available for Kafka consumer span");
+                        DebugLog("No cluster_id available for Kafka consumer span");
                     }
                 }
 
@@ -394,6 +390,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
+        private static void DebugLog(string message)
+        {
+            string? envVar = Environment.GetEnvironmentVariable("DD_TRACE_CUSTOM_DEBUG_LOGS");
+            if (!string.IsNullOrEmpty(envVar))
+            {
+                Log.Information("KAFKA-CLUSTER-ID: {Message}", message);
+                Console.WriteLine($"KAFKA-CLUSTER-ID: {message}");
+            }
+        }
+
         internal static string? GetClusterId(string bootstrapServers)
         {
             string clusterId = string.Empty;
@@ -401,222 +407,215 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             // Prevent re-entrancy: AdminClient internally creates a Producer, which would trigger our instrumentation again
             if (_isGettingClusterId)
             {
-                Log.Information("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
-                Console.WriteLine("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                DebugLog("Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
                 return null;
             }
 
             if (string.IsNullOrEmpty(bootstrapServers))
             {
-                Log.Information("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
-                Console.WriteLine("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                DebugLog("Cannot retrieve cluster_id - bootstrap servers is null or empty");
                 return null;
             }
 
             try
             {
                 _isGettingClusterId = true;
-                Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {BootstrapServers}", bootstrapServers);
-                Console.WriteLine($"ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {bootstrapServers}");
+                DebugLog($"Attempting to retrieve cluster_id from Kafka using bootstrap servers: {bootstrapServers}");
 
-                // Create AdminClientConfig
+                // 1. Create AdminClientConfig using pure reflection
                 var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
                 if (configType == null)
                 {
-                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
-                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
+                    DebugLog("Unable to find Confluent.Kafka.AdminClientConfig type");
                     return null;
                 }
 
-                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
                 var config = Activator.CreateInstance(configType);
-
-                if (config == null || !config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
+                if (config == null)
                 {
-                    Log.Information("ROBC: Unable to create or duck-cast AdminClientConfig");
-                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientConfig");
+                    DebugLog("Unable to create AdminClientConfig instance");
                     return null;
                 }
 
-                adminConfig.BootstrapServers = bootstrapServers;
+                DebugLog($"Created AdminClientConfig: {config.GetType().FullName}");
 
-                // Create AdminClientBuilder
+                // 2. Set BootstrapServers property using reflection
+                var bootstrapServersProperty = configType.GetProperty("BootstrapServers");
+                if (bootstrapServersProperty == null)
+                {
+                    DebugLog("Unable to find BootstrapServers property");
+                    return null;
+                }
+
+                bootstrapServersProperty.SetValue(config, bootstrapServers);
+                DebugLog($"Set BootstrapServers to: {bootstrapServers}");
+
+                // 3. Create AdminClientBuilder using reflection
                 var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
                 if (builderType == null)
                 {
-                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
-                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    DebugLog("Unable to find Confluent.Kafka.AdminClientBuilder type");
                     return null;
                 }
 
-                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
-                var builder = Activator.CreateInstance(builderType, new object[] { config }) ?? throw new InvalidOperationException("Unable to create AdminClientBuilder");
-                if (builder == null || !builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                var builder = Activator.CreateInstance(builderType, new object[] { config });
+                if (builder == null)
                 {
-                    Log.Information("ROBC: Unable to create or duck-cast AdminClientBuilder");
-                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientBuilder");
+                    DebugLog("Unable to create AdminClientBuilder instance");
                     return null;
                 }
 
-                // Build and use AdminClient (duck-typed for normal use)
-                using (var adminClient = adminBuilder.Build())
+                DebugLog($"Created AdminClientBuilder: {builder.GetType().FullName}");
+
+                // 4. Call Build() method using reflection
+                var buildMethod = builderType.GetMethod("Build", BindingFlags.Public | BindingFlags.Instance);
+                if (buildMethod == null)
                 {
-                    Console.WriteLine("ROBC: Trying Via Reflection");
+                    DebugLog("Unable to find Build method on AdminClientBuilder");
+                    return null;
+                }
 
-                    // Create a NEW AdminClient via reflection (not duck-typed) for the reflection-based call
-                    // 1. Get the AdminClientBuilder type and Build method
-                    var buildMethod = builderType.GetMethod("Build", BindingFlags.Public | BindingFlags.Instance)
-                                    ?? throw new MissingMethodException("AdminClientBuilder.Build method not found");
+                var adminClient = buildMethod.Invoke(builder, null);
+                if (adminClient == null)
+                {
+                    DebugLog("AdminClientBuilder.Build() returned null");
+                    return null;
+                }
 
-                    // 2. Create a new builder instance
-                    var reflectionBuilder = Activator.CreateInstance(builderType, new object[] { config })
-                                          ?? throw new InvalidOperationException("Unable to create AdminClientBuilder via reflection");
+                DebugLog($"Built AdminClient: {adminClient.GetType().FullName}");
 
-                    Console.WriteLine($"ROBC: Created new AdminClientBuilder via reflection: {reflectionBuilder.GetType().FullName}");
-
-                    // 3. Build the AdminClient (this will be the real type, not duck-typed)
-                    var reflectionAdminClient = buildMethod.Invoke(reflectionBuilder, null)
-                                              ?? throw new InvalidOperationException("AdminClientBuilder.Build returned null");
-
-                    Console.WriteLine($"ROBC: Created AdminClient via reflection: {reflectionAdminClient.GetType().FullName}");
-
-                    try
+                try
+                {
+                    // 5. Get DescribeClusterAsync method using reflection
+                    var adminClientType = adminClient.GetType();
+                    var describeClusterAsyncMethod = adminClientType.GetMethod("DescribeClusterAsync", BindingFlags.Public | BindingFlags.Instance);
+                    if (describeClusterAsyncMethod == null)
                     {
-                        // 4. Resolve the extension type
-                        var extType = Type.GetType("Confluent.Kafka.IAdminClientExtensions, Confluent.Kafka")
-                                    ?? throw new InvalidOperationException("Extension type not found");
+                        DebugLog("Unable to find DescribeClusterAsync method on AdminClient");
+                        return null;
+                    }
 
-                        // 5. Find the static DescribeClusterAsync method
-                        var method = extType.GetMethod("DescribeClusterAsync", BindingFlags.Public | BindingFlags.Static)
-                                    ?? throw new MissingMethodException("DescribeClusterAsync not found");
+                    DebugLog("Found DescribeClusterAsync method");
 
-                        // 6. Create DescribeClusterOptions (avoid NRE if null)
-                        var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka")
-                                        ?? throw new InvalidOperationException("DescribeClusterOptions type not found");
-                        var options = Activator.CreateInstance(optionsType)
-                                    ?? throw new InvalidOperationException("Failed to create DescribeClusterOptions instance");
+                    // 6. Create DescribeClusterOptions using reflection (optional parameter, can pass null)
+                    var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+                    object? options = null;
+                    if (optionsType != null)
+                    {
+                        options = Activator.CreateInstance(optionsType);
+                        DebugLog($"Created DescribeClusterOptions: {options}");
+                    }
+                    else
+                    {
+                        DebugLog("DescribeClusterOptions type not found, using null");
+                    }
 
-                        Console.WriteLine($"ROBC: Created DescribeClusterOptions instance: {options}");
+                    // 7. Invoke DescribeClusterAsync
+                    var taskObj = describeClusterAsyncMethod.Invoke(adminClient, new object?[] { options });
+                    if (taskObj == null)
+                    {
+                        DebugLog("DescribeClusterAsync returned null");
+                        return null;
+                    }
 
-                        // 7. Invoke the method with the reflection-based AdminClient
-                        var taskObj = (method.Invoke(null, new object[] { reflectionAdminClient, options }) as Task)
-                                    ?? throw new InvalidOperationException("DescribeClusterAsync did not return a Task");
-                        taskObj.GetAwaiter().GetResult();
+                    DebugLog($"DescribeClusterAsync returned: {taskObj.GetType().FullName}");
 
-                        Console.WriteLine($"ROBC: Task object: {taskObj}");
+                    // 8. Wait for the task to complete using reflection
+                    var taskType = taskObj.GetType();
+                    var getAwaiterMethod = taskType.GetMethod("GetAwaiter");
+                    if (getAwaiterMethod == null)
+                    {
+                        DebugLog("Unable to find GetAwaiter method on Task");
+                        return null;
+                    }
 
-                        var resultProperty = taskObj.GetType().GetProperty("Result");
-                        var describeClusterResult = resultProperty?.GetValue(taskObj);
+                    var awaiter = getAwaiterMethod.Invoke(taskObj, null);
+                    if (awaiter == null)
+                    {
+                        DebugLog("GetAwaiter returned null");
+                        return null;
+                    }
 
-                        Console.WriteLine($"ROBC Result type: {describeClusterResult?.GetType().FullName}");
-                        Console.WriteLine($"ROBC Result value: {describeClusterResult}");
+                    var getResultMethod = awaiter.GetType().GetMethod("GetResult");
+                    if (getResultMethod == null)
+                    {
+                        DebugLog("Unable to find GetResult method on TaskAwaiter");
+                        return null;
+                    }
 
-                        // Extract the ClusterId from the result
-                        if (describeClusterResult != null)
+                    var result = getResultMethod.Invoke(awaiter, null);
+                    DebugLog($"Task completed, result: {result?.GetType().FullName}");
+
+                    // 9. Extract ClusterId from the result using reflection
+                    if (result != null)
+                    {
+                        var resultType = result.GetType();
+                        var clusterIdProperty = resultType.GetProperty("ClusterId");
+                        if (clusterIdProperty != null)
                         {
-                            var clusterIdProperty = describeClusterResult.GetType().GetProperty("ClusterId");
-                            if (clusterIdProperty != null)
-                            {
-                                clusterId = clusterIdProperty.GetValue(describeClusterResult) as string ?? string.Empty;
-                                Console.WriteLine($"ROBC: ClusterId extracted: {clusterId}");
+                            var clusterIdValue = clusterIdProperty.GetValue(result);
+                            DebugLog($"ClusterId raw value type: {clusterIdValue?.GetType().FullName}, value: {clusterIdValue}");
 
-                                if (!string.IsNullOrEmpty(clusterId))
+                            // ClusterId might be wrapped in an optional type (e.g., Option<string> or Nullable)
+                            // Or it might be a string that contains "Some(...)" pattern
+                            if (clusterIdValue != null)
+                            {
+                                var clusterIdType = clusterIdValue.GetType();
+
+                                // Check if it's a string directly
+                                if (clusterIdValue is string strValue)
                                 {
-                                    Log.Information("ROBC: Kafka cluster_id extracted successfully: {ClusterId}", clusterId);
-                                    Console.WriteLine($"ROBC: Kafka cluster_id extracted successfully: {clusterId}");
+                                    DebugLog($"ClusterId is a string: {strValue}");
+
+                                    // Check if the string itself contains the "Some(...)" wrapper pattern
+                                    if (strValue.StartsWith("Some(") && strValue.EndsWith(")"))
+                                    {
+                                        clusterId = strValue.Substring(5, strValue.Length - 6);
+                                        DebugLog($"Parsed ClusterId from Some(...) string pattern: {clusterId}");
+                                    }
+                                    else
+                                    {
+                                        clusterId = strValue;
+                                    }
                                 }
                                 else
                                 {
-                                    Console.WriteLine("ROBC: ClusterId is null or empty");
+                                    DebugLog($"ClusterId is not a string, unexpected type: {clusterIdType.FullName}");
                                 }
+                            }
+
+                            if (!string.IsNullOrEmpty(clusterId))
+                            {
+                                DebugLog($"Kafka cluster_id extracted successfully: {clusterId}");
                             }
                             else
                             {
-                                Console.WriteLine("ROBC: ClusterId property not found on result");
+                                DebugLog("ClusterId is null or empty");
                             }
                         }
-
-                        Log.Information("ROBC: Successfully called DescribeClusterAsync via reflection");
-                        Console.WriteLine("ROBC: Successfully called DescribeClusterAsync via reflection");
-                    }
-                    finally
-                    {
-                        // Dispose of the reflection-based AdminClient
-                        if (reflectionAdminClient is IDisposable disposable)
+                        else
                         {
-                            disposable.Dispose();
-                            Console.WriteLine("ROBC: Disposed reflection AdminClient");
+                            DebugLog("ClusterId property not found on result");
                         }
-                    }
-
-                    Type? staticType = Type.GetType("Confluent.Kafka.IAdminClientExtensions, Confluent.Kafka");
-                    if (staticType == null)
-                    {
-                        Log.Information("ROBC: Unable to find Confluent.Kafka.IAdminClientExtensions type");
-                        Console.WriteLine("ROBC: Unable to find Confluent.Kafka.IAdminClientExtensions type");
-                        return null;
-                    }
-
-                    Type proxyType = typeof(IAdminClientExtensions); // The type of our proxy
-                    if (proxyType == null)
-                    {
-                        Log.Information("ROC94: Unable to find IAdminClientExtensions type");
-                        Console.WriteLine("ROC94: Unable to find IAdminClientExtensions type");
-                        return null;
-                    }
-
-                    DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
-                    IAdminClientExtensions? proxy = null;
-                    if (proxyResult.Success)
-                    {
-                        // Pass in null, as there's no "instance" to duck type here, to create an instance of our proxy
-                        proxy = (IAdminClientExtensions)proxyResult.CreateInstance(null!);
-                        Log.Information("ROBC: Successfully created IAdminClientExtensions proxy");
-                        Console.WriteLine("ROBC: Successfully created IAdminClientExtensions proxy");
                     }
                     else
                     {
-                        Log.Information("ROBC: Unable to create or duck-cast IAdminClientExtensions");
-                        Console.WriteLine("ROBC: Unable to create or duck-cast IAdminClientExtensions");
-                        return null;
+                        DebugLog("DescribeClusterAsync result is null");
                     }
-
-                    var describeClusterAsync = proxy.DescribeClusterAsync(adminClient, null);
-
-                    // Use a short timeout to avoid blocking
-                    var timeout = TimeSpan.FromMilliseconds(100);
-                    using var cts = new CancellationTokenSource(timeout);
-
-                    if (describeClusterAsync.Wait(timeout))
+                }
+                finally
+                {
+                    // 10. Dispose AdminClient using reflection
+                    if (adminClient is IDisposable disposable)
                     {
-                        // Get the Result property from Task<DescribeClusterResult>
-                        var describeClusterResultProperty = describeClusterAsync.GetType().GetProperty("Result");
-                        var describeClusterResultValue = describeClusterResultProperty?.GetValue(describeClusterAsync);
-
-                        if (describeClusterResultValue != null && describeClusterResultValue.TryDuckCast<IDescribeClusterResult>(out var clusterResult))
-                        {
-                            if (clusterResult?.ClusterId != null)
-                            {
-                                Log.Information("ROBC: Successfully retrieved cluster_id from Kafka: {ClusterId}", clusterResult.ClusterId);
-                                Console.WriteLine($"ROBC: Successfully retrieved cluster_id from Kafka: {clusterResult.ClusterId}");
-                                return clusterResult.ClusterId;
-                            }
-                        }
-
-                        Log.Information("ROBC: DescribeClusterAsync returned null or empty cluster_id");
-                        Console.WriteLine("ROBC: DescribeClusterAsync returned null or empty cluster_id");
-                    }
-                    else
-                    {
-                        Log.Information("ROBC: DescribeClusterAsync timed out after {TimeoutMs}ms", timeout.TotalMilliseconds);
-                        Console.WriteLine($"ROBC: DescribeClusterAsync timed out after {timeout.TotalMilliseconds}ms");
+                        disposable.Dispose();
+                        DebugLog("Disposed AdminClient");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "ROBC: Error extracting cluster_id from Kafka metadata");
-                Console.WriteLine($"ROBC: Error extracting cluster_id from Kafka metadata: {ex}");
+                DebugLog($"Error extracting cluster_id from Kafka metadata: {ex}");
             }
             finally
             {
