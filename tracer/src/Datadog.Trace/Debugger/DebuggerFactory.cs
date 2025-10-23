@@ -39,7 +39,7 @@ internal class DebuggerFactory
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.MutableSettings.Environment, tracerSettings.MutableSettings.ServiceVersion);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion);
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
 
