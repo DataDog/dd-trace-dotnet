@@ -22,8 +22,8 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TelemetryTransportTests
     {
-        private const string _gzipCompression = "gzip";
-        private const string _noCompression = "none";
+        private const string GzipCompression = "gzip";
+        private const string NoCompression = "none";
         private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(1);
 
         [Fact]
