@@ -37,15 +37,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                var settings = tracer.Settings;
-                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                var settings = tracer.CurrentTraceSettings;
+                if (!settings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
                 }
 
                 var parent = tracer.ActiveScope?.Span;
-                string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
+                string operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
                 if (parent is not null &&
                     parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -53,8 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
+                string serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+                KafkaTags tags = settings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 span.SetMetric(Trace.Tags.Measured, 1.0);
 
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
@@ -238,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // Consumer spans should always be measured
                 span.SetTag(Tags.Measured, "1");
 
-                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
 
                 if (dataStreamsManager.IsEnabled)
                 {
@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         pathwayContext);
 
                     message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
-                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
+                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
                         // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
@@ -279,8 +279,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             try
             {
-                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                 || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
+                var settings = tracer.CurrentTraceSettings.Settings;
+                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+                 || !settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // integration disabled, skip this trace
                     return;

@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Tests
             propagatedTags.SetTag("_dd.p.key1", "value1");
             propagatedTags.SetTag("_dd.p.key2", "value2");
 
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), propagatedTags);
+            var traceContext = new TraceContext(new StubDatadogTracer(), propagatedTags);
             traceContext.SetSamplingPriority(samplingPriority);
             traceContext.Origin = origin;
             traceContext.AdditionalW3CTraceState = additionalW3CTraceState;

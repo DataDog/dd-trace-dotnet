@@ -78,6 +78,14 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
         public void GrpcRetryDelayParsingFailed(params object?[]? args)
         {
         }
+
+        public void BufferExceededMaxSize(string signalType, int bufferSize)
+        {
+        }
+
+        public void BufferResizeFailedDueToMemory(string signalType)
+        {
+        }
     }
 }
 #endif

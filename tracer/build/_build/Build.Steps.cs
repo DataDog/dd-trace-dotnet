@@ -1366,6 +1366,7 @@ partial class Build
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));

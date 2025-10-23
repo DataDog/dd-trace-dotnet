@@ -13,15 +13,6 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.OpenTelemetry.Metrics
 {
     /// <summary>
-    /// Result of an export operation.
-    /// </summary>
-    internal enum ExportResult
-    {
-        Success,
-        Failure
-    }
-
-    /// <summary>
     /// Base class for exporting metrics data via OTLP.
     /// </summary>
     internal abstract class MetricExporter

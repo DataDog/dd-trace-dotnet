@@ -5,6 +5,8 @@
 
 #if NETFRAMEWORK
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Reflection;
@@ -16,20 +18,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static string ResolveManagedProfilerDirectory()
+        internal static string ComputeTfmDirectory(string tracerHomeDirectory)
         {
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, "net461"));
-            if (!Directory.Exists(fullPath))
-            {
-                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}' and current directory {Environment.CurrentDirectory}");
-                return null;
-            }
-
-            return fullPath;
+            return Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             try
             {
@@ -43,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly? ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
 
@@ -60,23 +54,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
             var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-            StartupLogger.Debug("  Looking for: '{0}'", path);
+            StartupLogger.Debug("Assembly Resolve event received for: {0}. Looking for: {1}", name, path);
 
             if (File.Exists(path))
             {
-                if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
+                if (name.StartsWith("Datadog.Trace, Version=", StringComparison.Ordinal) && name != AssemblyName)
                 {
                     StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
                     return null;
                 }
 
-                StartupLogger.Debug("  Resolving '{0}', loading '{1}'", name, path);
+                StartupLogger.Debug("Calling Assembly.LoadFrom(\"{0}\")", path);
                 var assembly = Assembly.LoadFrom(path);
-                StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
+                StartupLogger.Debug("Assembly loaded: {0}", assembly.FullName);
                 return assembly;
             }
 
-            StartupLogger.Debug("Assembly not found in path: '{0}'", path);
+            StartupLogger.Debug("Assembly not found in path: {0}", path);
             return null;
         }
     }
