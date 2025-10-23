@@ -466,7 +466,7 @@ public class ConfigurationKeysGeneratorTests
         /// String constants for standard Datadog configuration keys.
         /// Auto-generated from supported-configurations.json and supported-configurations-docs.yaml
         /// </summary>
-        internal static partial class ConfigurationKeys2
+        internal static partial class ConfigurationKeys
         {
             /// <summary>
             /// Configuration key for the maximum number of traces to submit per second.
