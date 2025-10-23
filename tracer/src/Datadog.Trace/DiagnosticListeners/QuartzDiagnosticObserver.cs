@@ -142,6 +142,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+                // Quartz
                 if (!string.Equals(listener.Name, DiagnosticListenerName, StringComparison.Ordinal))
                 {
                     return;

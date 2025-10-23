@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -27,7 +28,7 @@ namespace Datadog.Trace.DiagnosticListeners
             return true;
         }
 
-        public virtual IDisposable SubscribeIfMatch(DiagnosticListener diagnosticListener)
+        public virtual IDisposable SubscribeIfMatch(IDiagnosticListener diagnosticListener)
         {
             if (diagnosticListener.Name == ListenerName)
             {

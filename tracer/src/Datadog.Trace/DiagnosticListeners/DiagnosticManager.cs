@@ -7,6 +7,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Datadog.Trace.DiagnosticListeners.DuckTypes;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -61,7 +63,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     continue;
                 }
 
-                IDisposable subscription = subscriber.SubscribeIfMatch(listener);
+                IDisposable subscription = subscriber.SubscribeIfMatch(listener.DuckAs<IDiagnosticListener>());
 
                 if (subscription != null)
                 {
