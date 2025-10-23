@@ -40,13 +40,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                var tracer = Tracer.Instance;
+                if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled, don't create a scope, skip this trace
                     return null;
                 }
 
-                var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
                 PropagationContext extractedContext = default;
                 HttpHeadersCollection? headersCollection = null;
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

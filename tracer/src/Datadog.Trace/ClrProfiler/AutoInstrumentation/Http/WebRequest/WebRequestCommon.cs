@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             {
                 var tracer = Tracer.Instance;
 
-                if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
+                if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
                 {
                     var span = ScopeFactory.CreateInactiveOutboundHttpSpan(
                         tracer,

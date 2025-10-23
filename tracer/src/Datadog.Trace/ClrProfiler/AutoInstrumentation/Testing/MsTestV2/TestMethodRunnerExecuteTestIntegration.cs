@@ -74,6 +74,15 @@ public static class TestMethodRunnerExecuteTestIntegration
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    MethodName = "ExecuteTestAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402

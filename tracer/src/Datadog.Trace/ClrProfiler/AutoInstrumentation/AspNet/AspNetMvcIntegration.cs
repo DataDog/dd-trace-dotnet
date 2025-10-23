@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Span span = null;
                 // integration enabled, go create a scope!
                 var tracer = Tracer.Instance;
-                if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
@@ -209,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
                     }
 
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
                     if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
                     {
