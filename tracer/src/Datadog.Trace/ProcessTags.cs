@@ -50,7 +50,7 @@ internal static class ProcessTags
     private static string GetLastPathSegment(string directoryPath)
     {
         // Path.GetFileName returns an empty string if the path ends with a '/'.
-        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .netframework
+        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
         return Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
     }
 
