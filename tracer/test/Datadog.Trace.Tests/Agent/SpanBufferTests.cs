@@ -147,8 +147,8 @@ namespace Datadog.Trace.Tests.Agent
             buffer.TryWrite(secondSpanArray, ref temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
 
             interceptedChunks.Should().HaveCount(2);
-            interceptedChunks[0].IsFirstChunkInBuffer.Should().BeTrue();
-            interceptedChunks[1].IsFirstChunkInBuffer.Should().BeFalse();
+            interceptedChunks[0].IsFirstChunkInPayload.Should().BeTrue();
+            interceptedChunks[1].IsFirstChunkInPayload.Should().BeFalse();
         }
 
         private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)

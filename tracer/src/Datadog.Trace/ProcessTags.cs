@@ -10,7 +10,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Datadog.Trace.Processors;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace;
 
@@ -20,16 +23,16 @@ internal static class ProcessTags
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
-    private static Lazy<string> _lazySerializedTags = new(GetSerializedTags);
+    private static readonly Lazy<string> LazySerializedTags = new(GetSerializedTags);
 
     public static string SerializedTags
     {
-        get => _lazySerializedTags.Value;
+        get => LazySerializedTags.Value;
     }
 
-    private static Dictionary<string, string> LoadBaseTags()
+    private static SortedDictionary<string, string> LoadBaseTags()
     {
-        var tags = new Dictionary<string, string>();
+        var tags = new SortedDictionary<string, string>();
 
         var entrypointFullName = Assembly.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
         if (!string.IsNullOrEmpty(entrypointFullName))
@@ -51,12 +54,19 @@ internal static class ProcessTags
     {
         // Path.GetFileName returns an empty string if the path ends with a '/'.
         // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
-        return Path.GetFileName(directoryPath.TrimEnd('\\', '/'));
+        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
     }
 
     private static string GetSerializedTags()
     {
-        return string.Join(",", LoadBaseTags().OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}:{NormalizeTagValue(kv.Value)}"));
+        var serializedTags = new StringBuilder();
+        foreach (var kvp in LoadBaseTags())
+        {
+            serializedTags.Append($"{kvp.Key}:{NormalizeTagValue(kvp.Value)},");
+        }
+
+        serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
+        return serializedTags.ToString();
     }
 
     private static string NormalizeTagValue(string tagValue)

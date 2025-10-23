@@ -151,7 +151,7 @@ public class SpanMessagePackFormatterTests
             span.SetDuration(TimeSpan.FromSeconds(1));
         }
 
-        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), isFirstChunkInBuffer: firstChunk);
+        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), isFirstChunkInPayload: firstChunk);
 
         byte[] bytes = [];
 

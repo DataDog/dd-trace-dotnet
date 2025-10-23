@@ -34,7 +34,6 @@ internal static class MessagePackStringCache
 
     // NOTE: all of these can be cached in SpanMessagePackFormatter as static byte[]
     // since they never change over the lifetime of a process
-    private static CachedBytes _processTags;
     private static CachedBytes _gitCommitSha;
     private static CachedBytes _gitRepositoryUrl;
     private static CachedBytes _aasSiteNameBytes;
@@ -98,11 +97,6 @@ internal static class MessagePackStringCache
     public static byte[]? GetServiceBytes(string? service)
     {
         return GetBytes(service, ref _service);
-    }
-
-    public static byte[]? GetProcessTagsBytes(string processTags)
-    {
-        return GetBytes(processTags, ref _processTags);
     }
 
     public static byte[]? GetAzureAppServiceKeyBytes(string key, string? value)
