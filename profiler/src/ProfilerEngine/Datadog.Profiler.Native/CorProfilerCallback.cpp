@@ -342,7 +342,17 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        if (_pConfiguration->IsHeapSnapshotEnabled())
+        {
+            _pHeapSnapshotManager = RegisterService<HeapSnapshotManager>(
+                _pConfiguration.get(),
+                _pCorProfilerInfoEvents,
+                _pFrameStore.get()
+                );
+        }
+
+        // GC profiling is needed for both GC provider and heap snapshots
+        if ((_pHeapSnapshotManager != nullptr) || _pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
@@ -566,7 +576,8 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pMetadataProvider.get(),
         _pSsiManager.get(),
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pHeapSnapshotManager
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -1380,7 +1391,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
         _pConfiguration->IsHttpProfilingEnabled() ||
-        _pConfiguration->IsWaitHandleProfilingEnabled()
+        _pConfiguration->IsWaitHandleProfilingEnabled() ||
+        _pConfiguration->IsHeapSnapshotEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1477,6 +1489,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
         //  - WaitHandle events for .NET 9+
         //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //  - HTTP events via System.Net.Http provider
+        //  - Bulkxxx events for heap snapshots
         //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1523,7 +1537,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-
             providerCount = 6;
             providers =
             {
@@ -1578,6 +1591,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 }
             };
         }
+
+        // TODO: generating a heap snapshot requires the creation of another EventPipe session
+        //       with the same Microsoft-Windows-DotNETRuntime provider and other keywords and,
+        //       more important, possiblly a different verbosity (i.e. verbose).
+        //       CHECK if we need to keep track of the current verbosity level after the heap snapshot
+        //       probably by creating another EventPipe session just to reset the verbosity level.
+        //       Hoping that it is not required to also reset the keywords...
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
                 providerCount, providers.data(), false, &_session

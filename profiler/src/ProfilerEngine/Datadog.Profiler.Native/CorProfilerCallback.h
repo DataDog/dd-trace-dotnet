@@ -42,6 +42,7 @@
 #endif
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
+#include "HeapSnapshotManager.h"
 #include "PInvoke.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
@@ -259,6 +260,8 @@ private :
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
     NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
+    HeapSnapshotManager* _pHeapSnapshotManager = nullptr;
+
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;

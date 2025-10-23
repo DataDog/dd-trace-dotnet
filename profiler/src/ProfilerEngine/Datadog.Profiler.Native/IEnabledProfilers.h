@@ -19,6 +19,7 @@ ENUM_FLAGS(RuntimeProfiler, size_t)
     Network = 128, // TODO: should it be renamed "Http"?
     CpuGc = 256,
     ThreadsLifetime = 512,
+    HeapSnapshot = 1024,
 };
 
 class IEnabledProfilers

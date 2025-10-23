@@ -254,6 +254,8 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="HeapSnapshotManager.h" />
+    <ClInclude Include="IHeapSnapshotManager.h" />
     <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
@@ -408,6 +410,7 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="HeapSnapshotManager.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="NetworkActivity.cpp" />
     <ClCompile Include="NetworkProvider.cpp" />

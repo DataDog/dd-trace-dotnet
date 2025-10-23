@@ -480,11 +480,12 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize)
+    uint64_t pohSize,
+    uint32_t memPressure)
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        LogGcEvent("OnGarbageCollectionEnd: ", number, " ", generation, " ", reason, " ", type);
+        LogGcEvent("OnGarbageCollectionEnd: #", number, " gen", generation, " ", reason, " ", type, " ", memPressure, "%");
 
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
@@ -497,7 +498,8 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
             endTimestamp,
             gen2Size,
             lohSize,
-            pohSize);
+            pohSize,
+            memPressure);
     }
 }
 
@@ -623,7 +625,8 @@ void ClrEventsParser::OnGCRestartEEEnd(std::chrono::nanoseconds timestamp)
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            gc.memPressure);
         ResetGC(gc);
     }
 }
@@ -641,7 +644,6 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
     gc.gen2Size = gen2Size;
     gc.lohSize = lohSize;
     gc.pohSize = pohSize;
-
     if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
@@ -658,7 +660,8 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            gc.memPressure);
         ResetGC(gc);
     }
 }
@@ -694,7 +697,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            payload.MemPressure);
         ResetGC(gc);
     }
 }

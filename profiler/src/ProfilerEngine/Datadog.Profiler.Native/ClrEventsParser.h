@@ -233,6 +233,8 @@ struct GCGlobalHeapPayload
     uint32_t Gen0ReductionCount;
     uint32_t Reason;
     uint32_t GlobalMechanisms;
+    uint32_t PauseMode;
+    uint32_t MemPressure;
 };
 
 struct WaitHandleWaitStartPayload // for .NET 9+
@@ -264,6 +266,7 @@ struct GCDetails
     uint64_t gen2Size;
     uint64_t lohSize;
     uint64_t pohSize;
+    uint32_t memPressure;
 
     // GlobalHeapHistory and HeapStats events are not received in the same order
     // between Framework and CoreCLR. So we need to keep track of what has been received
@@ -335,7 +338,8 @@ private:
         std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
-        uint64_t pohSize
+        uint64_t pohSize,
+        uint32_t memPressure
         );
     GCDetails& GetCurrentGC();
     void InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload);
