@@ -125,7 +125,7 @@ jobs:
       - name: "Rename vNext milestone"
         id: rename
         # We don't rename vNext/vNext-v1 for hotfix releases
-        if: ${{ !inputs.is_hotfix && !contains(github.ref, 'hotfix') }}
+        if: ${{ !inputs.is_hotfix }}
         run: ./tracer/build.sh RenameVNextMilestone
         env:
           Version: ${{steps.versions.outputs.full_version}}
