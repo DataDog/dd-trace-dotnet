@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -60,6 +61,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             return fullPath;
+        }
+
+        internal static string GetProfilerPathEnvVarNameForArch()
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+                   {
+                       Architecture.X64 => "CORECLR_PROFILER_PATH_64",
+                       Architecture.X86 => "CORECLR_PROFILER_PATH_32",
+                       Architecture.Arm64 => "CORECLR_PROFILER_PATH_ARM64",
+                       Architecture.Arm => "CORECLR_PROFILER_PATH_ARM",
+                       _ => throw new ArgumentOutOfRangeException(nameof(RuntimeInformation.ProcessArchitecture), RuntimeInformation.ProcessArchitecture, "Unsupported architecture")
+                   };
+        }
+
+        internal static string GetProfilerPathEnvVarNameFallback()
+        {
+            return "CORECLR_PROFILER_PATH";
         }
 
         private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
