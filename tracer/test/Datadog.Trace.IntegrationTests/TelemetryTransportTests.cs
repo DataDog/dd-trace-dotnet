@@ -22,6 +22,8 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TelemetryTransportTests
     {
+        private const string _gzipCompression = "gzip";
+        private const string _noCompression = "none";
         private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(1);
 
         [Fact]
@@ -31,7 +33,7 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
             // Uses framework specific transport
-            var transport = GetAgentOnlyTransport(telemetryUri, true);
+            var transport = GetAgentOnlyTransport(telemetryUri, _gzipCompression);
             var data =  GetSampleData();
             var result = await transport.PushTelemetry(data);
 
@@ -64,7 +66,7 @@ namespace Datadog.Trace.IntegrationTests
             // Uses framework specific transport
             var transport = agentless
                                 ? GetAgentlessOnlyTransport(telemetryUri, apiKey, cloud)
-                                : GetAgentOnlyTransport(telemetryUri, true);
+                                : GetAgentOnlyTransport(telemetryUri, _gzipCompression);
 
             var data = GetSampleData();
             var result = await transport.PushTelemetry(data);
@@ -127,7 +129,7 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{port}");
 
             // Uses framework specific transport
-            var transport = GetAgentOnlyTransport(telemetryUri, true);
+            var transport = GetAgentOnlyTransport(telemetryUri, _gzipCompression);
             var data = GetSampleData();
             var result = await transport.PushTelemetry(data);
 
@@ -136,7 +138,7 @@ namespace Datadog.Trace.IntegrationTests
 
         [SkippableTheory]
         [MemberData(nameof(Data.GetStatusCodes), MemberType = typeof(Data))]
-        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, bool compressionEnabled, int expectedPushResult)
+        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, string compressionEnabled, int expectedPushResult)
         {
             using var agent = new ErroringTelemetryAgent(
                 responseCode: responseCode,
@@ -169,10 +171,10 @@ namespace Datadog.Trace.IntegrationTests
                 host: new HostTelemetryData("SOME_HOST", "Windows", "x64"),
                 payload: null);
 
-        private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri, bool compressionEnabled)
+        private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri, string compressionMethod)
         {
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionEnabled: compressionEnabled),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod),
                 ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, telemetryUri } }));
             transport.AgentTransport.Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
             return transport.AgentTransport;
@@ -183,7 +185,7 @@ namespace Datadog.Trace.IntegrationTests
             var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey, cloudSettings);
 
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionEnabled: true),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: _gzipCompression),
                 new ExporterSettings());
 
             transport.AgentlessTransport.Should().NotBeNull().And.BeOfType<AgentlessTelemetryTransport>();
@@ -205,7 +207,7 @@ namespace Datadog.Trace.IntegrationTests
                 // make sure it works correctly
                 var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
                 var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
-                var compressed = string.Equals(ctx.Request.Headers["Content-Encoding"], "gzip", StringComparison.OrdinalIgnoreCase);
+                var compressed = string.Equals(ctx.Request.Headers["Content-Encoding"], _gzipCompression, StringComparison.OrdinalIgnoreCase);
 
                 var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType, compressed);
 
@@ -216,20 +218,20 @@ namespace Datadog.Trace.IntegrationTests
 
         internal class Data
         {
-            public static TheoryData<int, bool, int> GetStatusCodes() => new()
+            public static TheoryData<int, string, int> GetStatusCodes() => new()
             {
-                { 200, true, (int)TelemetryPushResult.Success },
-                { 201, true, (int)TelemetryPushResult.Success },
-                { 400, true, (int)TelemetryPushResult.TransientFailure },
-                { 404, true, (int)TelemetryPushResult.FatalError },
-                { 500, true, (int)TelemetryPushResult.TransientFailure },
-                { 503, true, (int)TelemetryPushResult.TransientFailure },
-                { 200, false, (int)TelemetryPushResult.Success },
-                { 201, false, (int)TelemetryPushResult.Success },
-                { 400, false, (int)TelemetryPushResult.TransientFailure },
-                { 404, false, (int)TelemetryPushResult.FatalError },
-                { 500, false, (int)TelemetryPushResult.TransientFailure },
-                { 503, false, (int)TelemetryPushResult.TransientFailure },
+                { 200, _gzipCompression, (int)TelemetryPushResult.Success },
+                { 201, _gzipCompression, (int)TelemetryPushResult.Success },
+                { 400, _gzipCompression, (int)TelemetryPushResult.TransientFailure },
+                { 404, _gzipCompression, (int)TelemetryPushResult.FatalError },
+                { 500, _gzipCompression, (int)TelemetryPushResult.TransientFailure },
+                { 503, _gzipCompression, (int)TelemetryPushResult.TransientFailure },
+                { 200, _noCompression, (int)TelemetryPushResult.Success },
+                { 201, _noCompression, (int)TelemetryPushResult.Success },
+                { 400, _noCompression, (int)TelemetryPushResult.TransientFailure },
+                { 404, _noCompression, (int)TelemetryPushResult.FatalError },
+                { 500, _noCompression, (int)TelemetryPushResult.TransientFailure },
+                { 503, _noCompression, (int)TelemetryPushResult.TransientFailure },
             };
         }
     }

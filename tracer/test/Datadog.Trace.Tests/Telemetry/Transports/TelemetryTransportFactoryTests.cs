@@ -30,7 +30,7 @@ public class TelemetryTransportFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: "gzip");
 
         var exporterSettings = new ExporterSettings();
 

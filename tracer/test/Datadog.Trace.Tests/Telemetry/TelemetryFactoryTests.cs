@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tests.Telemetry;
 [TelemetryRestorer]
 public class TelemetryFactoryTests
 {
+    private const string _gzipCompression = "gzip";
+
     [Fact]
     public void TelemetryFactory_DisabledIfTelemetryIsDisabled()
     {
@@ -38,7 +40,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -59,7 +61,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -84,7 +86,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -110,7 +112,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -136,7 +138,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -162,7 +164,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true);
 
@@ -192,7 +194,7 @@ public class TelemetryFactoryTests
             dependencyCollectionEnabled: dependencyCollectionEnabled,
             metricsEnabled: true,
             debugEnabled: false,
-            compressionEnabled: true);
+            compressionMethod: _gzipCompression);
 
         // First controller
         var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
