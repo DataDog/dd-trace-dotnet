@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -15,12 +15,10 @@
                     "value": "Hello"
                   }
                 },
-                "type": "Generic",
-                "value": "Generic"
+                "type": "Generic"
               },
               "this": {
-                "type": "Test`1",
-                "value": "Test`1"
+                "type": "Test`1"
               }
             }
           },
@@ -33,20 +31,17 @@
                     "value": "Hello"
                   }
                 },
-                "type": "Generic",
-                "value": "Generic"
+                "type": "Generic"
               },
               "this": {
-                "type": "Test`1",
-                "value": "Test`1"
+                "type": "Test`1"
               }
             },
             "locals": {
               "@return": {
                 "elements": [
                   {
-                    "type": "Test`1",
-                    "value": "Test`1"
+                    "type": "Test`1"
                   }
                 ],
                 "size": 1,
@@ -55,8 +50,7 @@
               "kk": {
                 "elements": [
                   {
-                    "type": "Test`1",
-                    "value": "Test`1"
+                    "type": "Test`1"
                   }
                 ],
                 "size": 1,
@@ -69,8 +63,7 @@
               "tt": {
                 "elements": [
                   {
-                    "type": "Test`1",
-                    "value": "Test`1"
+                    "type": "Test`1"
                   }
                 ],
                 "size": 1,
@@ -94,6 +87,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasVarAndMvar+Test`1",

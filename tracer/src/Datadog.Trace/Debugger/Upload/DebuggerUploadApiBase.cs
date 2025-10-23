@@ -5,10 +5,12 @@
 
 #nullable enable
 using System;
+using System.CodeDom;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
@@ -18,6 +20,8 @@ namespace Datadog.Trace.Debugger.Upload;
 
 internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 {
+    protected const string DebuggerV1Endpoint = "debugger/v1/input";
+
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
 
@@ -52,6 +56,16 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
         query["ddtags"] = _tags;
         builder.Query = query.ToString();
         return builder.ToString();
+    }
+
+    protected Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
+    {
+        var request = _apiRequestFactory.Create(new Uri(uri));
+        var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
+
+        return this is DiagnosticsUploadApi && !isDebuggerV1
+                   ? request.PostAsync([new("event", MimeTypes.Json, "event.json", data)])
+                   : request.PostAsync(data, MimeTypes.Json);
     }
 
     private string GetDefaultTagsMergedWithGlobalTags()

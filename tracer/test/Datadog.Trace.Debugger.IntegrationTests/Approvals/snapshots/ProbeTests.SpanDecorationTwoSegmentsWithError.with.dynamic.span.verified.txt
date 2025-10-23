@@ -13,7 +13,6 @@
       runtime-id: Guid_2,
       SpanDecorationTwoSegments: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValueRun,
       version: 1.0.0,
-      _dd.code_origin.type: exit,
       _dd.di.SpanDecorationTwoSegments.evaluation_error: EvaluationError { Expression = this.Arg =  },
       _dd.di.SpanDecorationTwoSegments.probe_id: Guid_3
     },

@@ -32,15 +32,15 @@ internal static class IbmMqHelper
 
         try
         {
-            var settings = tracer.Settings;
-            if (!settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+            var settings = tracer.CurrentTraceSettings;
+            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
             {
                 return null;
             }
 
-            var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
-            var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             tags.TopicName = queue.Name;
 
             scope = tracer.StartActiveInternal(
@@ -77,14 +77,14 @@ internal static class IbmMqHelper
 
         try
         {
-            var settings = tracer.Settings;
-            if (!settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+            var settings = tracer.CurrentTraceSettings;
+            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
             {
                 return null;
             }
 
             var parent = tracer.ActiveScope?.Span;
-            var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingType);
             if (parent is not null &&
                 parent.OperationName == operationName &&
                 parent.GetTag(Tags.InstrumentationName) != null)
@@ -104,8 +104,8 @@ internal static class IbmMqHelper
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
             }
 
-            var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             tags.TopicName = queue.Name;
             scope = tracer.StartActiveInternal(
                 operationName,

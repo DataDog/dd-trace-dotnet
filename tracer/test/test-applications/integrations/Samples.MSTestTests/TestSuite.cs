@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Samples.MSTestTests;
@@ -130,6 +131,15 @@ public class TestSuite
 
 public class MyCustomTestMethodAttribute : TestMethodAttribute
 {
+#if MSTEST_ASYNC
+    public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+    {
+        return Task.FromResult(new []
+        {
+            new TestResult { DisplayName = "My Custom: " + testMethod.TestMethodName, Outcome = UnitTestOutcome.Passed, }
+        });
+    }
+#else
     public override TestResult[] Execute(ITestMethod testMethod)
     {
         return
@@ -137,20 +147,41 @@ public class MyCustomTestMethodAttribute : TestMethodAttribute
             new TestResult { DisplayName = "My Custom: " + testMethod.TestMethodName, Outcome = UnitTestOutcome.Passed, }
         ];
     }
+#endif
 }
 
 public class MyCustomRenameTestMethodAttribute : TestMethodAttribute
 {
+#if MSTEST_ASYNC
+    public override async Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+    {
+        var results = await base.ExecuteAsync(testMethod).ConfigureAwait(false);
+        results[0].DisplayName = "My Custom 2: " + testMethod.TestMethodName;
+        return results;
+    }
+#else
     public override TestResult[] Execute(ITestMethod testMethod)
     {
         var results = base.Execute(testMethod);
         results[0].DisplayName = "My Custom 2: " + testMethod.TestMethodName;
         return results;
     }
+#endif
 }
 
 public class MyCustomMultipleResultsTestMethodAttribute : TestMethodAttribute
 {
+#if MSTEST_ASYNC
+    public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+    {
+        return Task.FromResult(new []
+        {
+            new TestResult { DisplayName = "My Custom 3|1: " + testMethod.TestMethodName, Outcome = UnitTestOutcome.Passed, },
+
+            new TestResult { DisplayName = "My Custom 3|2: " + testMethod.TestMethodName, Outcome = UnitTestOutcome.Passed, }
+        });
+    }
+#else
     public override TestResult[] Execute(ITestMethod testMethod)
     {
         return
@@ -160,4 +191,5 @@ public class MyCustomMultipleResultsTestMethodAttribute : TestMethodAttribute
             new TestResult { DisplayName = "My Custom 3|2: " + testMethod.TestMethodName, Outcome = UnitTestOutcome.Passed, }
         ];
     }
+#endif
 }

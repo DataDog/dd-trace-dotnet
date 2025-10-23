@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> AspNetAreaBytes => new byte[] { 171, 97, 115, 112, 110, 101, 116, 46, 97, 114, 101, 97 };
         // HttpRouteBytes = MessagePack.Serialize("http.route");
         private static ReadOnlySpan<byte> HttpRouteBytes => new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 
         public override string? GetTag(string key)
         {
@@ -34,6 +36,7 @@ namespace Datadog.Trace.Tagging
                 "aspnet.action" => AspNetAction,
                 "aspnet.area" => AspNetArea,
                 "http.route" => HttpRoute,
+                "component" => InstrumentationName,
                 _ => base.GetTag(key),
             };
         }
@@ -56,6 +59,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "http.route": 
                     HttpRoute = value;
+                    break;
+                case "component": 
+                    InstrumentationName = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -88,6 +94,11 @@ namespace Datadog.Trace.Tagging
             if (HttpRoute is not null)
             {
                 processor.Process(new TagItem<string>("http.route", HttpRoute, HttpRouteBytes));
+            }
+
+            if (InstrumentationName is not null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -127,6 +138,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.route (tag):")
                   .Append(HttpRoute)
+                  .Append(',');
+            }
+
+            if (InstrumentationName is not null)
+            {
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
                   .Append(',');
             }
 

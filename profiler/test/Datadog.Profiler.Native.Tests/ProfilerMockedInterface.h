@@ -103,6 +103,7 @@ public:
     MOCK_METHOD(bool, Export, (bool lastCall), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
+    MOCK_METHOD(void, RegisterUpscalePoissonProvider, (IUpscalePoissonProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
     MOCK_METHOD(void, RegisterApplication, (std::string_view runtimeId), (override));
 };
@@ -236,6 +237,13 @@ public:
                               const std::string& typeName,
                               uint64_t allocationAmount,
                               const std::vector<uintptr_t>& stack), (override));
+
+    MOCK_METHOD(void, OnAllocationSampled, (uint32_t allocationKind,
+                              ClassID classId,
+                              const WCHAR* typeName,
+                              uintptr_t address,
+                              uint64_t objectSize,
+                              uint64_t allocationByteOffset), (override));
 };
 
 template <typename T, typename U, typename... Args>

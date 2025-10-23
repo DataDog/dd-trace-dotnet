@@ -11,8 +11,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      version: 1.0.0,
-      _dd.code_origin.type: exit
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -34,7 +33,6 @@
       language: dotnet,
       SpanDecorationError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
       version: 1.0.0,
-      _dd.code_origin.type: exit,
       _dd.di.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error },
       _dd.di.SpanDecorationError.probe_id: Guid_3
     }

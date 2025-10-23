@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -17,8 +17,7 @@
                 "value": "Greg"
               },
               "this": {
-                "type": "HasLocalListOfObjects",
-                "value": "HasLocalListOfObjects"
+                "type": "HasLocalListOfObjects"
               }
             }
           },
@@ -33,8 +32,7 @@
                 "value": "Greg"
               },
               "this": {
-                "type": "HasLocalListOfObjects",
-                "value": "HasLocalListOfObjects"
+                "type": "HasLocalListOfObjects"
               }
             },
             "locals": {
@@ -63,8 +61,7 @@
                                 "value": "City"
                               }
                             },
-                            "type": "Place",
-                            "value": "Place"
+                            "type": "Place"
                           },
                           "HomeType": {
                             "type": "BuildingType",
@@ -79,8 +76,7 @@
                             "value": "Elsewhere"
                           }
                         },
-                        "type": "Address",
-                        "value": "Address"
+                        "type": "Address"
                       },
                       "Age": {
                         "type": "Double",
@@ -99,8 +95,7 @@
                         "value": "Simon"
                       }
                     },
-                    "type": "Person",
-                    "value": "Person"
+                    "type": "Person"
                   },
                   {
                     "fields": {
@@ -121,8 +116,7 @@
                                 "value": "City"
                               }
                             },
-                            "type": "Place",
-                            "value": "Place"
+                            "type": "Place"
                           },
                           "HomeType": {
                             "type": "BuildingType",
@@ -137,8 +131,7 @@
                             "value": "Here"
                           }
                         },
-                        "type": "Address",
-                        "value": "Address"
+                        "type": "Address"
                       },
                       "Age": {
                         "type": "Double",
@@ -157,8 +150,7 @@
                         "value": "Lucy"
                       }
                     },
-                    "type": "Person",
-                    "value": "Person"
+                    "type": "Person"
                   }
                 ],
                 "size": 2,
@@ -183,8 +175,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -199,8 +190,7 @@
                         "value": "Somewhere"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -218,8 +208,7 @@
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
-                                "type": "Place",
-                                "value": "Place"
+                                "type": "Place"
                               },
                               "HomeType": {
                                 "type": "BuildingType",
@@ -234,8 +223,7 @@
                                 "value": "Elsewhere"
                               }
                             },
-                            "type": "Address",
-                            "value": "Address"
+                            "type": "Address"
                           },
                           "Age": {
                             "type": "Double",
@@ -254,8 +242,7 @@
                             "value": "Simon"
                           }
                         },
-                        "type": "Person",
-                        "value": "Person"
+                        "type": "Person"
                       },
                       {
                         "fields": {
@@ -267,8 +254,7 @@
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
-                                "type": "Place",
-                                "value": "Place"
+                                "type": "Place"
                               },
                               "HomeType": {
                                 "type": "BuildingType",
@@ -283,8 +269,7 @@
                                 "value": "Here"
                               }
                             },
-                            "type": "Address",
-                            "value": "Address"
+                            "type": "Address"
                           },
                           "Age": {
                             "type": "Double",
@@ -303,8 +288,7 @@
                             "value": "Lucy"
                           }
                         },
-                        "type": "Person",
-                        "value": "Person"
+                        "type": "Person"
                       }
                     ],
                     "size": 2,
@@ -319,8 +303,7 @@
                     "value": "Greg"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "p2": {
                 "fields": {
@@ -341,8 +324,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -357,8 +339,7 @@
                         "value": "Elsewhere"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -377,8 +358,7 @@
                     "value": "Simon"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "p3": {
                 "fields": {
@@ -399,8 +379,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -415,8 +394,7 @@
                         "value": "Here"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -435,8 +413,7 @@
                     "value": "Lucy"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               }
             }
           }
@@ -456,6 +433,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalListOfObjects",

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.Debugger.Caching;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
+        private readonly ConcurrentDictionary<Assembly, bool> _assemblySkipCache = new();
         private readonly CodeOriginTags _tags;
 
         internal SpanCodeOrigin(DebuggerSettings settings)
@@ -36,16 +38,21 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null)
+            if (span?.Tags is WebTags { SpanKind: SpanKinds.Server })
             {
-                Log.Debug("Can not add code origin when span is null");
+                // entry span
+                Log.Debug("SetCodeOriginForExitSpan: Skipping server entry span {SpanID}. Code origin will be added later. Service {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ServiceName, span.ResourceName, span.OperationName);
                 return;
             }
 
-            if (span.Tags is WebTags { SpanKind: SpanKinds.Server })
+            if (ShouldSkipExitSpan())
             {
-                // entry span
-                Log.Debug("Skipping span {SpanID}, we will add entry span code origin for it later. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
+                return;
+            }
+
+            if (span == null)
+            {
+                Log.Debug("Can not add code origin for exit span when span is null");
                 return;
             }
 
@@ -56,6 +63,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             AddExitSpanTags(span);
+        }
+
+        private bool ShouldSkipExitSpan()
+        {
+            // Exit span code origin has been disabled since tracer version 3.28.0.
+            // when it will be enabled, update SpanCodeOriginTests.ExitSpanTests
+            return true;
         }
 
         internal void SetCodeOriginForEntrySpan(Span? span, Type? type, MethodInfo? method)
@@ -89,12 +103,14 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
 
                 var assembly = type.Assembly;
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.SymDbThirdPartyDetectionExcludes, Settings.SymDbThirdPartyDetectionIncludes))
+                if (ShouldSkipAssembly(assembly))
                 {
-                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     return;
                 }
 
+                // Add code origin tags to entry span
+                // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
+                // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
                 span.Tags.SetTag(_tags.Type, "entry");
                 span.Tags.SetTag(_tags.Index[0], "0");
                 span.Tags.SetTag(_tags.Method[0], methodName);
@@ -116,6 +132,21 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private DatadogMetadataReader.DatadogSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
         {
+            // Design Decision: Read ALL endpoint sequence points upfront per assembly
+            //
+            // Current approach: Opens PDB once, reads all endpoint sequence points (~50-200 methods),
+            // closes immediately. One-time cost per assembly, then instant cache hits.
+            //
+            // Alternatives considered:
+            // - Lazy loading: Would reopen PDB repeatedly (expensive I/O, unpredictable latency spikes)
+            // - Keep PDB open: File handle leaks, resource limits, complex lifecycle management
+            // - Background/async: Race conditions, thundering herd, testing complexity
+            //
+            // Trade-off: Slightly higher first-request latency for simplicity, predictability, and no resource leaks.
+            // Memory cost is negligible: 50-200 endpoints × ~150 bytes = 7.5-30 KB per assembly.
+            //
+            // Note: Will revisit if profiling shows significant performance impact.
+
             var pdbInfo = _assemblyPdbCache.GetOrAdd(
                 assembly,
                 asm =>
@@ -130,7 +161,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     {
                         var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader);
 
-                        // Build dictionary of sequence points only for endpoint methods
+                        // Build dictionary of sequence points for ALL detected endpoint methods in one pass
+                        // This avoids reopening the PDB file on subsequent endpoint calls
                         var builder = ImmutableDictionary.CreateBuilder<int, DatadogMetadataReader.DatadogSequencePoint?>();
 
                         foreach (var token in endpointMethodTokens)
@@ -143,6 +175,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                             catch (Exception ex)
                             {
                                 Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, asm.FullName);
+                                // Add null to dictionary to avoid retrying on every call
+                                builder.Add(token, null);
                             }
                         }
 
@@ -235,9 +269,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.ThirdPartyDetectionExcludes, Settings.ThirdPartyDetectionIncludes))
+                if (ShouldSkipAssembly(assembly))
                 {
-                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
                 }
 
@@ -245,6 +278,16 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             return count;
+        }
+
+        private bool ShouldSkipAssembly(Assembly assembly)
+        {
+            return _assemblySkipCache.GetOrAdd(
+                assembly,
+                asm => AssemblyFilter.ShouldSkipAssembly(
+                    asm,
+                    Settings.ThirdPartyDetectionExcludes,
+                    Settings.ThirdPartyDetectionIncludes));
         }
 
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
@@ -255,7 +298,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         }
 
         /// <summary>
-        /// avoid string concatenations and reduce GC pressure in hot path
+        /// Avoid string concatenations and reduce GC pressure in hot path
         /// </summary>
         internal class CodeOriginTags
         {

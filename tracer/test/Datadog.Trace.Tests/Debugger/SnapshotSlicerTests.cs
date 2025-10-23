@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Flaky("This test sporadically fails due to invalid json e.g. Unexpected end of content while loading JObject. Path 'debugger', line 1, position 20557")]
         public async Task SnapshotBiggerThanMaxSize_ThreeLevel_AllSliced()
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } }, false);
+            var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { Class = new VeryComplexClass()  { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } } }, false);
             var slicer = GetSlicer(3, snapshot.Length - 326);
             var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
 

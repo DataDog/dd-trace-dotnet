@@ -115,6 +115,8 @@
    </assembly>
    <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
+   <assembly fullname="MSTest.TestFramework" />
+   <assembly fullname="MSTestAdapter.PlatformServices" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
    <assembly fullname="netstandard" />
@@ -237,6 +239,10 @@
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
    </assembly>
    <assembly fullname="System.Diagnostics.DiagnosticSource">
+      <type fullname="System.Diagnostics.Activity" />
+      <type fullname="System.Diagnostics.ActivityIdFormat" />
+      <type fullname="System.Diagnostics.ActivitySpanId" />
+      <type fullname="System.Diagnostics.ActivityTraceId" />
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />
@@ -366,19 +372,26 @@
    <assembly fullname="System.Messaging" />
    <assembly fullname="System.Net.Http">
       <type fullname="System.Net.Http.ByteArrayContent" />
+      <type fullname="System.Net.Http.Headers.HeaderStringValues" />
+      <type fullname="System.Net.Http.Headers.HeaderStringValues/Enumerator" />
       <type fullname="System.Net.Http.Headers.HttpContentHeaders" />
       <type fullname="System.Net.Http.Headers.HttpHeaders" />
+      <type fullname="System.Net.Http.Headers.HttpHeadersNonValidated" />
       <type fullname="System.Net.Http.Headers.HttpRequestHeaders" />
       <type fullname="System.Net.Http.Headers.HttpResponseHeaders" />
       <type fullname="System.Net.Http.Headers.MediaTypeHeaderValue" />
       <type fullname="System.Net.Http.Headers.NameValueHeaderValue" />
+      <type fullname="System.Net.Http.Headers.RetryConditionHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
       <type fullname="System.Net.Http.HttpContent" />
       <type fullname="System.Net.Http.HttpMessageHandler" />
+      <type fullname="System.Net.Http.HttpMessageInvoker" />
       <type fullname="System.Net.Http.HttpMethod" />
+      <type fullname="System.Net.Http.HttpRequestException" />
       <type fullname="System.Net.Http.HttpRequestMessage" />
       <type fullname="System.Net.Http.HttpResponseMessage" />
+      <type fullname="System.Net.Http.HttpVersionPolicy" />
       <type fullname="System.Net.Http.MultipartFormDataContent" />
       <type fullname="System.Net.Http.SocketsHttpConnectionContext" />
       <type fullname="System.Net.Http.SocketsHttpHandler" />
@@ -394,6 +407,7 @@
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />
+      <type fullname="System.Net.HttpVersion" />
       <type fullname="System.Net.ICredentials" />
       <type fullname="System.Net.IPAddress" />
       <type fullname="System.Net.IPEndPoint" />
@@ -641,6 +655,7 @@
       <type fullname="System.IO.FileStream" />
       <type fullname="System.IO.FileSystemInfo" />
       <type fullname="System.IO.HandleInheritability" />
+      <type fullname="System.IO.InvalidDataException" />
       <type fullname="System.IO.IOException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
@@ -742,6 +757,7 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
+      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
@@ -906,6 +922,7 @@
       <type fullname="System.IO.BinaryReader" />
       <type fullname="System.IO.BinaryWriter" />
       <type fullname="System.IO.EndOfStreamException" />
+      <type fullname="System.IO.InvalidDataException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
       <type fullname="System.IO.StreamReader" />

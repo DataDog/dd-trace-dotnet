@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncNoHoistedLocal",
-                "value": "AsyncNoHoistedLocal"
+                "type": "AsyncNoHoistedLocal"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncNoHoistedLocal",
-                "value": "AsyncNoHoistedLocal"
+                "type": "AsyncNoHoistedLocal"
               }
             },
             "locals": {
@@ -56,6 +54,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncNoHoistedLocal",

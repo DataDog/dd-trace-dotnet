@@ -22,6 +22,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack:

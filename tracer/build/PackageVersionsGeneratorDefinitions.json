@@ -1,5 +1,19 @@
 [
   {
+    "IntegrationName": "Quartz",
+    "SampleProjectName": "Samples.Quartz",
+    "NugetPackageSearchName": "Quartz",
+    "MinVersion": "3.1.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSdk",
     "SampleProjectName": "Samples.AWS.DynamoDBv2",
     "NugetPackageSearchName": "AWSSDK.Core",
@@ -162,7 +176,7 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "3.5.0",
     "SpecificVersions": [
       "2.0.*",
       "2.5.*",
@@ -599,36 +613,51 @@
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
-    ]
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    }]
   },
   {
     "IntegrationName": "MSTest2",
     "SampleProjectName": "Samples.MSTestTests2",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
-    ]
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    }]
   },
   {
     "IntegrationName": "MSTest2Retries",
     "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.*.*",
-      "3.*.*"
-    ]
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    }]
   },
   {
     "IntegrationName": "Kafka",

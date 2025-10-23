@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -19,8 +19,7 @@
                     "value": "5"
                   }
                 },
-                "type": "AsyncFieldArgumentEntryFullSnapshot",
-                "value": "AsyncFieldArgumentEntryFullSnapshot"
+                "type": "AsyncFieldArgumentEntryFullSnapshot"
               }
             },
             "staticFields": {
@@ -43,8 +42,7 @@
                     "value": "5"
                   }
                 },
-                "type": "AsyncFieldArgumentEntryFullSnapshot",
-                "value": "AsyncFieldArgumentEntryFullSnapshot"
+                "type": "AsyncFieldArgumentEntryFullSnapshot"
               }
             },
             "locals": {
@@ -80,6 +78,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.ExpressionTests.AsyncFieldArgumentEntryFullSnapshot",

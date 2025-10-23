@@ -4,11 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
@@ -32,6 +29,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         internal static string ExceptionCaptureId { get; } = Guid.NewGuid().ToString();
 
         internal static string FrameIndex { get; } = Guid.NewGuid().ToString();
+
+        internal override string DebuggerProduct => DebuggerTags.DebuggerProduct.ER;
 
         internal override DebuggerSnapshotCreator EndSnapshot()
         {
