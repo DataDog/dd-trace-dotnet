@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.Configuration;
 
 #nullable enable
@@ -27,12 +29,24 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private const int LengthDelimited = 2;
 
         private readonly TracerSettings _settings;
-        private readonly byte[] _cachedResourceData;
+        private byte[] _cachedResourceData;
 
         public OtlpMetricsSerializer(TracerSettings settings)
         {
             _settings = settings;
-            _cachedResourceData = SerializeResource(settings);
+            UpdateCachedResourceData(settings.Manager.InitialMutableSettings);
+            settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdateCachedResourceData(mutable);
+                }
+            });
+            [MemberNotNull(nameof(_cachedResourceData))]
+            void UpdateCachedResourceData(MutableSettings mutable)
+            {
+                Interlocked.Exchange(ref _cachedResourceData, SerializeResource(mutable));
+            }
         }
 
         /// <summary>
@@ -74,8 +88,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteTag(writer, FieldNumbers.Resource, LengthDelimited);
-            WriteVarInt(writer, _cachedResourceData.Length);
-            writer.Write(_cachedResourceData);
+            var data = Volatile.Read(ref _cachedResourceData);
+            WriteVarInt(writer, data.Length);
+            writer.Write(data);
 
             // Group metrics by meter identity (name + version + tags)
             var meterGroups = new Dictionary<string, List<MetricPoint>>();
@@ -104,7 +119,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeResource(TracerSettings settings)
+        private byte[] SerializeResource(MutableSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -124,31 +139,30 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             WriteVarInt(writer, sdkVersionAttr.Length);
             writer.Write(sdkVersionAttr);
 
-            var serviceName = settings.MutableSettings.ServiceName ?? "unknown_service:dotnet";
-            var serviceNameAttr = SerializeKeyValue("service.name", serviceName);
+            var serviceNameAttr = SerializeKeyValue("service.name", settings.DefaultServiceName);
             WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
             WriteVarInt(writer, serviceNameAttr.Length);
             writer.Write(serviceNameAttr);
 
-            if (!string.IsNullOrEmpty(settings.MutableSettings.Environment))
+            if (!string.IsNullOrEmpty(settings.Environment))
             {
-                var envAttr = SerializeKeyValue("deployment.environment.name", settings.MutableSettings.Environment);
+                var envAttr = SerializeKeyValue("deployment.environment.name", settings.Environment);
                 WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
                 WriteVarInt(writer, envAttr.Length);
                 writer.Write(envAttr);
             }
 
-            if (!string.IsNullOrEmpty(settings.MutableSettings.ServiceVersion))
+            if (!string.IsNullOrEmpty(settings.ServiceVersion))
             {
-                var versionAttr = SerializeKeyValue("service.version", settings.MutableSettings.ServiceVersion);
+                var versionAttr = SerializeKeyValue("service.version", settings.ServiceVersion);
                 WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
                 WriteVarInt(writer, versionAttr.Length);
                 writer.Write(versionAttr);
             }
 
-            if (settings.MutableSettings.GlobalTags.Count > 0)
+            if (settings.GlobalTags.Count > 0)
             {
-                foreach (var tag in settings.MutableSettings.GlobalTags)
+                foreach (var tag in settings.GlobalTags)
                 {
                     if (IsHandledResourceAttribute(tag.Key))
                     {
