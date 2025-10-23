@@ -507,7 +507,7 @@ namespace Datadog.Trace
         internal const string RuntimeFamily = "_dd.runtime_family";
 
         /// <summary>
-        /// contains a serialized list of process tags, that can be used in the backend for service renaming
+        /// Contains a serialized list of process tags, that can be used in the backend for service renaming.
         /// <see cref="ProcessTags"/>
         /// </summary>
         internal const string ProcessTags = "_dd.tags.process";
