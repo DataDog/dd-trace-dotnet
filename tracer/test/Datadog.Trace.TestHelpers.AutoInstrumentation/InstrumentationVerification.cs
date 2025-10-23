@@ -25,7 +25,7 @@ public static class InstrumentationVerification
 
     /// <summary>
     /// Configuration key for enabling or disabling the copying original modules to disk so we can do offline investigation.
-    /// Default is value is disabled.
+    /// Default value is disabled.
     /// </summary>
     public const string CopyingOriginalModulesEnabled = "DD_COPY_ORIGINALS_MODULES_TO_DISK";
 
