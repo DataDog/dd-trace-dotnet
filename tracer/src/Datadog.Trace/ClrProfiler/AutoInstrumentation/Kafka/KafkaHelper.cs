@@ -8,8 +8,6 @@
 using System;
 using System.Reflection;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
@@ -458,158 +456,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                // Build and use AdminClient (duck-typed for normal use)
+                // Build and use AdminClient
                 using (var adminClient = adminBuilder.Build())
                 {
-                    Console.WriteLine("ROBC: Trying Via Reflection");
+                    Console.WriteLine("ROBC: Calling DescribeClusterAsync via duck typing");
 
-                    // Create a NEW AdminClient via reflection (not duck-typed) for the reflection-based call
-                    // 1. Get the AdminClientBuilder type and Build method
-                    var buildMethod = builderType.GetMethod("Build", BindingFlags.Public | BindingFlags.Instance)
-                                    ?? throw new MissingMethodException("AdminClientBuilder.Build method not found");
+                    // Call DescribeClusterAsync directly on the duck-typed AdminClient
+                    var result = adminClient.DescribeClusterAsync(null);
+                    var describeClusterResult = result.GetAwaiter().GetResult();
 
-                    // 2. Create a new builder instance
-                    var reflectionBuilder = Activator.CreateInstance(builderType, new object[] { config })
-                                          ?? throw new InvalidOperationException("Unable to create AdminClientBuilder via reflection");
+                    Console.WriteLine($"ROBC: DescribeClusterAsync completed successfully");
+                    Console.WriteLine($"ROBC: Result type: {result.GetType().FullName}");
 
-                    Console.WriteLine($"ROBC: Created new AdminClientBuilder via reflection: {reflectionBuilder.GetType().FullName}");
+                    // Extract the ClusterId from the result
+                    clusterId = describeClusterResult.ClusterId;
+                    Console.WriteLine($"ROBC: ClusterId extracted: {clusterId}");
 
-                    // 3. Build the AdminClient (this will be the real type, not duck-typed)
-                    var reflectionAdminClient = buildMethod.Invoke(reflectionBuilder, null)
-                                              ?? throw new InvalidOperationException("AdminClientBuilder.Build returned null");
-
-                    Console.WriteLine($"ROBC: Created AdminClient via reflection: {reflectionAdminClient.GetType().FullName}");
-
-                    try
+                    if (!string.IsNullOrEmpty(clusterId))
                     {
-                        // 4. Resolve the extension type
-                        var extType = Type.GetType("Confluent.Kafka.IAdminClientExtensions, Confluent.Kafka")
-                                    ?? throw new InvalidOperationException("Extension type not found");
-
-                        // 5. Find the static DescribeClusterAsync method
-                        var method = extType.GetMethod("DescribeClusterAsync", BindingFlags.Public | BindingFlags.Static)
-                                    ?? throw new MissingMethodException("DescribeClusterAsync not found");
-
-                        // 6. Create DescribeClusterOptions (avoid NRE if null)
-                        var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka")
-                                        ?? throw new InvalidOperationException("DescribeClusterOptions type not found");
-                        var options = Activator.CreateInstance(optionsType)
-                                    ?? throw new InvalidOperationException("Failed to create DescribeClusterOptions instance");
-
-                        Console.WriteLine($"ROBC: Created DescribeClusterOptions instance: {options}");
-
-                        // 7. Invoke the method with the reflection-based AdminClient
-                        var taskObj = (method.Invoke(null, new object[] { reflectionAdminClient, options }) as Task)
-                                    ?? throw new InvalidOperationException("DescribeClusterAsync did not return a Task");
-                        taskObj.GetAwaiter().GetResult();
-
-                        Console.WriteLine($"ROBC: Task object: {taskObj}");
-
-                        var resultProperty = taskObj.GetType().GetProperty("Result");
-                        var describeClusterResult = resultProperty?.GetValue(taskObj);
-
-                        Console.WriteLine($"ROBC Result type: {describeClusterResult?.GetType().FullName}");
-                        Console.WriteLine($"ROBC Result value: {describeClusterResult}");
-
-                        // Extract the ClusterId from the result
-                        if (describeClusterResult != null)
-                        {
-                            var clusterIdProperty = describeClusterResult.GetType().GetProperty("ClusterId");
-                            if (clusterIdProperty != null)
-                            {
-                                clusterId = clusterIdProperty.GetValue(describeClusterResult) as string ?? string.Empty;
-                                Console.WriteLine($"ROBC: ClusterId extracted: {clusterId}");
-
-                                if (!string.IsNullOrEmpty(clusterId))
-                                {
-                                    Log.Information("ROBC: Kafka cluster_id extracted successfully: {ClusterId}", clusterId);
-                                    Console.WriteLine($"ROBC: Kafka cluster_id extracted successfully: {clusterId}");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("ROBC: ClusterId is null or empty");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("ROBC: ClusterId property not found on result");
-                            }
-                        }
-
-                        Log.Information("ROBC: Successfully called DescribeClusterAsync via reflection");
-                        Console.WriteLine("ROBC: Successfully called DescribeClusterAsync via reflection");
-                    }
-                    finally
-                    {
-                        // Dispose of the reflection-based AdminClient
-                        if (reflectionAdminClient is IDisposable disposable)
-                        {
-                            disposable.Dispose();
-                            Console.WriteLine("ROBC: Disposed reflection AdminClient");
-                        }
-                    }
-
-                    Type? staticType = Type.GetType("Confluent.Kafka.IAdminClientExtensions, Confluent.Kafka");
-                    if (staticType == null)
-                    {
-                        Log.Information("ROBC: Unable to find Confluent.Kafka.IAdminClientExtensions type");
-                        Console.WriteLine("ROBC: Unable to find Confluent.Kafka.IAdminClientExtensions type");
-                        return null;
-                    }
-
-                    Type proxyType = typeof(IAdminClientExtensions); // The type of our proxy
-                    if (proxyType == null)
-                    {
-                        Log.Information("ROC94: Unable to find IAdminClientExtensions type");
-                        Console.WriteLine("ROC94: Unable to find IAdminClientExtensions type");
-                        return null;
-                    }
-
-                    DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
-                    IAdminClientExtensions? proxy = null;
-                    if (proxyResult.Success)
-                    {
-                        // Pass in null, as there's no "instance" to duck type here, to create an instance of our proxy
-                        proxy = (IAdminClientExtensions)proxyResult.CreateInstance(null!);
-                        Log.Information("ROBC: Successfully created IAdminClientExtensions proxy");
-                        Console.WriteLine("ROBC: Successfully created IAdminClientExtensions proxy");
+                        Log.Information("ROBC: Kafka cluster_id extracted successfully: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Kafka cluster_id extracted successfully: {clusterId}");
                     }
                     else
                     {
-                        Log.Information("ROBC: Unable to create or duck-cast IAdminClientExtensions");
-                        Console.WriteLine("ROBC: Unable to create or duck-cast IAdminClientExtensions");
-                        return null;
-                    }
-
-                    var describeClusterAsync = proxy.DescribeClusterAsync(adminClient, null);
-
-                    // Use a short timeout to avoid blocking
-                    var timeout = TimeSpan.FromMilliseconds(100);
-                    using var cts = new CancellationTokenSource(timeout);
-
-                    if (describeClusterAsync.Wait(timeout))
-                    {
-                        // Get the Result property from Task<DescribeClusterResult>
-                        var describeClusterResultProperty = describeClusterAsync.GetType().GetProperty("Result");
-                        var describeClusterResultValue = describeClusterResultProperty?.GetValue(describeClusterAsync);
-
-                        if (describeClusterResultValue != null && describeClusterResultValue.TryDuckCast<IDescribeClusterResult>(out var clusterResult))
-                        {
-                            if (clusterResult?.ClusterId != null)
-                            {
-                                Log.Information("ROBC: Successfully retrieved cluster_id from Kafka: {ClusterId}", clusterResult.ClusterId);
-                                Console.WriteLine($"ROBC: Successfully retrieved cluster_id from Kafka: {clusterResult.ClusterId}");
-                                return clusterResult.ClusterId;
-                            }
-                        }
-
-                        Log.Information("ROBC: DescribeClusterAsync returned null or empty cluster_id");
-                        Console.WriteLine("ROBC: DescribeClusterAsync returned null or empty cluster_id");
-                    }
-                    else
-                    {
-                        Log.Information("ROBC: DescribeClusterAsync timed out after {TimeoutMs}ms", timeout.TotalMilliseconds);
-                        Console.WriteLine($"ROBC: DescribeClusterAsync timed out after {timeout.TotalMilliseconds}ms");
+                        Console.WriteLine("ROBC: ClusterId is null or empty");
                     }
                 }
             }
