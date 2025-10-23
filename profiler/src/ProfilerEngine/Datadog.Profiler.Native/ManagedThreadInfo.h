@@ -104,6 +104,16 @@ public:
     inline bool CanBeInterrupted() const;
 #endif
 
+#ifdef DD_TEST
+    inline static std::unique_ptr<ManagedThreadInfo>CreateForTest(std::uint32_t osThreadId)
+    {
+        ManagedThreadInfo::s_nextProfilerThreadInfoId = 1;
+        auto threadInfo = std::make_unique<ManagedThreadInfo>(1, nullptr);
+        threadInfo->SetOsInfo(osThreadId, HANDLE());
+        return threadInfo;
+    }
+#endif
+
     inline AppDomainID GetAppDomainId();
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
@@ -128,7 +138,9 @@ private:
     ThreadID _clrThreadId;
     DWORD _osThreadId;
     ScopedHandle _osThreadHandle;
-    shared::WSTRING _pThreadName;
+    shared::WSTRING _threadName;
+    std::once_flag _profileThreadIdOnceFlag;
+    std::once_flag _profileThreadNameOnceFlag;
 
     std::chrono::nanoseconds _lastSampleHighPrecisionTimestamp;
     std::chrono::milliseconds _cpuConsumption;
@@ -171,8 +183,7 @@ std::string ManagedThreadInfo::GetProfileThreadId()
     // This is safe in case of multiple threads calling this method.
     // Only one thread will compute the profile thread id, and
     // the other threads will wait for the thread id to be computed.
-    static std::once_flag profileThreadIdOnceFlag;
-    std::call_once(profileThreadIdOnceFlag, [this]() {
+    std::call_once(_profileThreadIdOnceFlag, [this]() {
         _profileThreadId = BuildProfileThreadId();
     });
 
@@ -185,8 +196,7 @@ std::string ManagedThreadInfo::GetProfileThreadName()
     // This is safe in case of multiple threads calling this method.
     // Only one thread will compute the profile thread name, and
     // the other threads will wait for the thread name to be computed.
-    static std::once_flag threadNameOnceFlag;
-    std::call_once(threadNameOnceFlag, [this]() {
+    std::call_once(_profileThreadNameOnceFlag, [this]() {
         _profileThreadName = BuildProfileThreadName();
     });
     return _profileThreadName;
@@ -218,13 +228,14 @@ inline std::string ManagedThreadInfo::BuildProfileThreadId()
 inline std::string ManagedThreadInfo::BuildProfileThreadName()
 {
     std::stringstream nameBuilder;
-    if (GetThreadName().empty())
+    auto threadName = _threadName;
+    if (threadName.empty())
     {
         nameBuilder << "Managed thread (name unknown)";
     }
     else
     {
-        nameBuilder << shared::ToString(GetThreadName());
+        nameBuilder << shared::ToString(std::move(threadName));
     }
     nameBuilder << " [#" << _osThreadId << "]";
 
@@ -262,12 +273,12 @@ inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle
 
 inline const shared::WSTRING& ManagedThreadInfo::GetThreadName() const
 {
-    return _pThreadName;
+    return _threadName;
 }
 
 inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
 {
-    _pThreadName = std::move(pThreadName);
+    _threadName = std::move(pThreadName);
 
     // why computing thread name here ?
     GetProfileThreadName();
