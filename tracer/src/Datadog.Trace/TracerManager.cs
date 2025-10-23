@@ -52,6 +52,8 @@ namespace Datadog.Trace
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
+        private readonly IDisposable _settingSubscription;
+        private PerTraceSettings _perTraceSettings;
         private volatile bool _isClosing = false;
 
         public TracerManager(
@@ -101,10 +103,21 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = new SpanEventsManager(discoveryService);
 
-            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, settings.MutableSettings.DefaultServiceName, settings.MutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
-            PerTraceSettings = new(traceSampler, spanSampler, schema, settings.MutableSettings);
-
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
+            UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
+            _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdatePerTraceSettings(mutable);
+                }
+            });
+
+            void UpdatePerTraceSettings(MutableSettings mutableSettings)
+            {
+                var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, mutableSettings.DefaultServiceName, mutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
+                Interlocked.Exchange(ref _perTraceSettings, new(traceSampler, spanSampler, schema, mutableSettings));
+            }
         }
 
         /// <summary>
@@ -163,7 +176,7 @@ namespace Datadog.Trace
 
         public ISpanEventsManager SpanEventsManager { get; }
 
-        public PerTraceSettings PerTraceSettings { get; }
+        public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
         public SpanContextPropagator SpanContextPropagator { get; }
 
@@ -233,6 +246,7 @@ namespace Datadog.Trace
         {
             try
             {
+                oldManager._settingSubscription.Dispose();
                 var agentWriterReplaced = false;
                 if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
                 {
@@ -687,25 +701,6 @@ namespace Datadog.Trace
 
             // Record the service discovery metadata
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
-
-            // Register for rebuilding the settings on changes
-            // TODO: This is only temporary, we want to _stop_ rebuilding everything whenever settings change in the future
-            // We also don't bother to dispose this because we never unsubscribe
-            tracerSettings.Manager.SubscribeToChanges(updatedSettings =>
-            {
-                var newSettings = updatedSettings switch
-                {
-                    { UpdatedExporter: { } e, UpdatedMutable: { } m } => Tracer.Instance.Settings with { Exporter = e, MutableSettings = m },
-                    { UpdatedExporter: { } e } => Tracer.Instance.Settings with { Exporter = e },
-                    { UpdatedMutable: { } m } => Tracer.Instance.Settings with { MutableSettings = m },
-                    _ => null,
-                };
-                if (newSettings != null)
-                {
-                    // Update the global instance
-                    Trace.Tracer.Configure(newSettings);
-                }
-            });
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
@@ -726,6 +721,7 @@ namespace Datadog.Trace
 
                 if (instance is not null)
                 {
+                    instance._settingSubscription.Dispose();
                     Log.Debug("Disposing DynamicConfigurationManager");
                     instance.DynamicConfigurationManager.Dispose();
                     Log.Debug("Disposing TracerFlareManager");
