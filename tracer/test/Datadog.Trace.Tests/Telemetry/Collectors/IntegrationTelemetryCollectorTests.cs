@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void HasChangesWhenNewIntegrationRunning()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void DoesNotHaveChangesWhenSameIntegrationRunning()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void HasChangesWhenNewIntegrationGeneratedSpan()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void DoesNotHaveChangesWhenSameIntegrationGeneratedSpan()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void HasChangesWhenNewIntegrationDisabled()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void DoesNotHaveChangesWhenSameIntegrationDisabled()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void WhenIntegrationRunsSuccessfullyHasExpectedValues()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.IntegrationRunning(IntegrationId);
             collector.IntegrationGeneratedSpan(IntegrationId);
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void WhenIntegrationRunsButDoesNotGenerateSpanHasExpectedValues()
         {
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.IntegrationRunning(IntegrationId);
 
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string error = "Some error";
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.IntegrationRunning(IntegrationId);
             collector.IntegrationDisabledDueToError(IntegrationId, error);
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string error = "Some error";
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             collector.IntegrationRunning(IntegrationId);
             collector.IntegrationGeneratedSpan(IntegrationId);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string error = "Some error";
             var collector = new IntegrationTelemetryCollector();
-            collector.RecordTracerSettings(new TracerSettings());
+            collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             // first call
             collector.GetData().Should().NotBeEmpty();
