@@ -1,10 +1,18 @@
 #pragma once
 #include "../../../shared/src/native-src/string.h"
+#include <optional>
+#include <vector>
 
 namespace datadog::shared::nativeloader
 {
 
-inline bool is_workload_allowed(const ::shared::WSTRING&, const std::vector<::shared::WSTRING>&, const ::shared::WSTRING&)
+inline std::optional<std::vector<uint8_t>> readPolicies()
+{
+    return std::nullopt;
+}
+
+inline bool isWorkloadAllowed(const ::shared::WSTRING&, const std::vector<::shared::WSTRING>&, const ::shared::WSTRING&,
+                              const std::vector<uint8_t>&, const bool)
 {
     return true;
 }

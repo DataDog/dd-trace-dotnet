@@ -1,10 +1,8 @@
 #include "workload_selection_impl.h"
 
-#include "../../../shared/src/native-src/string.h"
 #include "log.h"
 #include "util.h"
 
-#include <optional>
 extern "C"
 {
 #include <dd/policies/error_codes.h>
@@ -26,34 +24,6 @@ namespace
     };
 
     InjectionStatus injection_status;
-
-    std::optional<std::vector<uint8_t>> readPolicies()
-    {
-        const auto policies_file = GetPoliciesPath();
-
-        FILE* file = NULL;
-        fopen_s(&file, policies_file.string().c_str(), "rb");
-        if (!file)
-        {
-            return std::nullopt;
-        }
-
-        fseek(file, 0, SEEK_END);
-        const auto file_size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-
-        std::vector<uint8_t> buffer(file_size);
-
-        const auto read_size = fread(buffer.data(), 1, file_size, file);
-        fclose(file);
-
-        if (read_size != file_size)
-        {
-            return std::nullopt;
-        }
-
-        return buffer;
-    }
 
     plcs_errors onInjectionAllow(plcs_evaluation_result eval_result, char**, size_t, const char* policy, int)
     {
@@ -106,8 +76,37 @@ namespace
 
 } // namespace
 
-bool is_workload_allowed(const ::shared::WSTRING& process_name, const std::vector<::shared::WSTRING>& argv,
-                         const ::shared::WSTRING& application_pool);
+std::optional<std::vector<uint8_t>> readPolicies()
+{
+    const auto policies_file = GetPoliciesPath();
+
+    FILE* file = NULL;
+    fopen_s(&file, policies_file.string().c_str(), "rb");
+    if (!file)
+    {
+        return std::nullopt;
+    }
+
+    fseek(file, 0, SEEK_END);
+    const auto file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    std::vector<uint8_t> buffer(file_size);
+
+    const auto read_size = fread(buffer.data(), 1, file_size, file);
+    fclose(file);
+
+    if (read_size != file_size)
+    {
+        return std::nullopt;
+    }
+
+    return buffer;
+}
+
+bool isWorkloadAllowed(const ::shared::WSTRING& process_name, const std::vector<::shared::WSTRING>& argv,
+                       const ::shared::WSTRING& application_pool, const std::vector<uint8_t>& policies,
+                       const bool is_iis)
 {
     const auto process_name_str = ::shared::ToString(process_name);
     const auto application_pool_str = ::shared::ToString(application_pool);
@@ -125,13 +124,7 @@ bool is_workload_allowed(const ::shared::WSTRING& process_name, const std::vecto
 
     injection_status = InjectionStatus::UNKNOWN;
 
-    auto buffer = readPolicies();
-    if (!buffer)
-    {
-        return true;
-    }
-
-    if (auto res = plcs_evaluate_buffer(*buffer.data(), *buffer.size()); res != PLCS_ESUCCESS)
+    if (auto res = plcs_evaluate_buffer(policies.data(), policies.size()); res != PLCS_ESUCCESS)
     {
         Log::Error(__func__, ": An error occured while evaluating workload selection policies (errno: ", res, ")");
         return true;
@@ -140,7 +133,7 @@ bool is_workload_allowed(const ::shared::WSTRING& process_name, const std::vecto
     // We enable or disable instrumentation depending on the context:
     //   - Windows IIS: instrumentation is ENABLED by default, only need to consider DENY rules.
     //   - .NET: instrumentation is DISABLED by default, only consider ALLOW rules.
-    if (IsRunningOnIIS())
+    if (is_iis)
     {
         return injection_status == InjectionStatus::DENY ? false : true;
     }
