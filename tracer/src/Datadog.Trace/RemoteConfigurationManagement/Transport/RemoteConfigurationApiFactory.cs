@@ -14,7 +14,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
     internal class RemoteConfigurationApiFactory
     {
-        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings, RemoteConfigurationSettings remoteConfigurationSettings, IDiscoveryService discoveryService)
+        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = AgentTransportStrategy.Get(
                 exporterSettings,

@@ -19,24 +19,6 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class RemoteConfigurationSettingsTests : SettingsTestsBase
     {
-        [Fact]
-        public void RuntimeId()
-        {
-            var source = CreateConfigurationSource();
-            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.RuntimeId.Should().Be(Datadog.Trace.Util.RuntimeId.Get());
-        }
-
-        [Fact]
-        public void TracerVersion()
-        {
-            var source = CreateConfigurationSource();
-            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.TracerVersion.Should().Be(TracerConstants.ThreePartVersion);
-        }
-
         [Theory]
         [InlineData(null, null, RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
         [InlineData("", null, RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
