@@ -182,15 +182,11 @@ namespace Datadog.Trace
                     var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
                     var rcmApi = RemoteConfigurationApiFactory.Create(settings.Exporter, rcmSettings, discoveryService);
 
-                    // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                    var serviceName = TraceUtil.NormalizeTag(defaultServiceName);
-
                     remoteConfigurationManager =
                         RemoteConfigurationManager.Create(
                             discoveryService,
                             rcmApi,
                             rcmSettings,
-                            serviceName,
                             settings,
                             gitMetadataTagsProvider,
                             RcmSubscriptionManager.Instance);

@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -12,7 +14,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClientTracer
     {
-        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string? appVersion, List<string> tags)
+        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string? appVersion, ReadOnlyDictionary<string, string> globalTags)
         {
             RuntimeId = runtimeId;
             Language = TracerConstants.Language;
@@ -20,8 +22,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
             Service = service;
             Env = env;
             AppVersion = appVersion;
-            Tags = tags;
+            Tags = GetTags(env, appVersion, globalTags);
         }
+
+        [JsonIgnore]
+        public bool IsGitMetadataAddedToRequestTags { get; set; }
 
         [JsonProperty("runtime_id")]
         public string RuntimeId { get; }
@@ -46,5 +51,32 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 
         [JsonProperty("tags")]
         public List<string> Tags { get; }
+
+        private static List<string> GetTags(string? environment, string? serviceVersion, ReadOnlyDictionary<string, string> globalTags)
+        {
+            var tags = globalTags.Count > 0
+                           ? globalTags.Select(pair => pair.Key + ":" + pair.Value).ToList()
+                           : [];
+
+            if (!string.IsNullOrEmpty(environment))
+            {
+                tags.Add($"env:{environment}");
+            }
+
+            if (!string.IsNullOrEmpty(serviceVersion))
+            {
+                tags.Add($"version:{serviceVersion}");
+            }
+
+            tags.Add($"tracer_version:{TracerConstants.ThreePartVersion}");
+
+            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            if (!string.IsNullOrEmpty(hostName))
+            {
+                tags.Add($"host_name:{hostName}");
+            }
+
+            return tags;
+        }
     }
 }

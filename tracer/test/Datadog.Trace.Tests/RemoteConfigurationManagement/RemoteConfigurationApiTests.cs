@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -11,6 +12,7 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -243,7 +245,7 @@ public class RemoteConfigurationApiTests
             service: nameof(RemoteConfigurationApiTests),
             env: "RCM Test",
             appVersion: "1.0.0",
-            tags: []);
+            globalTags: ReadOnlyDictionary.Empty);
 
         var state = new RcmClientState(
             rootVersion: 1,
