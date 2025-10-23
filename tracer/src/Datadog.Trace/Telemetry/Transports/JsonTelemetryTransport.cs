@@ -90,7 +90,7 @@ namespace Datadog.Trace.Telemetry.Transports
                 TelemetryFactory.Metrics.RecordCountTelemetryApiResponses(endpointMetricTag, response.GetTelemetryStatusCodeMetricTag());
                 if (response.StatusCode is >= 200 and < 300)
                 {
-                    Log.Debug("telemetry sent successfully. Compression {Compression}", _telemetryCompressionMethod);
+                    Log.Debug("Telemetry sent successfully. Compression {Compression}", _telemetryCompressionMethod);
                     return TelemetryPushResult.Success;
                 }
 
