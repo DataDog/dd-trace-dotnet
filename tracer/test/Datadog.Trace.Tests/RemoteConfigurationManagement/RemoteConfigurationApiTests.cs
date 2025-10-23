@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -11,6 +12,7 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -237,13 +239,13 @@ public class RemoteConfigurationApiTests
     {
         // We don't really care about this being "real" data, as long as it has the right shape,
         // but we'll keep it reasonable here for the sake of it
-        var tracer = new RcmClientTracer(
+        var tracer = RcmClientTracer.Create(
             runtimeId: Guid.NewGuid().ToString(),
             tracerVersion: TracerConstants.ThreePartVersion,
             service: nameof(RemoteConfigurationApiTests),
             env: "RCM Test",
             appVersion: "1.0.0",
-            tags: [],
+            globalTags: ReadOnlyDictionary.Empty,
             processTags: ["a.b:c", "x.y:z"]);
 
         var state = new RcmClientState(
