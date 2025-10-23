@@ -56,9 +56,11 @@
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
-    <Compile Include="..\Datadog.Trace\Generated\net6.0\**\ConfigurationKeys*.g.cs" Link="Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
+    <!-- Link to generated ConfigurationKeys from Datadog.Trace project -->
+    <Compile Include="..\Datadog.Trace\Generated\netstandard2.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\ConfigurationKeys.g.cs" Link="Configuration\ConfigurationKeys.g.cs" />
+    <Compile Include="..\Datadog.Trace\Generated\netstandard2.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\ConfigurationKeys.Telemetry.g.cs" Link="Configuration\ConfigurationKeys.Telemetry.g.cs" />
   </ItemGroup>
 
   <ItemGroup>
