@@ -13,20 +13,23 @@ namespace Datadog.Trace.TestHelpers
 {
     internal class LogSettingsHelper
     {
-        public static LogFormatter GetFormatter() => new(
-            new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance, new OverrideErrorLog()),
-            GetValidSettings(),
-            aasSettings: null,
-            serviceName: "MyTestService",
-            env: "integration_tests",
-            version: "1.0.0",
-            gitMetadataTagsProvider: new NullGitMetadataProvider());
-
-        public static DirectLogSubmissionSettings GetValidSettings()
+        public static LogFormatter GetFormatter()
         {
-            var tracerSettings = TracerSettings.Create(new()
+            var tracerSettings = GetValidSettings();
+            return new(
+                tracerSettings,
+                tracerSettings.LogSubmissionSettings,
+                aasSettings: null,
+                gitMetadataTagsProvider: new NullGitMetadataProvider());
+        }
+
+        public static TracerSettings GetValidSettings()
+            => TracerSettings.Create(new()
             {
                 { ConfigurationKeys.ApiKey, "abcdef" },
+                { ConfigurationKeys.Environment, "integration_tests" },
+                { ConfigurationKeys.ServiceName, "MyTestService" },
+                { ConfigurationKeys.ServiceVersion, "1.0.0" },
                 { ConfigurationKeys.DirectLogSubmission.Host, "some_host" },
                 { ConfigurationKeys.DirectLogSubmission.Source, "csharp" },
                 { ConfigurationKeys.DirectLogSubmission.Url, "https://localhost:1234" },
@@ -36,8 +39,5 @@ namespace Datadog.Trace.TestHelpers
                 { ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "2" },
                 { ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, "100000" }
             });
-
-            return tracerSettings.LogSubmissionSettings;
-        }
     }
 }
