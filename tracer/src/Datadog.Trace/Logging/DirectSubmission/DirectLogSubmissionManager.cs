@@ -30,16 +30,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
         public LogFormatter Formatter { get; }
 
         public static DirectLogSubmissionManager Create(
-            DirectLogSubmissionManager? previous,
             TracerSettings settings,
             DirectLogSubmissionSettings directLogSettings,
             ImmutableAzureAppServiceSettings? azureAppServiceSettings,
-            string serviceName,
-            string env,
-            string serviceVersion,
             IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            var formatter = new LogFormatter(settings, directLogSettings, azureAppServiceSettings, serviceName, env, serviceVersion, gitMetadataTagsProvider);
+            var formatter = new LogFormatter(settings, directLogSettings, azureAppServiceSettings, gitMetadataTagsProvider);
 
 #if NETCOREAPP3_1_OR_GREATER
             if (settings.OpenTelemetryLogsEnabled is true)
@@ -47,14 +43,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 return new DirectLogSubmissionManager(directLogSettings, new Sink.OtlpSubmissionLogSink(directLogSettings.CreateBatchingSinkOptions(), settings), formatter);
             }
 #endif
-
-            if (previous is not null)
-            {
-                // Only the formatter uses settings that are configurable in code.
-                // If that ever changes, need to update the log-shipping integrations that
-                // currently cache the sink/settings instances
-                return new DirectLogSubmissionManager(previous.Settings, previous.Sink, formatter);
-            }
 
             if (!directLogSettings.IsEnabled)
             {
@@ -76,6 +64,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 {
                     await sink.DisposeAsync().ConfigureAwait(false);
                 }
+
+                Formatter.Dispose();
             }
             catch (Exception ex)
             {
