@@ -460,9 +460,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 using (var adminClient = adminBuilder.Build())
                 {
                     Console.WriteLine("ROBC: Calling DescribeClusterAsync via duck typing");
+                    var clusterOptionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+                    if (clusterOptionsType == null)
+                    {
+                        Log.Information("ROBC: Unable to find DescribeClusterOptions type");
+                        Console.WriteLine("ROBC: Unable to find DescribeClusterOptions type");
+                        return null;
+                    }
+
+                    var clusterOptionsObj = Activator.CreateInstance(clusterOptionsType);
+                    if (clusterOptionsObj == null || !clusterOptionsObj.TryDuckCast<IDescribeClusterOptions>(out var clusterOptions))
+                    {
+                        Log.Information("ROBC: Unable to create or duck-cast DescribeClusterOptions");
+                        Console.WriteLine("ROBC: Unable to create or duck-cast DescribeClusterOptions");
+                        return null;
+                    }
 
                     // Call DescribeClusterAsync directly on the duck-typed AdminClient
-                    var result = adminClient.DescribeClusterAsync(null);
+                    var result = adminClient.DescribeClusterAsync(clusterOptions);
                     var describeClusterResult = result.GetAwaiter().GetResult();
 
                     Console.WriteLine($"ROBC: DescribeClusterAsync completed successfully");
@@ -470,7 +485,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     // Extract the ClusterId from the result
                     clusterId = describeClusterResult.ClusterId;
-                    Console.WriteLine($"ROBC: ClusterId extracted: {clusterId}");
+                    Console.WriteLine($"ROBC: ClusterId extracted (raw): {clusterId}");
+
+                    // Check if the clusterId is wrapped in "Some(...)" pattern and unwrap it
+                    if (!string.IsNullOrEmpty(clusterId) && clusterId.StartsWith("Some(") && clusterId.EndsWith(")"))
+                    {
+                        clusterId = clusterId.Substring(5, clusterId.Length - 6);
+                        Console.WriteLine($"ROBC: Unwrapped ClusterId from Some(...) pattern: {clusterId}");
+                    }
 
                     if (!string.IsNullOrEmpty(clusterId))
                     {
