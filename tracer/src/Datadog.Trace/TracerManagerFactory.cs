@@ -5,26 +5,20 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Iast;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Processors;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
@@ -34,8 +28,6 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
-using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -123,12 +115,9 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            // TODO: Update anything that accesses tracerSettings.MutableSettings or tracerSettings.Manager.InitialTracerSettings
-            // to subscribe to changes, once we stop creating a new TracerManager whenever there's a config change
-
-            var defaultServiceName = settings.MutableSettings.DefaultServiceName;
-
             discoveryService ??= GetDiscoveryService(settings);
+            var telemetrySettings = CreateTelemetrySettings(settings);
+            telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
             // Technically we don't _always_ need a dogstatsd instance, because we only need it if runtime metrics
             // are enabled _or_ tracer metrics are enabled. However, tracer metrics can be enabled and disabled dynamically
