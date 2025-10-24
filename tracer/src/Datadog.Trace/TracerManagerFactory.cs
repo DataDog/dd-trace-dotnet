@@ -129,27 +129,18 @@ namespace Datadog.Trace
 
             discoveryService ??= GetDiscoveryService(settings);
 
-            bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
+            // Technically we don't _always_ need a dogstatsd instance, because we only need it if runtime metrics
+            // are enabled _or_ tracer metrics are enabled. However, tracer metrics can be enabled and disabled dynamically
+            // at runtime, which makes managing the lifetime of the statsd instance more complex than we'd like, so
+            // for simplicity, we _always_ create a new statsd instance
+            statsd ??= new StatsdManager(settings, includeDefaultTags: true);
+            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
+                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService)
+                                   : null;
 
-            statsd = (settings.MutableSettings.TracerMetricsEnabled || runtimeMetricsEnabled)
-                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
-                         : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, settings.MutableSettings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
-
-            if (runtimeMetricsEnabled && runtimeMetrics is { })
-            {
-                runtimeMetrics.UpdateStatsd(statsd);
-            }
-            else if (runtimeMetricsEnabled)
-            {
-                runtimeMetrics = new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
-            }
-            else
-            {
-                runtimeMetrics = null;
-            }
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
 
@@ -450,78 +441,5 @@ namespace Datadog.Trace
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
-
-        internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
-        {
-            try
-            {
-                var statsd = new DogStatsdService();
-                var config = new StatsdConfig
-                {
-                    ConstantTags = constantTags?.ToArray(),
-                    Prefix = prefix,
-                    // note that if these are null, statsd tries to grab them directly from the environment, which could be unsafe
-                    ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
-                    Environment = settings.MutableSettings.Environment,
-                    ServiceVersion = settings.MutableSettings.ServiceVersion,
-                    Advanced = { TelemetryFlushInterval = telemtryFlushInterval }
-                };
-
-                switch (settings.Exporter.MetricsTransport)
-                {
-                    case MetricsTransportType.NamedPipe:
-                        config.PipeName = settings.Exporter.MetricsPipeName;
-                        Log.Information("Using windows named pipes for metrics transport: {PipeName}.", config.PipeName);
-                        break;
-#if NETCOREAPP3_1_OR_GREATER
-                    case MetricsTransportType.UDS:
-                        config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}";
-                        Log.Information("Using unix domain sockets for metrics transport: {Socket}.", config.StatsdServerName);
-                        break;
-#endif
-                    case MetricsTransportType.UDP:
-                    default:
-                        config.StatsdServerName = settings.Exporter.MetricsHostname;
-                        config.StatsdPort = settings.Exporter.DogStatsdPort;
-                        Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
-                        break;
-                }
-
-                statsd.Configure(config);
-                return statsd;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Unable to instantiate StatsD client.");
-                return new NoOpStatsd();
-            }
-        }
-
-        private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
-        {
-            var customTagCount = settings.MutableSettings.GlobalTags.Count;
-            var constantTags = new List<string>(5 + customTagCount)
-            {
-                "lang:.NET",
-                $"lang_interpreter:{FrameworkDescription.Instance.Name}",
-                $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
-            };
-
-            if (customTagCount > 0)
-            {
-                var tagProcessor = new TruncatorTagsProcessor();
-                foreach (var kvp in settings.MutableSettings.GlobalTags)
-                {
-                    var key = kvp.Key;
-                    var value = kvp.Value;
-                    tagProcessor.ProcessMeta(ref key, ref value);
-                    constantTags.Add($"{key}:{value}");
-                }
-            }
-
-            return CreateDogStatsdClient(settings, serviceName, constantTags);
-        }
     }
 }
