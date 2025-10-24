@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             var tracer = Tracer.Instance;
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && tracer.InternalActiveScope?.Span is Span span
                 && dataStreamsManager.IsEnabled)
             {

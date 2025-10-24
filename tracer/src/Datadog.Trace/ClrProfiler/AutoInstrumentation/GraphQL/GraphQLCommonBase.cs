@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             tags.OperationName = queryOperationName;
             tags.OperationType = queryOperationType;
 
-            tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+            tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             return scope;
         }

@@ -25,6 +25,7 @@ pr:
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
+      - .gitignore
       - .github/
       - .claude/
       - .devcontainer/
@@ -1683,11 +1684,13 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - powershell: |
-        mkdir -Force ./artifacts/build_data/snapshots
-        docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
-      displayName: Start test agent
-      retryCountOnTaskFailure: 3
+#    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
+#    Tests with [Trait("RequiresDockerDependency", "true")] are skipped below
+#    - powershell: |
+#        mkdir -Force ./artifacts/build_data/snapshots
+#        docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
+#      displayName: Start test agent
+#      retryCountOnTaskFailure: 3
 
     - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Build integration tests
@@ -1706,10 +1709,11 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
-    - script: docker compose -f docker-compose.windows.yml down
-      displayName: Stop test agent
-      condition: succeededOrFailed()
-      continueOnError: true
+#    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
+#    - script: docker compose -f docker-compose.windows.yml down
+#      displayName: Stop test agent
+#      condition: succeededOrFailed()
+#      continueOnError: true
 
     - task: PublishTestResults@2
       displayName: publish test results

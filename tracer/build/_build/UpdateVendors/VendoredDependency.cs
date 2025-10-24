@@ -167,11 +167,20 @@ namespace UpdateVendors
                     AddOpenTelemetryUsings),
                 relativePathsToExclude: new[]
                 {
-                    // Vendor only the gRPC transport client - exclude everything else
+                    // Vendor gRPC and HTTP export clients for logs and metrics
+                    // Vendor low-level protobuf utilities: ProtobufSerializer, ProtobufWireType
+                    // Vendor ONLY field constants we actually use (Logs and Common)
+                    // EXCLUDE high-level serializers that depend on OpenTelemetry SDK types
                     ".publicApi/",
                     "Builder/",
                     "PersistentStorage/",
-                    "Implementation/Serializer/",
+                    "Implementation/Serializer/ProtobufOtlpLogSerializer.cs",          
+                    "Implementation/Serializer/ProtobufOtlpMetricSerializer.cs",        
+                    "Implementation/Serializer/ProtobufOtlpTraceSerializer.cs",        
+                    "Implementation/Serializer/ProtobufOtlpResourceSerializer.cs",     
+                    "Implementation/Serializer/ProtobufOtlpTagWriter.cs",              
+                    "Implementation/Serializer/ProtobufOtlpMetricFieldNumberConstants.cs",  // Not used - metrics has own FieldNumbers ATM
+                    "Implementation/Serializer/ProtobufOtlpTraceFieldNumberConstants.cs",
                     "Implementation/Transmission/",
                     "Implementation/ActivityExtensions.cs",
                     "Implementation/ExperimentalOptions.cs",
@@ -182,7 +191,6 @@ namespace UpdateVendors
                     "Implementation/OtlpExporterOptionsConfigurationType.cs",
                     "Implementation/OtlpSpecConfigDefinitions.cs",
                     "Implementation/TimestampHelpers.cs",
-                    "Implementation/ExportClient/OtlpHttpExportClient.cs",  // We only need gRPC for this PR
                     "Implementation/ExportClient/OtlpRetry.cs",
                     "CHANGELOG.md",
                     "README.md",
