@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.PInvoke
 
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core.
-        // These methods are rewritten by the native tracer to use the correct paths.
+        // These methods are rewritten by the native tracer to use the correct paths
         private static partial class Windows
         {
             [DllImport("Datadog.Tracer.Native.dll")]
