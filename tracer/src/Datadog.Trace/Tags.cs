@@ -559,6 +559,13 @@ namespace Datadog.Trace
         internal const string AzureAppServicesSiteType = "aas.site.type";
 
         /// <summary>
+        /// The process type for Azure Functions isolated mode.
+        /// Possible values: host, worker
+        /// Only set for isolated Azure Functions (not in-process functions).
+        /// </summary>
+        internal const string AzureFunctionsProcess = "aas.function.process";
+
+        /// <summary>
         /// The subscription ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
