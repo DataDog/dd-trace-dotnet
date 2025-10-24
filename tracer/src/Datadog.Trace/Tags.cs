@@ -507,6 +507,12 @@ namespace Datadog.Trace
         internal const string RuntimeFamily = "_dd.runtime_family";
 
         /// <summary>
+        /// Contains a serialized list of process tags, that can be used in the backend for service renaming.
+        /// <see cref="ProcessTags"/>
+        /// </summary>
+        internal const string ProcessTags = "_dd.tags.process";
+
+        /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         internal const string AzureAppServicesResourceId = "aas.resource.id";
