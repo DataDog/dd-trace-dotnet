@@ -281,6 +281,25 @@ Integration test failures may indicate:
 
 Check the specific integration test logs for details about which service or scenario failed.
 
+#### Flaky Profiler Stack Walking Failures (Alpine/musl)
+
+**Symptom:**
+```
+Failed to walk N stacks for sampled exception: E_FAIL (80004005)
+```
+or
+```
+Failed to walk N stacks for sampled exception: CORPROF_E_STACKSNAPSHOT_UNSAFE
+```
+
+**Appears in**: Smoke tests on Alpine Linux (musl libc), particularly `installer_smoke_tests` → `linux alpine_3_1-alpine3_14`
+
+**Cause**: Race condition in the profiler when unwinding call stacks while threads are running. This is a known limitation on Alpine/musl platforms and appears intermittently.
+
+**Solution**: Retry the failed job. The smoke test check `CheckSmokeTestsForErrors` has an allowlist for known patterns, but some error codes like `E_FAIL` may occasionally slip through.
+
+**Note**: The profiler only logs these warnings every 100 failures to avoid log spam, so seeing this message indicates multiple stack walking attempts have failed.
+
 ### Build Failures
 
 Build failures typically show:
