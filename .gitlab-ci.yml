@@ -232,3 +232,12 @@ dsm_throughput:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
       when: always
     - when: manual
+
+
+validate_supported_configurations_local_file:
+  stage: build
+  rules:
+    - when: on_success
+  extends: .validate_supported_configurations_local_file
+  variables:
+    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
