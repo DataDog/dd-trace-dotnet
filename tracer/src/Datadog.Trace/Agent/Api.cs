@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IDogStatsd _statsd;
+        private readonly IDogStatsd _originalStatsd;
         private readonly string _containerId;
         private readonly string _entityId;
         private readonly Uri _tracesEndpoint;
@@ -40,6 +41,7 @@ namespace Datadog.Trace.Agent
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
+        private IDogStatsd _statsd;
         private string _cachedResponse;
         private string _agentVersion;
 
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Agent
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
+            bool healthMetricsEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -56,7 +59,8 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
-            _statsd = statsd;
+            _originalStatsd = statsd;
+            ToggleTracerHealthMetrics(healthMetricsEnabled);
             _containerId = ContainerMetadata.GetContainerId();
             _entityId = ContainerMetadata.GetEntityId();
             _apiRequestFactory = apiRequestFactory;
@@ -74,6 +78,12 @@ namespace Datadog.Trace.Agent
             Success,
             Failed_CanRetry,
             Failed_DontRetry,
+        }
+
+        [MemberNotNull(nameof(_statsd))]
+        public void ToggleTracerHealthMetrics(bool enabled)
+        {
+            _statsd = enabled ? _originalStatsd : NoOpStatsd.Instance;
         }
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)

@@ -59,11 +59,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public static TelemetryFactory CreateFactory() => new();
 
-        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable: null), discoveryService, useCiVisibilityTelemetry: false);
+        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, TelemetrySettings telemetrySettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, telemetrySettings, discoveryService, useCiVisibilityTelemetry: false);
 
-        public ITelemetryController CreateCiVisibilityTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable), discoveryService, useCiVisibilityTelemetry: true);
+        public ITelemetryController CreateCiVisibilityTelemetryController(TracerSettings tracerSettings, TelemetrySettings telemetrySettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, telemetrySettings, discoveryService, useCiVisibilityTelemetry: true);
 
         public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
         {
