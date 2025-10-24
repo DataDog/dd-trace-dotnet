@@ -323,7 +323,7 @@ namespace datadog::shared::nativeloader
 
             if (auto policies = readPolicies(); policies)
             {
-                WSTRING application_pool{L""};
+                WSTRING application_pool;
                 if (auto maybe_application_pool = GetApplicationPool())
                 {
                     application_pool = std::move(*maybe_application_pool);
