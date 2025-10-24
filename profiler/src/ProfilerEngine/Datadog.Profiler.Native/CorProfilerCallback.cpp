@@ -400,7 +400,8 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pNetworkProvider
+            _pNetworkProvider,
+            _pHeapSnapshotManager
         );
 
         if (_pGarbageCollectionProvider != nullptr)

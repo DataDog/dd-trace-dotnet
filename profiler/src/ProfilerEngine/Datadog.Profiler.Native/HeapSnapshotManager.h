@@ -7,6 +7,7 @@
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IGarbageCollectionsListener.h"
+#include "IGCDumpListener.h"
 #include "ServiceBase.h"
 
 #include "corprof.h"
@@ -34,6 +35,7 @@ class HeapSnapshotManager
     : 
     public IHeapSnapshotManager,
     public IGarbageCollectionsListener,
+    public IGCDumpListener,
     public ServiceBase
 {
 public:
@@ -73,6 +75,16 @@ protected:
         uint64_t lohSize,
         uint64_t pohSize,
         uint32_t memPressure) override;
+
+    // inherited via IGCDumpListener
+    void OnBulkNodes(
+        uint32_t Index,
+        uint32_t Count,
+        GCBulkNodeValue* pNodes) override;
+    void OnBulkEdges(
+        uint32_t Index,
+        uint32_t Count,
+        GCBulkEdgeValue* pEdges) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;

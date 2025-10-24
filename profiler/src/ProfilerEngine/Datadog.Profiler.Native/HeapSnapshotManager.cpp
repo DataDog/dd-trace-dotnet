@@ -45,6 +45,20 @@ std::string HeapSnapshotManager::GetHeapSnapshotText()
     return std::string{};
 }
 
+void HeapSnapshotManager::OnBulkNodes(
+    uint32_t Index,
+    uint32_t Count,
+    GCBulkNodeValue* pNodes)
+{
+}
+
+void HeapSnapshotManager::OnBulkEdges(
+    uint32_t Index,
+    uint32_t Count,
+    GCBulkEdgeValue* pEdges)
+{
+}
+
 void HeapSnapshotManager::OnGarbageCollectionStart(
     std::chrono::nanoseconds timestamp,
     int32_t number,
@@ -52,9 +66,9 @@ void HeapSnapshotManager::OnGarbageCollectionStart(
     GCReason reason,
     GCType type)
 {
-    if ((_session != 0) && (_inducedGCNumber != -1))
+    // waiting for the first induced foregrouned gen2 collection
+    if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
     {
-        // waiting for the first induced foregrouned gen2 collection
         if ((reason == GCReason::Induced) && (generation == 2) && (type == GCType::NonConcurrentGC))
         {
             _inducedGCNumber = number;
@@ -76,7 +90,7 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
     uint64_t pohSize,
     uint32_t memPressure)
 {
-    if (_session != 0)
+    if (_isHeapDumpInProgress)
     {
         if (number == _inducedGCNumber)
         {

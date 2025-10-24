@@ -255,6 +255,7 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="HeapSnapshotManager.h" />
+    <ClInclude Include="IGCDumpListener.h" />
     <ClInclude Include="IHeapSnapshotManager.h" />
     <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />

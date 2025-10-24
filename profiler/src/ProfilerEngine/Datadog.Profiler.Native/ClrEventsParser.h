@@ -19,6 +19,7 @@
 #include "IAllocationsListener.h"
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
+#include "IGCDumpListener.h"
 
 #include "../../../../shared/src/native-src/string.h"
 #include "assert.h"
@@ -50,6 +51,9 @@ const int EVENT_GC_PINOBJECTATGCTIME = 33;
 
 const int EVENT_SW_STACK = 82;
 
+// events sent during heap dumps
+const int EVENT_GC_BULK_NODE = 18;
+const int EVENT_GC_BULK_EDGE = 19;
 
 
 #define LONG_LENGTH 1024
@@ -248,7 +252,39 @@ struct WaitHandleWaitStopPayload // for .NET 9+
 {
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
 };
+
+//struct GCBulkNodeValue
+//{
+//    uintptr_t Address;
+//    uint64_t Size;
+//    uint64_t TypeID;
+//    uint64_t EdgeCount;
+//};
+//struct GCBulkNodePayload
+//{
+//    uint32_t Index;
+//    uint32_t Count;
+//    uint16_t ClrInstanceID;
+//
+//    // this is followed by an array of Count GCBulkNodeValue structures
+//};
+//
+//struct GCBulkEdgeValue
+//{
+//    uintptr_t Value;
+//    uint32_t ReferencingFieldID;
+//};
+//struct GCBulkEdgePayload
+//{
+//    uint32_t Index;
+//    uint32_t Count;
+//    uint16_t ClrInstanceID;
+//
+//    // this is followed by an array of Count GCBulkEdgeValue structures
+//};
+
 #pragma pack()
+
 
 class IContentionListener;
 
@@ -286,9 +322,9 @@ public:
     ClrEventsParser(
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
-        IGCSuspensionsListener* pGCSuspensionsListener
+        IGCSuspensionsListener* pGCSuspensionsListener,
+        IGCDumpListener* pGCDumpListener
         );
-
 
     // the parser is used both for synchronous (ICorProfilerCallback) and
     // asynchronous (.NET Framework via the Agent) cases. The timestamp parameter
@@ -350,6 +386,7 @@ private:
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
+    IGCDumpListener* _pGCDumpListener = nullptr;
 
     template <typename... Args>
     void LogGcEvent(Args const&... args);
