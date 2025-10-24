@@ -13,7 +13,7 @@ namespace Datadog.Trace.ContinuousProfiler;
 
 internal class ProfilerSettings
 {
-    private bool _isManagedActivationEnabled = false;
+    private readonly bool _isManagedActivationEnabled = false;
 
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
         : this(config, new EnvironmentConfigurationSource(), telemetry)
