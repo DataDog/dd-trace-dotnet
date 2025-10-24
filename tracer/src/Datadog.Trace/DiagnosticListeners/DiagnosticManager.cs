@@ -5,12 +5,10 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Reflection.Emit;
 using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -74,7 +72,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
 
                     // Create a dynamic type that implements IObserver<DiagnosticListener>
-                    var observerType = CreateDiagnosticListenerObserverType(diagnosticListenerType);
+                    var observerType = DiagnosticListenerObserverFactory.CreateObserverType(diagnosticListenerType);
                     if (observerType == null)
                     {
                         Log.Warning("Failed to create dynamic observer type");
@@ -124,7 +122,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     continue;
                 }
 
-                IDisposable subscription = subscriber.SubscribeIfMatch(listener.DuckAs<IDiagnosticListener>());
+                IDisposable subscription = subscriber.SubscribeIfMatch(listener);
 
                 if (subscription != null)
                 {
@@ -168,101 +166,11 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// Creates a dynamic type that implements IObserver&lt;DiagnosticListener&gt;
-        /// All the code here is developed by Cursor.
-        /// to receive notifications about new DiagnosticListeners.
-        /// </summary>
-        private static Type? CreateDiagnosticListenerObserverType(Type diagnosticListenerType)
-        {
-            try
-            {
-                // Get the IObserver<DiagnosticListener> type
-                var observerType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
-
-                var assemblyName = new AssemblyName("Datadog.DiagnosticManager.Dynamic");
-                assemblyName.Version = typeof(DiagnosticManager).Assembly.GetName().Version;
-                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-                var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-
-                // Ensure type visibility
-                DuckType.EnsureTypeVisibility(moduleBuilder, typeof(DiagnosticManager));
-
-                var typeBuilder = moduleBuilder.DefineType(
-                    "DiagnosticListenerObserver",
-                    TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
-                    typeof(object),
-                    new[] { observerType });
-
-                // Add a field to hold the DiagnosticManager instance
-                var managerField = typeBuilder.DefineField("_manager", typeof(DiagnosticManager), FieldAttributes.Private | FieldAttributes.InitOnly);
-
-                // Define constructor that takes DiagnosticManager
-                var constructor = typeBuilder.DefineConstructor(
-                    MethodAttributes.Public,
-                    CallingConventions.Standard,
-                    new[] { typeof(DiagnosticManager) });
-
-                var ctorIl = constructor.GetILGenerator();
-                ctorIl.Emit(OpCodes.Ldarg_0);
-                var baseConstructor = typeof(object).GetConstructor(Type.EmptyTypes);
-                if (baseConstructor is null)
-                {
-                    throw new NullReferenceException("Could not get Object constructor.");
-                }
-
-                ctorIl.Emit(OpCodes.Call, baseConstructor);
-                ctorIl.Emit(OpCodes.Ldarg_0);
-                ctorIl.Emit(OpCodes.Ldarg_1);
-                ctorIl.Emit(OpCodes.Stfld, managerField);
-                ctorIl.Emit(OpCodes.Ret);
-
-                var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
-
-                // OnCompleted
-                var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
-                var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
-                onCompletedMethodIl.Emit(OpCodes.Ret);
-
-                // OnError
-                var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
-                var onErrorMethodIl = onErrorMethod.GetILGenerator();
-                onErrorMethodIl.Emit(OpCodes.Ret);
-
-                // OnNext - calls DiagnosticManager.OnDiagnosticListenerNext
-                var onDiagnosticListenerNextMethodInfo = typeof(DiagnosticManager).GetMethod(
-                    nameof(OnDiagnosticListenerNext),
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-                if (onDiagnosticListenerNextMethodInfo == null)
-                {
-                    Log.Warning("Unable to find OnDiagnosticListenerNext method");
-                    return null;
-                }
-
-                var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { diagnosticListenerType });
-                var onNextMethodIl = onNextMethod.GetILGenerator();
-                onNextMethodIl.Emit(OpCodes.Ldarg_0);
-                onNextMethodIl.Emit(OpCodes.Ldfld, managerField);
-                onNextMethodIl.Emit(OpCodes.Ldarg_1);
-                onNextMethodIl.EmitCall(OpCodes.Callvirt, onDiagnosticListenerNextMethodInfo, null);
-                onNextMethodIl.Emit(OpCodes.Ret);
-
-                var createdType = typeBuilder.CreateTypeInfo()?.AsType();
-                // Store the manager in a way that the created instance can access it
-                // We'll pass it to the constructor instead
-                return createdType;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating dynamic DiagnosticListener observer type");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Called when a new DiagnosticListener is created.
-        /// This method is called by the dynamically created observer type.
+        /// This method is called by the dynamically created observer type via reflection.
         /// </summary>
-        private void OnDiagnosticListenerNext(object diagnosticListener)
+        /// <param name="diagnosticListener">The DiagnosticListener instance (actual System.Diagnostics type)</param>
+        internal void OnDiagnosticListenerNext(object diagnosticListener)
         {
             try
             {
@@ -280,4 +188,3 @@ namespace Datadog.Trace.DiagnosticListeners
         }
     }
 }
-#endif

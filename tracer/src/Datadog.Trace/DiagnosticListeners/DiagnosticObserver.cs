@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,9 +17,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticObserver>();
 
         /// <summary>
-        /// Gets the name of the <see cref="DiagnosticListener"/> that should be instrumented.
+        /// Gets the name of the DiagnosticListener that should be instrumented.
         /// </summary>
-        /// <value>The name of the <see cref="DiagnosticListener"/> that should be instrumented.</value>
+        /// <value>The name of the DiagnosticListener that should be instrumented.</value>
         protected abstract string ListenerName { get; }
 
         public virtual bool IsSubscriberEnabled()
@@ -71,4 +70,3 @@ namespace Datadog.Trace.DiagnosticListeners
         protected abstract void OnNext(string eventName, object arg);
     }
 }
-#endif
