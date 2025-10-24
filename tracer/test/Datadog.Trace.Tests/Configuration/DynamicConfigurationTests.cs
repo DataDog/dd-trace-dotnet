@@ -63,7 +63,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             // emulate the one-time subscribe that TracerManager.Instance does
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
-            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
@@ -83,7 +82,6 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.GlobalTags, "key2:value2" },
             });
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
-            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
@@ -102,7 +100,6 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.GlobalTags, "key1:value1" },
             });
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
-            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             var previousRuntimeMetrics = tracerManager.RuntimeMetrics;
 
@@ -117,18 +114,17 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var tracerSettings = new TracerSettings();
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
-            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             // tracing is enabled by default
-            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeTrue();
+            tracerManager.PerTraceSettings.Settings.TraceEnabled.Should().BeTrue();
 
             // disable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", false)), tracerSettings);
-            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeFalse();
+            tracerManager.PerTraceSettings.Settings.TraceEnabled.Should().BeFalse();
 
             // re-enable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)), tracerSettings);
-            tracerManager.Settings.MutableSettings.TraceEnabled.Should().BeTrue();
+            tracerManager.PerTraceSettings.Settings.TraceEnabled.Should().BeTrue();
         }
 
         [Fact]
@@ -148,10 +144,9 @@ namespace Datadog.Trace.Tests.Configuration
             });
 
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
-            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
-            tracerManager.Settings.MutableSettings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
-            tracerManager.Settings.MutableSettings.CustomSamplingRulesIsRemote.Should().BeFalse();
+            tracerManager.PerTraceSettings.Settings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
+            tracerManager.PerTraceSettings.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
             var rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
@@ -181,8 +176,8 @@ namespace Datadog.Trace.Tests.Configuration
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             var remoteSamplingRulesJson = JsonConvert.SerializeObject(remoteSamplingRulesConfig);
-            tracerManager.Settings.MutableSettings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
-            tracerManager.Settings.MutableSettings.CustomSamplingRulesIsRemote.Should().BeTrue();
+            tracerManager.PerTraceSettings.Settings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
+            tracerManager.PerTraceSettings.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
             rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
@@ -277,24 +272,6 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             return new DynamicConfigConfigurationSource(configObj, ConfigurationOrigins.RemoteConfig);
-        }
-
-        private static TracerManager UpdateTracerManager(TracerSettings.SettingsManager.SettingChanges updates, TracerSettings settings, TracerManager tracerManager)
-        {
-            var newSettings = updates switch
-            {
-                { UpdatedExporter: { } e, UpdatedMutable: { } m } => settings with { Exporter = e, MutableSettings = m },
-                { UpdatedExporter: { } e } => settings with { Exporter = e },
-                { UpdatedMutable: { } m } => settings with { MutableSettings = m },
-                _ => null,
-            };
-
-            if (newSettings != null)
-            {
-                tracerManager = TracerManagerFactory.Instance.CreateTracerManager(newSettings, tracerManager);
-            }
-
-            return tracerManager;
         }
     }
 }
