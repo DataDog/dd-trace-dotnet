@@ -70,8 +70,6 @@ namespace Datadog.Trace.TestHelpers
 
         public bool DebugModeEnabled { get; set; }
 
-        public bool SetTracerHomeEnvironmentVariable { get; set; } = true;
-
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string SampleName { get; }
@@ -198,11 +196,7 @@ namespace Datadog.Trace.TestHelpers
             bool ignoreProfilerProcessesVar = false)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
-
-            if (SetTracerHomeEnvironmentVariable)
-            {
-                environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
-            }
+            environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
 
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
