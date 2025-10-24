@@ -383,7 +383,7 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error initializing Quartz diagnostic observer for .NET Framework.");
-            }x
+            }
 #endif
 
             try
