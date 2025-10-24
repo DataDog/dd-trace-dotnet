@@ -8,6 +8,8 @@
 #include "unknwn.h"
 #include <shared/src/native-src/string.h>
 #include <shared/src/native-src/util.h>
+
+#include <algorithm>
 #include <thread>
 
 #ifdef _WIN32
@@ -234,7 +236,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         }
 
         auto currentIsCrashingThread = threadId == crashingThreadId;
-        for (int i = 0; i < frames.size(); i++)
+        // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
+        for (auto it = frames.rbegin(); it != frames.rend(); it++)
         {
             auto [frame, succeeded] = ExtractResult(ddog_crasht_StackFrame_new());
 
@@ -243,7 +246,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 return 1;
             }
 
-            auto const& currentFrame = frames[i];
+            auto const& currentFrame = *it;
 
             if (currentIsCrashingThread)
             {
@@ -394,9 +397,6 @@ std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame
         result.push_back(*managedIt);
         ++managedIt;
     }
-
-    // we could also return the merged callstack without reversing but the caller would have to walk backwards
-    std::reverse(result.begin(), result.end());
 
     return result;
 }

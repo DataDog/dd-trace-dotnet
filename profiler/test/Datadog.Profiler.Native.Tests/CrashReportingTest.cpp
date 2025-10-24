@@ -160,14 +160,15 @@ TEST(CrashReportingTest, CheckMergedCallstackOnAlternateStackWithHighAddresses)
         {0x7F4D6D7D3924, 0x7F476CC3EA90, "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
     };
 
+    // MergeFrames returns the frames in the order of the sp addresses
     auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
     
     std::vector<std::string> expectedFunctions = {
-        "__GI___wait4",
-        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
-        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
-        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
         "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
+        "__GI___wait4",
     };
     
     ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
@@ -198,11 +199,11 @@ TEST(CrashReportingTest, CheckMergedCallstackOnAlternateStackWithLowAddresses)
     auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
 
     std::vector<std::string> expectedFunctions = {
-        "__GI___wait4",
-        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
-        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
-        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
         "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
+        "__GI___wait4",
     };
 
     ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
@@ -229,12 +230,12 @@ TEST(CrashReportingTest, CheckMergedCallstackButNoFusionBetweenNativeAndManaged)
     auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
 
     std::vector<std::string> expectedFunctions = {
-        "MethodTable::GetFlag(MethodTable::WFLAGS_HIGH_ENUM) const",
-        "WKS::gc_heap::mark_object_simple(unsigned char**)",
-        "WKS::gc_heap::mark_through_cards_helper(unsigned char**, unsigned long&, unsigned long&, void (*)(unsigned char**), unsigned char*, unsigned char*, int, int)",
-        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
-        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
         "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "WKS::gc_heap::mark_through_cards_helper(unsigned char**, unsigned long&, unsigned long&, void (*)(unsigned char**), unsigned char*, unsigned char*, int, int)",
+        "WKS::gc_heap::mark_object_simple(unsigned char**)",
+        "MethodTable::GetFlag(MethodTable::WFLAGS_HIGH_ENUM) const",
     };
 
     ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
