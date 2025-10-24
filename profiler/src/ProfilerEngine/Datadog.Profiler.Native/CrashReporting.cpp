@@ -360,7 +360,7 @@ std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame
     std::vector<StackFrame> result;
     // it's safe here to not use nativeFrames.size() + managedFrames.size()
     // because the managed frames should be a subset of the native frames
-    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
+    result.reserve((std::max)(nativeFrames.size(), managedFrames.size()));
 
     auto nativeIt = nativeFrames.rbegin();
     auto managedIt = managedFrames.rbegin();
