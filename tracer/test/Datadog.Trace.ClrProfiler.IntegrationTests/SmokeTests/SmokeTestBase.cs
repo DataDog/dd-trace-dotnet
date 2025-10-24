@@ -29,7 +29,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 this.GetType(),
                 output,
                 samplesDirectory: "test/test-applications/regression",
-                prependSamplesToAppName: false);
+                prependSamplesToAppName: false)
+            {
+                // Don't set DD_DOTNET_TRACER_HOME in smoke tests to verify the fallback logic works
+                SetTracerHomeEnvironmentVariable = false
+            };
         }
 
         protected ITestOutputHelper Output { get; }
