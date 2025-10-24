@@ -465,7 +465,6 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
@@ -484,7 +483,9 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+#if !NETFRAMEWORK
                 observers.Add(new AspNetCoreDiagnosticObserver());
+#endif
                 observers.Add(new QuartzDiagnosticObserver());
             }
 
@@ -492,7 +493,6 @@ namespace Datadog.Trace.ClrProfiler
             diagnosticManager.Start();
             DiagnosticManager.Instance = diagnosticManager;
         }
-#endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
