@@ -730,7 +730,6 @@ namespace Datadog.Trace.Configuration
             // Move the creation of these settings inside SettingsManager?
             var initialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
             Manager = new(this, initialMutableSettings, Exporter);
-            MutableSettings = initialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -742,8 +741,6 @@ namespace Datadog.Trace.Configuration
         internal OverrideErrorLog ErrorLog { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
-
-        internal MutableSettings MutableSettings { get; init; }
 
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
 

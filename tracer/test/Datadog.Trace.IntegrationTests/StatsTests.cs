@@ -583,9 +583,9 @@ namespace Datadog.Trace.IntegrationTests
 
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
-                stats.Env.Should().Be(settings.MutableSettings.Environment);
+                stats.Env.Should().Be(settings.Manager.InitialMutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
-                stats.Version.Should().Be(settings.MutableSettings.ServiceVersion);
+                stats.Version.Should().Be(settings.Manager.InitialMutableSettings.ServiceVersion);
                 stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);
