@@ -71,23 +71,23 @@ namespace Datadog.Trace.Tests.Configuration
 
         public static IEnumerable<(Func<TracerSettings, object> SettingGetter, object ExpectedValue)> GetDefaultTestData()
         {
-            yield return (s => s.MutableSettings.TraceEnabled, true);
+            yield return (s => s.Manager.InitialMutableSettings.TraceEnabled, true);
             yield return (s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:8126/"));
-            yield return (s => s.MutableSettings.Environment, null);
-            yield return (s => s.MutableSettings.ServiceName, null);
-            yield return (s => s.MutableSettings.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by default
-            yield return (s => s.MutableSettings.LogsInjectionEnabled, true);
-            yield return (s => s.MutableSettings.GlobalTags.Count, 0);
+            yield return (s => s.Manager.InitialMutableSettings.Environment, null);
+            yield return (s => s.Manager.InitialMutableSettings.ServiceName, null);
+            yield return (s => s.Manager.InitialMutableSettings.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by default
+            yield return (s => s.Manager.InitialMutableSettings.LogsInjectionEnabled, true);
+            yield return (s => s.Manager.InitialMutableSettings.GlobalTags.Count, 0);
 #pragma warning disable 618 // App analytics is deprecated but supported
-            yield return (s => s.MutableSettings.AnalyticsEnabled, false);
+            yield return (s => s.Manager.InitialMutableSettings.AnalyticsEnabled, false);
 #pragma warning restore 618
-            yield return (s => s.MutableSettings.CustomSamplingRules, null);
-            yield return (s => s.MutableSettings.MaxTracesSubmittedPerSecond, 100);
-            yield return (s => s.MutableSettings.TracerMetricsEnabled, false);
+            yield return (s => s.Manager.InitialMutableSettings.CustomSamplingRules, null);
+            yield return (s => s.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond, 100);
+            yield return (s => s.Manager.InitialMutableSettings.TracerMetricsEnabled, false);
             yield return (s => s.Exporter.DogStatsdPort, 8125);
             yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext", "baggage" });
             yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext", "baggage" });
-            yield return (s => s.MutableSettings.ServiceNameMappings, new string[0]);
+            yield return (s => s.Manager.InitialMutableSettings.ServiceNameMappings, new string[0]);
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, true);
@@ -97,58 +97,58 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetBreakingChangeTestData()
         {
             // Test edge cases that expose various discrepenacies with the Agent DD_TAGS parsing algorithm that we would like to support
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.MutableSettings.GlobalTags, TagsK1V1K2V2);
-            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.MutableSettings.GlobalTags, TagsKey1Key2);
-            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.MutableSettings.GlobalTags, TagsKey1Key2);
-            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.MutableSettings.GlobalTags, TagsWithSpacesInValue);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.Manager.InitialMutableSettings.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.Manager.InitialMutableSettings.GlobalTags, TagsKey1Key2);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.Manager.InitialMutableSettings.GlobalTags, TagsKey1Key2);
+            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.Manager.InitialMutableSettings.GlobalTags, TagsWithSpacesInValue);
         }
 
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetTestData()
         {
-            yield return (ConfigurationKeys.TraceEnabled, "true", s => s.MutableSettings.TraceEnabled, true);
-            yield return (ConfigurationKeys.TraceEnabled, "false", s => s.MutableSettings.TraceEnabled, false);
+            yield return (ConfigurationKeys.TraceEnabled, "true", s => s.Manager.InitialMutableSettings.TraceEnabled, true);
+            yield return (ConfigurationKeys.TraceEnabled, "false", s => s.Manager.InitialMutableSettings.TraceEnabled, false);
 
             yield return (ConfigurationKeys.AgentHost, "test-host", s => s.Exporter.AgentUri, new Uri("http://test-host:8126/"));
             yield return (ConfigurationKeys.AgentPort, "9000", s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:9000/"));
 
-            yield return (ConfigurationKeys.Environment, "staging", s => s.MutableSettings.Environment, "staging");
+            yield return (ConfigurationKeys.Environment, "staging", s => s.Manager.InitialMutableSettings.Environment, "staging");
 
-            yield return (ConfigurationKeys.ServiceVersion, "1.0.0", s => s.MutableSettings.ServiceVersion, "1.0.0");
+            yield return (ConfigurationKeys.ServiceVersion, "1.0.0", s => s.Manager.InitialMutableSettings.ServiceVersion, "1.0.0");
 
-            yield return (ConfigurationKeys.ServiceName, "web-service", s => s.MutableSettings.ServiceName, "web-service");
-            yield return ("DD_SERVICE_NAME", "web-service", s => s.MutableSettings.ServiceName, "web-service");
+            yield return (ConfigurationKeys.ServiceName, "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
+            yield return ("DD_SERVICE_NAME", "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
 
-            yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", s => s.MutableSettings.DisabledIntegrationNames.Count, 3); // The OpenTelemetry integration is disabled by defau)t
+            yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", s => s.Manager.InitialMutableSettings.DisabledIntegrationNames.Count, 3); // The OpenTelemetry integration is disabled by defau)t
 
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", s => s.MutableSettings.GlobalTags, TagsK1V1K2V2);
-            yield return (ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", s => s.MutableSettings.GlobalTags, TagsK2V2);
-            yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", s => s.MutableSettings.GlobalTags, TagsK1V1K2V2);
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", s => s.MutableSettings.GlobalTags.Count, 1);
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", s => s.MutableSettings.GlobalTags, TagsWithColonsInValue);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", s => s.Manager.InitialMutableSettings.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", s => s.Manager.InitialMutableSettings.GlobalTags, TagsK2V2);
+            yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", s => s.Manager.InitialMutableSettings.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", s => s.Manager.InitialMutableSettings.GlobalTags.Count, 1);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", s => s.Manager.InitialMutableSettings.GlobalTags, TagsWithColonsInValue);
 
             // Test edge cases that expose various discrepenacies with the Agent DD_TAGS parsing algorithm that we would like to support
-            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.MutableSettings.GlobalTags, new Dictionary<string, string>() { { "k1", "v1 k2:v2" } });
-            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.MutableSettings.GlobalTags.Count, 0);
-            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.MutableSettings.GlobalTags.Count, 0);
-            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.MutableSettings.GlobalTags, TagsWithSpacesInValue);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.Manager.InitialMutableSettings.GlobalTags, new Dictionary<string, string>() { { "k1", "v1 k2:v2" } });
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.Manager.InitialMutableSettings.GlobalTags.Count, 0);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.Manager.InitialMutableSettings.GlobalTags.Count, 0);
+            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.Manager.InitialMutableSettings.GlobalTags, TagsWithSpacesInValue);
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
-            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", s => s.MutableSettings.AnalyticsEnabled, true);
-            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", s => s.MutableSettings.AnalyticsEnabled, false);
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", s => s.Manager.InitialMutableSettings.AnalyticsEnabled, true);
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", s => s.Manager.InitialMutableSettings.AnalyticsEnabled, false);
 #pragma warning restore 618
 
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,invalidheaderonly:,validheaderwithoutcolon,:", s => s.MutableSettings.HeaderTags, HeaderTagsWithOptionalMappings);
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", s => s.MutableSettings.HeaderTags, HeaderTagsSameTag);
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", s => s.MutableSettings.HeaderTags.Count, 1);
-            yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", s => s.MutableSettings.HeaderTags, HeaderTagsWithDots);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,invalidheaderonly:,validheaderwithoutcolon,:", s => s.Manager.InitialMutableSettings.HeaderTags, HeaderTagsWithOptionalMappings);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", s => s.Manager.InitialMutableSettings.HeaderTags, HeaderTagsSameTag);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", s => s.Manager.InitialMutableSettings.HeaderTags.Count, 1);
+            yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", s => s.Manager.InitialMutableSettings.HeaderTags, HeaderTagsWithDots);
 
-            yield return (ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", s => s.MutableSettings.ServiceNameMappings["elasticsearch"], "custom-name");
+            yield return (ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", s => s.Manager.InitialMutableSettings.ServiceNameMappings["elasticsearch"], "custom-name");
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
         public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetJsonTestData()
         {
-            yield return new(@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", s => s.MutableSettings.GlobalTags, TagsK1V1K2V2);
+            yield return new(@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", s => s.Manager.InitialMutableSettings.GlobalTags, TagsK1V1K2V2);
         }
 
         public static IEnumerable<object[]> GetBadJsonTestData1()
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetBadJsonTestData3()
         {
             // Json doesn't represent dictionary of string to string
-            yield return (@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", s => s.MutableSettings.GlobalTags.Count, 0);
+            yield return (@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", s => s.Manager.InitialMutableSettings.GlobalTags.Count, 0);
         }
 
         public void Dispose()
@@ -301,7 +301,7 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            Assert.Equal(expectedValue, settings.MutableSettings.HeaderTags);
+            Assert.Equal(expectedValue, settings.Manager.InitialMutableSettings.HeaderTags);
         }
 
         private void AssertNameValueConfigurationSource(IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> testData, string setExperimentalFeaturesEnabled = "")
