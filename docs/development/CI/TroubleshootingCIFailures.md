@@ -54,6 +54,37 @@ The human-readable build URL format is:
 https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>
 ```
 
+### Using Azure DevOps MCP (AI Assistant Integration)
+
+If you're using an AI assistant with the Azure DevOps MCP server, you can use these tools for cleaner queries:
+
+#### Get build information
+Ask your assistant to use `mcp__azure-devops__pipelines_get_builds` with:
+- `project: "dd-trace-dotnet"`
+- `buildIds: [<BUILD_ID>]`
+
+This returns structured build data including status, result, queue time, and trigger information.
+
+#### Get build logs
+Ask your assistant to use `mcp__azure-devops__pipelines_get_build_log` with:
+- `project: "dd-trace-dotnet"`
+- `buildId: <BUILD_ID>`
+
+Note: Large builds may have very large logs that exceed token limits. In that case, fall back to curl/jq to target specific log IDs.
+
+#### Get specific log by ID
+Ask your assistant to use `mcp__azure-devops__pipelines_get_build_log_by_id` with:
+- `project: "dd-trace-dotnet"`
+- `buildId: <BUILD_ID>`
+- `logId: <LOG_ID>`
+- Optional: `startLine` and `endLine` to limit output
+
+**Advantages of MCP approach:**
+- Structured JSON responses (no manual parsing)
+- Works naturally in conversation with AI assistants
+- Handles authentication automatically
+- Can combine multiple queries in a single request
+
 ## Investigating Test Failures
 
 ### Find failed tasks in a build
@@ -259,6 +290,34 @@ Connection reset by peer
 
 **Solution**: Retry the failed job. These are typically transient network issues.
 
+#### Identifying Flaky Tests and Retry Attempts
+
+Azure DevOps automatically retries some failed stages. You can identify retried tasks in the build timeline:
+
+**Using curl/jq:**
+```bash
+curl -s "https://dev.azure.com/datadoghq/a51c4863-3eb4-4c5d-878a-58b41a049e4e/_apis/build/builds/<BUILD_ID>/timeline" \
+  | jq -r '.records[] | select(.previousAttempts != null and (.previousAttempts | length) > 0) | "\(.name): attempt \(.attempt), previous attempts: \(.previousAttempts | length)"'
+```
+
+**Using Azure DevOps MCP:**
+Ask your assistant to check the build timeline for tasks with `previousAttempts` or `attempt > 1`.
+
+**What this means:**
+- `"attempt": 2` with `"result": "succeeded"` → The task failed initially but passed on retry (likely a flake)
+- `"previousAttempts": [...]` → Contains IDs of previous failed attempts
+
+**When you see retried tasks:**
+1. If a task succeeded on retry after an initial failure, it's likely a flaky/intermittent issue
+2. The overall build result may still show as "failed" even if the retry succeeded, depending on pipeline configuration
+3. Check if the failure pattern is known (see "Flaky Profiler Stack Walking Failures" below)
+
+**How to retry a failed job:**
+1. Open the build in Azure DevOps: `https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>`
+2. Find the failed stage/job
+3. Click the "..." menu → "Retry failed stages" or "Retry stage"
+4. Only failed stages will be retried; successful stages are not re-run
+
 ### Unit Test Failures
 
 Failed unit tests typically appear in logs as:
@@ -327,6 +386,20 @@ Common verification failures:
 - **Check snapshots** - Test snapshots don't match (see [RunSmokeTestsLocally.md](RunSmokeTestsLocally.md))
 
 ## Example Investigation Workflow
+
+### Quick Investigation (AI Assistant with MCP)
+
+If you're using an AI assistant with Azure DevOps MCP:
+
+```
+"Why did Azure DevOps build <BUILD_ID> fail?"
+```
+
+The assistant will:
+1. Get build information using `mcp__azure-devops__pipelines_get_builds`
+2. Identify the result and any failed stages
+3. Check for retry attempts to identify flaky tests
+4. Provide guidance on whether to retry or investigate further
 
 ### Quick Investigation (GitHub CLI)
 
