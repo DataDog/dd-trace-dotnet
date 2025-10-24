@@ -63,11 +63,16 @@ internal class DebuggerFactory
          && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
-            statsd = new NoOpStatsd();
+            statsd = NoOpStatsd.Instance;
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, prefix: DebuggerSettings.DebuggerMetricPrefix, telemtryFlushInterval: null);
+            // TODO: use StatsdManager to get automatic updating on exporter and other setting changes
+            statsd = StatsdFactory.CreateDogStatsdClient(
+                tracerSettings.Manager.InitialMutableSettings,
+                tracerSettings.Exporter,
+                includeDefaultTags: false,
+                prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return statsd;
