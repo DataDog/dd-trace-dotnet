@@ -78,7 +78,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 var env = StringUtil.IsNullOrEmpty(settings.Environment) ? [] : StringEncoding.UTF8.GetBytes(settings.Environment);
                 Interlocked.Exchange(ref _environmentValueBytes!, env);
 
-                var service = StringUtil.IsNullOrEmpty(settings.Environment) ? [] : StringEncoding.UTF8.GetBytes(settings.Environment);
+                var service = StringUtil.IsNullOrEmpty(settings.DefaultServiceName) ? [] : StringEncoding.UTF8.GetBytes(settings.DefaultServiceName);
                 Interlocked.Exchange(ref _serviceValueBytes!, service);
             }
         }
