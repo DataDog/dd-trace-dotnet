@@ -45,11 +45,12 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var tracer = TracerManager.Instance;
 
+            // We no longer replace tracer instances when reconfiguring the tracer
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)), tracer.Settings);
 
             var newTracer = TracerManager.Instance;
 
-            newTracer.Should().NotBeSameAs(tracer);
+            newTracer.Should().BeSameAs(tracer);
 
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)), tracer.Settings);
 
@@ -148,7 +149,7 @@ namespace Datadog.Trace.Tests.Configuration
             tracerManager.PerTraceSettings.Settings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
             tracerManager.PerTraceSettings.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
-            var rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
+            var rules = ((ManagedTraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
             rules.Should()
                  .BeEquivalentTo(
@@ -179,7 +180,7 @@ namespace Datadog.Trace.Tests.Configuration
             tracerManager.PerTraceSettings.Settings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
             tracerManager.PerTraceSettings.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
-            rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
+            rules = ((ManagedTraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
             // new list should include the remote rules, not the local rules
             rules.Should()

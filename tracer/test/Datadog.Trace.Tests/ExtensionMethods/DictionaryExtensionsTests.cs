@@ -76,8 +76,8 @@ public class DictionaryExtensionsTests
     [Fact]
     public void SequenceEqual_UsesDictionaryKeyComparer()
     {
-        ReadOnlyDictionary<string, string> dict1 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "key", "value1" } });
-        ReadOnlyDictionary<string, string> dict2 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "KEY", "value2" } });
+        ReadOnlyDictionary<string, string> dict1 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "key", "value" } });
+        ReadOnlyDictionary<string, string> dict2 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "KEY", "value" } });
         dict1.SequenceEqual(dict2).Should().BeTrue();
         dict2.SequenceEqual(dict1).Should().BeTrue();
     }
@@ -85,8 +85,8 @@ public class DictionaryExtensionsTests
     [Fact]
     public void SequenceEqual_UsesDictionaryWithDifferentComparersIsNotSupported()
     {
-        ReadOnlyDictionary<string, string> dict1 = new(new Dictionary<string, string>(StringComparer.Ordinal) { { "key", "value1" } });
-        ReadOnlyDictionary<string, string> dict2 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "KEY", "value2" } });
+        ReadOnlyDictionary<string, string> dict1 = new(new Dictionary<string, string>(StringComparer.Ordinal) { { "key", "value" } });
+        ReadOnlyDictionary<string, string> dict2 = new(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "KEY", "value" } });
 
         // reversing the order changes the result
         dict1.SequenceEqual(dict2).Should().BeTrue();
