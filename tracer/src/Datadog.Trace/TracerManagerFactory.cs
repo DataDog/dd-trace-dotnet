@@ -130,27 +130,18 @@ namespace Datadog.Trace
 
             discoveryService ??= GetDiscoveryService(settings);
 
-            bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
+            // Technically we don't _always_ need a dogstatsd instance, because we only need it if runtime metrics
+            // are enabled _or_ tracer metrics are enabled. However, tracer metrics can be enabled and disabled dynamically
+            // at runtime, which makes managing the lifetime of the statsd instance more complex than we'd like, so
+            // for simplicity, we _always_ create a new statsd instance
+            statsd ??= new StatsdManager(settings, includeDefaultTags: true);
+            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
+                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService)
+                                   : null;
 
-            statsd = (settings.MutableSettings.TracerMetricsEnabled || runtimeMetricsEnabled)
-                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
-                         : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, settings.MutableSettings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
-
-            if (runtimeMetricsEnabled && runtimeMetrics is { })
-            {
-                runtimeMetrics.UpdateStatsd(statsd);
-            }
-            else if (runtimeMetricsEnabled)
-            {
-                runtimeMetrics = new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
-            }
-            else
-            {
-                runtimeMetrics = null;
-            }
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
 
@@ -449,6 +440,12 @@ namespace Datadog.Trace
             }
         }
 
+        // internal for testing
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
+            => settings.AgentFeaturePollingEnabled ?
+                   DiscoveryService.Create(settings.Exporter) :
+                   NullDiscoveryService.Instance;
+
         internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
         {
             try
@@ -494,12 +491,6 @@ namespace Datadog.Trace
                 return new NoOpStatsd();
             }
         }
-
-        // internal for testing
-        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => settings.AgentFeaturePollingEnabled ?
-                   DiscoveryService.Create(settings.Exporter) :
-                   NullDiscoveryService.Instance;
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
