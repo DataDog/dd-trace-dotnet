@@ -13,7 +13,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
@@ -376,7 +375,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             var versionAndSampling = (byte)(((version << 4) & 0b1111_0000) | (sampled & 0b0000_0001));
             var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
 
-            var span = new VendoredMicrosoftCode.System.Span<byte>(contextBytes) { [0] = versionAndSampling };
+            var span = new Span<byte>(contextBytes) { [0] = versionAndSampling };
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1), spanId);
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong)), traceId.Upper);
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong) + sizeof(ulong)), traceId.Lower);

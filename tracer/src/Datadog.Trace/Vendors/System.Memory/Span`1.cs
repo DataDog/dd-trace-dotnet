@@ -14,8 +14,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+
 #pragma warning disable CS8625
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System

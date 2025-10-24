@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests
         {
 #if DEBUG
             throw new Xunit.SkipException("This test requires RELEASE mode and will fail in DEBUG mode on some target frameworks");
-#else
+#elif !NETCOREAPP3_1_OR_GREATER
             var originalType = typeof(System.Runtime.CompilerServices.Unsafe);
             var vendoredType = typeof(VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
 
@@ -122,6 +122,7 @@ namespace Datadog.Trace.Tests
 #endif
         }
 
+#if !NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void UnsafeTypePrepareMethodTest()
         {
@@ -219,6 +220,7 @@ namespace Datadog.Trace.Tests
                 }
             }
         }
+#endif
 
         private static MethodBase MakeGenericMethod(MethodBase foundedMb, out List<Type> genericMethodArguments)
         {
