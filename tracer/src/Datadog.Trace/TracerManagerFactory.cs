@@ -254,19 +254,9 @@ namespace Datadog.Trace
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
-            // ISamplingRule is used to implement, in order of precedence:
-            // - custom sampling rules
-            //   - remote custom rules (provenance: "customer")
-            //   - remote dynamic rules (provenance: "dynamic")
-            //   - local custom rules (provenance: "local"/none) = DD_TRACE_SAMPLING_RULES
-            // - global sampling rate
-            //   - remote
-            //   - local = DD_TRACE_SAMPLE_RATE
-            // - agent sampling rates (as a single rule)
-
-            // Note: the order that rules are registered is important, as they are evaluated in order.
-            // The first rule that matches will be used to determine the sampling rate.
-
+            // TODO: This may need to be updated to be dynamic, and to handle changes to enablement
+            // e.g. AppSec can be enabled/disabled dynamically, which could change this flag at runtime,
+            // leaving us with the wrong sampler in place
             if (settings.ApmTracingEnabled == false &&
                 (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
@@ -276,63 +266,7 @@ namespace Datadog.Trace
                 return samplerStandalone.Build();
             }
 
-            var sampler = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: settings.MutableSettings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
-
-            // sampling rules (remote value overrides local value)
-            var samplingRulesJson = settings.MutableSettings.CustomSamplingRules;
-
-            // check if the rules are remote or local because they have different JSON schemas
-            if (settings.MutableSettings.CustomSamplingRulesIsRemote)
-            {
-                // remote sampling rules
-                if (!string.IsNullOrWhiteSpace(samplingRulesJson))
-                {
-                    var remoteSamplingRules =
-                        RemoteCustomSamplingRule.BuildFromConfigurationString(
-                            samplingRulesJson,
-                            RegexBuilder.DefaultTimeout);
-
-                    sampler.RegisterRules(remoteSamplingRules);
-                }
-            }
-            else
-            {
-                // local sampling rules
-                var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
-
-                if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRulesJson))
-                {
-                    var localSamplingRules =
-                        LocalCustomSamplingRule.BuildFromConfigurationString(
-                            samplingRulesJson,
-                            samplingRulesFormat,
-                            RegexBuilder.DefaultTimeout);
-
-                    sampler.RegisterRules(localSamplingRules);
-                }
-            }
-
-            // global sampling rate (remote value overrides local value)
-            if (settings.MutableSettings.GlobalSamplingRate is { } globalSamplingRate)
-            {
-                if (globalSamplingRate is < 0f or > 1f)
-                {
-                    Log.Warning(
-                        "{ConfigurationKey} configuration of {ConfigurationValue} is out of range",
-                        ConfigurationKeys.GlobalSamplingRate,
-                        settings.MutableSettings.GlobalSamplingRate);
-                }
-                else
-                {
-                    sampler.RegisterRule(new GlobalSamplingRateRule((float)globalSamplingRate));
-                }
-            }
-
-            // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
-            // This rule is always present, even if the agent has not yet provided any sampling rates.
-            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
-
-            return sampler.Build();
+            return new ManagedTraceSampler(settings);
         }
 
         protected virtual ISpanSampler GetSpanSampler(TracerSettings settings)
