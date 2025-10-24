@@ -732,6 +732,14 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
     {
         _IsManagedConfigurationSet = true;
 
+        // nothing to do when managed configuration is disabled
+        // i.e. the tracer is not even supposed to send Stable Configuration
+        if (!_pConfiguration->IsManagedActivationEnabled())
+        {
+            Log::Info("Managed layer provides Stable Configuration even when managed activation is disabled.");
+            return false;
+        }
+
         // Take into account the enablement computed by the managed layer:
         Log::Info("Managed layer provides Stable Configuration.");
         EnablementStatus enablementStatus =
