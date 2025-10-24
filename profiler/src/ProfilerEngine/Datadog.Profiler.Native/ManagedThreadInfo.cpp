@@ -34,7 +34,7 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _clrThreadId(clrThreadId),
     _osThreadId(osThreadId),
     _osThreadHandle(osThreadHandle),
-    _pThreadName(std::move(pThreadName)),
+    _threadName(std::move(pThreadName)),
     _lastSampleHighPrecisionTimestamp{0ns},
     _cpuConsumption{0ms},
     _timestamp{0ns},
