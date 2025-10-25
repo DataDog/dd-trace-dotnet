@@ -85,6 +85,10 @@ public:
     bool IsWaitHandleProfilingEnabled() const override;
     bool IsManagedActivationEnabled() const override;
     void SetEnablementStatus(EnablementStatus status) override;
+    bool IsHeapSnapshotEnabled() const override;
+    std::chrono::minutes GetHeapSnapshotInterval() const override;
+    int32_t GetHeapSnapshotUsedMemoryThreshold() const override;
+
 
 private:
     static tags ExtractUserTags();
@@ -110,6 +114,7 @@ private:
     EnablementStatus ExtractEnablementStatus();
     std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
     std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
+    std::chrono::minutes ExtractHeapSnapshotInterval() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -187,4 +192,8 @@ private:
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
     bool _isWaitHandleProfilingEnabled;
+
+    bool _isHeapSnapshotEnabled;
+    std::chrono::minutes _heapSnapshotInterval;
+    int32_t _heapSnapshotUsedMemoryThreshold; // in % of used memory
 };

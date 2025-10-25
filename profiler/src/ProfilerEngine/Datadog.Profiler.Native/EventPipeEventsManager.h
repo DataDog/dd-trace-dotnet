@@ -27,7 +27,8 @@ public:
                            IAllocationsListener* pAllocationListener,
                            IContentionListener* pContentionListener,
                            IGCSuspensionsListener* pGCSuspensionsListener,
-                           INetworkListener* pNetworkListener);
+                           INetworkListener* pNetworkListener,
+                           IGCDumpListener* pGCDumpListener);
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,

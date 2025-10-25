@@ -118,6 +118,9 @@ Configuration::Configuration()
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
+    _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
+    _heapSnapshotInterval = ExtractHeapSnapshotInterval();
+    _heapSnapshotUsedMemoryThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotUsedMemoryThreshold, 85);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -797,7 +800,6 @@ void Configuration::SetEnablementStatus(EnablementStatus status)
     _enablementStatus = status;
 }
 
-
 std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() const
 {
     auto const defaultValue = 50ms;
@@ -811,4 +813,31 @@ std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() c
 std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
 {
     return _httpRequestDurationThreshold;
+}
+
+bool Configuration::IsHeapSnapshotEnabled() const
+{
+    return _isHeapSnapshotEnabled;
+}
+
+std::chrono::minutes Configuration::ExtractHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::HeapSnapshotInterval);
+    int32_t interval;
+    if (TryParse(r, interval))
+    {
+        return std::chrono::minutes(interval);
+    }
+
+    return 5min;
+}
+
+std::chrono::minutes Configuration::GetHeapSnapshotInterval() const
+{
+    return _heapSnapshotInterval;
+}
+
+int32_t Configuration::GetHeapSnapshotUsedMemoryThreshold() const
+{
+    return _heapSnapshotUsedMemoryThreshold;
 }

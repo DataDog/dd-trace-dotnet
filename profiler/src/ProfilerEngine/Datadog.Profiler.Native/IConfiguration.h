@@ -81,6 +81,10 @@ public:
     virtual bool IsWaitHandleProfilingEnabled() const = 0;
     virtual bool IsManagedActivationEnabled() const = 0;
 
-    // these setter functions are needed for Stable Configuration support
+    // this setter function isneeded for Stable Configuration support
     virtual void SetEnablementStatus(EnablementStatus status) = 0;
+
+    virtual bool IsHeapSnapshotEnabled() const = 0;
+    virtual std::chrono::minutes GetHeapSnapshotInterval() const = 0;
+    virtual int32_t GetHeapSnapshotUsedMemoryThreshold() const = 0;
 };
