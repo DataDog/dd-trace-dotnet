@@ -40,12 +40,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 if (container.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
                 {
                     databaseId = databaseNew.Id;
-                    endpoint = databaseNew.Client.Endpoint;
+                    try
+                    {
+                        endpoint = databaseNew.Client.Endpoint;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Container/Client disposed; skip endpoint to avoid throwing in instrumentation
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Unable to get Cosmos client endpoint from DatabaseNewStruct.");
+                    }
                 }
                 else if (container.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
                 {
                     databaseId = databaseOld.Id;
-                    endpoint = databaseOld.ClientContext.Client.Endpoint;
+                    try
+                    {
+                        endpoint = databaseOld.ClientContext.Client.Endpoint;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Container/Client disposed; skip endpoint to avoid throwing in instrumentation
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Unable to get Cosmos client endpoint from DatabaseOldStruct.");
+                    }
                 }
             }
 
@@ -60,14 +82,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
             if (instance.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
             {
                 databaseId = databaseNew.Id;
-                var client = databaseNew.Client;
-                endpoint = client.Endpoint;
+                try
+                {
+                    endpoint = databaseNew.Client.Endpoint;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Client disposed; leave endpoint null
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Unable to get Cosmos client endpoint from DatabaseNewStruct.");
+                }
             }
             else if (instance.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
             {
                 databaseId = databaseOld.Id;
-                var client = databaseOld.ClientContext.Client;
-                endpoint = client.Endpoint;
+                try
+                {
+                    endpoint = databaseOld.ClientContext.Client.Endpoint;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Client disposed; leave endpoint null
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Unable to get Cosmos client endpoint from DatabaseOldStruct.");
+                }
             }
 
             return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, endpoint);
@@ -78,7 +120,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
             Uri endpoint = null;
             if (instance.TryDuckCast<CosmosClientStruct>(out var c))
             {
-                endpoint = c.Endpoint;
+                try
+                {
+                    endpoint = c.Endpoint;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Client disposed; leave endpoint null
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Unable to get Cosmos client endpoint from CosmosClientStruct.");
+                }
             }
 
             return CreateCosmosDbCallState(instance, queryDefinition, null, null, endpoint);
