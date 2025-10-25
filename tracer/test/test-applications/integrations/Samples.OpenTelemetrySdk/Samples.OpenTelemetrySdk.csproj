@@ -10,6 +10,11 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     </PropertyGroup>
 
+  <!-- Required to fix package pruning errors introduced in rc2. Should be removed in NET 10 GA -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
+  </PropertyGroup>  
+  
   <ItemGroup>
     <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />

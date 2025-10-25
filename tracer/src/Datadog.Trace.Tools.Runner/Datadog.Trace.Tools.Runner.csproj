@@ -23,6 +23,8 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <BuildInParallel>false</BuildInParallel>
+    <!-- Required to fix package pruning errors introduced in rc2. Should be removed in NET 10 GA -->
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
   </PropertyGroup>
 
   <Choose>

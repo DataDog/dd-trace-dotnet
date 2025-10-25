@@ -6,4 +6,9 @@
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
+  <!-- Required to fix package pruning errors introduced in rc2. Should be removed in NET 10 GA -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
+  </PropertyGroup>
+  
 </Project>
