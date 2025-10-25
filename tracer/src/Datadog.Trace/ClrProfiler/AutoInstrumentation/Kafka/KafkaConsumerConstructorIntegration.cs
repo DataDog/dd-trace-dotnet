@@ -7,7 +7,9 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Delegates;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -27,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaConsumerConstructorIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaConsumerConstructorIntegration));
+
     internal static CallTargetState OnMethodBegin<TTarget, TConsumerBuilder>(TTarget instance, TConsumerBuilder consumer)
         where TConsumerBuilder : IConsumerBuilder
     {
@@ -63,8 +67,22 @@ public class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                // Save the map between this consumer and a consumer group
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
+                // Extract cluster_id using AdminClient API with bootstrap servers
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    Log.Information("ROBC: Kafka consumer config retrieved - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", groupId, bootstrapServers, clusterId);
+                    Console.WriteLine($"ROBC: Kafka consumer config retrieved - GroupId: {groupId}, BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
+                }
+                else
+                {
+                    Log.Information("ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {GroupId}, BootstrapServers: {BootstrapServers}", groupId, bootstrapServers);
+                    Console.WriteLine($"ROBC: Kafka consumer config retrieved but no cluster_id could be obtained - GroupId: {groupId}, BootstrapServers: {bootstrapServers}");
+                }
+
+                // Save the map between this consumer and its metadata
+                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
