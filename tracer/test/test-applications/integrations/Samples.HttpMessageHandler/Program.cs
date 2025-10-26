@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.HttpMessageHandler
@@ -35,31 +36,33 @@ namespace Samples.HttpMessageHandler
                 // send async http requests using HttpClient
                 url += "?key1=value1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482";
 
-                Console.WriteLine();
-                Console.WriteLine("Sending async request with default HttpClient.");
-                using (var client = new HttpClient())
+                for (var i = 0; i < 10; i++)
                 {
-                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
-                }
-
-                // send async http requests using HttpClient with CustomHandler
-                Console.WriteLine();
-                Console.WriteLine("Sending async request with HttpClient(CustomHandler).");
-                using (var client = new HttpClient(new CustomHandler()))
-                {
-                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
-                }
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    // send async http requests using HttpClient with raw WinHttpHandler
                     Console.WriteLine();
-                    Console.WriteLine("Sending async request with HttpClient(WinHttpHandler).");
-                    using (var client = new HttpClient(new WinHttpHandler()))
+                    Console.WriteLine("Sending async request with default HttpClient.");
+                    using (var client = new HttpClient())
                     {
                         RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
                     }
-                }
+
+                    // send async http requests using HttpClient with CustomHandler
+                    Console.WriteLine();
+                    Console.WriteLine("Sending async request with HttpClient(CustomHandler).");
+                    using (var client = new HttpClient(new CustomHandler()))
+                    {
+                        RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
+                    }
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        // send async http requests using HttpClient with raw WinHttpHandler
+                        Console.WriteLine();
+                        Console.WriteLine("Sending async request with HttpClient(WinHttpHandler).");
+                        using (var client = new HttpClient(new WinHttpHandler()))
+                        {
+                            RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
+                        }
+                    }
 
 #if NETCOREAPP
                 // send async http requests using HttpClient with raw SocketsHttpHandler
@@ -123,6 +126,9 @@ namespace Samples.HttpMessageHandler
                     }
                 }
 #endif
+
+                    Thread.Sleep(3000);
+                }
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
