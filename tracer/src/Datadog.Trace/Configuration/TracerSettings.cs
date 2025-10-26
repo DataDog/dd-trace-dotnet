@@ -348,7 +348,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
+                                  .AsBool(defaultValue: true);
 
             if (DataPipelineEnabled)
             {
