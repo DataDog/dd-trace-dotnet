@@ -1,0 +1,40 @@
+{
+  "profiles": {
+    "WithDatadog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_VERSION": "",
+
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
+
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared/bin/monitoring-home",
+        "DD_TRACE_OTEL_ENABLED": "true",
+        "DD_TRACE_AGENT_PORT": "8136",
+        "DD_SERVICE": "Samples.Hangfire",
+        "DD_TRACE_DEBUG": "true"
+      },
+      "nativeDebugging": false
+    },
+    "NoDatadog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_ENV": "",
+        "DD_SERVICE": "",
+        "DD_VERSION": "",
+
+        "COR_ENABLE_PROFILING": "0",
+        "DD_TRACE_ENABLED": "false",
+
+        "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+        "OTEL_EXPORTER_OTLP_ENABLED": "true"
+      },
+      "nativeDebugging": false
+    }
+  }
+}
