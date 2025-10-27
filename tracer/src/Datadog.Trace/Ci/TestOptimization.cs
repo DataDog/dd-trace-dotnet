@@ -246,7 +246,7 @@ internal class TestOptimization : ITestOptimization
         // In case we are running using the agent, check if the event platform proxy is supported.
         TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
-            getDiscoveryServiceFunc: static s => DiscoveryService.Create(
+            getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
                 s.TracerSettings.Manager.InitialExporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
