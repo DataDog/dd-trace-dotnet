@@ -75,7 +75,7 @@ public class TraceExporterTests
 
         var sampleRateResponses = new ConcurrentQueue<Dictionary<string, float>>();
 
-        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
+        var discovery = DiscoveryService.CreateUnmanaged(tracerSettings.Manager.InitialExporterSettings);
         var statsd = new NoOpStatsd();
 
         // We have to replace the agent writer so that we can intercept the sample rate responses

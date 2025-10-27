@@ -285,7 +285,7 @@ namespace Datadog.Trace
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => settings.AgentFeaturePollingEnabled ?
-                   DiscoveryService.Create(settings.Exporter) :
+                   DiscoveryService.CreateManaged(settings) :
                    NullDiscoveryService.Instance;
     }
 }
