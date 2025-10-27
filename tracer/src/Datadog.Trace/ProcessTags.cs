@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
 
 namespace Datadog.Trace;
@@ -31,10 +32,13 @@ internal static class ProcessTags
     {
         var tags = new SortedDictionary<string, string>();
 
-        var entrypointFullName = Assembly.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
-        if (!string.IsNullOrEmpty(entrypointFullName))
+        if (EntryAssemblyLocator.GetEntryAssembly() is { } assembly)
         {
-            tags.Add(EntrypointName, entrypointFullName!);
+            var entrypointFullName = assembly.EntryPoint?.DeclaringType?.FullName;
+            if (!string.IsNullOrEmpty(entrypointFullName))
+            {
+                tags.Add(EntrypointName, entrypointFullName!);
+            }
         }
 
         tags.Add(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
