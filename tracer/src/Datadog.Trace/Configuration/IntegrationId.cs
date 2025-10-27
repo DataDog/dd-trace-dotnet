@@ -86,6 +86,7 @@ namespace Datadog.Trace.Configuration
         SessionTimeout,
         DatadogTraceManual,
         EmailHtmlInjection,
-        Protobuf
+        Protobuf,
+        AzureEventHubs
     }
 }
