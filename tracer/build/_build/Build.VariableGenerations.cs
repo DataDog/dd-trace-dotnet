@@ -585,7 +585,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -665,8 +665,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
@@ -692,8 +692,8 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
@@ -799,8 +799,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble-chiseled", "ubuntu", "noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble-chiseled-composite", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble-chiseled", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble-chiseled-composite", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled", "ubuntu", "jammy"),
@@ -828,7 +828,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim", "debian", "bullseye"),
@@ -900,8 +900,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite", "alpine", "3.19"),
@@ -932,8 +932,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble-chiseled", "ubuntu", "noble"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble-chiseled-composite", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble-chiseled", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble-chiseled-composite", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled", "ubuntu", "jammy"),
@@ -992,7 +992,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1029,8 +1029,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
@@ -1094,7 +1094,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim", "debian", "bookworm"),
@@ -1128,8 +1128,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20", "alpine", "3.20"),
@@ -1186,7 +1186,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1234,8 +1234,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
@@ -1296,7 +1296,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1327,8 +1327,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19", "alpine", "3.19"),
@@ -1355,7 +1355,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1373,7 +1373,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.1-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.100-rc.2-alpine3.22", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16", "alpine", "3.16"),
@@ -1400,7 +1400,7 @@ partial class Build : NukeBuild
                         "ubuntu",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-noble", "ubuntu", "noble"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-noble", "ubuntu", "noble"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", "debian", "bookworm"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy", "ubuntu", "jammy"),
@@ -1433,8 +1433,8 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22", "alpine", "3.22"),
-                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-alpine3.22-composite", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22", "alpine", "3.22"),
+                            new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-alpine3.22-composite", "alpine", "3.22"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite", "alpine", "3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18", "alpine", "3.18"),
@@ -1562,7 +1562,7 @@ partial class Build : NukeBuild
                     };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
@@ -1599,7 +1599,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
@@ -1672,7 +1672,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                     };
@@ -1706,7 +1706,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
@@ -1744,7 +1744,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.1-windowsservercore-ltsc2022", "windows", "servercore-2022"),
+                        new (publishFramework: TargetFramework.NET10_0, "10.0.0-rc.2-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "windows", "servercore-2022"),
