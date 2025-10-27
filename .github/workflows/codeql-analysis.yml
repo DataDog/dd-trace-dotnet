@@ -14,6 +14,8 @@ jobs:
   profiler:
     name: Analyze Profiler
     runs-on: ubuntu-latest
+    # Temporarily disabled
+    if: false
     permissions:
       actions: read
       contents: read
@@ -90,6 +92,8 @@ jobs:
   tracer:
     name: Analyze Tracer
     runs-on: ubuntu-latest
+    # Temporarily disabled
+    if: false
     permissions:
       actions: read
       contents: read

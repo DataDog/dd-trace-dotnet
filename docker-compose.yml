@@ -228,6 +228,30 @@ services:
     volumes:
       - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    hostname: azurite
+    container_name: azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+
+  azure-eventhubs-emulator:
+    image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
+    hostname: azure-eventhubs-emulator
+    container_name: azure-eventhubs-emulator
+    depends_on:
+      - azurite
+    ports:
+      - "127.0.0.1:5673:5672"
+    environment:
+      - ACCEPT_EULA=Y
+      - BLOB_SERVER=azurite
+      - METADATA_SERVER=azurite
+    volumes:
+      - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
+
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
     image: container-registry.oracle.com/database/free:latest
@@ -351,8 +375,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -402,8 +426,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -445,6 +469,7 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
@@ -496,6 +521,8 @@ services:
       - localstack
       - couchbase
       - azureservicebus-emulator
+      - azurite
+      - azure-eventhubs-emulator
       - test-agent
 
   IntegrationTests.Debugger:
@@ -503,8 +530,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -555,8 +582,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -612,8 +639,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -678,18 +705,20 @@ services:
       - localstack
       - couchbase
       - azureservicebus-emulator
+      - azurite
+      - azure-eventhubs-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672 test-agent:8126  # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126  # oracle:1521
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -789,8 +818,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project

@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is null)
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     };
 
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags);
                 }
                 else
@@ -184,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 var scope = CreateIsolatedFunctionScope(tracer, functionContext);
 
@@ -238,9 +238,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
-                    else if (triggerType == "ServiceBus" && tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
-                        extractedContext = ExtractPropagatedContextFromServiceBus(context).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                    }
+                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+                    {
+                        extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -258,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else
@@ -340,7 +344,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context)
+        private static PropagationContext ExtractPropagatedContextFromMessaging<T>(T context, string singlePropertyKey, string batchPropertyKey)
             where T : IFunctionContext
         {
             try
@@ -368,8 +372,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
                 var spanContexts = new List<SpanContext>();
 
-                // Extract from single message UserProperties
-                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                // Extract from single message properties
+                if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
                 {
                     if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
@@ -378,8 +382,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                // Extract from batch UserPropertiesArray
-                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                // Extract from batch properties array
+                if (triggerMetadata?.TryGetValue(batchPropertyKey, out var arrayPropsObj) == true &&
                     TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
                 {
                     foreach (var props in propsArray)
@@ -401,22 +405,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (!areAllTheSame)
                 {
-                    Log.Warning("Multiple different contexts found in ServiceBus messages. Using first context for parentship.");
+                    Log.Warning("Multiple different contexts found in messages. Using first context for parentship.");
                 }
 
                 return new PropagationContext(spanContexts[0], Baggage.Current, null);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
+                Log.Error(ex, "Error extracting propagated context from messaging binding");
                 return default;
             }
         }
 
         private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
         {
-            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(userProperties, default(ServiceBus.ContextPropagation));
-            return extractedContext.SpanContext;
+            return Shared.AzureMessagingCommon.ExtractContext(userProperties);
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)

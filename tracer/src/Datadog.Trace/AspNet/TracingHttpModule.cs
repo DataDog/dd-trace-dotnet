@@ -134,7 +134,7 @@ namespace Datadog.Trace.AspNet
             {
                 var tracer = Tracer.Instance;
 
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -207,7 +207,7 @@ namespace Datadog.Trace.AspNet
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope

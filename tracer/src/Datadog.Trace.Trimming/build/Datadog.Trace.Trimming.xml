@@ -10,6 +10,7 @@
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
+   <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
@@ -115,6 +116,8 @@
    </assembly>
    <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
+   <assembly fullname="MSTest.TestFramework" />
+   <assembly fullname="MSTestAdapter.PlatformServices" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
    <assembly fullname="netstandard" />

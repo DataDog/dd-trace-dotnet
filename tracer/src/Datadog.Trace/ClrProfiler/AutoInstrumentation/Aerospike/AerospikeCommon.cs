@@ -23,7 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -33,8 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             try
             {
-                var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateAerospikeTags();
+                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
 
                 scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
@@ -93,8 +94,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 span.Type = SpanTypes.Aerospike;
                 span.ResourceName = ExtractResourceName(target.GetType());
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

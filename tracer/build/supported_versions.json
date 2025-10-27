@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "4.0.8.1",
-        "maxVersionAvailableInclusive": "4.0.8.1",
-        "maxVersionTestedInclusive": "4.0.8.1"
+        "maxVersionSupportedInclusive": "4.0.9",
+        "maxVersionAvailableInclusive": "4.0.9",
+        "maxVersionTestedInclusive": "4.0.9"
       }
     ]
   },
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.7.12",
-        "maxVersionAvailableInclusive": "4.0.7.12",
-        "maxVersionTestedInclusive": "4.0.7.12"
+        "maxVersionSupportedInclusive": "4.0.7.13",
+        "maxVersionAvailableInclusive": "4.0.7.13",
+        "maxVersionTestedInclusive": "4.0.7.13"
       }
     ]
   },
@@ -398,6 +398,23 @@
         "maxVersionSupportedInclusive": "4.0.0.31",
         "maxVersionAvailableInclusive": "4.0.0.31",
         "maxVersionTestedInclusive": "4.0.0.31"
+      }
+    ]
+  },
+  {
+    "integrationName": "AzureEventHubs",
+    "assemblyName": "Azure.Messaging.EventHubs",
+    "minAssemblyVersionInclusive": "5.9.2",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Messaging.EventHubs",
+        "minVersionAvailableInclusive": "5.0.0",
+        "minVersionSupportedInclusive": "5.9.2",
+        "minVersionTestedInclusive": "5.11.6",
+        "maxVersionSupportedInclusive": "5.12.2",
+        "maxVersionAvailableInclusive": "5.12.2",
+        "maxVersionTestedInclusive": "5.12.2"
       }
     ]
   },

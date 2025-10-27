@@ -218,7 +218,9 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+        // PERF: use a synchronized pool to avoid race conditions when adding samples to the profile.
+        auto pool = _memoryResourceManager.GetSynchronizedPool(1000, sizeof(RawWallTimeSample));
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool);
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
@@ -731,6 +733,14 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
     if (!_IsManagedConfigurationSet)
     {
         _IsManagedConfigurationSet = true;
+
+        // nothing to do when managed configuration is disabled
+        // i.e. the tracer is not even supposed to send Stable Configuration
+        if (!_pConfiguration->IsManagedActivationEnabled())
+        {
+            Log::Info("Managed layer provides Stable Configuration even when managed activation is disabled.");
+            return false;
+        }
 
         // Take into account the enablement computed by the managed layer:
         Log::Info("Managed layer provides Stable Configuration.");

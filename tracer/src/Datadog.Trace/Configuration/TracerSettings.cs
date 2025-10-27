@@ -462,6 +462,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureEventHubsBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -998,6 +1002,14 @@ namespace Datadog.Trace.Configuration
         public bool AzureServiceBusBatchLinksEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure EventHubs batch operations.
+        /// When enabled, TryAdd spans are created and linked to the send span.
+        /// When disabled, TryAdd spans are not created.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
+        public bool AzureEventHubsBatchLinksEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
@@ -1369,16 +1381,6 @@ namespace Datadog.Trace.Configuration
 
             return list.ToArray();
         }
-
-        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
-            => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
-
-        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
-
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
-            => MutableSettings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
 
         internal string GetDefaultHttpClientExclusions()
         {

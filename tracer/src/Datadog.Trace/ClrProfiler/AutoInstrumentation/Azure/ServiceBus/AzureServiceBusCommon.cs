@@ -115,19 +115,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             IEnumerable<SpanLink>? spanLinks)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 return new CallTargetState(null);
             }
 
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+            var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
 
             tags.MessagingDestinationName = entityPath;
             tags.MessagingOperation = operationName;
             tags.MessagingSystem = "servicebus";
             tags.InstrumentationName = "AzureServiceBus";
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+            string serviceName = perTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
             var scope = tracer.StartActiveInternal(
                 "azure_servicebus." + operationName,
                 tags: tags,
@@ -170,6 +171,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 tags.NetworkDestinationPort = networkDestinationPort;
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
 
             return new CallTargetState(scope);
         }
