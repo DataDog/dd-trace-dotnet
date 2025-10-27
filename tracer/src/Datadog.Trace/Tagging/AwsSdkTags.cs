@@ -37,6 +37,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.AwsService)]
         public string Service { get; set; }
 
+        [Tag(Trace.Tags.PeerService)]
+        public string PeerService { get; set; }
+
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 

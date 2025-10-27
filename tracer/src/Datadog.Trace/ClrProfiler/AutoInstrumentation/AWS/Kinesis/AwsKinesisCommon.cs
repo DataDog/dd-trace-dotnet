@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                 tags.Service = KinesisServiceName;
                 tags.Operation = operation;
+                tags.PeerService = "kinesis." + tags.AwsRegion + "amazonaws.com";
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
