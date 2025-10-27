@@ -247,7 +247,7 @@ internal class TestOptimization : ITestOptimization
         TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
             getDiscoveryServiceFunc: static s => DiscoveryService.Create(
-                s.TracerSettings.Exporter,
+                s.TracerSettings.Manager.InitialExporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
