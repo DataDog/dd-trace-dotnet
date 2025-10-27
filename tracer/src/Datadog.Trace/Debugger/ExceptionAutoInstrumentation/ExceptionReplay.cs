@@ -65,8 +65,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
             _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            // TODO: respond to changes in exporter settings
             var apiFactory = AgentTransportStrategy.Get(
-                tracer.Settings.Exporter,
+                tracer.Settings.Manager.InitialExporterSettings,
                 productName: "debugger",
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 AgentHttpHeaderNames.MinimalHeaders,
