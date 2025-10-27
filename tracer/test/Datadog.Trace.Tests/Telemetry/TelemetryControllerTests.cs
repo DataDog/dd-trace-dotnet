@@ -35,7 +35,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerShouldSendTelemetry()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -56,7 +56,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerShouldSendGitMetadataWithTelemetry()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -105,7 +105,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerShouldUpdateGitMetadataWithTelemetry()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -139,7 +139,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var collector = new ConfigurationTelemetry();
         var settings = new TracerSettings();
@@ -170,7 +170,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerCanBeDisposedTwice()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -189,7 +189,7 @@ public class TelemetryControllerTests
     public async Task TelemetrySendsHeartbeatAlongWithData()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -227,7 +227,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerAddsAllAssembliesToCollector()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var currentAssemblyNames = AppDomain.CurrentDomain
                                             .GetAssemblies()
@@ -273,7 +273,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerRecordsAppEndpoints()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
@@ -319,7 +319,7 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerDumpsAllTelemetryToFile()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryController(
             new TracerSettings(),
