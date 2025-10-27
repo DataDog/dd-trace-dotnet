@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
@@ -59,7 +58,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 var activeScope = Tracer.Instance.ActiveScope;
                 if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
                 {
-                    AzureMessagingCommon.InjectContext(properties, activeScope as Scope);
+                    var context = new PropagationContext(spanContext, Baggage.Current);
+                    Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
                 }
             }
 

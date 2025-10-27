@@ -408,15 +408,6 @@ namespace Datadog.Trace.Configuration
         public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling or disabling span links creation for Azure EventHubs batch operations.
-        /// When enabled, TryAdd spans are created and linked to the send span.
-        /// When disabled, TryAdd spans are not created, and therefore they are never linked to the send span.
-        /// Default value is <c>true</c> (enabled).
-        /// </summary>
-        /// <seealso cref="TracerSettings.AzureEventHubsBatchLinksEnabled"/>
-        public const string AzureEventHubsBatchLinksEnabled = "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED";
-
-        /// <summary>
         /// Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
         /// </summary>
         public const string StatsComputationEnabled = "DD_TRACE_STATS_COMPUTATION_ENABLED";

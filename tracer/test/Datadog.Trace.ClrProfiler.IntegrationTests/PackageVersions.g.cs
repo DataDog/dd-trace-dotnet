@@ -130,8 +130,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AzureServiceBusAPM => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBusAPM : PackageVersionsLatestSpecific.AzureServiceBusAPM;
 
-        public static IEnumerable<object[]> AzureEventHubs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventHubs : PackageVersionsLatestSpecific.AzureEventHubs;
-
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
     }
 }

@@ -457,10 +457,6 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
-            AzureEventHubsBatchLinksEnabled = config
-                                             .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
-                                             .AsBool(defaultValue: true);
-
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -993,14 +989,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
         public bool AzureServiceBusBatchLinksEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether span links should be created for Azure EventHubs batch operations.
-        /// When enabled, TryAdd spans are created and linked to the send span.
-        /// When disabled, TryAdd spans are not created.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
-        public bool AzureEventHubsBatchLinksEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution

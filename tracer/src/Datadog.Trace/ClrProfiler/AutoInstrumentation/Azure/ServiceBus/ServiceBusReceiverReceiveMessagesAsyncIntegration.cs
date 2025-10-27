@@ -9,12 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -48,7 +49,7 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         where TTarget : IServiceBusReceiver, IDuckType
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
         {
             return returnValue;
         }
@@ -100,10 +101,11 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
                     serviceBusMessage.ApplicationProperties != null)
                 {
-                    var extractedContext = AzureMessagingCommon.ExtractContext(serviceBusMessage.ApplicationProperties);
-                    if (extractedContext != null)
+                    var headerAdapter = new ServiceBusHeadersCollectionAdapter(serviceBusMessage.ApplicationProperties);
+                    var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headerAdapter);
+                    if (extractedContext.SpanContext != null)
                     {
-                        extractedContexts.Add(extractedContext);
+                        extractedContexts.Add(extractedContext.SpanContext);
                     }
                 }
             }
@@ -176,8 +178,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
             tags.ServerAddress = endpoint.Host;
         }
 
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
-
         return scope;
     }
 
@@ -185,6 +185,8 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
     {
         try
         {
+            var context = new Propagators.PropagationContext(scope.Span.Context, Baggage.Current);
+
             foreach (var message in messagesList)
             {
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
@@ -192,7 +194,8 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                     var amqpMessage = serviceBusMessage.AmqpMessage;
                     if (amqpMessage?.ApplicationProperties != null)
                     {
-                        AzureMessagingCommon.InjectContext(amqpMessage.ApplicationProperties, scope);
+                        var headerAdapter = new ServiceBusHeadersCollectionAdapter(amqpMessage.ApplicationProperties);
+                        tracer.TracerManager.SpanContextPropagator.Inject(context, headerAdapter);
                     }
                 }
             }
@@ -200,6 +203,24 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         catch (Exception ex)
         {
             Log.Error(ex, "ServiceBusReceiver: Error re-injecting context into ServiceBus messages");
+        }
+    }
+
+    private class SpanContextComparer : IEqualityComparer<SpanContext>
+    {
+        public bool Equals(SpanContext? x, SpanContext? y)
+        {
+            if (x == null || y == null)
+            {
+                return x == y;
+            }
+
+            return x.TraceId128 == y.TraceId128 && x.SpanId == y.SpanId;
+        }
+
+        public int GetHashCode(SpanContext obj)
+        {
+            return HashCode.Combine(obj.TraceId128, obj.SpanId);
         }
     }
 }

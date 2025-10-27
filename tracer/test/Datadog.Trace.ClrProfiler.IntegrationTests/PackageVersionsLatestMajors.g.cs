@@ -2543,47 +2543,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-      public static IEnumerable<object[]> AzureEventHubs =>
+      public static IEnumerable<object[]> Selenium =>
 
             new List<object[]>
             {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETCOREAPP2_1
-                new object[] { "5.12.2" },
-#endif
-#if NETCOREAPP3_0
-                new object[] { "5.12.2" },
-#endif
-#if NETCOREAPP3_1
-                new object[] { "5.12.2" },
-#endif
-#if NET5_0
-                new object[] { "5.12.2" },
-#endif
-#if NET6_0
-                new object[] { "5.12.2" },
-#endif
-#if NET7_0
-                new object[] { "5.12.2" },
-#endif
-#if NET8_0
-                new object[] { "5.12.2" },
-#endif
-#if NET9_0
-                new object[] { "5.12.2" },
-#endif
-#if NET10_0
-                new object[] { "5.12.2" },
-#endif
-#endif
-            };
-
-        public static IEnumerable<object[]> Selenium =>
-
-                  new List<object[]>
-                  {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -2618,7 +2581,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.37.0" },
 #endif
 #endif
-                  };
+            };
 
     }
 }

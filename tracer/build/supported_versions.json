@@ -402,23 +402,6 @@
     ]
   },
   {
-    "integrationName": "AzureEventHubs",
-    "assemblyName": "Azure.Messaging.EventHubs",
-    "minAssemblyVersionInclusive": "5.9.2",
-    "maxAssemblyVersionInclusive": "5.65535.65535",
-    "packages": [
-      {
-        "name": "Azure.Messaging.EventHubs",
-        "minVersionAvailableInclusive": "5.0.0",
-        "minVersionSupportedInclusive": "5.9.2",
-        "minVersionTestedInclusive": "5.11.6",
-        "maxVersionSupportedInclusive": "5.12.2",
-        "maxVersionAvailableInclusive": "5.12.2",
-        "maxVersionTestedInclusive": "5.12.2"
-      }
-    ]
-  },
-  {
     "integrationName": "AzureFunctions",
     "assemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "minAssemblyVersionInclusive": "1.4.0",

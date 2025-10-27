@@ -207,27 +207,6 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAzureServiceBusRequestV0(excludeTags),
             };
 
-        public static Result IsAzureEventHubsOutbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAzureEventHubsOutboundV1(excludeTags),
-                _ => span.IsAzureEventHubsOutboundV0(excludeTags),
-            };
-
-        public static Result IsAzureEventHubsCreate(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAzureEventHubsCreateV1(excludeTags),
-                _ => span.IsAzureEventHubsCreateV0(excludeTags),
-            };
-
-        public static Result IsAzureEventHubsInbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAzureEventHubsInboundV1(excludeTags),
-                _ => span.IsAzureEventHubsInboundV0(excludeTags),
-            };
-
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

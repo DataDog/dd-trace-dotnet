@@ -617,69 +617,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAzureEventHubsOutboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
-            .Properties(s => s
-                .MatchesOneOf(Name, "azure_eventhubs.create", "azure_eventhubs.send")
-                .Matches(Type, "queue"))
-            .Tags(s => s
-                .IsPresent("messaging.destination.name", "message_bus.destination")
-                .IfPresentMatches("messaging.system", "eventhubs")
-                .MatchesOneOf("messaging.operation", "create", "send")
-                .IsOptional("messaging.batch.message_count")
-                .IsOptional("messaging.message_id")
-                .IsOptional("network.destination.name")
-                .IsOptional("network.destination.port")
-                .IsOptional("net.peer.name")
-                .IsOptional("peer.address")
-                .IsOptional("server.address")
-                .IsOptional("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .IsOptional("_dd.peer.service.source")
-                .Matches("component", "AzureEventHubs")
-                .IfPresentMatches("kind", "producer")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAzureEventHubsCreateV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
-            .Properties(s => s
-                .Matches(Name, "azure_eventhubs.create")
-                .Matches(Type, "queue"))
-            .Tags(s => s
-                .IsPresent("messaging.destination.name", "message_bus.destination")
-                .IfPresentMatches("messaging.system", "eventhubs")
-                .Matches("messaging.operation", "create")
-                .IsPresent("messaging.message_id")
-                .IsPresent("network.destination.name")
-                .IsOptional("net.peer.name")
-                .IsOptional("peer.address")
-                .IsOptional("server.address")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "messaging.destination.name", "message_bus.destination", "peer.service")
-                .Matches("component", "AzureEventHubs")
-                .IfPresentMatches("kind", "producer")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAzureEventHubsInboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
-            .Properties(s => s
-                .Matches(Name, "azure_eventhubs.receive")
-                .Matches(Type, "queue"))
-            .Tags(s => s
-                .IsOptional("messaging.source.name")
-                .IsOptional("messaging.destination.name", "message_bus.destination")
-                .IfPresentMatches("messaging.system", "eventhubs")
-                .Matches("messaging.operation", "receive")
-                .IsOptional("messaging.batch.message_count")
-                .IsOptional("messaging.message_id")
-                .IsOptional("net.peer.name")
-                .IsOptional("peer.address")
-                .IsPresent("server.address")
-                .Matches("component", "AzureEventHubs")
-                .IfPresentMatches("kind", "consumer")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "consumer"));
-
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")
