@@ -58,7 +58,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -205,7 +205,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -366,7 +366,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
                     }));
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);

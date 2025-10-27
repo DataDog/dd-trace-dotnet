@@ -283,6 +283,6 @@ namespace Datadog.Trace
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => DiscoveryService.Create(settings.Exporter);
+            => DiscoveryService.CreateManaged(settings);
     }
 }
