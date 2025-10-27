@@ -42,7 +42,7 @@ public class InstrumentMessageIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
     {
-        if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+        if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
             var activeScope = Tracer.Instance.ActiveScope;
             if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)

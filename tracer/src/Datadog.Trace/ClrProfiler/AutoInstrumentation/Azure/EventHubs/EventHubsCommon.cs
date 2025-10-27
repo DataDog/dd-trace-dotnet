@@ -73,7 +73,7 @@ internal static class EventHubsCommon
         IEnumerable<SpanLink>? spanLinks)
     {
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
             return CallTargetState.GetDefault();
         }

@@ -242,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
-                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
+                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
                     {
                         extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
