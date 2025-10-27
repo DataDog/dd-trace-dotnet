@@ -69,7 +69,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         // using a Lazy here to make sure we don't compute the value of the process tags too early in the life of the app,
-        // some values may neeb a bit of time to be accessible.
+        // some values may need a bit of time to be accessible.
         // With this construct, it should be queried after the first span(s) get closed, which should be late enough.
         private readonly Lazy<byte[]> _processTagsValueBytes = new(() => StringEncoding.UTF8.GetBytes(ProcessTags.SerializedTags));
         private readonly byte[] _processTagsNameBytes = StringEncoding.UTF8.GetBytes(Tags.ProcessTags);
