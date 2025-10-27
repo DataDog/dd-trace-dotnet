@@ -276,6 +276,7 @@ partial class Build
             {
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
+                    .SetVerbosity(NuGetVerbosity.Detailed)
                     .SetProcessLogOutput(!IsServerBuild)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
