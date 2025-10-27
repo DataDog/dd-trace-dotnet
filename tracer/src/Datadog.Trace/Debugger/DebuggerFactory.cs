@@ -60,7 +60,7 @@ internal class DebuggerFactory
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-         && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
+         && tracerSettings.Manager.InitialExporterSettings.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
             statsd = NoOpStatsd.Instance;
@@ -70,7 +70,7 @@ internal class DebuggerFactory
             // TODO: use StatsdManager to get automatic updating on exporter and other setting changes
             statsd = StatsdFactory.CreateDogStatsdClient(
                 tracerSettings.Manager.InitialMutableSettings,
-                tracerSettings.Exporter,
+                tracerSettings.Manager.InitialExporterSettings,
                 includeDefaultTags: false,
                 prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
@@ -119,7 +119,7 @@ internal class DebuggerFactory
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            tracerSettings.Exporter,
+            tracerSettings.Manager.InitialExporterSettings,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,
