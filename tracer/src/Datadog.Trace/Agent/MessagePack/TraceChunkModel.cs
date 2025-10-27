@@ -74,7 +74,7 @@ internal readonly struct TraceChunkModel
     /// </summary>
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
-    /// <param name="isFirstChunkInPayload">marks if this is the first chunk being written to the buffer that then gets sent to the agent</param>
+    /// <param name="isFirstChunkInPayload">Indicates if this is the first trace chunk being written to the output buffer.</param>
     public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null, bool isFirstChunkInPayload = false)
         : this(spans, TraceContext.GetTraceContext(spans), samplingPriority, isFirstChunkInPayload)
     {
