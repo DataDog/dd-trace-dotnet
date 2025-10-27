@@ -326,6 +326,8 @@ namespace Datadog.Trace
                 string agentError = null;
                 var instanceSettings = instance.Settings;
                 var mutableSettings = instance.PerTraceSettings.Settings;
+                // TODO: this only writes the initial settings - we should make sure to record an "update" log on reconfiguration
+                var exporterSettings = instanceSettings.Manager.InitialExporterSettings;
 
                 // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
                 // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
@@ -403,10 +405,10 @@ namespace Datadog.Trace
                     writer.WriteValue(mutableSettings.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
-                    writer.WriteValue(instanceSettings.Exporter.TraceAgentUriBase);
+                    writer.WriteValue(exporterSettings.TraceAgentUriBase);
 
                     writer.WritePropertyName("agent_transport");
-                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
+                    writer.WriteValue(exporterSettings.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
@@ -520,7 +522,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("exporter_settings_warning");
                     writer.WriteStartArray();
 
-                    foreach (var warning in instanceSettings.Exporter.ValidationWarnings)
+                    foreach (var warning in exporterSettings.ValidationWarnings)
                     {
                         writer.WriteValue(warning);
                     }
