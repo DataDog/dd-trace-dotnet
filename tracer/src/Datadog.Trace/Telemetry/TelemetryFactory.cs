@@ -80,7 +80,7 @@ namespace Datadog.Trace.Telemetry
 
             try
             {
-                var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+                var telemetryTransports = new TelemetryTransportFactory(settings);
 
                 if (!telemetryTransports.HasTransports)
                 {
@@ -156,11 +156,11 @@ namespace Datadog.Trace.Telemetry
 
         private ITelemetryController CreateController(
             TracerSettings tracerSettings,
-            TelemetryTransports telemetryTransports,
+            TelemetryTransportFactory telemetryTransports,
             TelemetrySettings settings,
             IDiscoveryService discoveryService)
         {
-            var transportManager = new TelemetryTransportManager(telemetryTransports, discoveryService);
+            var transportManager = new TelemetryTransportManager(tracerSettings.Manager, telemetryTransports, discoveryService);
             // The telemetry controller must be a singleton, so we initialize once
             // Note that any dependencies initialized inside the controller are also singletons (by design)
             // Initialized once so if we create a new controller from this factory we get the same collector instances.
