@@ -83,6 +83,9 @@ internal sealed class ManagedTraceSampler : ITraceSampler
 
     public SamplingDecision MakeSamplingDecision(Span span) => Volatile.Read(ref _current).MakeSamplingDecision(span);
 
+    // used for testing
+    internal IReadOnlyList<ISamplingRule> GetRules() => Volatile.Read(ref _current).GetRules();
+
     private static TraceSampler CreateSampler(MutableSettings settings, string customSamplingRulesFormat)
     {
         // ISamplingRule is used to implement, in order of precedence:
