@@ -8,8 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
@@ -17,6 +18,8 @@ namespace Datadog.Trace;
 
 internal static class ProcessTags
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessTags));
+    
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
@@ -60,7 +63,12 @@ internal static class ProcessTags
         }
 
         serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
-        return StringBuilderCache.GetStringAndRelease(serializedTags);
+        var tagsValues = StringBuilderCache.GetStringAndRelease(serializedTags);
+
+        // also send the tags to the profiler to tag profiles
+        PropagateProcessTagsToProfiler(tagsValues);
+
+        return tagsValues;
     }
 
     private static string NormalizeTagValue(string tagValue)
@@ -68,5 +76,21 @@ internal static class ProcessTags
         // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
         // which we don't want because we use it as a key/value separator.
         return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
+    }
+
+    private static void PropagateProcessTagsToProfiler(string values)
+    {
+        try
+        {
+            // Avoid P/Invoke if the profiler is not ready
+            if (Profiler.Instance.Status.IsProfilerReady && !string.IsNullOrEmpty(values))
+            {
+                NativeInterop.SetProcessTags(RuntimeId.Get(), values);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to share process tags with the Continuous Profiler.");
+        }
     }
 }

@@ -14,4 +14,5 @@ public:
 
     virtual void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) = 0;
     virtual void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) = 0;
+    virtual void SetProcessTags(std::string runtimeId, std::string processTags) = 0;
 };

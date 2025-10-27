@@ -10,4 +10,5 @@ public:
     std::string Version;
     std::string RepositoryUrl;
     std::string CommitSha;
+    std::string ProcessTags;
 };

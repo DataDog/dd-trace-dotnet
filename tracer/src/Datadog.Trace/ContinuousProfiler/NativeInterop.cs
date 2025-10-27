@@ -49,6 +49,12 @@ namespace Datadog.Trace.ContinuousProfiler
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void SetProcessTags(string runtimeId, string processTagsValue)
+        {
+            NativeMethods.SetProcessTags(runtimeId, processTagsValue);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void FlushProfile()
         {
             NativeMethods.FlushProfile();
@@ -102,6 +108,9 @@ namespace Datadog.Trace.ContinuousProfiler
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetGitMetadataForApplication")]
             public static extern void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha);
+
+            [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetProcessTagsForApplication")]
+            public static extern void SetProcessTags(string runtimeId, string processTagsValue);
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "FlushProfile")]
             public static extern void FlushProfile();
