@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tagging
         public string Service { get; set; }
 
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService { get; set; }
+        public virtual string PeerService { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }

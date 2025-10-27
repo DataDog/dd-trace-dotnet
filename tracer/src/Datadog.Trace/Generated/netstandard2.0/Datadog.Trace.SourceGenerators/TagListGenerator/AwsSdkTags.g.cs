@@ -30,6 +30,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> AwsServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
         // ServiceBytes = MessagePack.Serialize("aws_service");
         private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 171, 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
+        // PeerServiceBytes = MessagePack.Serialize("peer.service");
+        private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
         // HttpMethodBytes = MessagePack.Serialize("http.method");
         private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
         // HttpUrlBytes = MessagePack.Serialize("http.url");
@@ -49,6 +51,7 @@ namespace Datadog.Trace.Tagging
                 "aws.requestId" => RequestId,
                 "aws.service" => AwsService,
                 "aws_service" => Service,
+                "peer.service" => PeerService,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode,
@@ -71,6 +74,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "aws_service": 
                     Service = value;
+                    break;
+                case "peer.service": 
+                    PeerService = value;
                     break;
                 case "http.method": 
                     HttpMethod = value;
@@ -133,6 +139,11 @@ namespace Datadog.Trace.Tagging
             if (Service is not null)
             {
                 processor.Process(new TagItem<string>("aws_service", Service, ServiceBytes));
+            }
+
+            if (PeerService is not null)
+            {
+                processor.Process(new TagItem<string>("peer.service", PeerService, PeerServiceBytes));
             }
 
             if (HttpMethod is not null)
@@ -208,6 +219,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aws_service (tag):")
                   .Append(Service)
+                  .Append(',');
+            }
+
+            if (PeerService is not null)
+            {
+                sb.Append("peer.service (tag):")
+                  .Append(PeerService)
                   .Append(',');
             }
 

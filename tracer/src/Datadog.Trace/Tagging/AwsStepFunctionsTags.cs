@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerService)]
-        public string? PeerService
+        public override string? PeerService
         {
             get
             {
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride ?? StateMachineName;
             }
-            private set => _peerServiceOverride = value;
+            set => _peerServiceOverride = value;
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]

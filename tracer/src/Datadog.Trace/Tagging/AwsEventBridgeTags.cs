@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tagging
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
         [Tag(Trace.Tags.PeerService)]
-        public string? PeerService
+        public override string? PeerService
         {
             get
             {
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride ?? RuleName;
             }
-            private set => _peerServiceOverride = value;
+            set => _peerServiceOverride = value;
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
