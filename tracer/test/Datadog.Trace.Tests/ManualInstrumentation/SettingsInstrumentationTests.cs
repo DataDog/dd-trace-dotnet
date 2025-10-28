@@ -228,8 +228,8 @@ public class SettingsInstrumentationTests
 
         var manual = new ImmutableManualSettings(serializedSettings);
 
-        manual.AgentUri.Should().Be(automatic.Exporter.AgentUri);
-        manual.Exporter.AgentUri.Should().Be(automatic.Exporter.AgentUri);
+        manual.AgentUri.Should().Be(automatic.Manager.InitialExporterSettings.AgentUri);
+        manual.Exporter.AgentUri.Should().Be(automatic.Manager.InitialExporterSettings.AgentUri);
         manual.AnalyticsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.AnalyticsEnabled);
         manual.CustomSamplingRules.Should().Be(automatic.Manager.InitialMutableSettings.CustomSamplingRules);
         manual.Environment.Should().Be(automatic.Manager.InitialMutableSettings.Environment);
@@ -261,8 +261,8 @@ public class SettingsInstrumentationTests
     private static void AssertEquivalent(ManualSettings manual, TracerSettings automatic)
     {
         // AgentUri gets transformed in exporter settings, so hacking around that here
-        GetTransformedAgentUri(manual.AgentUri).Should().Be(automatic.Exporter.AgentUri);
-        GetTransformedAgentUri(manual.Exporter.AgentUri).Should().Be(automatic.Exporter.AgentUri);
+        GetTransformedAgentUri(manual.AgentUri).Should().Be(automatic.Manager.InitialExporterSettings.AgentUri);
+        GetTransformedAgentUri(manual.Exporter.AgentUri).Should().Be(automatic.Manager.InitialExporterSettings.AgentUri);
 
         manual.AnalyticsEnabled.Should().Be(automatic.Manager.InitialMutableSettings.AnalyticsEnabled);
         manual.CustomSamplingRules.Should().Be(automatic.Manager.InitialMutableSettings.CustomSamplingRules);
@@ -365,7 +365,7 @@ public class SettingsInstrumentationTests
         automatic.StatsComputationEnabled.Should().Be(true);
         automatic.Manager.InitialMutableSettings.TraceEnabled.Should().Be(false);
         automatic.Manager.InitialMutableSettings.TracerMetricsEnabled.Should().Be(true);
-        automatic.Exporter.AgentUri.Should().Be(new Uri("http://127.0.0.1:1234"));
+        automatic.Manager.InitialExporterSettings.AgentUri.Should().Be(new Uri("http://127.0.0.1:1234"));
         automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
         automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
         automatic.Manager.InitialMutableSettings.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);

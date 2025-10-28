@@ -128,8 +128,8 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.DogStatsdPort, port },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
-            var expectedPort = settings.Exporter.DogStatsdPort;
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDP);
+            var expectedPort = settings.Manager.InitialExporterSettings.DogStatsdPort;
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.NamedPipe);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.NamedPipe);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDS);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDS);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tests
 
             // If we're not using the "default" UDS path, then we fallback to UDP for stats
             // Should fallback to the "default" stats location
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDP);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
