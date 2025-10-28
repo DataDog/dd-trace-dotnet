@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -70,10 +71,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                 tags.Service = KinesisServiceName;
                 tags.Operation = operation;
-                /*if (CheckSe)
+                if (EnvironmentHelpers.IsAwsLambda())
                 {
                     tags.PeerService = "kinesis." + tags.AwsRegion + "amazonaws.com";
-                }*/
+                }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
