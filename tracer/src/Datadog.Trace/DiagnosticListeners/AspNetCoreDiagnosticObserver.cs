@@ -713,8 +713,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
+            if (arg.TryDuckCast<HttpRequestInStopStruct>(out var stopStruct)
+             && stopStruct.HttpContext is { } httpContext
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
