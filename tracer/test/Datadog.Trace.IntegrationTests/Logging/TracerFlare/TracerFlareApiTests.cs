@@ -32,7 +32,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         await RunTest(settings, agent);
     }
@@ -45,8 +45,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
         var agentPath = agent.TracesUdsPath;
-        var settings = new ExporterSettings(
-                new NameValueConfigurationSource(new() { { "DD_APM_RECEIVER_SOCKET", agentPath } }));
+        var settings = TracerSettings.Create(new() { { "DD_APM_RECEIVER_SOCKET", agentPath } });
 
         await RunTest(settings, agent);
     }
@@ -82,8 +81,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         {
             using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
             var pipeName = agent.TracesWindowsPipeName;
-            var settings = new ExporterSettings(
-                    new NameValueConfigurationSource(new() { { "DD_TRACE_PIPE_NAME", pipeName } }));
+            var settings = TracerSettings.Create(new() { { "DD_TRACE_PIPE_NAME", pipeName } });
 
             await RunTest(settings, agent);
         }
@@ -96,12 +94,12 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var invalidJson = "{meep";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse(invalidJson, 500);
 
-        var api = TracerFlareApi.Create(settings);
+        var api = TracerFlareApi.CreateManaged(settings.Manager);
 
         var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
@@ -118,12 +116,12 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var somethingWentWrong = "Something went wrong";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse($$"""{ "error": "{{somethingWentWrong}}" }""", 500);
 
-        var api = TracerFlareApi.Create(settings);
+        var api = TracerFlareApi.CreateManaged(settings.Manager);
 
         var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
@@ -133,9 +131,9 @@ public class TracerFlareApiTests(ITestOutputHelper output)
         result.Value.Should().Be(somethingWentWrong);
     }
 
-    private async Task RunTest(ExporterSettings settings, MockTracerAgent agent)
+    private async Task RunTest(TracerSettings settings, MockTracerAgent agent)
     {
-        var api = TracerFlareApi.Create(settings);
+        var api = TracerFlareApi.CreateManaged(settings.Manager);
 
         var result = await api.SendTracerFlare(WriteFlareToStreamFunc, CaseId, Hostname, Email);
 
