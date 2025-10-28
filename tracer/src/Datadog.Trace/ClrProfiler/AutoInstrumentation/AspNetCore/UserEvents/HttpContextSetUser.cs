@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
 
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref ClaimsPrincipal claimsPrincipal)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref ClaimsPrincipal? claimsPrincipal)
         {
             if (Security.Instance is { IsTrackUserEventsEnabled: true } security)
             {
