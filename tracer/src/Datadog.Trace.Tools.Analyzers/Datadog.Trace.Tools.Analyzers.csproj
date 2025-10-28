@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+    <!-- BannedApiAnalyzers needs to flow to consuming projects, so don't mark as PrivateAssets -->
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +21,12 @@
     <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs">
       <Link>Helpers\System.Runtime.CompilerServices.Attributes.cs</Link>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include BannedSymbols.txt as an additional file for BannedApiAnalyzers -->
+    <None Include="ConfigurationAnalyzers\BannedSymbols.txt" Pack="true" PackagePath="analyzers/dotnet/cs" />
+    <AdditionalFiles Include="ConfigurationAnalyzers\BannedSymbols.txt" />
   </ItemGroup>
 
 </Project>
