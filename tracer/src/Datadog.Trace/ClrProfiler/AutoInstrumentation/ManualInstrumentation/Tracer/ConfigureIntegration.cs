@@ -55,7 +55,7 @@ public class ConfigureIntegration
         if (FrameworkDescription.Instance.IsWindows()
          && values.TryGetValue(TracerSettingKeyConstants.AgentUriKey, out var raw)
          && raw is Uri uri
-         && uri.ToString().StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+         && uri.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
         {
             InvalidConfigurationException.Throw(
                 $"Error changing AgentUri. " +
