@@ -125,7 +125,7 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
-            Exporter = new ExporterSettings(source, _telemetry);
+            var exporter = new ExporterSettings(source, _telemetry);
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -353,7 +353,11 @@ namespace Datadog.Trace.Configuration
 
                 // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
                 // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
-                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
+                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
+                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
+                // this scenario in the public API.
+                if (exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
@@ -729,7 +733,7 @@ namespace Datadog.Trace.Configuration
 
             // Move the creation of these settings inside SettingsManager?
             var initialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
-            Manager = new(this, initialMutableSettings, Exporter);
+            Manager = new(this, initialMutableSettings, exporter);
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -888,11 +892,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
         internal string[] DisabledActivitySources { get; }
-
-        /// <summary>
-        /// Gets the transport settings that dictate how the tracer connects to the agent.
-        /// </summary>
-        public ExporterSettings Exporter { get; init; }
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
@@ -1355,19 +1354,5 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
-
-        internal void CollectTelemetry(IConfigurationTelemetry destination)
-        {
-            // copy the current settings into telemetry
-            _telemetry.CopyTo(destination);
-
-            // If ExporterSettings has been replaced, it will have its own telemetry collector
-            // so we need to record those values too.
-            if (Exporter.Telemetry is { } exporterTelemetry
-             && exporterTelemetry != _telemetry)
-            {
-                exporterTelemetry.CopyTo(destination);
-            }
-        }
     }
 }

@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<(Func<TracerSettings, object> SettingGetter, object ExpectedValue)> GetDefaultTestData()
         {
             yield return (s => s.Manager.InitialMutableSettings.TraceEnabled, true);
-            yield return (s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:8126/"));
+            yield return (s => s.Manager.InitialExporterSettings.AgentUri, new Uri("http://127.0.0.1:8126/"));
             yield return (s => s.Manager.InitialMutableSettings.Environment, null);
             yield return (s => s.Manager.InitialMutableSettings.ServiceName, null);
             yield return (s => s.Manager.InitialMutableSettings.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by default
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.Manager.InitialMutableSettings.CustomSamplingRules, null);
             yield return (s => s.Manager.InitialMutableSettings.MaxTracesSubmittedPerSecond, 100);
             yield return (s => s.Manager.InitialMutableSettings.TracerMetricsEnabled, false);
-            yield return (s => s.Exporter.DogStatsdPort, 8125);
+            yield return (s => s.Manager.InitialExporterSettings.DogStatsdPort, 8125);
             yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext", "baggage" });
             yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext", "baggage" });
             yield return (s => s.Manager.InitialMutableSettings.ServiceNameMappings, new string[0]);
@@ -108,8 +108,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (ConfigurationKeys.TraceEnabled, "true", s => s.Manager.InitialMutableSettings.TraceEnabled, true);
             yield return (ConfigurationKeys.TraceEnabled, "false", s => s.Manager.InitialMutableSettings.TraceEnabled, false);
 
-            yield return (ConfigurationKeys.AgentHost, "test-host", s => s.Exporter.AgentUri, new Uri("http://test-host:8126/"));
-            yield return (ConfigurationKeys.AgentPort, "9000", s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:9000/"));
+            yield return (ConfigurationKeys.AgentHost, "test-host", s => s.Manager.InitialExporterSettings.AgentUri, new Uri("http://test-host:8126/"));
+            yield return (ConfigurationKeys.AgentPort, "9000", s => s.Manager.InitialExporterSettings.AgentUri, new Uri("http://127.0.0.1:9000/"));
 
             yield return (ConfigurationKeys.Environment, "staging", s => s.Manager.InitialMutableSettings.Environment, "staging");
 
