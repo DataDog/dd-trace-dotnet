@@ -53,18 +53,18 @@ public partial record TracerSettings
             lock (_subscribers)
             {
                 _subscribers.Add(subscription);
-            }
 
-            if (Volatile.Read(ref _latest) is { } currentConfig)
-            {
-                try
+                if (_latest is { } currentConfig)
                 {
-                    // If we already have updates, call this immediately
-                    callback(currentConfig);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error notifying subscriber of updated MutableSettings during subscribe");
+                    try
+                    {
+                        // If we already have updates, call this immediately
+                        callback(currentConfig);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error notifying subscriber of updated MutableSettings during subscribe");
+                    }
                 }
             }
 

@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
             var wasUpdated = tracerSettings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
             if (wasUpdated)
             {
-                Log.Information("Setting updates made via configuration in code were applied");
+                Log.Information("Setting updates made via dynamic configuration were applied");
             }
 
             // TODO: This might not record the config in the correct order in future, but would require
