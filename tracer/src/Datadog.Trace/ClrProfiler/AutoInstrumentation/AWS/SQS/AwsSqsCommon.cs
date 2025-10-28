@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
-                //tags.PeerService = "sqs." + tags.AwsRegion + "amazonaws.com";
+                // tags.PeerService = "sqs." + tags.AwsRegion + "amazonaws.com";
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
