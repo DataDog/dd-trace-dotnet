@@ -169,7 +169,7 @@ namespace Datadog.Trace
                 }
 
                 dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
-                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.Exporter));
+                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.CreateManaged(settings.Manager));
                 spanEventsManager ??= new SpanEventsManager(discoveryService);
             }
             else
