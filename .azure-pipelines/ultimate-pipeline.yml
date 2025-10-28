@@ -70,8 +70,8 @@ variables:
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
-  linuxX64SmokePool: azure-managed-linux-smoke
-  linuxX64Pool: azure-managed-linux-x64-1
+  linuxX64SmokePool: azure-managed-linux-smoke-2
+  linuxX64Pool: azure-managed-linux-x64-2
   linuxArm64Pool: azure-managed-linux-arm64-2
   windowsX64Pool: azure-managed-windows-x64-1
 
