@@ -754,7 +754,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
+            if (arg.TryDuckCast<HttpRequestInStopStruct>(out var stopStruct)
+             && stopStruct.HttpContext is { } httpContext
              && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
