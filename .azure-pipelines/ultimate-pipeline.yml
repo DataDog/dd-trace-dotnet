@@ -87,7 +87,7 @@ variables:
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   # Only run code coverage when requested
-  # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
+  # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL.
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
