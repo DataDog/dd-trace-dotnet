@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                if (instance is HttpContext httpContext && scope is not null)
+                if (instance is HttpContext httpContext && scope is not null && claimsPrincipal is not null)
                 {
                     var span = scope.Span;
                     var foundUserId = false;
