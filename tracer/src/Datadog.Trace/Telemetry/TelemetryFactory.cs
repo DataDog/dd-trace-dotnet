@@ -182,7 +182,6 @@ namespace Datadog.Trace.Telemetry
                 }
             }
 
-            _controller.DisableSending(); // disable sending until fully configured
             _controller.SetTransportManager(transportManager);
             _controller.SetFlushInterval(settings.HeartbeatInterval);
 
