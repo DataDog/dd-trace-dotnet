@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         {
             if (loggingEvent?.Instance is null)
             {
-                return CallTargetState.Default();
+                return CallTargetState.GetDefault();
             }
 
             var tracer = Tracer.Instance;
