@@ -525,29 +525,6 @@ services:
       - RANDOM_SEED
       - TEST_AGENT_HOST=test-agent
     hostname: integrationtests
-    depends_on:
-      - servicestackredis
-      - stackexchangeredis
-      - stackexchangeredis-replica
-      - stackexchangeredis-single
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
-      - sqlserver
-      # - oracle disabled for now, image is too big for CI
-      - mongo
-      - postgres
-      - mysql
-      - mysql57
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
-      - localstack
-      - couchbase
-      - azureservicebus-emulator
-      - azurite
-      - azure-eventhubs-emulator
-      - test-agent
 
   IntegrationTests.Debugger:
     build:
@@ -906,7 +883,6 @@ services:
 
   test-agent:
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
-    profiles: ["group1", "group2"]
     volumes:
     - ./tracer/build/smoke_test_snapshots:/snapshots
     - ./artifacts/build_data/snapshots:/debug_snapshots
