@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -20,12 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class ServiceStackRedisTests : TracingIntegrationTest
+    public class ServiceStackRedisTests : TracingIntegrationTest, IClassFixture<RedisFixture>
     {
-        public ServiceStackRedisTests(ITestOutputHelper output)
+        public ServiceStackRedisTests(ITestOutputHelper output, RedisFixture redisFixture)
             : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(redisFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
