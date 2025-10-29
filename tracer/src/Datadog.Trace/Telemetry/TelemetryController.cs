@@ -47,7 +47,6 @@ internal class TelemetryController : ITelemetryController
     private readonly Scheduler _scheduler;
     private readonly IDisposable _settingsSubscription;
     private TelemetryTransportManager _transportManager;
-    private bool _sendTelemetry;
     private bool _isStarted;
     private string? _namingVersion;
 
@@ -112,7 +111,6 @@ internal class TelemetryController : ITelemetryController
         _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _logTagBuilder.Update(settings);
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
     public void RecordGitMetadata(GitMetadata gitMetadata)
@@ -169,11 +167,6 @@ internal class TelemetryController : ITelemetryController
         _settingsSubscription.Dispose();
         TerminateLoop();
         await _flushTask.ConfigureAwait(false);
-    }
-
-    public void DisableSending()
-    {
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.DisableSending, null));
     }
 
     public void SetTransportManager(TelemetryTransportManager manager)
@@ -274,12 +267,6 @@ internal class TelemetryController : ITelemetryController
                     case WorkItem.ItemType.SetTracerStarted:
                         _isStarted = true;
                         break;
-                    case WorkItem.ItemType.EnableSending:
-                        _sendTelemetry = true;
-                        break;
-                    case WorkItem.ItemType.DisableSending:
-                        _sendTelemetry = false;
-                        break;
                     case WorkItem.ItemType.SetFlushInterval:
                         _scheduler.SetFlushInterval((TimeSpan)item.State!);
                         break;
@@ -293,7 +280,7 @@ internal class TelemetryController : ITelemetryController
                 await _metrics.DisposeAsync().ConfigureAwait(false);
             }
 
-            if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
+            if (_isStarted && _scheduler.ShouldFlushTelemetry)
             {
                 await PushTelemetry(includeLogs: _scheduler.ShouldFlushRedactedErrorLogs, sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
@@ -317,14 +304,6 @@ internal class TelemetryController : ITelemetryController
             // need to make sure we clear the buffers. If we don't we could get overflows.
             // We will lose these metrics if the endpoint errors, but better than growing too much.
             MetricResults? metrics = _metrics.GetMetrics();
-
-            if (!_sendTelemetry)
-            {
-                // sending is currently disabled, so don't fetch the other data or attempt to send
-                Log.Debug("Telemetry pushing currently disabled, skipping");
-                return;
-            }
-
             var application = _application.GetApplicationData();
             var host = _application.GetHostData();
             if (application is null || host is null)
@@ -376,8 +355,6 @@ internal class TelemetryController : ITelemetryController
         {
             SetTransportManager,
             SetFlushInterval,
-            EnableSending,
-            DisableSending,
             SetTracerStarted
         }
 
