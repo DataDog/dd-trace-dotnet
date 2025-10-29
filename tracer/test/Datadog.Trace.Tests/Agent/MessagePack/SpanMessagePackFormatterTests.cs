@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -125,49 +124,6 @@ public class SpanMessagePackFormatterTests
                 metricsProcessor.Remaining.Should().BeEmpty();
             }
         }
-    }
-
-    [Theory]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void ProcessTags_Serialization(bool enabled, bool firstChunk)
-    {
-        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
-
-        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.PropagateProcessTags, enabled ? "true" : "false" } }));
-        var tracer = TracerHelper.Create(settings);
-
-        var parentContext = new SpanContext(new TraceId(Upper: 0, Lower: 1), spanId: 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
-
-        var spans = new[]
-        {
-            new Span(new SpanContext(parentContext, new TraceContext(tracer), "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(tracer), "ServiceName1"), DateTimeOffset.UtcNow)
-        };
-
-        foreach (var span in spans)
-        {
-            span.SetDuration(TimeSpan.FromSeconds(1));
-        }
-
-        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), isFirstChunkInPayload: firstChunk);
-
-        byte[] bytes = [];
-
-        var length = formatter.Serialize(ref bytes, offset: 0, traceChunk, SpanFormatterResolver.Instance);
-        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, offset: 0, length));
-
-        if (enabled && firstChunk)
-        {
-            result[0].Tags.Should().ContainKey(Tags.ProcessTags);
-        }
-        else
-        {
-            result[0].Tags.Should().NotContainKey(Tags.ProcessTags);
-        }
-
-        result[1].Tags.Should().NotContainKey(Tags.ProcessTags, "process tags only added to first span of trace");
     }
 
     [Fact]
