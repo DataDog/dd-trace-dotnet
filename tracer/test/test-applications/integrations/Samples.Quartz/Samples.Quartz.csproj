@@ -17,7 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Quartz" Version="$(ApiVersion)" />
     <!-- Use older DiagnosticSource for .NET Framework and .NET Core 3.x to match what's available in the runtime -->
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" Condition="'$(TargetFramework)' == 'net48' OR '$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'netcoreapp3.1'" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.7.1" Condition="'$(TargetFramework)' == 'net48' OR '$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" Condition="'$(TargetFramework)' != 'net48' AND '$(TargetFramework)' != 'netcoreapp3.0' AND '$(TargetFramework)' != 'netcoreapp3.1'" />
     <!-- Uncomment the packages below to use OTEL instrumentation -->
     <!-- <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" /> -->
