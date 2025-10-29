@@ -74,11 +74,16 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            var profilerSettings = Profiler.Instance.Settings;
+            if (!profilerSettings.IsManagedActivationEnabled)
+            {
+                Log.Debug("Set Stable Configuration in Continuous Profiler native library is disabled.");
+                return;
+            }
+
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;
-            var profilerSettings = Profiler.Instance.Settings;
-
             NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
