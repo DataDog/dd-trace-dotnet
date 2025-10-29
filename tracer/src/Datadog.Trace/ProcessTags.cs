@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
@@ -28,26 +27,6 @@ internal static class ProcessTags
         get => LazySerializedTags.Value;
     }
 
-    private static SortedDictionary<string, string> LoadBaseTags()
-    {
-        var tags = new SortedDictionary<string, string>();
-
-        if (EntryAssemblyLocator.GetEntryAssembly() is { } assembly)
-        {
-            var entrypointFullName = assembly.EntryPoint?.DeclaringType?.FullName;
-            if (!string.IsNullOrEmpty(entrypointFullName))
-            {
-                tags.Add(EntrypointName, entrypointFullName!);
-            }
-        }
-
-        tags.Add(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
-        // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-        tags.Add(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
-
-        return tags;
-    }
-
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
     /// </summary>
@@ -60,10 +39,23 @@ internal static class ProcessTags
 
     private static string GetSerializedTags()
     {
-        var serializedTags = new StringBuilder();
-        foreach (var kvp in LoadBaseTags())
+        // ⚠️ make sure entries are added in alphabetical order of keys
+        var tags = new List<KeyValuePair<string, string?>>
         {
-            serializedTags.Append($"{kvp.Key}:{NormalizeTagValue(kvp.Value)},");
+            new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
+            new(EntrypointName, EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName),
+            // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
+            new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
+        };
+
+        // then normalize values and put all tags in a string
+        var serializedTags = new StringBuilder();
+        foreach (var kvp in tags)
+        {
+            if (!string.IsNullOrEmpty(kvp.Value))
+            {
+                serializedTags.Append($"{kvp.Key}:{NormalizeTagValue(kvp.Value!)},");
+            }
         }
 
         serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
