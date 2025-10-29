@@ -27,15 +27,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         static LogsInjectionHelper()
         {
+            // Use typeof(TTarget).Assembly to get the NLog assembly safely, avoiding Type.GetType()
+            // which can throw FileLoadException even with throwOnError: false when there are
+            // assembly loading issues (version mismatches, binding redirects, etc.)
+            var nlogAssembly = typeof(TTarget).Assembly;
+
             // this is not available in older versions of NLog (e.g., v2.1 doesn't have JSON support)
-            _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
+            _jsonAttributeType = nlogAssembly.GetType("NLog.Layouts.JsonAttribute", throwOnError: false);
             if (_jsonAttributeType is null)
             {
                 return;
             }
 
             // this simple layout should exist for all versions
-            _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
+            _simpleLayoutType = nlogAssembly.GetType("NLog.Layouts.SimpleLayout", throwOnError: false);
         }
 
         /// <summary>
