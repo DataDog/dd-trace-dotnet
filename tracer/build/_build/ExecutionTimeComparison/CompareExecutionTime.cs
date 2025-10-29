@@ -35,7 +35,7 @@ public class CompareExecutionTime
                          return $"""
                         <code lang="mermaid"><pre lang="mermaid">
                         gantt
-                            title Execution time (ms) {group.Key.TestSample} ({GetName(group.Key.Framework)}) 
+                            title Execution time (ms) {group.Key.TestSample} ({GetName(group.Key.Framework)})
                             dateFormat  X
                             axisFormat %s
                             todayMarker off
@@ -44,12 +44,14 @@ public class CompareExecutionTime
                         """;
                      });
 
-        return GetCommentMarkdown(sources, charts);
+        var comparisonTable = GetComparisonTable(results);
+
+        return GetCommentMarkdown(sources, charts, comparisonTable);
     }
  
     static string GetMermaidSection(string scenario, IEnumerable<ExecutionTimeResult> results)
     {
-        
+
         const decimal msToNs = 1_000_000m;
         const decimal zScore = 2.3263m;
         const string offset = "    ";
@@ -103,6 +105,9 @@ public class CompareExecutionTime
             var q05 = (result.Result.Mean - zScore * result.Result.Stdev) / msToNs;
             var q95 = (result.Result.Mean + zScore * result.Result.Stdev) / msToNs;
 
+            // Ensure q05 is not negative (which would cause mermaid to start from 0)
+            q05 = Math.Max(0, q05);
+
             var formattedMean = mean.ToString("N0");
             var format = result.Source.SourceType == ExecutionTimeSourceType.CurrentCommit
                       && scenario != "Baseline"
@@ -119,14 +124,287 @@ public class CompareExecutionTime
         return sb.ToString();
     }
 
-    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts)
+    static string GetComparisonTable(List<ExecutionTimeResult> results)
+    {
+        // Key metrics to compare
+        var keyMetrics = new[]
+        {
+            "process.internal_duration_ms",
+            "process.time_to_main_ms",
+            "runtime.dotnet.exceptions.count",
+            "runtime.dotnet.mem.committed",
+            "runtime.dotnet.threads.count"
+        };
+
+        var regressionsOutput = new StringBuilder();
+        var detailsOutput = new StringBuilder();
+        var hasRegressions = false;
+
+        // Group by Sample first, then by Framework and Scenario
+        var sampleGroups = results
+            .GroupBy(x => x.TestSample)
+            .OrderBy(g => g.Key);
+
+        foreach (var sampleGroup in sampleGroups)
+        {
+            var sampleName = sampleGroup.Key.ToString();
+            var regressionsTableRows = new StringBuilder();
+            var detailsTableRows = new StringBuilder();
+            var sampleHasRegressions = false;
+
+            var grouped = sampleGroup
+                .GroupBy(x => (x.Framework, x.Scenario))
+                .OrderBy(g => g.Key.Framework)
+                .ThenBy(g => g.Key.Scenario);
+
+            foreach (var group in grouped)
+            {
+                var masterResult = group.FirstOrDefault(x => x.Source.SourceType == ExecutionTimeSourceType.Master);
+                var currentResult = group.FirstOrDefault(x => x.Source.SourceType == ExecutionTimeSourceType.CurrentCommit);
+
+                if (masterResult == null || currentResult == null)
+                {
+                    continue;
+                }
+
+                var scenarioName = $"{GetName(group.Key.Framework)} - {group.Key.Scenario}";
+                var tableRows = new List<(string html, bool isRegression)>();
+
+                // Check if we have detailed metrics or just duration
+                var hasDuration = masterResult.Result.Durations.Length > 0 && currentResult.Result.Durations.Length > 0;
+                var hasDetailedMetrics = masterResult.Result.Metrics.Any();
+
+                if (hasDetailedMetrics)
+                {
+                    // Use detailed metrics
+                    foreach (var metricName in keyMetrics)
+                    {
+                        if (!masterResult.Result.Metrics.ContainsKey(metricName) ||
+                            !currentResult.Result.Metrics.ContainsKey(metricName))
+                        {
+                            continue;
+                        }
+
+                        var masterValues = masterResult.Result.Metrics[metricName];
+                        var currentValues = currentResult.Result.Metrics[metricName];
+
+                        if (masterValues.Length == 0 || currentValues.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        var (rowHtml, isRegression) = FormatMetricRow(metricName, masterValues, currentValues, convertFromNs: false);
+                        tableRows.Add((rowHtml, isRegression));
+                    }
+                }
+                else if (hasDuration)
+                {
+                    // Fall back to duration for .NET Framework - values are in nanoseconds
+                    var (rowHtml, isRegression) = FormatMetricRow("duration", masterResult.Result.Durations, currentResult.Result.Durations, convertFromNs: true);
+                    tableRows.Add((rowHtml, isRegression));
+                }
+
+                if (tableRows.Count == 0)
+                {
+                    continue;
+                }
+
+                // Add section header row
+                detailsTableRows.AppendLine($"    <tr><th colspan=\"5\">{scenarioName}</th></tr>");
+
+                var hasAnyRegression = false;
+                var regressionRows = new StringBuilder();
+
+                foreach (var (rowHtml, isRegression) in tableRows)
+                {
+                    detailsTableRows.AppendLine(rowHtml);
+                    if (isRegression)
+                    {
+                        hasAnyRegression = true;
+                        regressionRows.AppendLine(rowHtml);
+                    }
+                }
+
+                // If there are regressions, also add to the regressions table
+                if (hasAnyRegression)
+                {
+                    sampleHasRegressions = true;
+                    regressionsTableRows.AppendLine($"    <tr><th colspan=\"5\">{scenarioName}</th></tr>");
+                    regressionsTableRows.Append(regressionRows);
+                }
+            }
+
+            // Build table for this sample in details
+            if (detailsTableRows.Length > 0)
+            {
+                detailsOutput.AppendLine($"<h4>{sampleName}</h4>");
+                detailsOutput.AppendLine("<table>");
+                detailsOutput.AppendLine("  <thead>");
+                detailsOutput.AppendLine("    <tr>");
+                detailsOutput.AppendLine("      <th>Metric</th>");
+                detailsOutput.AppendLine("      <th>Master (Median ± 95% CI)</th>");
+                detailsOutput.AppendLine("      <th>Current (Median ± 95% CI)</th>");
+                detailsOutput.AppendLine("      <th>Change</th>");
+                detailsOutput.AppendLine("      <th>Status</th>");
+                detailsOutput.AppendLine("    </tr>");
+                detailsOutput.AppendLine("  </thead>");
+                detailsOutput.AppendLine("  <tbody>");
+                detailsOutput.Append(detailsTableRows);
+                detailsOutput.AppendLine("  </tbody>");
+                detailsOutput.AppendLine("</table>");
+                detailsOutput.AppendLine();
+            }
+
+            // Build table for this sample in regressions
+            if (sampleHasRegressions)
+            {
+                hasRegressions = true;
+                regressionsOutput.AppendLine($"<h4>{sampleName}</h4>");
+                regressionsOutput.AppendLine("<table>");
+                regressionsOutput.AppendLine("  <thead>");
+                regressionsOutput.AppendLine("    <tr>");
+                regressionsOutput.AppendLine("      <th>Metric</th>");
+                regressionsOutput.AppendLine("      <th>Master (Median ± 95% CI)</th>");
+                regressionsOutput.AppendLine("      <th>Current (Median ± 95% CI)</th>");
+                regressionsOutput.AppendLine("      <th>Change</th>");
+                regressionsOutput.AppendLine("      <th>Status</th>");
+                regressionsOutput.AppendLine("    </tr>");
+                regressionsOutput.AppendLine("  </thead>");
+                regressionsOutput.AppendLine("  <tbody>");
+                regressionsOutput.Append(regressionsTableRows);
+                regressionsOutput.AppendLine("  </tbody>");
+                regressionsOutput.AppendLine("</table>");
+                regressionsOutput.AppendLine();
+            }
+        }
+
+        var finalOutput = new StringBuilder();
+
+        if (hasRegressions)
+        {
+            finalOutput.AppendLine("### ⚠️ Potential Regressions Detected");
+            finalOutput.AppendLine();
+            finalOutput.Append(regressionsOutput);
+        }
+
+        finalOutput.AppendLine("<details>");
+        finalOutput.AppendLine("  <summary>Full Metrics Comparison</summary>");
+        finalOutput.AppendLine();
+        finalOutput.Append(detailsOutput);
+        finalOutput.AppendLine("</details>");
+
+        return finalOutput.ToString();
+    }
+
+    static (string html, bool isRegression) FormatMetricRow(string metricName, double[] masterValues, double[] currentValues, bool convertFromNs)
+    {
+        var masterStats = CalculateStats(masterValues, convertFromNs);
+        var currentStats = CalculateStats(currentValues, convertFromNs);
+
+        var changePct = masterStats.Median != 0
+            ? ((currentStats.Median - masterStats.Median) / masterStats.Median) * 100
+            : 0;
+
+        var (status, isRegression) = GetStatusInfo(changePct, metricName);
+        var changeText = changePct >= 0 ? $"+{changePct:F1}%" : $"{changePct:F1}%";
+
+        var masterText = FormatMetricValue(metricName, masterStats.Median, masterStats.Ci95Lower, masterStats.Ci95Upper);
+        var currentText = FormatMetricValue(metricName, currentStats.Median, currentStats.Ci95Lower, currentStats.Ci95Upper);
+
+        var rowHtml = $"    <tr><td>{GetMetricDisplayName(metricName)}</td><td>{masterText}</td><td>{currentText}</td><td>{changeText}</td><td>{status}</td></tr>";
+
+        return (rowHtml, isRegression);
+    }
+
+    static (double Median, double Ci95Lower, double Ci95Upper) CalculateStats(double[] values, bool convertFromNs = false)
+    {
+        if (values.Length == 0)
+        {
+            return (0, 0, 0);
+        }
+
+        // Convert from nanoseconds to milliseconds if needed
+        const double nsToMs = 1_000_000.0;
+        var convertedValues = convertFromNs
+            ? values.Select(v => v / nsToMs).ToArray()
+            : values;
+
+        var sorted = convertedValues.OrderBy(x => x).ToArray();
+        var median = sorted.Length % 2 == 0
+            ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2
+            : sorted[sorted.Length / 2];
+
+        // Calculate 95% CI using percentiles (2.5th and 97.5th percentiles)
+        var lowerIndex = (int)Math.Floor(sorted.Length * 0.025);
+        var upperIndex = (int)Math.Ceiling(sorted.Length * 0.975) - 1;
+        upperIndex = Math.Min(upperIndex, sorted.Length - 1);
+
+        var ci95Lower = sorted[lowerIndex];
+        var ci95Upper = sorted[upperIndex];
+
+        return (median, ci95Lower, ci95Upper);
+    }
+
+    static string FormatMetricValue(string metricName, double median, double ci95Lower, double ci95Upper)
+    {
+        if (metricName.Contains("mem.committed"))
+        {
+            // Format as MB
+            return $"{median / 1_024_024:F2} ± ({ci95Lower / 1_024_024:F2} - {ci95Upper / 1_024_024:F2}) MB";
+        }
+        else if (metricName.Contains("_ms") || metricName == "duration")
+        {
+            // Format as milliseconds
+            return $"{median:F2} ± ({ci95Lower:F2} - {ci95Upper:F2}) ms";
+        }
+        else
+        {
+            // Format as integer
+            return $"{median:F0} ± ({ci95Lower:F0} - {ci95Upper:F0})";
+        }
+    }
+
+    static string GetMetricDisplayName(string metricName) => metricName;
+
+    static (string emoji, bool isRegression) GetStatusInfo(double changePct, string metricName)
+    {
+        // For exceptions and most metrics, lower is better
+        // For thread count, changes might be neutral
+        var threshold = 5.0; // 5% threshold for significant change
+
+        if (Math.Abs(changePct) < threshold)
+        {
+            return ("✅", false); // No significant change
+        }
+
+        // For most metrics, increase is worse
+        if (metricName.Contains("exceptions") || metricName.Contains("duration") ||
+            metricName.Contains("time_to") || metricName.Contains("mem") || metricName == "duration")
+        {
+            if (changePct > 0)
+            {
+                return ("❌", true); // Regression
+            }
+            else
+            {
+                return ("✅", false); // Improvement
+            }
+        }
+
+        // For thread count, treat as neutral
+        return ("⚠️", false);
+    }
+
+    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
     {
         return $"""
             ## Execution-Time Benchmarks Report :stopwatch:
 
-            Execution-time results for samples comparing 
+            Execution-time results for samples comparing
             {string.Join(" and ", sources.Select(x => x.Markdown))}.
-            
+
+            {comparisonTable}
+
             <details>
               <summary>Comparison explanation</summary>
               <p>
@@ -135,7 +413,7 @@ public class CompareExecutionTime
               The following thresholds were used for comparing the execution times:</p>
               <ul>
                 <li>Welch test with statistical test for significance of <strong>5%</strong></li>
-                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.<li>
+                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.</li>
               </ul>
               <p>
                 Note that these results are based on a <em>single</em> point-in-time result for each branch.
@@ -144,6 +422,10 @@ public class CompareExecutionTime
               <p>
                 Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
               </p>
+            </details>
+
+            <details>
+              <summary>Execution-time charts</summary>
 
             {string.Join('\n', charts)}
             </details>
@@ -190,7 +472,37 @@ public class CompareExecutionTime
                 {
                     var scenario = job["name"].ToString();
                     var durations = job["durations"].AsArray().Select(x => (double)x).ToList();
-                    var result = new Result((long)job["min"], (long)job["max"], (decimal)job["mean"], (decimal)job["stdev"], durations.ToArray());
+
+                    // Parse metrics from the data array
+                    var metricsDict = new Dictionary<string, List<double>>();
+                    if (job["data"] is JsonArray dataArray)
+                    {
+                        foreach (var dataPoint in dataArray)
+                        {
+                            if (dataPoint["metrics"] is JsonObject metricsObj)
+                            {
+                                foreach (var metric in metricsObj)
+                                {
+                                    if (!metricsDict.ContainsKey(metric.Key))
+                                    {
+                                        metricsDict[metric.Key] = new List<double>();
+                                    }
+                                    metricsDict[metric.Key].Add((double)metric.Value);
+                                }
+                            }
+                        }
+                    }
+
+                    var metrics = metricsDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+                    var result = new Result((long) job["min"],
+                        Max: (long) job["max"],
+                        Mean: (decimal) job["mean"],
+                        Median: (decimal) job["median"],
+                        LowerCi95Bound: (decimal) job["ci95"]?[0],
+                        UpperCi95Bound: (decimal) job["ci95"]?[1],
+                        (decimal) job["stdev"],
+                        durations.ToArray(),
+                        metrics);
                     results.Add(new (source, sample, framework, scenario, result));
                 }
             }
@@ -204,7 +516,7 @@ public class CompareExecutionTime
     }
 
     public record ExecutionTimeResult(ExecutionTimeResultSource Source, ExecutionTimeSample TestSample, ExecutionTimeFramework Framework, string Scenario, Result Result);
-    public record Result(long Min, long Max, decimal Mean, decimal Stdev, double[] Durations)
+    public record Result(long Min, long Max, decimal Mean, decimal Median, decimal LowerCi95Bound, decimal UpperCi95Bound, decimal Stdev, double[] Durations, Dictionary<string, double[]> Metrics)
     {
 
     }
