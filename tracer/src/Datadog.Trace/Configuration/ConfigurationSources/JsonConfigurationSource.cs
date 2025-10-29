@@ -79,19 +79,6 @@ namespace Datadog.Trace.Configuration
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
         /// <summary>
-        /// Creates a new <see cref="JsonConfigurationSource"/> instance
-        /// by loading the JSON string from the specified file.
-        /// </summary>
-        /// <param name="filename">A JSON file that contains configuration values.</param>
-        /// <param name="origin">The origin to use for telemetry.</param>
-        /// <returns>The newly created configuration source.</returns>
-        internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
-        {
-            var json = File.ReadAllText(filename);
-            return new JsonConfigurationSource(json, origin, filename);
-        }
-
-        /// <summary>
         /// Gets the value of the setting with the specified key and converts it into type <typeparamref name="T"/>.
         /// Supports JPath.
         /// </summary>

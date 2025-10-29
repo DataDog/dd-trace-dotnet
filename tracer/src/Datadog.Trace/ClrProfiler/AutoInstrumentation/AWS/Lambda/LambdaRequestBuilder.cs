@@ -21,7 +21,7 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
 
     internal LambdaRequestBuilder()
     {
-        Uri = EnvironmentHelpers.GetEnvironmentVariable(ExtensionUriEnvName) ?? ExtensionUri;
+        Uri = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ExtensionUriEnvName) ?? ExtensionUri;
     }
 
     internal string Uri { get; }

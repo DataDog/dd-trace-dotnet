@@ -59,12 +59,12 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
-        /// Safe wrapper around Environment.GetEnvironmentVariable
+        /// Safe wrapper around Environment.GetEnvironmentVariableWithLogging
         /// </summary>
         /// <param name="key">Name of the environment variable to fetch</param>
         /// <param name="defaultValue">Value to return in case of error</param>
         /// <returns>The value of the environment variable, or the default value if an error occured</returns>
-        public static string? GetEnvironmentVariable(string key, string? defaultValue = null)
+        public static string? GetEnvironmentVariableWithLogging(string key, string? defaultValue = null)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsUsingAzureAppServicesSiteExtension()
         {
-            return GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
+            return GetEnvironmentVariableWithLogging(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Util
                               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
 
             return IsAzureFunctions()
-                   && string.Equals(GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
+                   && string.Equals(GetEnvironmentVariableWithLogging(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
                    && !hasWorkerId;
         }
 
@@ -183,6 +183,6 @@ namespace Datadog.Trace.Util
         /// <summary>
         /// Checks if the specified environment variable exists in the current environment.
         /// </summary>
-        private static bool EnvironmentVariableExists(string key) => !string.IsNullOrEmpty(GetEnvironmentVariable(key));
+        private static bool EnvironmentVariableExists(string key) => !string.IsNullOrEmpty(GetEnvironmentVariableWithLogging(key));
     }
 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -49,7 +50,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             // The native loader sets this env var to say where it's loaded from, so the waf should be next to it
             // Use this preferentially over other options
-            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
+            var value = EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
             if (!string.IsNullOrWhiteSpace(value))
             {
                 paths.Add(Path.GetDirectoryName(value));
@@ -78,7 +79,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             bool TryAddProfilerFolders(List<string> pathLists, string envVar)
             {
-                var value = EnvironmentHelpers.GetEnvironmentVariable(envVar);
+                var value = EnvironmentHelpers.GetEnvironmentVariableWithLogging(envVar);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     return false;
@@ -92,7 +93,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         private static void AddHomeFolders(List<string> paths, string runtimeId)
         {
             // the real trace home
-            var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            var tracerHome = EnvironmentConfigurationSource.GetEnvironmentVariable(ConfigurationKeys.DotnetTracerHome);
             if (!string.IsNullOrWhiteSpace(tracerHome))
             {
                 // the home folder could contain the native dll directly (in legacy versions of the package),

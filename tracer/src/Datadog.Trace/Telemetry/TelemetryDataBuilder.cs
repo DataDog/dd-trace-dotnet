@@ -175,9 +175,9 @@ internal class TelemetryDataBuilder
 
     private static AppStartedPayload.InstallSignaturePayload? GetInstallSignature()
     {
-        var installId = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_ID");
-        var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
-        var installTime = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TIME");
+        var installId = EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_INSTRUMENTATION_INSTALL_ID");
+        var installType = EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_INSTRUMENTATION_INSTALL_TYPE");
+        var installTime = EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_INSTRUMENTATION_INSTALL_TIME");
 
         if (string.IsNullOrEmpty(installId) && string.IsNullOrEmpty(installType) && string.IsNullOrEmpty(installTime))
         {

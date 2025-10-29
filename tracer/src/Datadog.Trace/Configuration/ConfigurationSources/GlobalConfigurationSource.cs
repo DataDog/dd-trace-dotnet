@@ -114,7 +114,7 @@ internal class GlobalConfigurationSource
             if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                 File.Exists(configurationFileName))
             {
-                jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName, ConfigurationOrigins.DdConfig);
+                jsonConfigurationSource = JsonConfigurationSourceFromFile(configurationFileName, ConfigurationOrigins.DdConfig);
                 return true;
             }
         }
@@ -151,5 +151,18 @@ internal class GlobalConfigurationSource
     public static void UpdateManualConfigurationSource(ManualInstrumentationConfigurationSourceBase manual)
     {
         Interlocked.Exchange(ref _manualConfigurationSource, manual);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="JsonConfigurationSource"/> instance
+    /// by loading the JSON string from the specified file.
+    /// </summary>
+    /// <param name="filename">A JSON file that contains configuration values.</param>
+    /// <param name="origin">The origin to use for telemetry.</param>
+    /// <returns>The newly created configuration source.</returns>
+    internal static JsonConfigurationSource JsonConfigurationSourceFromFile(string filename, ConfigurationOrigins origin)
+    {
+        var json = File.ReadAllText(filename);
+        return new JsonConfigurationSource(json, origin, filename);
     }
 }

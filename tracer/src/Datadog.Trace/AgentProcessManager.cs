@@ -28,17 +28,17 @@ namespace Datadog.Trace
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
             Name = "datadog-trace-agent",
-            PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
+            PipeName = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.TracesPipeName),
+            ProcessPath = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.TraceAgentPath),
+            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.TraceAgentArgs),
         };
 
         internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
         {
             Name = "dogstatsd",
-            PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
+            PipeName = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.MetricsPipeName),
+            ProcessPath = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.DogStatsDPath),
+            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.DogStatsDArgs),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
@@ -117,7 +117,7 @@ namespace Datadog.Trace
             if (azureAppServiceSettings.DebugModeEnabled)
             {
                 const string ddLogLevelKey = "DD_LOG_LEVEL";
-                if (EnvironmentHelpers.GetEnvironmentVariable(ddLogLevelKey) == null)
+                if (EnvironmentHelpers.GetEnvironmentVariableWithLogging(ddLogLevelKey) == null)
                 {
                     // This ensures that a single setting from applicationConfig can enable debug logs for every aspect of the extension
                     EnvironmentHelpers.SetEnvironmentVariable(ddLogLevelKey, "debug");

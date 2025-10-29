@@ -18,4 +18,6 @@ internal static partial class PlatformKeys
     /// Platform key indicating the path to the .NET Framework CLR profiler path
     /// </summary>
     public const string DotNetClrProfiler = "COR_PROFILER_PATH";
+
+    public const string ProgramData = "ProgramData";
 }

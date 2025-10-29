@@ -91,7 +91,7 @@ public sealed class TestSession
             var environmentVariables = GetPropagateEnvironmentVariables();
             foreach (var envVar in environmentVariables)
             {
-                _environmentVariablesToRestore[envVar.Key] = EnvironmentHelpers.GetEnvironmentVariable(envVar.Key);
+                _environmentVariablesToRestore[envVar.Key] = EnvironmentHelpers.GetEnvironmentVariableWithLogging(envVar.Key);
                 EnvironmentHelpers.SetEnvironmentVariable(envVar.Key, envVar.Value);
             }
         }
@@ -110,7 +110,7 @@ public sealed class TestSession
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
         }
 
-        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
+        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariableWithLogging(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
                                  MetricTags.CIVisibilityTestSessionType.AutoInjected :
                                  MetricTags.CIVisibilityTestSessionType.NotAutoInjected;
 

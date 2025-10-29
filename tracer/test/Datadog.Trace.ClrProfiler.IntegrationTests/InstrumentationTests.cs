@@ -929,7 +929,7 @@ namespace Foo
 
                                Console.WriteLine(data);
 
-                               var logFileName = Environment.GetEnvironmentVariable("{WatchFileEnvironmentVariable}");
+                               var logFileName = Environment.GetEnvironmentVariableWithLogging("{WatchFileEnvironmentVariable}");
                                File.WriteAllText(logFileName, data);
                                """;
                 File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);

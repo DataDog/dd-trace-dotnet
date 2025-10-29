@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal readonly struct EnvironmentVariablesProvider : IValueProvider
 {
-    public string? GetValue(string key, string? defaultValue = null) => EnvironmentHelpers.GetEnvironmentVariable(key, defaultValue);
+    public string? GetValue(string key, string? defaultValue = null) => EnvironmentHelpers.GetEnvironmentVariableWithLogging(key, defaultValue);
 
     public IDictionary GetValues() => EnvironmentHelpers.GetEnvironmentVariables();
 }

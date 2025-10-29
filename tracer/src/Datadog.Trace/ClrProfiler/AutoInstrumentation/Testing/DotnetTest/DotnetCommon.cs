@@ -115,13 +115,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (agentless || isEvpProxy)
             {
                 // Try to load the command line propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
+                if (EnvironmentHelpers.GetEnvironmentVariableWithLogging(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
                 {
                     commandLine = Environment.CommandLine;
                 }
 
                 // Try to load the working directory propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
+                if (EnvironmentHelpers.GetEnvironmentVariableWithLogging(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
                 {
                     workingDirectory = Environment.CurrentDirectory;
                 }
@@ -165,14 +165,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 session.SetErrorInfo(exception);
             }
 
-            var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
+            var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariableWithLogging(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
 
             // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
             // global code coverage percentage.
             // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
             if (!string.IsNullOrEmpty(codeCoveragePath))
             {
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariableWithLogging(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
                 {
                     Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
                 }
@@ -182,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     globalCoverage is not null)
                 {
                     // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
-                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
+                    if (EnvironmentHelpers.GetEnvironmentVariableWithLogging(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
                     {
                         // Adds the global code coverage percentage to the session
                         session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             {
                 try
                 {
-                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
+                    if (EnvironmentHelpers.GetEnvironmentVariableWithLogging(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
                         File.Exists(extCodeCoverageFilePath))
                     {
                         if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             const string testAdapterPathProperty = "-property:VSTestTestAdapterPath=";
 
             var disableTestAdapterInjection = false;
-            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
+            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
             if (string.IsNullOrEmpty(codeCoverageCollectorPath))
             {
                 Log.Warning("InjectCodeCoverageCollector.DotnetTest: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");
@@ -472,7 +472,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             var disableCollectInjection = false;
             var disableTestAdapterInjection = false;
-            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
+            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
             if (string.IsNullOrEmpty(codeCoverageCollectorPath))
             {
                 Log.Warning("InjectCodeCoverageCollector.VsConsoleTest:: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");

@@ -618,7 +618,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// </summary>
         private bool IsEnCFeatureEnabled()
         {
-            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable("COMPLUS_ForceEnc");
+            var encEnabled = EnvironmentHelpers.GetEnvironmentVariableWithLogging("COMPLUS_ForceEnc");
             return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 

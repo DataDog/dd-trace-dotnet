@@ -1145,7 +1145,7 @@ namespace Datadog.Trace.TestHelpers
                     listener.Prefixes.Add($"http://127.0.0.1:{port}/");
                     listener.Prefixes.Add($"http://localhost:{port}/");
 
-                    var containerHostname = EnvironmentHelpers.GetEnvironmentVariable("CONTAINER_HOSTNAME");
+                    var containerHostname = EnvironmentHelpers.GetEnvironmentVariableWithLogging("CONTAINER_HOSTNAME");
                     if (containerHostname != null)
                     {
                         listener.Prefixes.Add($"{containerHostname}:{port}/");

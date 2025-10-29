@@ -43,7 +43,7 @@ internal static class ProfilerAvailabilityHelper
         // on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
         if (fd.IsWindows())
         {
-            return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
+            return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
         }
 
         // Now we're into fuzzy territory. The CP is not available in some environments

@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(bool dataPipelineEnabled)
         {
             // See documentation at docs/development/Serverless.md for examples and diagrams
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
+            if (!string.IsNullOrEmpty(EnvironmentConfigurationSource.GetEnvironmentVariable("IsAlpine")))
             {
                 Output.WriteLine("Skipping");
                 return;
