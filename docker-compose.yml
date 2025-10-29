@@ -206,7 +206,7 @@ services:
 
   mysql57:
     image: mysql/mysql-server:5.7
-    profiles: ["group2"]
+    profiles: ["group1"]
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -695,6 +695,7 @@ services:
       - sqlserver
       - postgres
       - mysql
+      - mysql57
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
@@ -702,7 +703,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies
@@ -712,7 +713,6 @@ services:
       - elasticsearch6
       - elasticsearch5
       - mongo
-      - mysql57
       - localstack
       - sqledge
       - azureservicebus-emulator
@@ -721,7 +721,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 mysql57:3306 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
