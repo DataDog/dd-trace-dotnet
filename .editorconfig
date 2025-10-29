@@ -91,12 +91,7 @@ dotnet_diagnostic.RS0030.severity = error
 [/tracer/src/Datadog.Trace/Vendors/**.*]
 dotnet_diagnostic.RS0030.severity = none
 
-# Allow Environment.GetEnvironmentVariable in EnvironmentConfigurationSource (it's the *one* place that needs it)
-[/tracer/src/Datadog.Trace/Configuration/ConfigurationSources/EnvironmentConfigurationSource.cs]
-dotnet_diagnostic.RS0030.severity = none
-
-# TODO: the rest now should eventually go
-# Allow Environment.GetEnvironmentVariable in helper utilities that wrap it
-# this one needs quite some work to change for config registry
-[/tracer/src/Datadog.Trace/Util/EnvironmentHelpers*.cs]
+# These spots are allowed as they are checked by analyzers to make sure it's called with constants from ConfigurationKeys or PlatformKeys
+# These spots are allowed as they are checked by analyzers to make sure it's called with constants from ConfigurationKeys or PlatformKeys
+[/tracer/src/Datadog.Trace/**/{EnvironmentHelpers.cs,EnvironmentHelpersNoLogging.cs,EnvironmentConfigurationSource.cs}]
 dotnet_diagnostic.RS0030.severity = none
