@@ -89,6 +89,7 @@ services:
 # Dependencies
   localstack:
     image: localstack/localstack
+    profiles: ["group2"]
     environment:
       - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
@@ -101,6 +102,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    profiles: ["group1"]
     command: rabbitmq-server
     ports:
       - "127.0.0.1:5672:5672"
@@ -108,12 +110,14 @@ services:
 
   servicestackredis:
     image: redis:4-alpine
+    profiles: ["group1"]
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6379:6379"
 
   stackexchangeredis:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
     ports:
@@ -121,6 +125,7 @@ services:
 
   stackexchangeredis-replica:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis-replica
     command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
     ports:
@@ -128,6 +133,7 @@ services:
 
   stackexchangeredis-single:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis-single
     command: redis-server --bind 0.0.0.0
     ports:
@@ -135,18 +141,21 @@ services:
 
   mongo:
     image: mongo:4.0.9
+    profiles: ["group2"]
     ports:
       - "127.0.0.1:27017:27017"
     command: mongod
 
   couchbase:
     image: bentonam/couchbase-docker:community-5.0.1
+    profiles: ["group1"]
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"
 
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9210:9200"
     - "127.0.0.1:9310:9300"
@@ -156,6 +165,7 @@ services:
 
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9200:9200"
     - "127.0.0.1:9300:9300"
@@ -165,6 +175,7 @@ services:
 
   elasticsearch5:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9205:9200"
     - "127.0.0.1:9305:9300"
@@ -174,6 +185,7 @@ services:
 
   postgres:
     image: postgres:10.5-alpine
+    profiles: ["group1"]
     environment:
     - POSTGRES_PASSWORD=postgres
     - POSTGRES_USER=postgres
@@ -183,6 +195,7 @@ services:
 
   mysql:
     image: mysql/mysql-server:8.0
+    profiles: ["group1"]
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -193,6 +206,7 @@ services:
 
   mysql57:
     image: mysql/mysql-server:5.7
+    profiles: ["group2"]
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -203,6 +217,7 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
+    profiles: ["group1"]
     ports:
     - "127.0.0.1:1433:1433"
     environment:
@@ -211,12 +226,14 @@ services:
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest
+    profiles: ["group2"]
     environment:
     - ACCEPT_EULA=Y
     - MSSQL_SA_PASSWORD=Strong!Passw0rd
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
+    profiles: ["group2"]
     hostname: azureservicebus-emulator
     container_name: azureservicebus-emulator
     depends_on:
@@ -230,6 +247,7 @@ services:
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest
+    profiles: ["group2"]
     hostname: azurite
     container_name: azurite
     ports:
@@ -239,6 +257,7 @@ services:
 
   azure-eventhubs-emulator:
     image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
+    profiles: ["group2"]
     hostname: azure-eventhubs-emulator
     container_name: azure-eventhubs-emulator
     depends_on:
@@ -269,6 +288,7 @@ services:
   # For original definitions
   kafka-zookeeper:
     image: confluentinc/cp-zookeeper:6.1.1
+    profiles: ["group1"]
     hostname: kafka-zookeeper
     container_name: kafka-zookeeper
     ports:
@@ -280,6 +300,7 @@ services:
 
   kafka-broker:
     image: confluentinc/cp-server:6.1.1
+    profiles: ["group1"]
     hostname: kafka-broker
     container_name: kafka-broker
     depends_on:
@@ -311,6 +332,7 @@ services:
 
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry:6.1.1
+    profiles: ["group1"]
     hostname: kafka-schema-registry
     container_name: kafka-schema-registry
     depends_on:
@@ -325,6 +347,7 @@ services:
 
   kafka-control-center:
     image: confluentinc/cp-enterprise-control-center:6.1.1
+    profiles: ["group1"]
     hostname: kafka-control-center
     container_name: kafka-control-center
     depends_on:
@@ -344,6 +367,7 @@ services:
 
   kafka-rest-proxy:
     image: confluentinc/cp-kafka-rest:6.1.1
+    profiles: ["group1"]
     depends_on:
       - kafka-broker
       - kafka-schema-registry
@@ -683,34 +707,44 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
 
-  StartDependencies:
+  StartDependencies.Group1:
     image: andrewlock/wait-for-dependencies
+    profiles: ["group1"]
     depends_on:
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
       - stackexchangeredis-single
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
       - sqlserver
-      # - oracle disabled for now, image is too big for CI
-      - mongo
       - postgres
       - mysql
-      - mysql57
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
-      - localstack
       - couchbase
+      - test-agent
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
+
+  StartDependencies.Group2:
+    image: andrewlock/wait-for-dependencies
+    profiles: ["group2"]
+    depends_on:
+      - elasticsearch7
+      - elasticsearch6
+      - elasticsearch5
+      - mongo
+      - mysql57
+      - localstack
+      - sqledge
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126  # oracle:1521
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 mysql57:3306 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
@@ -872,6 +906,7 @@ services:
 
   test-agent:
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
+    profiles: ["group1", "group2"]
     volumes:
     - ./tracer/build/smoke_test_snapshots:/snapshots
     - ./artifacts/build_data/snapshots:/debug_snapshots

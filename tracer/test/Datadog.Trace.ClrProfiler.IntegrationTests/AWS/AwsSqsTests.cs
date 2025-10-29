@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Collection(nameof(AwsSqsTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
     {

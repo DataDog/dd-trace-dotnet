@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     public class AwsLambdaTests : TestHelper
     {
         private static readonly Regex StackRegex = new(@"(      error.stack:)(?:\n|\r){1,2}(?:[^,]*(?:\n|\r){1,2})+.*(,(?:\r|\n){1,2})");
