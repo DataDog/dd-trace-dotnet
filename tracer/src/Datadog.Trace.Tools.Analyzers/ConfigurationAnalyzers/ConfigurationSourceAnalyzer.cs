@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,35 +15,50 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 {
     /// <summary>
-    /// Analyzer to ensure that IConfigurationSource method calls only accept string constants
-    /// from PlatformKeys or ConfigurationKeys classes, not hardcoded strings or variables.
+    /// Analyzer to ensure that specific classes' public/internal methods with string key parameters
+    /// only accept string constants from PlatformKeys or ConfigurationKeys classes.
+    /// Checks: IConfigurationSource implementations, ConfigurationBuilder, and other configured classes.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ConfigurationSourceAnalyzer : DiagnosticAnalyzer
     {
         /// <summary>
-        /// Diagnostic descriptor for when IConfigurationSource methods are called with a hardcoded string instead of a constant from PlatformKeys or ConfigurationKeys.
+        /// Diagnostic descriptor for when methods are called with a hardcoded string instead of a constant from PlatformKeys or ConfigurationKeys.
         /// </summary>
         public static readonly DiagnosticDescriptor UseConfigurationConstantsRule = new(
             id: "DD0011",
-            title: "Use configuration constants instead of hardcoded strings in IConfigurationSource method calls",
-            messageFormat: "IConfigurationSource.{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of hardcoded string '{1}'",
+            title: "Use configuration constants instead of hardcoded strings",
+            messageFormat: "{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of hardcoded string '{1}'",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "IConfigurationSource method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes to ensure consistency and avoid typos.");
+            description: "Methods with string key parameters should only accept string constants from PlatformKeys or ConfigurationKeys classes to ensure consistency and avoid typos.");
 
         /// <summary>
-        /// Diagnostic descriptor for when IConfigurationSource methods are called with a variable instead of a constant from PlatformKeys or ConfigurationKeys.
+        /// Diagnostic descriptor for when methods are called with a variable instead of a constant from PlatformKeys or ConfigurationKeys.
         /// </summary>
         public static readonly DiagnosticDescriptor UseConfigurationConstantsNotVariablesRule = new(
             id: "DD0012",
-            title: "Use configuration constants instead of variables in IConfigurationSource method calls",
-            messageFormat: "IConfigurationSource.{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of variable '{1}'",
+            title: "Use configuration constants instead of variables",
+            messageFormat: "{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of variable '{1}'",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "IConfigurationSource method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
+            description: "Methods with string key parameters should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
+
+        // List of class names (with namespaces) to check for string key parameters
+        private static readonly HashSet<string> ClassesToCheck =
+        [
+            "Datadog.Trace.Configuration.Telemetry.ConfigurationBuilder",
+            "Datadog.Trace.Configuration.Telemetry.HasKeys",
+            // "Datadog.Trace.Util.EnvironmentHelpers",
+            // "Datadog.Trace.Util.EnvironmentHelpersNoLogging",
+        ];
+
+        private static readonly HashSet<string> InterfacesToCheck =
+        [
+            "Datadog.Trace.Configuration.IConfigurationSource"
+        ];
 
         /// <summary>
         /// Gets the supported diagnostics
@@ -69,24 +87,18 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 return;
             }
 
-            // Check if we're inside an IConfigurationSource implementation - if so, skip analysis
-            if (IsInsideConfigurationSourceImplementation(invocation, context.SemanticModel))
+            // Check if this is a method call we should analyze
+            var (shouldAnalyze, methodName, parameterIndex) = ShouldAnalyzeMethod(invocation, context.SemanticModel);
+            if (!shouldAnalyze || methodName == null)
             {
                 return;
             }
 
-            // Check if this is an IConfigurationSource method call
-            var methodName = GetConfigurationSourceMethodName(invocation, context.SemanticModel);
-            if (methodName == null)
-            {
-                return;
-            }
-
-            // Analyze the first argument (the key parameter)
+            // Analyze the parameter at the specified index (the key parameter)
             var argumentList = invocation.ArgumentList;
-            if (argumentList?.Arguments.Count > 0)
+            if (argumentList?.Arguments.Count > parameterIndex)
             {
-                var argument = argumentList.Arguments[0]; // The key is always the first parameter
+                var argument = argumentList.Arguments[parameterIndex];
                 AnalyzeConfigurationArgument(context, argument, methodName);
             }
         }
@@ -112,8 +124,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 if (currentNode is MethodDeclarationSyntax methodDeclaration)
                 {
                     var methodSymbol = semanticModel.GetDeclaredSymbol(methodDeclaration);
-                    if (methodSymbol != null &&
-                        methodSymbol.DeclaredAccessibility == Accessibility.Private &&
+                    if (methodSymbol is { DeclaredAccessibility: Accessibility.Private } &&
                         IsWithinConfigurationBuilder(methodSymbol))
                     {
                         return true;
@@ -175,34 +186,42 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             return false;
         }
 
-        private static string GetConfigurationSourceMethodName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+        private static (bool ShouldAnalyze, string MethodName, int ParameterIndex) ShouldAnalyzeMethod(
+            InvocationExpressionSyntax invocation,
+            SemanticModel semanticModel)
         {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
             {
-                var methodName = memberAccess.Name.Identifier.ValueText;
+                return (false, null, 0);
+            }
 
-                // Only check methods that start with "Get"
-                if (!methodName.StartsWith("Get") || methodName == "IsPresent")
-                {
-                    return null;
-                }
+            var methodName = memberAccess.Name.Identifier.ValueText;
 
-                // Get the symbol info for the method
-                var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
-                if (symbolInfo.Symbol is IMethodSymbol method)
+            // Get the symbol info for the method
+            var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
+            if (symbolInfo.Symbol is not IMethodSymbol method || method.DeclaredAccessibility is not Accessibility.Public and not Accessibility.Internal || method.ContainingType is null)
+            {
+                return (false, null, 0);
+            }
+
+            // Check if this is a method from one of the configured classes to check
+            var fullTypeName = method.ContainingType.ToDisplayString();
+            if (ClassesToCheck.Contains(fullTypeName) || method.ContainingType.Interfaces.Any(i => InterfacesToCheck.Contains(i.ToDisplayString())))
+            {
+                // Check if the method is public or internal
+                // Find any string parameter named "key"–
+                for (var i = 0; i < method.Parameters.Length; i++)
                 {
-                    // Check if this method is from a type that implements IConfigurationSource
-                    // and has at least one string parameter
-                    if (ImplementsIConfigurationSource(method.ContainingType) &&
-                        method.Parameters.Length > 0 &&
-                        method.Parameters[0].Type?.SpecialType == SpecialType.System_String)
+                    var param = method.Parameters[i];
+                    if (param.Type?.SpecialType == SpecialType.System_String &&
+                        param.Name.Equals("key", System.StringComparison.OrdinalIgnoreCase))
                     {
-                        return methodName;
+                        return (true, methodName, i);
                     }
                 }
             }
 
-            return null;
+            return (false, null, 0);
         }
 
         private static bool ImplementsIConfigurationSource(INamedTypeSymbol typeSymbol)
