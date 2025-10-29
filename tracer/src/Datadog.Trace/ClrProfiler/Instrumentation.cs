@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler
                 try
                 {
                     // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                    return !string.IsNullOrEmpty(EnvironmentConfigurationSource.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed));
                 }
                 catch
                 {
@@ -473,8 +473,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariableWithLogging(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariableWithLogging(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {

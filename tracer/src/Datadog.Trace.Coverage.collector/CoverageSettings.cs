@@ -43,7 +43,7 @@ internal class CoverageSettings
     }
 
     public CoverageSettings(XmlElement? configurationElement)
-        : this(configurationElement, Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME"), TestOptimizationSettings.FromDefaultSources())
+        : this(configurationElement, Util.EnvironmentHelpers.GetEnvironmentVariableWithLogging("DD_DOTNET_TRACER_HOME"), TestOptimizationSettings.FromDefaultSources())
     {
     }
 

@@ -108,7 +108,7 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
     {
         foreach (var kvp in expected)
         {
-            Environment.GetEnvironmentVariable(kvp.Key, EnvironmentVariableTarget.Machine).Should().Be(kvp.Value);
+            Environment.GetEnvironmentVariableWithLogging(kvp.Key, EnvironmentVariableTarget.Machine).Should().Be(kvp.Value);
         }
     }
 
@@ -116,7 +116,7 @@ public class GlobalEnvVariableHelperTests(ITestOutputHelper output) : FleetInsta
     {
         foreach (var kvp in values.GlobalRequiredEnvVariables)
         {
-            Environment.GetEnvironmentVariable(kvp.Key, EnvironmentVariableTarget.Machine).Should().BeNullOrEmpty();
+            Environment.GetEnvironmentVariableWithLogging(kvp.Key, EnvironmentVariableTarget.Machine).Should().BeNullOrEmpty();
         }
     }
 

@@ -39,11 +39,11 @@ internal class LambdaMetadata
 
     public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
     {
-        var functionName = EnvironmentHelpers.GetEnvironmentVariable(FunctionNameEnvVar);
+        var functionName = EnvironmentHelpers.GetEnvironmentVariableWithLogging(FunctionNameEnvVar);
 
         var isRunningInLambda = !string.IsNullOrEmpty(functionName)
                              && File.Exists(
-                                    EnvironmentHelpers.GetEnvironmentVariable(ExtensionPathEnvVar)
+                                    EnvironmentHelpers.GetEnvironmentVariableWithLogging(ExtensionPathEnvVar)
                                  ?? extensionPath);
 
         if (!isRunningInLambda)
@@ -52,7 +52,7 @@ internal class LambdaMetadata
             return new LambdaMetadata(isRunningInLambda: false, functionName, handlerName: null, serviceName: null);
         }
 
-        var handlerName = EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvVar);
+        var handlerName = EnvironmentHelpers.GetEnvironmentVariableWithLogging(HandlerEnvVar);
         var serviceName = handlerName?.IndexOf("::", StringComparison.Ordinal) switch
         {
             null => null, // not provided

@@ -47,7 +47,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            var rawValue = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableName);
+            var rawValue = EnvironmentHelpers.GetEnvironmentVariableWithLogging(EnvironmentVariableName);
             var value = JsonConvert.DeserializeObject<PerformanceCountersValue>(rawValue);
 
             statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);

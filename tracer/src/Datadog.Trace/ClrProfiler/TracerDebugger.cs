@@ -39,7 +39,7 @@ internal static class TracerDebugger
             return true;
         }
 
-        var debugEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach);
+        var debugEnabled = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.WaitForDebuggerAttach);
         if (!string.IsNullOrEmpty(debugEnabled) && debugEnabled!.Equals("1", StringComparison.Ordinal))
         {
             Console.WriteLine("Waiting for debugger attach...");
@@ -62,7 +62,7 @@ internal static class TracerDebugger
     private static bool WaitForNativeDebugger()
     {
         // Check if native debugging is enabled and OS is windows.
-        var nativeDebugEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.WaitForNativeDebuggerAttach);
+        var nativeDebugEnabled = EnvironmentHelpers.GetEnvironmentVariableWithLogging(ConfigurationKeys.WaitForNativeDebuggerAttach);
         if (!string.IsNullOrEmpty(nativeDebugEnabled) && nativeDebugEnabled!.Equals("1", StringComparison.Ordinal)
                                                       && FrameworkDescription.Instance.IsWindows())
         {

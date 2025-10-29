@@ -139,7 +139,7 @@ internal abstract class LambdaCommon
 
     internal static void Log(string message, Exception ex = null, bool debug = true)
     {
-        if (!debug || EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
+        if (!debug || EnvironmentHelpers.GetEnvironmentVariableWithLogging(LogLevelEnvName)?.ToLower() == "debug")
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
         }

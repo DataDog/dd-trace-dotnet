@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
 #if NETCOREAPP3_0
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
+            if (!string.IsNullOrEmpty(EnvironmentConfigurationSource.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
              && !string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) >= new Version("6.0.0"))
             {

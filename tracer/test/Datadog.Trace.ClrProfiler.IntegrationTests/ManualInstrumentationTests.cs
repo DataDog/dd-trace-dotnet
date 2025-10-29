@@ -61,7 +61,7 @@ public class ManualInstrumentationTests : TestHelper
         // OK, I know, this is weird, but AFAICT they changed the host FX lookup logic in .NET 9,
         // and for some reason it doesn't seem to work properly in this _one_specific case...
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-         && Environment.GetEnvironmentVariable("DOTNET_EXE_32") is { } dotnet32BitExe)
+         && EnvironmentConfigurationSource.GetEnvironmentVariable("DOTNET_EXE_32") is { } dotnet32BitExe)
         {
             var root = Path.GetDirectoryName(dotnet32BitExe);
             SetEnvironmentVariable("DOTNET_ROOT(x86)", root);
