@@ -14,8 +14,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsKinesisV1Tags
     {
-        // PeerServiceBytes = MessagePack.Serialize("peer.service");
-        private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
         // PeerServiceSourceBytes = MessagePack.Serialize("_dd.peer.service.source");
         private static ReadOnlySpan<byte> PeerServiceSourceBytes => new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
 
@@ -23,7 +21,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "peer.service" => PeerService,
                 "_dd.peer.service.source" => PeerServiceSource,
                 _ => base.GetTag(key),
             };
@@ -33,9 +30,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "peer.service": 
-                    PeerService = value;
-                    break;
                 case "_dd.peer.service.source": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsKinesisV1Tags));
                     break;
@@ -47,11 +41,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (PeerService is not null)
-            {
-                processor.Process(new TagItem<string>("peer.service", PeerService, PeerServiceBytes));
-            }
-
             if (PeerServiceSource is not null)
             {
                 processor.Process(new TagItem<string>("_dd.peer.service.source", PeerServiceSource, PeerServiceSourceBytes));
@@ -62,13 +51,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (PeerService is not null)
-            {
-                sb.Append("peer.service (tag):")
-                  .Append(PeerService)
-                  .Append(',');
-            }
-
             if (PeerServiceSource is not null)
             {
                 sb.Append("_dd.peer.service.source (tag):")
