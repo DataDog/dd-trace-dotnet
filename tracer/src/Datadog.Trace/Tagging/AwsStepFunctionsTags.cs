@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tagging
         {
         }
 
-        [Tag(Trace.Tags.PeerService)]
+        // [Tag(Trace.Tags.PeerService)]
         public override string? PeerService
         {
             get
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tagging
             set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        // [Tag(Trace.Tags.PeerServiceSource)]
         public string? PeerServiceSource
         {
             get

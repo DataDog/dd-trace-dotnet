@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        // [Tag(Trace.Tags.PeerService)]
         public override string PeerService
         {
             get
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tagging
             set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        // [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
