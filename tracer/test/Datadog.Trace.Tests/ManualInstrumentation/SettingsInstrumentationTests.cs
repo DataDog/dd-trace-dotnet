@@ -8,12 +8,14 @@ extern alias DatadogTraceManual;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
@@ -219,12 +221,13 @@ public class SettingsInstrumentationTests
     }
 
     [Fact]
-    public void AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
+    public async Task AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
     {
         var automatic = GetAndAssertAutomaticTracerSettings();
+        await using var tracer = TracerHelper.Create(automatic);
 
         Dictionary<string, object> serializedSettings = new();
-        CtorIntegration.PopulateSettings(serializedSettings, automatic);
+        CtorIntegration.PopulateSettings(serializedSettings, tracer);
 
         var manual = new ImmutableManualSettings(serializedSettings);
 
