@@ -104,8 +104,7 @@ namespace Datadog.Trace.Configuration
 
             PropagateProcessTags = config
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
-                                       .AsBool(false)
-                                || ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags);
+                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
