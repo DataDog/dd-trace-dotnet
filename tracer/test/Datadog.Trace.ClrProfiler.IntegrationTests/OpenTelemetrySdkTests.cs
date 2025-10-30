@@ -215,6 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
+        [Trait("DockerGroup", "1")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
         {
@@ -303,6 +304,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
+        [Trait("DockerGroup", "1")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
         {

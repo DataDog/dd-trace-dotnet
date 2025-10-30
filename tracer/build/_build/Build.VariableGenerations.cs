@@ -365,7 +365,11 @@ partial class Build : NukeBuild
                     {
                         if (dockerTest)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                            var dockerGroups = new[] { 1, 2 };
+                            foreach (var dockerGroup in dockerGroups)
+                            {
+                                matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
+                            }
                         }
                         else
                         {

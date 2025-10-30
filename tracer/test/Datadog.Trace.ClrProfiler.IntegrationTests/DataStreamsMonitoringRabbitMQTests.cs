@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "1")]
 public class DataStreamsMonitoringRabbitMQTests : TestHelper
 {
     public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
