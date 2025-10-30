@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [Trait("Category", "ArmUnsupported")]
     public class AzureEventHubsTests : TracingIntegrationTest
     {

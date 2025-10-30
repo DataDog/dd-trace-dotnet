@@ -33,7 +33,7 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
 
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
@@ -101,6 +101,10 @@ namespace Datadog.Trace.Configuration
                         "all" => DefaultExperimentalFeatures,
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
+
+            PropagateProcessTags = config
+                                       .WithKeys(ConfigurationKeys.PropagateProcessTags)
+                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -741,6 +745,8 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInCiVisibility { get; }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
+
+        internal bool PropagateProcessTags { get; }
 
         internal OverrideErrorLog ErrorLog { get; }
 
