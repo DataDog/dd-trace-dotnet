@@ -31,82 +31,77 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Get the supported-configurations.json file
-        var jsonFile = context.AdditionalTextsProvider
-                              .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
-                              .WithTrackingName(TrackingNames.ConfigurationKeysGenAdditionalText);
+        // Get all configuration files
+        var configFiles = context.AdditionalTextsProvider
+                                 .Where(static file =>
+                                 {
+                                     var fileName = Path.GetFileName(file.Path);
+                                     return fileName.Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase) ||
+                                            fileName.Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase) ||
+                                            fileName.Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase);
+                                 })
+                                 .WithTrackingName(TrackingNames.ConfigurationKeysGenAdditionalText);
+        var parsedConfig = configFiles.Collect().Select(static (allFiles, ct) =>
+                                      {
+                                          // Find each file type
+                                          AdditionalText? jsonFile = null;
+                                          AdditionalText? yamlFile = null;
+                                          AdditionalText? mappingFile = null;
 
-        // Get the supported-configurations-docs.yaml file (optional)
-        var yamlFile = context.AdditionalTextsProvider
-                              .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase))
-                              .WithTrackingName(TrackingNames.ConfigurationKeysGenYamlAdditionalText);
-
-        // Get the configuration_keys_mapping.json file (optional)
-        var mappingFile = context.AdditionalTextsProvider
-                                 .Where(static file => Path.GetFileName(file.Path).Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase))
-                                 .WithTrackingName(TrackingNames.ConfigurationKeysGenMappingAdditionalText);
-
-        // Combine all files
-        var combinedFiles = jsonFile.Collect().Combine(yamlFile.Collect()).Combine(mappingFile.Collect());
-
-        var configContent = combinedFiles.Select(static (files, ct) =>
+                                          foreach (var file in allFiles)
                                           {
-                                              var ((jsonFiles, yamlFiles), mappingFiles) = files;
-
-                                              if (jsonFiles.Length == 0)
+                                              var fileName = Path.GetFileName(file.Path);
+                                              if (fileName.Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                               {
-                                                  return new Result<(string Json, string? Yaml, string? Mapping)>(
-                                                      (string.Empty, null, null),
-                                                      new EquatableArray<DiagnosticInfo>(
-                                                      [
-                                                          CreateDiagnosticInfo("DDSG0005", "Configuration file not found", $"The file '{SupportedConfigurationsFileName}' was not found. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
-                                                      ]));
+                                                  jsonFile = file;
                                               }
-
-                                              var jsonResult = ExtractConfigurationContent(jsonFiles[0], ct);
-                                              if (jsonResult.Errors.Count > 0)
+                                              else if (fileName.Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase))
                                               {
-                                                  return new Result<(string Json, string? Yaml, string? Mapping)>((string.Empty, null, null), jsonResult.Errors);
+                                                  yamlFile = file;
                                               }
-
-                                              string? yamlContent = null;
-                                              if (yamlFiles.Length > 0)
+                                              else if (fileName.Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase))
                                               {
-                                                  var yamlResult = ExtractConfigurationContent(yamlFiles[0], ct);
-                                                  if (yamlResult.Errors.Count == 0)
-                                                  {
-                                                      yamlContent = yamlResult.Value;
-                                                  }
-
-                                                  // YAML is optional, so we don't fail if it has errors
+                                                  mappingFile = file;
                                               }
+                                          }
 
-                                              string? mappingContent = null;
-                                              if (mappingFiles.Length > 0)
-                                              {
-                                                  var mappingResult = ExtractConfigurationContent(mappingFiles[0], ct);
-                                                  if (mappingResult.Errors.Count == 0)
-                                                  {
-                                                      mappingContent = mappingResult.Value;
-                                                  }
+                                          // JSON file is required
+                                          if (jsonFile is null)
+                                          {
+                                              return new Result<ConfigurationData>(
+                                                  null!,
+                                                  new EquatableArray<DiagnosticInfo>(
+                                                  [
+                                                      CreateDiagnosticInfo("DDSG0005", "Configuration file not found", $"The file '{SupportedConfigurationsFileName}' was not found. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
+                                                  ]));
+                                          }
 
-                                                  // Mapping is optional, so we don't fail if it has errors
-                                              }
+                                          // Read JSON file (required)
+                                          var jsonText = jsonFile.GetText(ct);
+                                          if (jsonText is null)
+                                          {
+                                              return new Result<ConfigurationData>(
+                                                  null!,
+                                                  new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0006", "Configuration file read error", $"Unable to read the content of '{SupportedConfigurationsFileName}'.", DiagnosticSeverity.Error)]));
+                                          }
 
-                                              return new Result<(string Json, string? Yaml, string? Mapping)>((jsonResult.Value, yamlContent, mappingContent), new EquatableArray<DiagnosticInfo>());
-                                          })
-                                         .WithTrackingName(TrackingNames.ConfigurationKeysGenContentExtracted);
+                                          // Read optional YAML file
+                                          string? yamlContent = null;
+                                          if (yamlFile is not null)
+                                          {
+                                              yamlContent = yamlFile.GetText(ct)?.ToString();
+                                          }
 
-        var parsedConfig = configContent.Select(static (extractResult, ct) =>
-                                         {
-                                             if (extractResult.Errors.Count > 0)
-                                             {
-                                                 return new Result<ConfigurationData>(null!, extractResult.Errors);
-                                             }
+                                          // Read optional mapping file
+                                          string? mappingContent = null;
+                                          if (mappingFile is not null)
+                                          {
+                                              mappingContent = mappingFile.GetText(ct)?.ToString();
+                                          }
 
-                                             return ParseConfigurationContent(extractResult.Value.Json, extractResult.Value.Yaml, extractResult.Value.Mapping, ct);
-                                         })
-                                        .WithTrackingName(TrackingNames.ConfigurationKeysGenParseConfiguration);
+                                          return ParseConfigurationContent(jsonText.ToString(), yamlContent, mappingContent, ct);
+                                      })
+                                     .WithTrackingName(TrackingNames.ConfigurationKeysGenParseConfiguration);
 
         context.RegisterSourceOutput(
             parsedConfig,
@@ -141,34 +136,6 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         }
     }
 
-    private static Result<string> ExtractConfigurationContent(AdditionalText file, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var sourceText = file.GetText(cancellationToken);
-            if (sourceText is null)
-            {
-                return new Result<string>(
-                    string.Empty,
-                    new EquatableArray<DiagnosticInfo>(
-                    [
-                        CreateDiagnosticInfo("DDSG0006", "Configuration file read error", $"Unable to read the content of '{SupportedConfigurationsFileName}'.", DiagnosticSeverity.Error)
-                    ]));
-            }
-
-            return new Result<string>(sourceText.ToString(), new EquatableArray<DiagnosticInfo>());
-        }
-        catch (Exception ex)
-        {
-            return new Result<string>(
-                string.Empty,
-                new EquatableArray<DiagnosticInfo>(
-                [
-                    CreateDiagnosticInfo("DDSG0006", "Configuration file read error", $"Error reading '{SupportedConfigurationsFileName}': {ex.Message}", DiagnosticSeverity.Error)
-                ]));
-        }
-    }
-
     private static Result<ConfigurationData> ParseConfigurationContent(string jsonContent, string? yamlContent, string? mappingContent, CancellationToken cancellationToken)
     {
         try
@@ -183,7 +150,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                     null!,
                     new EquatableArray<DiagnosticInfo>(
                     [
-                        CreateDiagnosticInfo("DDSG0007", "JSON parse error", "Failed to find 'supportedConfigurations' section in supported-configurations.json.", DiagnosticSeverity.Error)
+                        CreateDiagnosticInfo("DDSG0007", "JSON parse error", $"Failed to find 'supportedConfigurations' section in {SupportedConfigurationsFileName}.", DiagnosticSeverity.Error)
                     ]));
             }
 
@@ -323,7 +290,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         var sb = new StringBuilder();
 
         AppendFileHeader(sb);
-        sb.AppendLine($"namespace {Namespace};");
+        sb.Append("namespace ").Append(Namespace).AppendLine(";");
         sb.AppendLine();
 
         if (string.IsNullOrEmpty(product))
@@ -509,27 +476,15 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     }
 
     private static string[] ProductNameEquivalents(string? productName)
-    {
-        if (string.IsNullOrEmpty(productName))
+        => productName switch
         {
-            return new[] { string.Empty };
-        }
-
-        // we need to keep comparison case-sensitive as there are keys like TraceRemoveIntegrationServiceNamesEnabled and we don't want to strip Tracer
-        switch (productName)
-        {
-            case "AppSec":
-                return new[] { "Appsec" };
-            case "Tracer":
-                return new[] { "Trace" };
-            case "CiVisibility":
-                return new[] { "Civisibility" };
-            case "OpenTelemetry":
-                return new[] { "Otel" };
-            default:
-                return new[] { productName! };
-        }
-    }
+            null or "" => [string.Empty],
+            "AppSec" => ["Appsec"],
+            "Tracer" => ["Trace"],
+            "CiVisibility" => ["Civisibility"],
+            "OpenTelemetry" => ["Otel"],
+            _ => [productName]
+        };
 
     private static DiagnosticInfo CreateDiagnosticInfo(string id, string title, string message, DiagnosticSeverity severity)
     {

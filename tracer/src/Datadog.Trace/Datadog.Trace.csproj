@@ -167,12 +167,4 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Generated\net461\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\" />
-    <Folder Include="Generated\net6.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\" />
-    <Folder Include="Generated\netcoreapp3.1\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\" />
-    <Folder Include="Generated\netstandard2.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\" />
-  </ItemGroup>
-
 </Project>
