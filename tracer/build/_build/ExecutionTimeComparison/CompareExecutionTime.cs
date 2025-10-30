@@ -33,15 +33,20 @@ public class CompareExecutionTime
                                         .ThenBy(x => x.Scenario)
                                         .GroupBy(x => x.Scenario)
                                         .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
+                         var chartTitle = $"{group.Key.TestSample} ({GetName(group.Key.Framework)})";
                          return $"""
-                        <code lang="mermaid"><pre lang="mermaid">
+                        <details>
+                          <summary>{chartTitle}</summary>
+
+                        ```mermaid
                         gantt
-                            title Execution time (ms) {group.Key.TestSample} ({GetName(group.Key.Framework)})
-                            dateFormat  X
-                            axisFormat %s
+                            title Execution time (ms) {chartTitle}
+                            dateFormat  x
+                            axisFormat %Q
                             todayMarker off
                         {string.Join(Environment.NewLine, scenarios)}
-                        </pre></code>
+                        ```
+                        </details>
                         """;
                      });
 
@@ -119,7 +124,6 @@ public class CompareExecutionTime
 
             sb.AppendLine($"""
             {offset}{result.Source.BranchName} - mean ({formattedMean}ms)  : {format}{q05:F0}, {q95:F0}
-            {offset} .   : {format}milestone, {mean:F0},
             """);
         }
 
@@ -436,12 +440,9 @@ public class CompareExecutionTime
                 Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
               </p>
             </details>
-            
-            <details>
-              <summary>Execution-time charts</summary>
 
+            Charts:
             {{string.Join('\n', charts)}}
-            </details>
             """;
     }
 
