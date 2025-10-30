@@ -2294,35 +2294,112 @@ stages:
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
-  - job: DockerTestGroup1
-    timeoutInMinutes: 60
+  - job: DockerTest
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
-    variables:
-      TestAllPackageVersions: true
-      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
-      IntegrationTestFilter: 'DockerGroup=1'
-    pool:
-      name: $(linuxX64Pool)
-    steps:
-    - template: steps/run-docker-integration-tests.yml
-      parameters:
-        groupNumber: '1'
 
-  - job: DockerTestGroup2
-    timeoutInMinutes: 60
-    strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
     variables:
       TestAllPackageVersions: true
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
-      IntegrationTestFilter: 'DockerGroup=2'
+      IntegrationTestFilter: DockerGroup=$(dockerGroup)
+
     pool:
       name: $(linuxX64Pool)
+
     steps:
-    - template: steps/run-docker-integration-tests.yml
+    - template: steps/clone-repo.yml
       parameters:
-        groupNumber: '2'
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/restore-working-directory-for-tests.yml
+      parameters:
+        artifactSuffix: $(artifactSuffix)
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    - script: |
+        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) run --rm StartDependencies.Group$(dockerGroup)
+      env:
+        baseImage: $(baseImage)
+        framework: $(publishTargetFramework)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        COMPOSE_PROFILES: group$(dockerGroup)
+      displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) \
+          run --rm \
+          -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          -e IncludeTestsRequiringDocker=true \
+          -e Filter=$(IntegrationTestFilter) \
+          -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
+          IntegrationTests
+      displayName: docker-compose run IntegrationTests (Group $(dockerGroup))
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+        COMPOSE_PROFILES: group$(dockerGroup)
+
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
+      displayName: docker-compose logs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        COMPOSE_PROFILES: group$(dockerGroup)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) down
+      displayName: docker-compose stop services
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        COMPOSE_PROFILES: group$(dockerGroup)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/make-artifacts-uploadable.yml
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: artifacts/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
     timeoutInMinutes: 60
