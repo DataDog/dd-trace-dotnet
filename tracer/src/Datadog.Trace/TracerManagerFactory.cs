@@ -63,21 +63,26 @@ namespace Datadog.Trace
                 tracerFlareManager: null,
                 spanEventsManager: null);
 
-            try
+            tracer.Settings.Manager.SubscribeToChanges(changes =>
             {
-                if (Profiler.Instance.Status.IsProfilerReady)
+                if (changes.UpdatedMutable is { } mutableSettings)
                 {
-                    var mutableSettings = tracer.PerTraceSettings.Settings;
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion);
+                    try
+                    {
+                        if (Profiler.Instance.Status.IsProfilerReady)
+                        {
+                            NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // We failed to retrieve the runtime from native this can be because:
+                        // - P/Invoke issue (unknown dll, unknown entrypoint...)
+                        // - We are running in a partial trust environment
+                        Log.Warning(ex, "Failed to set the service name for native.");
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                // We failed to retrieve the runtime from native this can be because:
-                // - P/Invoke issue (unknown dll, unknown entrypoint...)
-                // - We are running in a partial trust environment
-                Log.Warning(ex, "Failed to set the service name for native.");
-            }
+            });
 
             return tracer;
         }
