@@ -217,8 +217,6 @@ services:
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
-    hostname: azureservicebus-emulator
-    container_name: azureservicebus-emulator
     depends_on:
       - sqledge
     environment:
@@ -239,8 +237,6 @@ services:
 
   azure-eventhubs-emulator:
     image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
-    hostname: azure-eventhubs-emulator
-    container_name: azure-eventhubs-emulator
     depends_on:
       - azurite
     ports:
