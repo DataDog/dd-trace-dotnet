@@ -84,6 +84,18 @@ internal static partial class ConfigurationKeys
         public const string UploadFlushInterval = "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL";
 
         /// <summary>
+        /// Configuration key for enabling or disabling agentless Exception Replay uploads.
+        /// Default value is false.
+        /// </summary>
+        public const string ExceptionReplayAgentlessEnabled = "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED";
+
+        /// <summary>
+        /// Configuration key for overriding the agentless Exception Replay intake URL.
+        /// Default value is derived from DD_SITE (https://debugger-intake.{site}/api/v2/debugger).
+        /// </summary>
+        public const string ExceptionReplayAgentlessUrl = "DD_EXCEPTION_REPLAY_AGENTLESS_URL";
+
+        /// <summary>
         /// Configuration key to enable capturing the variables of all the frames in exception call stack.
         /// Default value is false.
         /// </summary>
