@@ -29,6 +29,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -312,7 +313,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static async Task WriteDiagnosticLog(TracerManager instance)
+        private static async Task WriteDiagnosticLog(TracerManager instance, MutableSettings mutableSettings, ExporterSettings exporterSettings)
         {
             try
             {
@@ -323,9 +324,6 @@ namespace Datadog.Trace
 
                 string agentError = null;
                 var instanceSettings = instance.Settings;
-                var mutableSettings = instance.PerTraceSettings.Settings;
-                // TODO: this only writes the initial settings - we should make sure to record an "update" log on reconfiguration
-                var exporterSettings = instanceSettings.Manager.InitialExporterSettings;
 
                 // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
                 // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
@@ -610,7 +608,8 @@ namespace Datadog.Trace
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
-                instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
+                instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
+                mutableSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
             }
             catch (Exception ex)
             {
@@ -683,10 +682,19 @@ namespace Datadog.Trace
                 OneTimeSetup(newManager.Settings);
             }
 
-            if (newManager.PerTraceSettings.Settings.StartupDiagnosticLogEnabled)
+            if (newManager.Settings.Manager is { InitialMutableSettings: { StartupDiagnosticLogEnabled: true } mutable, InitialExporterSettings: { } exporter })
             {
-                _ = Task.Run(() => WriteDiagnosticLog(newManager));
+                _ = Task.Run(() => WriteDiagnosticLog(newManager, mutable, exporter));
             }
+
+            newManager.Settings.Manager.SubscribeToChanges(changes =>
+            {
+                var mutable = changes.UpdatedMutable ?? changes.PreviousMutable;
+                if (mutable.StartupDiagnosticLogEnabled)
+                {
+                    _ = Task.Run(() => WriteDiagnosticLog(newManager, mutable, changes.UpdatedExporter ?? changes.PreviousExporter));
+                }
+            });
 
             return newManager;
         }
