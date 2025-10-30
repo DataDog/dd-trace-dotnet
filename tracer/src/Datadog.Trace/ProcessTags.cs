@@ -11,6 +11,7 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -49,7 +50,7 @@ internal static class ProcessTags
         };
 
         // then normalize values and put all tags in a string
-        var serializedTags = new StringBuilder();
+        var serializedTags = StringBuilderCache.Acquire();
         foreach (var kvp in tags)
         {
             if (!string.IsNullOrEmpty(kvp.Value))
@@ -59,7 +60,7 @@ internal static class ProcessTags
         }
 
         serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
-        return serializedTags.ToString();
+        return StringBuilderCache.GetStringAndRelease(serializedTags);
     }
 
     private static string NormalizeTagValue(string tagValue)
