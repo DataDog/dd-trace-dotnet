@@ -29,7 +29,8 @@ public class CompareExecutionTime
                      {
                          var scenarios = group
                                         .Select(x => x)
-                                        .OrderBy(x => x.Scenario)
+                                        .OrderBy(x => x.Scenario == "Baseline" ? 0 : 1 )
+                                        .ThenBy(x => x.Scenario)
                                         .GroupBy(x => x.Scenario)
                                         .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
                          return $"""
@@ -57,7 +58,8 @@ public class CompareExecutionTime
         const string offset = "    ";
         var orderedResults = results
                             .OrderBy(x => x.Source.SourceType)
-                            .ThenBy(x => x.Scenario) // baseline first
+                            .ThenBy(x => x.Scenario == "Baseline" ? 0 : 1 )
+                            .ThenBy(x => x.Scenario)
                             .ToList();
 
         var pairedResults = orderedResults
@@ -155,6 +157,7 @@ public class CompareExecutionTime
             var grouped = sampleGroup
                 .GroupBy(x => (x.Framework, x.Scenario))
                 .OrderBy(g => g.Key.Framework)
+                .ThenBy(g => g.Key.Scenario == "Baseline" ? 0 : 1)
                 .ThenBy(g => g.Key.Scenario);
 
             foreach (var group in grouped)
@@ -232,7 +235,7 @@ public class CompareExecutionTime
                 }
 
                 // Add section header row
-                detailsTableRows.AppendLine($"    <tr><th colspan=\"5\">{scenarioName}</th></tr>");
+                detailsTableRows.AppendLine($"    <tr><th colspan=\"5\" align=\"left\">{scenarioName}</th></tr>");
 
                 var hasAnyRegression = false;
                 var regressionRows = new StringBuilder();
@@ -251,7 +254,7 @@ public class CompareExecutionTime
                 if (hasAnyRegression)
                 {
                     sampleHasRegressions = true;
-                    regressionsTableRows.AppendLine($"    <tr><th colspan=\"5\">{scenarioName}</th></tr>");
+                    regressionsTableRows.AppendLine($"    <tr><th colspan=\"5\" align=\"left\">{scenarioName}</th></tr>");
                     regressionsTableRows.Append(regressionRows);
                 }
             }
@@ -310,7 +313,7 @@ public class CompareExecutionTime
         }
         else
         {
-            finalOutput.AppendLine("### ✅ No regressions detected - check the details below");
+            finalOutput.AppendLine("✅ No regressions detected - check the details below");
             finalOutput.AppendLine();
 
         }
@@ -345,10 +348,13 @@ public class CompareExecutionTime
         var (status, isRegression) = GetStatusInfo(changePct, metricName);
         var changeText = changePct >= 0 ? $"+{changePct:F1}%" : $"{changePct:F1}%";
 
+        // Add upward arrow for increases to make them easier to scan
+        var statusWithArrow = changePct > 0 ? $"{status}⬆️" : status;
+
         var masterText = FormatMetricValue(metricName, masterStats.Mean, masterStats.Ci95Lower, masterStats.Ci95Upper);
         var currentText = FormatMetricValue(metricName, currentStats.Mean, currentStats.Ci95Lower, currentStats.Ci95Upper);
 
-        var rowHtml = $"    <tr><td>{GetMetricDisplayName(metricName)}</td><td>{masterText}</td><td>{currentText}</td><td>{changeText}</td><td>{status}</td></tr>";
+        var rowHtml = $"    <tr><td>{GetMetricDisplayName(metricName)}</td><td>{masterText}</td><td>{currentText}</td><td>{changeText}</td><td style=\"text-align: right;\">{statusWithArrow}</td></tr>";
 
         return (rowHtml, isRegression);
     }
@@ -405,18 +411,36 @@ public class CompareExecutionTime
 
     static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
     {
-        return $"""
+        return $$"""
             ## Execution-Time Benchmarks Report :stopwatch:
 
-            Execution-time results for samples comparing
-            {string.Join(" and ", sources.Select(x => x.Markdown))}.
+            Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
 
-            {comparisonTable}
+            {{comparisonTable}}
 
+            <details>
+              <summary>Comparison explanation</summary>
+              <p>
+              Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
+              Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
+              The following thresholds were used for comparing the execution times:</p>
+              <ul>
+                <li>Welch test with statistical test for significance of <strong>5%</strong></li>
+                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.</li>
+              </ul>
+              <p>
+                Note that these results are based on a <em>single</em> point-in-time result for each branch.
+                For full results, see the <a href="https://ddstaging.datadoghq.com/dashboard/4qn-6fi-54p/apm-net-execution-time-benchmarks">dashboard</a>.
+              </p>
+              <p>
+                Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
+              </p>
+            </details>
+            
             <details>
               <summary>Execution-time charts</summary>
 
-            {string.Join('\n', charts)}
+            {{string.Join('\n', charts)}}
             </details>
             """;
     }
