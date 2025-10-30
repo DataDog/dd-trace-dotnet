@@ -25,7 +25,7 @@
             {
               "key": "service.name",
               "value": {
-                "string_value": "unknown_service:dotnet"
+                "string_value": "Samples.OpenTelemetrySdk"
               }
             }
           ]
