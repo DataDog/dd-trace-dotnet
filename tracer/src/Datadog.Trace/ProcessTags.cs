@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -41,13 +40,13 @@ internal static class ProcessTags
     private static string GetSerializedTags()
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        var tags = new List<KeyValuePair<string, string?>>
-        {
+        List<KeyValuePair<string, string?>> tags =
+        [
             new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
             new(EntrypointName, EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName),
             // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
             new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
-        };
+        ];
 
         // then normalize values and put all tags in a string
         var serializedTags = StringBuilderCache.Acquire();
