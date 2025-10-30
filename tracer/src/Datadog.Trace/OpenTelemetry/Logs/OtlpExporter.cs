@@ -187,12 +187,12 @@ internal class OtlpExporter : IOtlpExporter
         try
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
-            var resp = _httpExportClient!.SendExportRequest(
+            var resp = _httpExportClient?.SendExportRequest(
                 otlpPayload,
                 otlpPayload.Length,
                 deadline);
 
-            return Task.FromResult(resp.Success);
+            return Task.FromResult(resp is { Success: true });
         }
         catch (Exception ex)
         {
@@ -218,11 +218,11 @@ internal class OtlpExporter : IOtlpExporter
                 (uint)dataLength);
 
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
-            var resp = _grpcClient!.SendExportRequest(
+            var resp = _grpcClient?.SendExportRequest(
                 otlpPayload,
                 otlpPayload.Length,
                 deadline);
-            return Task.FromResult(resp.Success);
+            return Task.FromResult(resp is { Success: true });
         }
         catch (Exception ex)
         {
