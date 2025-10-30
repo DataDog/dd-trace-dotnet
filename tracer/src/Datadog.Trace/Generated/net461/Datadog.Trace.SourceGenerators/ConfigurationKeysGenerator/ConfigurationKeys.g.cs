@@ -131,6 +131,8 @@ internal static partial class ConfigurationKeys
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.Environment"/>
     public const string Environment = "DD_ENV";
 
+    public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
+
     /// <summary>
     /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
     /// </summary>
