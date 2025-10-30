@@ -64,6 +64,19 @@
                 }
               },
               {
+                "name": "example.async.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "66"
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
                 "name": "example.counter",
                 "sum": {
                   "data_points": [
@@ -151,6 +164,33 @@
                       ],
                       "min": 33.0,
                       "max": 33.0
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "example.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "55",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
                     }
                   ],
                   "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"

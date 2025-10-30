@@ -34,7 +34,15 @@
           {
             "scope": {
               "name": "OpenTelemetryMetricsMeter",
-              "version": "1.0"
+              "version": "1.0",
+              "attributes": [
+                {
+                  "key": "MeterTagKey",
+                  "value": {
+                    "string_value": "MeterTagValue"
+                  }
+                }
+              ]
             },
             "metrics": [
               {
@@ -47,7 +55,7 @@
                       "as_int": "22"
                     }
                   ],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
                   "is_monotonic": true
                 }
               },
@@ -61,6 +69,19 @@
                       "as_double": 88.0
                     }
                   ]
+                }
+              },
+              {
+                "name": "example.async.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "66"
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
                 }
               },
               {
@@ -87,8 +108,34 @@
                       ]
                     }
                   ],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
                   "is_monotonic": true
+                }
+              },
+              {
+                "name": "example.gauge",
+                "gauge": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_double": 77.0,
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 }
               },
               {
@@ -151,6 +198,33 @@
                       ],
                       "min": 33.0,
                       "max": 33.0
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA"
+                }
+              },
+              {
+                "name": "example.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "55",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
                     }
                   ],
                   "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
