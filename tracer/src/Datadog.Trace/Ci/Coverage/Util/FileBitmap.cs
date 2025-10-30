@@ -2,32 +2,32 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-#if NETCOREAPP3_0_OR_GREATER
+using System.Text;
+
+#if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 #endif
-#if NET6_0
+
+#if NET6_0_OR_GREATER
 using System.Runtime.Intrinsics.Arm;
 #endif
-using System.Text;
-using Datadog.Trace.Util;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage.Util;
 
 /// <summary>
 /// Represents a memory-efficient, modifiable file bitmap, optimized for high performance using unsafe code and SIMD instructions when available.
 /// </summary>
-internal unsafe ref struct FileBitmap
+internal readonly unsafe ref struct FileBitmap
 {
     /// <summary>
     /// Size of the bitmap in bytes.
@@ -227,7 +227,7 @@ internal unsafe ref struct FileBitmap
         }
 #endif
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
         // Use 256-bit (32-byte) vectors if available
         if (Avx.IsSupported)
         {
@@ -376,7 +376,7 @@ internal unsafe ref struct FileBitmap
         }
 #endif
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
         // Use 256-bit (32-byte) vectors if available
         if (Avx.IsSupported)
         {
@@ -517,7 +517,7 @@ internal unsafe ref struct FileBitmap
         }
 #endif
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
         if (Avx.IsSupported)
         {
             var allOnesVector = Vector256.Create((byte)0xFF); // Create a vector with all bits set to 1
@@ -583,7 +583,7 @@ internal unsafe ref struct FileBitmap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
 
-#if !NETCOREAPP3_0_OR_GREATER
+#if !NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Hamming weight algorithm for ulong
     /// </summary>
@@ -734,7 +734,7 @@ internal unsafe ref struct FileBitmap
             // Ensure there's at least 8 bytes left to read as ulong (64 bits)
             if (i + 7 < _size)
             {
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
                 // If supported, use the BitOperations.PopCount method for fast population count of bits set to 1
                 // This method utilizes hardware acceleration (if available) to count the bits efficiently
                 count += BitOperations.PopCount(*(ulong*)(_bitmap + i));
@@ -752,7 +752,7 @@ internal unsafe ref struct FileBitmap
             // Ensure there's at least 4 bytes left to read as uint (32 bits)
             if (i + 3 < _size)
             {
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
                 // Use BitOperations.PopCount for a uint, counting bits in 4 bytes
                 count += BitOperations.PopCount(*(uint*)(_bitmap + i));
 #else
@@ -765,7 +765,7 @@ internal unsafe ref struct FileBitmap
             }
 
             // Count remaining bits one byte at a time
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
             // Use BitOperations.PopCount for a single byte
             count += BitOperations.PopCount(_bitmap[i]);
 #else
@@ -790,7 +790,7 @@ internal unsafe ref struct FileBitmap
             // Ensure there's at least 8 bytes left to read as ulong (64 bits)
             if (i + 7 < _size)
             {
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
                 // If supported, use the BitOperations.PopCount method for fast population count of bits set to 1
                 // This method utilizes hardware acceleration (if available) to count the bits efficiently
                 if (BitOperations.PopCount(*(ulong*)(_bitmap + i)) > 0)
@@ -814,7 +814,7 @@ internal unsafe ref struct FileBitmap
             // Ensure there's at least 4 bytes left to read as uint (32 bits)
             if (i + 3 < _size)
             {
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
                 // Use BitOperations.PopCount for a uint, counting bits in 4 bytes
                 if (BitOperations.PopCount(*(uint*)(_bitmap + i)) > 0)
                 {
@@ -833,7 +833,7 @@ internal unsafe ref struct FileBitmap
             }
 
             // Count remaining bits one byte at a time
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
             // Use BitOperations.PopCount for a single byte
             if (BitOperations.PopCount(_bitmap[i]) > 0)
             {
