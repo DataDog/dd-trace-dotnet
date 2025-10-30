@@ -42,7 +42,7 @@ namespace Benchmarks.Trace
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();
-            CtorIntegration.PopulateSettings(manualSettings, _tracer.Settings);
+            CtorIntegration.PopulateSettings(manualSettings, _tracer);
 
             // Constructor is private, so create using reflection
             _manualTracer = (ManualTracer)typeof(ManualTracer)

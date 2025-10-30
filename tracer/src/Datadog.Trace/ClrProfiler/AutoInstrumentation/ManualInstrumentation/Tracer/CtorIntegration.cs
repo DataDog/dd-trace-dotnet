@@ -36,17 +36,19 @@ public class CtorIntegration
         // but in 3.7.0 we don't need to instrument them
         if (automaticTracer is Datadog.Trace.Tracer tracer)
         {
-            PopulateSettings(values, tracer.Settings);
+            PopulateSettings(values, tracer);
         }
 
         return CallTargetState.GetDefault();
     }
 
-    internal static void PopulateSettings(Dictionary<string, object?> values, TracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, Datadog.Trace.Tracer tracer)
     {
         // record all the settings in the dictionary
-        var mutableSettings = settings.Manager.InitialMutableSettings;
-        var exporterSettings = settings.Manager.InitialExporterSettings;
+        var mutableSettings = tracer.CurrentTraceSettings.Settings;
+        // TODO: This doesn't get the "current" exporter settings, if they've been changed for code.
+        // We don't currently provide a way to do that without subscribing to all changes, which would be overkill here.
+        var exporterSettings = tracer.Settings.Manager.InitialExporterSettings;
         // This key is used to detect if the settings have been populated _at all_, so should always be sent
         values[TracerSettingKeyConstants.AgentUriKey] = exporterSettings.AgentUri;
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -64,7 +66,7 @@ public class CtorIntegration
         values[TracerSettingKeyConstants.ServiceNameKey] = mutableSettings.ServiceName;
         values[TracerSettingKeyConstants.ServiceVersionKey] = mutableSettings.ServiceVersion;
         values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = mutableSettings.StartupDiagnosticLogEnabled;
-        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabled;
+        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = tracer.Settings.StatsComputationEnabled;
         values[TracerSettingKeyConstants.TraceEnabledKey] = mutableSettings.TraceEnabled;
         values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = mutableSettings.TracerMetricsEnabled;
 
