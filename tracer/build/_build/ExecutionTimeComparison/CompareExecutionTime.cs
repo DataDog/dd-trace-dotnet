@@ -176,7 +176,7 @@ public class CompareExecutionTime
 
                 if (hasDetailedMetrics)
                 {
-                    // Use detailed metrics
+                    // Use detailed metrics with pre-calculated stats
                     foreach (var metricName in keyMetrics)
                     {
                         if (!masterResult.Result.Metrics.ContainsKey(metricName) ||
@@ -185,22 +185,44 @@ public class CompareExecutionTime
                             continue;
                         }
 
-                        var masterValues = masterResult.Result.Metrics[metricName];
-                        var currentValues = currentResult.Result.Metrics[metricName];
+                        var masterStats = masterResult.Result.Metrics[metricName];
+                        var currentStats = currentResult.Result.Metrics[metricName];
 
-                        if (masterValues.Length == 0 || currentValues.Length == 0)
+                        // Check if we have the required stats
+                        if (!masterStats.ContainsKey("mean") || !masterStats.ContainsKey("std_err") ||
+                            !currentStats.ContainsKey("mean") || !currentStats.ContainsKey("std_err"))
                         {
                             continue;
                         }
 
-                        var (rowHtml, isRegression) = FormatMetricRow(metricName, masterValues, currentValues, convertFromNs: false);
+                        // Calculate 95% CI from standard error: mean ± 1.96 * std_err
+                        const double z95 = 1.96;
+                        var masterMean = masterStats["mean"];
+                        var masterStdErr = masterStats["std_err"];
+                        var masterCiLower = masterMean - (z95 * masterStdErr);
+                        var masterCiUpper = masterMean + (z95 * masterStdErr);
+
+                        var currentMean = currentStats["mean"];
+                        var currentStdErr = currentStats["std_err"];
+                        var currentCiLower = currentMean - (z95 * currentStdErr);
+                        var currentCiUpper = currentMean + (z95 * currentStdErr);
+
+                        var (rowHtml, isRegression) = FormatMetricRowFromStats(
+                            metricName,
+                            masterStats: (masterMean, masterCiLower, masterCiUpper),
+                            currentStats: (currentMean, currentCiLower, currentCiUpper),
+                            convertFromNs: false);
                         tableRows.Add((rowHtml, isRegression));
                     }
                 }
                 else if (hasDuration)
                 {
-                    // Fall back to duration for .NET Framework - values are in nanoseconds
-                    var (rowHtml, isRegression) = FormatMetricRow("duration", masterResult.Result.Durations, currentResult.Result.Durations, convertFromNs: true);
+                    // Fall back to duration for .NET Framework - use pre-calculated stats from Result
+                    var (rowHtml, isRegression) = FormatMetricRowFromStats(
+                        "duration",
+                        masterStats: ((double)masterResult.Result.Median, (double)masterResult.Result.LowerCi95Bound, (double)masterResult.Result.UpperCi95Bound),
+                        currentStats: ((double)currentResult.Result.Median, (double)currentResult.Result.LowerCi95Bound, (double)currentResult.Result.UpperCi95Bound),
+                        convertFromNs: true);
                     tableRows.Add((rowHtml, isRegression));
                 }
 
@@ -242,8 +264,8 @@ public class CompareExecutionTime
                 detailsOutput.AppendLine("  <thead>");
                 detailsOutput.AppendLine("    <tr>");
                 detailsOutput.AppendLine("      <th>Metric</th>");
-                detailsOutput.AppendLine("      <th>Master (Median ± 95% CI)</th>");
-                detailsOutput.AppendLine("      <th>Current (Median ± 95% CI)</th>");
+                detailsOutput.AppendLine("      <th>Master (Mean ± 95% CI)</th>");
+                detailsOutput.AppendLine("      <th>Current (Mean ± 95% CI)</th>");
                 detailsOutput.AppendLine("      <th>Change</th>");
                 detailsOutput.AppendLine("      <th>Status</th>");
                 detailsOutput.AppendLine("    </tr>");
@@ -264,8 +286,8 @@ public class CompareExecutionTime
                 regressionsOutput.AppendLine("  <thead>");
                 regressionsOutput.AppendLine("    <tr>");
                 regressionsOutput.AppendLine("      <th>Metric</th>");
-                regressionsOutput.AppendLine("      <th>Master (Median ± 95% CI)</th>");
-                regressionsOutput.AppendLine("      <th>Current (Median ± 95% CI)</th>");
+                regressionsOutput.AppendLine("      <th>Master (Mean ± 95% CI)</th>");
+                regressionsOutput.AppendLine("      <th>Current (Mean ± 95% CI)</th>");
                 regressionsOutput.AppendLine("      <th>Change</th>");
                 regressionsOutput.AppendLine("      <th>Status</th>");
                 regressionsOutput.AppendLine("    </tr>");
@@ -282,9 +304,15 @@ public class CompareExecutionTime
 
         if (hasRegressions)
         {
-            finalOutput.AppendLine("### ⚠️ Potential Regressions Detected");
+            finalOutput.AppendLine("### ⚠️ Potential regressions detected");
             finalOutput.AppendLine();
             finalOutput.Append(regressionsOutput);
+        }
+        else
+        {
+            finalOutput.AppendLine("### ✅ No regressions detected - check the details below");
+            finalOutput.AppendLine();
+
         }
 
         finalOutput.AppendLine("<details>");
@@ -296,71 +324,51 @@ public class CompareExecutionTime
         return finalOutput.ToString();
     }
 
-    static (string html, bool isRegression) FormatMetricRow(string metricName, double[] masterValues, double[] currentValues, bool convertFromNs)
+    static (string html, bool isRegression) FormatMetricRowFromStats(
+        string metricName,
+        (double Mean, double Ci95Lower, double Ci95Upper) masterStats,
+        (double Mean, double Ci95Lower, double Ci95Upper) currentStats,
+        bool convertFromNs)
     {
-        var masterStats = CalculateStats(masterValues, convertFromNs);
-        var currentStats = CalculateStats(currentValues, convertFromNs);
+        // Convert from nanoseconds to milliseconds if needed
+        const double nsToMs = 1_000_000.0;
+        if (convertFromNs)
+        {
+            masterStats = (masterStats.Mean / nsToMs, masterStats.Ci95Lower / nsToMs, masterStats.Ci95Upper / nsToMs);
+            currentStats = (currentStats.Mean / nsToMs, currentStats.Ci95Lower / nsToMs, currentStats.Ci95Upper / nsToMs);
+        }
 
-        var changePct = masterStats.Median != 0
-            ? ((currentStats.Median - masterStats.Median) / masterStats.Median) * 100
+        var changePct = masterStats.Mean != 0
+            ? ((currentStats.Mean - masterStats.Mean) / masterStats.Mean) * 100
             : 0;
 
         var (status, isRegression) = GetStatusInfo(changePct, metricName);
         var changeText = changePct >= 0 ? $"+{changePct:F1}%" : $"{changePct:F1}%";
 
-        var masterText = FormatMetricValue(metricName, masterStats.Median, masterStats.Ci95Lower, masterStats.Ci95Upper);
-        var currentText = FormatMetricValue(metricName, currentStats.Median, currentStats.Ci95Lower, currentStats.Ci95Upper);
+        var masterText = FormatMetricValue(metricName, masterStats.Mean, masterStats.Ci95Lower, masterStats.Ci95Upper);
+        var currentText = FormatMetricValue(metricName, currentStats.Mean, currentStats.Ci95Lower, currentStats.Ci95Upper);
 
         var rowHtml = $"    <tr><td>{GetMetricDisplayName(metricName)}</td><td>{masterText}</td><td>{currentText}</td><td>{changeText}</td><td>{status}</td></tr>";
 
         return (rowHtml, isRegression);
     }
 
-    static (double Median, double Ci95Lower, double Ci95Upper) CalculateStats(double[] values, bool convertFromNs = false)
-    {
-        if (values.Length == 0)
-        {
-            return (0, 0, 0);
-        }
-
-        // Convert from nanoseconds to milliseconds if needed
-        const double nsToMs = 1_000_000.0;
-        var convertedValues = convertFromNs
-            ? values.Select(v => v / nsToMs).ToArray()
-            : values;
-
-        var sorted = convertedValues.OrderBy(x => x).ToArray();
-        var median = sorted.Length % 2 == 0
-            ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2
-            : sorted[sorted.Length / 2];
-
-        // Calculate 95% CI using percentiles (2.5th and 97.5th percentiles)
-        var lowerIndex = (int)Math.Floor(sorted.Length * 0.025);
-        var upperIndex = (int)Math.Ceiling(sorted.Length * 0.975) - 1;
-        upperIndex = Math.Min(upperIndex, sorted.Length - 1);
-
-        var ci95Lower = sorted[lowerIndex];
-        var ci95Upper = sorted[upperIndex];
-
-        return (median, ci95Lower, ci95Upper);
-    }
-
-    static string FormatMetricValue(string metricName, double median, double ci95Lower, double ci95Upper)
+    static string FormatMetricValue(string metricName, double mean, double ci95Lower, double ci95Upper)
     {
         if (metricName.Contains("mem.committed"))
         {
             // Format as MB
-            return $"{median / 1_024_024:F2} ± ({ci95Lower / 1_024_024:F2} - {ci95Upper / 1_024_024:F2}) MB";
+            return $"{mean / 1_024_024:F2} ± ({ci95Lower / 1_024_024:F2} - {ci95Upper / 1_024_024:F2}) MB";
         }
         else if (metricName.Contains("_ms") || metricName == "duration")
         {
             // Format as milliseconds
-            return $"{median:F2} ± ({ci95Lower:F2} - {ci95Upper:F2}) ms";
+            return $"{mean:F2} ± ({ci95Lower:F2} - {ci95Upper:F2}) ms";
         }
         else
         {
             // Format as integer
-            return $"{median:F0} ± ({ci95Lower:F0} - {ci95Upper:F0})";
+            return $"{mean:F0} ± ({ci95Lower:F0} - {ci95Upper:F0})";
         }
     }
 
@@ -404,25 +412,6 @@ public class CompareExecutionTime
             {string.Join(" and ", sources.Select(x => x.Markdown))}.
 
             {comparisonTable}
-
-            <details>
-              <summary>Comparison explanation</summary>
-              <p>
-              Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
-              Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
-              The following thresholds were used for comparing the execution times:</p>
-              <ul>
-                <li>Welch test with statistical test for significance of <strong>5%</strong></li>
-                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.</li>
-              </ul>
-              <p>
-                Note that these results are based on a <em>single</em> point-in-time result for each branch.
-                For full results, see the <a href="https://ddstaging.datadoghq.com/dashboard/4qn-6fi-54p/apm-net-execution-time-benchmarks">dashboard</a>.
-              </p>
-              <p>
-                Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
-              </p>
-            </details>
 
             <details>
               <summary>Execution-time charts</summary>
@@ -473,27 +462,31 @@ public class CompareExecutionTime
                     var scenario = job["name"].ToString();
                     var durations = job["durations"].AsArray().Select(x => (double)x).ToList();
 
-                    // Parse metrics from the data array
-                    var metricsDict = new Dictionary<string, List<double>>();
-                    if (job["data"] is JsonArray dataArray)
+                    // Parse metrics with suffixed stats (e.g., "process.time_to_start_ms.mean", "process.time_to_start_ms.std_err")
+                    var metrics = new Dictionary<string, Dictionary<string, double>>();
+                    if (job["metrics"] is JsonObject metricsObj)
                     {
-                        foreach (var dataPoint in dataArray)
+                        foreach (var metric in metricsObj)
                         {
-                            if (dataPoint["metrics"] is JsonObject metricsObj)
+                            var fullKey = metric.Key;
+                            var lastDotIndex = fullKey.LastIndexOf('.');
+
+                            if (lastDotIndex > 0)
                             {
-                                foreach (var metric in metricsObj)
+                                // Split into base metric name and stat suffix
+                                var baseMetric = fullKey.Substring(0, lastDotIndex);
+                                var statSuffix = fullKey.Substring(lastDotIndex + 1);
+
+                                if (!metrics.ContainsKey(baseMetric))
                                 {
-                                    if (!metricsDict.ContainsKey(metric.Key))
-                                    {
-                                        metricsDict[metric.Key] = new List<double>();
-                                    }
-                                    metricsDict[metric.Key].Add((double)metric.Value);
+                                    metrics[baseMetric] = new Dictionary<string, double>();
                                 }
+
+                                metrics[baseMetric][statSuffix] = (double)metric.Value;
                             }
                         }
                     }
 
-                    var metrics = metricsDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
                     var result = new Result((long) job["min"],
                         Max: (long) job["max"],
                         Mean: (decimal) job["mean"],
@@ -516,7 +509,7 @@ public class CompareExecutionTime
     }
 
     public record ExecutionTimeResult(ExecutionTimeResultSource Source, ExecutionTimeSample TestSample, ExecutionTimeFramework Framework, string Scenario, Result Result);
-    public record Result(long Min, long Max, decimal Mean, decimal Median, decimal LowerCi95Bound, decimal UpperCi95Bound, decimal Stdev, double[] Durations, Dictionary<string, double[]> Metrics)
+    public record Result(long Min, long Max, decimal Mean, decimal Median, decimal LowerCi95Bound, decimal UpperCi95Bound, decimal Stdev, double[] Durations, Dictionary<string, Dictionary<string, double>> Metrics)
     {
 
     }
