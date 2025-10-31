@@ -22,8 +22,12 @@ public abstract class ContainerFixture : IAsyncLifetime
         _resources = await ContainersRegistry.GetOrAdd(GetType(), InitializeResources);
     }
 
-    // Do not implement, the ContainersRegistry is responsible for disposing the containers
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        // Release the reference to this fixture type
+        // When the reference count reaches zero, the containers will be disposed
+        await ContainersRegistry.Release(GetType());
+    }
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
