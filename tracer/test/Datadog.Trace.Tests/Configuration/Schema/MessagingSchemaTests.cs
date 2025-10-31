@@ -129,11 +129,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void CreateAwsS3TagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var expectedType = schemaVersion switch
-            {
-                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsS3Tags),
-                _ => typeof(AwsS3V1Tags),
-            };
+            var expectedType = typeof(AwsS3Tags);
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsS3Tags("spanKind").Should().BeOfType(expectedType);
@@ -144,11 +140,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void CreateAwsSqsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var expectedType = schemaVersion switch
-            {
-                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSqsTags),
-                _ => typeof(AwsSqsV1Tags),
-            };
+            var expectedType = typeof(AwsSqsTags);
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsSqsTags("spanKind").Should().BeOfType(expectedType);
@@ -159,11 +151,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void CreateAwsSnsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var expectedType = schemaVersion switch
-            {
-                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSnsTags),
-                _ => typeof(AwsSnsV1Tags),
-            };
+            var expectedType = typeof(AwsSnsTags);
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsSnsTags("spanKind").Should().BeOfType(expectedType);
@@ -174,11 +162,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void CreateAwsEventBridgeTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var expectedType = schemaVersion switch
-            {
-                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsEventBridgeTags),
-                _ => typeof(AwsEventBridgeV1Tags),
-            };
+            var expectedType = typeof(AwsEventBridgeTags);
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsEventBridgeTags("spanKind").Should().BeOfType(expectedType);
