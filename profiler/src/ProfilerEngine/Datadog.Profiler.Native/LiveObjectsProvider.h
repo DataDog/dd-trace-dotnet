@@ -64,7 +64,8 @@ public:
         std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
-        uint64_t pohSize) override;
+        uint64_t pohSize,
+        uint32_t memPressure) override;
 
 private:
     ObjectHandleID CreateWeakHandle(uintptr_t address) const;
