@@ -414,6 +414,10 @@ void CorProfilerCallback::InitializeServices()
         {
             _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
         }
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pEventPipeEventsManager->Register(_pHeapSnapshotManager);
+        }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
     else if ((_pRuntimeInfo->IsDotnetFramework()) && (_pConfiguration->IsEtwEnabled()))

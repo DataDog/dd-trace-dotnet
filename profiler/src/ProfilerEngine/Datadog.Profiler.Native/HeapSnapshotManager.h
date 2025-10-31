@@ -18,7 +18,7 @@ class ClassHistogramEntry
 {
 public:
     ClassHistogramEntry(std::string& className)
-        : 
+        :
         InstanceCount(0),
         TotalSize(0),
         ClassName(className)
@@ -31,8 +31,8 @@ public:
     uint64_t TotalSize;
 };
 
-class HeapSnapshotManager 
-    : 
+class HeapSnapshotManager
+    :
     public IHeapSnapshotManager,
     public IGarbageCollectionsListener,
     public IGCDumpListener,

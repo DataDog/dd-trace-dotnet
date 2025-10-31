@@ -42,14 +42,60 @@ bool HeapSnapshotManager::StopImpl()
 
 std::string HeapSnapshotManager::GetHeapSnapshotText()
 {
-    return std::string{};
+    std::stringstream ss;
+    ss << "[" << std::endl;
+    int current = 1;
+    int last = static_cast<int>(_classHistogram.size());
+    for (auto& [classID, entry] : _classHistogram)
+    {
+        ss << "[\"";
+        ss << entry.ClassName << "\","
+           << entry.InstanceCount << ","
+           << entry.TotalSize;
+        ss << "]";
+        if (current < last)
+        {
+            ss << "," << std::endl;
+        }
+        else
+        {
+            ss << std::endl;
+        }
+    }
+    ss << "]" << std::endl;
+
+    return ss.str();
 }
 
 void HeapSnapshotManager::OnBulkNodes(
-    uint32_t Index,
-    uint32_t Count,
+    uint32_t index,
+    uint32_t count,
     GCBulkNodeValue* pNodes)
 {
+    for (size_t i = 0; i < count; i++)
+    {
+        // TODO: we should not be called from different threads so no need to lock
+        auto entry = _classHistogram.find(pNodes[i].TypeID);
+        if (entry == _classHistogram.end())
+        {
+            std::string className;
+            if (_pFrameStore->GetTypeName(static_cast<ClassID>(pNodes[i].TypeID), className))
+            {
+                ClassHistogramEntry histogramEntry(className);
+                histogramEntry.InstanceCount = 1;
+                histogramEntry.TotalSize = pNodes[i].Size;
+                _classHistogram.emplace(pNodes[i].TypeID, histogramEntry);
+            }
+            else // should never happen  :^(
+            {
+            }
+        }
+        else
+        {
+            entry->second.InstanceCount++;
+            entry->second.TotalSize += pNodes[i].Size;
+        }
+    }
 }
 
 void HeapSnapshotManager::OnBulkEdges(
@@ -57,6 +103,7 @@ void HeapSnapshotManager::OnBulkEdges(
     uint32_t Count,
     GCBulkEdgeValue* pEdges)
 {
+    // TODO: use to rebuild the reference chain
 }
 
 void HeapSnapshotManager::OnGarbageCollectionStart(
@@ -67,13 +114,13 @@ void HeapSnapshotManager::OnGarbageCollectionStart(
     GCType type)
 {
     // waiting for the first induced foregrouned gen2 collection
-    if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
-    {
+    //if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
+    //{
         if ((reason == GCReason::Induced) && (generation == 2) && (type == GCType::NonConcurrentGC))
         {
             _inducedGCNumber = number;
         }
-    }
+    //}
 }
 
 void HeapSnapshotManager::OnGarbageCollectionEnd(
@@ -90,8 +137,9 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
     uint64_t pohSize,
     uint32_t memPressure)
 {
-    if (_isHeapDumpInProgress)
-    {
+
+    //if (_isHeapDumpInProgress)
+    //{
         if (number == _inducedGCNumber)
         {
             // the induced GC triggered to generate the heap snapshot has ended
@@ -101,7 +149,7 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
 
             // TODO: restart the timer before the next heap snapshot
         }
-    }
+    //}
 
     // store sizes for next heap snapshot
     _gen2Size = gen2Size;
@@ -130,7 +178,7 @@ void HeapSnapshotManager::StartGCDump()
     UINT64 activatedKeywords = 0x900000;    // GCHeapDumpKeyword and ManagedHeapCollectKeyword
 
     uint32_t verbosity = 5; // verbose verbosity
-    COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[1] = 
+    COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[1] =
     {
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG{
             WStr("Microsoft-Windows-DotNETRuntime"),
@@ -152,10 +200,18 @@ void HeapSnapshotManager::StartGCDump()
 
 void HeapSnapshotManager::StopGCDump()
 {
-    if (_session == 0)
-    {
-        return;
-    }
+    //if (_session == 0)
+    //{
+    //    return;
+    //}
+
+#ifdef NDEBUG
+    // for debugging purpose only
+#else
+    // dump each entry in _classHistogram
+    auto content = GetHeapSnapshotText();
+    std::cout << content << std::endl;
+#endif
 
     _pCorProfilerInfo->EventPipeStopSession(_session);
     _isHeapDumpInProgress = false;
