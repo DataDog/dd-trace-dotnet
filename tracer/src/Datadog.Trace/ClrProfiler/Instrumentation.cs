@@ -470,20 +470,24 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
+            // For Azure Functions, we need to handle AspNetCoreDiagnosticObserver differently based on the process type.
+            // Skip AspNetCoreDiagnosticObserver in:
+            // - In-process functions (due to separate Assembly Load Context issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - Isolated functions worker process (to create aspnet_core.request spans that azure_functions.invoke can parent to)
+            // - All other scenarios (non-Azure Functions)
+            var isInAzureFunctionsHost = EnvironmentHelpers.IsRunningInAzureFunctionsHost();
+            var shouldSkipAspNetCore = isInAzureFunctionsHost || (EnvironmentHelpers.IsAzureFunctions() && !EnvironmentHelpers.IsAzureFunctionsIsolated());
 
-            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
+            if (shouldSkipAspNetCore)
             {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
-                // This is because user code is loaded within the functions host in a separate context.
-                // Even in isolated functions, we don't want the AspNetCore spans to be created.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions host process or in-process functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions (host process or in-process).");
             }
             else
             {
+                // Enable AspNetCoreDiagnosticObserver in isolated worker process or other scenarios
                 observers.Add(new AspNetCoreDiagnosticObserver());
                 observers.Add(new QuartzDiagnosticObserver());
             }
