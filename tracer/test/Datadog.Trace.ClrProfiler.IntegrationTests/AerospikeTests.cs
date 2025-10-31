@@ -20,8 +20,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(AerospikeCollection.Name)]
     [UsesVerify]
-    public class AerospikeTests : TracingIntegrationTest, IClassFixture<AerospikeFixture>
+    public class AerospikeTests : TracingIntegrationTest
     {
         public AerospikeTests(ITestOutputHelper output, AerospikeFixture aerospikeFixture)
             : base("Aerospike", output)
