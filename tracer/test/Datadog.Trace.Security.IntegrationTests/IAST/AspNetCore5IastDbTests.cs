@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST;
 
 [Trait("RequiresDockerDependency", "true")]
 [Collection(ContainersCollection.Name)]
-public class AspNetCore5IastDbTests : AspNetCore5IastTests, IClassFixture<PostgresFixture>
+public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, PostgresFixture postgresFixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, sampleName: "AspNetCore5")
