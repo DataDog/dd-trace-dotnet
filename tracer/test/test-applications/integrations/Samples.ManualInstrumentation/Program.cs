@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -317,6 +318,23 @@ internal class Program
 
             // Manually disable debug logs
             GlobalSettings.SetDebugEnabled(false);
+
+            // Try to reconfigure tracer to use UDS on Windows. This should throw an exception
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                try
+                {
+                    var invalidSettings = TracerSettings.FromDefaultSources();
+                    invalidSettings.ServiceName = "InvalidSettings";
+                    invalidSettings.AgentUri = new Uri("unix://apm.socket");
+                    Tracer.Configure(invalidSettings);
+                    ThrowIf(true, "We should not be able to configure the tracer with UDS on Windows");
+                }
+                catch
+                {
+                    LogAndAssertCurrentSettings(Tracer.Instance, "RejectedInvalidSettings", settings);
+                }
+            }
 
             // Force flush
             await Tracer.Instance.ForceFlushAsync();
