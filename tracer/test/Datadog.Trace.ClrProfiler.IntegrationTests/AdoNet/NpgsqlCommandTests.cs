@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -20,13 +21,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(ContainersCollection.Name)]
     [UsesVerify]
-    public class NpgsqlCommandTests : TracingIntegrationTest
+    public class NpgsqlCommandTests : TracingIntegrationTest, IClassFixture<PostgresFixture>
     {
-        public NpgsqlCommandTests(ITestOutputHelper output)
+        public NpgsqlCommandTests(ITestOutputHelper output, PostgresFixture postgresFixture)
             : base("Npgsql", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(postgresFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
@@ -78,7 +81,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("Npgsql-Test-[a-zA-Z0-9]{32}"), "Npgsql-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: postgres");
             settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
+            // TestContainers uses Docker bridge IP (e.g., 172.17.0.1)
+            settings.AddRegexScrubber(new Regex(@"out\.host: \d+\.\d+\.\d+\.\d+"), "out.host: postgres");
 
             var fileName = nameof(NpgsqlCommandTests);
 #if NETFRAMEWORK

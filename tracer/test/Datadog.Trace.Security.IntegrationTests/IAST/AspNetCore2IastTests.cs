@@ -12,10 +12,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -650,9 +652,15 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
     }
 }
 
-public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+[Collection(ContainersCollection.Name)]
+public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>, IClassFixture<PostgresFixture>
 {
     public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
+        : this(fixture, null, outputHelper, enableIast, testName, isIastDeduplicationEnabled, samplingRate, vulnerabilitiesPerRequest, redactionEnabled, iastTelemetryLevel)
+    {
+    }
+
+    public AspNetCore2IastTests(AspNetCoreTestFixture fixture, PostgresFixture postgresFixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
         : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
@@ -664,6 +672,11 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         IastTelemetryLevel = iastTelemetryLevel;
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+
+        if (postgresFixture != null)
+        {
+            ConfigureContainers(postgresFixture);
+        }
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
