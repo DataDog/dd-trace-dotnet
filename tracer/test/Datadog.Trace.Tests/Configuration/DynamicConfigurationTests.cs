@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Configuration
             Tracer.Instance.CurrentTraceSettings.GetServiceName("test")
                .Should().Be($"{Tracer.Instance.DefaultServiceName}-test");
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_service_mapping", "test:ok")));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_service_mapping", "test:ok")), Tracer.Instance.Settings);
 
             Tracer.Instance.CurrentTraceSettings.GetServiceName("test")
                .Should().Be($"{Tracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
@@ -45,13 +45,13 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var tracer = TracerManager.Instance;
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)), tracer.Settings);
 
             var newTracer = TracerManager.Instance;
 
             newTracer.Should().NotBeSameAs(tracer);
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rate", 0.4)), tracer.Settings);
 
             TracerManager.Instance.Should().BeSameAs(newTracer);
         }
@@ -60,14 +60,17 @@ namespace Datadog.Trace.Tests.Configuration
         public void ApplyTagsToDirectLogs()
         {
             var tracerSettings = TracerSettings.Create(new() { { ConfigurationKeys.GlobalTags, "key1:value1" } });
-            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
 
-            TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
+            // emulate the one-time subscribe that TracerManager.Instance does
+            var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
+            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
+
+            tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
             var configBuilder = CreateConfig(("tracing_tags", new[] { "key2:value2" }));
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
-            TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key2:value2");
+            tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key2:value2");
         }
 
         [Fact]
@@ -79,14 +82,15 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, "xunit" },
                 { ConfigurationKeys.GlobalTags, "key2:value2" },
             });
-            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
+            var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
+            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
-            TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
+            tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
             var configBuilder = CreateConfig(("tracing_tags", new[] { "key3:value3" }));
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
-            TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
+            tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
         }
 
         [Fact]
@@ -97,32 +101,34 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.RuntimeMetricsEnabled, "true" },
                 { ConfigurationKeys.GlobalTags, "key1:value1" },
             });
-            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
+            var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
+            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
-            var previousRuntimeMetrics = TracerManager.Instance.RuntimeMetrics;
+            var previousRuntimeMetrics = tracerManager.RuntimeMetrics;
 
             var configBuilder = CreateConfig(("tracing_tags", new[] { "key2:value2" }));
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
-            TracerManager.Instance.RuntimeMetrics.Should().Be(previousRuntimeMetrics);
+            tracerManager.RuntimeMetrics.Should().Be(previousRuntimeMetrics);
         }
 
         [Fact]
         public void EnableTracing()
         {
             var tracerSettings = new TracerSettings();
-            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
+            var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
+            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
             // tracing is enabled by default
-            TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
+            tracerManager.Settings.TraceEnabled.Should().BeTrue();
 
             // disable "remotely"
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", false)));
-            TracerManager.Instance.Settings.TraceEnabled.Should().BeFalse();
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", false)), tracerSettings);
+            tracerManager.Settings.TraceEnabled.Should().BeFalse();
 
             // re-enable "remotely"
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)));
-            TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)), tracerSettings);
+            tracerManager.Settings.TraceEnabled.Should().BeTrue();
         }
 
         [Fact]
@@ -141,12 +147,13 @@ namespace Datadog.Trace.Tests.Configuration
                 { "DD_TRACE_SAMPLING_RULES", localSamplingRulesJson }
             });
 
-            TracerManager.ReplaceGlobalManager(tracerSettings, TracerManagerFactory.Instance);
+            var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
+            using var sub = tracerSettings.Manager.SubscribeToChanges(x => tracerManager = UpdateTracerManager(x, tracerSettings, tracerManager));
 
-            TracerManager.Instance.Settings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
-            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
+            tracerManager.Settings.CustomSamplingRules.Should().Be(localSamplingRulesJson);
+            tracerManager.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
-            var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
+            var rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
             rules.Should()
                  .BeEquivalentTo(
@@ -171,13 +178,13 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             var configBuilder = CreateConfig(("tracing_sampling_rules", remoteSamplingRulesConfig));
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             var remoteSamplingRulesJson = JsonConvert.SerializeObject(remoteSamplingRulesConfig);
-            TracerManager.Instance.Settings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
-            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
+            tracerManager.Settings.CustomSamplingRules.Should().Be(remoteSamplingRulesJson);
+            tracerManager.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
-            rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
+            rules = ((TraceSampler)tracerManager.PerTraceSettings.TraceSampler)!.GetRules();
 
             // new list should include the remote rules, not the local rules
             rules.Should()
@@ -270,6 +277,24 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             return new DynamicConfigConfigurationSource(configObj, ConfigurationOrigins.RemoteConfig);
+        }
+
+        private static TracerManager UpdateTracerManager(TracerSettings.SettingsManager.SettingChanges updates, TracerSettings settings, TracerManager tracerManager)
+        {
+            var newSettings = updates switch
+            {
+                { UpdatedExporter: { } e, UpdatedMutable: { } m } => settings with { Exporter = e, MutableSettings = m },
+                { UpdatedExporter: { } e } => settings with { Exporter = e },
+                { UpdatedMutable: { } m } => settings with { MutableSettings = m },
+                _ => null,
+            };
+
+            if (newSettings != null)
+            {
+                tracerManager = TracerManagerFactory.Instance.CreateTracerManager(newSettings, tracerManager);
+            }
+
+            return tracerManager;
         }
     }
 }
