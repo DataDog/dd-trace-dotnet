@@ -158,10 +158,10 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Configuration\supported-configurations.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
     <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
     <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

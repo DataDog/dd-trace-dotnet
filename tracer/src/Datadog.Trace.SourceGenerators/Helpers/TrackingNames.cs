@@ -39,6 +39,11 @@ internal class TrackingNames
     public const string ConfigurationKeysAdditionalText = nameof(ConfigurationKeysAdditionalText);
 
     // Configuration key generator
+    public const string ConfigurationKeysGenJsonFile = nameof(ConfigurationKeysGenJsonFile);
+    public const string ConfigurationKeysGenYamlFile = nameof(ConfigurationKeysGenYamlFile);
+    public const string ConfigurationKeysGenMappingFile = nameof(ConfigurationKeysGenMappingFile);
+    public const string ConfigurationKeysGenMergeData = nameof(ConfigurationKeysGenMergeData);
     public const string ConfigurationKeysGenParseConfiguration = nameof(ConfigurationKeysGenParseConfiguration);
-    public const string ConfigurationKeysGenAdditionalText = nameof(ConfigurationKeysGenAdditionalText);
+    public const string ConfigurationKeysGenParseYaml = nameof(ConfigurationKeysGenParseYaml);
+    public const string ConfigurationKeysGenParseMapping = nameof(ConfigurationKeysGenParseMapping);
 }
