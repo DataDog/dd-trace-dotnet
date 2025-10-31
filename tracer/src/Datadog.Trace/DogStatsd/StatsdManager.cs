@@ -7,7 +7,6 @@
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -18,20 +17,30 @@ namespace Datadog.Trace.DogStatsd;
 /// This acts as a wrapper around a "real" <see cref="DogStatsdService"/> service or a <see cref="NoOpStatsd"/> client,
 /// but which responds to changes in settings caused by remote config or configuration in code.
 /// </summary>
-internal sealed class StatsdManager : IDogStatsd
+internal sealed class StatsdManager : IStatsdManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsdManager>();
     private readonly object _lock = new();
     private readonly IDisposable _settingSubscription;
-    private IDogStatsd _current;
-    private bool _isDisposed;
+    private int _isRequiredMask;
+    private StatsdClientHolder? _current;
+    private Func<IDogStatsd> _factory;
 
-    public StatsdManager(TracerSettings tracerSettings, bool includeDefaultTags)
+    public StatsdManager(TracerSettings tracerSettings)
+        : this(tracerSettings, CreateClient)
     {
-        _current = StatsdFactory.CreateDogStatsdClient(
+    }
+
+    // Internal for testing
+    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, IDogStatsd> statsdFactory)
+    {
+        // The initial factory, assuming there's no updates
+        _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
-            tracerSettings.Manager.InitialExporterSettings,
-            includeDefaultTags);
+            tracerSettings.Manager.InitialExporterSettings);
+
+        // We don't create a new client unless we need one, and we rely on consumers of the manager to tell us when it's needed
+        _current = null;
 
         _settingSubscription = tracerSettings.Manager.SubscribeToChanges(c =>
         {
@@ -40,91 +49,113 @@ internal sealed class StatsdManager : IDogStatsd
             // a value then we should check if it's changed here
             if (!HasImpactingChanges(c))
             {
+                Log.Debug("No impacting changes found for StatsdManager, ignoring settings update");
                 return;
             }
 
-            IDogStatsd previous;
-
-            lock (_lock)
-            {
-                if (_isDisposed)
-                {
-                    return;
-                }
-
-                previous = _current;
-                _current = StatsdFactory.CreateDogStatsdClient(
+            // update the factory
+            Log.Debug("Updating statsdClient factory to use new configuration");
+            Interlocked.Exchange(
+                ref _factory,
+                () => statsdFactory(
                     c.UpdatedMutable ?? c.PreviousMutable,
-                    c.UpdatedExporter ?? c.PreviousExporter,
-                    includeDefaultTags);
-            }
+                    c.UpdatedExporter ?? c.PreviousExporter));
 
-            if (previous is DogStatsdService dogStatsdService)
+            // check if we actually need to do an update or if noone is using the client yet
+            if (Volatile.Read(ref _isRequiredMask) != 0)
             {
-                // Kick off disposal in the background after a delay to make sure everything is flushed
-                // There's a risk that something could have grabbed the instance, and if something
-                // tries to write to the client, it will throw an exception.
-                Task.Run(async () =>
-                     {
-                         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-                         dogStatsdService.Flush();
-                         dogStatsdService.Dispose();
-                     })
-                    .ContinueWith(t => Log.Error(t.Exception, "There was an error disposing the statsd client"), TaskContinuationOptions.OnlyOnFaulted);
+                // Someone needs it, so create
+                EnsureClient(ensureCreated: true, forceRecreate: true);
             }
         });
     }
 
-    // Delegated implementation
-    public ITelemetryCounters TelemetryCounters => Volatile.Read(ref _current).TelemetryCounters;
+    /// <inheritdoc cref="IStatsdManager.TryGetClientLease"/>
+    public StatsdClientLease TryGetClientLease()
+    {
+        while (true)
+        {
+            var current = Volatile.Read(ref _current);
+            if (current == null)
+            {
+                return default;
+            }
 
-    public void Configure(StatsdConfig config) => Volatile.Read(ref _current).Configure(config);
+            if (current.TryRetain())
+            {
+                return new StatsdClientLease(current);
+            }
 
-    public void Counter(string statName, double value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Counter(statName, value, sampleRate, tags);
+            // The client was marked for closing, there should be a new one
+            // we can use instead, so loop around and grab that.
+        }
+    }
 
-    public void Decrement(string statName, int value = 1, double sampleRate = 1, params string[] tags) => Volatile.Read(ref _current).Decrement(statName, value, sampleRate, tags);
+    /// <inheritdoc cref="IStatsdManager.SetRequired"/>
+    public void SetRequired(StatsdConsumer consumer, bool enabled)
+    {
+        var bitToSet = (int)consumer;
 
-    public void Event(string title, string text, string? alertType = null, string? aggregationKey = null, string? sourceType = null, int? dateHappened = null, string? priority = null, string? hostname = null, string[]? tags = null) => Volatile.Read(ref _current).Event(title, text, alertType, aggregationKey, sourceType, dateHappened, priority, hostname, tags);
+        if (enabled)
+        {
+            // Set the consumer bit; and check if there's been a change from before
+#if NET6_0_OR_GREATER
+            var prev = Interlocked.Or(ref _isRequiredMask, bitToSet);
+#else
+            // Can't use Interlocked.Or, so have to use a loop to be sure
+            int prev, updated;
+            do
+            {
+                prev = Volatile.Read(ref _isRequiredMask);
+                updated = prev | bitToSet;
+                if (prev == updated)
+                {
+                    // already set, nothing to do
+                    return;
+                }
+            }
+            while (Interlocked.CompareExchange(ref _isRequiredMask, updated, prev) != prev);
+#endif
+            if (prev == 0)
+            {
+                // We transitioned from 0 -> non-zero: ensure client exists
+                EnsureClient(ensureCreated: true, forceRecreate: false);
+            }
+        }
+        else
+        {
+            // Atomically clear bit; clearMask is all ones, excluding the bit we're clearing
+            var clearMask = ~bitToSet;
+#if NET6_0_OR_GREATER
 
-    public void Gauge(string statName, double value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Gauge(statName, value, sampleRate, tags);
-
-    public void Histogram(string statName, double value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Histogram(statName, value, sampleRate, tags);
-
-    public void Distribution(string statName, double value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Distribution(statName, value, sampleRate, tags);
-
-    public void Increment(string statName, int value = 1, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Increment(statName, value, sampleRate, tags);
-
-    public void Set<T>(string statName, T value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Set(statName, value, sampleRate, tags);
-
-    public void Set(string statName, string value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Set(statName, value, sampleRate, tags);
-
-    public IDisposable StartTimer(string name, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).StartTimer(name, sampleRate, tags);
-
-    public void Time(Action action, string statName, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Time(action, statName, sampleRate, tags);
-
-    public T Time<T>(Func<T> func, string statName, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Time(func, statName, sampleRate, tags);
-
-    public void Timer(string statName, double value, double sampleRate = 1, string[]? tags = null) => Volatile.Read(ref _current).Timer(statName, value, sampleRate, tags);
-
-    public void ServiceCheck(string name, Status status, int? timestamp = null, string? hostname = null, string[]? tags = null, string? message = null) => Volatile.Read(ref _current).ServiceCheck(name, status, timestamp, hostname, tags, message);
+            var prev = Interlocked.And(ref _isRequiredMask, clearMask);
+#else
+            int prev, updated;
+            do
+            {
+                prev = Volatile.Read(ref _isRequiredMask);
+                updated = prev & clearMask;
+                if (prev == updated)
+                {
+                    // already cleared, nothing to do
+                    return;
+                }
+            }
+            while (Interlocked.CompareExchange(ref _isRequiredMask, updated, prev) != prev);
+#endif
+            if (prev == bitToSet)
+            {
+                // We transitioned from 1 -> 0: get rid of the client
+                EnsureClient(ensureCreated: false, forceRecreate: false);
+            }
+        }
+    }
 
     public void Dispose()
     {
-        IDogStatsd previous;
-        lock (_lock)
-        {
-            _isDisposed = true;
-            _settingSubscription.Dispose();
-            previous = _current;
-            _current = NoOpStatsd.Instance;
-        }
-
-        // Given we're shutting down at this point, it doesn't seem like it's worth actually disposing
-        // the instance (and risking an error) so we just flush to make sure everything is sent
-        if (previous is DogStatsdService dogStatsdService)
-        {
-            dogStatsdService.Flush();
-        }
+        _settingSubscription.Dispose();
+        // We swap out the client to make sure we do any flushes.
+        EnsureClient(ensureCreated: false, forceRecreate: true);
     }
 
     // Internal for testing
@@ -139,5 +170,135 @@ internal sealed class StatsdManager : IDogStatsd
                             && string.Equals(updated.DefaultServiceName, changes.PreviousMutable.DefaultServiceName, StringComparison.OrdinalIgnoreCase)
                             && updated.GlobalTags.SequenceEqual(changes.PreviousMutable.GlobalTags)));
         return hasChanges;
+    }
+
+    private static IDogStatsd CreateClient(MutableSettings settings, ExporterSettings exporter)
+        => StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true);
+
+    private void EnsureClient(bool ensureCreated, bool forceRecreate)
+    {
+        StatsdClientHolder? previous;
+        Log.Debug("Recreating statsdClient: Create new client: {CreateClient}, Force recreate: {ForceRecreate}", ensureCreated, forceRecreate);
+
+        lock (_lock)
+        {
+            previous = _current;
+            if (ensureCreated && previous != null && !forceRecreate)
+            {
+                // Already created
+                return;
+            }
+
+            _current = ensureCreated
+                           ? new StatsdClientHolder(_factory())
+                           : null;
+        }
+
+        previous?.MarkClosing(); // will dispose when last lease releases
+    }
+
+    internal readonly struct StatsdClientLease(StatsdClientHolder? holder) : IDisposable
+    {
+        private readonly StatsdClientHolder? _holder = holder;
+
+        public IDogStatsd? Client => _holder?.Client;
+
+        public void Dispose() => _holder?.Release();
+    }
+
+    internal sealed class StatsdClientHolder(IDogStatsd client)
+    {
+        private const int ClosingBit = 1 << 31;  // sign bit = closing
+
+        // Logically, _state represents two values we need to check:
+        // - Was MarkClosing() called?
+        // - How many references does it have?
+        // We keep this all in the same variable to avoid race conditions that
+        // would occur if we had separate flag variables for count and closing
+        // high bit = closing, low 31 bits = refcount
+        private int _state;
+        private int _disposed;
+
+        public IDogStatsd Client { get; } = client;
+
+        public bool TryRetain()
+        {
+            while (true)
+            {
+                var state = Volatile.Read(ref _state);
+                if ((state & ClosingBit) != 0)
+                {
+                    // already closing; deny new leases
+                    return false;
+                }
+
+                if ((state & int.MaxValue) == int.MaxValue)
+                {
+                    // Guard against int.MaxValue retentions, won't happen, but play it safe
+                    return false;
+                }
+
+                // Conditionally bump ref count
+                if (Interlocked.CompareExchange(ref _state, state + 1, state) == state)
+                {
+                    // ok, increment ref count
+                    return true;
+                }
+
+                // The state of the client holder changed out from under us (someone else retained it, or it was closed), try again
+            }
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="StatsdClientLease"/> to indicate client is done with it
+        /// </summary>
+        public void Release()
+        {
+            var v = Interlocked.Decrement(ref _state);
+            if (v == ClosingBit)
+            {
+                // count hit zero and we're marked as closing
+                Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="StatsdManager"/> when swapping clients
+        /// </summary>
+        public void MarkClosing()
+        {
+            // Set the closing bit to ensure no more retention of client
+#if NET6_0_OR_GREATER
+            Interlocked.Or(ref _state, ClosingBit);
+#else
+            // Interlocked.Or is not available in < .NET 6, so have to emulate it
+            int state;
+            do
+            {
+                state = Volatile.Read(ref _state);
+            }
+            while (Interlocked.CompareExchange(ref _state, state | ClosingBit, state) != state);
+#endif
+
+            // If ref count is 0 (i.e., state == ClosingBit), dispose now; else wait for Release() to reach 0
+            if ((Volatile.Read(ref _state) & int.MaxValue) == 0)
+            {
+                Dispose();
+            }
+        }
+
+        private void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                Log.Debug("Disposing DogStatsdService");
+                if (Client is DogStatsdService dogStatsd)
+                {
+                    dogStatsd.Flush();
+                }
+
+                Client.Dispose();
+            }
+        }
     }
 }
