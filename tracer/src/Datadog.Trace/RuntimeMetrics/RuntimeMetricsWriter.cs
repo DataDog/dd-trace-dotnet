@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -28,7 +29,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private static readonly Version Windows81Version = new(6, 3, 9600);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
-        private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+        private static readonly Func<IStatsdManager, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
 
         [ThreadStatic]
         private static bool _inspectingFirstChanceException;
@@ -51,7 +52,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
-        private IDogStatsd _statsd;
+        private readonly IStatsdManager _statsd;
         private int _outOfMemoryCount;
 
         // The time when the runtime metrics were last pushed
@@ -61,15 +62,16 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousSystemCpu;
         private int _disposed;
 
-        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
+        public RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext)
             : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext, Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext, Func<IStatsdManager, TimeSpan, bool, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
+            _statsd.SetRequired(StatsdConsumer.RuntimeMetricsWriter, enabled: true);
             _lastUpdate = DateTime.UtcNow;
 
             try
@@ -158,12 +160,6 @@ namespace Datadog.Trace.RuntimeMetrics
             _exceptionCounts.Clear();
         }
 
-        internal void UpdateStatsd(IDogStatsd statsd)
-        {
-            Interlocked.Exchange(ref _statsd, statsd);
-            _listener?.UpdateStatsd(statsd);
-        }
-
         internal void PushEvents()
         {
             if (Volatile.Read(ref _disposed) == 1)
@@ -180,6 +176,10 @@ namespace Datadog.Trace.RuntimeMetrics
                 _lastUpdate = now;
 
                 _listener?.Refresh();
+                // if we can't send stats (e.g. we're shutting down), there's not much point in
+                // running all this, but seeing as we update various state, play it safe and just do no-ops
+                using var lease = _statsd.TryGetClientLease();
+                var statsd = lease.Client ?? NoOpStatsd.Instance;
 
                 if (_enableProcessMetrics)
                 {
@@ -196,25 +196,28 @@ namespace Datadog.Trace.RuntimeMetrics
                     var maximumCpu = Environment.ProcessorCount * elapsedSinceLastUpdate.TotalMilliseconds;
                     var totalCpu = userCpu + systemCpu;
 
-                    _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
+                    statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
 
 #if NETSTANDARD
                     if (_enableProcessMemory)
                     {
-                        _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
+                        statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
                         Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.CommittedMemory);
                     }
 #else
-                    _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
+                    statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
 #endif
 
                     // Get CPU time in milliseconds per second
-                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
-                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
+                    statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
+                    statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
 
-                    _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
+                    statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
 
-                    Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ProcessMetrics);
+                    if (statsd is not NoOpStatsd)
+                    {
+                        Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ProcessMetrics);
+                    }
                 }
 
                 bool sentExceptionCount = false;
@@ -222,7 +225,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 if (Volatile.Read(ref _outOfMemoryCount) > 0)
                 {
                     var oomCount = Interlocked.Exchange(ref _outOfMemoryCount, 0);
-                    _statsd.Increment(MetricsNames.ExceptionsCount, oomCount, tags: [$"exception_type:{OutOfMemoryExceptionName}"]);
+                    statsd.Increment(MetricsNames.ExceptionsCount, oomCount, tags: [$"exception_type:{OutOfMemoryExceptionName}"]);
                     sentExceptionCount = true;
                 }
 
@@ -230,7 +233,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     foreach (var element in _exceptionCounts)
                     {
-                        _statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: [$"exception_type:{element.Key}"]);
+                        statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: [$"exception_type:{element.Key}"]);
                     }
 
                     // There's a race condition where we could clear items that haven't been pushed
@@ -273,7 +276,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
+        private static IRuntimeMetricsListener InitializeListener(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext)
         {
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);

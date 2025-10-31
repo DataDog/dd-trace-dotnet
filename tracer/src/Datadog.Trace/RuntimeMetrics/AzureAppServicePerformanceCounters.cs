@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -20,14 +21,16 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureAppServicePerformanceCounters>();
-        private IDogStatsd _statsd;
+        private readonly IStatsdManager _statsd;
 
         private int? _previousGen0Count;
         private int? _previousGen1Count;
         private int? _previousGen2Count;
 
-        public AzureAppServicePerformanceCounters(IDogStatsd statsd)
+        public AzureAppServicePerformanceCounters(IStatsdManager statsd)
         {
+            // We assume this is always used by RuntimeMetricsWriter, and therefore we hae already called SetRequired()
+            // If it's every used outside that context, we need to update to use SetRequired instead
             _statsd = statsd;
         }
 
@@ -37,13 +40,20 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Refresh()
         {
+            using var lease = _statsd.TryGetClientLease();
+            if (lease.Client is not { } statsd)
+            {
+                // bail out, we have no client for some reason
+                return;
+            }
+
             var rawValue = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableName);
             var value = JsonConvert.DeserializeObject<PerformanceCountersValue>(rawValue);
 
-            _statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);
-            _statsd.Gauge(MetricsNames.Gen1HeapSize, value.Gen1Size);
-            _statsd.Gauge(MetricsNames.Gen2HeapSize, value.Gen2Size);
-            _statsd.Gauge(MetricsNames.LohSize, value.LohSize);
+            statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);
+            statsd.Gauge(MetricsNames.Gen1HeapSize, value.Gen1Size);
+            statsd.Gauge(MetricsNames.Gen2HeapSize, value.Gen2Size);
+            statsd.Gauge(MetricsNames.LohSize, value.LohSize);
 
             var gen0 = GC.CollectionCount(0);
             var gen1 = GC.CollectionCount(1);
@@ -51,17 +61,17 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (_previousGen0Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
+                statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
             if (_previousGen1Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
+                statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
             if (_previousGen2Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
+                statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }
 
             _previousGen0Count = gen0;
@@ -69,11 +79,6 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen2Count = gen2;
 
             Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
-        }
-
-        public void UpdateStatsd(IDogStatsd statsd)
-        {
-            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         private class PerformanceCountersValue

@@ -60,7 +60,7 @@ namespace Datadog.Trace
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
@@ -154,7 +154,7 @@ namespace Datadog.Trace
         /// Gets the global <see cref="QueryStringManager"/> instance.
         public QueryStringManager QueryStringManager { get; }
 
-        public IDogStatsd Statsd { get; }
+        public IStatsdManager Statsd { get; }
 
         public ITraceProcessor[] TraceProcessors { get; }
 
@@ -776,7 +776,8 @@ namespace Datadog.Trace
             // send traces to the Agent
             if (_instance?.PerTraceSettings.Settings.TracerMetricsEnabled == true)
             {
-                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+                using var lease = _instance.Statsd.TryGetClientLease();
+                lease.Client?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
             }
         }
 

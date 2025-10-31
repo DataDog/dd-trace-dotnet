@@ -7,7 +7,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -22,7 +24,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         {
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new PerformanceCountersListener(statsd.Object);
+            using var listener = new PerformanceCountersListener(new TestStatsdManager(statsd.Object));
 
             await listener.WaitForInitialization();
 
@@ -64,7 +66,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new TestPerformanceCounterListener(statsd.Object, Callback);
+            using var listener = new TestPerformanceCounterListener(new TestStatsdManager(statsd.Object), Callback);
 
             // The first SignalAndWait will deadlock if InitializePerformanceCounters is not called asynchronously
             barrier.SignalAndWait();
@@ -86,7 +88,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             // The field needs to be volatile because it's used concurrently from two threads
             private volatile Action _callback;
 
-            public TestPerformanceCounterListener(IDogStatsd statsd, Action callback)
+            public TestPerformanceCounterListener(IStatsdManager statsd, Action callback)
                 : base(statsd)
             {
                 _callback = callback;
