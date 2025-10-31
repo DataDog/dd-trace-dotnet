@@ -9,11 +9,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using HashCode = System.HashCode;
 
 /// <summary>
 /// Source generator that reads supported-configurations.json and generates ConfigurationKeys
@@ -31,81 +31,70 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Get all configuration files
-        var configFiles = context.AdditionalTextsProvider
-                                 .Where(static file =>
-                                 {
-                                     var fileName = Path.GetFileName(file.Path);
-                                     return fileName.Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase) ||
-                                            fileName.Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase) ||
-                                            fileName.Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase);
-                                 })
-                                 .WithTrackingName(TrackingNames.ConfigurationKeysGenAdditionalText);
-        var parsedConfig = configFiles.Collect().Select(static (allFiles, ct) =>
-                                      {
-                                          // Find each file type
-                                          AdditionalText? jsonFile = null;
-                                          AdditionalText? yamlFile = null;
-                                          AdditionalText? mappingFile = null;
+        // Create THREE separate single-value providers - each caches independently
 
-                                          foreach (var file in allFiles)
-                                          {
-                                              var fileName = Path.GetFileName(file.Path);
-                                              if (fileName.Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
-                                              {
-                                                  jsonFile = file;
-                                              }
-                                              else if (fileName.Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase))
-                                              {
-                                                  yamlFile = file;
-                                              }
-                                              else if (fileName.Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase))
-                                              {
-                                                  mappingFile = file;
-                                              }
-                                          }
+        // JSON pipeline
+        var jsonData = context.AdditionalTextsProvider
+                              .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
+                              .Select(static (file, ct) => file.GetText(ct))
+                             .WithTrackingName(TrackingNames.ConfigurationKeysGenJsonFile)
+                              .Select(static (text, _) =>
+                              {
+                                  var content = text?.ToString() ?? string.Empty;
+                                  return ParseJsonContent(content);
+                              })
+                              .Collect()
+                             .WithTrackingName(TrackingNames.ConfigurationKeysGenParseConfiguration); // Now it's IncrementalValueProvider<ImmutableArray<Result>>
 
-                                          // JSON file is required
-                                          if (jsonFile is null)
-                                          {
-                                              return new Result<ConfigurationData>(
-                                                  null!,
-                                                  new EquatableArray<DiagnosticInfo>(
-                                                  [
-                                                      CreateDiagnosticInfo("DDSG0005", "Configuration file not found", $"The file '{SupportedConfigurationsFileName}' was not found. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
-                                                  ]));
-                                          }
+        // YAML pipeline
+        var yamlData = context.AdditionalTextsProvider
+                              .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsDocsFileName, StringComparison.OrdinalIgnoreCase))
+                              .Select(static (file, ct) => file.GetText(ct))
+                              .WithTrackingName(TrackingNames.ConfigurationKeysGenYamlFile)
+                              .Select(static (text, _) =>
+                               {
+                                   var content = text?.ToString() ?? string.Empty;
+                                   return ParseYamlContent(content);
+                               })
+                              .Collect()
+                              .WithTrackingName(TrackingNames.ConfigurationKeysGenParseYaml);
 
-                                          // Read JSON file (required)
-                                          var jsonText = jsonFile.GetText(ct);
-                                          if (jsonText is null)
-                                          {
-                                              return new Result<ConfigurationData>(
-                                                  null!,
-                                                  new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0006", "Configuration file read error", $"Unable to read the content of '{SupportedConfigurationsFileName}'.", DiagnosticSeverity.Error)]));
-                                          }
+        // Mapping pipeline
+        var mappingData = context.AdditionalTextsProvider
+                                 .Where(static file => Path.GetFileName(file.Path).Equals(ConfigurationKeysMappingFileName, StringComparison.OrdinalIgnoreCase))
+                                 .Select(static (file, ct) => file.GetText(ct)).WithTrackingName(TrackingNames.ConfigurationKeysGenMappingFile)
+                                 .Select(static (text, _) =>
+                                  {
+                                      var content = text?.ToString() ?? string.Empty;
+                                      return ParseMappingContent(content);
+                                  })
+                                 .Collect()
+                                 .WithTrackingName(TrackingNames.ConfigurationKeysGenParseMapping);
 
-                                          // Read optional YAML file
-                                          string? yamlContent = null;
-                                          if (yamlFile is not null)
-                                          {
-                                              yamlContent = yamlFile.GetText(ct)?.ToString();
-                                          }
+        // Combine the three independent providers
+        var combined = jsonData
+                      .Combine(yamlData)
+                      .Combine(mappingData)
+                      .Select(static (data, _) =>
+                      {
+                          var ((jsonArray, yamlArray), mappingArray) = data;
 
-                                          // Read optional mapping file
-                                          string? mappingContent = null;
-                                          if (mappingFile is not null)
-                                          {
-                                              mappingContent = mappingFile.GetText(ct)?.ToString();
-                                          }
+                          var json = jsonArray.Length > 0
+                              ? jsonArray[0]
+                              : new Result<ConfigurationData>(null!, new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0005", "Missing", "JSON not found", DiagnosticSeverity.Error)]));
 
-                                          return ParseConfigurationContent(jsonText.ToString(), yamlContent, mappingContent, ct);
-                                      })
-                                     .WithTrackingName(TrackingNames.ConfigurationKeysGenParseConfiguration);
+                          var yaml = yamlArray.Length > 0
+                              ? yamlArray[0]
+                              : new Result<ParsedYamlDocs>(new ParsedYamlDocs(null), new EquatableArray<DiagnosticInfo>());
 
-        context.RegisterSourceOutput(
-            parsedConfig,
-            static (spc, result) => Execute(spc, result));
+                          var mapping = mappingArray.Length > 0
+                              ? mappingArray[0]
+                              : new Result<ParsedMappingData>(new ParsedMappingData(null), new EquatableArray<DiagnosticInfo>());
+
+                          return MergeResults(json, yaml, mapping);
+                      }).WithTrackingName(TrackingNames.ConfigurationKeysGenMergeData);
+
+        context.RegisterSourceOutput(combined, static (spc, result) => Execute(spc, result));
     }
 
     private static void Execute(SourceProductionContext context, Result<ConfigurationData> result)
@@ -136,78 +125,30 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         }
     }
 
-    private static Result<ConfigurationData> ParseConfigurationContent(string jsonContent, string? yamlContent, string? mappingContent, CancellationToken cancellationToken)
+    // Parse JSON content from string
+    private static Result<ConfigurationData> ParseJsonContent(string content)
     {
+        if (string.IsNullOrEmpty(content))
+        {
+            return new Result<ConfigurationData>(null!, new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0006", "Read error", "JSON content is empty", DiagnosticSeverity.Error)]));
+        }
+
         try
         {
-            using var document = JsonDocument.Parse(jsonContent);
+            using var document = JsonDocument.Parse(content);
             var root = document.RootElement;
 
-            // Extract the supportedConfigurations section from JSON
             if (!root.TryGetProperty("supportedConfigurations", out var configSection))
             {
-                return new Result<ConfigurationData>(
-                    null!,
-                    new EquatableArray<DiagnosticInfo>(
-                    [
-                        CreateDiagnosticInfo("DDSG0007", "JSON parse error", $"Failed to find 'supportedConfigurations' section in {SupportedConfigurationsFileName}.", DiagnosticSeverity.Error)
-                    ]));
+                return new Result<ConfigurationData>(null!, new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0007", "JSON parse error", "Missing 'supportedConfigurations' section", DiagnosticSeverity.Error)]));
             }
 
-            // Parse mapping file if available
-            Dictionary<string, ConstantNameMapping>? nameMapping = null;
-            if (mappingContent != null && !string.IsNullOrEmpty(mappingContent))
-            {
-                try
-                {
-                    nameMapping = ParseMappingFile(mappingContent);
-                }
-                catch
-                {
-                    // Mapping is optional, continue without it
-                }
-            }
-
-            // Parse YAML documentation if available
-            Dictionary<string, string>? yamlDocs = null;
-            if (yamlContent != null && !string.IsNullOrEmpty(yamlContent))
-            {
-                try
-                {
-                    yamlDocs = YamlReader.ParseDocumentation(yamlContent);
-                }
-                catch
-                {
-                    // YAML parsing is optional, continue without it
-                }
-            }
-
-            // Parse each configuration entry from JSON
             var configurations = ParseConfigurationEntries(configSection);
 
-            // Parse deprecations section
-            Dictionary<string, string>? deprecations = null;
+            // Parse deprecations
             if (root.TryGetProperty("deprecations", out var deprecationsSection))
             {
-                deprecations = ParseDeprecations(deprecationsSection);
-            }
-
-            // Override documentation from YAML if available
-            if (yamlDocs != null)
-            {
-                foreach (var key in yamlDocs.Keys)
-                {
-                    if (configurations.ContainsKey(key))
-                    {
-                        var existing = configurations[key];
-                        configurations[key] = new ConfigEntry(existing.Key, yamlDocs[key], existing.Product, existing.DeprecationMessage);
-                    }
-                }
-            }
-
-            // Add deprecation messages to entries
-            if (deprecations != null)
-            {
+                var deprecations = ParseDeprecations(deprecationsSection);
                 foreach (var kvp in deprecations)
                 {
                     if (configurations.ContainsKey(kvp.Key))
@@ -218,17 +159,85 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                 }
             }
 
-            return new Result<ConfigurationData>(new ConfigurationData(configurations, nameMapping), new EquatableArray<DiagnosticInfo>());
+            return new Result<ConfigurationData>(new ConfigurationData(configurations, null), new EquatableArray<DiagnosticInfo>());
         }
         catch (Exception ex)
         {
-            return new Result<ConfigurationData>(
-                null!,
-                new EquatableArray<DiagnosticInfo>(
-                [
-                    CreateDiagnosticInfo("DDSG0007", "JSON parse error", $"Error parsing supported-configurations.json: {ex.Message}", DiagnosticSeverity.Error)
-                ]));
+            return new Result<ConfigurationData>(null!, new EquatableArray<DiagnosticInfo>([CreateDiagnosticInfo("DDSG0007", "JSON parse error", $"Error: {ex.Message}", DiagnosticSeverity.Error)]));
         }
+    }
+
+    // Parse YAML content from string
+    private static Result<ParsedYamlDocs> ParseYamlContent(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return new Result<ParsedYamlDocs>(new ParsedYamlDocs(null), new EquatableArray<DiagnosticInfo>());
+        }
+
+        try
+        {
+            var docs = YamlReader.ParseDocumentation(content);
+            return new Result<ParsedYamlDocs>(new ParsedYamlDocs(docs), new EquatableArray<DiagnosticInfo>());
+        }
+        catch
+        {
+            return new Result<ParsedYamlDocs>(new ParsedYamlDocs(null), new EquatableArray<DiagnosticInfo>());
+        }
+    }
+
+    // Parse mapping content from string
+    private static Result<ParsedMappingData> ParseMappingContent(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return new Result<ParsedMappingData>(new ParsedMappingData(null), new EquatableArray<DiagnosticInfo>());
+        }
+
+        try
+        {
+            var mapping = ParseMappingJson(content);
+            return new Result<ParsedMappingData>(new ParsedMappingData(mapping), new EquatableArray<DiagnosticInfo>());
+        }
+        catch
+        {
+            return new Result<ParsedMappingData>(new ParsedMappingData(null), new EquatableArray<DiagnosticInfo>());
+        }
+    }
+
+    // Merge all parsed results into final ConfigurationData
+    private static Result<ConfigurationData> MergeResults(
+        Result<ConfigurationData> jsonResult,
+        Result<ParsedYamlDocs> yamlResult,
+        Result<ParsedMappingData> mappingResult)
+    {
+        var diagnostics = new List<DiagnosticInfo>(jsonResult.Errors);
+        diagnostics.AddRange(yamlResult.Errors);
+        diagnostics.AddRange(mappingResult.Errors);
+
+        if (jsonResult.Value is null)
+        {
+            return new Result<ConfigurationData>(null!, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
+        }
+
+        var configurations = new Dictionary<string, ConfigEntry>(jsonResult.Value.Configurations);
+
+        // Merge YAML docs
+        var yamlDocs = yamlResult.Value.Docs;
+        if (yamlDocs != null)
+        {
+            foreach (var kvp in yamlDocs)
+            {
+                if (configurations.ContainsKey(kvp.Key))
+                {
+                    var existing = configurations[kvp.Key];
+                    configurations[kvp.Key] = new ConfigEntry(existing.Key, kvp.Value, existing.Product, existing.DeprecationMessage);
+                }
+            }
+        }
+
+        var nameMapping = mappingResult.Value.Mapping;
+        return new Result<ConfigurationData>(new ConfigurationData(configurations, nameMapping), new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
     }
 
     private static Dictionary<string, string> ParseDeprecations(JsonElement deprecationsElement)
@@ -340,7 +349,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static Dictionary<string, ConstantNameMapping> ParseMappingFile(string mappingJson)
+    private static Dictionary<string, ConstantNameMapping> ParseMappingJson(string mappingJson)
     {
         var mapping = new Dictionary<string, ConstantNameMapping>();
 
@@ -521,7 +530,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
         public override bool Equals(object? obj) => obj is ConfigEntry other && Equals(other);
 
-        public override int GetHashCode() => System.HashCode.Combine(Key, Documentation, Product, DeprecationMessage);
+        public override int GetHashCode() => HashCode.Combine(Key, Documentation, Product, DeprecationMessage);
     }
 
     private readonly struct ConstantNameMapping : IEquatable<ConstantNameMapping>
@@ -538,6 +547,116 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         public override bool Equals(object? obj) => obj is ConstantNameMapping other && Equals(other);
 
         public override int GetHashCode() => ConstantName.GetHashCode();
+    }
+
+    private readonly struct ParsedYamlDocs : IEquatable<ParsedYamlDocs>
+    {
+        public ParsedYamlDocs(Dictionary<string, string>? docs)
+        {
+            Docs = docs;
+        }
+
+        public Dictionary<string, string>? Docs { get; }
+
+        public bool Equals(ParsedYamlDocs other)
+        {
+            if (Docs == null && other.Docs == null)
+            {
+                return true;
+            }
+
+            if (Docs == null || other.Docs == null || Docs.Count != other.Docs.Count)
+            {
+                return false;
+            }
+
+            foreach (var kvp in Docs)
+            {
+                if (!other.Docs.TryGetValue(kvp.Key, out var otherValue) || kvp.Value != otherValue)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object? obj) => obj is ParsedYamlDocs other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            if (Docs == null)
+            {
+                return 0;
+            }
+
+            var hash = new HashCode();
+            hash.Add(Docs.Count);
+
+            // Hash keys and values in sorted order for determinism
+            foreach (var kvp in Docs.OrderBy(x => x.Key))
+            {
+                hash.Add(kvp.Key);
+                hash.Add(kvp.Value);
+            }
+
+            return hash.ToHashCode();
+        }
+    }
+
+    private readonly struct ParsedMappingData : IEquatable<ParsedMappingData>
+    {
+        public ParsedMappingData(Dictionary<string, ConstantNameMapping>? mapping)
+        {
+            Mapping = mapping;
+        }
+
+        public Dictionary<string, ConstantNameMapping>? Mapping { get; }
+
+        public bool Equals(ParsedMappingData other)
+        {
+            if (Mapping == null && other.Mapping == null)
+            {
+                return true;
+            }
+
+            if (Mapping == null || other.Mapping == null || Mapping.Count != other.Mapping.Count)
+            {
+                return false;
+            }
+
+            foreach (var kvp in Mapping)
+            {
+                if (!other.Mapping.TryGetValue(kvp.Key, out var otherValue) || !kvp.Value.Equals(otherValue))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object? obj) => obj is ParsedMappingData other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            if (Mapping == null)
+            {
+                return 0;
+            }
+
+            var hash = new HashCode();
+            hash.Add(Mapping.Count);
+
+            // Hash keys and values in sorted order for determinism
+            foreach (var kvp in Mapping.OrderBy(x => x.Key))
+            {
+                hash.Add(kvp.Key);
+                hash.Add(kvp.Value);
+            }
+
+            return hash.ToHashCode();
+        }
     }
 
     private sealed class ConfigurationData : IEquatable<ConfigurationData>
@@ -621,7 +740,28 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
         public override int GetHashCode()
         {
-            return System.HashCode.Combine(Configurations.Count, NameMapping?.Count ?? 0);
+            var hash = new HashCode();
+            hash.Add(Configurations.Count);
+
+            // Hash configuration keys and values in sorted order for determinism
+            foreach (var kvp in Configurations.OrderBy(x => x.Key))
+            {
+                hash.Add(kvp.Key);
+                hash.Add(kvp.Value);
+            }
+
+            // Hash name mapping
+            if (NameMapping != null)
+            {
+                hash.Add(NameMapping.Count);
+                foreach (var kvp in NameMapping.OrderBy(x => x.Key))
+                {
+                    hash.Add(kvp.Key);
+                    hash.Add(kvp.Value);
+                }
+            }
+
+            return hash.ToHashCode();
         }
     }
 }
