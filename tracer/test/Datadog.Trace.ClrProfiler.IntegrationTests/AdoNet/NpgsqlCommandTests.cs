@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(ContainersCollection.Name)]
+    [Collection(PostgresCollection.Name)]
     [UsesVerify]
     public class NpgsqlCommandTests : TracingIntegrationTest
     {
