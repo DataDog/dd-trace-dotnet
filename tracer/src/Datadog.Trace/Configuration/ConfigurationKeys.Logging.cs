@@ -12,7 +12,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key for enabling or disabling the diagnostic log at startup
         /// </summary>
-        /// <seealso cref="TracerSettings.StartupDiagnosticLogEnabled"/>
+        /// <seealso cref="MutableSettings.StartupDiagnosticLogEnabled"/>
         public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
 
         /// <summary>
