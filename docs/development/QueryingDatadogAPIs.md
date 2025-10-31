@@ -59,6 +59,7 @@ curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
 - The request body must be wrapped in `{"data": {"attributes": {...}, "type": "search_request"}}` structure
 - API keys can be obtained from https://app.datadoghq.com/organization-settings/api-keys
 - Full API documentation: https://docs.datadoghq.com/api/latest/spans/
+- **Shell variable substitution issue**: If using environment variables like `${DD_API_KEY}` fails with "Unauthorized" errors, try using the key values directly in the curl command instead of shell variable substitution. Some shells may have issues with variable expansion in curl headers.
 
 ## Common Use Cases
 
@@ -78,6 +79,49 @@ The `query` field supports the Datadog query syntax:
 - `operation_name:<op-name>` - Filter by operation name
 - Combine with boolean operators: `service:my-service AND env:prod`
 - Exclude with `-`: `service:my-service -resource_name:*ping*`
+
+## Response Structure
+
+The Spans API returns data in the following structure:
+
+```json
+{
+  "data": [
+    {
+      "id": "...",
+      "type": "spans",
+      "attributes": {
+        "operation_name": "azure_functions.invoke",
+        "resource_name": "GET /api/endpoint",
+        "span_id": "4208934728885019856",
+        "parent_id": "0",
+        "trace_id": "690507fc00000000b882bcd2bdac6b9e",
+        "start_timestamp": 1761937404333164200,
+        "end_timestamp": 1761937404533785600,
+        "status": "ok",
+        "service": "service-name",
+        "env": "environment",
+        "tags": ["tag1:value1", "tag2:value2"],
+        "custom": {
+          "duration": 200621200,
+          "aas": {
+            "function": {
+              "process": "host",
+              "name": "HttpTest"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Key fields:
+- `attributes.span_id` and `attributes.parent_id` - Direct span relationship fields (not in `custom`)
+- `attributes.operation_name` and `attributes.resource_name` - At root of `attributes`
+- `attributes.custom.*` - Custom tags and metadata (including nested objects like `aas.function.process`)
+- `attributes.tags[]` - Array of tag strings in `key:value` format
 
 ## Example: Debugging Span Parenting
 
@@ -129,6 +173,68 @@ When investigating span parenting issues (e.g., verifying that child spans are c
    ```
 
 4. Verify the parent-child relationships by checking that each span's `parent_id` matches another span's `span_id` in the trace.
+
+## PowerShell Helper Script
+
+The repository includes a PowerShell script that simplifies querying traces from the Datadog API.
+
+### Get-DatadogTrace.ps1
+
+**Location**: `tracer/tools/Get-DatadogTrace.ps1`
+
+This script retrieves all spans for a given trace ID and displays them in various formats.
+
+**Prerequisites:**
+- Set environment variables: `DD_API_KEY` and `DD_APPLICATION_KEY`
+- API keys can be obtained from https://app.datadoghq.com/organization-settings/api-keys
+
+**Basic usage:**
+```powershell
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e"
+```
+
+**Parameters:**
+- `-TraceId` (required) - The 128-bit trace ID in hex format
+- `-TimeRange` (optional) - How far back to search (default: "2h"). Examples: "15m", "1h", "2h", "1d"
+- `-OutputFormat` (optional) - Output format: "table" (default), "json", or "hierarchy"
+
+**Output formats:**
+
+1. **Table** (default) - Formatted table with key span information:
+   ```powershell
+   .\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e"
+   ```
+   Shows: Operation, Resource, Span ID, Parent ID, Process, Duration
+
+2. **Hierarchy** - Tree view showing parent-child relationships:
+   ```powershell
+   .\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat hierarchy
+   ```
+   Useful for visualizing span nesting and verifying proper parent-child relationships
+
+3. **JSON** - Raw JSON output for further processing:
+   ```powershell
+   .\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat json
+   ```
+
+**Example workflow:**
+
+1. Get a recent trace ID from your service:
+   ```bash
+   curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
+     -H "DD-API-KEY: $DD_API_KEY" \
+     -H "DD-APPLICATION-KEY: $DD_APPLICATION_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"data":{"attributes":{"filter":{"query":"service:my-service","from":"now-5m","to":"now"},"sort":"-timestamp","page":{"limit":1}},"type":"search_request"}}' \
+     | jq -r '.data[0].attributes.trace_id'
+   ```
+
+2. Analyze the full trace with the PowerShell script:
+   ```powershell
+   .\tracer\tools\Get-DatadogTrace.ps1 -TraceId "<trace-id-from-step-1>" -OutputFormat hierarchy
+   ```
+
+**Note**: The script uses `Invoke-RestMethod` which properly handles authentication headers, avoiding the shell variable substitution issues that can occur with curl.
 
 ## Logs Search API
 
