@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
@@ -18,7 +19,7 @@ public class DataStreamsApiTests
     public async Task SendAsync_When200_ReturnsTrue()
     {
         var factory = new TestRequestFactory(x => new TestApiRequest(x));
-        var api = new DataStreamsApi(factory);
+        var api = new DataStreamsApi(new TracerSettings().Manager, _ => factory);
 
         var result = await api.SendAsync(new ArraySegment<byte>(new byte[64]));
         factory.RequestsSent.Should().HaveCount(1);
@@ -33,7 +34,7 @@ public class DataStreamsApiTests
     public async Task SendAsync_WhenError_ReturnsFalse_AndDoesntRetry(int statusCode)
     {
         var factory = new TestRequestFactory(x => new TestApiRequest(x, statusCode));
-        var api = new DataStreamsApi(factory);
+        var api = new DataStreamsApi(new TracerSettings().Manager, _ => factory);
 
         var result = await api.SendAsync(new ArraySegment<byte>(new byte[64]));
         factory.RequestsSent.Should().HaveCount(1);

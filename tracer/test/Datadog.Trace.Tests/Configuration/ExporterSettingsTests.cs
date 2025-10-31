@@ -92,6 +92,43 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
+
+        [Theory]
+        [InlineData("""C:\Users\andrew.lock\AppData\Local\Temp\nltdjakv.cbs""")]
+        [InlineData("/some/socket.soc")]
+        public void Metrics_UdsTraceAgent_UsesDefaultUdp(string socket)
+        {
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            AssertUdsIsConfigured(config, socket.Replace('\\', '/'));
+            AssertMetricsUdpIsConfigured(config);
+            config.ValidationWarnings.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void Metrics_UdsTraceAgent_EmptyDogStatsdUrl_UsesDefaultUdp(string metricsSocket)
+        {
+            var socket = "/some/socket.soc";
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_URL:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            AssertUdsIsConfigured(config, socket);
+            AssertMetricsUdpIsConfigured(config);
+            config.ValidationWarnings.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void Metrics_UdsTraceAgent_EmptyDogStatsdSocket_UsesDefaultUdp(string metricsSocket)
+        {
+            var socket = "/some/socket.soc";
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_SOCKET:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            AssertUdsIsConfigured(config, socket);
+            AssertMetricsUdpIsConfigured(config);
+            config.ValidationWarnings.Should().BeEmpty();
+        }
 #else
         [Fact]
         public void Metrics_DogStatsdUrl_UdsUnsupported_UsesDefaultUdpOnWindows()
@@ -104,7 +141,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void Metrics_DogStatsdUrl_UdsUnsupported_UsesDefaultUdsOnLinux()
+        public void Metrics_DogStatsdUrl_UdsUnsupported_UsesDefaultUdpOnLinux()
         {
             var socketPath = @"/some/socket.soc";
             var settings = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{socketPath}", "DD_TRACE_AGENT_URL:http://localhost:8126");

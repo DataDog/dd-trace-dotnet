@@ -12,18 +12,34 @@ namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {
-        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, ExporterSettings exporterSettings)
+        public TelemetryTransportFactory(TelemetrySettings telemetrySettings)
         {
-            var agentProxy = telemetrySettings is { AgentProxyEnabled: true }
-                                 ? GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled)
-                                 : null;
+            AgentTransportFactory = telemetrySettings switch
+            {
+                { AgentProxyEnabled: true, DebugEnabled: true } => static e => GetAgentFactory(e, true),
+                { AgentProxyEnabled: true, DebugEnabled: false } => static e => GetAgentFactory(e, false),
+                _ => null,
+            };
 
-            var agentless = telemetrySettings is { Agentless: { } a }
-                                ? GetAgentlessFactory(a, telemetrySettings.DebugEnabled)
-                                : null;
-
-            return new TelemetryTransports(agentProxy, agentless);
+            AgentlessTransport = telemetrySettings is { Agentless: { } a }
+                                     ? GetAgentlessFactory(a, telemetrySettings.DebugEnabled)
+                                     : null;
         }
+
+        // Internal for testing
+        internal TelemetryTransportFactory(
+            Func<ExporterSettings, ITelemetryTransport>? agentTransportFactory,
+            ITelemetryTransport? agentlessTransport)
+        {
+            AgentTransportFactory = agentTransportFactory;
+            AgentlessTransport = agentlessTransport;
+        }
+
+        public Func<ExporterSettings, ITelemetryTransport>? AgentTransportFactory { get; }
+
+        public ITelemetryTransport? AgentlessTransport { get; }
+
+        public bool HasTransports => AgentTransportFactory is not null || AgentlessTransport is not null;
 
         private static ITelemetryTransport GetAgentFactory(ExporterSettings exporterSettings, bool debugEnabled)
             => new AgentTelemetryTransport(
