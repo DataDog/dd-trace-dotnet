@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests.IAST;
 
 [Trait("RequiresDockerDependency", "true")]
-[Collection(ContainersCollection.Name)]
+[Collection(PostgresCollection.Name)]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, PostgresFixture postgresFixture, ITestOutputHelper outputHelper)

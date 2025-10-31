@@ -652,8 +652,7 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
     }
 }
 
-[Collection(ContainersCollection.Name)]
-public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>, IClassFixture<PostgresFixture>
+public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
         : this(fixture, null, outputHelper, enableIast, testName, isIastDeduplicationEnabled, samplingRate, vulnerabilitiesPerRequest, redactionEnabled, iastTelemetryLevel)

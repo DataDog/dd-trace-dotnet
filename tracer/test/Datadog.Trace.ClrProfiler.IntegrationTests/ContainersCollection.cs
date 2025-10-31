@@ -9,15 +9,25 @@ using Xunit;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 /// <summary>
-/// Collection definition for TestContainers.
-/// Using ICollectionFixture ensures that ONE instance of each fixture is shared across all test classes
-/// in the collection, and disposed when all tests complete. This prevents race conditions and
-/// eliminates the need for reference counting.
+/// Collection definition for Postgres tests.
+/// Using ICollectionFixture ensures that ONE PostgresFixture instance is shared across all test classes
+/// in this collection. The container starts when the first test runs and stops when the last test finishes.
 /// </summary>
 [CollectionDefinition(Name)]
-public class ContainersCollection :
-    ICollectionFixture<PostgresFixture>,
-    ICollectionFixture<AerospikeFixture>
+public class PostgresCollection : ICollectionFixture<PostgresFixture>
 {
-    public const string Name = "TestContainers";
+    public const string Name = "Postgres";
 }
+
+/// <summary>
+/// Collection definition for Aerospike tests.
+/// Using ICollectionFixture ensures that ONE AerospikeFixture instance is shared across all test classes
+/// in this collection. The container starts when the first test runs and stops when the last test finishes.
+/// </summary>
+#pragma warning disable SA1402 // File may only contain a single type
+[CollectionDefinition(Name)]
+public class AerospikeCollection : ICollectionFixture<AerospikeFixture>
+{
+    public const string Name = "Aerospike";
+}
+#pragma warning restore SA1402 // File may only contain a single type
