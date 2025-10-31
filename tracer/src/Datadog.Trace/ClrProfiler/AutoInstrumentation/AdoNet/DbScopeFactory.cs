@@ -138,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
+            HashSet<string> disabledAdoNetCommandTypes,
             string? commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
             [NotNullWhen(true)] out string? dbType)
@@ -172,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (IsDisabledCommandType(commandTypeName))
+                    if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
                         dbType = null;
@@ -200,14 +201,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        internal static bool IsDisabledCommandType(string commandTypeName)
+        internal static bool IsDisabledCommandType(string commandTypeName, HashSet<string> disabledAdoNetCommandTypes)
         {
             if (string.IsNullOrEmpty(commandTypeName))
             {
                 return false;
             }
 
-            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+            var disabledTypes = disabledAdoNetCommandTypes;
 
             if (disabledTypes is null || disabledTypes.Count == 0)
             {
@@ -245,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 CommandType = typeof(TCommand);
 
-                if (TryGetIntegrationDetails(CommandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(Tracer.Instance.Settings.DisabledAdoNetCommandTypes, CommandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
                     DbTypeName = dbTypeName;
@@ -275,7 +276,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
-                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(tracer.Settings.DisabledAdoNetCommandTypes, commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);

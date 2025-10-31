@@ -15,8 +15,9 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 {
     public class DataStreamsContextPropagatorTests
     {
-        [Fact]
-        public void CanRoundTripPathwayContext()
+        [Theory]
+        [CombinatorialData]
+        public void CanRoundTripPathwayContext(bool isDataStreamsLegacyHeadersEnabled)
         {
             var oneMs = TimeSpan.FromMilliseconds(1);
             var headers = new TestHeadersCollection();
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
                 DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
-            DataStreamsContextPropagator.Instance.Inject(context, headers);
+            DataStreamsContextPropagator.Instance.Inject(context, headers, isDataStreamsLegacyHeadersEnabled);
 
             var extracted = DataStreamsContextPropagator.Instance.Extract(headers);
 
@@ -86,8 +87,9 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             extractedContext.Value.EdgeStart.Should().NotBe(binaryContext.EdgeStart);
         }
 
-        [Fact]
-        public void InjectedHeaders_HaveCorrectFormat()
+        [Theory]
+        [CombinatorialData]
+        public void InjectedHeaders_HaveCorrectFormat(bool isDataStreamsLegacyHeadersEnabled)
         {
             var headers = new TestHeadersCollection();
             var context = new PathwayContext(
@@ -95,7 +97,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 0x1122334455667788,
                 unchecked((long)0x99AABBCCDDEEFF00));
 
-            DataStreamsContextPropagator.Instance.Inject(context, headers);
+            DataStreamsContextPropagator.Instance.Inject(context, headers, isDataStreamsLegacyHeadersEnabled);
 
             headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
             var base64HeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64];
