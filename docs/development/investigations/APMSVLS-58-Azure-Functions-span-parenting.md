@@ -11,6 +11,17 @@
 - [QueryingDatadogAPIs.md](../QueryingDatadogAPIs.md) - Query Datadog APIs for spans and logs to verify instrumentation
 - [CI/TroubleshootingCIFailures.md](../CI/TroubleshootingCIFailures.md) - Investigate Azure DevOps build and test failures
 
+## Baseline Traces
+
+The following baseline traces were captured before implementing the fix, showing the current incorrect behavior:
+
+- [baseline-trace-690507fc.json](baseline-trace-690507fc.json) - Trace `690507fc00000000b882bcd2bdac6b9e` (JSON format)
+- [baseline-trace-690507fc-hierarchy.txt](baseline-trace-690507fc-hierarchy.txt) - Trace `690507fc00000000b882bcd2bdac6b9e` (hierarchy view)
+- [baseline-trace-69052141.json](baseline-trace-69052141.json) - Trace `6905214100000000f48b7273ba29823e` (JSON format)
+- [baseline-trace-69052141-hierarchy.txt](baseline-trace-69052141-hierarchy.txt) - Trace `6905214100000000f48b7273ba29823e` (hierarchy view)
+
+These traces demonstrate the issue where the worker's `azure_functions.invoke` span is parented directly to the host's root span instead of being nested under an `aspnet_core.request` span.
+
 ## Problem Description
 
 When using isolated Azure Functions with ASP.NET Core Integration, the worker's `azure_functions.invoke` span is incorrectly created as a root span in a separate trace instead of being parented to the worker's `aspnet_core.request` span.
@@ -231,30 +242,40 @@ The AsyncLocal context is not flowing properly between the DiagnosticObserver an
 
 ## Code Changes Made
 
-### 1. Enable AspNetCoreDiagnosticObserver for Isolated Functions
+### 1. Enable AspNetCoreDiagnosticObserver for Isolated Functions Worker Process
 
-**File**: `tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs`
-**Lines**: 464-498
+**File**: `tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs:473-493`
 
-Modified to enable `AspNetCoreDiagnosticObserver` for isolated functions while keeping it disabled for in-process functions:
+Modified to enable `AspNetCoreDiagnosticObserver` specifically in the isolated worker process while keeping it disabled in the host process and in-process functions:
 
 ```csharp
-// Check if this is an in-process Azure Function (not isolated)
-var isInProcessFunction = !string.IsNullOrEmpty(functionsExtensionVersion)
-                       && !string.IsNullOrEmpty(functionsWorkerRuntime)
-                       && !functionsWorkerRuntime.Equals("dotnet-isolated", StringComparison.OrdinalIgnoreCase);
+// For Azure Functions, we need to handle AspNetCoreDiagnosticObserver differently based on the process type.
+// Skip AspNetCoreDiagnosticObserver in:
+// - In-process functions (due to separate Assembly Load Context issues)
+// - Isolated functions host process (to avoid duplicate spans)
+// Enable AspNetCoreDiagnosticObserver in:
+// - Isolated functions worker process (to create aspnet_core.request spans that azure_functions.invoke can parent to)
+// - All other scenarios (non-Azure Functions)
+var isInAzureFunctionsHost = EnvironmentHelpers.IsRunningInAzureFunctionsHost();
+var shouldSkipAspNetCore = isInAzureFunctionsHost || (EnvironmentHelpers.IsAzureFunctions() && !EnvironmentHelpers.IsAzureFunctionsIsolated());
 
-if (isInProcessFunction)
+if (shouldSkipAspNetCore)
 {
-    Log.Debug("Skipping AspNetCoreDiagnosticObserver in in-process Azure Functions.");
+    // Skip AspNetCoreDiagnosticObserver in Azure Functions host process or in-process functions
+    Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions (host process or in-process).");
 }
 else
 {
-    // For isolated functions, enable AspNetCoreDiagnosticObserver
+    // Enable AspNetCoreDiagnosticObserver in isolated worker process or other scenarios
     observers.Add(new AspNetCoreDiagnosticObserver());
     observers.Add(new QuartzDiagnosticObserver());
 }
 ```
+
+**Key changes**:
+- Uses `EnvironmentHelpers.IsRunningInAzureFunctionsHost()` to distinguish between host and worker processes
+- Consolidates skip conditions: isolated host process OR in-process functions
+- Enables `AspNetCoreDiagnosticObserver` in all other scenarios (isolated worker process and non-Azure Functions)
 
 ### 2. Add Debug Logging to Azure Functions Span Creation
 
