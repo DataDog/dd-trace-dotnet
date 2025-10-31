@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [Collection(ContainersCollection.Name)]
-    public class DapperTests : TracingIntegrationTest, IClassFixture<PostgresFixture>
+    public class DapperTests : TracingIntegrationTest
     {
         public DapperTests(ITestOutputHelper output, PostgresFixture postgresFixture)
             : base("Dapper", output)

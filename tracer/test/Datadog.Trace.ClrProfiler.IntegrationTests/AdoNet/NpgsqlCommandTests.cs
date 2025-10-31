@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("DockerGroup", "1")]
     [Collection(ContainersCollection.Name)]
     [UsesVerify]
-    public class NpgsqlCommandTests : TracingIntegrationTest, IClassFixture<PostgresFixture>
+    public class NpgsqlCommandTests : TracingIntegrationTest
     {
         public NpgsqlCommandTests(ITestOutputHelper output, PostgresFixture postgresFixture)
             : base("Npgsql", output)
