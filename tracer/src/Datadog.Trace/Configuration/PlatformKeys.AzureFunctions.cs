@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationKeys.AzureFunctions.cs" company="Datadog">
+// <copyright file="PlatformKeys.AzureFunctions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,12 @@
 
 namespace Datadog.Trace.Configuration;
 
-internal partial class ConfigurationKeys
+internal static partial class PlatformKeys
 {
     /// <summary>
     /// Reference: https://learn.microsoft.com/en-us/azure/azure-functions/functions-app-settings
     /// </summary>
-    internal class AzureFunctions
+    internal static class AzureFunctions
     {
         /// <summary>
         /// The version of the Azure Functions runtime, e.g. "~1" or "~4".

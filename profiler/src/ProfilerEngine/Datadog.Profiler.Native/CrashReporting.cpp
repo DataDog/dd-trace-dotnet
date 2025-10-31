@@ -8,6 +8,8 @@
 #include "unknwn.h"
 #include <shared/src/native-src/string.h>
 #include <shared/src/native-src/util.h>
+
+#include <algorithm>
 #include <thread>
 
 #ifdef _WIN32
@@ -234,7 +236,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         }
 
         auto currentIsCrashingThread = threadId == crashingThreadId;
-        for (int i = 0; i < frames.size(); i++)
+        // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
+        for (auto it = frames.rbegin(); it != frames.rend(); it++)
         {
             auto [frame, succeeded] = ExtractResult(ddog_crasht_StackFrame_new());
 
@@ -243,7 +246,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 return 1;
             }
 
-            auto const& currentFrame = frames[i];
+            auto const& currentFrame = *it;
 
             if (currentIsCrashingThread)
             {
@@ -355,41 +358,44 @@ int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
 std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
 {
     std::vector<StackFrame> result;
-    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
+    // it's safe here to not use nativeFrames.size() + managedFrames.size()
+    // because the managed frames should be a subset of the native frames
+    result.reserve((std::max)(nativeFrames.size(), managedFrames.size()));
 
-    size_t i = 0, j = 0;
-    while (i < nativeFrames.size() && j < managedFrames.size())
+    auto nativeIt = nativeFrames.rbegin();
+    auto managedIt = managedFrames.rbegin();
+    while (nativeIt != nativeFrames.rend() && managedIt != managedFrames.rend())
     {
-        if (nativeFrames[i].sp < managedFrames[j].sp)
+        if (nativeIt->sp > managedIt->sp)
         {
-            result.push_back(nativeFrames[i]);
-            ++i;
+            result.push_back(*nativeIt);
+            ++nativeIt;
         }
-        else if (managedFrames[j].sp < nativeFrames[i].sp)
+        else if (managedIt->sp > nativeIt->sp)
         {
-            result.push_back(managedFrames[j]);
-            ++j;
+            result.push_back(*managedIt);
+            ++managedIt;
         }
         else
         { // frames[i].sp == managedFrames[j].sp
             // Prefer managedFrame when sp values are the same
-            result.push_back(managedFrames[j]);
-            ++i;
-            ++j;
+            result.push_back(*managedIt);
+            ++nativeIt;
+            ++managedIt;
         }
     }
 
     // Add any remaining frames that are left in either vector
-    while (i < nativeFrames.size())
+    while (nativeIt != nativeFrames.rend())
     {
-        result.push_back(nativeFrames[i]);
-        ++i;
+        result.push_back(*nativeIt);
+        ++nativeIt;
     }
 
-    while (j < managedFrames.size())
+    while (managedIt != managedFrames.rend())
     {
-        result.push_back(managedFrames[j]);
-        ++j;
+        result.push_back(*managedIt);
+        ++managedIt;
     }
 
     return result;
