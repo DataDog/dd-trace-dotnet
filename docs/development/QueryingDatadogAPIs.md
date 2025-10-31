@@ -238,7 +238,7 @@ This script retrieves all spans for a given trace ID and displays them in variou
 
 ## Logs Search API
 
-### Search for logs with specific criteria
+### Search for logs with specific criteria (curl)
 
 ```bash
 curl -s -X POST https://api.datadoghq.com/api/v2/logs/events/search \
@@ -259,6 +259,68 @@ curl -s -X POST https://api.datadoghq.com/api/v2/logs/events/search \
 ```
 
 **Note:** Unlike the Spans API, the Logs API does not require the `{"data": {"attributes": {...}, "type": "search_request"}}` wrapper structure. The request body is directly the filter/sort/page configuration.
+
+## PowerShell Helper Script - Logs
+
+The repository includes a PowerShell script that simplifies querying logs from the Datadog API.
+
+### Get-DatadogLogs.ps1
+
+**Location**: `tracer/tools/Get-DatadogLogs.ps1`
+
+This script retrieves logs matching a query and displays them in various formats.
+
+**Prerequisites:**
+- Set environment variables: `DD_API_KEY` and `DD_APPLICATION_KEY`
+- API keys can be obtained from https://app.datadoghq.com/organization-settings/api-keys
+
+**Basic usage:**
+```powershell
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service error"
+```
+
+**Parameters:**
+- `-Query` (required) - Log query using Datadog query syntax (e.g., "service:my-service error")
+- `-TimeRange` (optional) - How far back to search (default: "1h"). Examples: "15m", "1h", "2h", "1d"
+- `-Limit` (optional) - Maximum number of log entries to return (default: 50, max: 1000)
+- `-OutputFormat` (optional) - Output format: "table" (default), "json", or "raw"
+
+**Output formats:**
+
+1. **Table** (default) - Formatted table with key log information:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service error"
+   ```
+   Shows: Timestamp, Status, Service, Host, Message (truncated to 100 chars)
+
+2. **JSON** - Raw JSON output for further processing:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service" -OutputFormat json
+   ```
+
+3. **Raw** - Simple timestamp and message format:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service" -OutputFormat raw
+   ```
+
+**Example workflows:**
+
+1. Search for recent errors in a service:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service error" -TimeRange "1h" -Limit 20
+   ```
+
+2. Find tracer debug logs from Azure Functions:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:lucasp-premium-linux-isolated AspNetCoreDiagnosticObserver" -TimeRange "30m"
+   ```
+
+3. Export logs as JSON for processing:
+   ```powershell
+   .\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-service DD-TRACE-DOTNET" -OutputFormat json | ConvertFrom-Json | ConvertTo-Json -Depth 10
+   ```
+
+**Note**: The script uses `Invoke-RestMethod` which properly handles authentication headers, avoiding the shell variable substitution issues that can occur with curl.
 
 ### Search for tracer debug logs
 
