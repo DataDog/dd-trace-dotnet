@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -30,7 +31,7 @@ public class ProcessTagsTests
     public async Task ProcessTags_Only_In_First_Span(bool enabled)
     {
         var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.PropagateProcessTags, enabled ? "true" : "false" } }));
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter);
 
         using (tracer.StartActiveInternal("A"))

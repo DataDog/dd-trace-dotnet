@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
 using Xunit;
@@ -29,7 +30,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new AzureAppServicePerformanceCounters(statsd.Object);
+            using var listener = new AzureAppServicePerformanceCounters(new TestStatsdManager(statsd.Object));
 
             listener.Refresh();
 

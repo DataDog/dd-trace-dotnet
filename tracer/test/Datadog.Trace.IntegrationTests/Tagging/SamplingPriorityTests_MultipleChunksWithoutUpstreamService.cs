@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -363,7 +364,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     private ScopedTracer GetTracer()
     {
         var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         return TracerHelper.Create(settings, agentWriter, null, null, null);
     }
 }

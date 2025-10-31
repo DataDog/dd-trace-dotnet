@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -159,7 +160,7 @@ public class RandomIdGeneratorTests
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            Mock.Of<IDogStatsd>(),
+            new TestStatsdManager(Mock.Of<IDogStatsd>()),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 
@@ -179,7 +180,7 @@ public class RandomIdGeneratorTests
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            Mock.Of<IDogStatsd>(),
+            new TestStatsdManager(Mock.Of<IDogStatsd>()),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 
@@ -199,7 +200,7 @@ public class RandomIdGeneratorTests
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            Mock.Of<IDogStatsd>(),
+            new TestStatsdManager(Mock.Of<IDogStatsd>()),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 

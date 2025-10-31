@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             _output = output;
             _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
+            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
 
         [Fact]
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -106,7 +107,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -143,7 +144,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
 
             var settings = SpanSamplingRule("*", "operation");
-            var agentWriter = new AgentWriter(api, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api, statsAggregator.Object, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -191,7 +192,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ProcessTrace(spans)).Returns(spans);
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
 
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             agent.WriteTrace(spans);
 
@@ -227,7 +228,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
+            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }
@@ -238,7 +239,7 @@ namespace Datadog.Trace.Tests.Agent
             // The flush thread should be able to recover from an error when calling the API
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
                .Returns(() => throw new InvalidOperationException());
@@ -259,7 +260,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             // Make sure that the agent is able to switch to the secondary buffer when the primary is full/busy
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
 
             var barrier = new Barrier(2);
 
@@ -317,7 +318,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
             agent.WriteTrace(CreateTraceChunk(1));
             agent.WriteTrace(CreateTraceChunk(1));
@@ -347,7 +348,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd.Object, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, initialTracerMetricsEnabled: true);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, new TestStatsdManager(statsd.Object), automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, initialTracerMetricsEnabled: true);
 
             // Fill the two buffers
             agent.WriteTrace(CreateTraceChunk(1));
@@ -397,7 +398,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public Task WakeUpSerializationTask()
         {
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: null, batchInterval: 0);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: TestStatsdManager.NoOp, batchInterval: 0);
 
             // To reduce flakiness, first we make sure the serialization thread is started
             WaitForDequeue(agent);
@@ -438,7 +439,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // Make the buffer size big enough for a single trace
             var api = new MockApi();
-            var agent = new AgentWriter(api, statsAggregator: null, statsd: null, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
 
             // Fill both buffers
             agent.WriteTrace(spans);
@@ -470,7 +471,7 @@ namespace Datadog.Trace.Tests.Agent
         public void AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();
-            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             var flushTcs = new TaskCompletionSource<bool>();
             int invocation = 0;
 

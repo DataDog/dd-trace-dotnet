@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,10 +14,8 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
@@ -25,10 +25,10 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
-        private static readonly ArraySegment<byte> EmptyPayload = new(new byte[] { 0x90 });
+        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
-        private readonly IDogStatsd _statsd;
+        private readonly IStatsdManager _statsd;
         private readonly Task _flushTask;
         private readonly Task _serializationTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Agent
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
-        private readonly IStatsAggregator _statsAggregator;
+        private readonly IStatsAggregator? _statsAggregator;
 
         private readonly bool _apmTracingEnabled;
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Agent
 
         private bool _traceMetricsEnabled;
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, TracerSettings settings)
+        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, TracerSettings settings)
             : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled)
         {
             settings.Manager.SubscribeToChanges(changes =>
@@ -76,16 +76,17 @@ namespace Datadog.Trace.Agent
                  && mutable.TracerMetricsEnabled != changes.PreviousMutable.TracerMetricsEnabled)
                 {
                     Volatile.Write(ref _traceMetricsEnabled, mutable.TracerMetricsEnabled);
+                    _statsd.SetRequired(StatsdConsumer.AgentWriter, mutable.TracerMetricsEnabled);
                 }
             });
         }
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
+        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
         : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
+        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
             _statsAggregator = statsAggregator;
 
@@ -104,6 +105,7 @@ namespace Datadog.Trace.Agent
 
             _apmTracingEnabled = apmTracingEnabled;
             _traceMetricsEnabled = initialTracerMetricsEnabled;
+            _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
             _serializationTask = automaticFlush ? Task.Factory.StartNew(SerializeTracesLoop, TaskCreationOptions.LongRunning) : Task.CompletedTask;
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
@@ -114,7 +116,7 @@ namespace Datadog.Trace.Agent
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
-        internal event Action Flushed;
+        internal event Action? Flushed;
 
         internal SpanBuffer ActiveBuffer => _activeBuffer;
 
@@ -151,8 +153,12 @@ namespace Datadog.Trace.Agent
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {
-                _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
+                using var lease = _statsd.TryGetClientLease();
+                if (lease.Client is { } statsd)
+                {
+                    statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
+                    statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
+                }
             }
         }
 
@@ -255,7 +261,7 @@ namespace Datadog.Trace.Agent
             {
                 tasks[2] = Task.Delay(TimeSpan.FromSeconds(1));
                 await Task.WhenAny(tasks).ConfigureAwait(false);
-                tasks[2] = null;
+                tasks[2] = null!;
 
                 if (_forceFlush.Task.IsCompleted)
                 {
@@ -327,8 +333,12 @@ namespace Datadog.Trace.Agent
                 {
                     if (Volatile.Read(ref _traceMetricsEnabled))
                     {
-                        _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                        _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
+                        using var lease = _statsd.TryGetClientLease();
+                        if (lease.Client is { } statsd)
+                        {
+                            statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
+                            statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
+                        }
                     }
 
                     var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
@@ -347,7 +357,7 @@ namespace Datadog.Trace.Agent
                         {
                             droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
                             droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
-                            Log.Debug<int, int, long, long>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                            Log.Debug("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
                             // Metrics for unsampled traces/spans already recorded
                         }
                         else
@@ -388,7 +398,7 @@ namespace Datadog.Trace.Agent
         private void SerializeTrace(ArraySegment<Span> spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
-            SpanBuffer SwapBuffers()
+            SpanBuffer? SwapBuffers()
             {
                 if (_activeBuffer == _frontBuffer)
                 {
@@ -525,8 +535,12 @@ namespace Datadog.Trace.Agent
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {
-                _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
+                using var lease = _statsd.TryGetClientLease();
+                if (lease.Client is { } statsd)
+                {
+                    statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
+                    statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
+                }
             }
         }
 
@@ -589,7 +603,7 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly ArraySegment<Span> Trace;
-            public readonly Action Callback;
+            public readonly Action? Callback;
 
             public WorkItem(ArraySegment<Span> trace)
             {

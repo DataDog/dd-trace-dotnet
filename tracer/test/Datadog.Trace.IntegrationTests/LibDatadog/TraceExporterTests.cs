@@ -18,6 +18,7 @@ using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -86,7 +87,7 @@ public class TraceExporterTests
             out var exporter).Should().BeTrue();
         exporter.Should().NotBeNull();
 
-        var agentWriter = new AgentWriter(exporter, new NullStatsAggregator(), statsd, tracerSettings);
+        var agentWriter = new AgentWriter(exporter, new NullStatsAggregator(), new TestStatsdManager(statsd), tracerSettings);
 
         await using (var tracer = TracerHelper.Create(tracerSettings, agentWriter: agentWriter, statsd: statsd, discoveryService: discovery))
         {

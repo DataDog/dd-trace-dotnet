@@ -88,14 +88,14 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -123,11 +123,7 @@ namespace Datadog.Trace
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
-            // Technically we don't _always_ need a dogstatsd instance, because we only need it if runtime metrics
-            // are enabled _or_ tracer metrics are enabled. However, tracer metrics can be enabled and disabled dynamically
-            // at runtime, which makes managing the lifetime of the statsd instance more complex than we'd like, so
-            // for simplicity, we _always_ create a new statsd instance
-            statsd ??= new StatsdManager(settings, includeDefaultTags: true);
+            statsd ??= new StatsdManager(settings);
             runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
                                    ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService)
                                    : null;
@@ -233,7 +229,7 @@ namespace Datadog.Trace
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -275,7 +271,7 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)

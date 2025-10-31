@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent;
@@ -24,7 +25,7 @@ internal class ManagedApi : IApi
 
     public ManagedApi(
         TracerSettings.SettingsManager settings,
-        IDogStatsd statsd,
+        IStatsdManager statsd,
         Action<Dictionary<string, float>> updateSampleRates,
         bool partialFlushEnabled)
     {
