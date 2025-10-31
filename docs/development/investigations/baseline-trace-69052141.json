@@ -1,0 +1,52 @@
+[
+  {
+    "SpanId": "9349924773672680418",
+    "ParentId": "0",
+    "OperationName": "azure_functions.invoke",
+    "ResourceName": "GET /api/httptest",
+    "Status": "ok",
+    "Duration": 872.33,
+    "Process": "host",
+    "Service": "lucasp-premium-linux-isolated"
+  },
+  {
+    "SpanId": "86692038000556982",
+    "ParentId": "9349924773672680418",
+    "OperationName": "http.request",
+    "ResourceName": "GET localhost:35129/api/HttpTest",
+    "Status": "ok",
+    "Duration": 595.78,
+    "Process": "host",
+    "Service": "lucasp-premium-linux-isolated-http-client"
+  },
+  {
+    "SpanId": "2471114450846074276",
+    "ParentId": "9349924773672680418",
+    "OperationName": "azure_functions.invoke",
+    "ResourceName": "Http HttpTest",
+    "Status": "ok",
+    "Duration": 248.12,
+    "Process": "worker",
+    "Service": "lucasp-premium-linux-isolated"
+  },
+  {
+    "SpanId": "4528662242376985262",
+    "ParentId": "2471114450846074276",
+    "OperationName": "test_span",
+    "ResourceName": "test_span",
+    "Status": "ok",
+    "Duration": 213.18,
+    "Process": "worker",
+    "Service": "lucasp-premium-linux-isolated"
+  },
+  {
+    "SpanId": "8321837758356480840",
+    "ParentId": "4528662242376985262",
+    "OperationName": "http.request",
+    "ResourceName": "GET jsonplaceholder.typicode.com/users/?",
+    "Status": "ok",
+    "Duration": 184.95,
+    "Process": "worker",
+    "Service": "lucasp-premium-linux-isolated-http-client"
+  }
+]

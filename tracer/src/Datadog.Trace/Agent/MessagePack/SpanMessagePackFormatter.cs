@@ -111,6 +111,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private byte[] _aasOperatingSystemTagNameBytes;
         private byte[] _aasRuntimeTagNameBytes;
         private byte[] _aasExtensionVersionTagNameBytes;
+        private byte[] _aasFunctionProcessTagNameBytes;
+        private byte[] _aasFunctionProcessTagValueBytes;
 
         private SpanMessagePackFormatter()
         {
@@ -752,6 +754,14 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                 }
+
+                // Add function process tag ("host" or "worker") for isolated Azure Functions
+                if (EnvironmentHelpers.IsAzureFunctionsIsolated())
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasFunctionProcessTagNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasFunctionProcessTagValueBytes);
+                }
             }
 
             if (count > 0)
@@ -977,6 +987,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasOperatingSystemTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem);
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
+                _aasFunctionProcessTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureFunctionsProcess);
+
+                _aasFunctionProcessTagValueBytes = EnvironmentHelpers.IsRunningInAzureFunctionsHost() ?
+                                                       StringEncoding.UTF8.GetBytes("host") :
+                                                       StringEncoding.UTF8.GetBytes("worker");
             }
         }
 

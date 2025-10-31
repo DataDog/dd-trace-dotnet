@@ -1,0 +1,29 @@
+
+Found 5 spans in trace:
+Trace ID: 6905214100000000f48b7273ba29823e
+
+azure_functions.invoke [host]
+   Resource: GET /api/httptest
+   Span ID: 9349924773672680418, Parent: 0
+   Duration: 872.33 ms
+
+  青 http.request [host]
+     Resource: GET localhost:35129/api/HttpTest
+     Span ID: 86692038000556982, Parent: 9349924773672680418
+     Duration: 595.78 ms
+
+  青 azure_functions.invoke [worker]
+     Resource: Http HttpTest
+     Span ID: 2471114450846074276, Parent: 9349924773672680418
+     Duration: 248.12 ms
+
+    青 test_span [worker]
+       Resource: test_span
+       Span ID: 4528662242376985262, Parent: 2471114450846074276
+       Duration: 213.18 ms
+
+      青 http.request [worker]
+         Resource: GET jsonplaceholder.typicode.com/users/?
+         Span ID: 8321837758356480840, Parent: 4528662242376985262
+         Duration: 184.95 ms
+
