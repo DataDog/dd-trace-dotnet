@@ -78,6 +78,7 @@ struct StackFrame
     uint64_t moduleAddress;
     bool isSuspicious;
     std::string_view buildId;
+    std::string_view modulePath;
 };
 
 struct Tag

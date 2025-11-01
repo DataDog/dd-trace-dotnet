@@ -263,11 +263,15 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));
             CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, currentFrame.moduleAddress));
             CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, relativeAddress));
-
             CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, currentFrame.symbolAddress));
 
+            if (!currentFrame.modulePath.empty())
+            {
+                CHECK_RESULT(ddog_crasht_StackFrame_with_path(&frame, {currentFrame.modulePath.data(), currentFrame.modulePath.size()}));
+            }
+
             auto buildId = currentFrame.buildId;
-            if (buildId.size() != 0)
+            if (!buildId.empty())
             {
                 CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
 #ifdef _WINDOWS
