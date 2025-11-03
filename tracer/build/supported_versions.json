@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "4.0.9",
-        "maxVersionAvailableInclusive": "4.0.9",
-        "maxVersionTestedInclusive": "4.0.9"
+        "maxVersionSupportedInclusive": "4.0.9.3",
+        "maxVersionAvailableInclusive": "4.0.9.3",
+        "maxVersionTestedInclusive": "4.0.9.3"
       }
     ]
   },
@@ -276,9 +276,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "4.0.5",
-        "maxVersionAvailableInclusive": "4.0.5",
-        "maxVersionTestedInclusive": "4.0.5"
+        "maxVersionSupportedInclusive": "4.0.5.2",
+        "maxVersionAvailableInclusive": "4.0.5.2",
+        "maxVersionTestedInclusive": "4.0.5.2"
       }
     ]
   },
@@ -293,9 +293,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "4.0.4.9",
-        "maxVersionAvailableInclusive": "4.0.4.9",
-        "maxVersionTestedInclusive": "4.0.4.9"
+        "maxVersionSupportedInclusive": "4.0.6",
+        "maxVersionAvailableInclusive": "4.0.6",
+        "maxVersionTestedInclusive": "4.0.6"
       }
     ]
   },
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.7.13",
-        "maxVersionAvailableInclusive": "4.0.7.13",
-        "maxVersionTestedInclusive": "4.0.7.13"
+        "maxVersionSupportedInclusive": "4.0.9.1",
+        "maxVersionAvailableInclusive": "4.0.9.1",
+        "maxVersionTestedInclusive": "4.0.9.1"
       }
     ]
   },
@@ -344,9 +344,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.11",
-        "maxVersionSupportedInclusive": "4.0.1.1",
-        "maxVersionAvailableInclusive": "4.0.1.1",
-        "maxVersionTestedInclusive": "4.0.1.1"
+        "maxVersionSupportedInclusive": "4.0.1.3",
+        "maxVersionAvailableInclusive": "4.0.1.3",
+        "maxVersionTestedInclusive": "4.0.1.3"
       }
     ]
   },
@@ -361,9 +361,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "4.0.1.9",
-        "maxVersionAvailableInclusive": "4.0.1.9",
-        "maxVersionTestedInclusive": "4.0.1.9"
+        "maxVersionSupportedInclusive": "4.0.2.2",
+        "maxVersionAvailableInclusive": "4.0.2.2",
+        "maxVersionTestedInclusive": "4.0.2.2"
       }
     ]
   },
@@ -378,9 +378,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "4.0.1.11",
-        "maxVersionAvailableInclusive": "4.0.1.11",
-        "maxVersionTestedInclusive": "4.0.1.11"
+        "maxVersionSupportedInclusive": "4.0.2",
+        "maxVersionAvailableInclusive": "4.0.2",
+        "maxVersionTestedInclusive": "4.0.2"
       }
     ]
   },
@@ -395,9 +395,26 @@
         "minVersionAvailableInclusive": "3.3.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.104.87",
-        "maxVersionSupportedInclusive": "4.0.0.31",
-        "maxVersionAvailableInclusive": "4.0.0.31",
-        "maxVersionTestedInclusive": "4.0.0.31"
+        "maxVersionSupportedInclusive": "4.0.1",
+        "maxVersionAvailableInclusive": "4.0.1",
+        "maxVersionTestedInclusive": "4.0.1"
+      }
+    ]
+  },
+  {
+    "integrationName": "AzureEventHubs",
+    "assemblyName": "Azure.Messaging.EventHubs",
+    "minAssemblyVersionInclusive": "5.9.2",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Messaging.EventHubs",
+        "minVersionAvailableInclusive": "5.0.0",
+        "minVersionSupportedInclusive": "5.9.2",
+        "minVersionTestedInclusive": "5.11.6",
+        "maxVersionSupportedInclusive": "5.12.2",
+        "maxVersionAvailableInclusive": "5.12.2",
+        "maxVersionTestedInclusive": "5.12.2"
       }
     ]
   },
@@ -412,8 +429,8 @@
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.4.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.1.0",
-        "maxVersionAvailableInclusive": "2.1.0",
+        "maxVersionSupportedInclusive": "2.2.0",
+        "maxVersionAvailableInclusive": "2.2.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -577,9 +594,9 @@
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "2.3.0",
         "minVersionTestedInclusive": "4.1.0",
-        "maxVersionSupportedInclusive": "8.6.0",
-        "maxVersionAvailableInclusive": "8.6.0",
-        "maxVersionTestedInclusive": "8.6.0"
+        "maxVersionSupportedInclusive": "8.7.0",
+        "maxVersionAvailableInclusive": "8.7.0",
+        "maxVersionTestedInclusive": "8.7.0"
       }
     ]
   },
@@ -961,6 +978,20 @@
     ]
   },
   {
+    "integrationName": "MsTestV2",
+    "assemblyName": "MSTest.TestFramework",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "MsTestV2",
+    "assemblyName": "MSTestAdapter.PlatformServices",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
     "integrationName": "MySql",
     "assemblyName": "MySql.Data",
     "minAssemblyVersionInclusive": "6.7.0",
@@ -971,9 +1002,9 @@
         "minVersionAvailableInclusive": "5.1.7",
         "minVersionSupportedInclusive": "6.7.4",
         "minVersionTestedInclusive": "6.7.9",
-        "maxVersionSupportedInclusive": "9.4.0",
-        "maxVersionAvailableInclusive": "9.4.0",
-        "maxVersionTestedInclusive": "9.4.0"
+        "maxVersionSupportedInclusive": "9.5.0",
+        "maxVersionAvailableInclusive": "9.5.0",
+        "maxVersionTestedInclusive": "9.5.0"
       }
     ]
   },
@@ -1152,9 +1183,9 @@
         "minVersionAvailableInclusive": "2.2.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "4.0.1",
-        "maxVersionSupportedInclusive": "4.37.0",
-        "maxVersionAvailableInclusive": "4.37.0",
-        "maxVersionTestedInclusive": "4.37.0"
+        "maxVersionSupportedInclusive": "4.38.0",
+        "maxVersionAvailableInclusive": "4.38.0",
+        "maxVersionTestedInclusive": "4.38.0"
       }
     ]
   },

@@ -73,7 +73,7 @@ namespace Benchmarks.Trace.Asm
 
         private void ExecuteCycle(object body)
         {
-            var traceContext = new Datadog.Trace.TraceContext(new EmptyDatadogTracer(), null);
+            var traceContext = new Datadog.Trace.TraceContext(EmptyDatadogTracer.Instance, null);
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
 

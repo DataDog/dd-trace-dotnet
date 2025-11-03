@@ -33,7 +33,7 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
 
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
@@ -101,6 +101,10 @@ namespace Datadog.Trace.Configuration
                         "all" => DefaultExperimentalFeatures,
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
+
+            PropagateProcessTags = config
+                                       .WithKeys(ConfigurationKeys.PropagateProcessTags)
+                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -457,6 +461,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureEventHubsBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -738,6 +746,8 @@ namespace Datadog.Trace.Configuration
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 
+        internal bool PropagateProcessTags { get; }
+
         internal OverrideErrorLog ErrorLog { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
@@ -989,6 +999,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
         public bool AzureServiceBusBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure EventHubs batch operations.
+        /// When enabled, TryAdd spans are created and linked to the send span.
+        /// When disabled, TryAdd spans are not created.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
+        public bool AzureEventHubsBatchLinksEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution

@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     public class DapperTests : TracingIntegrationTest
     {
         public DapperTests(ITestOutputHelper output)

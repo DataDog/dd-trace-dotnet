@@ -118,3 +118,46 @@ TEST(SampleValueTypeProvider, CheckSequentialIndex)
     ASSERT_EQ(CpuSampleTypeDefinitions[0].Index, 2);
     ASSERT_EQ(CpuSampleTypeDefinitions[1].Index, 2);
 }
+
+TEST(SampleValueTypeProvider, CheckReusedSampleValueType)
+{
+    std::vector<SampleValueType> AllocationSampleTypeDefinitions(
+        {{"alloc-samples", "count", -1},
+         {"alloc-size", "bytes", -1}});
+
+    SampleValueTypeProvider provider;
+
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+
+    ASSERT_EQ(AllocationSampleTypeDefinitions[0].Index, 0);
+    ASSERT_EQ(AllocationSampleTypeDefinitions[1].Index, 0);
+}
+
+TEST(SampleValueTypeProvider, CheckSequentialIndexWithReusedSampleValueType)
+{
+    std::vector<SampleValueType> AllocationSampleTypeDefinitions(
+        {{"alloc-samples", "count", -1},
+         {"alloc-size", "bytes", -1}});
+    std::vector<SampleValueType> ExceptionSampleTypeDefinitions(
+        {{"exception", "count", -1}});
+    std::vector<SampleValueType> CpuSampleTypeDefinitions(
+        {{"cpu", "nanoseconds", -1},
+        {"cpu-samples", "count", -1}});
+
+    SampleValueTypeProvider provider;
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(ExceptionSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(AllocationSampleTypeDefinitions);
+    std::ignore = provider.GetOrRegister(CpuSampleTypeDefinitions);
+
+
+    ASSERT_EQ(AllocationSampleTypeDefinitions[0].Index, 0);
+    ASSERT_EQ(AllocationSampleTypeDefinitions[1].Index, 0);
+    ASSERT_EQ(ExceptionSampleTypeDefinitions[0].Index, 1);
+    ASSERT_EQ(CpuSampleTypeDefinitions[0].Index, 2);
+    ASSERT_EQ(CpuSampleTypeDefinitions[1].Index, 2);
+}
