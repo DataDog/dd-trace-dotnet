@@ -7,16 +7,9 @@
 #if NET5_0_OR_GREATER
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
 using Xunit;
@@ -32,7 +25,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         {
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new RuntimeEventListener(new TestStatsdManager(statsd.Object), TimeSpan.FromSeconds(10));
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(10));
 
             listener.Refresh();
 
@@ -54,7 +47,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Setup(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null))
                 .Callback(() => mutex.Set());
 
-            using var listener = new RuntimeEventListener(new TestStatsdManager(statsd.Object), TimeSpan.FromSeconds(10));
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(10));
 
             statsd.Invocations.Clear();
 
@@ -105,7 +98,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             };
 
             var statsd = new Mock<IDogStatsd>();
-            using var listener = new RuntimeEventListener(new TestStatsdManager(statsd.Object), TimeSpan.FromSeconds(1));
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(1));
 
             // Wait for the counters to be refreshed
             mutex.Wait();
@@ -148,23 +141,12 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var originalStatsd = new Mock<IDogStatsd>();
             var newStatsd = new Mock<IDogStatsd>();
 
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "original" } });
-            var statsdManager = new StatsdManager(
-                settings,
-                (m, e) => m.ServiceName == "original" ? originalStatsd.Object : newStatsd.Object);
-
-            using var listener = new RuntimeEventListener(statsdManager, TimeSpan.FromSeconds(1));
-            using var writer = new RuntimeMetricsWriter(statsdManager, TimeSpan.FromSeconds(1), false);
+            using var listener = new RuntimeEventListener(originalStatsd.Object, TimeSpan.FromSeconds(1));
+            using var writer = new RuntimeMetricsWriter(originalStatsd.Object, TimeSpan.FromSeconds(1), false);
 
             mutex.Wait();
 
-            // Updating the service name should trigger a new statsd client to be created
-            settings.Manager.UpdateSettings(
-                NullConfigurationSource.Instance,
-                new ManualInstrumentationConfigurationSource(
-                    new ReadOnlyDictionary<string, object>(new Dictionary<string, object> { { TracerSettingKeyConstants.ServiceNameKey, "updated" } }),
-                    useDefaultSources: true),
-                NullConfigurationTelemetry.Instance);
+            writer.UpdateStatsd(newStatsd.Object);
 
             mutex.Reset();
             mutex.Wait();

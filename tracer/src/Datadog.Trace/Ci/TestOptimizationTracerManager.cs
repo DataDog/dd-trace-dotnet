@@ -13,7 +13,6 @@ using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -33,7 +32,7 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IStatsdManager statsd,
+            IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -149,7 +148,7 @@ namespace Datadog.Trace.Ci
                 TracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
-                IStatsdManager statsd,
+                IDogStatsd statsd,
                 RuntimeMetricsWriter runtimeMetricsWriter,
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,

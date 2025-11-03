@@ -14,7 +14,6 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -42,7 +41,7 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IStatsdManager statsd,
+            IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -88,7 +87,7 @@ namespace Datadog.Trace.Ci
 
         protected override bool ShouldEnableRemoteConfiguration(TracerSettings settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Check for agentless scenario
             if (_settings.Agentless)

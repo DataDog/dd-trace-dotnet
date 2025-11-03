@@ -9,7 +9,6 @@ using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -24,7 +23,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly int _processId;
 
-        private readonly IStatsdManager _statsd;
+        private IDogStatsd _statsd;
 
         private int? _previousGen0Count;
         private int? _previousGen1Count;
@@ -34,10 +33,8 @@ namespace Datadog.Trace.RuntimeMetrics
         private MemoryMappedFile _file;
         private MemoryMappedViewAccessor _view;
 
-        public MemoryMappedCounters(IStatsdManager statsd)
+        public MemoryMappedCounters(IDogStatsd statsd)
         {
-            // We assume this is always used by RuntimeMetricsWriter, and therefore we hae already called SetRequired()
-            // If it's every used outside that context, we need to update to use SetRequired instead
             _statsd = statsd;
 
             ProcessHelpers.GetCurrentProcessInformation(out _, out _, out _processId);
@@ -134,15 +131,10 @@ namespace Datadog.Trace.RuntimeMetrics
                 throw new InvalidOperationException($"The PID in the IPC control block does not match (expected {_processId}, found {controlBlock.Perf.GC.ProcessID}");
             }
 
-            // if we can't send stats (e.g. we're shutting down), there's not much point in
-            // running all this, but seeing as we update various state, play it safe and just do no-ops
-            using var lease = _statsd.TryGetClientLease();
-            var statsd = lease.Client ?? NoOpStatsd.Instance;
-
-            statsd.Gauge(MetricsNames.Gen0HeapSize, perf.GC.GenHeapSize0);
-            statsd.Gauge(MetricsNames.Gen1HeapSize, perf.GC.GenHeapSize1);
-            statsd.Gauge(MetricsNames.Gen2HeapSize, perf.GC.GenHeapSize2);
-            statsd.Gauge(MetricsNames.LohSize, perf.GC.LargeObjSize);
+            _statsd.Gauge(MetricsNames.Gen0HeapSize, perf.GC.GenHeapSize0);
+            _statsd.Gauge(MetricsNames.Gen1HeapSize, perf.GC.GenHeapSize1);
+            _statsd.Gauge(MetricsNames.Gen2HeapSize, perf.GC.GenHeapSize2);
+            _statsd.Gauge(MetricsNames.LohSize, perf.GC.LargeObjSize);
 
             var contentionCount = perf.LocksAndThreads.Contention;
 
@@ -152,7 +144,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             else
             {
-                statsd.Counter(MetricsNames.ContentionCount, contentionCount - _lastContentionCount.Value);
+                _statsd.Counter(MetricsNames.ContentionCount, contentionCount - _lastContentionCount.Value);
                 _lastContentionCount = contentionCount;
             }
 
@@ -162,27 +154,29 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (_previousGen0Count != null)
             {
-                statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
+                _statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
             if (_previousGen1Count != null)
             {
-                statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
+                _statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
             if (_previousGen2Count != null)
             {
-                statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
+                _statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }
 
             _previousGen0Count = gen0;
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
 
-            if (statsd is not NoOpStatsd)
-            {
-                Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
-            }
+            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
+        }
+
+        public void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         [StructLayout(LayoutKind.Sequential)]

@@ -8,7 +8,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
 {
-    internal sealed class NoOpStatsd : IDogStatsd
+    internal class NoOpStatsd : IDogStatsd
     {
         public static readonly NoOpStatsd Instance = new();
 

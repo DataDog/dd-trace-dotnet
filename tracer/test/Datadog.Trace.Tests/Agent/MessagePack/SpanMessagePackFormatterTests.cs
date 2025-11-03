@@ -18,7 +18,6 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
@@ -222,7 +221,7 @@ public class SpanMessagePackFormatterTests
         var discoveryService = new DiscoveryServiceMock();
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new());
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null,  NullTelemetryController.Instance, discoveryService: discoveryService);
 
         tracer.TracerManager.Start();
@@ -451,7 +450,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
@@ -492,7 +491,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (var scope = tracer.StartActiveInternal("root"))

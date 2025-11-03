@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using System.Threading;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -42,7 +41,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly string _delayInSeconds;
 
-        private readonly IStatsdManager _statsd;
+        private IDogStatsd _statsd;
 
         private long _contentionCount;
 
@@ -62,7 +61,7 @@ namespace Datadog.Trace.RuntimeMetrics
             };
         }
 
-        public RuntimeEventListener(IStatsdManager statsd, TimeSpan delay)
+        public RuntimeEventListener(IDogStatsd statsd, TimeSpan delay)
         {
             _statsd = statsd;
             _delayInSeconds = ((int)delay.TotalSeconds).ToString();
@@ -72,22 +71,19 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Refresh()
         {
-            // if we can't send stats (e.g. we're shutting down), there's not much point in
-            // running all this, but seeing as we update various state, play it safe and just do no-ops
-            using var lease = _statsd.TryGetClientLease();
-            var statsd = lease.Client ?? NoOpStatsd.Instance;
-
             // Can't use a Timing because Dogstatsd doesn't support local aggregation
             // It means that the aggregations in the UI would be wrong
-            statsd?.Gauge(MetricsNames.ContentionTime, _contentionTime.Clear());
-            statsd?.Counter(MetricsNames.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
+            _statsd.Gauge(MetricsNames.ContentionTime, _contentionTime.Clear());
+            _statsd.Counter(MetricsNames.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
 
-            statsd?.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
+            _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
 
-            if (statsd is not NoOpStatsd)
-            {
-                Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ThreadStatsMetrics);
-            }
+            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ThreadStatsMetrics);
+        }
+
+        public void UpdateStatsd(IDogStatsd statsd)
+        {
+            Interlocked.Exchange(ref _statsd, statsd);
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -103,13 +99,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                using var lease = _statsd.TryGetClientLease();
-                // We want to make sure we still refresh everything, so use a noop if not available
-                var client = lease.Client;
-                var statsd = client ?? NoOpStatsd.Instance;
                 if (eventData.EventName == "EventCounters")
                 {
-                    ExtractCounters(statsd, eventData.Payload);
+                    ExtractCounters(eventData.Payload);
                 }
                 else if (eventData.EventId == EventGcSuspendBegin)
                 {
@@ -121,7 +113,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     if (start != null)
                     {
-                        statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
+                        _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
                         Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.GcPauseTime);
                     }
                 }
@@ -131,10 +123,10 @@ namespace Datadog.Trace.RuntimeMetrics
                     {
                         var stats = HeapStats.FromPayload(eventData.Payload);
 
-                        statsd.Gauge(MetricsNames.Gen0HeapSize, stats.Gen0Size);
-                        statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
-                        statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
-                        statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
+                        _statsd.Gauge(MetricsNames.Gen0HeapSize, stats.Gen0Size);
+                        _statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
+                        _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
+                        _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
 
                         Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GcHeapStatsMetrics);
                     }
@@ -151,10 +143,10 @@ namespace Datadog.Trace.RuntimeMetrics
 
                         if (heapHistory.MemoryLoad != null)
                         {
-                            statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
+                            _statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
                         }
 
-                        statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
+                        _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
                         Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GcGlobalHeapMetrics);
                     }
                 }
@@ -184,7 +176,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private void ExtractCounters(IDogStatsd statsd, ReadOnlyCollection<object> payload)
+        private void ExtractCounters(ReadOnlyCollection<object> payload)
         {
             for (int i = 0; i < payload.Count; ++i)
             {
@@ -204,7 +196,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     var value = (double)rawValue;
 
-                    statsd.Gauge(statName, value);
+                    _statsd.Gauge(statName, value);
                     Log.Debug("Sent the following metrics to the DD agent: {Metrics}", statName);
                 }
                 else

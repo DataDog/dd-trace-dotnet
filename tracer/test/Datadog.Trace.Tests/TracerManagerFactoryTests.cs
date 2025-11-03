@@ -19,7 +19,6 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.PlatformHelpers;
-using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -111,7 +110,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             Mock.Of<IScopeManager>(),
-            new TestStatsdManager(Mock.Of<IDogStatsd>()),
+            Mock.Of<IDogStatsd>(),
             BuildRuntimeMetrics(),
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
@@ -135,7 +134,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
                 gitMetadataTagsProvider: Mock.Of<IGitMetadataTagsProvider>());
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()
-            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
+            => new(Mock.Of<IDogStatsd>(), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
     }
 
     private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)

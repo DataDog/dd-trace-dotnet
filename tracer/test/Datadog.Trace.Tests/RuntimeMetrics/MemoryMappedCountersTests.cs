@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 
 using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
 using Xunit;
@@ -20,7 +19,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         {
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new MemoryMappedCounters(new TestStatsdManager(statsd.Object));
+            using var listener = new MemoryMappedCounters(statsd.Object);
 
             listener.Refresh();
 
