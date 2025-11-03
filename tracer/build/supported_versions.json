@@ -493,7 +493,7 @@
         "name": "Microsoft.Azure.Cosmos",
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.6.0",
-        "minVersionTestedInclusive": "3.6.0",
+        "minVersionTestedInclusive": "3.13.0",
         "maxVersionSupportedInclusive": "3.54.0",
         "maxVersionAvailableInclusive": "3.54.0",
         "maxVersionTestedInclusive": "3.54.0"
