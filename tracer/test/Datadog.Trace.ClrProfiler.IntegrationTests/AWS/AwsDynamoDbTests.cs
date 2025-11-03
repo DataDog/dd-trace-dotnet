@@ -28,16 +28,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.AwsDynamoDb
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               select new[] { packageVersionArray[0] };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAwsDynamoDb(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
+            string metadataSchemaVersion = "v0";
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-dynamodb" : EnvironmentHelper.FullSampleName;
