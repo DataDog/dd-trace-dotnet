@@ -77,9 +77,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sqs");
-                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sqs");
-                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sqs");
-                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("aws.queue.url: localstack_arm64", "peer.service: aws_sqs");
                 settings.AddRegexScrubber(new Regex(@"sqs\..+\.localhost.*\.localstack.*\.cloud:4566"), "localhost:00000");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
