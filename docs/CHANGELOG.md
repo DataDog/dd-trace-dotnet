@@ -32,6 +32,65 @@
 
 
 
+
+## [Release 3.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.30.0)
+
+## Summary
+
+- [Tracer] Add support for Azure Event Hubs
+- [Test Optimization] Add support for MSTest 4.x.x
+- [OpenTelemetry] OTLP Logs API Support
+- [Continuous Profiler] Performance improvements
+
+## Changes
+
+### Tracer
+* [Tracer] Add Azure Event Hubs instrumentation  (#7620)
+* [OTEL] OTLP Logs API Support (#7680)
+* [Tracer] Add new process tags (#7651)
+* small follow up on process tags (#7743)
+* Removing Forgiven Nulls (#7745)
+* Add fix for whitespace in exporter settings and metrics URL (#7747)
+* Fix ad-hoc use of `TracerSettings` to use `MutableSettings` where appropriate (#7543)
+* Fix calls to `IsIntegrationEnabled()`,  `IsErrorStatusCode()`, and `GetIntegrationAnalyticsSampleRate()` (#7544)
+* Enforce that you can't update exporter settings to point to UDS on Windows (#7721)
+
+### CI Visibility
+* [Test Optimization] MsTest support updates (#7663)
+
+### Continuous Profiler
+* [Profiler] Perf improvements + cleanup (#7696)
+* [crashtracker] Fix native and managed callstacks merge (#7703)
+* [Profiler] Don't take tracer stable config notification when kill switch detected (#7705)
+
+### Fixes
+* Protect against `claimsPrincipal` being `null` (#7719)
+
+### Build / Test
+* [Config Registry] 1/5 Add gitlab step and json configuration file and yaml for doc (#7548)
+* managed loader: refactor for testability, add unit tests (#7594)
+* Update to .NET RC2 (#7659)
+* [Test Package Versions Bump] Updating package versions (#7673)
+* Run dsm-throughput macrobenchmarks on master push & schedule (#7686)
+* Update `.gitignore` to ignore local Claude Code settings (#7691)
+* Comment out new test agent on Windows (#7692)
+* [Test Package Versions Bump] Updating package versions (#7693)
+* Remove CodeQL workflow (#7701)
+* [Test Package Versions Bump] Updating package versions (#7712)
+* Update Linux VMs (#7718)
+* [Test Package Versions Bump] Updating package versions (#7726)
+* Split integration tests in groups (#7733)
+* [Tracer] Fix EventHubs flaky batch test (#7734)
+
+### Miscellaneous
+* [onboarding] make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)
+* Revert "make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)" (#7704)
+* [Config registry] 2/5 Reorganize keys, split config keys and platform keys (#7688)
+* [Docs] Improve docs on troubleshooting CI failures  (#7707)
+* Add VBCSCompiler to exclude list (#7694)
+
+[Changes since 3.29.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.29.0...v3.30.0)
+
 ## [Release 3.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.29.0)
 
 ## Summary
