@@ -65,6 +65,10 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  cosmosdb-emulator_arm64:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    command: ["--protocol", "https"]
+
   stackexchangeredis_arm64:
     image: redis:4-alpine
     hostname: stackexchangeredis_arm64
@@ -267,9 +271,10 @@ services:
     volumes:
       - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
 
-  azure-cosmosdb-emulator:
-    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+  cosmosdb-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
     profiles: ["group2"]
+    command: ["--protocol", "https"]
 
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
@@ -494,7 +499,7 @@ services:
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
-      - COSMOSDB_ENDPOINT=https://azure-cosmosdb-emulator:8081
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
@@ -718,11 +723,11 @@ services:
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
-      - azure-cosmosdb-emulator
+      - cosmosdb-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 azure-cosmosdb-emulator:8081 test-agent:8126
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
@@ -764,7 +769,7 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
-      - COSMOSDB_ENDPOINT=https://azure-cosmosdb-emulator:8081
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -806,7 +811,7 @@ services:
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
-      - azure-cosmosdb-emulator
+      - cosmosdb-emulator_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -823,10 +828,10 @@ services:
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
-      - azure-cosmosdb-emulator
+      - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 azure-cosmosdb-emulator:8081
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
