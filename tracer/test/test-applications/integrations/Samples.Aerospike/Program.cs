@@ -71,7 +71,6 @@ namespace Samples.Aerospike
             // Asynchronous methods
             await client.Put(null, CancellationToken.None, key1, bin1, bin2);
             await client.Add(null, CancellationToken.None, key1, bin3);
-
             await client.Prepend(null, CancellationToken.None, key1, bin4);
             await client.Append(null, CancellationToken.None, key1, bin5);
 
@@ -91,9 +90,7 @@ namespace Samples.Aerospike
         {
             var clientPolicy = new AsyncClientPolicy
             {
-                // This is the cluster-level connect timeout; keep it if you want.
                 timeout = 10_000,
-                // Optional but recommended when running in CI:
                 failIfNotConnected = true
             };
 
@@ -109,7 +106,6 @@ namespace Samples.Aerospike
                 maxRetries = 2
             };
 
-            // Batches & existence checks use base Policy too:
             clientPolicy.batchPolicyDefault = new BatchPolicy
             {
                 totalTimeout = 10_000,
