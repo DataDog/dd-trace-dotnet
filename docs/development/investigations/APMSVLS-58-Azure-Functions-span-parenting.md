@@ -348,9 +348,21 @@ This tag is automatically applied during span serialization based on `Environmen
 When working on this issue, use the following workflow to test changes:
 
 **Test Environment**:
-- **Function App**: `lucasp-premium-linux-isolated`
 - **Resource Group**: `lucas.pimentel`
-- **Test App Location**: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore`
+
+**Deployed Test Applications**:
+
+| Source App | Function App Name | Platform | ASP.NET Core Integration |
+|-----------|------------------|----------|--------------------------|
+| `isolated-dotnet8-aspnetcore` | `lucasp-premium-linux-isolated` | Linux | ✅ Yes |
+| `isolated-dotnet8` | `lucasp-premium-windows-isolated` | Windows | ❌ No |
+| `isolated-dotnet8-aspnetcore` | `lucasp-premium-windows-isolated-aspnet` | Windows | ✅ Yes |
+
+**Source Locations**:
+- `isolated-dotnet8`: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8`
+- `isolated-dotnet8-aspnetcore`: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore`
+
+**Primary Test App**: `lucasp-premium-linux-isolated` (isolated-dotnet8-aspnetcore)
 
 ### 1. Build the Datadog.AzureFunctions NuGet Package
 
