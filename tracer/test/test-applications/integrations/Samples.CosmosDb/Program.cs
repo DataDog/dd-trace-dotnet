@@ -10,10 +10,18 @@ using System.Net.Http;
 
 namespace Samples.CosmosDb
 {
+    enum TestMode
+    {
+        Full,
+        CI
+    }
+
     class Program
     {
         // The Azure Cosmos DB endpoint for running this sample.
-        private static readonly string EndpointUri = ConfigurationManager.AppSettings["EndPointUri"];
+        private static readonly string EndpointUri =
+            Environment.GetEnvironmentVariable("COSMOSDB_ENDPOINT") ??
+            "https://localhost:8081";
 
         // The primary key for the Azure Cosmos account.
         private static readonly string PrimaryKey = ConfigurationManager.AppSettings["PrimaryKey"];
@@ -66,13 +74,35 @@ namespace Samples.CosmosDb
         /// </summary>
         public async Task GetStartedDemoAsync()
         {
+            var testModeStr = Environment.GetEnvironmentVariable("TEST_MODE");
+            if (string.IsNullOrEmpty(testModeStr))
+            {
+                throw new InvalidOperationException("TEST_MODE environment variable must be set");
+            }
+
+            if (!Enum.TryParse<TestMode>(testModeStr, ignoreCase: true, out var testMode))
+            {
+                var validModes = string.Join(", ", Enum.GetNames(typeof(TestMode)));
+                throw new InvalidOperationException($"TEST_MODE must be one of: {validModes}. Got: '{testModeStr}'");
+            }
+
+            Console.WriteLine($"{DateTime.Now:o}: Running in {testMode} mode\n");
+
             // Create a new instance of the Cosmos Client
-            var clientOptions = 
-                new CosmosClientOptions() 
-                { 
-                    ApplicationName = "CosmosDBDotnetQuickstart", 
+            var clientOptions =
+                new CosmosClientOptions()
+                {
+                    ApplicationName = "CosmosDBDotnetQuickstart",
                     RequestTimeout = TimeSpan.FromMinutes(10),
-                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
+                    ConnectionMode = ConnectionMode.Gateway,
+                    HttpClientFactory = () =>
+                    {
+                        var handler = new HttpClientHandler
+                        {
+                            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                        };
+                        return new HttpClient(handler);
+                    }
                 };
 
             cosmosClient = new CosmosClient(EndpointUri, PrimaryKey, clientOptions);
@@ -81,11 +111,20 @@ namespace Samples.CosmosDb
             {
                 await CreateDatabaseAsync();
                 await CreateContainerAsync();
-                await ScaleContainerAsync();
                 await AddItemsToContainerAsync();
-                await QueryDatabasesAsync();
-                await QueryContainersAsync();
-                await QueryUsersAsync();
+
+                switch (testMode)
+                {
+                    case TestMode.Full:
+                        await ScaleContainerAsync();
+                        await QueryDatabasesAsync();
+                        await QueryContainersAsync();
+                        await QueryUsersAsync();
+                        break;
+                    case TestMode.CI:
+                        break;
+                }
+
                 await QueryItemsAsync();
             }
             finally
@@ -104,9 +143,6 @@ namespace Samples.CosmosDb
             // Create a new database
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
             Console.WriteLine($"{DateTime.Now:o}: Created Database: {database.Id}\n");
-
-            var user = await database.CreateUserAsync("user");
-            Console.WriteLine($"{DateTime.Now:o}: Created user: {user.Resource.Id}\n");
         }
         // </CreateDatabaseAsync>
 
@@ -294,6 +330,9 @@ namespace Samples.CosmosDb
         /// </summary>
         private async Task QueryUsersAsync()
         {
+            var user = await database.CreateUserAsync("user");
+            Console.WriteLine($"{DateTime.Now:o}: Created user: {user.Resource.Id}\n");
+
             var sqlQueryText = "SELECT * FROM u";
             QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
 

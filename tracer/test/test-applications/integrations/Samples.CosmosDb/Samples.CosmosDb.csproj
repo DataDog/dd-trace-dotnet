@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.18.0</ApiVersion>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
