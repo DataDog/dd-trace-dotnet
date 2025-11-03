@@ -23,6 +23,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return Path.Combine(Path.GetFullPath(tracerHomeDirectory), "net461");
         }
 
+        internal static string GetProfilerPathEnvVarNameForArch()
+        {
+            return Environment.Is64BitProcess ? "COR_PROFILER_PATH_64" : "COR_PROFILER_PATH_32";
+        }
+
+        internal static string GetProfilerPathEnvVarNameFallback()
+        {
+            return "COR_PROFILER_PATH";
+        }
+
         private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             try
