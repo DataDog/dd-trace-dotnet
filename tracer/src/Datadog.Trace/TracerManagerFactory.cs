@@ -504,6 +504,7 @@ namespace Datadog.Trace
             }
         }
 
+        // internal for testing
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => settings.AgentFeaturePollingEnabled ?
                    DiscoveryService.Create(settings.Exporter) :
