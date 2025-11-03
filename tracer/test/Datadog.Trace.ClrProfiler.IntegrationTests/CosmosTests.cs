@@ -16,6 +16,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class CosmosTests : TracingIntegrationTest, IAsyncLifetime
     {
@@ -41,11 +43,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
         [Trait("SkipInCI", "True")] // Cosmos emulator is too flaky in CI at the moment
-        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTracesFull(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("TEST_MODE", "Full");
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName);
+                spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
+
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        // vnext emulator only supports queries on items
+        public async Task SubmitTracesCI(string packageVersion, string metadataSchemaVersion)
+        {
+            var expectedSpanCount = 4;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("TEST_MODE", "CI");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
 

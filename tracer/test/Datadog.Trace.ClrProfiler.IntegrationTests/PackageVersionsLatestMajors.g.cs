@@ -1931,9 +1931,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET48
-                new object[] { "3.54.0" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "3.28.0" },
 #endif
