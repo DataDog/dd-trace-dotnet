@@ -13,7 +13,7 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://localhost:00000/,
+      out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.CosmosDb
@@ -39,7 +39,7 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://localhost:00000/,
+      out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.CosmosDb
@@ -65,7 +65,7 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://localhost:00000/,
+      out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.CosmosDb
@@ -91,7 +91,7 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://localhost:00000/,
+      out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.CosmosDb
