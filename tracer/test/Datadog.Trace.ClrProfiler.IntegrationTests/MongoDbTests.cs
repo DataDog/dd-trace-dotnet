@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -21,17 +22,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class MongoDbTests : TracingIntegrationTest
+    public class MongoDbTests : TracingIntegrationTest, IClassFixture<MongoDbFixture>
     {
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
         private static readonly Regex OIdRegex = new("""\{\s*"\$oid" : "[0-9a-f]+" \}""");
         private static readonly Regex Base64Regex = new("""base64"\s*:\s*"[a-zA-Z0-9+\\]+=*",""");
 
-        public MongoDbTests(ITestOutputHelper output)
+        public MongoDbTests(ITestOutputHelper output, MongoDbFixture mongoDbFixture)
             : base("MongoDB", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mongoDbFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

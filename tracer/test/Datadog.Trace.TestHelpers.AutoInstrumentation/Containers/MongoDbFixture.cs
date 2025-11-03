@@ -25,7 +25,7 @@ public class MongoDbFixture : ContainerFixture
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
-        yield return new("MONGO_HOST", $"{Container.Hostname}:{Container.GetMappedPublicPort(MongoPort)}");
+        yield return new("MONGO_HOST", $"{Container.Hostname}");
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
