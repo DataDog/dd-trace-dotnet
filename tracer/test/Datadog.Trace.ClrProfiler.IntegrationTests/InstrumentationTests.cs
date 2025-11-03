@@ -251,6 +251,25 @@ namespace Foo
             agent.Telemetry.Should().NotBeEmpty();
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenOmittingTracerHome_InstrumentsApp()
+        {
+            // Verify that DD_DOTNET_TRACER_HOME is not set to ensure we're actually testing the fallback behavior
+            EnvironmentHelper.CustomEnvironmentVariables.Should().NotContainKey("DD_DOTNET_TRACER_HOME");
+            Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME").Should().BeNullOrEmpty();
+
+            SetLogDirectory();
+
+            // DD_DOTNET_TRACER_HOME is not set, so the tracer should derive it from the profiler path
+            Output.WriteLine("DD_DOTNET_TRACER_HOME not set, relying on profiler path environment variables");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
         [SkippableTheory]
         [CombinatorialData]
         [Trait("RunOnWindows", "True")]
@@ -423,7 +442,7 @@ namespace Foo
 
             var pointsJson = """
                              [{
-                               "name": "library_entrypoint.abort", 
+                               "name": "library_entrypoint.abort",
                                "tags": ["reason:eol_runtime"]
                              },{
                                "name": "library_entrypoint.abort.runtime"
@@ -456,7 +475,7 @@ namespace Foo
 
             var pointsJson = """
                              [{
-                               "name": "library_entrypoint.complete", 
+                               "name": "library_entrypoint.complete",
                                "tags": ["injection_forced:true"]
                              }]
                              """;
@@ -495,7 +514,7 @@ namespace Foo
 
             var pointsJson = """
                              [{
-                               "name": "library_entrypoint.complete", 
+                               "name": "library_entrypoint.complete",
                                "tags": ["injection_forced:true"]
                              }]
                              """;
@@ -526,7 +545,7 @@ namespace Foo
 
             var pointsJson = """
                              [{
-                               "name": "library_entrypoint.abort", 
+                               "name": "library_entrypoint.abort",
                                "tags": ["reason:incompatible_runtime"]
                              },{
                                "name": "library_entrypoint.abort.runtime"
@@ -585,7 +604,7 @@ namespace Foo
 
             var pointsJson = """
                              [{
-                               "name": "library_entrypoint.complete", 
+                               "name": "library_entrypoint.complete",
                                "tags": ["injection_forced:false"]
                              }]
                              """;
