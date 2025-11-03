@@ -141,7 +141,7 @@ namespace Datadog.Trace.ExtensionMethods
             ReadOnlyDictionary<string, string> dict2,
             StringComparison valueComparison = StringComparison.Ordinal)
         {
-            if (dict1 is null & dict2 is null)
+            if (dict1 is null && dict2 is null)
             {
                 return true;
             }
