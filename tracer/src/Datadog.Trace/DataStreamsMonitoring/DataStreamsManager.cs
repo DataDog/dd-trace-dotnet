@@ -36,10 +36,11 @@ internal class DataStreamsManager
         string? env,
         string defaultServiceName,
         IDataStreamsWriter? writer,
-        bool isInDefaultState)
+        bool isInDefaultState,
+        string? processTags)
     {
-        // We don't yet support primary tag in .NET yet
-        _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
+        // We don't support primary tag in .NET yet
+        _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null, processTags);
         _isEnabled = writer is not null;
         _writer = writer;
         _isInDefaultState = isInDefaultState;
@@ -59,7 +60,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
     }
 
     public async Task DisposeAsync()
