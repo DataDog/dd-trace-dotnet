@@ -55,6 +55,89 @@ public class CompareExecutionTime
         return GetCommentMarkdown(sources, charts, comparisonTable);
     }
  
+    static EquivalenceTestConclusion CalculateSignificance(double[] masterValues, double[] currentValues)
+    {
+        if (!IsValidForStatisticalTest(masterValues)|| !IsValidForStatisticalTest(currentValues))
+        {
+            return EquivalenceTestConclusion.Unknown;
+        }
+
+        if (!IsValidForStatisticalTest(masterValues) || !IsValidForStatisticalTest(currentValues))
+        {
+            return EquivalenceTestConclusion.Same;
+        }
+
+        try
+        {
+            if (HasZeroVariance(masterValues) || HasZeroVariance(currentValues))
+            {
+                // If we have zero variance, WelchTest blows up, so use a MannWhitneyU as a fallback
+                var userThresholdResult = StatisticalTestHelper.CalculateTost(
+                    MannWhitneyTest.Instance, masterValues, currentValues, SignificantResultThreshold);
+                var conclusion = userThresholdResult.Conclusion switch
+                {
+                    EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                    _ when StatisticalTestHelper.CalculateTost(MannWhitneyTest.Instance, masterValues, currentValues, NoiseThreshold).Conclusion == EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                    _ => userThresholdResult.Conclusion,
+                };
+
+                return conclusion;
+            }
+            else
+            {
+                var userThresholdResult = StatisticalTestHelper.CalculateTost(
+                    WelchTest.Instance, masterValues, currentValues, SignificantResultThreshold);
+                var conclusion = userThresholdResult.Conclusion switch
+                {
+                    EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                    _ when StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, currentValues, NoiseThreshold).Conclusion == EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
+                    _ => userThresholdResult.Conclusion,
+                };
+
+                return conclusion;
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Warning("Error calculating TOST: {Message}", e.Message);
+            return EquivalenceTestConclusion.Same;
+        }
+
+        static bool IsValidForStatisticalTest(double[] values)
+        {
+            if (values is null || values.Length < 2)
+            {
+                return false;
+            }
+
+            // Check for invalid values (NaN, Infinity)
+            foreach (var value in values)
+            {
+                if (double.IsNaN(value) || double.IsInfinity(value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool HasZeroVariance(double[] values)
+        {
+            // Check if all values are identical (zero variance)
+            var first = values[0];
+            foreach (var value in values)
+            {
+                if (Math.Abs(value - first) > 1e-10)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     static string GetMermaidSection(string scenario, IEnumerable<ExecutionTimeResult> results)
     {
 
@@ -75,28 +158,8 @@ public class CompareExecutionTime
                                 var masterValues = pairedScenarios.FirstOrDefault(x => x.Source.SourceType == ExecutionTimeSourceType.Master)?.Result.Durations;
                                 var commitValues = pairedScenarios.FirstOrDefault(x => x.Source.SourceType == ExecutionTimeSourceType.CurrentCommit)?.Result.Durations;
 
-                                if (masterValues is null || commitValues is null)
-                                {
-                                    return (@pairedScenarios.Key, conclusion: EquivalenceTestConclusion.Same);
-                                }
-
-                                try
-                                {
-                                    var userThresholdResult = StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, SignificantResultThreshold);
-                                    var conclusion = userThresholdResult.Conclusion switch
-                                    {
-                                        EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
-                                        _ when StatisticalTestHelper.CalculateTost(WelchTest.Instance, masterValues, commitValues, NoiseThreshold).Conclusion == EquivalenceTestConclusion.Same => EquivalenceTestConclusion.Same,
-                                        _ => userThresholdResult.Conclusion,
-                                    };
-
-                                    return (@pairedScenarios.Key, conclusion);
-                                }
-                                catch (Exception e)
-                                {
-                                    Logger.Warning("Error calculating TOST for {Scenario}: {Message}", @pairedScenarios.Key, e.Message);
-                                    return (@pairedScenarios.Key, conclusion: EquivalenceTestConclusion.Same);
-                                }
+                                var conclusion = CalculateSignificance(masterValues, commitValues);
+                                return (@pairedScenarios.Key, conclusion);
                             })
                            .ToDictionary(x => x.Key, x => x.conclusion);
 
@@ -214,22 +277,30 @@ public class CompareExecutionTime
                         var currentCiLower = currentMean - (z95 * currentStdErr);
                         var currentCiUpper = currentMean + (z95 * currentStdErr);
 
+                        // Calculate significance using raw metricsData arrays
+                        var masterMetricData = masterResult.Result.MetricsData.GetValueOrDefault(metricName);
+                        var currentMetricData = currentResult.Result.MetricsData.GetValueOrDefault(metricName);
+                        var significance = CalculateSignificance(masterMetricData, currentMetricData);
+
                         var (rowHtml, isRegression) = FormatMetricRowFromStats(
                             metricName,
                             masterStats: (masterMean, masterCiLower, masterCiUpper),
                             currentStats: (currentMean, currentCiLower, currentCiUpper),
-                            convertFromNs: false);
+                            convertFromNs: false,
+                            significance: significance);
                         tableRows.Add((rowHtml, isRegression));
                     }
                 }
                 else if (hasDuration)
                 {
                     // Fall back to duration for .NET Framework - use pre-calculated stats from Result
+                    var significance = CalculateSignificance(masterResult.Result.Durations, currentResult.Result.Durations);
                     var (rowHtml, isRegression) = FormatMetricRowFromStats(
                         "duration",
                         masterStats: ((double)masterResult.Result.Median, (double)masterResult.Result.LowerCi95Bound, (double)masterResult.Result.UpperCi95Bound),
                         currentStats: ((double)currentResult.Result.Median, (double)currentResult.Result.LowerCi95Bound, (double)currentResult.Result.UpperCi95Bound),
-                        convertFromNs: true);
+                        convertFromNs: true,
+                        significance: significance);
                     tableRows.Add((rowHtml, isRegression));
                 }
 
@@ -335,7 +406,8 @@ public class CompareExecutionTime
         string metricName,
         (double Mean, double Ci95Lower, double Ci95Upper) masterStats,
         (double Mean, double Ci95Lower, double Ci95Upper) currentStats,
-        bool convertFromNs)
+        bool convertFromNs,
+        EquivalenceTestConclusion significance)
     {
         // Convert from nanoseconds to milliseconds if needed
         const double nsToMs = 1_000_000.0;
@@ -349,7 +421,7 @@ public class CompareExecutionTime
             ? ((currentStats.Mean - masterStats.Mean) / masterStats.Mean) * 100
             : 0;
 
-        var (status, isRegression) = GetStatusInfo(changePct, metricName);
+        var (status, isRegression) = GetStatusInfo(significance, metricName);
         var changeText = changePct >= 0 ? $"+{changePct:F1}%" : $"{changePct:F1}%";
 
         // Add upward arrow for increases to make them easier to scan
@@ -384,33 +456,18 @@ public class CompareExecutionTime
 
     static string GetMetricDisplayName(string metricName) => metricName;
 
-    static (string emoji, bool isRegression) GetStatusInfo(double changePct, string metricName)
+    static (string emoji, bool isRegression) GetStatusInfo(EquivalenceTestConclusion significance, string metricName)
     {
-        // For exceptions and most metrics, lower is better
-        // For thread count, changes might be neutral
-        var threshold = 5.0; // 5% threshold for significant change
-
-        if (Math.Abs(changePct) < threshold)
+        // Use statistical test result to determine status
+        if (significance == EquivalenceTestConclusion.Same)
         {
             return ("✅", false); // No significant change
         }
 
-        // For most metrics, increase is worse
-        if (metricName.Contains("exceptions") || metricName.Contains("duration") ||
-            metricName.Contains("time_to") || metricName.Contains("mem") || metricName == "duration")
-        {
-            if (changePct > 0)
-            {
-                return ("❌", true); // Regression
-            }
-            else
-            {
-                return ("✅", false); // Improvement
-            }
-        }
-
-        // For thread count, treat as neutral
-        return ("⚠️", false);
+        // For most metrics, increase is worse (slower, more exceptions, more memory)
+        return significance == EquivalenceTestConclusion.Slower
+            ? ("❌", true) // Regression (slower/higher is worse)
+            : ("✅", false); // Improvement (faster/lower is better)
     }
 
     static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
@@ -430,7 +487,7 @@ public class CompareExecutionTime
               The following thresholds were used for comparing the execution times:</p>
               <ul>
                 <li>Welch test with statistical test for significance of <strong>5%</strong></li>
-                <li>Only results indicating a difference greater than <strong>{SignificantResultThreshold}</strong> and <strong>{NoiseThreshold}</strong> are considered.</li>
+                <li>Only results indicating a difference greater than <strong>{{SignificantResultThreshold}}</strong> and <strong>{{NoiseThreshold}}</strong> are considered.</li>
               </ul>
               <p>
                 Note that these results are based on a <em>single</em> point-in-time result for each branch.
@@ -441,8 +498,10 @@ public class CompareExecutionTime
               </p>
             </details>
 
-            Charts:
+            <details>
+            <summary>Duration charts</summary>
             {{string.Join('\n', charts)}}
+            </details>
             """;
     }
 
@@ -512,6 +571,19 @@ public class CompareExecutionTime
                         }
                     }
 
+                    // Parse raw metricsData arrays (e.g., "metricsData"."runtime.dotnet.threads.count": [3, 4, 5, ...])
+                    var metricsData = new Dictionary<string, double[]>();
+                    if (job["metricsData"] is JsonObject metricsDataObj)
+                    {
+                        foreach (var metricData in metricsDataObj)
+                        {
+                            if (metricData.Value is JsonArray dataArray)
+                            {
+                                metricsData[metricData.Key] = dataArray.Select(x => (double)x).ToArray();
+                            }
+                        }
+                    }
+
                     var result = new Result((long) job["min"],
                         Max: (long) job["max"],
                         Mean: (decimal) job["mean"],
@@ -520,7 +592,8 @@ public class CompareExecutionTime
                         UpperCi95Bound: (decimal) job["ci95"]?[1],
                         (decimal) job["stdev"],
                         durations.ToArray(),
-                        metrics);
+                        metrics,
+                        metricsData);
                     results.Add(new (source, sample, framework, scenario, result));
                 }
             }
@@ -534,7 +607,7 @@ public class CompareExecutionTime
     }
 
     public record ExecutionTimeResult(ExecutionTimeResultSource Source, ExecutionTimeSample TestSample, ExecutionTimeFramework Framework, string Scenario, Result Result);
-    public record Result(long Min, long Max, decimal Mean, decimal Median, decimal LowerCi95Bound, decimal UpperCi95Bound, decimal Stdev, double[] Durations, Dictionary<string, Dictionary<string, double>> Metrics)
+    public record Result(long Min, long Max, decimal Mean, decimal Median, decimal LowerCi95Bound, decimal UpperCi95Bound, decimal Stdev, double[] Durations, Dictionary<string, Dictionary<string, double>> Metrics, Dictionary<string, double[]> MetricsData)
     {
 
     }
