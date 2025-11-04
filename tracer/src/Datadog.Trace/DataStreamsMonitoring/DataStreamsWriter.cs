@@ -316,14 +316,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
 
             _resetEvent.Wait(_waitTimeSpan);
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            // var tcs = new TaskCompletionSource<bool>();
-            // using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            // {
-            //
-            //     await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
-            // }
         }
     }
 
