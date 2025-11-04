@@ -1,0 +1,41 @@
+name: Create normal draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      forced_commit_id:
+        description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
+        required: false
+        type: string
+      ignore_gitlab_failures:
+        description: "DANGER Force ignoring any issues with the GitLab artifacts or SSI. Don't use this unless you _really_ know what you're doing"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+    check_branch:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Verify running on main release branch
+              run: |
+                if [[ "${{  github.ref }}" != "refs/heads/master" ]]; then
+                  echo "Error: This workflow can only be run from the following: master"
+                  echo "Current branch: ${{ github.ref }}"
+                  exit 1
+                fi
+
+    create_normal_draft_release:
+        needs: check_branch
+        uses: ./.github/workflows/_create_draft_release.yml
+        with:
+            forced_commit_id: ${{ inputs.forced_commit_id }}
+            ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}
+            is_hotfix: false
+        secrets:
+            AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
+            NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+            GH_APP_ID: ${{ secrets.GH_APP_ID }}
+            GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+            DD_PREPROD_API_KEY: ${{ secrets.DD_PREPROD_API_KEY }}
+            DD_PUBLIC_SYMBOL_API_KEY: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}

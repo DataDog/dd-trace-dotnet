@@ -1,14 +1,34 @@
-name: Create draft release
+name: Create reusable draft release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       forced_commit_id:
         description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
         required: false
+        type: string
       ignore_gitlab_failures:
         description: "DANGER Force ignoring any issues with the GitLab artifacts or SSI. Don't use this unless you _really_ know what you're doing"
         required: false
+        type: boolean
+        default: false
+      is_hotfix:
+        description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
+        required: true
+        type: boolean
+    secrets:
+      AZURE_DEVOPS_TOKEN:
+        required: true
+      NUGET_API_KEY:
+        required: true
+      GH_APP_ID:
+        required: true
+      GH_APP_PRIVATE_KEY:
+        required: true
+      DD_PREPROD_API_KEY:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY:
+        required: true
 
 jobs:
   create_draft_release:
@@ -33,10 +53,10 @@ jobs:
       - name: Set SHA
         id: set_sha
         run: |
-          if [ -z "${{ github.event.inputs.forced_commit_id }}" ]; then
+          if [ -z "${{ inputs.forced_commit_id }}" ]; then
               commitsha="${GITHUB_SHA}"
           else
-              commitsha="${{ github.event.inputs.forced_commit_id }}"
+              commitsha="${{ inputs.forced_commit_id }}"
           fi
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
@@ -78,7 +98,7 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: "Check GitLab status"
-        if: ${{ !github.event.inputs.ignore_gitlab_failures }}
+        if: ${{ !inputs.ignore_gitlab_failures }}
         run: ./tracer/build.sh VerifyReleaseReadiness
         env:
           CommitSha: "${{ steps.set_sha.outputs.sha }}"
@@ -92,7 +112,7 @@ jobs:
         id: assets
         run: ./tracer/build.sh DownloadReleaseArtifacts
         env:
-          TargetBranch: ${{ github.event.ref }}
+          TargetBranch: ${{ github.ref }}
           CommitSha: "${{ steps.set_sha.outputs.sha }}"
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
@@ -105,14 +125,14 @@ jobs:
       - name: "Rename vNext milestone"
         id: rename
         # We don't rename vNext/vNext-v1 for hotfix releases
-        if: ${{ !contains(github.event.ref, 'hotfix') }}
+        if: ${{ !inputs.is_hotfix }}
         run: ./tracer/build.sh RenameVNextMilestone
         env:
           Version: ${{steps.versions.outputs.full_version}}
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v1.0.0
+        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
         with:
           token: "${{ steps.generate-token.outputs.token }}"
           draft: true

@@ -952,6 +952,12 @@ namespace Datadog.Trace.Configuration
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
 
             /// <summary>
+            /// Configuration key to allow telemetry compression.
+            /// <see cref="TelemetrySettings.CompressionMethod"/>
+            /// </summary>
+            public const string TelemetryCompressionMethod = "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD";
+
+            /// <summary>
             /// Configuration key for whether to enable redacted error log collection.
             /// </summary>
             public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
