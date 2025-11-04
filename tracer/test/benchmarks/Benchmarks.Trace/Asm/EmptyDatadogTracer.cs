@@ -26,7 +26,7 @@ namespace Benchmarks.Trace.Asm
         {
             Settings = new(new NullConfigurationSource());
             _gitMetadata = new NullGitMetadataProvider();
-            _perTraceSettings = new PerTraceSettings(null, null, null, Settings.InitialMutableSettings);
+            _perTraceSettings = new PerTraceSettings(null, null, null, Settings.Manager.InitialMutableSettings);
         }
 
         public string DefaultServiceName => "My Service Name";
