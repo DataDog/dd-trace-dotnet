@@ -190,6 +190,18 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public void ProcessTagsUsedInBaseHash()
+    {
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, "hello:world");
+
+        hashWith.Value.Should().NotBe(hashWithout.Value);
+    }
+
+    [Fact]
     public void WhenDisabled_SetCheckpoint_ReturnsNull()
     {
         var dsm = GetDataStreamManager(false, out _);
