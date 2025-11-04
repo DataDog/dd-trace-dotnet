@@ -27,7 +27,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly ManualResetEventSlim _resetEvent = new(false);
+    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(15);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -155,6 +156,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
         _flushSemaphore.Dispose();
+        _resetEvent.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -313,7 +315,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            Task.WaitAll([_processExit.Task], _waitTimeSpan);
+            _resetEvent.Wait(_waitTimeSpan);
             // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
             // and modified to avoid dealing with exceptions
             // var tcs = new TaskCompletionSource<bool>();
