@@ -102,6 +102,31 @@ public class ExceptionRedactorTests
     }
 
     [Fact]
+    public async Task Redact_FlattensAggregateExceptions_WhenAggregateExceptionWithMultipleExceptions()
+    {
+        var tcs = new TaskCompletionSource<Exception>();
+
+        var task1 = Task.Run(ThrowException);
+        var task2 = Task.Run(ThrowException);
+
+        // Create AggregateException
+        var task3 = Task.WhenAll(task1, task2);
+        var task4 = Task.Run(ThrowException);
+
+        // Create second AggregateException
+        _ = Task.WhenAll(task3, task4)
+                .ContinueWith(t => { tcs.TrySetResult(t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+        var ex = await tcs.Task;
+
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.AggregateException (Multiple Exceptions) ---> System.Exception" + Environment.NewLine);
+        redacted.Should().Contain("---> System.Exception", Exactly.Thrice());
+        redacted.Should().Contain("System.AggregateException", Exactly.Once()); // flattened
+    }
+
+    [Fact]
     public void RedactStackTrace_IsEmptyForEmptyException()
     {
         var ex = new Exception();
