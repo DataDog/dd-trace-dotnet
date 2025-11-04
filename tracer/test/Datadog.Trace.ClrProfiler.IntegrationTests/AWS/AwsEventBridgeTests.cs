@@ -73,6 +73,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_eventbridge");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_eventbridge");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_eventbridge");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_eventbridge");
+                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_eventbridge");
+                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_eventbridge");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
                 if (!string.IsNullOrWhiteSpace(host))
