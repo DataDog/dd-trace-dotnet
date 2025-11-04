@@ -117,8 +117,6 @@ namespace Samples.Console_
                 {
                     Console.WriteLine("Ready");
                     Console.WriteLine($"Echo: {Console.ReadLine()}");
-                    // Small delay to ensure the test has time to read the output before the process exits
-                    Thread.Sleep(100);
                     return;
                 }
 
