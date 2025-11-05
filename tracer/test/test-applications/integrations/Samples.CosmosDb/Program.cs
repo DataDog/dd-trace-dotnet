@@ -69,13 +69,13 @@ namespace Samples.CosmosDb
         public async Task GetStartedDemoAsync()
         {
             // Create a new instance of the Cosmos Client
-            var clientOptions =
+            var clientOptions = 
                 new CosmosClientOptions()
                 {
                     ApplicationName = "CosmosDBDotnetQuickstart",
                     RequestTimeout = TimeSpan.FromMinutes(10),
-                    ConnectionMode = ConnectionMode.Gateway,
                     LimitToEndpoint = true,
+                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
                     HttpClientFactory = () =>
                     {
                         var handler = new HttpClientHandler
