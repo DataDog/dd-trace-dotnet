@@ -5486,6 +5486,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5505,6 +5511,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.28.0" },
 #endif
 #if NETCOREAPP3_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5524,6 +5536,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.28.0" },
 #endif
 #if NETCOREAPP3_1
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5566,9 +5584,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET5_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5611,9 +5635,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET6_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5656,9 +5686,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET7_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5701,9 +5737,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET8_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5746,9 +5788,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET9_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5791,9 +5839,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #if NET10_0
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
                 new object[] { "3.12.0" },
                 new object[] { "3.13.0" },
                 new object[] { "3.14.0" },
@@ -5836,7 +5890,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.51.0" },
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
-                new object[] { "3.54.0" },
+                new object[] { "3.54.1" },
 #endif
 #endif
             };

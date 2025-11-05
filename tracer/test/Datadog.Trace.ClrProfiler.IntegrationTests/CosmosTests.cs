@@ -40,12 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitTracesFull(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("TEST_MODE", "Full");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
 
@@ -59,6 +58,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                settings.AddSimpleScrubber("out.host: cosmosdb-emulator", "out.host: localhost");
+                settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator:8081/", "out.host: https://localhost:00000/");
+                settings.AddSimpleScrubber("peer.service: cosmosdb-emulator", "peer.service: localhost");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();

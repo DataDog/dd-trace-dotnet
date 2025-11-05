@@ -17,8 +17,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -46,8 +45,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -75,8 +73,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -104,8 +101,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -134,8 +130,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -164,8 +159,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -194,8 +188,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -224,8 +217,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -252,8 +244,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -280,8 +271,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -308,8 +298,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -336,8 +325,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -365,8 +353,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -394,8 +381,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
