@@ -4727,7 +4727,7 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+        - script: git clone -b gleocadie/disable-test-discovery-test-for-dotnet --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
 
         - script: |
@@ -4829,7 +4829,7 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git clone -b gleocadie/disable-test-discovery-test-for-dotnet --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - template: steps/download-artifact.yml
