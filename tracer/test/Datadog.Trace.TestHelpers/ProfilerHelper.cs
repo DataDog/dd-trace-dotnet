@@ -19,8 +19,6 @@ namespace Datadog.Trace.TestHelpers
                                                                      .Concat(new[] { "dotnet", "iisexpress" })
                                                                      .ToArray();
 
-        private static readonly object CorFlagsLock = new object();
-
         private static string _corFlagsExe;
 
         public static async Task<Process> StartProcessWithProfiler(
@@ -91,58 +89,53 @@ namespace Datadog.Trace.TestHelpers
 
         public static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
         {
-            // Use a lock to prevent parallel tests from modifying the same executable concurrently
-            // which can cause "Access is denied" errors in CI
-            lock (CorFlagsLock)
+            var corFlagsExe = _corFlagsExe;
+            var setBit = require32Bit ? "/32BITREQ+" : "/32BITREQ-";
+            if (string.IsNullOrEmpty(corFlagsExe))
             {
-                var corFlagsExe = _corFlagsExe;
-                var setBit = require32Bit ? "/32BITREQ+" : "/32BITREQ-";
-                if (string.IsNullOrEmpty(corFlagsExe))
-                {
-                    var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                    var dotnetWindowsSdkToolsFolder = Path.Combine(programFiles, "Microsoft SDKs", "Windows", "v10.0A", "bin");
+                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                var dotnetWindowsSdkToolsFolder = Path.Combine(programFiles, "Microsoft SDKs", "Windows", "v10.0A", "bin");
 
-                    output?.WriteLine($"Searching for CorFlags.exe in {dotnetWindowsSdkToolsFolder}");
-                    if (Directory.Exists(dotnetWindowsSdkToolsFolder))
+                output?.WriteLine($"Searching for CorFlags.exe in {dotnetWindowsSdkToolsFolder}");
+                if (Directory.Exists(dotnetWindowsSdkToolsFolder))
+                {
+                    // get sub directories, e.g.
+                    // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools",
+                    // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools",
+                    foreach (var folder in Directory.EnumerateDirectories(dotnetWindowsSdkToolsFolder))
                     {
-                        // get sub directories, e.g.
-                        // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools",
-                        // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools",
-                        foreach (var folder in Directory.EnumerateDirectories(dotnetWindowsSdkToolsFolder))
+                        var exe = Path.Combine(folder, "x64", "CorFlags.exe");
+                        if (File.Exists(exe))
                         {
-                            var exe = Path.Combine(folder, "x64", "CorFlags.exe");
-                            if (File.Exists(exe))
-                            {
-                                corFlagsExe = exe;
-                                break;
-                            }
+                            corFlagsExe = exe;
+                            break;
                         }
                     }
-
-                    if (!string.IsNullOrEmpty(corFlagsExe))
-                    {
-                        Interlocked.Exchange(ref _corFlagsExe, corFlagsExe);
-                        output?.WriteLine($"CorFlags.exe found at {corFlagsExe}");
-                    }
-                    else
-                    {
-                        throw new Exception($"Could not find CorFlags.exe so unable to set {setBit}");
-                    }
                 }
 
-                output?.WriteLine($"Updating {Path.GetFileName(executable)} using {setBit}");
-                var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit} /force")
+                if (!string.IsNullOrEmpty(corFlagsExe))
                 {
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                };
-
-                var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
-
-                if (!executedSuccessfully)
-                {
-                    throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
+                    Interlocked.Exchange(ref _corFlagsExe, corFlagsExe);
+                    output?.WriteLine($"CorFlags.exe found at {corFlagsExe}");
                 }
+                else
+                {
+                    throw new Exception($"Could not find CorFlags.exe so unable to set {setBit}");
+                }
+            }
+
+            output?.WriteLine($"Updating {Path.GetFileName(executable)} using {setBit}");
+            var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit} /force")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
+
+            var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
+
+            if (!executedSuccessfully)
+            {
+                throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
             }
         }
     }

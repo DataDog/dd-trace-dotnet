@@ -16,6 +16,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public abstract class ConsoleTestHelper : ToolTestHelper
 {
+    private static readonly object CorFlagsLock = new object();
+
     protected ConsoleTestHelper(ITestOutputHelper output)
         : base("Console", output)
     {
@@ -43,7 +45,10 @@ public abstract class ConsoleTestHelper : ToolTestHelper
          && !EnvironmentHelper.IsCoreClr()
          && !EnvironmentTools.IsTestTarget64BitProcess())
         {
-            ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
+            lock (CorFlagsLock)
+            {
+                ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
+            }
         }
 
         return (executable, args);
@@ -96,7 +101,13 @@ public abstract class ConsoleTestHelper : ToolTestHelper
             }
         };
 
-        var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
+        // Lock around Process.Start to prevent concurrent CorFlags modification
+        // from another thread causing "Access is denied" errors
+        CustomProcessHelper helper;
+        lock (CorFlagsLock)
+        {
+            helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
+        }
 
         var completed = await Task.WhenAny(
                             helper.Task,
