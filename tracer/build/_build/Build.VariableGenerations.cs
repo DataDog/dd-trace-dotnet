@@ -107,7 +107,7 @@ partial class Build : NukeBuild
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
                     bool isChanged = false;
-                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{changedTeamValue.VariableName}";
+                    var forceExplorationTestsWithVariableName = $"force_run_tests_with_{changedTeamValue.VariableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
