@@ -106,25 +106,6 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
-        /// <summary>
-        /// Used to refresh global settings when environment variables or config sources change.
-        /// This is not necessary if changes are set via code, only environment.
-        /// </summary>
-        [PublicApi]
-        public static void Reload()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
-            DatadogLogging.Reset();
-            var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
-            if (isLibdatadogAvailable.IsAvailable)
-            {
-                LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: false);
-            }
-
-            GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
-            Instance = CreateFromDefaultSources();
-        }
-
         private static GlobalSettings CreateFromDefaultSources()
             => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, OverrideErrorLog.Instance);
     }
