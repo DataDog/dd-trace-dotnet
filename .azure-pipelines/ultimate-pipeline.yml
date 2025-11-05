@@ -947,7 +947,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -967,7 +967,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -992,7 +992,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - checkout: none
 
@@ -1288,7 +1288,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1363,7 +1363,7 @@ stages:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_macos_matrix'] ]
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1619,7 +1619,7 @@ stages:
     - job: macos
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: macos-13
+        vmImage: macos-14
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1979,7 +1979,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
