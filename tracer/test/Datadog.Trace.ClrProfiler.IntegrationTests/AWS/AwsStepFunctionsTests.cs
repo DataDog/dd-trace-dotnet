@@ -32,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsStepFunctionsInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsStepFunctionsOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsStepFunctionsRequest(metadataSchemaVersion),
+            SpanKinds.Consumer => span.IsAwsStepFunctionsInbound(),
+            SpanKinds.Producer => span.IsAwsStepFunctionsOutbound(),
+            SpanKinds.Client => span.IsAwsStepFunctionsRequest(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Step Functions integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -44,9 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(string packageVersion)
         {
             string metadataSchemaVersion = "v0";
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-stepfunctions" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-stepfunctions";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -63,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var stepFunctionsSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 stepFunctionsSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(stepFunctionsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(stepFunctionsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

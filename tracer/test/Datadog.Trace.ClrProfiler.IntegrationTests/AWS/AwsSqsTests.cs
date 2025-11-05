@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsSqsInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsSqsOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsSqsRequest(metadataSchemaVersion),
+            SpanKinds.Consumer => span.IsAwsSqsInbound(),
+            SpanKinds.Producer => span.IsAwsSqsOutbound(),
+            SpanKinds.Client => span.IsAwsSqsRequest(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SQS integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -46,9 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(string packageVersion)
         {
             string metadataSchemaVersion = "v0";
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-sqs" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-sqs";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -66,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 sqsSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

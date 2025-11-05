@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Client => span.IsAwsS3Request(metadataSchemaVersion),
+            SpanKinds.Client => span.IsAwsS3Request(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS S3 integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -43,9 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(string packageVersion)
         {
             string metadataSchemaVersion = "v0";
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-s3" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-s3";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -63,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var s3Spans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 s3Spans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(s3Spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(s3Spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

@@ -32,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsEventBridgeInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsEventBridgeOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsEventBridgeRequest(metadataSchemaVersion),
+            SpanKinds.Consumer => span.IsAwsEventBridgeInbound(),
+            SpanKinds.Producer => span.IsAwsEventBridgeOutbound(),
+            SpanKinds.Client => span.IsAwsEventBridgeRequest(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS EventBridge integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -44,9 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(string packageVersion)
         {
             string metadataSchemaVersion = "v0";
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-eventbridge" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-eventbridge";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -63,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var eventBridgeSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 eventBridgeSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

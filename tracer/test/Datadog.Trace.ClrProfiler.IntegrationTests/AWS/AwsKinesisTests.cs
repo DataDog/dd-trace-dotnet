@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Producer => span.IsAwsKinesisOutbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsKinesisOutbound(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Kinesis integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -42,9 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsTraces(string packageVersion)
         {
             string metadataSchemaVersion = "v0";
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-kinesis" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-kinesis";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -62,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 kinesisSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(kinesisSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(kinesisSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AerospikeTags),
-                _ => typeof(AerospikeV1Tags),
+                _ => typeof(AerospikeDD_TRACE_SPAN_ATTRIBUTE_SCHEMA),
             };
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
