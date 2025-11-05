@@ -4,6 +4,7 @@ This guide outlines the process for updating and deploying the Windows Docker im
 
 ## Prerequisites
 
+- Windows PC/Virtual Machine
 - Docker Desktop with Windows containers enabled
 - Push access to `datadog` DockerHub organization
 
@@ -23,9 +24,11 @@ Tag format: `dotnet<VERSION>-<STAGE>` (e.g., `dotnet10-rc2`)
 ### 3. Build and Push to DockerHub
 
 ```powershell
+$tag="<TAG>"
+echo "building datadog/dd-trace-dotnet-docker-build:$tag"
 cd tracer\build\_build\docker\gitlab
-docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:<TAG> .
-docker push datadog/dd-trace-dotnet-docker-build:<TAG>
+docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:$tag .
+docker push datadog/dd-trace-dotnet-docker-build:$tag
 ```
 
 ### 4. Test the Image in GitLab CI
@@ -36,9 +39,11 @@ Create a PR and verify the GitLab CI build passes.
 
 ### 5. Get the Image Digest
 
+This is displayed when running the `docker push` from step 3. Alternatively, you can find the hash for an image using:
 ```powershell
-docker pull datadog/dd-trace-dotnet-docker-build:<TAG>
-docker inspect --format='{{index .RepoDigests 0}}' datadog/dd-trace-dotnet-docker-build:<TAG>
+echo "Finding format for $tag"
+docker pull datadog/dd-trace-dotnet-docker-build:$tag
+docker inspect --format='{{index .RepoDigests 0}}' datadog/dd-trace-dotnet-docker-build:$tag
 ```
 
 Extract the SHA256 hash from the output (format: `docker.io/datadog/dd-trace-dotnet-docker-build@sha256:<HASH>`).
@@ -64,6 +69,8 @@ In the `DataDog/images` repository, add entries to two files:
   digest: sha256:<DIGEST_FROM_STEP_5>
 ```
 
+> [!TIP]
+> You can clean up and delete "old" tags from these files, as long as they're no long in use in any pipelines.
 Create PR and wait for merge. Mirror sync completes within a few minutes.
 
 ### 7. Update GitLab CI to Use Mirror
