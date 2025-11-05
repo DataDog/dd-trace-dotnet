@@ -1783,12 +1783,6 @@ partial class Build : NukeBuild
                     var images = new SmokeTestImage[]
                     {
                         // macos-11/12/13 environments are no longer available in Azure Devops
-                        new (publishFramework: TargetFramework.NETCOREAPP3_1, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET5_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET6_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET7_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET8_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET9_0, "macos-13", "macos", "13"),
                         new (publishFramework: TargetFramework.NETCOREAPP3_1, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET5_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET6_0, "macos-14", "macos", "14"),
