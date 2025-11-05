@@ -22,19 +22,19 @@ internal static class HashHelper
     public static NodeHashBase CalculateNodeHashBase(string service, string? env, string? primaryTag, string? processTags)
     {
         var hash = FnvHash64.GenerateHash(service, HashVersion);
-        if (!string.IsNullOrEmpty(env))
+        if (!StringUtil.IsNullOrEmpty(env))
         {
-            hash = FnvHash64.GenerateHash(env!, HashVersion, hash);
+            hash = FnvHash64.GenerateHash(env, HashVersion, hash);
         }
 
-        if (!string.IsNullOrEmpty(primaryTag))
+        if (!StringUtil.IsNullOrEmpty(primaryTag))
         {
-            hash = FnvHash64.GenerateHash(primaryTag!, HashVersion, hash);
+            hash = FnvHash64.GenerateHash(primaryTag, HashVersion, hash);
         }
 
-        if (!string.IsNullOrEmpty(processTags))
+        if (!StringUtil.IsNullOrEmpty(processTags))
         {
-            hash = FnvHash64.GenerateHash(processTags!, HashVersion, hash);
+            hash = FnvHash64.GenerateHash(processTags, HashVersion, hash);
         }
 
         return new NodeHashBase(hash);
