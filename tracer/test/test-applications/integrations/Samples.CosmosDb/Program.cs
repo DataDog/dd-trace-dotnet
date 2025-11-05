@@ -39,6 +39,8 @@ namespace Samples.CosmosDb
         // <Main>
         public static async Task Main(string[] args)
         {
+            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+
             cosmosEventListener = new CosmosEventListener();
 
             try
