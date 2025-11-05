@@ -15,7 +15,7 @@ namespace Samples.CosmosDb
         // The Azure Cosmos DB endpoint for running this sample.
         private static readonly string EndpointUri =
             Environment.GetEnvironmentVariable("COSMOSDB_ENDPOINT") ??
-            "http://localhost:8081";
+            "https://localhost:8081";
 
         // The primary key for the Azure Cosmos account.
         private static readonly string PrimaryKey = ConfigurationManager.AppSettings["PrimaryKey"];
