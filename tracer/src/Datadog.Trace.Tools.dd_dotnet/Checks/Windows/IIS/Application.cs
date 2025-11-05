@@ -102,5 +102,37 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
             return result;
         }
+
+        public (string TrustLevel, bool IslegacyCasModel) GetPartialTrustDetails(string siteName)
+        {
+            // This is the "effective" version on the host - even if it doesn't have the settings
+            // itself, it includes the values set on the parent web.configs
+            // Note that we don't check <NetFx40_LegacySecurityPolicy>, as that doesn't apply to
+            // aspnet apps as far as I can tell - legacyCasModel is what takes precedence.
+            using var section = _appHostAdminManager.GetAdminSection("system.web/trust", $"MACHINE/WEBROOT/APPHOST/{siteName}");
+
+            using var properties = section.Properties();
+            var count = properties.Count();
+            string? level = null;
+            bool? isLegacyCasModel = null;
+            for (var i = 0; i < count; i++)
+            {
+                using var prop = properties.GetProperty(i);
+                var name = prop.Name();
+                if (string.Equals(name, "level", StringComparison.OrdinalIgnoreCase))
+                {
+                    level = prop.StringValue();
+                }
+
+                if (string.Equals(name, "legacyCasModel", StringComparison.OrdinalIgnoreCase))
+                {
+                    var legacyCasModel = prop.StringValue();
+                    isLegacyCasModel = bool.TryParse(legacyCasModel, out var isLegacyCase) && isLegacyCase;
+                }
+            }
+
+            // Default values are Full and False
+            return (level ?? "Full", isLegacyCasModel ?? false);
+        }
     }
 }
