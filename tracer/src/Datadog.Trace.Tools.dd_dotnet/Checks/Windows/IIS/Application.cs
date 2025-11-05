@@ -83,13 +83,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             return null;
         }
 
-        public IReadOnlyDictionary<string, string> GetAppSettings()
+        public IReadOnlyDictionary<string, string> GetAppSettings(string siteName)
         {
             var result = new Dictionary<string, string>();
 
             using var configManager = _appHostAdminManager.GetConfigManager();
 
-            using var section = _appHostAdminManager.GetAdminSection("appSettings", $"MACHINE/WEBROOT/APPHOST{_application.GetStringProperty("path")}");
+            using var section = _appHostAdminManager.GetAdminSection("appSettings", $"MACHINE/WEBROOT/APPHOST/{siteName}{_application.GetStringProperty("path")}");
 
             using var collection = section.Collection();
             var count = collection.Count();

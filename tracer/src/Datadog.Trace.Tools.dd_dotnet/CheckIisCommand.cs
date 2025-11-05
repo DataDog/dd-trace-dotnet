@@ -133,7 +133,7 @@ internal class CheckIisCommand : Command
 
             try
             {
-                appSettings = application.GetAppSettings();
+                appSettings = application.GetAppSettings(siteName);
             }
             catch (Exception ex)
             {
