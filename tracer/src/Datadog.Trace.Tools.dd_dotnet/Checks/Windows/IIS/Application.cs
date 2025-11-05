@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             // itself, it includes the values set on the parent web.configs
             // Note that we don't check <NetFx40_LegacySecurityPolicy>, as that doesn't apply to
             // aspnet apps as far as I can tell - legacyCasModel is what takes precedence.
-            using var section = _appHostAdminManager.GetAdminSection("system.web/trust", $"MACHINE/WEBROOT/APPHOST/{siteName}");
+            using var section = _appHostAdminManager.GetAdminSection("system.web/trust", $"MACHINE/WEBROOT/APPHOST/{siteName}{_application.GetStringProperty("path")}");
 
             using var properties = section.Properties();
             var count = properties.Count();
