@@ -2302,7 +2302,6 @@ stages:
     variables:
       TestAllPackageVersions: true
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
-      IntegrationTestFilter: DockerGroup=$(dockerGroup)
 
     pool:
       name: $(linuxX64Pool)
@@ -2319,6 +2318,14 @@ stages:
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
+    - bash: |
+        if [ -z "$(IntegrationTestFilter)" ]; then
+          newFilter="DockerGroup=$(dockerGroup)"
+        else
+          newFilter="$(IntegrationTestFilter)&(DockerGroup=$(dockerGroup))"
+        fi
+        echo "##vso[task.setvariable variable=IntegrationTestFilter]$newFilter"
+      displayName: "Calculate IntegrationTestFilter"
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
