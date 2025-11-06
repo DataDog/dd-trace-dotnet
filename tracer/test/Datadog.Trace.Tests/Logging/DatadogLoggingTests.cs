@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.Logging
         public DatadogLoggingTests(ITestOutputHelper output)
         {
             _output = output;
-            _originalIsDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+            _originalIsDebugEnabled = GlobalSettings.Instance.DebugEnabled;
             GlobalSettings.SetDebugEnabled(false);
             _logEventSink = new CollectionSink();
             _logger = new LoggerConfiguration()
