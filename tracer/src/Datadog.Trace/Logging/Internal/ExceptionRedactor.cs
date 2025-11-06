@@ -61,7 +61,17 @@ internal static class ExceptionRedactor
 
             sb.Append(ex.GetType().FullName ?? "Unknown Exception");
 
-            if (ex.InnerException is { } inner)
+            if (ex is AggregateException aex
+             && aex.Flatten() is { InnerExceptions: { Count: > 1 } exs })
+            {
+                // We don't specify the exact number so that we don't impact grouping
+                sb.Append(" (Multiple Exceptions)");
+                foreach (var aexInnerException in exs)
+                {
+                    AddException(sb, aexInnerException, isInnerException: true);
+                }
+            }
+            else if (ex.InnerException is { } inner)
             {
                 AddException(sb, inner, isInnerException: true);
             }

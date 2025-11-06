@@ -31,6 +31,136 @@
 
 
 
+
+
+## [Release 3.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.30.0)
+
+## Summary
+
+- [Tracer] Add support for Azure Event Hubs
+- [Test Optimization] Add support for MSTest 4.x.x
+- [OpenTelemetry] OTLP Logs API Support
+- [Continuous Profiler] Performance improvements
+
+## Changes
+
+### Tracer
+* [Tracer] Add Azure Event Hubs instrumentation  (#7620)
+* [OTEL] OTLP Logs API Support (#7680)
+* [Tracer] Add new process tags (#7651)
+* small follow up on process tags (#7743)
+* Removing Forgiven Nulls (#7745)
+* Add fix for whitespace in exporter settings and metrics URL (#7747)
+* Fix ad-hoc use of `TracerSettings` to use `MutableSettings` where appropriate (#7543)
+* Fix calls to `IsIntegrationEnabled()`,  `IsErrorStatusCode()`, and `GetIntegrationAnalyticsSampleRate()` (#7544)
+* Enforce that you can't update exporter settings to point to UDS on Windows (#7721)
+
+### CI Visibility
+* [Test Optimization] MsTest support updates (#7663)
+
+### Continuous Profiler
+* [Profiler] Perf improvements + cleanup (#7696)
+* [crashtracker] Fix native and managed callstacks merge (#7703)
+* [Profiler] Don't take tracer stable config notification when kill switch detected (#7705)
+
+### Fixes
+* Protect against `claimsPrincipal` being `null` (#7719)
+
+### Build / Test
+* [Config Registry] 1/5 Add gitlab step and json configuration file and yaml for doc (#7548)
+* managed loader: refactor for testability, add unit tests (#7594)
+* Update to .NET RC2 (#7659)
+* [Test Package Versions Bump] Updating package versions (#7673)
+* Run dsm-throughput macrobenchmarks on master push & schedule (#7686)
+* Update `.gitignore` to ignore local Claude Code settings (#7691)
+* Comment out new test agent on Windows (#7692)
+* [Test Package Versions Bump] Updating package versions (#7693)
+* Remove CodeQL workflow (#7701)
+* [Test Package Versions Bump] Updating package versions (#7712)
+* Update Linux VMs (#7718)
+* [Test Package Versions Bump] Updating package versions (#7726)
+* Split integration tests in groups (#7733)
+* [Tracer] Fix EventHubs flaky batch test (#7734)
+
+### Miscellaneous
+* [onboarding] make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)
+* Revert "make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)" (#7704)
+* [Config registry] 2/5 Reorganize keys, split config keys and platform keys (#7688)
+* [Docs] Improve docs on troubleshooting CI failures  (#7707)
+* Add VBCSCompiler to exclude list (#7694)
+
+[Changes since 3.29.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.29.0...v3.30.0)
+
+## [Release 3.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.29.0)
+
+## Summary
+
+- [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+- [Azure Functions] Add aas.site.kind tag to agentless logs (https://github.com/DataDog/dd-trace-dotnet/pull/7623)
+- [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+- Various other fixes and improvements
+
+## Changes
+
+### Tracer
+* Rebuild `MutableSettings` on dynamic config changes (#7525)
+* Move `DefaultServiceName` to `MutableSettings` (#7530)
+* Simplify `PerTraceSettings.GetServiceName()` (#7532)
+* [PDB] Handle exception during opening a pdb file (#7573)
+
+### CI Visibility
+* [TestOptimization] Catch IOException on the Git folder discovery (#7658)
+
+### Continuous Profiler
+* [crashtracker/profiler] Notify profiler the application is crashing (#7657)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3695 Return correct RC apply details (#6890)
+* [Dynamic Instrumentation] Skip some debugger tests on .NET 8 or greater (#7631)
+* Minor fix in DynamicConfigurationManager update process (#7664)
+* [Dynamic Instrumentation] DEBUG 3794 Stabilize snapshot enumerable serializing (#6910)
+* [Dynamic Instrumentation] DEBUG-3959 Guard against undefined value expression (#7008)
+* [Debugger Default-On] DEBUG-4341 Forward snapshots to debugger intake (#7388)
+* [Dynamic Instrumentation] Ensure DI metric probe does not send automatic telemetry (#7621)
+* [Dynamic Instrumentation] Remove reference types value property from snapshot (#7635)
+
+### Serverless
+* [Azure Functions] Add `aas.site.kind` tag to agentless logs (#7623)
+*  [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+* [internal docs] Add CI troubleshooting documentation (#7634)
+* [OTEL] Moves OTelMetrics Under OpenTelemetry.Metrics (#7638)
+* Minor refactor and added tests for `DynamicConfigurationManager` (#7652)
+* [OTEL] Vendoring OtlpGrpcExportClient And Enabling OTLP Metrics gRPC Tests (#7666)
+* [Code Origin] Add debug logs to code origin for entry span (#7612)
+* [Code Origin] Performance: Add Assembly Filter Caching for Code Origin (#7667)
+* Small OpenTelemetry Metrics fixes and optimizations (#7632)
+
+### Build / Test
+* Optimize `AGENTS.md` with contextual load guidance (#7625)
+* Bump timeit to v0.4.6 (#7647)
+* Improve and simplify the microbenchmarks CI setup (#7613)
+* Capture Exception when sending metrics (#7614)
+* [Test Package Versions Bump] Updating package versions (#7617)
+* Fix profiler_execution_benchmarks flakiness (#7622)
+* Fix the code freeze action (#7626)
+* Revert "[SINT-4157] sanitise ultimate-pipeline.yml" (#7627)
+* Increase Docker run step resiliency for Profiler integration tests (#7629)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7630)
+* [Azure Functions] Add `Build-AzureFunctionsNuget.ps1` helper script for local developement (#7633)
+* Update `CODEOWNERS` for consistent ownership of managed loader files (#7643)
+* [Test Package Versions Bump] Updating package versions (#7644)
+* Clone the prod dd-trace-dotnet microbenchmark branch for microbenchmarks (#7646)
+* Fix CleanObjFiles job (#7648)
+* [Test Package Versions Bump] Updating package versions (#7655)
+* [OTEL] Switches OTLP Tests To dd-apm-test-agent Instead of MockTracerAgent (#7656)
+* Fix nuget installer smoke tests (#7619)
+
+
+[Changes since 3.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.28.0...v3.29.0)
+
 ## [Release 3.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.28.0)
 
 ## Summary

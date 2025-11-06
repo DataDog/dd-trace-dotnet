@@ -74,11 +74,16 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            var profilerSettings = Profiler.Instance.Settings;
+            if (!profilerSettings.IsManagedActivationEnabled)
+            {
+                Log.Debug("Set Stable Configuration in Continuous Profiler native library is disabled.");
+                return;
+            }
+
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;
-            var profilerSettings = Profiler.Instance.Settings;
-
             NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
@@ -466,8 +471,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
             // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
+            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
 
             if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
             {

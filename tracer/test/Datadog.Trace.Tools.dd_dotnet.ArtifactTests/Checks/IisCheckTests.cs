@@ -51,7 +51,7 @@ public class IisCheckTests : ToolTestHelper
             standardOutput.Should().Contain(Resources.IisMixedRuntimes);
         }
 
-        standardOutput.Should().Contain(Resources.IisNoIssue);
+        standardOutput.Should().Contain(Resources.IisNoIssue).And.Contain(Resources.IisFullTrust);
         errorOutput.Should().BeEmpty();
         exitCode.Should().Be(0);
     }
@@ -67,7 +67,7 @@ public class IisCheckTests : ToolTestHelper
         using var iisFixture = await StartIisWithGac(GetAppType());
         var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
 
-        standardOutput.Should().Contain(Resources.IisNoIssue);
+        standardOutput.Should().Contain(Resources.IisNoIssue).And.Contain(Resources.IisFullTrust);
         errorOutput.Should().BeEmpty();
         exitCode.Should().Be(0);
     }
@@ -85,6 +85,7 @@ public class IisCheckTests : ToolTestHelper
 
         standardOutput.Should().Contain(Resources.OutOfProcess)
             .And.NotContain(Resources.AspNetCoreProcessNotFound)
+            .And.Contain(Resources.IisFullTrust)
             .And.Contain(Resources.IisNoIssue);
 
         errorOutput.Should().BeEmpty();
@@ -156,6 +157,36 @@ public class IisCheckTests : ToolTestHelper
         errorOutput.Should().BeEmpty();
     }
 
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task PartialTrustPool()
+    {
+        EnsureWindowsAndX64();
+
+        using var iisFixture = await StartIisWithGac(GetAppType(), usePartialTrust: true);
+
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+
+        exitCode.Should().Be(1);
+        standardOutput.Should().Contain(Resources.PartialTrustEnvironment("High"));
+        errorOutput.Should().BeEmpty();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task LegacyCasModelPool()
+    {
+        EnsureWindowsAndX64();
+
+        using var iisFixture = await StartIisWithGac(GetAppType(), useLegacyCasModel: true);
+
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+
+        exitCode.Should().Be(1);
+        standardOutput.Should().Contain(Resources.LegacyCasEnabled());
+        errorOutput.Should().BeEmpty();
+    }
+
     private static IisAppType GetAppType()
     {
 #if NETFRAMEWORK
@@ -203,14 +234,14 @@ public class IisCheckTests : ToolTestHelper
 #endif
     }
 
-    private async Task<GacIisFixture> StartIisWithGac(IisAppType appType)
+    private async Task<GacIisFixture> StartIisWithGac(IisAppType appType, bool usePartialTrust = false, bool useLegacyCasModel = false)
     {
         // GacFixture is not compatible with .NET Core, use the Nuke target instead
         GacIisFixture.GacAdd();
 
         try
         {
-            return new GacIisFixture(await StartIis(appType));
+            return new GacIisFixture(await StartIis(appType, usePartialTrust, useLegacyCasModel));
         }
         catch
         {
@@ -219,9 +250,9 @@ public class IisCheckTests : ToolTestHelper
         }
     }
 
-    private async Task<IisFixture> StartIis(IisAppType appType)
+    private async Task<IisFixture> StartIis(IisAppType appType, bool usePartialTrust = false, bool useLegacyCasModel = false)
     {
-        var fixture = new IisFixture { UseGac = false };
+        var fixture = new IisFixture { UseGac = false, UsePartialTrust = usePartialTrust, UseLegacyCasModel = useLegacyCasModel };
 
         if (appType is IisAppType.AspNetCoreInProcess or IisAppType.AspNetCoreOutOfProcess)
         {

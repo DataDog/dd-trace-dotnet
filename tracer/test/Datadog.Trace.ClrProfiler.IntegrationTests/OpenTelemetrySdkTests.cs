@@ -85,8 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
-#if NET6_0_OR_GREATER
-        public static IEnumerable<object[]> GetMetricsTestData()
+        public static IEnumerable<object[]> GetOtlpTestData()
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
@@ -96,7 +95,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return [packageVersion[0], "true", "false", "http/protobuf"];
             }
         }
-#endif
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
@@ -217,7 +215,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
-        [MemberData(nameof(GetMetricsTestData))]
+        [Trait("DockerGroup", "1")]
+        [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
@@ -292,6 +291,94 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var suffix = GetSuffix(packageVersion);
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpMetrics{suffix}{snapshotName}";
+
+                await Verifier.Verify(formattedJson, settings)
+                              .UseFileName(fileName)
+                              .DisableRequireUniquePrefix();
+            }
+        }
+#endif
+
+#if NETCOREAPP3_1_OR_GREATER
+        [SkippableTheory]
+        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RequiresDockerDependency", "true")]
+        [Trait("DockerGroup", "1")]
+        [MemberData(nameof(GetOtlpTestData))]
+        public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
+        {
+            var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
+            var runtimeMajor = Environment.Version.Major;
+
+            _ = runtimeMajor switch
+            {
+                >= 8 when parsedVersion >= new Version("1.9.0") => string.Empty,
+                6 or 7 when parsedVersion >= new Version("1.9.0") && otelLogsEnabled.Equals("true") && protocol.Equals("grpc") => throw new SkipException($"Unable to send insecure GRPC Logs using OpenTelemetry in .NET {runtimeMajor}."),
+                6 or 7 when parsedVersion >= new Version("1.9.0") => string.Empty,
+                _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
+            };
+
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            var otlpPort = protocol == "grpc" ? 4317 : 4318;
+
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
+            }
+
+            SetEnvironmentVariable("DD_ENV", "testing");
+            SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
+            SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=OtlpLogsService,deployment.environment=testing");
+            SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
+            SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+            SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
+            {
+                using var httpClient = new System.Net.Http.HttpClient();
+                var logsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/logs");
+                logsResponse.EnsureSuccessStatusCode();
+
+                var logsJson = await logsResponse.Content.ReadAsStringAsync();
+                var logsData = JToken.Parse(logsJson);
+
+                logsData.Should().NotBeNullOrEmpty();
+
+                foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
+                {
+                    attribute["value"]!["string_value"] = "sdk-version";
+                }
+
+                foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.name')]"))
+                {
+                    attribute["value"]!["string_value"] = "sdk-name";
+                }
+
+                foreach (var logRecord in logsData.SelectTokens("$..log_records[*]"))
+                {
+                    logRecord["time_unix_nano"] = "0";
+                    logRecord["observed_time_unix_nano"] = "0";
+
+                    if (logRecord["trace_id"] != null)
+                    {
+                        logRecord["trace_id"] = "normalized-trace-id";
+                    }
+
+                    if (logRecord["span_id"] != null)
+                    {
+                        logRecord["span_id"] = "normalized-span-id";
+                    }
+                }
+
+                var formattedJson = logsData.ToString(Formatting.Indented);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var suffix = GetSuffix(packageVersion);
+                var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpLogs{suffix}";
 
                 await Verifier.Verify(formattedJson, settings)
                               .UseFileName(fileName)

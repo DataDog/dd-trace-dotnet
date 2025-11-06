@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(StackExchangeRedisTestCollection))]
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [UsesVerify]
     public class StackExchangeRedisTests : TracingIntegrationTest
     {

@@ -1,10 +1,20 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include "gtest/gtest.h"
+
+#include "unknwn.h"
+
+const IID IID_IUnknown = {0x00000000,
+    0x0000,
+    0x0000,
+    {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+    
+#include "CrashReporting.h"
+
 #ifdef _WIN32
 
 #include "resource.h"
-#include "gtest/gtest.h"
 #include <string_view>
 #include <windows.h>
 #include <vector>
@@ -130,5 +140,107 @@ TEST(CrashReportingTest, ExtractPdbSignaturePE64)
     //                                  |        Pdb signature          |Age|
     ASSERT_STRCASEEQ(buildIdStr.data(), "C465AFCDBDBC58A0100995839A0E4C271");
 }
-
 #endif
+
+TEST(CrashReportingTest, CheckMergedCallstackOnAlternateStackWithHighAddresses)
+{
+    std::vector<StackFrame> nativeFrames = {
+        // next two frames simulate signal handler runnin on alternate stack
+        {0x7F4DECDF2BC0, 0x7F478000ACE0, "__GI___wait4", 0x7F4DECDF2BC0, 0x7F4DECD1F000, false, ""},
+        {0x7F4DECB882F0, 0x7F478000AD10, "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)", 0x7F4DECB882F0, 0x7F4DEC514000, false, ""},
+        // below managed before the signal handler
+        {0x7F4D778E1A7D, 0x7F476CC3E9D0, "/memfd:doublemapper (deleted)!<unknown>+b84da7d", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4D76593D2A, 0x7F476CC3EA10, "/memfd:doublemapper (deleted)!<unknown>+a4ffd2a", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4D6D7D3924, 0x7F476CC3EA90, "/usr/share/dotnet/shared/Microsoft.NETCore.App/9.0.10/System.Private.CoreLib.dll!<unknown>+5e370b924", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    std::vector<StackFrame> managedFrames = {
+        {0x7F4D778E1A7D, 0x7F476CC3E9D0, "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4D76593D2A, 0x7F476CC3EA10, "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4D6D7D3924, 0x7F476CC3EA90, "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    // MergeFrames returns the frames in the order of the sp addresses
+    auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
+    
+    std::vector<std::string> expectedFunctions = {
+        "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
+        "__GI___wait4",
+    };
+    
+    ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
+    for (size_t i = 0; i < mergedFrames.size(); i++)
+    {
+        ASSERT_EQ(mergedFrames[i].method, expectedFunctions[i]);
+    }
+}
+
+TEST(CrashReportingTest, CheckMergedCallstackOnAlternateStackWithLowAddresses)
+{
+    std::vector<StackFrame> nativeFrames = {
+        // next two frames simulate signal handler runnin on alternate stack
+        {0x7F4DECDF2BC0, 0x7F470000ACE0, "__GI___wait4", 0x7F4DECDF2BC0, 0x7F4DECD1F000, false, ""},
+        {0x7F4DECB882F0, 0x7F470000AD10, "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)", 0x7F4DECB882F0, 0x7F4DEC514000, false, ""},
+        // below managed before the signal handler
+        {0x7F4D778E1A7D, 0x7F476CC3E9D0, "/memfd:doublemapper (deleted)!<unknown>+b84da7d", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4D76593D2A, 0x7F476CC3EA10, "/memfd:doublemapper (deleted)!<unknown>+a4ffd2a", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4D6D7D3924, 0x7F476CC3EA90, "/usr/share/dotnet/shared/Microsoft.NETCore.App/9.0.10/System.Private.CoreLib.dll!<unknown>+5e370b924", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    std::vector<StackFrame> managedFrames = {
+        {0x7F4D778E1A7D, 0x7F476CC3E9D0, "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4D76593D2A, 0x7F476CC3EA10, "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4D6D7D3924, 0x7F476CC3EA90, "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
+
+    std::vector<std::string> expectedFunctions = {
+        "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "PROCCreateCrashDump(std::vector<char const*, std::allocator<char const*> >&, char*, int, bool)",
+        "__GI___wait4",
+    };
+
+    ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
+    for (size_t i = 0; i < mergedFrames.size(); i++)
+    {
+        ASSERT_EQ(mergedFrames[i].method, expectedFunctions[i]);
+    }
+}
+
+TEST(CrashReportingTest, CheckMergedCallstackButNoFusionBetweenNativeAndManaged)
+{
+    std::vector<StackFrame> nativeFrames = {
+        {0x7F4DEC9B2982, 0x7F476CC39E90, "MethodTable::GetFlag(MethodTable::WFLAGS_HIGH_ENUM) const", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4DEC9B3233, 0x7F476CC39F10, "WKS::gc_heap::mark_object_simple(unsigned char**)", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4DEC9B7929, 0x7F476CC39F70, "WKS::gc_heap::mark_through_cards_helper(unsigned char**, unsigned long&, unsigned long&, void (*)(unsigned char**), unsigned char*, unsigned char*, int, int)", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    std::vector<StackFrame> managedFrames = {
+        {0x7F4D778E1A7D, 0x7F476CC3E9D0, "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext", 0x7F4D778E1A7D, 0x7F4D6C094000, false, ""},
+        {0x7F4D76593D2A, 0x7F476CC3EA10, "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch", 0x7F4D76593D2A, 0x7F4D6C094000, false, ""},
+        {0x7F4D6D7D3924, 0x7F476CC3EA90, "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart", 0x7F4D6D7D3924, 0x7F478A0C8000, false, ""},
+    };
+
+    auto mergedFrames = CrashReporting::MergeFrames(nativeFrames, managedFrames);
+
+    std::vector<std::string> expectedFunctions = {
+        "System.Private.CoreLib.dll!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart",
+        "System.Private.CoreLib.dll!System.Threading.ThreadPoolWorkQueue.Dispatch",
+        "System.Private.CoreLib.dll!System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>+AsyncStateMachineBox<Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol+<ProcessRequests>d__238<System.__Canon>>.MoveNext",
+        "WKS::gc_heap::mark_through_cards_helper(unsigned char**, unsigned long&, unsigned long&, void (*)(unsigned char**), unsigned char*, unsigned char*, int, int)",
+        "WKS::gc_heap::mark_object_simple(unsigned char**)",
+        "MethodTable::GetFlag(MethodTable::WFLAGS_HIGH_ENUM) const",
+    };
+
+    ASSERT_EQ(mergedFrames.size(), expectedFunctions.size());
+    for (size_t i = 0; i < mergedFrames.size(); i++)
+    {
+        ASSERT_EQ(mergedFrames[i].method, expectedFunctions[i]);
+    }
+}

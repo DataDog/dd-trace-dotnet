@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
@@ -42,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
                 {
@@ -58,8 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 var activeScope = Tracer.Instance.ActiveScope;
                 if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
                 {
-                    var context = new PropagationContext(spanContext, Baggage.Current);
-                    Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, properties, default(ContextPropagation));
+                    AzureMessagingCommon.InjectContext(properties, activeScope as Scope);
                 }
             }
 

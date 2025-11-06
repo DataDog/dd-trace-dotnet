@@ -32,6 +32,7 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot/integrations"
     registries: "*"
+    open-pull-requests-limit: 1
     schedule:
       interval: "daily"
     labels:

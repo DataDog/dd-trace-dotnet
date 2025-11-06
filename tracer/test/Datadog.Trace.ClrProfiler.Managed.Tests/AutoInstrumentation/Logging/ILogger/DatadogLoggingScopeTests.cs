@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -16,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
     public class DatadogLoggingScopeTests
     {
         [Fact]
-        public void OutputsJsonFormattedStringWhenNoActiveTrace()
+        public async Task OutputsJsonFormattedStringWhenNoActiveTrace()
         {
             var settings = TracerSettings.Create(new()
             {
@@ -25,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 { ConfigurationKeys.Environment, "test" },
             });
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            await using var tracer = TracerHelper.Create(settings,  new Mock<IAgentWriter>().Object);
 
             var scope = new DatadogLoggingScope(tracer);
 
@@ -35,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         }
 
         [Fact]
-        public void OutputsJsonFormattedStringWhenActiveTrace()
+        public async Task OutputsJsonFormattedStringWhenActiveTrace()
         {
             var settings = TracerSettings.Create(new()
             {
@@ -44,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 { ConfigurationKeys.Environment, "test" },
             });
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            await using var tracer = TracerHelper.Create(settings,  new Mock<IAgentWriter>().Object);
             using var spanScope = tracer.StartActive("test");
             var scope = new DatadogLoggingScope(tracer);
 

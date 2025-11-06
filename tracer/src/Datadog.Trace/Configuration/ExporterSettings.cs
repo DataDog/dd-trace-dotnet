@@ -234,7 +234,7 @@ namespace Datadog.Trace.Configuration
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {
-            if (!string.IsNullOrWhiteSpace(metricsUrl) && TryGetMetricsUriAndTransport(metricsUrl!, out var settingsFromUri))
+            if (!string.IsNullOrEmpty(metricsUrl) && TryGetMetricsUriAndTransport(metricsUrl!, out var settingsFromUri))
             {
                 return settingsFromUri;
             }
@@ -252,7 +252,7 @@ namespace Datadog.Trace.Configuration
 
             MetricsTransportSettings settings;
 
-            if (!string.IsNullOrWhiteSpace(traceAgentUrl)
+            if (!string.IsNullOrEmpty(traceAgentUrl)
              && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix)
              && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var tcpUri))
             {
@@ -273,11 +273,11 @@ namespace Datadog.Trace.Configuration
                     portSource: dogStatsDPortSource,
                     out settings);
             }
-            else if (!string.IsNullOrWhiteSpace(metricsPipeName))
+            else if (!string.IsNullOrEmpty(metricsPipeName))
             {
                 settings = new MetricsTransportSettings(TransportType.NamedPipe, PipeName: metricsPipeName);
             }
-            else if (metricsUnixDomainSocketPath != null)
+            else if (!string.IsNullOrEmpty(metricsUnixDomainSocketPath))
             {
 #if NETCOREAPP3_1_OR_GREATER
                 SetUds(metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, ConfigurationKeys.MetricsUnixDomainSocketPath, out settings);
@@ -447,22 +447,22 @@ namespace Datadog.Trace.Configuration
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
                 // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
-                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
-                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
-                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
+                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
+                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
+                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
 
                 TraceAgentHost = config
                                .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
-                               .AsString();
+                               .AsString()?.Trim();
 
                 TraceAgentPort = config
                                .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
                                .AsInt32();
 
-                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString();
+                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString()?.Trim();
                 DogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
-                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
-                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
+                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString()?.Trim();
+                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString()?.Trim();
 
                 TracesPipeTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)

@@ -10,6 +10,7 @@ using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -163,7 +164,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_IHeadersCollection()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
@@ -202,7 +203,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_IHeadersCollection_128Bit_TraceId()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
@@ -246,7 +247,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_CarrierAndDelegate()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
@@ -288,7 +289,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_CarrierAndDelegate_128Bit_TraceId()
         {
-            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+            var traceContext = new TraceContext(new StubDatadogTracer());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);

@@ -147,7 +147,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occured while initializing the performance counters");
+                Log.ErrorSkipTelemetry(ex, "An error occured while initializing the performance counters");
                 throw;
             }
         }

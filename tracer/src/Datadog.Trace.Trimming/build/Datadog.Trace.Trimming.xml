@@ -10,6 +10,7 @@
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
+   <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
@@ -115,6 +116,8 @@
    </assembly>
    <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
+   <assembly fullname="MSTest.TestFramework" />
+   <assembly fullname="MSTestAdapter.PlatformServices" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
    <assembly fullname="netstandard" />
@@ -237,6 +240,10 @@
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
    </assembly>
    <assembly fullname="System.Diagnostics.DiagnosticSource">
+      <type fullname="System.Diagnostics.Activity" />
+      <type fullname="System.Diagnostics.ActivityIdFormat" />
+      <type fullname="System.Diagnostics.ActivitySpanId" />
+      <type fullname="System.Diagnostics.ActivityTraceId" />
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />

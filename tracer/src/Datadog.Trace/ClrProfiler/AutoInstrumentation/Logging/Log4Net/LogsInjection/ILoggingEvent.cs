@@ -4,13 +4,14 @@
 // </copyright>
 
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 {
     /// <summary>
     /// log4net.Core.LoggingEvent interface for ducktyping
     /// </summary>
-    internal interface ILoggingEvent
+    internal interface ILoggingEvent : IDuckType
     {
         /// <summary>
         /// Gets the properties of the logging event
