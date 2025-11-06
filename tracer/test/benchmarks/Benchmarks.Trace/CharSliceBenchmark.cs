@@ -15,6 +15,15 @@ namespace Benchmarks.Trace;
 [BenchmarkCategory(Constants.TracerCategory)]
 public class CharSliceBenchmark
 {
+    [IterationSetup]
+    public void Setup()
+    {
+        // Force GC to ensure clean state and reduce variance from GC timing
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
     [Benchmark]
     public void OriginalCharSlice()
     {
