@@ -27,8 +27,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly ManualResetEventSlim _resetEvent = new(false);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(15);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -156,7 +154,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
         _flushSemaphore.Dispose();
-        _resetEvent.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -315,8 +312,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            // _resetEvent is never set, we simply wait for a timeout
-            _resetEvent.Wait(_waitTimeSpan);
+            await Task.Delay(5).ConfigureAwait(false);
         }
     }
 
