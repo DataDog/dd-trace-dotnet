@@ -20,7 +20,7 @@ namespace Datadog.Trace.TestHelpers
                                                                      .Concat(new[] { "dotnet", "iisexpress" })
                                                                      .ToArray();
 
-        private static readonly ConcurrentDictionary<string, object> _corFlagsLocks = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        private static readonly object _lockObj = new();
         private static readonly ConcurrentDictionary<string, bool> _corFlagsApplied = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         private static string _corFlagsExe;
 
@@ -94,13 +94,17 @@ namespace Datadog.Trace.TestHelpers
         {
             // Use the absolute path as the key to track which executables have been modified
             var executablePath = Path.GetFullPath(executable);
-            var lockObj = _corFlagsLocks.GetOrAdd(executablePath, _ => new object());
 
-            lock (lockObj)
+            if (_corFlagsApplied.TryGetValue(executablePath, out _))
             {
+                return;
+            }
+
+            lock (_lockObj)
+            {
+                // check again to be safe
                 if (_corFlagsApplied.TryGetValue(executablePath, out _))
                 {
-                    output?.WriteLine($"CorFlags already applied to {Path.GetFileName(executable)}, skipping");
                     return;
                 }
 
