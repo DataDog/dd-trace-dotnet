@@ -48,9 +48,6 @@ namespace Samples.CosmosDb
                 Console.WriteLine($"{DateTime.Now:o}: Beginning operations...\n");
                 Console.WriteLine($"{DateTime.Now:o}: Environment.Is64BitProcess: {Environment.Is64BitProcess}, args: {string.Join(",", args)}");
 
-                await TrustCosmosEmulatorCertAsync();
-                Console.WriteLine($"{DateTime.Now:o}: Emulator certificate added to store");
-
                 Program p = new Program();
                 await p.GetStartedDemoAsync();
 
