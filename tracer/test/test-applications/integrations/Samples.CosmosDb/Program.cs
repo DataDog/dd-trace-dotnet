@@ -77,7 +77,7 @@ namespace Samples.CosmosDb
                     ApplicationName = "CosmosDBDotnetQuickstart",
                     RequestTimeout = TimeSpan.FromMinutes(10),
                     LimitToEndpoint = true,
-                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
+                    ConnectionMode = ConnectionMode.Gateway,
                     HttpClientFactory = () =>
                     {
                         var handler = new HttpClientHandler
