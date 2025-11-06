@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging.Internal;
 using FluentAssertions;
 using Xunit;
@@ -65,6 +66,64 @@ public class ExceptionRedactorTests
 
         // outer stack trace
         HasExpectedFrames(new StackTrace(ex), stackTraces[1]);
+    }
+
+    [Fact]
+    public async Task Redact_IncludesInnerException_WhenAggregateException()
+    {
+        var tcs = new TaskCompletionSource<Exception>();
+        _ = Task.Run(ThrowException).ContinueWith(t => { tcs.TrySetResult(t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+        var ex = await tcs.Task;
+
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.AggregateException ---> System.Exception" + Environment.NewLine);
+        redacted.Should().Contain("---> System.Exception", Exactly.Once());
+    }
+
+    [Fact]
+    public async Task Redact_IncludesInnerException_WhenAggregateExceptionWithMultipleExceptions()
+    {
+        var tcs = new TaskCompletionSource<Exception>();
+
+        var task1 = Task.Run(ThrowException);
+        var task2 = Task.Run(ThrowException);
+
+        _ = Task.WhenAll(task1, task2)
+                .ContinueWith(t => { tcs.TrySetResult(t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+        var ex = await tcs.Task;
+
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.AggregateException (Multiple Exceptions) ---> System.Exception" + Environment.NewLine);
+        redacted.Should().Contain("---> System.Exception", Exactly.Twice());
+    }
+
+    [Fact]
+    public async Task Redact_FlattensAggregateExceptions_WhenAggregateExceptionWithMultipleExceptions()
+    {
+        var tcs = new TaskCompletionSource<Exception>();
+
+        var task1 = Task.Run(ThrowException);
+        var task2 = Task.Run(ThrowException);
+
+        // Create AggregateException
+        var task3 = Task.WhenAll(task1, task2);
+        var task4 = Task.Run(ThrowException);
+
+        // Create second AggregateException
+        _ = Task.WhenAll(task3, task4)
+                .ContinueWith(t => { tcs.TrySetResult(t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+        var ex = await tcs.Task;
+
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.AggregateException (Multiple Exceptions) ---> System.Exception" + Environment.NewLine);
+        redacted.Should().Contain("---> System.Exception", Exactly.Thrice());
+        redacted.Should().Contain("System.AggregateException", Exactly.Once()); // flattened
     }
 
     [Fact]
