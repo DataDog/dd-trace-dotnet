@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiAnalyzerTests.cs" company="Datadog">
+﻿// <copyright file="InternalForTestingAnalyzerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,18 +12,18 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer.PublicApiAnalyzer,
+    Datadog.Trace.Tools.Analyzers.InternalForTestingAnalyzer.InternalForTestingAnalyzer,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {
-    public class PublicApiAnalyzerTests
+    public class InternalForTestingAnalyzerTests
     {
-        private const string DiagnosticId = PublicApiAnalyzer.PublicApiAnalyzer.DiagnosticId;
+        private const string DiagnosticId = InternalForTestingAnalyzer.InternalForTestingAnalyzer.DiagnosticId;
 
-        public static string[] GetPublicApiAttributes { get; } = { "PublicApi", "PublicApiAttribute" };
+        public static string[] GetInternalForTestingAttributes { get; } = { "InternalForTesting", "InternalForTestingAttribute" };
 
-        public static string[] NonPublicApiAccesses { get; } =
+        public static string[] NonInternalForTestingAccesses { get; } =
         {
             "var x = _nonPublicField;",
             "var x = NonPublicProperty;",
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             "var x = new NonPublicClass();",
         };
 
-        public static string[] PublicApiAccesses { get; } =
+        public static string[] InternalForTestingAccesses { get; } =
         {
             "var x = {|#0:_publicField|};",
             "var x = {|#0:PublicProperty|};",
@@ -66,21 +66,21 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
         };
 
         public static IEnumerable<object[]> NonPublicCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetInternalForTestingAttributes
             from includeNamespace in new[] { true, false }
-            from api in NonPublicApiAccesses
+            from api in NonInternalForTestingAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> PublicCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetInternalForTestingAttributes
             from includeNamespace in new[] { true, false }
-            from api in PublicApiAccesses
+            from api in InternalForTestingAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> NotSupportedCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetInternalForTestingAttributes
             from includeNamespace in new[] { true, false }
             from api in ShouldThrowButDoesnt
             from conditional in new[] { true, false }
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(NonPublicCombination))]
-        public async Task ShouldNotFlagUsageOfNonPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldNotFlagUsageOfNonInternalForTesting(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(PublicCombination))]
-        public async Task ShouldFlagUsageOfPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldFlagUsageOfInternalForTesting(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 

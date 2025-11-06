@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiAnalyzer.cs" company="Datadog">
+﻿// <copyright file="InternalForTestingAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,37 +14,38 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
+namespace Datadog.Trace.Tools.Analyzers.InternalForTestingAnalyzer
 {
     /// <summary>
-    /// DD002: Incorrect usage of public API
+    /// DD002: Incorrect usage of internal API
     ///
-    /// Finds internal usages of APIs specifically marked with the [PublicApi] flag.
-    /// These methods should not be called directly by our library code, only users should invoke them.
-    /// The analyzer enforces that. requirement
+    /// Finds internal usages of APIs specifically marked with the [InternalForTesting] flag.
+    /// These methods should not be called directly by our library code, only from test code.
+    /// The analyzer enforces that requirement
     ///
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class PublicApiAnalyzer : DiagnosticAnalyzer
+    public sealed class InternalForTestingAnalyzer : DiagnosticAnalyzer
     {
         /// <summary>
         /// The diagnostic ID displayed in error messages
         /// </summary>
         public const string DiagnosticId = "DD0002";
 
-        private const string PublicApiAttribute = nameof(PublicApiAttribute);
+        private const string InternalForTestingAttribute = nameof(InternalForTestingAttribute);
 
-        private static readonly ImmutableArray<string> PublicApiAttributeNames = ImmutableArray.Create(PublicApiAttribute);
+        private static readonly ImmutableArray<string> InternalForTestingAttributeNames
+            = ImmutableArray.Create(InternalForTestingAttribute);
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new(
             DiagnosticId,
-            title: "Incorrect usage of public API",
-            messageFormat: "This API is only for public usage and should not be called internally",
+            title: "Incorrect usage of internal API",
+            messageFormat: "This API is only for use in tests and should not be called internally",
             category: "CodeQuality",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "This API is only for public usage and should not be called internally. Use an alternative method.");
+            description: "This API is only for internal testing and should not be called internally. Use an alternative method.");
 #pragma warning restore RS2008
 
         /// <inheritdoc />
@@ -58,23 +59,23 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
 
             context.RegisterCompilationStartAction(context =>
             {
-                var publicApiMembers = new ConcurrentDictionary<ISymbol, PublicApiStatus>(SymbolEqualityComparer.Default);
+                var internalApiMembers = new ConcurrentDictionary<ISymbol, InternalApiStatus>(SymbolEqualityComparer.Default);
 
                 context.RegisterOperationBlockStartAction(
-                    context => AnalyzeOperationBlock(context, publicApiMembers));
+                    ctx => AnalyzeOperationBlock(ctx, internalApiMembers));
             });
         }
 
-        private void AnalyzeOperationBlock(
+        private static void AnalyzeOperationBlock(
             OperationBlockStartAnalysisContext context,
-            ConcurrentDictionary<ISymbol, PublicApiStatus> publicApiMembers)
+            ConcurrentDictionary<ISymbol, InternalApiStatus> internalApiMembers)
         {
-            var publicApiOperations = PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool>.GetInstance();
+            var internalApiOperations = PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool>.GetInstance();
 
             context.RegisterOperationAction(
-                context =>
+                ctx =>
                 {
-                    Helpers.AnalyzeOperation(context.Operation, publicApiOperations, publicApiMembers);
+                    Helpers.AnalyzeOperation(ctx.Operation, internalApiOperations, internalApiMembers);
                 },
                 OperationKind.MethodReference,
                 OperationKind.EventReference,
@@ -83,23 +84,23 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
                 OperationKind.ObjectCreation,
                 OperationKind.PropertyReference);
 
-            context.RegisterOperationBlockEndAction(context =>
+            context.RegisterOperationBlockEndAction(ctx =>
             {
                 try
                 {
-                    if (publicApiOperations.IsEmpty)
+                    if (internalApiOperations.IsEmpty)
                     {
                         return;
                     }
 
-                    foreach (var kvp in publicApiOperations)
+                    foreach (var kvp in internalApiOperations)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(Rule, kvp.Key.Key.Syntax.GetLocation()));
+                        ctx.ReportDiagnostic(Diagnostic.Create(Rule, kvp.Key.Key.Syntax.GetLocation()));
                     }
                 }
                 finally
                 {
-                    publicApiOperations.Free(context.CancellationToken);
+                    internalApiOperations.Free(ctx.CancellationToken);
                 }
             });
         }
@@ -108,8 +109,8 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
         {
             internal static void AnalyzeOperation(
                 IOperation operation,
-                PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool> publicApiOperations,
-                ConcurrentDictionary<ISymbol, PublicApiStatus> publicApiMembers)
+                PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool> internalApiOperations,
+                ConcurrentDictionary<ISymbol, InternalApiStatus> internalApiMembers)
             {
                 var symbol = GetOperationSymbol(operation);
 
@@ -184,9 +185,9 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
 
                 void CheckOperationAttributes(ISymbol symbol, bool checkParents)
                 {
-                    if (TryGetOrCreatePublicApiAttributes(symbol, checkParents, publicApiMembers, out _))
+                    if (TryGetOrCreatePublicApiAttributes(symbol, checkParents, internalApiMembers, out _))
                     {
-                        publicApiOperations.TryAdd(new KeyValuePair<IOperation, ISymbol>(operation, symbol), true);
+                        internalApiOperations.TryAdd(new KeyValuePair<IOperation, ISymbol>(operation, symbol), true);
                     }
                 }
             }
@@ -238,7 +239,7 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
                 return iEvent;
             }
 
-            private static PublicApiStatus CopyAttributes(PublicApiStatus copyAttributes) =>
+            private static InternalApiStatus CopyAttributes(InternalApiStatus copyAttributes) =>
                 new()
                 {
                     IsAssemblyAttribute = copyAttributes.IsAssemblyAttribute,
@@ -260,8 +261,8 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
             private static bool TryGetOrCreatePublicApiAttributes(
                 ISymbol symbol,
                 bool checkParents,
-                ConcurrentDictionary<ISymbol, PublicApiStatus> publicApiMembers,
-                out PublicApiStatus attributes)
+                ConcurrentDictionary<ISymbol, InternalApiStatus> publicApiMembers,
+                out InternalApiStatus attributes)
             {
                 if (!publicApiMembers.TryGetValue(symbol, out attributes))
                 {
@@ -281,7 +282,7 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
                         }
                     }
 
-                    attributes ??= new PublicApiStatus() { IsAssemblyAttribute = symbol is IAssemblySymbol };
+                    attributes ??= new InternalApiStatus() { IsAssemblyAttribute = symbol is IAssemblySymbol };
                     MergePlatformAttributes(symbol.GetAttributes(), ref attributes);
                     attributes = publicApiMembers.GetOrAdd(symbol, attributes);
                 }
@@ -290,11 +291,11 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
 
                 static void MergePlatformAttributes(
                     ImmutableArray<AttributeData> immediateAttributes,
-                    ref PublicApiStatus parentAttributes)
+                    ref InternalApiStatus parentAttributes)
                 {
                     foreach (AttributeData attribute in immediateAttributes)
                     {
-                        if (PublicApiAttributeNames.Contains(attribute.AttributeClass!.Name))
+                        if (InternalForTestingAttributeNames.Contains(attribute.AttributeClass!.Name))
                         {
                             parentAttributes.IsPublicApi = true;
                             return;
@@ -304,7 +305,7 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
             }
         }
 
-        private sealed class PublicApiStatus
+        private sealed class InternalApiStatus
         {
             public bool IsAssemblyAttribute { get; set; }
 
