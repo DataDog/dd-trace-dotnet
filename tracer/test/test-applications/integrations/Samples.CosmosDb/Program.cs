@@ -67,19 +67,6 @@ namespace Samples.CosmosDb
         }
         // </Main>
 
-        static async Task TrustCosmosEmulatorCertAsync()
-        {
-            using var http = new HttpClient(new HttpClientHandler {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
-            var pem = await http.GetByteArrayAsync(EndpointUri + "/_explorer/emulator.pem");
-            var cert = X509Certificate2.CreateFromPem(System.Text.Encoding.ASCII.GetString(pem));
-            using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-            store.Open(OpenFlags.ReadWrite);
-            store.Add(cert);
-            store.Close();
-        }
-
         // <GetStartedDemoAsync>
         /// <summary>
         /// Entry point to call methods that operate on Azure Cosmos DB resources in this sample
@@ -93,7 +80,15 @@ namespace Samples.CosmosDb
                     ApplicationName = "CosmosDBDotnetQuickstart",
                     RequestTimeout = TimeSpan.FromMinutes(10),
                     LimitToEndpoint = true,
-                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1)
+                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
+                    HttpClientFactory = () =>
+                    {
+                        var handler = new HttpClientHandler
+                        {
+                            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                        };
+                        return new HttpClient(handler);
+                    }
                 };
 
             cosmosClient = new CosmosClient(EndpointUri, PrimaryKey, clientOptions);
