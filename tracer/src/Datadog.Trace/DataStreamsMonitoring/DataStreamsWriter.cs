@@ -312,7 +312,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            await Task.Delay(5).ConfigureAwait(false);
+            await Task.Delay(10).ConfigureAwait(false);
         }
     }
 
