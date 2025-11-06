@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -127,6 +128,43 @@ namespace Datadog.Trace.ExtensionMethods
             var newVal = computeIfAbsent(key);
             map[key] = newVal;
             return newVal;
+        }
+
+        /// <summary>
+        /// Checks if two dictionaries contain the same keys and values.
+        /// Note that this method assumes the two dictionaries use the same
+        /// <see cref="IEqualityComparer"/>; using different comparers in each
+        /// dictionary is not supported.
+        /// </summary>
+        public static bool SequenceEqual(
+            this ReadOnlyDictionary<string, string> dict1,
+            ReadOnlyDictionary<string, string> dict2,
+            StringComparison valueComparison = StringComparison.Ordinal)
+        {
+            if (dict1 is null && dict2 is null)
+            {
+                return true;
+            }
+
+            if (dict1 is null || dict2 is null || dict1.Count != dict2.Count)
+            {
+                return false;
+            }
+
+            if (dict1.Count == 0 && dict2.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var kvp1 in dict1)
+            {
+                if (!dict2.TryGetValue(kvp1.Key, out var val2) || !string.Equals(kvp1.Value, val2, valueComparison))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
