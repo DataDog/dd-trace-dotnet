@@ -13,6 +13,10 @@
 #include "corprof.h"
 
 #include <unordered_map>
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 
 class ClassHistogramEntry
 {
@@ -93,10 +97,12 @@ protected:
 private:
     void StartGCDump();
     void StopGCDump();
+    void CleanupSession();
+    void StartSnapshotTimerIfNeeded();
 
 private:
     std::chrono::minutes _heapDumpInterval;
-    int32_t _memPressureThreshold;
+    uint32_t _memPressureThreshold;
     uint64_t _gen2Size;
     uint64_t _lohSize;
     uint64_t _pohSize;
@@ -115,4 +121,14 @@ private:
 
     // keep track of each type instances count and size during heap snapshot
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
+
+    // timestamp of the last heap snapshot
+    std::chrono::nanoseconds _lastTimestamp;
+
+    // TODO: see if we should also try to detect old heap size growth before triggering a heap snapshot
+    uint64_t _lastOldHeapSize; // gen2 + loh + poh
+
+    // TODO: see if we should also try to detect memory pressure growth before triggering a heap snapshot
+    //       instead of only using the configured threshold
+    uint64_t _lastMemPressure;
 };

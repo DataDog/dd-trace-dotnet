@@ -32,6 +32,8 @@ CpuProfilerType const Configuration::DefaultCpuProfilerType =
 #else
     CpuProfilerType::TimerCreate;
 #endif
+std::chrono::minutes const Configuration::DefaultDevHeapSnapshotInterval = 1min;
+std::chrono::minutes const Configuration::DefaultProdHeapSnapshotInterval = 5min;
 
 Configuration::Configuration()
 {
@@ -120,7 +122,7 @@ Configuration::Configuration()
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
-    _heapSnapshotUsedMemoryThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotUsedMemoryThreshold, 85);
+    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -820,6 +822,17 @@ bool Configuration::IsHeapSnapshotEnabled() const
     return _isHeapSnapshotEnabled;
 }
 
+std::chrono::minutes Configuration::GetDefaultHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
+
+    bool isDev;
+    if (shared::TryParseBooleanEnvironmentValue(r, isDev) && isDev)
+        return DefaultDevHeapSnapshotInterval;
+
+    return DefaultProdHeapSnapshotInterval;
+}
+
 std::chrono::minutes Configuration::ExtractHeapSnapshotInterval() const
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::HeapSnapshotInterval);
@@ -829,7 +842,7 @@ std::chrono::minutes Configuration::ExtractHeapSnapshotInterval() const
         return std::chrono::minutes(interval);
     }
 
-    return 5min;
+    return GetDefaultHeapSnapshotInterval();
 }
 
 std::chrono::minutes Configuration::GetHeapSnapshotInterval() const
@@ -837,7 +850,7 @@ std::chrono::minutes Configuration::GetHeapSnapshotInterval() const
     return _heapSnapshotInterval;
 }
 
-int32_t Configuration::GetHeapSnapshotUsedMemoryThreshold() const
+uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const
 {
-    return _heapSnapshotUsedMemoryThreshold;
+    return _heapSnapshotMemoryPressureThreshold;
 }

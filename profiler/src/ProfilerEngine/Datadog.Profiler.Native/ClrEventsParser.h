@@ -237,6 +237,7 @@ struct GCGlobalHeapPayload
     uint32_t Gen0ReductionCount;
     uint32_t Reason;
     uint32_t GlobalMechanisms;
+    uint16_t ClrInstanceID;
     uint32_t PauseMode;
     uint32_t MemPressure;
 };
@@ -315,6 +316,7 @@ class ClrEventsParser
 public:
     static const int64_t KEYWORD_GC =                             0x1;
     static const int64_t KEYWORD_CONTENTION =                  0x4000;
+    static const int64_t KEYWORD_GCHEAPDUMP =                0x100000; // for gcdump
     static const int64_t KEYWORD_WAITHANDLE =           0x40000000000; // .NET 9+ only
     static const int64_t KEYWORD_ALLOCATION_SAMPLING =  0x80000000000; // .NET 10+ only
 

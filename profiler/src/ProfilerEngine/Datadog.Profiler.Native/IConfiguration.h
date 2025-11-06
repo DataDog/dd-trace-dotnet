@@ -86,5 +86,5 @@ public:
 
     virtual bool IsHeapSnapshotEnabled() const = 0;
     virtual std::chrono::minutes GetHeapSnapshotInterval() const = 0;
-    virtual int32_t GetHeapSnapshotUsedMemoryThreshold() const = 0;
+    virtual uint32_t GetHeapSnapshotMemoryPressureThreshold() const = 0;
 };

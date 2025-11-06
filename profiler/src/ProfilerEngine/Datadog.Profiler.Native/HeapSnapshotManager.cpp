@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "HeapSnapshotManager.h"
+#include "OpSysTools.h"
+
 #include "Log.h"
 
 HeapSnapshotManager::HeapSnapshotManager(
@@ -17,10 +19,13 @@ HeapSnapshotManager::HeapSnapshotManager(
     _memPressure(0),
     _isHeapDumpInProgress(false),
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pFrameStore{pFrameStore}
+    _pFrameStore{pFrameStore},
+    _lastTimestamp(0ns),
+    _lastOldHeapSize(0),
+    _lastMemPressure(0)
 {
     _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
-    _memPressureThreshold = pConfiguration->GetHeapSnapshotUsedMemoryThreshold();
+    _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
 }
 
 bool HeapSnapshotManager::StartImpl()
@@ -32,12 +37,19 @@ bool HeapSnapshotManager::StartImpl()
 bool HeapSnapshotManager::StopImpl()
 {
     // don't forget to close the current EventPipe session if any
-    if (_session != 0)
-    {
-
-    }
+    CleanupSession();
 
     return true;
+}
+
+void HeapSnapshotManager::CleanupSession()
+{
+    _isHeapDumpInProgress = false;
+    if (_session != 0)
+    {
+        _pCorProfilerInfo->EventPipeStopSession(_session);
+        _session = 0;
+    }
 }
 
 std::string HeapSnapshotManager::GetHeapSnapshotText()
@@ -114,13 +126,13 @@ void HeapSnapshotManager::OnGarbageCollectionStart(
     GCType type)
 {
     // waiting for the first induced foregrouned gen2 collection
-    //if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
-    //{
+    if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
+    {
         if ((reason == GCReason::Induced) && (generation == 2) && (type == GCType::NonConcurrentGC))
         {
             _inducedGCNumber = number;
         }
-    //}
+    }
 }
 
 void HeapSnapshotManager::OnGarbageCollectionEnd(
@@ -137,25 +149,61 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
     uint64_t pohSize,
     uint32_t memPressure)
 {
-
-    //if (_isHeapDumpInProgress)
-    //{
+    if (_isHeapDumpInProgress)
+    {
         if (number == _inducedGCNumber)
         {
             // the induced GC triggered to generate the heap snapshot has ended
             _inducedGCNumber = -1;
 
-            StopGCDump();
+            // keep track of the last metrics
+            _lastOldHeapSize = gen2Size + lohSize + pohSize;
+            _lastMemPressure = memPressure;
 
-            // TODO: restart the timer before the next heap snapshot
+            StopGCDump();
+            _lastTimestamp = OpSysTools::GetHighPrecisionTimestamp();
         }
-    //}
+    }
 
     // store sizes for next heap snapshot
     _gen2Size = gen2Size;
     _lohSize = lohSize;
     _pohSize = pohSize;
     _memPressure = memPressure;
+
+    StartSnapshotTimerIfNeeded();
+}
+
+// the heuristic to trigger a heap snapshot is the following:
+//  - the memory pressure must be greater than the configured threshold
+//  - wait for the configured interval since the previous one
+void HeapSnapshotManager::StartSnapshotTimerIfNeeded()
+{
+    // DEBUG: we cannot start a gcdump: it breaks in the CLR because it is not allowed to start a GC during another GC
+
+    // TODO: let another thread trigger the gcdump
+    return;
+    // Note: if the memory pressure is set to 0 in the configuration, a snapshot will be generated at each interval
+    //       (used for testing purpose)
+    if (_memPressureThreshold > 0)
+    {
+        if (_memPressure < _memPressureThreshold)
+        {
+            return;
+        }
+    }
+
+    auto now = OpSysTools::GetHighPrecisionTimestamp();
+    if (_lastTimestamp != 0ns)
+    {
+        auto durationSinceLastSnapshot = now - _lastTimestamp;
+        if (durationSinceLastSnapshot < _heapDumpInterval)
+        {
+            return;
+        }
+    }
+
+    StartGCDump();
 }
 
 void HeapSnapshotManager::StartGCDump()
@@ -200,10 +248,10 @@ void HeapSnapshotManager::StartGCDump()
 
 void HeapSnapshotManager::StopGCDump()
 {
-    //if (_session == 0)
-    //{
-    //    return;
-    //}
+    if (_session == 0)
+    {
+        return;
+    }
 
 #ifdef NDEBUG
     // for debugging purpose only
@@ -213,7 +261,5 @@ void HeapSnapshotManager::StopGCDump()
     std::cout << content << std::endl;
 #endif
 
-    _pCorProfilerInfo->EventPipeStopSession(_session);
-    _isHeapDumpInProgress = false;
-    _session = 0;
+    CleanupSession();
 }

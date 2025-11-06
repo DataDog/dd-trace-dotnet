@@ -71,7 +71,10 @@ void ClrEventsParser::ParseEvent(
     ULONG cbEventData,
     LPCBYTE eventData)
 {
-    if (KEYWORD_GC == (keywords & KEYWORD_GC))
+    if (
+        (KEYWORD_GC == (keywords & KEYWORD_GC)) ||
+        (KEYWORD_GCHEAPDUMP == (keywords & KEYWORD_GCHEAPDUMP))  // GCBulkXXX events are treated as GC events
+        )
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);
     }
@@ -572,6 +575,7 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.gen2Size = 0;
     gc.lohSize = 0;
     gc.pohSize = 0;
+    gc.memPressure = 0;
 }
 
 void ClrEventsParser::InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload)
@@ -588,6 +592,7 @@ void ClrEventsParser::InitializeGC(std::chrono::nanoseconds timestamp, GCDetails
     gc.gen2Size = 0;
     gc.lohSize = 0;
     gc.pohSize = 0;
+    gc.memPressure = 0;
 }
 
 void ClrEventsParser::OnGCTriggered()
@@ -721,6 +726,7 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
         return;
     }
     gc.HasGlobalHeapHistoryBeenReceived = true;
+    gc.memPressure = payload.MemPressure;
 
     // check if the collection was compacting
     gc.IsCompacting =
