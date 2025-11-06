@@ -69,7 +69,7 @@ private:
         uintptr_t mappingId; // Unique identifier for the mapping
     };
     
-    std::vector<ManagedRegion> _managedRegions;
+    shared::pmr::vector<ManagedRegion> _managedRegions;
     std::atomic<size_t> _managedRegionCount;
     
     // Flag to indicate that we've encountered unknown mappings

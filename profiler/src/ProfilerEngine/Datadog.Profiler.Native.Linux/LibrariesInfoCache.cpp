@@ -21,6 +21,7 @@ LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
     _event(true), // set the event to force updating the cache the first time Wait is called
     _wrappersAllocator{resource},
+    _managedRegions{resource},
     _managedRegionCount(0),
     _hasMissingMappings(false)
 {
@@ -138,7 +139,7 @@ void LibrariesInfoCache::UpdateCache()
         &data);
 
     // Pre-compute managed regions for signal-safe lookup
-    std::vector<ManagedRegion> newManagedRegions;
+    shared::pmr::vector<ManagedRegion> newManagedRegions{_wrappersAllocator};
     
     for (const auto& wrapper : newCache)
     {
