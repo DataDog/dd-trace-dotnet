@@ -7,6 +7,7 @@ using Microsoft.Azure.Cosmos;
 using System.IO;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Samples.CosmosDb
 {
@@ -39,7 +40,6 @@ namespace Samples.CosmosDb
         // <Main>
         public static async Task Main(string[] args)
         {
-            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
 
             cosmosEventListener = new CosmosEventListener();
 
@@ -47,6 +47,9 @@ namespace Samples.CosmosDb
             {
                 Console.WriteLine($"{DateTime.Now:o}: Beginning operations...\n");
                 Console.WriteLine($"{DateTime.Now:o}: Environment.Is64BitProcess: {Environment.Is64BitProcess}, args: {string.Join(",", args)}");
+
+                await TrustCosmosEmulatorCertAsync();
+                Console.WriteLine($"{DateTime.Now:o}: Emulator certificate added to store");
 
                 Program p = new Program();
                 await p.GetStartedDemoAsync();
@@ -63,6 +66,19 @@ namespace Samples.CosmosDb
             }
         }
         // </Main>
+
+        static async Task TrustCosmosEmulatorCertAsync()
+        {
+            using var http = new HttpClient(new HttpClientHandler {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+            var pem = await http.GetByteArrayAsync(EndpointUri + "/_explorer/emulator.pem");
+            var cert = X509Certificate2.CreateFromPem(System.Text.Encoding.ASCII.GetString(pem));
+            using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadWrite);
+            store.Add(cert);
+            store.Close();
+        }
 
         // <GetStartedDemoAsync>
         /// <summary>
