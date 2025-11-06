@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -99,7 +100,20 @@ public class RunCommandTests : ConsoleTestHelper
         }
         finally
         {
-            process.Kill();
+            // The echo command exits after echoing one line, so the process may have already exited
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill();
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Process exited between the HasExited check and Kill() call
+            }
+
+            process.Dispose();
         }
     }
 

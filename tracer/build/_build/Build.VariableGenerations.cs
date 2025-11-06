@@ -107,7 +107,7 @@ partial class Build : NukeBuild
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
                     bool isChanged = false;
-                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{changedTeamValue.VariableName}";
+                    var forceExplorationTestsWithVariableName = $"force_run_tests_with_{changedTeamValue.VariableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
@@ -1782,16 +1782,13 @@ partial class Build : NukeBuild
                 {
                     var images = new SmokeTestImage[]
                     {
-                        // macos-11/12 environments are no longer available in Azure Devops
-                        new (publishFramework: TargetFramework.NETCOREAPP3_1, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET5_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET6_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET7_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET8_0, "macos-13", "macos", "13"),
-                        new (publishFramework: TargetFramework.NET9_0, "macos-13", "macos", "13"),
+                        // macos-11/12/13 environments are no longer available in Azure Devops
                         new (publishFramework: TargetFramework.NETCOREAPP3_1, "macos-14", "macos", "14"),
+                        new (publishFramework: TargetFramework.NET5_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET6_0, "macos-14", "macos", "14"),
+                        new (publishFramework: TargetFramework.NET7_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET8_0, "macos-14", "macos", "14"),
+                        new (publishFramework: TargetFramework.NET9_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET10_0, "macos-14", "macos-14_net10.0", "14"),
                         new (publishFramework: TargetFramework.NET6_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET8_0, "macos-15", "macos", "15"),
