@@ -20,8 +20,8 @@ namespace Datadog.Trace.TestHelpers
                                                                      .Concat(new[] { "dotnet", "iisexpress" })
                                                                      .ToArray();
 
-        private static readonly ConcurrentDictionary<string, object> _corFlagsLocks = new ConcurrentDictionary<string, object>();
-        private static readonly ConcurrentDictionary<string, bool> _corFlagsApplied = new ConcurrentDictionary<string, bool>();
+        private static readonly ConcurrentDictionary<string, object> _corFlagsLocks = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, bool> _corFlagsApplied = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         private static string _corFlagsExe;
 
         public static async Task<Process> StartProcessWithProfiler(
