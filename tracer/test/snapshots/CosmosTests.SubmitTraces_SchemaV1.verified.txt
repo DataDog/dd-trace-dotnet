@@ -11,13 +11,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -39,13 +39,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -67,13 +67,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -95,13 +95,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -124,13 +124,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -153,13 +153,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -182,13 +182,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -211,13 +211,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -238,13 +238,13 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -265,13 +265,13 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -292,13 +292,13 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -319,13 +319,13 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -347,13 +347,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
@@ -375,13 +375,13 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: localhost,
       out.port: 8081,
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      language: dotnet,
       _dd.peer.service.source: db.name
     },
     Metrics: {
