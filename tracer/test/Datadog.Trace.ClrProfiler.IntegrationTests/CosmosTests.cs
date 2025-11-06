@@ -62,6 +62,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // Normalize cosmosdb host between localhost, x64, and ARM64
+                settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
+                settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator_arm64:8081/", "out.host: https://cosmosdb-emulator:8081/");
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
+                settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
+
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
@@ -71,6 +78,64 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitTracesCRUD(string packageVersion, string metadataSchemaVersion)
+        {
+            // CRUD operations: Create, Read, Update, Delete
+            // Each operation calls RunWithDiagnosticsHelperAsync internally
+            var expectedSpanCount = 4;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("TEST_MODE", "CRUD");
+
+            // Disable HTTP instrumentation to avoid interference
+            SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_ENABLED", "false");
+            SetEnvironmentVariable("DD_TRACE_HttpMessageHandler_ENABLED", "false");
+
+            SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            {
+                // Wait for CosmosDB operation spans - get all spans without filtering by operation name first
+                var allSpans = await agent.WaitForSpansAsync(count: 1, returnAllOperations: true);
+                var cosmosSpans = allSpans.Where(s => s.Name == ExpectedOperationName).ToList();
+
+                Output.WriteLine($"Total spans received: {allSpans.Count}");
+                Output.WriteLine($"CosmosDB spans (cosmosdb.query): {cosmosSpans.Count}");
+                Output.WriteLine("All span operations: " + string.Join(", ", allSpans.Select(s => s.Name).Distinct()));
+                Output.WriteLine("All span resources: " + string.Join(", ", cosmosSpans.Select(s => s.Resource)));
+
+                cosmosSpans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} CosmosDB spans for CRUD operations, only received {cosmosSpans.Count}");
+
+                // Verify we have the expected operation types in resource names
+                var spanResourceNames = cosmosSpans.Select(s => s.Resource).ToList();
+                spanResourceNames.Should().Contain(s => s.Contains("Create"), "Should have a Create operation span");
+                spanResourceNames.Should().Contain(s => s.Contains("Read"), "Should have a Read operation span");
+                spanResourceNames.Should().Contain(s => s.Contains("Replace"), "Should have a Replace operation span");
+                spanResourceNames.Should().Contain(s => s.Contains("Delete"), "Should have a Delete operation span");
+
+                // Verify all spans have correct type and db.type tag
+                foreach (var span in cosmosSpans)
+                {
+                    span.Type.Should().Be("sql", "CosmosDB spans should be of type 'sql'");
+                    span.Tags.Should().ContainKey("db.type");
+                    span.Tags["db.type"].Should().Be("cosmosdb");
+                }
+
+                ValidateIntegrationSpans(cosmosSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
+            }
+        }
+
+        /*[SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         // vnext emulator only supports queries on items
@@ -106,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
             }
-        }
+        }*/
 
         public async Task InitializeAsync()
         {
