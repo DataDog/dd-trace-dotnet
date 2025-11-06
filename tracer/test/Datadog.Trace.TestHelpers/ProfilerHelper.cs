@@ -94,13 +94,10 @@ namespace Datadog.Trace.TestHelpers
         {
             // Use the absolute path as the key to track which executables have been modified
             var executablePath = Path.GetFullPath(executable);
-
-            // Get or create a lock object for this specific executable
             var lockObj = _corFlagsLocks.GetOrAdd(executablePath, _ => new object());
 
             lock (lockObj)
             {
-                // Check if we've already applied CorFlags to this executable
                 if (_corFlagsApplied.TryGetValue(executablePath, out _))
                 {
                     output?.WriteLine($"CorFlags already applied to {Path.GetFileName(executable)}, skipping");
@@ -156,7 +153,6 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
                 }
 
-                // Mark this executable as having been modified
                 _corFlagsApplied.TryAdd(executablePath, true);
             }
         }
