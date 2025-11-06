@@ -27,21 +27,17 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly ManualResetEventSlim _resetEvent = new(false);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(15);
+    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
-    private int _flushRequested;
-    private Task? _processTask;
     private Timer? _flushTimer;
-    private TaskCompletionSource<bool>? _currentFlushTcs;
+    private long _lastFlushNanos;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -90,18 +86,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         lock (_initLock)
         {
-            if (_processTask != null)
-            {
-                return;
-            }
-
-            _processTask = Task.Run(ProcessQueueLoopAsync);
-            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
-                x => ((DataStreamsWriter)x!).RequestFlush(),
+                x => ((DataStreamsWriter)x!).ProcessQueueLoopAsync().ConfigureAwait(false),
                 this,
-                dueTime: _bucketDurationMs,
-                period: _bucketDurationMs);
+                dueTime: 25,
+                period: 25);
 
             Volatile.Write(ref _isInitialized, true);
         }
@@ -154,130 +143,72 @@ internal class DataStreamsWriter : IDataStreamsWriter
 #else
         _flushTimer?.Dispose();
 #endif
-        await FlushAndCloseAsync().ConfigureAwait(false);
+        Interlocked.Exchange(ref _lastFlushNanos, 0L);
+        await ProcessQueueLoopAsync().ConfigureAwait(false);
+
         _flushSemaphore.Dispose();
-        _resetEvent.Dispose();
-    }
-
-    private async Task FlushAndCloseAsync()
-    {
-        if (!_processExit.TrySetResult(true))
-        {
-            return;
-        }
-
-        // nothing else to do, since the writer was not fully initialized
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        // request a final flush - as the _processExit flag is now set
-        // this ensures we will definitely flush all the stats
-        // (and sets the mutex if it isn't already set)
-        RequestFlush();
-
-        // wait for the processing loop to complete
-        var completedTask = await Task.WhenAny(
-                                           _processTask,
-                                           Task.Delay(TimeSpan.FromSeconds(20)))
-                                      .ConfigureAwait(false);
-
-        if (completedTask != _processTask)
-        {
-            Log.Error("Could not flush all data streams stats before process exit");
-        }
     }
 
     public async Task FlushAsync()
     {
-        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            var timeout = TimeSpan.FromSeconds(5);
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-            {
-                return;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Interlocked.Exchange(ref _currentFlushTcs, tcs);
-
-            RequestFlush();
-
-            var completedTask = await Task.WhenAny(
-                tcs.Task,
-                _processExit.Task,
-                Task.Delay(timeout)).ConfigureAwait(false);
-
-            if (completedTask != tcs.Task)
-            {
-                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
-            }
-        }
-        finally
-        {
-            _currentFlushTcs = null;
-            _flushSemaphore.Release();
-        }
-    }
-
-    private void RequestFlush()
-    {
-        Interlocked.Exchange(ref _flushRequested, 1);
+        await ProcessQueueLoopAsync().ConfigureAwait(false);
     }
 
     private async Task WriteToApiAsync()
     {
-        // This method blocks ingestion of new stats points into the aggregator,
-        // but they will continue to be added to the queue, and will be processed later
-        // Default buffer capacity matches Java implementation:
-        // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
-        _serializationBuffer ??= new MemoryStream(capacity: 512 * 1024);
-
-        var flushTimeNs = _processExit.Task.IsCompleted
-                              ? long.MaxValue // flush all buckets
-                              : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(); // don't flush current bucket
-
-        bool wasDataWritten;
-        _serializationBuffer.SetLength(0); // reset the stream
-        using (var gzip = new GZipStream(_serializationBuffer, CompressionLevel.Fastest, leaveOpen: true))
+        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        try
         {
-            wasDataWritten = _aggregator.Serialize(gzip, flushTimeNs);
+            // This method blocks ingestion of new stats points into the aggregator,
+            // but they will continue to be added to the queue, and will be processed later
+            // Default buffer capacity matches Java implementation:
+            // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
+            _serializationBuffer ??= new MemoryStream(capacity: 512 * 1024);
+
+            var flushTimeNs = _processExit.Task.IsCompleted
+                                  ? long.MaxValue // flush all buckets
+                                  : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(); // don't flush current bucket
+
+            bool wasDataWritten;
+            _serializationBuffer.SetLength(0); // reset the stream
+            using (var gzip = new GZipStream(_serializationBuffer, CompressionLevel.Fastest, leaveOpen: true))
+            {
+                wasDataWritten = _aggregator.Serialize(gzip, flushTimeNs);
+            }
+
+            if (wasDataWritten && (Volatile.Read(ref _isSupported) == SupportState.Supported))
+            {
+                // This flushes on the same thread as the processing loop
+                var data = new ArraySegment<byte>(_serializationBuffer.GetBuffer(), offset: 0, (int)_serializationBuffer.Length);
+
+                var success = await _api.SendAsync(data).ConfigureAwait(false);
+
+                var dropCount = Interlocked.Exchange(ref _pointsDropped, 0);
+                if (success)
+                {
+                    Log.Debug("Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
+                }
+                else
+                {
+                    Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
+                }
+            }
         }
-
-        if (wasDataWritten && (Volatile.Read(ref _isSupported) == SupportState.Supported))
+        finally
         {
-            // This flushes on the same thread as the processing loop
-            var data = new ArraySegment<byte>(_serializationBuffer.GetBuffer(), offset: 0, (int)_serializationBuffer.Length);
-
-            var success = await _api.SendAsync(data).ConfigureAwait(false);
-
-            var dropCount = Interlocked.Exchange(ref _pointsDropped, 0);
-            if (success)
-            {
-                Log.Debug("Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
-            }
-            else
-            {
-                Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
-            }
+            _flushSemaphore.Release();
         }
     }
 
     private async Task ProcessQueueLoopAsync()
     {
-        var isFinalFlush = false;
-        while (true)
+        try
         {
-            try
+            await Task.Run(async () =>
             {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var before = Interlocked.Exchange(ref _lastFlushNanos, now);
+
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
@@ -288,35 +219,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
                     _aggregator.AddBacklog(in backlogPoint);
                 }
 
-                var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1)
+                if (now - before >= _bucketDurationMs)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
-                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
-                    currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An error occured in the processing thread");
-            }
-
-            if (_processExit.Task.IsCompleted)
-            {
-                if (isFinalFlush)
-                {
-                    return;
-                }
-
-                // do one more loop to make sure everything is flushed
-                RequestFlush();
-                isFinalFlush = true;
-                continue;
-            }
-
-            // _resetEvent is never set, we simply wait for a timeout
-            _resetEvent.Wait(_waitTimeSpan);
+            }).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occured in the processing thread");
         }
     }
 
