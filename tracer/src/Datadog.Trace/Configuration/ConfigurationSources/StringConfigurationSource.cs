@@ -31,18 +31,6 @@ namespace Datadog.Trace.Configuration
         /// <paramref name="data"/>.
         /// </summary>
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
-        /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
-        public static IDictionary<string, string>? ParseCustomKeyValues(string? data)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues);
-            return ParseCustomKeyValues(data, allowOptionalMappings: false);
-        }
-
-        /// <summary>
-        /// Returns a <see cref="IDictionary{TKey, TValue}"/> from parsing
-        /// <paramref name="data"/>.
-        /// </summary>
-        /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
         [return: NotNullIfNotNull(nameof(data))]
