@@ -134,11 +134,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             if (_backlogBuffer.TryEnqueue(point))
             {
-                if (_backlogBuffer.Count >= QueueLimit / 2)
-                {
-                    _ = Task.Run(async () => await ProcessQueueAsync().ConfigureAwait(false));
-                }
-
                 return;
             }
         }
