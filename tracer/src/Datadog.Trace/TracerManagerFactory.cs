@@ -441,7 +441,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.PartialFlushEnabled);
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.PartialFlushEnabled, settings.PropagateProcessTags);
         }
 
         private static string GetUrl(TracerSettings settings)
