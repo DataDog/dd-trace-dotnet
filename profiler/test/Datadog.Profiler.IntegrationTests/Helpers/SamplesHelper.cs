@@ -11,12 +11,14 @@ using System.Text.RegularExpressions;
 using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 using Xunit;
+using ZstdSharp;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public static class SamplesHelper
     {
         private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
+        private static readonly byte[] ZstdMagicNumber = BitConverter.GetBytes(0xFD2FB528);
 
         public static int GetSamplesCount(string directory)
         {
@@ -212,6 +214,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (Lz4MagicNumber.SequenceEqual(buffer))
             {
                 return LZ4Stream.Decode(s);
+            }
+            else if (ZstdMagicNumber.SequenceEqual(buffer))
+            {
+                return new DecompressionStream(s);
             }
             else
             {
