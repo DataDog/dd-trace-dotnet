@@ -78,6 +78,7 @@ struct StackFrame
     uint64_t moduleAddress;
     bool isSuspicious;
     std::string_view buildId;
+    std::string_view modulePath;
 };
 
 struct Tag
@@ -143,6 +144,9 @@ protected:
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;
 
+#ifdef DD_TEST
+public:
+#endif
     static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
     int32_t ExportImpl(ddog_Endpoint* endpoint);

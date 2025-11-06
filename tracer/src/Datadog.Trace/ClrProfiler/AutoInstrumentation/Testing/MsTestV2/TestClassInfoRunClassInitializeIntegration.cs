@@ -88,3 +88,41 @@ public static class TestClassInfoRunClassInitializeIntegrationV3_9
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         => TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, state);
 }
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.RunClassInitialize(TestContext testContext, out LogMessageListener? logListener) calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "RunClassInitializeAsync",
+    ReturnTypeName = ClrNames.Task,
+    ParameterTypeNames = [ClrNames.Ignore],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "RunClassInitializeAsync",
+    ReturnTypeName = ClrNames.Task,
+    ParameterTypeNames = [ClrNames.Ignore],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestClassInfoRunClassInitializeAsyncIntegration
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext? testContext)
+        where TTarget : ITestClassInfo
+        => TestClassInfoRunClassInitializeIntegration.OnMethodBegin(instance, testContext);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        TestClassInfoRunClassInitializeIntegration.OnMethodEnd(instance, exception, state);
+        return returnValue;
+    }
+}

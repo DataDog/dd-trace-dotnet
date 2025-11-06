@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.4.0 -->
-    <PackageReference Include="MySql.Data" Version="9.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.5.0 -->
+    <PackageReference Include="MySql.Data" Version="9.5.0" />
   </ItemGroup>
 
 </Project>

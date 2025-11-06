@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -17,9 +16,26 @@ namespace Datadog.Trace.Configuration
     public class IntegrationSettings : IEquatable<IntegrationSettings>
     {
         /// <summary>
+        /// Configuration key pattern for enabling or disabling an integration.
+        /// </summary>
+        public const string IntegrationEnabled = "DD_TRACE_{0}_ENABLED";
+
+        /// <summary>
+        /// Configuration key pattern for enabling or disabling Analytics in an integration.
+        /// </summary>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public const string AnalyticsEnabledKey = "DD_TRACE_{0}_ANALYTICS_ENABLED";
+
+        /// <summary>
+        /// Configuration key pattern for setting Analytics sampling rate in an integration.
+        /// </summary>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
+        public const string AnalyticsSampleRateKey = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.
         /// </summary>
-        /// <param name="integrationName">The integration name.</param>
+        /// <param name="integrationName">The integration name. Callers shouldn't pass a null value, but as it's available in Datadog.Trace.Manual, we still need to check</param>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         /// <param name="isExplicitlyDisabled">Has the integration been explicitly disabled</param>
         /// <param name="fallback">The fallback values to use. Only used in manual instrumentation scenarios</param>
@@ -35,27 +51,29 @@ namespace Datadog.Trace.Configuration
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var upperName = integrationName.ToUpperInvariant();
-            Enabled = isExplicitlyDisabled ? false : (config
-                                                  .WithKeys(
-                                                       string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
-                                                       string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                                                       $"DD_{integrationName}_ENABLED")
-                                                  .AsBool()
-                                                   ?? fallback?.Enabled);
+            Enabled = isExplicitlyDisabled
+                          ? false
+                          : config
+                           .WithKeys(
+                                string.Format(IntegrationEnabled, upperName),
+                                string.Format(IntegrationEnabled, integrationName),
+                                $"DD_{integrationName}_ENABLED")
+                           .AsBool()
+                         ?? fallback?.Enabled;
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
                               .WithKeys(
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, upperName),
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
+                                   string.Format(AnalyticsEnabledKey, upperName),
+                                   string.Format(AnalyticsEnabledKey, integrationName),
                                    $"DD_{integrationName}_ANALYTICS_ENABLED")
                               .AsBool()
                             ?? fallback?.AnalyticsEnabled;
 
             AnalyticsSampleRate = config
                                  .WithKeys(
-                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, upperName),
-                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
+                                      string.Format(AnalyticsSampleRateKey, upperName),
+                                      string.Format(AnalyticsSampleRateKey, integrationName),
                                       $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
                                  .AsDouble(fallback?.AnalyticsSampleRate ?? 1.0);
 #pragma warning restore 618
