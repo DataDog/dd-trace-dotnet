@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces(string packageVersion)
         {
-            string metadataSchemaVersion = "v0";
+            const string metadataSchemaVersion = "v0";
             var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-eventbridge";
 
             using var telemetry = this.ConfigureTelemetry();
@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var eventBridgeSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 eventBridgeSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
+                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

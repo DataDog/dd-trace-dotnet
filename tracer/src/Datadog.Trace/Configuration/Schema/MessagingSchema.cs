@@ -78,13 +78,13 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new MsmqV1Tags(spanKind),
             };
 
-        public AwsS3Tags CreateAwsS3Tags(string spanKind) => new AwsS3Tags();
+        public AwsS3Tags CreateAwsS3Tags(string spanKind) => new AwsS3Tags(spanKind);
 
-        public AwsSqsTags CreateAwsSqsTags(string spanKind) => new AwsSqsTags();
+        public AwsSqsTags CreateAwsSqsTags(string spanKind) => new AwsSqsTags(spanKind);
 
-        public AwsSnsTags CreateAwsSnsTags(string spanKind) => new AwsSnsTags();
+        public AwsSnsTags CreateAwsSnsTags(string spanKind) => new AwsSnsTags(spanKind);
 
-        public AwsEventBridgeTags CreateAwsEventBridgeTags(string spanKind) => new AwsEventBridgeTags();
+        public AwsEventBridgeTags CreateAwsEventBridgeTags(string spanKind) => new AwsEventBridgeTags(spanKind);
 
         public AwsKinesisTags CreateAwsKinesisTags(string spanKind) => new AwsKinesisTags(spanKind);
 

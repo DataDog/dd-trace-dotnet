@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces(string packageVersion)
         {
-            string metadataSchemaVersion = "v0";
+            const string metadataSchemaVersion = "v0";
             var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-stepfunctions";
 
             using var telemetry = this.ConfigureTelemetry();
@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var stepFunctionsSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 stepFunctionsSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(stepFunctionsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, true);
+                ValidateIntegrationSpans(stepFunctionsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
