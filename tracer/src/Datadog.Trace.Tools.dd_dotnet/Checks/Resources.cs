@@ -33,6 +33,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
         public const string IisNotFound = "Could not find IIS. Make sure IIS is properly installed and enable, and run the tool from an elevated prompt.";
+        public const string IisFullTrust = "IIS site is running in a full trust environment, without code access security (CAS).";
 
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string SetupChecks = "---- STARTING TRACER SETUP CHECKS -----";
         public const string ConfigurationChecks = "---- CONFIGURATION CHECKS -----";
         public const string DdAgentChecks = "---- DATADOG AGENT CHECKS -----";
+        public const string IisChecks = "---- IIS CHECKS -----";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerEnabledWithHeuristics = "DD_PROFILING_ENABLED is set to 'auto'. The continuous profiler is enabled and may begin profiling based on heuristics.";
@@ -123,6 +125,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error} Try to run the tool in administrator mode.";
 
         public static string IisWorkerProcessError(string error) => $"Could not detect the worker process: {error} Note that you must run the tool from an elevated prompt.";
+
+        public static string ErrorReadingIisAppConfiguration(string error) => $"Could not extract configuration information for site: {error}";
+
+        public static string PartialTrustEnvironment(string trustLevel) => $"""IIS site is running in a partial trust environment, with level '{trustLevel}'. Partial trust environments are not supported. To enable Datadog, switch to Full trust by removing the system.web/trust node from your web.config, or set <trust level="Full" />. Note that this may change the security posture of your application.""";
+
+        public static string LegacyCasEnabled() => """IIS site is running with legacy code access security (CAS) enabled. Applications running with code access security are not supported. To enable Datadog, disable CAS policies by removing the system.web/trust node from your web.config, or set <trust legacyCasModel="false" />. Note that this may change the security posture of your application.""";
 
         public static string ListAllIisApplications(IEnumerable<string> availableApplications)
         {
