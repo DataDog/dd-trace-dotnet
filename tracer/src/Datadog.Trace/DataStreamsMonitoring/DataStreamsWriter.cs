@@ -22,22 +22,23 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
+    private static readonly int QueueLimit = 10_000;
 
     private readonly object _initLock = new();
     private readonly long _bucketDurationMs;
-    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
-    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: QueueLimit);
+    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: QueueLimit);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly bool _isInDefaultState;
 
-    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private Timer? _flushTimer;
     private long _lastFlushNanos;
+    private long _isDisposing;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -87,10 +88,18 @@ internal class DataStreamsWriter : IDataStreamsWriter
         lock (_initLock)
         {
             _flushTimer = new Timer(
-                x => ((DataStreamsWriter)x!).ProcessQueueLoopAsync().ConfigureAwait(false),
+                x =>
+                {
+                    // trigger flush when queue is half full or enough time has passed
+                    if (_buffer.Count > QueueLimit / 2 || _backlogBuffer.Count > QueueLimit / 2 ||
+                        DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() - Interlocked.Read(ref _lastFlushNanos) >= _bucketDurationMs)
+                    {
+                        ((DataStreamsWriter)x!).ProcessQueueAsync().ConfigureAwait(false);
+                    }
+                },
                 this,
-                dueTime: 25,
-                period: 25);
+                dueTime: 10,
+                period: 10);
 
             Volatile.Write(ref _isInitialized, true);
         }
@@ -125,6 +134,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             if (_backlogBuffer.TryEnqueue(point))
             {
+                if (_backlogBuffer.Count >= QueueLimit / 2)
+                {
+                    _ = Task.Run(async () => await ProcessQueueAsync().ConfigureAwait(false));
+                }
+
                 return;
             }
         }
@@ -134,6 +148,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task DisposeAsync()
     {
+        Interlocked.Exchange(ref _isDisposing, 1);
         _discoveryService.RemoveSubscription(HandleConfigUpdate);
 #if NETCOREAPP3_1_OR_GREATER
         if (_flushTimer != null)
@@ -144,14 +159,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         Interlocked.Exchange(ref _lastFlushNanos, 0L);
-        await ProcessQueueLoopAsync().ConfigureAwait(false);
+        await ProcessQueueAsync().ConfigureAwait(false);
 
         _flushSemaphore.Dispose();
     }
 
     public async Task FlushAsync()
     {
-        await ProcessQueueLoopAsync().ConfigureAwait(false);
+        await ProcessQueueAsync().ConfigureAwait(false);
     }
 
     private async Task WriteToApiAsync()
@@ -165,7 +180,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
             // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
             _serializationBuffer ??= new MemoryStream(capacity: 512 * 1024);
 
-            var flushTimeNs = _processExit.Task.IsCompleted
+            var isDisposing = Interlocked.Read(ref _isDisposing) == 1;
+            var flushTimeNs = isDisposing
                                   ? long.MaxValue // flush all buckets
                                   : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(); // don't flush current bucket
 
@@ -200,13 +216,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private async Task ProcessQueueLoopAsync()
+    private async Task ProcessQueueAsync()
     {
         try
         {
             await Task.Run(async () =>
             {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var now = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
                 var before = Interlocked.Exchange(ref _lastFlushNanos, now);
 
                 while (_buffer.TryDequeue(out var statsPoint))
