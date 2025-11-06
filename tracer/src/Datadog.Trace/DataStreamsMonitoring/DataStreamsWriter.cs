@@ -25,8 +25,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly object _initLock = new();
     private readonly long _bucketDurationMs;
-    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
-    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 25_000);
+    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 25_000);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -312,7 +312,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            await Task.Delay(10).ConfigureAwait(false);
+            await Task.Delay(25).ConfigureAwait(false);
         }
     }
 
