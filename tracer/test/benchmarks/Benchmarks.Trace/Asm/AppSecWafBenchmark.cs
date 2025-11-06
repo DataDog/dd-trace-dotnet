@@ -28,10 +28,10 @@ public class AppSecWafBenchmark
     private const int TimeoutMicroSeconds = 1_000_000;
 
     private static Waf _waf;
-    private static readonly Dictionary<string, object> _stage1 = MakeRealisticNestedMapStage1(false);
-    private static readonly Dictionary<string, object> _stage1Attack = MakeRealisticNestedMapStage1(true);
-    private static readonly Dictionary<string, object> _stage2 = MakeRealisticNestedMapStage2();
-    private static readonly Dictionary<string, object> _stage3 = MakeRealisticNestedMapStage3();
+    private static Dictionary<string, object> _stage1;
+    private static Dictionary<string, object> _stage1Attack;
+    private static Dictionary<string, object> _stage2;
+    private static Dictionary<string, object> _stage3;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -53,6 +53,13 @@ public class AppSecWafBenchmark
             throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
         }
         _waf = initResult.Waf;
+
+        // Create test data in GlobalSetup, not static initializer
+        // This ensures BenchmarkDotNet excludes allocation overhead from measurements
+        _stage1 = MakeRealisticNestedMapStage1(false);
+        _stage1Attack = MakeRealisticNestedMapStage1(true);
+        _stage2 = MakeRealisticNestedMapStage2();
+        _stage3 = MakeRealisticNestedMapStage3();
 
         // Warmup
         RunWafRealisticBenchmark();
