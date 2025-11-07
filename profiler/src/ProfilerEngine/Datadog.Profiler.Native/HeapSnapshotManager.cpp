@@ -3,13 +3,17 @@
 
 #include "HeapSnapshotManager.h"
 #include "OpSysTools.h"
+#include "ThreadsCpuManager.h"
 
 #include "Log.h"
+
+constexpr const WCHAR* ThreadName = WStr("DD_HeapSnapMgr");
 
 HeapSnapshotManager::HeapSnapshotManager(
     IConfiguration* pConfiguration,
     ICorProfilerInfo12* pCorProfilerInfo,
-    IFrameStore* pFrameStore) :
+    IFrameStore* pFrameStore,
+    IThreadsCpuManager* pThreadsCpuManager) :
     ServiceBase(),
     _inducedGCNumber(-1),
     _session(0),
@@ -20,22 +24,57 @@ HeapSnapshotManager::HeapSnapshotManager(
     _isHeapDumpInProgress(false),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pFrameStore{pFrameStore},
+    _pThreadsCpuManager{pThreadsCpuManager},
     _lastTimestamp(0ns),
     _lastOldHeapSize(0),
-    _lastMemPressure(0)
+    _lastMemPressure(0),
+    _shouldStartHeapDump(false)
 {
     _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
+    _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
+
+    _pCorProfilerInfo->AddRef();
+}
+
+HeapSnapshotManager::~HeapSnapshotManager()
+{
+    StopImpl();
+
+    ICorProfilerInfo12* pCorProfilerInfo = _pCorProfilerInfo;
+    if (pCorProfilerInfo != nullptr)
+    {
+        _pCorProfilerInfo = nullptr;
+        pCorProfilerInfo->Release();
+    }
 }
 
 bool HeapSnapshotManager::StartImpl()
 {
-    // TODO: decide how to trigger a heap snapshot (timer + memory pressure threshold + growing gen2+loh)
+    _pLoopThread = std::make_unique<std::thread>([this] {
+        OpSysTools::SetNativeThreadName(ThreadName);
+        MainLoop();
+    });
+
     return true;
 }
 
 bool HeapSnapshotManager::StopImpl()
 {
+    _shutdownRequested = true;
+
+    if (_pLoopThread != nullptr)
+    {
+        try
+        {
+            _pLoopThread->join();
+            _pLoopThread.reset();
+        }
+        catch (const std::exception&)
+        {
+        }
+    }
+
     // don't forget to close the current EventPipe session if any
     CleanupSession();
 
@@ -49,6 +88,46 @@ void HeapSnapshotManager::CleanupSession()
     {
         _pCorProfilerInfo->EventPipeStopSession(_session);
         _session = 0;
+    }
+}
+
+void HeapSnapshotManager::MainLoop()
+{
+    Log::Debug("HeapSnapshotManager::MainLoop started.");
+
+    _loopThreadOsId = OpSysTools::GetThreadId();
+    _pThreadsCpuManager->Map(_loopThreadOsId, ThreadName);
+
+    while (!_shutdownRequested)
+    {
+        try
+        {
+            OpSysTools::Sleep(_snapshotCheckInterval);
+            MainLoopIteration();
+        }
+        catch (const std::runtime_error& re)
+        {
+            Log::Error("Runtime error in HeapSnapshotManager::MainLoop: ", re.what());
+        }
+        catch (const std::exception& ex)
+        {
+            Log::Error("Typed Exception in HeapSnapshotManager::MainLoop: ", ex.what());
+        }
+        catch (...)
+        {
+            Log::Error("Unknown Exception in HeapSnapshotManager::MainLoop.");
+        }
+    }
+
+    Log::Debug("HeapSnapshotManager::MainLoop has ended.");
+}
+
+void HeapSnapshotManager::MainLoopIteration()
+{
+    if (_shouldStartHeapDump)
+    {
+        _shouldStartHeapDump = false;
+        StartGCDump();
     }
 }
 
@@ -181,8 +260,12 @@ void HeapSnapshotManager::StartSnapshotTimerIfNeeded()
 {
     // DEBUG: we cannot start a gcdump: it breaks in the CLR because it is not allowed to start a GC during another GC
 
-    // TODO: let another thread trigger the gcdump
-    return;
+    // already set so no need to check again
+    if (_shouldStartHeapDump)
+    {
+        return;
+    }
+
     // Note: if the memory pressure is set to 0 in the configuration, a snapshot will be generated at each interval
     //       (used for testing purpose)
     if (_memPressureThreshold > 0)
@@ -203,7 +286,7 @@ void HeapSnapshotManager::StartSnapshotTimerIfNeeded()
         }
     }
 
-    StartGCDump();
+    _shouldStartHeapDump = true;
 }
 
 void HeapSnapshotManager::StartGCDump()
@@ -235,7 +318,9 @@ void HeapSnapshotManager::StartGCDump()
             nullptr},
     };
 
-    // TODO: maybe this is sort of synchronous so we won't get the session before some events might be received
+    // TODO: Maybe this is sort of synchronous so we won't get the session before some events might be received.
+    //       It might also imply that _session won't be set when the induced GC ends; i.e. impossible to cleanup
+    //       --> clean up in the loop or when the next snapshot is triggered
     _isHeapDumpInProgress = true;
     auto hr =_pCorProfilerInfo->EventPipeStartSession(1, providers, false, &_session);
     if (FAILED(hr))

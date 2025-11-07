@@ -3,6 +3,11 @@
 
 #pragma once
 
+#include <thread>
+#include <memory>
+#include <unordered_map>
+#include <chrono>
+
 #include "IHeapSnapshotManager.h"
 #include "IConfiguration.h"
 #include "IFrameStore.h"
@@ -12,8 +17,9 @@
 
 #include "corprof.h"
 
-#include <unordered_map>
-#include <chrono>
+// forward declarations
+class IThreadsCpuManager;
+
 
 using namespace std::chrono_literals;
 
@@ -46,8 +52,9 @@ public:
     HeapSnapshotManager(
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
-        IFrameStore* pFrameStore);
-    ~HeapSnapshotManager() override = default;
+        IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager);
+    ~HeapSnapshotManager();
 
 protected:
     // inherited via IService
@@ -95,6 +102,8 @@ protected:
     bool StopImpl() override;
 
 private:
+    void MainLoop();
+    void MainLoopIteration();
     void StartGCDump();
     void StopGCDump();
     void CleanupSession();
@@ -102,6 +111,7 @@ private:
 
 private:
     std::chrono::minutes _heapDumpInterval;
+    std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
     uint64_t _gen2Size;
     uint64_t _lohSize;
@@ -110,11 +120,22 @@ private:
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
+    IThreadsCpuManager* _pThreadsCpuManager;
+
+    std::unique_ptr<std::thread> _pLoopThread;
+    DWORD _loopThreadOsId;
+    volatile bool _shutdownRequested = false;
 
     // session used to trigger a heap dump
     // TODO: check if we need to synchronize the update of this field from different threads
     EVENTPIPE_SESSION _session;
+
+    // set to true when a heap dump is requested by starting an EventPipe session
     bool _isHeapDumpInProgress;
+
+    // set to true when the criterias are met after a GC
+    // --> will trigger a heap dump in the main loop
+    bool _shouldStartHeapDump;
 
     // id of the induced GC triggering a heap dump
     int32_t _inducedGCNumber;

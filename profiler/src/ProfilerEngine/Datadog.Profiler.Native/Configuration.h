@@ -87,6 +87,7 @@ public:
     void SetEnablementStatus(EnablementStatus status) override;
     bool IsHeapSnapshotEnabled() const override;
     std::chrono::minutes GetHeapSnapshotInterval() const override;
+    std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
 
 
@@ -115,6 +116,7 @@ private:
     std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
     std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
     std::chrono::minutes ExtractHeapSnapshotInterval() const;
+    std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
 
 private:
@@ -198,5 +200,6 @@ private:
 
     bool _isHeapSnapshotEnabled;
     std::chrono::minutes _heapSnapshotInterval;
+    std::chrono::milliseconds _heapSnapshotCheckInterval;
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
 };

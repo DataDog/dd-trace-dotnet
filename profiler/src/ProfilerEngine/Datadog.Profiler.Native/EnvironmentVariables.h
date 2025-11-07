@@ -75,6 +75,7 @@ public:
     inline static const shared::WSTRING HttpRequestDurationThreshold    = WStr("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");
     inline static const shared::WSTRING HeapSnapshotEnabled             = WStr("DD_PROFILING_HEAPSNAPSHOT_ENABLED");
     inline static const shared::WSTRING HeapSnapshotInterval            = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL");
+    inline static const shared::WSTRING HeapSnapshotCheckInterval       = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL");
     inline static const shared::WSTRING HeapSnapshotMemoryPressureThreshold = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD");
 
     // used for tests only

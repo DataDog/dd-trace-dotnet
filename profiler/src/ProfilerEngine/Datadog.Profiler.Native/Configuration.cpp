@@ -122,6 +122,7 @@ Configuration::Configuration()
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
+    _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
 }
 
@@ -848,6 +849,23 @@ std::chrono::minutes Configuration::ExtractHeapSnapshotInterval() const
 std::chrono::minutes Configuration::GetHeapSnapshotInterval() const
 {
     return _heapSnapshotInterval;
+}
+
+std::chrono::milliseconds Configuration::ExtractHeapSnapshotCheckInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::HeapSnapshotCheckInterval);
+    int32_t interval;
+    if (TryParse(r, interval))
+    {
+        return std::chrono::milliseconds(interval);
+    }
+
+    return 250ms;
+}
+
+std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
+{
+    return _heapSnapshotCheckInterval;
 }
 
 uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const

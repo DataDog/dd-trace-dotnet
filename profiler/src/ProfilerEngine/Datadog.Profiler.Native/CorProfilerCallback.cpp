@@ -349,7 +349,8 @@ void CorProfilerCallback::InitializeServices()
             _pHeapSnapshotManager = RegisterService<HeapSnapshotManager>(
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
-                _pFrameStore.get()
+                _pFrameStore.get(),
+                _pThreadsCpuManager
                 );
         }
 
