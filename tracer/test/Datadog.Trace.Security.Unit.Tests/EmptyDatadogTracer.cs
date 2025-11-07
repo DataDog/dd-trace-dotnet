@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using Moq;
 
@@ -23,7 +24,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             DefaultServiceName = "My Service Name";
             Settings = new TracerSettings(NullConfigurationSource.Instance);
             var namingSchema = new NamingSchema(SchemaVersion.V0, false, false, DefaultServiceName, null, null);
-            PerTraceSettings = new PerTraceSettings(null, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings));
+            PerTraceSettings = new PerTraceSettings(null, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings, new ConfigurationTelemetry()));
         }
 
         public string DefaultServiceName { get; }

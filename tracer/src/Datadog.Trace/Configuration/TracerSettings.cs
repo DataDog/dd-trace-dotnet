@@ -125,8 +125,6 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
-            var exporter = new ExporterSettings(source, _telemetry);
-
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
                .AsBool(defaultValue: false);
@@ -334,66 +332,6 @@ namespace Datadog.Trace.Configuration
                                     .AsBool(defaultValue: false);
 
             OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
-
-            DataPipelineEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
-
-            if (DataPipelineEnabled)
-            {
-                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-                // as it may lead to different stats results than the managed one.
-                if (StatsComputationEnabled)
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
-                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
-                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
-                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
-                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
-                // this scenario in the public API.
-                if (exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                if (!isLibDatadogAvailable.IsAvailable)
-                {
-                    DataPipelineEnabled = false;
-                    if (isLibDatadogAvailable.Exception is not null)
-                    {
-                        Log.Warning(
-                            isLibDatadogAvailable.Exception,
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // SSI already utilizes libdatadog. To prevent unexpected behavior,
-                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
-                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-            }
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -731,9 +669,70 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            // Move the creation of these settings inside SettingsManager?
-            var initialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
-            Manager = new(this, initialMutableSettings, exporter);
+            // There's a circular dependency here because DataPipeline depends on ExporterSettings,
+            // but the settings manager depends on TracerSettings. Basically this is all fine as long
+            // as nothing in the MutableSettings or ExporterSettings depends on the value of DataPipelineEnabled!
+            Manager = new(source, this, telemetry, errorLog);
+
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
+
+            if (DataPipelineEnabled)
+            {
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
+                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
+                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
+                // this scenario in the public API.
+                if (Manager.InitialExporterSettings.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!isLibDatadogAvailable.IsAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    if (isLibDatadogAvailable.Exception is not null)
+                    {
+                        Log.Warning(
+                            isLibDatadogAvailable.Exception,
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+                    else
+                    {
+                        Log.Warning(
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // SSI already utilizes libdatadog. To prevent unexpected behavior,
+                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
+                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
         }
 
         internal bool IsRunningInCiVisibility { get; }
