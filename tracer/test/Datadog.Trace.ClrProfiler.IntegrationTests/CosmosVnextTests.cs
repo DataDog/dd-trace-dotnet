@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.CosmosDb
+            => from packageVersionArray in PackageVersions.CosmosDbVnext
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
