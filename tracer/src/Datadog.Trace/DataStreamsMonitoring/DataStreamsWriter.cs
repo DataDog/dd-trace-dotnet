@@ -34,6 +34,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
+    private readonly SemaphoreSlim _backgroundThreadSemaphore = new(0, 1);
+    private readonly TimeSpan _releaseTimeout = TimeSpan.FromSeconds(2);
     private TaskCompletionSource<bool>? _currentFlushTcs;
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
@@ -159,9 +161,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // wait for the thread to finish
-        _backgroundProcessingThread?.Join();
-        _flushSemaphore.Dispose();
+        // wait for processing thread
+        await _backgroundThreadSemaphore.WaitAsync(_releaseTimeout).ConfigureAwait(false);
+        _backgroundThreadSemaphore.Dispose();
+
+        // one final flush
+        var tsc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ProcessQueue(true, tsc);
+        await tsc.Task.WaitAsync(_releaseTimeout).ConfigureAwait(false);
     }
 
     public async Task FlushAsync()
@@ -245,45 +252,51 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
+    private void ProcessQueue(bool flush, TaskCompletionSource<bool>? tcs)
+    {
+        try
+        {
+            while (_buffer.TryDequeue(out var statsPoint))
+            {
+                _aggregator.Add(in statsPoint);
+            }
+
+            while (_backlogBuffer.TryDequeue(out var backlogPoint))
+            {
+                _aggregator.AddBacklog(in backlogPoint);
+            }
+
+            if (flush)
+            {
+                WriteToApi();
+                FlushComplete?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occured in the processing thread");
+        }
+
+        tcs?.TrySetResult(true);
+    }
+
     private void ProcessQueueLoop()
     {
-        var exitLoopCount = _processExit.Task.IsCompleted ? 1 : 0;
-        while (true)
+        _backgroundThreadSemaphore.Wait();
+        try
         {
-            // we allow one final loop after exit is signaled
-            exitLoopCount += _processExit.Task.IsCompleted ? 1 : 0;
-            if (exitLoopCount > 1)
+            while (!_processExit.Task.IsCompleted)
             {
-                break;
-            }
-
-            try
-            {
-                while (_buffer.TryDequeue(out var statsPoint))
-                {
-                    _aggregator.Add(in statsPoint);
-                }
-
-                while (_backlogBuffer.TryDequeue(out var backlogPoint))
-                {
-                    _aggregator.AddBacklog(in backlogPoint);
-                }
-
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1 || exitLoopCount == 1)
-                {
-                    WriteToApi();
-                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
-                    currentFlushTcs?.TrySetResult(true);
-                    FlushComplete?.Invoke(this, EventArgs.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An error occured in the processing thread");
-            }
+                var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
 
-            Thread.Sleep(5);
+                ProcessQueue(flushRequested == 1, currentFlushTcs);
+                Thread.Sleep(5);
+            }
+        }
+        finally
+        {
+            _backgroundThreadSemaphore.Release();
         }
     }
 

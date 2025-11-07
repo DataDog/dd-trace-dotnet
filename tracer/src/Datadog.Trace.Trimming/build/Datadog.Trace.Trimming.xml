@@ -1079,6 +1079,7 @@
       <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
+      <type fullname="System.Threading.ThreadStart" />
       <type fullname="System.Threading.ThreadState" />
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
