@@ -27,8 +27,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly ManualResetEventSlim _resetEvent = new(false);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(15);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -36,12 +34,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
+    private TaskCompletionSource<bool>? _currentFlushTcs;
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
-    private int _flushRequested;
-    private Task? _processTask;
+    private long _flushRequested;
     private Timer? _flushTimer;
-    private TaskCompletionSource<bool>? _currentFlushTcs;
+    private Thread? _backgroundProcessingThread;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -90,13 +88,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         lock (_initLock)
         {
-            if (_processTask != null)
+            if (_backgroundProcessingThread != null)
             {
                 return;
             }
 
-            _processTask = Task.Run(ProcessQueueLoopAsync);
-            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _backgroundProcessingThread = new Thread(ProcessQueueLoop);
+            _backgroundProcessingThread.Start();
+
             _flushTimer = new Timer(
                 x => ((DataStreamsWriter)x!).RequestFlush(),
                 this,
@@ -154,39 +153,15 @@ internal class DataStreamsWriter : IDataStreamsWriter
 #else
         _flushTimer?.Dispose();
 #endif
-        await FlushAndCloseAsync().ConfigureAwait(false);
-        _flushSemaphore.Dispose();
-        _resetEvent.Dispose();
-    }
-
-    private async Task FlushAndCloseAsync()
-    {
+        // signal exit
         if (!_processExit.TrySetResult(true))
         {
             return;
         }
 
-        // nothing else to do, since the writer was not fully initialized
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        // request a final flush - as the _processExit flag is now set
-        // this ensures we will definitely flush all the stats
-        // (and sets the mutex if it isn't already set)
-        RequestFlush();
-
-        // wait for the processing loop to complete
-        var completedTask = await Task.WhenAny(
-                                           _processTask,
-                                           Task.Delay(TimeSpan.FromSeconds(20)))
-                                      .ConfigureAwait(false);
-
-        if (completedTask != _processTask)
-        {
-            Log.Error("Could not flush all data streams stats before process exit");
-        }
+        // wait for the thread to finish
+        _backgroundProcessingThread?.Join();
+        _flushSemaphore.Dispose();
     }
 
     public async Task FlushAsync()
@@ -201,7 +176,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+            if (!Volatile.Read(ref _isInitialized) || _backgroundProcessingThread == null)
             {
                 return;
             }
@@ -233,7 +208,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         Interlocked.Exchange(ref _flushRequested, 1);
     }
 
-    private async Task WriteToApiAsync()
+    private void WriteToApi()
     {
         // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
@@ -257,8 +232,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             // This flushes on the same thread as the processing loop
             var data = new ArraySegment<byte>(_serializationBuffer.GetBuffer(), offset: 0, (int)_serializationBuffer.Length);
 
-            var success = await _api.SendAsync(data).ConfigureAwait(false);
-
+            var success = _api.SendAsync(data).ConfigureAwait(false).GetAwaiter().GetResult();
             var dropCount = Interlocked.Exchange(ref _pointsDropped, 0);
             if (success)
             {
@@ -271,11 +245,18 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private async Task ProcessQueueLoopAsync()
+    private void ProcessQueueLoop()
     {
-        var isFinalFlush = false;
+        var exitLoopCount = _processExit.Task.IsCompleted ? 1 : 0;
         while (true)
         {
+            // we allow one final loop after exit is signaled
+            exitLoopCount += _processExit.Task.IsCompleted ? 1 : 0;
+            if (exitLoopCount > 1)
+            {
+                break;
+            }
+
             try
             {
                 while (_buffer.TryDequeue(out var statsPoint))
@@ -289,9 +270,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 }
 
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1)
+                if (flushRequested == 1 || exitLoopCount == 1)
                 {
-                    await WriteToApiAsync().ConfigureAwait(false);
+                    WriteToApi();
                     var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
                     currentFlushTcs?.TrySetResult(true);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
@@ -302,21 +283,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 Log.Error(ex, "An error occured in the processing thread");
             }
 
-            if (_processExit.Task.IsCompleted)
-            {
-                if (isFinalFlush)
-                {
-                    return;
-                }
-
-                // do one more loop to make sure everything is flushed
-                RequestFlush();
-                isFinalFlush = true;
-                continue;
-            }
-
-            // _resetEvent is never set, we simply wait for a timeout
-            _resetEvent.Wait(_waitTimeSpan);
+            Thread.Sleep(5);
         }
     }
 
