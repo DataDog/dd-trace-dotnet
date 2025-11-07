@@ -1012,6 +1012,7 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
         public bool AzureEventHubsBatchLinksEnabled { get; }
 
+        /// <summary>
         /// Gets a value indicating whether the agent discovery service is enabled.
         /// When disabled, the tracer will not query the agent for available endpoints.
         /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
