@@ -112,28 +112,12 @@ private:
 
     void WatcherLoop();
     void WatcherLoopIteration();
-
-    struct DeadlockInterventionLogData
-    {
-        bool ShouldLog;
-        bool WasThreadSafeForCollection;
-        bool IsThreadSafeForCollection;
-        bool IsThreadResumed;
-        bool ShouldLogStatusChange;
-        std::chrono::nanoseconds CollectionDuration;
-        std::uint64_t OsThreadId;
-        std::uint64_t ClrThreadId;
-        const shared::WSTRING* ThreadName;
-        std::uint64_t CurrentPeriod;
-        std::uint64_t DeadlocksInPeriod;
-        std::uint64_t TotalDeadlockDetectionsCount;
-        std::uint64_t ThreadDeadlockTotalCount;
-        std::uint64_t ThreadDeadlockInAggPeriodCount;
-        std::uint64_t ThreadUsedDeadlocksAggPeriodIndex;
-    };
-
-    bool PerformDeadlockIntervention(const std::chrono::nanoseconds& ongoingStackSampleCollectionDurationNs, DeadlockInterventionLogData& logData);
-    void LogDeadlockIntervention(const DeadlockInterventionLogData& logData);
+    void PerformDeadlockIntervention(const std::chrono::nanoseconds& ongoingStackSampleCollectionDurationNs);
+    void LogDeadlockIntervention(
+        const std::chrono::nanoseconds& ongoingStackSampleCollectionDurationNs,
+        bool wasThreadSafeForStackSampleCollection,
+        bool isThreadSafeForStackSampleCollection,
+        bool isThreadResumed);
 
     void StartNewStatsAggregationPeriod(std::int64_t currentHighPrecisionNanosecs,
                                         const std::chrono::nanoseconds& periodDurationNs);
