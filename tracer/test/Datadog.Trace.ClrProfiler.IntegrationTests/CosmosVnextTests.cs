@@ -1,4 +1,4 @@
-// <copyright file="CosmosTests.cs" company="Datadog">
+// <copyright file="CosmosVnextTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,13 +16,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
-    public class CosmosTests : TracingIntegrationTest, IAsyncLifetime
+    public class CosmosVnextTests : TracingIntegrationTest, IAsyncLifetime
     {
         private const string ExpectedOperationName = "cosmosdb.query";
 
-        public CosmosTests(ITestOutputHelper output)
-            : base("CosmosDb", output)
+        public CosmosVnextTests(ITestOutputHelper output)
+            : base("CosmosDb.Vnext", output)
         {
             SetServiceVersion("1.0.0");
         }
@@ -37,15 +39,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
-        [Trait("Category", "ArmUnsupported")]
-        [Trait("SkipInCI", "True")] // Cosmos emulator is too flaky in CI at the moment
-        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        // vnext emulator only supports queries on items
+        public async Task SubmitTracesQuery(string packageVersion, string metadataSchemaVersion)
         {
-            var expectedSpanCount = 14;
+            var expectedSpanCount = 4;
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("TEST_MODE", "Query");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
 
@@ -59,6 +59,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // Normalize cosmosdb host between localhost, x64, and ARM64
+                settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
+                settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator_arm64:8081/", "out.host: https://cosmosdb-emulator:8081/");
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
+                settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
+
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();

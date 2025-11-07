@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: cosmosdb.query,
     Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -13,10 +13,13 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -30,7 +33,7 @@
     SpanId: Id_4,
     Name: cosmosdb.query,
     Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -39,10 +42,13 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -56,7 +62,7 @@
     SpanId: Id_6,
     Name: cosmosdb.query,
     Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -65,10 +71,13 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -82,7 +91,7 @@
     SpanId: Id_8,
     Name: cosmosdb.query,
     Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -91,10 +100,13 @@
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,

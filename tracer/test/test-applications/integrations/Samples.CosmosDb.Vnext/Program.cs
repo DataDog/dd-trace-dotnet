@@ -8,12 +8,19 @@ using System.IO;
 using System.Diagnostics;
 using System.Net.Http;
 
-namespace Samples.CosmosDb
+namespace Samples.CosmosDb.Vnext
 {
+    enum TestMode
+    {
+        Query
+    }
+
     class Program
     {
         // The Azure Cosmos DB endpoint for running this sample.
-        private static readonly string EndpointUri = ConfigurationManager.AppSettings["EndPointUri"];
+        private static readonly string EndpointUri =
+            Environment.GetEnvironmentVariable("COSMOSDB_ENDPOINT") ??
+            "https://localhost:8081";
 
         // The primary key for the Azure Cosmos account.
         private static readonly string PrimaryKey = ConfigurationManager.AppSettings["PrimaryKey"];
@@ -66,13 +73,36 @@ namespace Samples.CosmosDb
         /// </summary>
         public async Task GetStartedDemoAsync()
         {
+            var testModeStr = Environment.GetEnvironmentVariable("TEST_MODE");
+            if (string.IsNullOrEmpty(testModeStr))
+            {
+                throw new InvalidOperationException("TEST_MODE environment variable must be set");
+            }
+
+            if (!Enum.TryParse<TestMode>(testModeStr, ignoreCase: true, out var testMode))
+            {
+                var validModes = string.Join(", ", Enum.GetNames(typeof(TestMode)));
+                throw new InvalidOperationException($"TEST_MODE must be one of: {validModes}. Got: '{testModeStr}'");
+            }
+
+            Console.WriteLine($"{DateTime.Now:o}: Running in {testMode} mode\n");
+
             // Create a new instance of the Cosmos Client
-            var clientOptions = 
-                new CosmosClientOptions() 
-                { 
-                    ApplicationName = "CosmosDBDotnetQuickstart", 
+            var clientOptions =
+                new CosmosClientOptions()
+                {
+                    ApplicationName = "CosmosDBDotnetQuickstart",
                     RequestTimeout = TimeSpan.FromMinutes(10),
-                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
+                    ConnectionMode = ConnectionMode.Gateway,
+                    LimitToEndpoint = true,
+                    HttpClientFactory = () =>
+                    {
+                        var handler = new HttpClientHandler
+                        {
+                            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                        };
+                        return new HttpClient(handler);
+                    }
                 };
 
             cosmosClient = new CosmosClient(EndpointUri, PrimaryKey, clientOptions);
@@ -81,12 +111,14 @@ namespace Samples.CosmosDb
             {
                 await CreateDatabaseAsync();
                 await CreateContainerAsync();
-                await ScaleContainerAsync();
                 await AddItemsToContainerAsync();
-                await QueryDatabasesAsync();
-                await QueryContainersAsync();
-                await QueryUsersAsync();
-                await QueryItemsAsync();
+
+                switch (testMode)
+                {
+                    case TestMode.Query:
+                        await QueryItemsAsync();
+                        break;
+                }
             }
             finally
             {
@@ -104,9 +136,6 @@ namespace Samples.CosmosDb
             // Create a new database
             database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
             Console.WriteLine($"{DateTime.Now:o}: Created Database: {database.Id}\n");
-
-            var user = await database.CreateUserAsync("user");
-            Console.WriteLine($"{DateTime.Now:o}: Created user: {user.Resource.Id}\n");
         }
         // </CreateDatabaseAsync>
 
@@ -123,28 +152,6 @@ namespace Samples.CosmosDb
             Console.WriteLine($"{DateTime.Now:o}:Created Container: {container.Id}\n");
         }
         // </CreateContainerAsync>
-
-        // <ScaleContainerAsync>
-        /// <summary>
-        /// Scale the throughput provisioned on an existing Container.
-        /// You can scale the throughput (RU/s) of your container up and down to meet the needs of the workload. Learn more: https://aka.ms/cosmos-request-units
-        /// </summary>
-        /// <returns></returns>
-        private async Task ScaleContainerAsync()
-        {
-            // Read the current throughput
-            int? throughput = await container.ReadThroughputAsync();
-            if (throughput.HasValue)
-            {
-                Console.WriteLine($"{DateTime.Now:o}:Current provisioned throughput : {throughput.Value}\n");
-                int newThroughput = throughput.Value + 100;
-                // Update throughput
-                await container.ReplaceThroughputAsync(newThroughput);
-                Console.WriteLine($"{DateTime.Now:o}:New provisioned throughput : {newThroughput}\n");
-            }
-            
-        }
-        // </ScaleContainerAsync>
 
         // <AddItemsToContainerAsync>
         /// <summary>
@@ -246,64 +253,6 @@ namespace Samples.CosmosDb
             }
         }
         // </AddItemsToContainerAsync>
-
-        // <QueryItemsAsync>
-        /// <summary>
-        /// Run a query (using Azure Cosmos DB SQL syntax) against the container
-        /// </summary>
-        private async Task QueryDatabasesAsync()
-        {
-            var sqlQueryText = "SELECT * FROM d";
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
-
-            Console.WriteLine("Running queries: {0}\n", sqlQueryText);
-
-            Console.WriteLine($"{DateTime.Now:o}: cosmosClient.GetDatabaseQueryStreamIterator-QueryDefinition");
-            await ExecAndIterateQueryAsync(() => cosmosClient.GetDatabaseQueryStreamIterator(queryDefinition));
-            Console.WriteLine($"{DateTime.Now:o}: cosmosClient.GetDatabaseQueryStreamIterator-string");
-            await ExecAndIterateQueryAsync(() => cosmosClient.GetDatabaseQueryStreamIterator(sqlQueryText));
-            Console.WriteLine($"{DateTime.Now:o}: cosmosClient.GetDatabaseQueryIterator-QueryDefinition");
-            await ExecAndIterateQueryAsync(() => cosmosClient.GetDatabaseQueryIterator<DatabaseProperties>(queryDefinition));
-            Console.WriteLine($"{DateTime.Now:o}: cosmosClient.GetDatabaseQueryIterator-string");
-            await ExecAndIterateQueryAsync(() => cosmosClient.GetDatabaseQueryIterator<DatabaseProperties>(sqlQueryText));
-
-        }
-
-        /// <summary>
-        /// Run a query (using Azure Cosmos DB SQL syntax) against the container
-        /// </summary>
-        private async Task QueryContainersAsync()
-        {
-            var sqlQueryText = "SELECT * FROM c";
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
-
-            Console.WriteLine("Running queries: {0}\n", sqlQueryText);
-
-            Console.WriteLine($"{DateTime.Now:o}: database.GetContainerQueryStreamIterator-QueryDefinition");
-            await ExecAndIterateQueryAsync(() => database.GetContainerQueryStreamIterator(queryDefinition));
-            Console.WriteLine($"{DateTime.Now:o}: database.GetContainerQueryStreamIterator-string");
-            await ExecAndIterateQueryAsync(() => database.GetContainerQueryStreamIterator(sqlQueryText));
-            Console.WriteLine($"{DateTime.Now:o}: database.GetContainerQueryIterator-QueryDefinition");
-            await ExecAndIterateQueryAsync(() => database.GetContainerQueryIterator<Family>(queryDefinition));
-            Console.WriteLine($"{DateTime.Now:o}: database.GetContainerQueryIterator-string");
-            await ExecAndIterateQueryAsync(() => database.GetContainerQueryIterator<Family>(sqlQueryText));
-        }
-
-        /// <summary>
-        /// Run a query (using Azure Cosmos DB SQL syntax) against the container
-        /// </summary>
-        private async Task QueryUsersAsync()
-        {
-            var sqlQueryText = "SELECT * FROM u";
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
-
-            Console.WriteLine("Running queries: {0}\n", sqlQueryText);
-
-            Console.WriteLine($"{DateTime.Now:o}: database.GetUserQueryIterator-QueryDefinition");
-            await ExecAndIterateQueryAsync(() => database.GetUserQueryIterator<UserProperties>(queryDefinition));
-            Console.WriteLine($"{DateTime.Now:o}: database.GetUserQueryIterator-string");
-            await ExecAndIterateQueryAsync(() => database.GetUserQueryIterator<UserProperties>(sqlQueryText));
-        }
 
         /// <summary>
         /// Run a query (using Azure Cosmos DB SQL syntax) against the container
