@@ -212,7 +212,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .MatchesOneOf("span.kind", "producer", "client"));
+                .MatchesOneOf("span.kind", "producer", "client", "consumer"));
 
         public static Result IsAwsSnsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
