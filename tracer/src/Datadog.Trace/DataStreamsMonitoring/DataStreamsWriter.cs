@@ -34,7 +34,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
-    private readonly SemaphoreSlim _backgroundThreadSemaphore = new(0, 1);
+    private readonly SemaphoreSlim _backgroundThreadSemaphore = new(1, 1);
     private readonly TimeSpan _releaseTimeout = TimeSpan.FromSeconds(2);
     private TaskCompletionSource<bool>? _currentFlushTcs;
     private MemoryStream? _serializationBuffer;
