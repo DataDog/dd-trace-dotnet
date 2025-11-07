@@ -33,9 +33,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly bool _isInDefaultState;
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<bool> _tcsBackgroundThread = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
-    private readonly SemaphoreSlim _backgroundThreadSemaphore = new(1, 1);
-    private readonly TimeSpan _releaseTimeout = TimeSpan.FromSeconds(2);
+    private readonly TimeSpan _flushTimeout = TimeSpan.FromSeconds(5);
     private TaskCompletionSource<bool>? _currentFlushTcs;
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
@@ -161,14 +161,19 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // wait for processing thread
-        await _backgroundThreadSemaphore.WaitAsync(_releaseTimeout).ConfigureAwait(false);
-        _backgroundThreadSemaphore.Dispose();
+        // wait for thread to finish
+        if (_backgroundProcessingThread != null)
+        {
+            await _tcsBackgroundThread.Task.WaitAsync(_flushTimeout).ConfigureAwait(false);
+        }
 
-        // one final flush
+        // trigger one final manual flush
         var tsc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         ProcessQueue(true, tsc);
-        await tsc.Task.WaitAsync(_releaseTimeout).ConfigureAwait(false);
+        await tsc.Task.WaitAsync(_flushTimeout).ConfigureAwait(false);
+
+        // dispose
+        _flushSemaphore.Dispose();
     }
 
     public async Task FlushAsync()
@@ -176,8 +181,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
         await _flushSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            var timeout = TimeSpan.FromSeconds(5);
-
             if (_processExit.Task.IsCompleted)
             {
                 return;
@@ -196,11 +199,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
             var completedTask = await Task.WhenAny(
                 tcs.Task,
                 _processExit.Task,
-                Task.Delay(timeout)).ConfigureAwait(false);
+                Task.Delay(_flushTimeout)).ConfigureAwait(false);
 
             if (completedTask != tcs.Task)
             {
-                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
+                Log.Error("Data streams flush timeout after {Timeout}ms", _flushTimeout.TotalMilliseconds);
             }
         }
         finally
@@ -282,22 +285,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private void ProcessQueueLoop()
     {
-        _backgroundThreadSemaphore.Wait();
-        try
+        while (!_processExit.Task.IsCompleted)
         {
-            while (!_processExit.Task.IsCompleted)
-            {
-                var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
+            var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
+            var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
 
-                ProcessQueue(flushRequested == 1, currentFlushTcs);
-                Thread.Sleep(5);
-            }
+            ProcessQueue(flushRequested == 1, currentFlushTcs);
+            Thread.Sleep(5);
         }
-        finally
-        {
-            _backgroundThreadSemaphore.Release();
-        }
+
+        _tcsBackgroundThread.TrySetResult(true);
     }
 
     private void HandleConfigUpdate(AgentConfiguration config)
