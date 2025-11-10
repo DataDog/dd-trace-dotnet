@@ -66,9 +66,9 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAwsS3Request(this MockSpan span) => span.IsAwsS3RequestV0();
 
-        public static Result IsAwsSqsInbound(this MockSpan span) => span.IsAwsSqsRequestV0();
+        public static Result IsAwsSqsInbound(this MockSpan span) => span.IsAwsSqsInboundV0();
 
-        public static Result IsAwsSqsOutbound(this MockSpan span) => span.IsAwsSqsRequestV0();
+        public static Result IsAwsSqsOutbound(this MockSpan span) => span.IsAwsSqsOutboundV0();
 
         public static Result IsAwsSqsRequest(this MockSpan span) => span.IsAwsSqsRequestV0();
 
