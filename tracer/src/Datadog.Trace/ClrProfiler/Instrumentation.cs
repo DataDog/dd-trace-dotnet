@@ -316,7 +316,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
