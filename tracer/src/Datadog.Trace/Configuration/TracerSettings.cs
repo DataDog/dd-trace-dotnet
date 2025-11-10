@@ -38,31 +38,16 @@ namespace Datadog.Trace.Configuration
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
-        /// </summary>
-        [PublicApi]
-        public TracerSettings()
+        // Internal for testing
+        internal TracerSettings()
             : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <remarks>
-        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
-        /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(TracerSettings)"/>
-        /// </remarks>
-        [PublicApi]
-        public TracerSettings(IConfigurationSource? source)
+        // Internal for testing
+        internal TracerSettings(IConfigurationSource? source)
         : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
         /// <summary>
