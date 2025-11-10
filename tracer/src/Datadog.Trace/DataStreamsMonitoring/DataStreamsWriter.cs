@@ -96,6 +96,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
 
             _backgroundProcessingThread = new Thread(ProcessQueueLoop);
+            _backgroundProcessingThread.IsBackground = true;
             _backgroundProcessingThread.Start();
 
             _flushTimer = new Timer(
@@ -293,6 +294,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
 
         _tcsBackgroundThread.TrySetResult(true);
+        Log.Debug("Data Streams background thread has been completed");
     }
 
     private void HandleConfigUpdate(AgentConfiguration config)
