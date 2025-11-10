@@ -69,13 +69,14 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
-            // only contention profiler enabled so should only see the 2 related values per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            // contention and thread lifetime profilers enabled so should see 3 values per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 3);
             Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
 
             if (framework == "net8.0")
@@ -103,7 +104,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             runner.Run(agent);
 
-            // only contention profiler enabled so should see 3 value per sample
+            // contention and thread lifetime profilers enabled so should see 3 values per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 3);
             Assert.NotEqual(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
 
