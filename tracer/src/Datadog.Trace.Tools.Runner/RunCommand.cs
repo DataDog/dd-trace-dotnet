@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
-            if (GlobalSettings.Instance.DebugEnabledInternal)
+            if (GlobalSettings.Instance.DebugEnabled)
             {
                 Console.WriteLine("Running: {0} {1}", program, arguments);
             }

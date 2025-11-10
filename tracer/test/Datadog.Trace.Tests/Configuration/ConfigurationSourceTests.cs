@@ -91,6 +91,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, true);
+            yield return (s => s.AgentFeaturePollingEnabled, true);
         }
 
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetBreakingChangeTestData()
@@ -248,7 +249,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             foreach (var (value, settingGetter, expectedValue) in GetJsonTestData())
             {
-                IConfigurationSource source = new JsonConfigurationSource(value);
+                IConfigurationSource source = new JsonConfigurationSource(value, ConfigurationOrigins.Code);
                 var settings = new TracerSettings(source);
 
                 var actualValue = settingGetter(settings);
@@ -261,7 +262,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void JsonConfigurationSource_BadData1(
             string value)
         {
-            Assert.Throws<JsonReaderException>(() => { new JsonConfigurationSource(value); });
+            Assert.Throws<JsonReaderException>(() => { new JsonConfigurationSource(value, ConfigurationOrigins.Code); });
         }
 
         [Theory]
@@ -269,7 +270,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void JsonConfigurationSource_BadData2(
             string value)
         {
-            Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value); });
+            Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value, ConfigurationOrigins.Code); });
         }
 
         [Fact]
@@ -277,7 +278,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             foreach (var (value, settingGetter, expectedValue) in GetBadJsonTestData3())
             {
-                IConfigurationSource source = new JsonConfigurationSource(value);
+                IConfigurationSource source = new JsonConfigurationSource(value, ConfigurationOrigins.Code);
                 var settings = new TracerSettings(source);
 
                 var actualValue = settingGetter(settings);
@@ -364,7 +365,7 @@ namespace Datadog.Trace.Tests.Configuration
                 var config = new Dictionary<string, string> { [key] = value };
                 config.Add(ConfigurationKeys.ExperimentalFeaturesEnabled, setExperimentalFeaturesEnabled);
                 string json = JsonConvert.SerializeObject(config);
-                IConfigurationSource source = new JsonConfigurationSource(json);
+                IConfigurationSource source = new JsonConfigurationSource(json, ConfigurationOrigins.Code);
                 var settings = new TracerSettings(source);
 
                 object actualValue = settingGetter(settings);
