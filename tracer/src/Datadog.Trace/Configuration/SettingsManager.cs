@@ -24,6 +24,11 @@ public partial record TracerSettings
     {
         private readonly TracerSettings _tracerSettings = tracerSettings;
         private readonly List<SettingChangeSubscription> _subscribers = [];
+
+        private IConfigurationSource _dynamicConfigurationSource = NullConfigurationSource.Instance;
+        private ManualInstrumentationConfigurationSourceBase _manualConfigurationSource =
+            new ManualInstrumentationConfigurationSource(new Dictionary<string, object?>(), useDefaultSources: true);
+
         private SettingChanges? _latest;
 
         /// <summary>
@@ -75,11 +80,40 @@ public partial record TracerSettings
         /// Regenerate the application's new <see cref="MutableSettings"/> and <see cref="ExporterSettings"/>
         /// based on runtime configuration sources.
         /// </summary>
-        /// <param name="dynamicConfigSource">An <see cref="IConfigurationSource"/> for dynamic config via remote config</param>
-        /// <param name="manualSource">An <see cref="IConfigurationSource"/> for manual configuration (in code)</param>
+        /// <param name="manualSource">An <see cref="IConfigurationSource"/> containing the new settings created by manual configuration (in code)</param>
         /// <param name="centralTelemetry">The central <see cref="IConfigurationTelemetry"/> to report config telemetry updates to</param>
         /// <returns>True if changes were detected and consumers were updated, false otherwise</returns>
-        public bool UpdateSettings(
+        public bool UpdateManualConfigurationSettings(
+            ManualInstrumentationConfigurationSourceBase manualSource,
+            IConfigurationTelemetry centralTelemetry)
+        {
+            // we lock this whole method so that we can't conflict with UpdateDynamicConfigurationSettings calls too
+            lock (_subscribers)
+            {
+                _manualConfigurationSource = manualSource;
+                return UpdateSettings(_dynamicConfigurationSource, manualSource, centralTelemetry);
+            }
+        }
+
+        /// <summary>
+        /// Regenerate the application's new <see cref="MutableSettings"/> and <see cref="ExporterSettings"/>
+        /// based on runtime configuration sources.
+        /// </summary>
+        /// <param name="dynamicConfigSource">An <see cref="IConfigurationSource"/> for dynamic config via remote config</param>
+        /// <param name="centralTelemetry">The central <see cref="IConfigurationTelemetry"/> to report config telemetry updates to</param>
+        /// <returns>True if changes were detected and consumers were updated, false otherwise</returns>
+        public bool UpdateDynamicConfigurationSettings(
+            IConfigurationSource dynamicConfigSource,
+            IConfigurationTelemetry centralTelemetry)
+        {
+            lock (_subscribers)
+            {
+                _dynamicConfigurationSource = dynamicConfigSource;
+                return UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
+            }
+        }
+
+        private bool UpdateSettings(
             IConfigurationSource dynamicConfigSource,
             ManualInstrumentationConfigurationSourceBase manualSource,
             IConfigurationTelemetry centralTelemetry)
@@ -153,25 +187,17 @@ public partial record TracerSettings
 
         private void NotifySubscribers(SettingChanges settings)
         {
-            // Strictly, for safety, we only need to lock in the subscribers list access. However,
-            // there's nothing to prevent NotifySubscribers being called concurrently,
-            // which could result in weird out-of-order notifications for customers. So for simplicity
-            // we just lock the whole method to ensure serialized updates.
+            _latest = settings;
 
-            lock (_subscribers)
+            foreach (var subscriber in _subscribers)
             {
-                Volatile.Write(ref _latest, settings);
-
-                foreach (var subscriber in _subscribers)
+                try
                 {
-                    try
-                    {
-                        subscriber.Notify(settings);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error notifying subscriber of MutableSettings change");
-                    }
+                    subscriber.Notify(settings);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error notifying subscriber of MutableSettings change");
                 }
             }
         }

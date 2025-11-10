@@ -74,13 +74,7 @@ namespace Datadog.Trace.Configuration
 
         private static void OnConfigurationChanged(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
         {
-            var manualConfig = GlobalConfigurationSource.ManualConfigurationSource;
-
-            // We save this immediately, even if there's no manifest changes in the final settings
-            // so that it can be picked up by other configuration updaters, e.g. config in code
-            GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
-
-            var wasUpdated = tracerSettings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
+            var wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config);
             if (wasUpdated)
             {
                 Log.Information("Setting updates made via dynamic configuration were applied");

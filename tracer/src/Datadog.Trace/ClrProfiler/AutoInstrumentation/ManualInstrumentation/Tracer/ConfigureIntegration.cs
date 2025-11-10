@@ -73,12 +73,7 @@ public class ConfigureIntegration
                 ? new ManualInstrumentationLegacyConfigurationSource(values, isFromDefaults)
                 : new ManualInstrumentationConfigurationSource(values, isFromDefaults);
 
-        // We need to save this immediately, even if there's no manifest changes in the final settings
-        // so that it can be picked up by other configuration updaters, e.g. remote config
-        GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
-        var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
-
-        var wasUpdated = Datadog.Trace.Tracer.Instance.Settings.Manager.UpdateSettings(dynamicConfig, manualConfig, TelemetryFactory.Config);
+        var wasUpdated = Datadog.Trace.Tracer.Instance.Settings.Manager.UpdateManualConfigurationSettings(manualConfig, TelemetryFactory.Config);
         if (wasUpdated)
         {
             Log.Information("Setting updates made via configuration in code were applied");
