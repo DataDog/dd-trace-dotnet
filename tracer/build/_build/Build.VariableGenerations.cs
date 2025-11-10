@@ -613,6 +613,7 @@ partial class Build : NukeBuild
                         "ubuntu_interim",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
                             new (publishFramework: TargetFramework.NET9_0, "25.04-9.0", "ubuntu", "plucky"),
                         },
                         installer: "datadog-dotnet-apm*_amd64.deb",
@@ -644,7 +645,8 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"), // Not updated to GA .NET 9 yet
+                            new (publishFramework: TargetFramework.NET9_0, "42-10.0", "fedora", "42"),
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
                             new (publishFramework: TargetFramework.NET5_0, "35-5.0", "fedora", "35"),
@@ -738,6 +740,7 @@ partial class Build : NukeBuild
                         "rhel",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "10-10.0", "rhel", "10"),
                             new (publishFramework: TargetFramework.NET9_0, "9-9.0", "rhel", "9"),
                             new (publishFramework: TargetFramework.NET9_0, "8-9.0", "rhel", "8"),
                             new (publishFramework: TargetFramework.NET7_0, "8-7.0", "rhel", "8"),
@@ -757,7 +760,8 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new SmokeTestImage[]
                         {
-                            // new (publishFramework: TargetFramework.NET9_0, "9-9.0"), // Not updated to GA .NET 9 yet
+                            new (publishFramework: TargetFramework.NET9_0, "10-10.0", "centos-stream", "10"),
+                            new (publishFramework: TargetFramework.NET9_0, "9-9.0", "centos-stream", "9"),
                             new (publishFramework: TargetFramework.NET6_0, "9-6.0", "centos-stream", "9"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0", "centos-stream", "8"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0", "centos-stream", "8"),
@@ -775,6 +779,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "16-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -854,6 +859,7 @@ partial class Build : NukeBuild
                         "ubuntu_interim",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
                             new (publishFramework: TargetFramework.NET9_0, "25.04-9.0", "ubuntu", "plucky"),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb",
@@ -885,6 +891,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "42-10.0", "fedora", "42"),
                             new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
@@ -1016,7 +1023,8 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
+                            new (publishFramework: TargetFramework.NET9_0, "42-10.0", "fedora", "42"),
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0", "fedora", "33"),
@@ -1071,6 +1079,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "16-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -1220,7 +1229,8 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
+                            new (publishFramework: TargetFramework.NET9_0, "42-10.0", "fedora", "42")
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40")
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0", "fedora", "33"),
@@ -1272,6 +1282,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "16-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -1453,6 +1464,7 @@ partial class Build : NukeBuild
                         "rhel",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "10-10.0", "rhel", "10"),
                             new (publishFramework: TargetFramework.NET9_0, "9-9.0", "rhel", "9"),
                             new (publishFramework: TargetFramework.NET9_0, "8-9.0", "rhel", "8"),
                         },
@@ -1468,6 +1480,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "16-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
