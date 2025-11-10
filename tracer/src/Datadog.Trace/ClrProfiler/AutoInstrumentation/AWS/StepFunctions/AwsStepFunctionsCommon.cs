@@ -41,6 +41,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                if (isOutbound)
+                {
+                    tags.PeerService = tags.StateMachineName;
+                    tags.PeerServiceSource = Trace.Tags.StateMachineName;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -49,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
                 tags.Service = StepFunctionsServiceName;
                 tags.Operation = operation;
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
