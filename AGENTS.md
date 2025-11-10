@@ -21,7 +21,7 @@
 
 ## NuGet Package Architecture
 
-### Datadog.Trace Package
+### `Datadog.Trace` Package
 The `Datadog.Trace` NuGet package provides the **manual instrumentation API** for customers:
 - **Contains**: `Datadog.Trace.Manual.dll` - Public API for manual instrumentation
 - **Does NOT contain**: Auto-instrumentation code or native profiler binaries
@@ -29,13 +29,13 @@ The `Datadog.Trace` NuGet package provides the **manual instrumentation API** fo
 
 Auto-instrumentation comes from the tracer "monitoring home" deployed separately (via installers, MSI, container images, or specialized packages like `Datadog.AzureFunctions`).
 
-### Datadog.Trace.dll vs Datadog.Trace.Manual.dll
+### `Datadog.Trace.dll` vs `Datadog.Trace.Manual.dll`
 - `Datadog.Trace.dll` - The full managed tracer with all auto-instrumentation code, loaded by the native profiler into instrumented processes
 - `Datadog.Trace.Manual.dll` - Lightweight manual instrumentation API packaged in the `Datadog.Trace` NuGet package for customer reference
 
 ### Specialized Packages
-- **Datadog.AzureFunctions**: Bundles `Datadog.Trace.dll` and native profiler for Azure Functions (see `docs/development/AzureFunctions.md`)
-- **Datadog.Monitoring.Distribution**: MSI installer for Windows (IIS, Windows Services)
+- **Datadog.Trace.Bundle**: Bundles`Datadog.Trace.dll` and native profiler for all platforms. An alternative distribution mechanism for auto instrumentation
+- **Datadog.AzureFunctions**: A leaner version of Datadog.Trace.Bundle specifically for Azure Functions (see `docs/development/AzureFunctions.md`). It doesn't include files for unsupported runtimes (net461, macos, etc), and includes references to `Datadog.Trace` (for manual instrumentation), `Datadog.Trace.Annotations`, and `Datadog.Serverless.Compat` (which includes a Rust agent).
 - Other serverless/platform-specific packages may bundle the full tracer similarly
 
 ## Tracer Structure
