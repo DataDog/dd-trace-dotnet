@@ -519,7 +519,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
-      - TEST_AGENT_HOST=test-agent
     hostname: integrationtests
 
   IntegrationTests.Debugger:
