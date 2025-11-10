@@ -3,9 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
+using SettingChanges = Datadog.Trace.Configuration.TracerSettings.SettingsManager.SettingChanges;
 
 namespace Datadog.Trace.Tests.Configuration;
 
