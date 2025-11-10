@@ -16,11 +16,11 @@ Azure functions operates in one of two ways:
 
 The `Datadog.AzureFunctions` NuGet package is the primary instrumentation package for Azure Functions. It contains:
 
-- **Datadog.Trace.dll** - The full managed tracer with all auto-instrumentation code
-- **Native profiler binaries** - Platform-specific profiler libraries (e.g., `Datadog.Trace.ClrProfiler.Native.so` for Linux)
+- **Datadog.Trace.dll** - The full managed tracer component with all auto-instrumentation code
+- **Native binaries** - Platform-specific native libraries (e.g., `Datadog.Trace.ClrProfiler.Native.so` for Linux)
 - **Monitoring home directory structure** - Deployed to `/home/site/wwwroot/datadog/` (Linux) or equivalent on Windows
 
-When profiling is enabled globally (via `CORECLR_ENABLE_PROFILING=1`), the native profiler loads `Datadog.Trace.dll` into **both the host process (`func.exe` or `Microsoft.Azure.WebJobs.Script.WebHost`) and the worker process**. This allows instrumentation code to run in both processes, which is essential for:
+When instrumentation is enabled globally (via `CORECLR_ENABLE_PROFILING=1`), the native profiler loads `Datadog.Trace.dll` into **both the host process (`func.exe` or `Microsoft.Azure.WebJobs.Script.WebHost`) and the worker process**. This allows instrumentation code to run in both processes, which is essential for:
 - Instrumenting host process methods (e.g., `GrpcMessageConversionExtensions.ToRpcHttp()`)
 - Instrumenting worker process methods (e.g., `FunctionExecutionMiddleware`)
 - Ensuring correct trace context propagation across the process boundary
@@ -113,9 +113,9 @@ gantt
 
 ### Isolated Azure Functions with ASP.NET Core Integration
 
-Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) that operates differently from the standard gRPC-based communication.
+Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) mode where the host uses HTTP proxying instead of sending all request details over gRPC.
 
-#### HTTP Proxying Architecture
+**For architectural details** about HTTP proxying, YARP, and detection, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
 
 When ASP.NET Core integration is enabled, the `func.exe` host uses **HTTP proxying** instead of sending all request details over gRPC:
 
