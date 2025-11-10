@@ -40,10 +40,10 @@ public partial record TracerSettings
 
         /// <summary>
         /// Subscribe to changes in <see cref="MutableSettings"/> and/or <see cref="ExporterSettings"/>.
-        /// Called whenever these settings change. If the settings have already changed when <see cref="SubscribeToChanges"/>
-        /// is called, <paramref name="callback"/> is invoked immediately with the latest configuration.
+        /// <paramref name="callback"/> is called whenever these settings change. If the settings have already changed when <see cref="SubscribeToChanges"/>
+        /// is called, <paramref name="callback"/> is synchronously invoked immediately with the latest configuration.
         /// Also note that calling <see cref="SubscribeToChanges"/> twice with the same callback
-        /// will invoke the callback twice.
+        /// will invoke the callback twice. Callbacks should complete quickly to avoid blocking other operations.
         /// </summary>
         /// <param name="callback">The method to invoke</param>
         /// <returns>An <see cref="IDisposable"/> that should be disposed to unsubscribe</returns>
@@ -160,10 +160,9 @@ public partial record TracerSettings
 
             lock (_subscribers)
             {
-                var subscribers = _subscribers;
                 Volatile.Write(ref _latest, settings);
 
-                foreach (var subscriber in subscribers)
+                foreach (var subscriber in _subscribers)
                 {
                     try
                     {
