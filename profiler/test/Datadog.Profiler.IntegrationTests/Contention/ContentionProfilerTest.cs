@@ -89,20 +89,22 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
 
-            // disable default profilers except contention
+            // disabled all default profiles except contention and wall time
+            // thread lifetime profiler enabled <= this one will help us gathering
+            // an accurate view on the threads that are alive during the profiling
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
-            // only contention profiler enabled so should see 2 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            // only contention profiler enabled so should see 3 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 3);
             Assert.NotEqual(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
 
             if (framework == "net8.0")
