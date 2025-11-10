@@ -512,7 +512,7 @@ namespace Datadog.Trace.Tests.Agent
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             agent.WriteWatermark(() => mutex.Set(), wakeUpThread);
 

@@ -676,7 +676,7 @@ public class MetricsTelemetryCollectorTests
     public async Task ShouldAggregateMetricsAutomatically()
     {
         var aggregationPeriod = TimeSpan.FromMilliseconds(500);
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
 
         var collector = new MetricsTelemetryCollector(
             aggregationPeriod,

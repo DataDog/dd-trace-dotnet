@@ -69,7 +69,7 @@ namespace Samples.AspNetAsyncHandler
 
         private void CaptureThread(HttpApplication app)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             ThreadPool.UnsafeQueueUserWorkItem(_ =>
             {
