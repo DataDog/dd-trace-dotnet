@@ -168,9 +168,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
 
         // trigger one final manual flush
-        var tsc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        ProcessQueue(true, tsc);
-        await tsc.Task.WaitAsync(_flushTimeout).ConfigureAwait(false);
+        await Task.Run(() => ProcessQueue(true, null)).ConfigureAwait(false);
 
         // dispose
         _flushSemaphore.Dispose();
