@@ -64,8 +64,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 perTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

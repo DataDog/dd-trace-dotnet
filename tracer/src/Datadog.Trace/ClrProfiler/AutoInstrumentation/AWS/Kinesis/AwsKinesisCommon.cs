@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -62,6 +63,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
                 string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "kinesis." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (isOutbound)
+                {
+                    tags.PeerService = tags.StreamName;
+                    tags.PeerServiceSource = Trace.Tags.TopicName;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -70,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                 tags.Service = KinesisServiceName;
                 tags.Operation = operation;
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
