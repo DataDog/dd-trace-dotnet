@@ -33,7 +33,7 @@ The `Datadog.Trace` NuGet package is different from `Datadog.AzureFunctions`:
 - **Does NOT contain** auto-instrumentation code or native profiler binaries
 - Used by application code for manual instrumentation (e.g., `Tracer.Instance.StartActive()`)
 
-In Azure Functions scenarios, the worker application references `Datadog.Trace` for manual instrumentation, while `Datadog.AzureFunctions` provides the auto-instrumentation. The version of `Datadog.Trace` referenced by the application doesn't need to match `Datadog.AzureFunctions` exactly, as the auto-instrumentation comes entirely from `Datadog.Trace.dll` bundled in `Datadog.AzureFunctions`.
+In Azure Functions scenarios, applications typically only need to reference `Datadog.AzureFunctions`, which provides both auto-instrumentation and pulls in `Datadog.Trace` as a transitive dependency for manual instrumentation APIs. If an application explicitly references `Datadog.Trace` (e.g., for version pinning), the version doesn't need to match `Datadog.AzureFunctions` exactly, as the auto-instrumentation comes entirely from `Datadog.Trace.dll` bundled in `Datadog.AzureFunctions`.
 
 ## In-process Azure Functions integration
 
@@ -121,8 +121,8 @@ When ASP.NET Core integration is enabled, the `func.exe` host uses **HTTP proxyi
 
 1. **Request Reception**: `func.exe` receives the incoming HTTP request
 2. **Capability Detection**: Host checks if worker advertised the `HttpUri` capability
-3. **Minimal gRPC Message**: `GrpcMessageConversionExtensions.ToRpcHttp()` returns an **empty** or minimal gRPC message (see [GrpcMessageConversionExtensions.cs:123-125](https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.Grpc/MessageExtensions/GrpcMessageConversionExtensions.cs#L123-L125))
-4. **HTTP Forwarding**: Host uses [YARP (Yet Another Reverse Proxy)](https://microsoft.github.io/reverse-proxy/) to forward the original HTTP request to the worker process via `DefaultHttpProxyService.StartForwarding()` ([source](https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script/Http/DefaultHttpProxyService.cs#L82-L108))
+3. **Minimal gRPC Message**: `GrpcMessageConversionExtensions.ToRpcHttp()` returns an **empty** or minimal gRPC message (see [GrpcMessageConversionExtensions.cs:123-125](https://github.com/Azure/azure-functions-host/blob/de87f37cec3cf02b3e29716764d4ceb6c2856fa8/src/WebJobs.Script.Grpc/MessageExtensions/GrpcMessageConversionExtensions.cs#L123-L125))
+4. **HTTP Forwarding**: Host uses [YARP (Yet Another Reverse Proxy)](https://microsoft.github.io/reverse-proxy/) to forward the original HTTP request to the worker process via `DefaultHttpProxyService.StartForwarding()` ([source](https://github.com/Azure/azure-functions-host/blob/de87f37cec3cf02b3e29716764d4ceb6c2856fa8/src/WebJobs.Script/Http/DefaultHttpProxyService.cs#L82-L108))
 5. **Worker Processing**: Worker receives the HTTP request and processes the function
 6. **Response Proxying**: Worker's HTTP response is proxied back through the host to the client
 
@@ -181,6 +181,8 @@ Worker spans (serialized by PID 56, tagged as "worker"):
    └─ azure_functions.invoke (s_id: 114d..., p_id: 9ddf...)  [Child of worker's aspnet_core]
       └─ ... (additional spans)
 ```
+
+<!-- TODO: Update this section if/when span parenting is fixed to properly connect host and worker spans -->
 
 **Key insight**: When troubleshooting traces in Datadog, a single distributed trace will contain spans from both processes with different `aas.function.process` tag values. This is expected behavior.
 
