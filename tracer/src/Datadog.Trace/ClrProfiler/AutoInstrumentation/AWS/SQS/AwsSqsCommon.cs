@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -42,6 +43,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags = perTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "sqs." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (isOutbound)
+                {
+                    tags.PeerService = tags.QueueName;
+                    tags.PeerServiceSource = Trace.Tags.QueueName;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -51,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
