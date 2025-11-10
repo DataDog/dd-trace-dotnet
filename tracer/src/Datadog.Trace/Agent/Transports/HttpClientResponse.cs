@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -28,7 +28,11 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.Content.Headers.ContentLength ?? -1;
 
+#if NETCOREAPP
         public string? ContentEncodingHeader => string.Join(',', _response.Content.Headers.ContentEncoding);
+#else
+        public string? ContentEncodingHeader => string.Join(",", _response.Content.Headers.ContentEncoding);
+#endif
 
         public string? ContentTypeHeader => _response.Content.Headers.ContentType?.ToString();
 
@@ -43,12 +47,12 @@ namespace Datadog.Trace.Agent.Transports
         public Encoding GetCharsetEncoding()
         {
             var charset = _response.Content.Headers.ContentType?.CharSet;
-            if (string.IsNullOrEmpty(charset))
+            if (StringUtil.IsNullOrEmpty(charset))
             {
                 return EncodingHelpers.Utf8NoBom;
             }
 
-            if (EncodingHelpers.TryGetWellKnownCharset(charset, out var wellKnown))
+            if (EncodingHelpers.TryGetWellKnownCharset(charset.AsSpan(), out var wellKnown))
             {
                 return wellKnown;
             }
@@ -89,4 +93,3 @@ namespace Datadog.Trace.Agent.Transports
         }
     }
 }
-#endif
