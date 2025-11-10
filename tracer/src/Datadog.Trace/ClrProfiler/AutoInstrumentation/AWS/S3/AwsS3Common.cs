@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
 {
@@ -40,6 +41,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
                 tags = perTraceSettings.Schema.Messaging.CreateAwsS3Tags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsS3ServiceName);
                 var operationName = GetOperationName(tracer);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    if (tags.BucketName != null)
+                    {
+                        tags.PeerService = tags.BucketName + ".s3." + tags.AwsRegion + ".amazonaws.com";
+                    }
+                    else
+                    {
+                        tags.PeerService = "s3." + tags.AwsRegion + ".amazonaws.com";
+                    }
+
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (isOutbound)
+                {
+                    tags.PeerService = tags.BucketName;
+                    tags.PeerServiceSource = Trace.Tags.BucketName;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -48,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
 
                 tags.Service = S3ServiceName;
                 tags.Operation = operation;
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
