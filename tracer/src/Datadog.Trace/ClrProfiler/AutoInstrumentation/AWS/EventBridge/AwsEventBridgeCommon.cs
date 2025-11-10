@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
@@ -43,6 +44,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsEventBridgeServiceName);
                 var operationName = GetOperationName(tracer);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "events." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (isOutbound)
+                {
+                    tags.PeerService = tags.RuleName;
+                    tags.PeerServiceSource = Trace.Tags.RuleName;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -51,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
                 tags.Service = EventBridgeServiceName;
                 tags.Operation = operation;
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
