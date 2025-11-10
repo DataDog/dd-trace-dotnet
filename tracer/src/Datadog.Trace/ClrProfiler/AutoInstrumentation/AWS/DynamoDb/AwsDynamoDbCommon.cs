@@ -8,6 +8,7 @@ using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -38,6 +39,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             {
                 tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsDynamoDbServiceName);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "dynamodb." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else
+                {
+                    tags.PeerService = tags.TableName;
+                    tags.PeerServiceSource = Trace.Tags.TableName;
+                }
+
                 scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -48,6 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
                 tags.Service = DynamoDbServiceName;
                 tags.Operation = operation;
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
