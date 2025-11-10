@@ -31,8 +31,8 @@ RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV
 
 # Install .NET 10
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="10.0.100-rc.2.25502.107" \
-    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100-rc.2.25502.107/dotnet-sdk-10.0.100-rc.2.25502.107-win-x64.exe" \
+ENV DOTNET_VERSION="10.0.100" \
+    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-win-x64.exe" \
     DOTNET_SHA512="24500b715efddc1252d0cdf6cd24c96fbca47e8952c0bc0f33a2815e464db0c56a2401f834532cf4eba533397e8d7b5ce0d8b94d7d89ec4fd3fadbb7061f57cc"
 
 COPY install_dotnet.ps1 .
