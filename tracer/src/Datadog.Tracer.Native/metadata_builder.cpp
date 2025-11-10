@@ -71,7 +71,7 @@ HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationDefinition& int
         // Name matches, now check the version, in case we have multiple versions of the assembly loaded
         // TODO: we should already have this data, so should probably just pass that data through,
         // but it's a bit of a pain, to thread that needle right now
-        const auto current_assembly_metadata = GetAssemblyImportMetadata(assembly_import_);
+        const auto& current_assembly_metadata = GetAssemblyImportMetadata(assembly_import_);
         if (current_assembly_metadata.version == integration_definition.integration_type.assembly.version)
         {
             // type is defined in this assembly (same name AND version)

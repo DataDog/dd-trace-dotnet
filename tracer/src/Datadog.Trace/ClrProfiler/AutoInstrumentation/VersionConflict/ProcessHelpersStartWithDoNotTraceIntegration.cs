@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict;
     MethodName = "StartWithDoNotTrace",
     ReturnTypeName = ClrNames.Process,
     ParameterTypeNames = ["System.Diagnostics.ProcessStartInfo", ClrNames.Bool],
-    MinimumVersion = "2.49.0",
+    MinimumVersion = "2.49.0", // We only introduced ProcessHelpers.StartWithDoNotTrace() in 2.49.0
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.DatadogTraceVersionConflict))]
 [Browsable(false)]

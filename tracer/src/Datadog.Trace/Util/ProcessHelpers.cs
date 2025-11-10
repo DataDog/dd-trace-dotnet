@@ -70,7 +70,7 @@ namespace Datadog.Trace.Util
         /// Used to override the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>.
         /// Prefer using <see cref="StartWithDoNotTrace"/> - this should only be used to work around version conflict scenarios
         /// </summary>
-        public static bool ForceDoNotTrace(bool doNotTrace) => _doNotTrace = doNotTrace;
+        public static void ForceDoNotTrace(bool doNotTrace) => _doNotTrace = doNotTrace;
 
         /// <summary>
         /// Run a command and get the standard output content as a string
