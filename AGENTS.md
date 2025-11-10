@@ -223,7 +223,7 @@ tracer/src/Datadog.Trace
 - **`docs/development/AzureFunctions.md`** — Setup, testing, instrumentation specifics, and debugging guide
 
 📖 **Load when**: Need detailed architectural understanding of Azure Functions internals
-- **`docs/development/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, and instrumentation hook points
+- **`docs/development/for-ai/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, and instrumentation hook points
 
 📖 **Load when**: Working on AWS Lambda or general serverless instrumentation
 - **`docs/development/Serverless.md`** — Serverless instrumentation patterns across cloud providers
@@ -314,7 +314,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/AzureFunctions.md` — Azure Functions integration
-- `docs/development/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
+- `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/Serverless.md` — Serverless instrumentation
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)

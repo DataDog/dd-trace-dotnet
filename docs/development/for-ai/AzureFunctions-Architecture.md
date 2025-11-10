@@ -3,8 +3,8 @@
 This document provides detailed architectural information about Azure Functions Host and .NET Worker, focusing on aspects relevant to dd-trace-dotnet instrumentation and distributed tracing.
 
 **Related Documentation:**
-- [Azure Functions Integration Guide](AzureFunctions.md) - Setup, testing, and instrumentation specifics for dd-trace-dotnet
-- [AGENTS.md](../../AGENTS.md) - Repository structure and development guidelines
+- [Azure Functions Integration Guide](../AzureFunctions.md) - Setup, testing, and instrumentation specifics for dd-trace-dotnet
+- [AGENTS.md](../../../AGENTS.md) - Repository structure and development guidelines
 
 **External Resources:**
 - [Azure Functions Host Repository](https://github.com/Azure/azure-functions-host)
@@ -910,10 +910,10 @@ Capture exceptions from:
 
 ### Related dd-trace-dotnet Documentation
 
-- [AzureFunctions.md](AzureFunctions.md) - Integration guide for dd-trace-dotnet
-- [AutomaticInstrumentation.md](AutomaticInstrumentation.md) - Creating integrations
-- [DuckTyping.md](DuckTyping.md) - Duck typing patterns for third-party types
-- [AGENTS.md](../../AGENTS.md) - Repository structure
+- [AzureFunctions.md](../AzureFunctions.md) - Integration guide for dd-trace-dotnet
+- [AutomaticInstrumentation.md](../AutomaticInstrumentation.md) - Creating integrations
+- [DuckTyping.md](../DuckTyping.md) - Duck typing patterns for third-party types
+- [AGENTS.md](../../../AGENTS.md) - Repository structure
 
 ---
 

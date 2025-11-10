@@ -3,7 +3,7 @@
 This document describes how dd-trace-dotnet integrates with Azure Functions for distributed tracing.
 
 **Related Documentation:**
-- [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md) - Detailed architectural information about Azure Functions Host and .NET Worker
+- [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md) - Detailed architectural information about Azure Functions Host and .NET Worker
 
 Azure functions operates in one of two ways:
 
@@ -47,7 +47,7 @@ We also instrument the `FunctionExecutor`. This provides all the details about t
 
 Isolated functions are the only supported model for Azure Functions going forward. In this model, instead of the customer's app being a class library, its a real ASP.NET Core application. The host `func.exe` starts the customer app as a sub process, and sets up a GRPC channel between the two apps. The `func.exe` host acts as a proxy for requests to the customer's app.
 
-For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
+For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md).
 
 `func.exe` sets up an in-process Azure Function for every function in the customer's app. Each of the functions in `func.exe` are simple calls that proxy the request to the customer app, and then return the response.
 
@@ -115,7 +115,7 @@ gantt
 
 Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) mode where the host uses HTTP proxying instead of sending all request details over gRPC.
 
-**For architectural details** about HTTP proxying, YARP, and detection, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
+**For architectural details** about HTTP proxying, YARP, and detection, see [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md).
 
 When ASP.NET Core integration is enabled, the `func.exe` host uses **HTTP proxying** instead of sending all request details over gRPC:
 
