@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmissio
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
@@ -216,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return properties;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static bool AddDatadogTargetNLog50(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
@@ -252,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return true;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static bool AddDatadogTargetNLog45(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
@@ -288,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return true;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static bool AddDatadogTargetNLog43To45(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
@@ -364,7 +365,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static bool AddDatadogTargetNLogPre43(object loggingConfiguration, object targetProxy)
         {
             var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationPre43Proxy>();
@@ -408,7 +409,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return true;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static object CreateNLogTargetProxy(DirectSubmissionNLogV5Target target)
         {
             if (_targetType is null)
@@ -426,7 +427,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return reverseProxy;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static object CreateNLogTargetProxy(DirectSubmissionNLogTarget target)
         {
             if (_targetType is null)
@@ -444,7 +445,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return reverseProxy;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static object CreateNLogTargetProxy(DirectSubmissionNLogLegacyTarget target)
         {
             if (_targetType is null)
@@ -466,7 +467,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             return reverseProxy;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static void TryGetMdcProxy(
             Assembly nlogAssembly,
             out bool haveMdcProxy,
@@ -504,7 +505,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             mdc = default;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static void TryGetMdlcProxy(
             Assembly nlogAssembly,
             out bool haveMdlcProxy,
@@ -542,7 +543,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             isModernMdlcProxy = false;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static Func<object> CreateLoggingRuleActivator(Assembly nlogAssembly)
         {
             var activator = new ActivatorHelper(nlogAssembly.GetType("NLog.Config.LoggingRule")!);

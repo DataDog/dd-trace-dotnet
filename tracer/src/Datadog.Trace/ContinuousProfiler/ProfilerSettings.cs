@@ -21,7 +21,7 @@ internal class ProfilerSettings
     {
     }
 
-    // Internal for testing only
+    [TestingAndPrivateOnly]
     internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)

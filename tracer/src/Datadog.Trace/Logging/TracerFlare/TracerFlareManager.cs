@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -251,7 +252,7 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    // internal for testing
+    [TestingAndPrivateOnly]
     internal async Task<ApplyDetails> TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
     {
         try

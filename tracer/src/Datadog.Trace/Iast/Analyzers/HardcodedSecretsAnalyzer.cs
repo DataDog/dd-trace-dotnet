@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
@@ -27,7 +28,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     private readonly TimeSpan _regexTimeout;
     private List<SecretRegex>? _secretRules = null;
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal HardcodedSecretsAnalyzer(TimeSpan regexTimeout)
     {
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
