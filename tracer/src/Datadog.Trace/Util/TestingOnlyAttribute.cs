@@ -8,8 +8,10 @@
 namespace Datadog.Trace.SourceGenerators;
 
 /// <summary>
-/// A marker attribute added to APIs to indicate they should only be
+/// A marker attribute added to APIs to indicate they must only be
 /// used for testing. Used by analyzers to confirm we're not calling testing convenience methods.
+/// Contrasts with <see cref="TestingAndPrivateOnlyAttribute"/> which indicates members
+/// can also be used in production code if called from the same type
 /// </summary>
 [System.Diagnostics.Conditional("DEBUG")]
 [System.AttributeUsage(
