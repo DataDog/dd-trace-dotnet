@@ -177,8 +177,22 @@ Added `aas.function.process` tag to distinguish host vs worker spans:
 
 ### Environment
 
+**All Function Apps** (Resource Group: `lucas.pimentel`, Location: Canada Central):
+
+| Name | Purpose |
+|------|---------|
+| lucasp-premium-linux-isolated-aspnet | **Primary test app** - Isolated .NET 8 with ASP.NET Core Integration |
+| lucasp-premium-linux-isolated | Isolated .NET 8 (no ASP.NET Core) |
+| lucasp-premium-linux-inproc | In-process .NET 6 |
+| lucasp-premium-windows-isolated-aspnet | Windows isolated with ASP.NET Core |
+| lucasp-premium-windows-isolated | Windows isolated (no ASP.NET Core) |
+| lucasp-premium-windows-inproc | Windows in-process |
+| lucasp-consumption-windows-isolated | Windows consumption plan |
+| lucasp-flex-consumption-isolated | Flex consumption plan |
+
+**Primary Test App:**
+- **Name**: `lucasp-premium-linux-isolated-aspnet`
 - **Resource Group**: `lucas.pimentel`
-- **Primary Test App**: `lucasp-premium-linux-isolated` (isolated-dotnet8-aspnetcore)
 - **Source**: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore`
 
 ### Steps
@@ -301,6 +315,44 @@ Since AsyncLocal context doesn't flow through Azure Functions middleware, use `H
 **Fallback approaches:**
 - Use `FunctionContext.Features` to store/retrieve scope
 - Custom middleware to bridge AsyncLocal → Features before context is lost
+
+## Implementation Progress
+
+### Phase 3: HttpContext.Items Bridge (In Progress)
+
+**Status**: Code implemented, testing pending
+
+**Changes Made** (Commit: d0e31854a):
+
+1. **Store scope in HttpContext.Items** ✅
+   - File: `tracer/src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs:142`
+   - Added: `httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"] = scope;`
+   - Stores the AspNetCore scope immediately after creation
+
+2. **Add Items property to IFunctionContext** ✅
+   - File: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/IFunctionContext.cs:22`
+   - Added: `IDictionary<object, object>? Items { get; }`
+   - Allows duck-typed access to FunctionContext.Items
+
+3. **Retrieve scope from HttpContext.Items** ✅
+   - File: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsCommon.cs:262-297`
+   - Logic:
+     1. Check if `tracer.InternalActiveScope == null` (AsyncLocal didn't flow)
+     2. Try to get HttpContext from `context.Items["__AspNetCoreHttpContext__"]`
+     3. Try to get scope from `httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"]`
+     4. Use scope as parent if found, otherwise fall back to header extraction
+   - Only uses HttpContext.Items when AsyncLocal fails (maintains backward compatibility)
+
+**Next Steps**:
+1. Deploy updated NuGet package to `lucasp-premium-linux-isolated-aspnet`
+2. Trigger HttpTest function
+3. Download and analyze traces to verify:
+   - Worker's `azure_functions.invoke` is now child of `aspnet_core.request`
+   - All spans in same trace
+   - Correct parent_id relationships
+
+**Pending**:
+- Step 3: Skip host span creation when HTTP proxying is detected (secondary priority)
 
 ## References
 
