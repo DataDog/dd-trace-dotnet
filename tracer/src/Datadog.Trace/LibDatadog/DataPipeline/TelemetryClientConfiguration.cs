@@ -34,4 +34,15 @@ internal struct TelemetryClientConfiguration
     /// Defaults to false.
     /// </summary>
     public bool DebugEnabled;
+
+    /// <summary>
+    /// Returns a string representation of the telemetry client configuration.
+    /// </summary>
+    /// <returns>A string representation of the telemetry client configuration.</returns>
+    public override string ToString()
+    {
+        return $"Interval: {Interval}, " +
+               $"RuntimeId: {RuntimeId}, " +
+               $"DebugEnabled: {DebugEnabled}";
+    }
 }
