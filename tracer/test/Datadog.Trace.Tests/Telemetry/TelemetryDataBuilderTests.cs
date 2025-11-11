@@ -34,7 +34,8 @@ public class TelemetryDataBuilderTests
             runtimeName: FrameworkDescription.Instance.Name,
             runtimeVersion: FrameworkDescription.Instance.ProductVersion,
             commitSha: "testCommitSha",
-            repositoryUrl: "testRepositoryUrl");
+            repositoryUrl: "testRepositoryUrl",
+            processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads");
         _host = new HostTelemetryData("MY_MACHINE", "Windows", "arm64");
     }
 

@@ -30,6 +30,12 @@ internal class ApplicationTelemetryCollector
             Interlocked.Exchange(ref _gitMetadata, gitMetadata);
         }
 
+        string? processTags = null;
+        if (tracerSettings.PropagateProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags))
+        {
+            processTags = ProcessTags.SerializedTags;
+        }
+
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
@@ -41,7 +47,8 @@ internal class ApplicationTelemetryCollector
             runtimeName: frameworkDescription.Name,
             runtimeVersion: frameworkDescription.ProductVersion,
             commitSha: gitMetadata?.CommitSha,
-            repositoryUrl: gitMetadata?.RepositoryUrl);
+            repositoryUrl: gitMetadata?.RepositoryUrl,
+            processTags: processTags);
 
         Interlocked.Exchange(ref _applicationData, application);
 
@@ -95,7 +102,8 @@ internal class ApplicationTelemetryCollector
                 runtimeName: original.RuntimeName,
                 runtimeVersion: original.RuntimeVersion,
                 commitSha: gitMetadata.CommitSha,
-                repositoryUrl: gitMetadata.RepositoryUrl);
+                repositoryUrl: gitMetadata.RepositoryUrl,
+                processTags: original.ProcessTags);
 
             var updated = Interlocked.Exchange(ref _applicationData, application);
             if (updated == original)
