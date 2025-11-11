@@ -270,18 +270,37 @@ Now that we have an `aspnet_core.request` span in the worker process (Phase 2), 
    - These spans represent HTTP proxying overhead, not the actual function execution
    - Detect HTTP proxying in host process and skip span creation
 
-## Next Steps
+## Implementation Plan
 
-1. **Fix worker span parenting** (high priority)
-   - Investigate why `tracer.InternalActiveScope` is null when creating `azure_functions.invoke` span
-   - Root cause: AsyncLocal context doesn't flow through Azure Functions middleware
-   - Find alternative to AsyncLocal and Activity.Current for parent retrieval
-   - Consider using `HttpContext.Items` to pass span context explicitly
+### Approach: Use HttpContext.Items as Bridge
 
-2. **Alternative approaches to investigate**:
-   - Store scope in `FunctionContext.Features`
-   - Store span context in `HttpContext.Items`
-   - Use `HttpContext.Features` to access ASP.NET Core span from Azure Functions middleware
+Since AsyncLocal context doesn't flow through Azure Functions middleware, use `HttpContext.Items` to explicitly pass span context between middleware layers.
+
+**Step 1: Store scope in HttpContext.Items**
+- File: `tracer/src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs:125`
+- After creating scope, store in `httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"]`
+- Use `__` prefix to avoid conflicts with user code (same pattern as `TracingHttpModule.cs`)
+
+**Step 2: Retrieve scope in Azure Functions middleware**
+- File: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsCommon.cs:262-279`
+- Get HttpContext from `functionContext.GetHttpContext()`
+- Retrieve scope from `httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"]`
+- Use as parent before falling back to extraction logic
+
+**Step 3: Skip host span creation when proxying**
+- File: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutorTryExecuteAsyncIntegration.cs`
+- Detect `IsRunningInAzureFunctionsHost()` + HTTP proxying enabled
+- Skip span creation in host when ASP.NET Core integration is active in worker
+
+**Why this works:**
+- HttpContext.Items persists throughout request lifecycle
+- Both ASP.NET Core and Azure Functions middleware access same HttpContext instance
+- No reliance on AsyncLocal or Activity.Current
+- Explicit and debuggable
+
+**Fallback approaches:**
+- Use `FunctionContext.Features` to store/retrieve scope
+- Custom middleware to bridge AsyncLocal → Features before context is lost
 
 ## References
 
