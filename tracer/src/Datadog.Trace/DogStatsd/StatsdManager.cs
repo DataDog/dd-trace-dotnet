@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -24,7 +25,7 @@ internal sealed class StatsdManager : IStatsdManager
     private readonly IDisposable _settingSubscription;
     private int _isRequiredMask;
     private StatsdClientHolder? _current;
-    private Func<IDogStatsd> _factory;
+    private Func<StatsdClientHolder> _factory;
 
     public StatsdManager(TracerSettings tracerSettings)
         : this(tracerSettings, CreateClient)
@@ -32,7 +33,7 @@ internal sealed class StatsdManager : IStatsdManager
     }
 
     // Internal for testing
-    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, IDogStatsd> statsdFactory)
+    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, StatsdClientHolder> statsdFactory)
     {
         // The initial factory, assuming there's no updates
         _factory = () => statsdFactory(
@@ -172,8 +173,8 @@ internal sealed class StatsdManager : IStatsdManager
         return hasChanges;
     }
 
-    private static IDogStatsd CreateClient(MutableSettings settings, ExporterSettings exporter)
-        => StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true);
+    private static StatsdClientHolder CreateClient(MutableSettings settings, ExporterSettings exporter)
+        => new(StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true));
 
     private void EnsureClient(bool ensureCreated, bool forceRecreate)
     {
@@ -189,9 +190,7 @@ internal sealed class StatsdManager : IStatsdManager
                 return;
             }
 
-            _current = ensureCreated
-                           ? new StatsdClientHolder(_factory())
-                           : null;
+            _current = ensureCreated ? _factory() : null;
         }
 
         previous?.MarkClosing(); // will dispose when last lease releases
@@ -220,6 +219,9 @@ internal sealed class StatsdManager : IStatsdManager
         private int _disposed;
 
         public IDogStatsd Client { get; } = client;
+
+        // Internal for testing
+        public bool IsDisposed => Volatile.Read(ref _disposed) == 1;
 
         public bool TryRetain()
         {
@@ -292,12 +294,18 @@ internal sealed class StatsdManager : IStatsdManager
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
-                if (Client is DogStatsdService dogStatsd)
-                {
-                    dogStatsd.Flush();
-                }
 
-                Client.Dispose();
+                // We push this all to a background thread to avoid the disposes running in-line
+                // the DogStatsdService does sync-over-async, and this can cause thread exhaustion
+                _ = Task.Run(() =>
+                {
+                    if (Client is DogStatsdService dogStatsd)
+                    {
+                        dogStatsd.Flush();
+                    }
+
+                    Client.Dispose();
+                });
             }
         }
     }
