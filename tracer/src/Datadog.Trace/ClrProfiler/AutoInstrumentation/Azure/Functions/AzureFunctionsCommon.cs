@@ -236,7 +236,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
+                        // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
+                        // The headers in the gRPC message are STALE (contain host's root span context)
+                        // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
+                        var isAspNetCoreIntegration = context.Items?.ContainsKey("HttpRequestContext") == true;
+
+                        if (isAspNetCoreIntegration)
+                        {
+                            // Skip extraction - will rely on HttpContext.Items bridge or create root span
+                            Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                        }
+                        else
+                        {
+                            // Only extract from gRPC message when NOT using ASP.NET Core integration
+                            extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                            Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+                        }
                     }
                     else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
@@ -261,13 +277,84 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (tracer.InternalActiveScope == null)
                 {
-                    // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                    Log.Debug("Azure Functions span creation: AsyncLocal context not available - attempting HttpContext.Items bridge");
+
+                    // AsyncLocal context didn't flow - try to get parent scope from HttpContext.Items
+                    // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow
+                    Scope? parentScope = null;
+                    try
+                    {
+                        // Check if context.Items exists
+                        if (context.Items == null)
+                        {
+                            Log.Debug("Azure Functions span creation: FunctionContext.Items is null - cannot retrieve HttpContext");
+                        }
+                        else if (context.Items.TryGetValue("HttpRequestContext", out var httpContextObj))
+                        {
+                            Log.Debug("Azure Functions span creation: Found HttpRequestContext in FunctionContext.Items");
+
+                            if (httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext)
+                            {
+                                Log.Debug("Azure Functions span creation: Successfully cast to HttpContext");
+
+                                if (httpContext.Items.TryGetValue("__Datadog.Trace.AspNetCore.ActiveScope", out var scopeObj))
+                                {
+                                    Log.Debug("Azure Functions span creation: Found __Datadog.Trace.AspNetCore.ActiveScope in HttpContext.Items");
+
+                                    if (scopeObj is Scope aspNetCoreScope)
+                                    {
+                                        parentScope = aspNetCoreScope;
+                                        Log.Debug("Azure Functions span creation: Retrieved AspNetCore scope - span_id: {SpanId}, trace_id: {TraceId}", aspNetCoreScope.Span.SpanId, aspNetCoreScope.Span.TraceId);
+                                    }
+                                    else
+                                    {
+                                        Log.Debug("Azure Functions span creation: Scope object is wrong type: {TypeName}", scopeObj?.GetType().FullName);
+                                    }
+                                }
+                                else
+                                {
+                                    Log.Debug("Azure Functions span creation: HttpContext.Items does not contain __Datadog.Trace.AspNetCore.ActiveScope key");
+                                }
+                            }
+                            else
+                            {
+                                Log.Debug("Azure Functions span creation: HttpContext object is wrong type: {TypeName}", httpContextObj?.GetType().FullName);
+                            }
+                        }
+                        else
+                        {
+                            Log.Debug("Azure Functions span creation: FunctionContext.Items does not contain HttpRequestContext key");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "Azure Functions span creation: Error retrieving AspNetCore scope from HttpContext.Items");
+                    }
+
+                    if (parentScope != null)
+                    {
+                        // Use the AspNetCore scope as parent
+                        scope = tracer.StartActiveInternal(OperationName, parent: parentScope.Span.Context, tags: tags);
+                        Log.Debug("Azure Functions span creation: Parented to AspNetCore scope - parent_id: {ParentId}", parentScope.Span.SpanId);
+                    }
+                    else if (extractedContext.SpanContext != null)
+                    {
+                        // Use extracted context from headers
+                        tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                        scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                        Log.Debug("Azure Functions span creation: Parented to extracted context - parent_id: {ParentId}, trace_id: {TraceId}", extractedContext.SpanContext.SpanId, extractedContext.SpanContext.TraceId);
+                    }
+                    else
+                    {
+                        // No parent available - create root span
+                        tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                        scope = tracer.StartActiveInternal(OperationName, tags: tags);
+                        Log.Debug("Azure Functions span creation: Created as root span (no parent available)");
+                    }
                 }
                 else
                 {
-                    // shouldn't be hit, but better safe than sorry
+                    // AsyncLocal is working - use it as parent
                     scope = tracer.StartActiveInternal(OperationName);
                     var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
