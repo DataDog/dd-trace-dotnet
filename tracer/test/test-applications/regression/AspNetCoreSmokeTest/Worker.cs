@@ -53,7 +53,10 @@ namespace AspNetCoreSmokeTest
                 var address = addressFeature!.Addresses.First();
                 _logger.LogInformation("Found server address: {address}", address);
 
-                var client = new HttpClient();
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
 
                 // By default, IIS uses a wildcard host, so switch that out for localhost
                 address = address.Replace("http://*", "http://localhost").TrimEnd('/');
@@ -67,7 +70,11 @@ namespace AspNetCoreSmokeTest
                     response.EnsureSuccessStatusCode();
                 }
 
+#if NET5_0_OR_GREATER
+                var responseContent = await response.Content.ReadAsStringAsync(stoppingToken);
+#else
                 var responseContent = await response.Content.ReadAsStringAsync();
+#endif
                 var expected = Program.GetTracerAssemblyLocation();
                 if (responseContent != expected)
                 {
