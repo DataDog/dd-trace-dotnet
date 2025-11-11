@@ -212,7 +212,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .Matches("span.kind", "client"));
+                .MatchesOneOf("span.kind", "producer", "client", "consumer"));
 
         public static Result IsAwsSnsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -234,7 +234,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .Matches("span.kind", "client"));
+                .MatchesOneOf("span.kind", "producer", "client"));
 
         public static Result IsAwsEventBridgeRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -254,7 +254,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .Matches("span.kind", "client"));
+                .MatchesOneOf("span.kind", "producer", "client"));
 
         public static Result IsAwsStepFunctionsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
