@@ -19,9 +19,10 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
     /// <summary>
     /// DD002: Incorrect usage of internal API
     ///
-    /// Finds internal usages of APIs specifically marked with the [TestingOnly] flag.
-    /// These methods should not be called directly by our library code, only from test code.
-    /// The analyzer enforces that requirement
+    /// Finds internal usages of APIs specifically marked with the [TestingOnly] or [TestingAndPrivateOnly] flag.
+    /// - [TestingOnly]: Methods should not be called directly by our library code, only from test code.
+    /// - [TestingAndPrivateOnly]: Methods can be called from within the same type, or from test code, but not from other types.
+    /// The analyzer enforces these requirements.
     ///
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -33,9 +34,7 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
         public const string DiagnosticId = "DD0002";
 
         private const string TestingOnlyAttribute = nameof(TestingOnlyAttribute);
-
-        private static readonly ImmutableArray<string> TestingOnlyAttributeNames
-            = ImmutableArray.Create(TestingOnlyAttribute);
+        private const string TestingAndPrivateOnlyAttribute = nameof(TestingAndPrivateOnlyAttribute);
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new(
@@ -71,11 +70,12 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
             ConcurrentDictionary<ISymbol, InternalApiStatus> internalApiMembers)
         {
             var internalApiOperations = PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool>.GetInstance();
+            var callingType = context.OwningSymbol?.ContainingType;
 
             context.RegisterOperationAction(
                 ctx =>
                 {
-                    Helpers.AnalyzeOperation(ctx.Operation, internalApiOperations, internalApiMembers);
+                    Helpers.AnalyzeOperation(ctx.Operation, internalApiOperations, internalApiMembers, callingType);
                 },
                 OperationKind.MethodReference,
                 OperationKind.EventReference,
@@ -110,7 +110,8 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
             internal static void AnalyzeOperation(
                 IOperation operation,
                 PooledConcurrentDictionary<KeyValuePair<IOperation, ISymbol>, bool> internalApiOperations,
-                ConcurrentDictionary<ISymbol, InternalApiStatus> internalApiMembers)
+                ConcurrentDictionary<ISymbol, InternalApiStatus> internalApiMembers,
+                INamedTypeSymbol? callingType)
             {
                 var symbol = GetOperationSymbol(operation);
 
@@ -185,8 +186,21 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
 
                 void CheckOperationAttributes(ISymbol symbol, bool checkParents)
                 {
-                    if (TryGetOrCreatePublicApiAttributes(symbol, checkParents, internalApiMembers, out _))
+                    if (TryGetOrCreatePublicApiAttributes(symbol, checkParents, internalApiMembers, out var attributes))
                     {
+                        // If the marked member has [TestingAndPrivateOnly], allow calls from within the same type
+                        if (attributes.IsTestingAndPrivateOnly)
+                        {
+                            var targetType = symbol.ContainingType;
+
+                            // Allow calls from within the same type
+                            if (callingType != null && targetType != null &&
+                                SymbolEqualityComparer.Default.Equals(callingType, targetType))
+                            {
+                                return;
+                            }
+                        }
+
                         internalApiOperations.TryAdd(new KeyValuePair<IOperation, ISymbol>(operation, symbol), true);
                     }
                 }
@@ -243,7 +257,8 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
                 new()
                 {
                     IsAssemblyAttribute = copyAttributes.IsAssemblyAttribute,
-                    IsPublicApi = copyAttributes.IsPublicApi
+                    IsTestingApi = copyAttributes.IsTestingApi,
+                    IsTestingAndPrivateOnly = copyAttributes.IsTestingAndPrivateOnly
                 };
 
             private static bool IsWithinConditionalOperation(IFieldReferenceOperation pOperation) =>
@@ -287,7 +302,7 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
                     attributes = publicApiMembers.GetOrAdd(symbol, attributes);
                 }
 
-                return attributes.IsPublicApi;
+                return attributes.IsTestingApi;
 
                 static void MergePlatformAttributes(
                     ImmutableArray<AttributeData> immediateAttributes,
@@ -295,9 +310,17 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
                 {
                     foreach (AttributeData attribute in immediateAttributes)
                     {
-                        if (TestingOnlyAttributeNames.Contains(attribute.AttributeClass!.Name))
+                        var attributeName = attribute.AttributeClass!.Name;
+                        if (attributeName == TestingAndPrivateOnlyAttribute)
                         {
-                            parentAttributes.IsPublicApi = true;
+                            parentAttributes.IsTestingApi = true;
+                            parentAttributes.IsTestingAndPrivateOnly = true;
+                            return;
+                        }
+                        else if (attributeName == TestingOnlyAttribute)
+                        {
+                            parentAttributes.IsTestingApi = true;
+                            parentAttributes.IsTestingAndPrivateOnly = false;
                             return;
                         }
                     }
@@ -309,7 +332,9 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
         {
             public bool IsAssemblyAttribute { get; set; }
 
-            public bool IsPublicApi { get; set; }
+            public bool IsTestingApi { get; set; }
+
+            public bool IsTestingAndPrivateOnly { get; set; }
         }
     }
 }
