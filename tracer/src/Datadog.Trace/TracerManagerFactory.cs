@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
@@ -474,6 +475,7 @@ namespace Datadog.Trace
                     Advanced = { TelemetryFlushInterval = telemtryFlushInterval }
                 };
 
+                /*
                 switch (settings.Exporter.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
@@ -493,7 +495,9 @@ namespace Datadog.Trace
                         Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
                         break;
                 }
+                */
 
+                config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}/tmp/datadog_dogstatsd.socket";
                 statsd.Configure(config);
                 return statsd;
             }
