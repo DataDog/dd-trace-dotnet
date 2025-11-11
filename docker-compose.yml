@@ -35,15 +35,6 @@ services:
     ports:
     - "3306"
 
-  postgres_arm64:
-    image: postgres:10.5-alpine
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "5432"
-
   rabbitmq_arm64:
     image: rabbitmq:3-management
     command: rabbitmq-server
@@ -182,16 +173,6 @@ services:
     environment:
     - discovery.type=single-node
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-
-  postgres:
-    image: postgres:10.5-alpine
-    profiles: ["group1"]
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "127.0.0.1:5432:5432"
 
   mysql:
     image: mysql/mysql-server:8.0
@@ -477,7 +458,6 @@ services:
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
       - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
-      - POSTGRES_HOST=postgres
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - MYSQL57_HOST=mysql57
@@ -689,7 +669,6 @@ services:
       - stackexchangeredis-replica
       - stackexchangeredis-single
       - sqlserver
-      - postgres
       - mysql
       - mysql57
       - rabbitmq
@@ -699,7 +678,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies
@@ -729,6 +708,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -754,7 +734,6 @@ services:
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
       - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
-      - POSTGRES_HOST=postgres_arm64
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
@@ -795,7 +774,6 @@ services:
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
-      - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
@@ -811,14 +789,13 @@ services:
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
-      - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -830,6 +807,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -1154,13 +1132,12 @@ services:
       - elasticsearch7_osx_arm64
       - sqledge_osx_arm64
       - mongo_osx_arm64
-      - postgres_osx_arm64
       - mysql_osx_arm64
       - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -1200,15 +1177,6 @@ services:
       - MYSQL_PASSWORD=mysqldb
     ports:
       - "3306:3306"
-
-  postgres_osx_arm64:
-    image: postgres:10.5-alpine
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - "5432:5432"
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management
@@ -1252,6 +1220,12 @@ services:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Strong!Passw0rd
 
+### PRE PULL TEST CONTAINER IMAGES BELOW HERE TO GET THEM INTO THE VM TO MAKE IT GO FASTER ###
+
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
   aerospike:
     image: aerospike/aerospike-server:6.2.0.6
+
+  # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\PostgresFixture.cs
+  postgres:
+    image: postgres:10.5-alpine

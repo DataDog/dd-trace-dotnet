@@ -17,6 +17,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

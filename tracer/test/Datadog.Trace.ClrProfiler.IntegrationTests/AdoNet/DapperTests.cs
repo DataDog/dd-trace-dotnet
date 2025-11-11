@@ -5,6 +5,7 @@
 
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,12 +13,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(PostgresCollection.Name)]
     public class DapperTests : TracingIntegrationTest
     {
-        public DapperTests(ITestOutputHelper output)
+        public DapperTests(ITestOutputHelper output, PostgresFixture postgresFixture)
             : base("Dapper", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(postgresFixture);
         }
 
         // Assert Npgsql because the Dapper application uses Postgres for the actual client

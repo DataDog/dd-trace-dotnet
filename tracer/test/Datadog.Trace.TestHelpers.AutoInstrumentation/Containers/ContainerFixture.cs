@@ -15,28 +15,48 @@ namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {
-    private IReadOnlyDictionary<string, object>? _resources;
+    private Dictionary<string, object>? _resources;
 
     public async Task InitializeAsync()
     {
-        _resources = await ContainersRegistry.GetOrAdd(GetType(), InitializeResources);
+        _resources = new Dictionary<string, object>();
+        await InitializeResources(_resources.Add).ConfigureAwait(false);
     }
 
-    // Do not implement, the ContainersRegistry is responsible for disposing the containers
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        if (_resources == null)
+        {
+            return;
+        }
+
+        foreach (var resourceKvp in _resources)
+        {
+            var resource = resourceKvp.Value;
+
+            try
+            {
+                if (resource is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                }
+                else if (resource is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch
+            {
+                // Continue disposing other resources even if one fails
+            }
+        }
+
+        _resources.Clear();
+    }
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
     protected abstract Task InitializeResources(Action<string, object> registerResource);
 
     protected T GetResource<T>(string key) => (T)_resources![key];
-
-    private async Task<IReadOnlyDictionary<string, object>> InitializeResources()
-    {
-        var resources = new Dictionary<string, object>();
-
-        await InitializeResources(resources.Add).ConfigureAwait(false);
-
-        return resources;
-    }
 }
