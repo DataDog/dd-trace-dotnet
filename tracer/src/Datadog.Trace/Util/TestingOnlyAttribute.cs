@@ -1,4 +1,4 @@
-﻿// <copyright file="InternalForTestingAttribute.cs" company="Datadog">
+﻿// <copyright file="TestingOnlyAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,6 +17,6 @@ namespace Datadog.Trace.SourceGenerators;
   | System.AttributeTargets.Property
   | System.AttributeTargets.Method
   | System.AttributeTargets.Constructor)]
-internal sealed class InternalForTestingAttribute : System.Attribute
+internal sealed class TestingOnlyAttribute : System.Attribute
 {
 }

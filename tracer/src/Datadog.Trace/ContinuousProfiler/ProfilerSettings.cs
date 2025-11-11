@@ -69,7 +69,7 @@ internal class ProfilerSettings
         };
     }
 
-    [InternalForTesting]
+    [TestingOnly]
     internal ProfilerSettings(ProfilerState state)
     {
         ProfilerState = state;

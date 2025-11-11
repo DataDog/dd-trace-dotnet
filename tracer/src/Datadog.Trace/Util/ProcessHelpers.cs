@@ -203,7 +203,7 @@ namespace Datadog.Trace.Util
         /// <summary>
         /// Internal for testing to make it easier to call using reflection from a sample app
         /// </summary>
-        [InternalForTesting]
+        [TestingOnly]
         internal static void TestingOnly_RunCommand(string cmd, string? args)
         {
             RunCommand(new Command(cmd, args));

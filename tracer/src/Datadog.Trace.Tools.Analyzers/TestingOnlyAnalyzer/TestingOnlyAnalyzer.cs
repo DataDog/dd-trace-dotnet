@@ -1,4 +1,4 @@
-﻿// <copyright file="InternalForTestingAnalyzer.cs" company="Datadog">
+﻿// <copyright file="TestingOnlyAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,28 +14,28 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Datadog.Trace.Tools.Analyzers.InternalForTestingAnalyzer
+namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
 {
     /// <summary>
     /// DD002: Incorrect usage of internal API
     ///
-    /// Finds internal usages of APIs specifically marked with the [InternalForTesting] flag.
+    /// Finds internal usages of APIs specifically marked with the [TestingOnly] flag.
     /// These methods should not be called directly by our library code, only from test code.
     /// The analyzer enforces that requirement
     ///
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class InternalForTestingAnalyzer : DiagnosticAnalyzer
+    public sealed class TestingOnlyAnalyzer : DiagnosticAnalyzer
     {
         /// <summary>
         /// The diagnostic ID displayed in error messages
         /// </summary>
         public const string DiagnosticId = "DD0002";
 
-        private const string InternalForTestingAttribute = nameof(InternalForTestingAttribute);
+        private const string TestingOnlyAttribute = nameof(TestingOnlyAttribute);
 
-        private static readonly ImmutableArray<string> InternalForTestingAttributeNames
-            = ImmutableArray.Create(InternalForTestingAttribute);
+        private static readonly ImmutableArray<string> TestingOnlyAttributeNames
+            = ImmutableArray.Create(TestingOnlyAttribute);
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new(
@@ -295,7 +295,7 @@ namespace Datadog.Trace.Tools.Analyzers.InternalForTestingAnalyzer
                 {
                     foreach (AttributeData attribute in immediateAttributes)
                     {
-                        if (InternalForTestingAttributeNames.Contains(attribute.AttributeClass!.Name))
+                        if (TestingOnlyAttributeNames.Contains(attribute.AttributeClass!.Name))
                         {
                             parentAttributes.IsPublicApi = true;
                             return;

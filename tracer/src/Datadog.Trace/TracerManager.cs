@@ -226,7 +226,7 @@ namespace Datadog.Trace
         /// Run all the shutdown tasks for a standalone <see cref="TracerManager"/> instance,
         /// stopping the background processes.
         /// </summary>
-        [InternalForTesting]
+        [TestingOnly]
         internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)

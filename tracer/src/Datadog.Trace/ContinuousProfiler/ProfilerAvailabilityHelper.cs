@@ -26,7 +26,7 @@ internal static class ProfilerAvailabilityHelper
     /// </summary>
     public static bool IsContinuousProfilerAvailable => ProfilerIsAvailable.Value;
 
-    [InternalForTesting]
+    [TestingOnly]
     internal static bool IsContinuousProfilerAvailable_TestingOnly(Func<bool> isClrProfilerAttached)
         => GetIsContinuousProfilerAvailable(isClrProfilerAttached);
 

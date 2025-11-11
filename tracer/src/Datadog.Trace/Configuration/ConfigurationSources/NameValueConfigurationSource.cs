@@ -21,7 +21,7 @@ namespace Datadog.Trace.Configuration
     {
         private readonly NameValueCollection _nameValueCollection;
 
-        [InternalForTesting]
+        [TestingOnly]
         public NameValueConfigurationSource(NameValueCollection nameValueCollection)
             : this(nameValueCollection, ConfigurationOrigins.Code)
         {

@@ -43,7 +43,7 @@ namespace Datadog.Trace.Util
             _queueLimit = queueLimit;
         }
 
-        [InternalForTesting]
+        [TestingOnly]
         internal ConcurrentQueue<T> InnerQueue => _queue;
 
         public int Count => _counter;

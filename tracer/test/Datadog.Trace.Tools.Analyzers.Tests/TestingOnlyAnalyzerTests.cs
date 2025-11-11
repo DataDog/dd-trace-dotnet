@@ -1,4 +1,4 @@
-﻿// <copyright file="InternalForTestingAnalyzerTests.cs" company="Datadog">
+﻿// <copyright file="TestingOnlyAnalyzerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,18 +12,18 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.InternalForTestingAnalyzer.InternalForTestingAnalyzer,
+    Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer.TestingOnlyAnalyzer,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {
-    public class InternalForTestingAnalyzerTests
+    public class TestingOnlyAnalyzerTests
     {
-        private const string DiagnosticId = InternalForTestingAnalyzer.InternalForTestingAnalyzer.DiagnosticId;
+        private const string DiagnosticId = TestingOnlyAnalyzer.TestingOnlyAnalyzer.DiagnosticId;
 
-        public static string[] GetInternalForTestingAttributes { get; } = { "InternalForTesting", "InternalForTestingAttribute" };
+        public static string[] GetTestingOnlyAttributes { get; } = { "TestingOnly", "TestingOnlyAttribute" };
 
-        public static string[] NonInternalForTestingAccesses { get; } =
+        public static string[] NonTestingOnlyAccesses { get; } =
         {
             "var x = _nonPublicField;",
             "var x = NonPublicProperty;",
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             "var x = new NonPublicClass();",
         };
 
-        public static string[] InternalForTestingAccesses { get; } =
+        public static string[] TestingOnlyAccesses { get; } =
         {
             "var x = {|#0:_publicField|};",
             "var x = {|#0:PublicProperty|};",
@@ -66,21 +66,21 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
         };
 
         public static IEnumerable<object[]> NonPublicCombination { get; } =
-            from attrs in GetInternalForTestingAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
-            from api in NonInternalForTestingAccesses
+            from api in NonTestingOnlyAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> PublicCombination { get; } =
-            from attrs in GetInternalForTestingAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
-            from api in InternalForTestingAccesses
+            from api in TestingOnlyAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> NotSupportedCombination { get; } =
-            from attrs in GetInternalForTestingAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
             from api in ShouldThrowButDoesnt
             from conditional in new[] { true, false }
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(NonPublicCombination))]
-        public async Task ShouldNotFlagUsageOfNonInternalForTesting(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldNotFlagUsageOfNonTestingOnly(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(PublicCombination))]
-        public async Task ShouldFlagUsageOfInternalForTesting(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldFlagUsageOfTestingOnly(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
