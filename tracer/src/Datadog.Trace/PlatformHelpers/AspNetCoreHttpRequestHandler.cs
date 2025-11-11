@@ -153,6 +153,11 @@ namespace Datadog.Trace.PlatformHelpers
             httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
 
+            // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
+            // Use __ prefix to avoid conflicts with user code (same pattern as TracingHttpModule)
+            httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"] = scope;
+            _log.Debug("AspNetCore: Stored scope in HttpContext.Items - span_id: {SpanId}, trace_id: {TraceId}, path: {Path}", scope.Span.SpanId, scope.Span.TraceId, request.Path);
+
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
