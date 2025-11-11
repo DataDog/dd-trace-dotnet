@@ -114,7 +114,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         var lease = manager.TryGetClientLease();
@@ -130,7 +130,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -143,8 +143,8 @@ public class StatsdManagerTests
     [Fact]
     public void SetRequired_False_DisposesClient()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         using (manager.TryGetClientLease())
@@ -153,7 +153,7 @@ public class StatsdManagerTests
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
 
-        client.IsDisposed.Should().BeTrue("client should be disposed when no longer required and not in use");
+        holder.IsDisposed.Should().BeTrue("client should be disposed when no longer required and not in use");
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -177,11 +177,11 @@ public class StatsdManagerTests
     public void MultipleConsumers_PartialUnrequire_KeepsClient()
     {
         var clientCount = 0;
-        var client = new MockStatsdClient();
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return holder;
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -190,18 +190,18 @@ public class StatsdManagerTests
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
 
         clientCount.Should().Be(1, "only one client should be created for multiple consumers");
-        client.IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
+        holder.IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
     }
 
     [Fact]
     public void MultipleConsumers_AllUnrequire_DisposesClient()
     {
         var clientCount = 0;
-        var client = new MockStatsdClient();
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return client;
+            return holder;
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -212,21 +212,23 @@ public class StatsdManagerTests
             manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
             manager.SetRequired(StatsdConsumer.TraceApi, false);
 
-            client.IsDisposed.Should().BeFalse("client should be disposed while it is leased");
+            holder.IsDisposed.Should().BeFalse("client should be disposed while it is leased");
         }
 
-        client.IsDisposed.Should().BeTrue("client should be disposed when all consumers unrequire it");
+        holder.IsDisposed.Should().BeTrue("client should be disposed when all consumers unrequire it");
     }
 
     [Fact]
     public void MultipleConsumers_ReRequire_CreatesNewClient()
     {
         var clientCount = 0;
-        var client = new MockStatsdClient();
+        StatsdManager.StatsdClientHolder holder = null;
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            Interlocked.Exchange(ref holder, newClient);
+            return newClient;
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -236,42 +238,42 @@ public class StatsdManagerTests
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         clientCount.Should().Be(3);
-        client.IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
+        Volatile.Read(ref holder).IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
     }
 
     [Fact]
     public void Lease_ProvidesAccessToClient()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         using var lease = manager.TryGetClientLease();
 
-        lease.Client.Should().BeSameAs(client);
+        lease.Client.Should().BeSameAs(holder.Client);
     }
 
     [Fact]
     public void MultipleLeasesSimultaneously_ShareSameClient()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         using var lease1 = manager.TryGetClientLease();
         using var lease2 = manager.TryGetClientLease();
         using var lease3 = manager.TryGetClientLease();
 
-        lease1.Client.Should().BeSameAs(client);
-        lease2.Client.Should().BeSameAs(client);
-        lease3.Client.Should().BeSameAs(client);
+        lease1.Client.Should().BeSameAs(holder.Client);
+        lease2.Client.Should().BeSameAs(holder.Client);
+        lease3.Client.Should().BeSameAs(holder.Client);
     }
 
     [Fact]
     public void DisposingLease_DoesNotDisposeClient_WhileOtherLeasesActive()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease1 = manager.TryGetClientLease();
@@ -280,15 +282,21 @@ public class StatsdManagerTests
         lease1.Dispose();
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
 
-        client.IsDisposed.Should().BeFalse("client should not be disposed while other leases are active");
+        holder.IsDisposed.Should().BeFalse("client should not be disposed while other leases are active");
         lease2.Dispose();
-        client.IsDisposed.Should().BeTrue();
+        holder.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
     public void NeverReturnsDisposedClient()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new MockStatsdClient());
+        StatsdManager.StatsdClientHolder holder = null;
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        {
+            var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            Volatile.Write(ref holder, newClient);
+            return newClient;
+        });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
@@ -303,7 +311,7 @@ public class StatsdManagerTests
         var lease2 = manager.TryGetClientLease();
 
         lease2.Client.Should().NotBeNull();
-        ((MockStatsdClient)lease2.Client).IsDisposed.Should().BeFalse("should never return a disposed client");
+        holder.IsDisposed.Should().BeFalse("should never return a disposed client");
 
         // Cleanup
         lease2.Dispose();
@@ -312,37 +320,37 @@ public class StatsdManagerTests
     [Fact]
     public void ReferenceCountingPreventsDisposalWhileLeasesActive()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
 
-        client.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
+        holder.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
 
         lease.Dispose();
 
-        client.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
+        holder.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
     }
 
     [Fact]
     public void Dispose_WithActiveLease_DisposesAfterLeaseReleased()
     {
-        var client = new MockStatsdClient();
-        var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
         manager.Dispose(); // note _manager_ disposed
 
-        client.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
+        holder.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
 
         // Dispose the lease
         lease.Dispose();
 
         // Now it should be disposed
-        client.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
+        holder.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
     }
 
     [Fact]
@@ -353,7 +361,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref  clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -379,11 +387,19 @@ public class StatsdManagerTests
     public void SettingsUpdate_OldLeaseContinuesWorkingWithOldClient()
     {
         var tracerSettings = new TracerSettings();
-        using var manager = new StatsdManager(tracerSettings, (_, _) => new MockStatsdClient());
+
+        StatsdManager.StatsdClientHolder holder = null;
+        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        {
+            var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            Volatile.Write(ref holder, newClient);
+            return newClient;
+        });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         var lease1 = manager.TryGetClientLease();
         var client1 = lease1.Client;
+        var oldHolder = holder;
 
         tracerSettings.Manager.UpdateManualConfigurationSettings(
             new ManualInstrumentationConfigurationSource(
@@ -392,18 +408,17 @@ public class StatsdManagerTests
             NullConfigurationTelemetry.Instance);
 
         lease1.Client.Should().BeSameAs(client1, "old lease should continue to reference old client");
-        ((MockStatsdClient)client1).IsDisposed.Should().BeFalse("old client should not be disposed while lease is active");
+        Volatile.Read(ref holder)!.IsDisposed.Should().BeFalse("old client should not be disposed while lease is active");
 
         // Get new lease
         var lease2 = manager.TryGetClientLease();
-        var client2 = lease2.Client;
         lease2.Client.Should().NotBeSameAs(client1, "new lease should get new client");
 
         // Cleanup
         lease1.Dispose();
-        ((MockStatsdClient)client1).IsDisposed.Should().BeTrue("old client should be disposed after lease is released");
+        oldHolder.IsDisposed.Should().BeTrue("old client should be disposed after lease is released");
         lease2.Dispose();
-        ((MockStatsdClient)client2).IsDisposed.Should().BeFalse("new client is still in use");
+        Volatile.Read(ref holder)!.IsDisposed.Should().BeFalse("new client is still in use");
     }
 
     [Fact]
@@ -414,7 +429,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         // Don't call SetRequired - no client should be created
@@ -436,7 +451,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -459,7 +474,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -478,8 +493,8 @@ public class StatsdManagerTests
     [Fact]
     public void ConcurrentLeaseAcquisition_AllSucceed()
     {
-        var client = new MockStatsdClient();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => client);
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var leases = new ConcurrentQueue<StatsdManager.StatsdClientLease>();
@@ -490,7 +505,7 @@ public class StatsdManagerTests
         });
 
         leases.Should().HaveCount(100);
-        leases.Should().AllSatisfy(lease => lease.Client.Should().BeSameAs(client));
+        leases.Should().AllSatisfy(lease => lease.Client.Should().BeSameAs(holder.Client));
 
         // Cleanup
         while (leases.TryDequeue(out var lease))
@@ -503,11 +518,11 @@ public class StatsdManagerTests
     public async Task ConcurrentLeaseAcquisitionAndDisposal_ThreadSafe()
     {
         var clientCount = 0;
-        var client = new MockStatsdClient();
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return client;
+            return holder;
         });
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         var cts = new CancellationTokenSource();
@@ -545,7 +560,7 @@ public class StatsdManagerTests
 
         await Task.WhenAll(tasks);
         clientCount.Should().Be(1, "client should not be recreated for settings update when no changes");
-        client.IsDisposed.Should().BeFalse("client should not be disposed while still required");
+        holder.IsDisposed.Should().BeFalse("client should not be disposed while still required");
     }
 
     [Fact]
@@ -555,7 +570,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         // random toggling on an off
@@ -581,7 +596,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
-            return new MockStatsdClient();
+            return new(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -612,7 +627,7 @@ public class StatsdManagerTests
                     if (lease.Client != null)
                     {
                         // Check if client is disposed WHILE we hold the lease
-                        if (((MockStatsdClient)lease.Client).IsDisposed)
+                        if (((MockStatsdClient)lease.Client).DisposeCount > 0)
                         {
                             Interlocked.Increment(ref disposedClientReturned);
                         }
@@ -631,11 +646,11 @@ public class StatsdManagerTests
     [Fact]
     public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
     {
-        var clients = new ConcurrentQueue<MockStatsdClient>();
+        var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
-            var client = new MockStatsdClient();
-            clients.Enqueue(client);
+            var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            holders.Enqueue(client);
             return client;
         });
 
@@ -668,21 +683,21 @@ public class StatsdManagerTests
         await Task.WhenAll(tasks);
 
         // We only recreated once
-        clients.Should().HaveCount(2);
-        clients.TryDequeue(out var client1).Should().BeTrue();
+        holders.Should().HaveCount(2);
+        holders.TryDequeue(out var client1).Should().BeTrue();
         client1.IsDisposed.Should().BeTrue("old client should be disposed");
-        clients.TryDequeue(out var client2).Should().BeTrue();
+        holders.TryDequeue(out var client2).Should().BeTrue();
         client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
     }
 
     [Fact]
     public void MultipleTransitionsBetweenRequiredAndNotRequired()
     {
-        var clients = new List<MockStatsdClient>();
+        var holders = new List<StatsdManager.StatsdClientHolder>();
         using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
-            var client = new MockStatsdClient();
-            clients.Add(client);
+            var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            holders.Add(client);
             return client;
         });
 
@@ -694,14 +709,14 @@ public class StatsdManagerTests
             manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
         }
 
-        clients.Count.Should().Be(5, "should create a new client for each transition");
-        clients.Should().AllSatisfy(client => client.IsDisposed.Should().BeTrue("all old clients should be disposed"));
+        holders.Count.Should().Be(5, "should create a new client for each transition");
+        holders.Should().AllSatisfy(client => client.IsDisposed.Should().BeTrue("all old clients should be disposed"));
     }
 
     [Fact]
     public void Dispose_MultipleTimes_IsSafe()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         manager.Dispose();
@@ -712,7 +727,7 @@ public class StatsdManagerTests
     [Fact]
     public void DefaultLease_CanDisposeSafely()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
 
         var lease = manager.TryGetClientLease();
 
@@ -723,16 +738,18 @@ public class StatsdManagerTests
     [Fact]
     public void DisposingLease_MultipleTimes_DoesNotDisposeStatsDMultipleTimes()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new MockStatsdClient());
+        var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
-        var client = lease.Client.Should().NotBeNull().And.BeOfType<MockStatsdClient>().Subject;
+        var statsdClient = lease.Client.Should().NotBeNull().And.BeOfType<MockStatsdClient>().Subject;
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
         lease.Dispose();
         lease.Dispose();
         lease.Dispose();
-        client.DisposeCount.Should().Be(1);
+        holder.IsDisposed.Should().BeTrue();
+        statsdClient.DisposeCount.Should().BeLessThanOrEqualTo(1); // we dispose in the background, so may not have happened yet
     }
 
     private class MockStatsdClient : IDogStatsd
@@ -740,8 +757,6 @@ public class StatsdManagerTests
         private int _disposeCount;
 
         public int DisposeCount => Volatile.Read(ref _disposeCount);
-
-        public bool IsDisposed => DisposeCount > 0;
 
         public ITelemetryCounters TelemetryCounters => null;
 
