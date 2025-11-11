@@ -421,7 +421,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                  && new Version(packageVersion) < new Version("2.43.0")
                  && ex.Message.Contains("ObjectDisposedException"))
                 {
-                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                    throw new SkipException($"Hit race condition in GRPC deadline exceeded {ex.Message}");
                 }
 
                 throw;
