@@ -77,18 +77,41 @@ Note: Host-side azure_functions.invoke and http.request spans should be removed
 
 Before enabling AspNetCoreDiagnosticObserver in the worker process, the `aspnet_core.request` span was **not created at all** because the observer was disabled in all Azure Functions processes (both host and worker).
 
-**Expected traces** (to be added):
-```
-Host spans:
-├─ azure_functions.invoke [HOST] (ROOT)
-└─ http.request [HOST → WORKER]
+**Captured traces**:
+- [trace_payload_1762897459231.json](1-original/trace_payload_1762897459231.json) - Worker spans
+- [trace_payload_1762897460146.json](1-original/trace_payload_1762897460146.json) - Host spans
 
-Worker spans (separate trace):
-└─ azure_functions.invoke [WORKER] (ROOT) ❌ No aspnet_core.request span exists
-   └─ test_span [WORKER]
+**Analysis of trace `1910270346618876437`**:
+```
+HOST PROCESS (runtime_id: 1ecec7fe, process: 27):
+├─ azure_functions.invoke (span: 1978509666546725896) [ROOT] ❌
+│  resource: "GET /api/httptest"
+│  duration: 635ms
+│
+└─ http.request (span: 5775791465145012166) ❌
+   resource: "GET localhost:43239/api/HttpTest"
+   duration: 413ms
+   parent: 1978509666546725896 (host's azure_functions.invoke)
+
+WORKER PROCESS (runtime_id: 3e375b7a, process: 58):
+└─ azure_functions.invoke (span: 18286165385944622934) ⚠️
+   resource: "Http HttpTest"
+   duration: 159ms
+   parent: 1978509666546725896 (HOST's root span!)
+   │
+   └─ test_span (span: 13925130946451077401)
+      duration: 136ms
+      │
+      └─ http.request (span: 4052593309550270339)
+         resource: "GET jsonplaceholder.typicode.com/users/?"
+         duration: 115ms
 ```
 
-**Key issue**: Missing `aspnet_core.request` span entirely.
+**Key issues**:
+- ❌ No `aspnet_core.request` span exists in worker process
+- ❌ Worker's `azure_functions.invoke` is parented to HOST's root span (1978509666546725896)
+- ❌ Host creates unnecessary `azure_functions.invoke` and `http.request` spans
+- ✓ All spans are in the same trace (distributed tracing working via headers)
 
 ### Phase 2: After Enabling AspNetCoreDiagnosticObserver in Worker
 
@@ -233,21 +256,32 @@ public async Task<IActionResult> HttpTest([HttpTrigger(AuthorizationLevel.Anonym
 - HTTP Trigger
 - `Datadog.AzureFunctions` NuGet package
 
+## Goal
+
+Now that we have an `aspnet_core.request` span in the worker process (Phase 2), we need to:
+
+1. **Make worker's `azure_functions.invoke` span a child of `aspnet_core.request`** (high priority)
+   - Currently: Worker's `azure_functions.invoke` is parented to host's root span
+   - Goal: Worker's `azure_functions.invoke` should be parented to worker's `aspnet_core.request` span
+   - This will create the correct hierarchy: `aspnet_core.request` → `azure_functions.invoke` → user code
+
+2. **Remove host-side spans** (secondary priority)
+   - Host's `azure_functions.invoke` and `http.request` spans are unnecessary when ASP.NET Core integration is enabled
+   - These spans represent HTTP proxying overhead, not the actual function execution
+   - Detect HTTP proxying in host process and skip span creation
+
 ## Next Steps
 
 1. **Fix worker span parenting** (high priority)
-   - Investigate why `extractedContext.SpanContext` contains host's root span context
+   - Investigate why `tracer.InternalActiveScope` is null when creating `azure_functions.invoke` span
+   - Root cause: AsyncLocal context doesn't flow through Azure Functions middleware
    - Find alternative to AsyncLocal and Activity.Current for parent retrieval
    - Consider using `HttpContext.Items` to pass span context explicitly
 
-2. **Remove host-side spans** (secondary priority)
-   - Detect HTTP proxying in host process
-   - Skip span creation when proxying is enabled
-
-3. **Alternative approaches to investigate**:
+2. **Alternative approaches to investigate**:
    - Store scope in `FunctionContext.Features`
    - Store span context in `HttpContext.Items`
-   - Have worker integration create both ASP.NET Core and Azure Functions spans
+   - Use `HttpContext.Features` to access ASP.NET Core span from Azure Functions middleware
 
 ## References
 
