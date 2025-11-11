@@ -150,11 +150,18 @@ namespace Datadog.Trace.TestHelpers
                     UseShellExecute = false
                 };
 
-                var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
-
-                if (!executedSuccessfully)
+                using (var process = Process.Start(opts))
                 {
-                    throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
+                    if (process == null)
+                    {
+                        throw new Exception("Failed to start CorFlags process.");
+                    }
+
+                    var exited = process.WaitForExit(20_000);
+                    if (!exited)
+                    {
+                        throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
+                    }
                 }
 
                 _corFlagsApplied.TryAdd(executablePath, true);
