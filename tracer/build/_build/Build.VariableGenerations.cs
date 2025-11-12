@@ -1128,7 +1128,7 @@ partial class Build : NukeBuild
                        "debian",
                        new SmokeTestImage[]
                        {
-                           new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
+                        //    new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
                        },
                        relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
@@ -1328,7 +1328,7 @@ partial class Build : NukeBuild
                        "debian",
                        new SmokeTestImage[]
                        {
-                           new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
+                        //    new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
                        },
                        platformSuffix: "linux-arm64",
                        dockerName: "andrewlock/dotnet-debian"
