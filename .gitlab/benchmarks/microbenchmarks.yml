@@ -72,15 +72,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
 check-big-regressions:
   stage: report
-  rules:
-    # Run and warn on releases, but don't fail the pipeline
-    #   v2.10.0
-    #   v2.10.1
-    #   v2.10.0rc0
-    #   v2.10.0rc5
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(rc[0-9]+)?$/
-      allow_failure: true
-    - allow_failure: false
+  allow_failure: false
   when: always
   needs: [ run-benchmarks ]
   tags: ["arch:amd64"]
@@ -94,7 +86,7 @@ check-big-regressions:
     git clone --branch dd-trace-dotnet/micro https://github.com/DataDog/benchmarking-platform /platform
     export PATH="$PATH:/platform/steps"
 
-    bp-runner /platform/bp-runner.fail-on-regression.yml --debug
+    bp-runner .gitlab/benchmarks/bp-runner.fail-on-regression.yml --debug
   variables:
     # Gitlab and BP specific env vars. Do not modify.
     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
