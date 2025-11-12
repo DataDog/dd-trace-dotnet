@@ -2348,6 +2348,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         COMPOSE_PROFILES: group$(dockerGroup)
       displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
+      retryCountOnTaskFailure: 5
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) \

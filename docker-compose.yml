@@ -395,11 +395,6 @@ services:
     image: aerospike/aerospike-server:6.2.0.6
     ports:
       - 3000:3000
-    # A recent CI update broke these, and started giving 1024, and aerospike doesn't like it
-    ulimits:
-      nofile:
-        soft: 15000
-        hard: 15000
 
   ProfilerIntegrationTests:
     build:
