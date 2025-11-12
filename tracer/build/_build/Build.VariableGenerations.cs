@@ -779,7 +779,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "16-10.0", "opensuse", "16"),
+                            new (publishFramework: TargetFramework.NET10_0, "16.0-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -1079,7 +1079,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "16-10.0", "opensuse", "16"),
+                            new (publishFramework: TargetFramework.NET10_0, "16.0-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -1282,7 +1282,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "16-10.0", "opensuse", "16"),
+                            new (publishFramework: TargetFramework.NET10_0, "16.0-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0", "opensuse", "15"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0", "opensuse", "15"),
@@ -1480,7 +1480,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "16-10.0", "opensuse", "16"),
+                            new (publishFramework: TargetFramework.NET10_0, "16.0-10.0", "opensuse", "16"),
                             new (publishFramework: TargetFramework.NET9_0, "15-9.0", "opensuse", "15"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
