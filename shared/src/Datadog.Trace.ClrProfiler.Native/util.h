@@ -46,7 +46,7 @@ static fs::path GetPoliciesPath()
         program_data_path = WStr(R"(C:\ProgramData)");
     }
 
-    return program_data_path / "Datadog" / "workload_selection.fb";
+    return program_data_path / "Datadog" / "user-wls-policy.bin";
 }
 #endif
 
