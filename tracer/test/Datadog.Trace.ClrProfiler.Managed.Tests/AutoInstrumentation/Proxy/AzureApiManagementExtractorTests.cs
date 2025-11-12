@@ -17,12 +17,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 public class AzureApiManagementExtractorTests
 {
     private readonly AzureApiManagementExtractor _extractor;
-    private readonly Tracer _tracer; // this is a mocked instance of the tracer
 
     public AzureApiManagementExtractorTests()
     {
         _extractor = new AzureApiManagementExtractor();
-        _tracer = ProxyTestHelpers.GetMockTracer();
     }
 
     [Fact]
@@ -36,7 +34,7 @@ public class AzureApiManagementExtractorTests
         var tracer = ProxyTestHelpers.GetMockTracer(collection);
         var headers = ProxyTestHelpers.CreateValidAzureHeaders();
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
@@ -51,7 +49,7 @@ public class AzureApiManagementExtractorTests
 
         var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("azure-apim");
@@ -74,7 +72,7 @@ public class AzureApiManagementExtractorTests
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("azure-apim");
@@ -95,7 +93,7 @@ public class AzureApiManagementExtractorTests
         var headers = ProxyTestHelpers.CreateValidAzureHeaders();
         headers.Set(InferredProxyHeaders.StartTime, startTime);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
@@ -107,7 +105,7 @@ public class AzureApiManagementExtractorTests
         var headers = ProxyTestHelpers.CreateValidAzureHeaders();
         headers.Remove(InferredProxyHeaders.StartTime);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
