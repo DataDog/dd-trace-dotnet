@@ -34,8 +34,19 @@ namespace AspNetCoreSmokeTest
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var timeout = TimeSpan.FromMinutes(2);
+            var startTime = DateTimeOffset.UtcNow;
+
             while (!_appListening && !stoppingToken.IsCancellationRequested)
             {
+                if (DateTimeOffset.UtcNow - startTime > timeout)
+                {
+                    _logger.LogError("Timed out waiting for application to start after {Timeout}", timeout);
+                    Program.ExitCode = 1;
+                    _lifetime.StopApplication();
+                    return;
+                }
+
                 _logger.LogInformation("Waiting for app started handling requests");
                 await Task.Delay(100, stoppingToken);
             }
