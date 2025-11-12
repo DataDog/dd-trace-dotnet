@@ -390,12 +390,6 @@ services:
       LDAP_ADMIN_PASSWORD: "Passw0rd"
       LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
 
-  aerospike:
-    profiles: ["group2"]
-    image: aerospike/aerospike-server:6.2.0.6
-    ports:
-      - 3000:3000
-
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
@@ -494,7 +488,6 @@ services:
       - ORACLE_HOST=oracle
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
-      - AEROSPIKE_HOST=aerospike:3000
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - TEST_AGENT_HOST=test-agent
@@ -717,14 +710,13 @@ services:
       - mongo
       - localstack
       - sqledge
-      - aerospike
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126 aerospike:3000
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
@@ -1260,5 +1252,5 @@ services:
       - SA_PASSWORD=Strong!Passw0rd
 
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
-  # aerospike:
-    # image: aerospike/aerospike-server:6.2.0.6
+  aerospike:
+    image: aerospike/aerospike-server:6.2.0.6
