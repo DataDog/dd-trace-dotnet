@@ -11,6 +11,7 @@ stages:
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
+  - report
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-7
@@ -614,4 +615,69 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+
+check-big-regressions:
+  stage: report
+  rules:
+    # Run and warn on releases, but don't fail the pipeline
+    #   v2.10.0
+    #   v2.10.1
+    #   v2.10.0rc0
+    #   v2.10.0rc5
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(rc[0-9]+)?$/
+      allow_failure: true
+    - allow_failure: false
+  when: always
+  needs:
+    - baseline-x86
+    - calltarget_ngen-x86
+    - trace_stats-x86
+    - manual_only-x86
+    - manual_and_automatic-x86
+    - ddtraceenabled_false-x86
+    - profiler_exceptions_baseline-x86
+    - profiler-x86
+    - profiler_walltime-x86
+    - profiler_exceptions-x86
+    - profiler_cpu-x86
+    - profiler_cpu_timer_create-x86
+    - baseline-arm64
+    - calltarget_ngen-arm64
+    - trace_stats-arm64
+    - manual_only-arm64
+    - manual_and_automatic-arm64
+    - ddtraceenabled_false-arm64
+    - profiler_exceptions_baseline-arm64
+    - profiler-arm64
+    - profiler_walltime-arm64
+    - profiler_exceptions-arm64
+    - profiler_cpu-arm64
+    - profiler_cpu_timer_create-arm64
+    - baseline-win
+    - calltarget_ngen-win
+    - trace_stats-win
+    - manual_only-win
+    - manual_and_automatic-win
+    - ddtraceenabled_false-win
+    - profiler_exceptions_baseline-win
+    - profiler-win
+    - profiler_walltime-win
+    - profiler_exceptions-win
+    - profiler_cpu-win
+    - profiler_cpu_timer_create-win
+  tags: ["arch:amd64"]
+  image: $MACROBENCHMARKS_CI_IMAGE
+  script: |
+    export ARTIFACTS_DIR="$(pwd)/platform/artifacts/"
+    if [[ -n "$CI_JOB_TOKEN" ]];
+    then
+      git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
+    fi
+    git clone --branch dd-trace-dotnet/macro https://github.com/DataDog/benchmarking-platform /platform
+    export PATH="$PATH:/platform/steps"
+
+    bp-runner /platform/bp-runner.fail-on-regression.yml --debug
+  variables:
+    # Gitlab and BP specific env vars. Do not modify.
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
 
