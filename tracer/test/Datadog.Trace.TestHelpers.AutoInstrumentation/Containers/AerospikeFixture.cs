@@ -32,11 +32,7 @@ public class AerospikeFixture : ContainerFixture
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(AerospikePort, true)
-                       .WithCreateParameterModifier(parameters =>
-                        {
-                            parameters.HostConfig.ShmSize = 1_073_741_824; // 1GB in bytes
-                        })
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged(".*service ready.*"))
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(AerospikePort))
                        .Build();
 
         await container.StartAsync();
