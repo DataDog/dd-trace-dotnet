@@ -1625,6 +1625,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, ".");
             return hr;
         }
+
+        // keep track of the keywords and verbosity so that we will be able to reset what is stored
+        // by the GC and the CLR after a heap snapshot - see https://github.com/dotnet/runtime/issues/121462
+        // for more details
+        //
+        // TODO: add a test to check in which version of the CLR this issue has been fixed
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pHeapSnapshotManager->SetRuntimeSessionParameters(activatedKeywords, verbosity);
+        }
     }
     else
     {

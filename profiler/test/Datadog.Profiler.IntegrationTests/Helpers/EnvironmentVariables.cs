@@ -41,5 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
         public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
         public const string ManagedActivationEnabled = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
+        public const string HeapSnapshotEnabled = "DD_PROFILING_HEAPSNAPSHOT_ENABLED";
+        public const string HeapSnapshotMemoryPressureThreshold = "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD";
     }
 }

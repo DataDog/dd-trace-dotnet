@@ -8,7 +8,7 @@
 class IHeapSnapshotManager
 {
 public:
+    virtual void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) = 0;
     virtual std::string GetHeapSnapshotText() = 0;
-
     virtual ~IHeapSnapshotManager() = default;
 };

@@ -25,10 +25,14 @@ HeapSnapshotManager::HeapSnapshotManager(
     _pCorProfilerInfo{pCorProfilerInfo},
     _pFrameStore{pFrameStore},
     _pThreadsCpuManager{pThreadsCpuManager},
+    _runtimeSessionKeywords(0),
+    _runtimeSessionVerbosity(0),
     _lastTimestamp(0ns),
     _lastOldHeapSize(0),
     _lastMemPressure(0),
-    _shouldStartHeapDump(false)
+    _shouldStartHeapDump(false),
+    _shouldCleanupHeapDumpSession(false),
+    _loopThreadOsId(0)
 {
     _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
@@ -47,6 +51,12 @@ HeapSnapshotManager::~HeapSnapshotManager()
         _pCorProfilerInfo = nullptr;
         pCorProfilerInfo->Release();
     }
+}
+
+void HeapSnapshotManager::SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity)
+{
+    _runtimeSessionKeywords = keywords;
+    _runtimeSessionVerbosity = verbosity;
 }
 
 bool HeapSnapshotManager::StartImpl()
@@ -75,20 +85,9 @@ bool HeapSnapshotManager::StopImpl()
         }
     }
 
-    // don't forget to close the current EventPipe session if any
-    CleanupSession();
+    // NOTE: don't cleanup the session - should be done in the dedicated thread
 
     return true;
-}
-
-void HeapSnapshotManager::CleanupSession()
-{
-    _isHeapDumpInProgress = false;
-    if (_session != 0)
-    {
-        _pCorProfilerInfo->EventPipeStopSession(_session);
-        _session = 0;
-    }
 }
 
 void HeapSnapshotManager::MainLoop()
@@ -124,6 +123,13 @@ void HeapSnapshotManager::MainLoop()
 
 void HeapSnapshotManager::MainLoopIteration()
 {
+    if (_shouldCleanupHeapDumpSession)
+    {
+        // TODO: close the session + start/stop the fake session to reset the keywords/verbosity
+        _shouldCleanupHeapDumpSession = false;
+        CleanupSession();
+    }
+    else
     if (_shouldStartHeapDump)
     {
         _shouldStartHeapDump = false;
@@ -152,6 +158,7 @@ std::string HeapSnapshotManager::GetHeapSnapshotText()
         {
             ss << std::endl;
         }
+        current++;
     }
     ss << "]" << std::endl;
 
@@ -239,8 +246,11 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
             _lastOldHeapSize = gen2Size + lohSize + pohSize;
             _lastMemPressure = memPressure;
 
-            StopGCDump();
             _lastTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+
+            // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
+            //        because it could deadlock the GC
+            _shouldCleanupHeapDumpSession = true;
         }
     }
 
@@ -277,16 +287,27 @@ void HeapSnapshotManager::StartSnapshotTimerIfNeeded()
     }
 
     auto now = OpSysTools::GetHighPrecisionTimestamp();
-    if (_lastTimestamp != 0ns)
+    if (_lastTimestamp == 0ns)
+    {
+        // for tests purposes, we start the first snapshot right away
+        if (_memPressureThreshold == 0)
+        {
+            _shouldStartHeapDump = true;
+            return;
+        }
+
+        // wait at least _heapDumpInterval before the first snapshot
+        _lastTimestamp = now;
+    }
+    else
     {
         auto durationSinceLastSnapshot = now - _lastTimestamp;
         if (durationSinceLastSnapshot < _heapDumpInterval)
         {
             return;
         }
+        _shouldStartHeapDump = true;
     }
-
-    _shouldStartHeapDump = true;
 }
 
 void HeapSnapshotManager::StartGCDump()
@@ -331,7 +352,7 @@ void HeapSnapshotManager::StartGCDump()
     }
 }
 
-void HeapSnapshotManager::StopGCDump()
+void HeapSnapshotManager::OnEndGCDump()
 {
     if (_session == 0)
     {
@@ -346,5 +367,47 @@ void HeapSnapshotManager::StopGCDump()
     std::cout << content << std::endl;
 #endif
 
-    CleanupSession();
+    // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
+    //        because it could deadlock the GC
+    _shouldCleanupHeapDumpSession = true;
+}
+
+void HeapSnapshotManager::CleanupSession()
+{
+    if (!_isHeapDumpInProgress)
+    {
+        // This should not happen
+        return;
+    }
+
+    _isHeapDumpInProgress = false;
+    if (_session != 0)
+    {
+        _pCorProfilerInfo->EventPipeStopSession(_session);
+        _session = 0;
+    }
+
+    // TODO: check that reverse P/Invoke would not make us see this native thread as a managed thread
+    // ---> look at the logs + ICorProfilerCallback2::ThreadAssignedToOSThread
+
+    // Before the fix of https://github.com/dotnet/runtime/issues/121462, it is needed to start
+    // and stop a session JUST to reset the keywords/verbosity of the Microsoft-Windows-DotNETRuntime provider
+    if (_runtimeSessionKeywords != 0)
+    {
+        COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] = {
+            {WStr("Microsoft-Windows-DotNETRuntime"),
+             _runtimeSessionKeywords,
+             _runtimeSessionVerbosity,
+             nullptr}};
+        EVENTPIPE_SESSION tempSession = 0;
+        HRESULT hr = _pCorProfilerInfo->EventPipeStartSession(
+            1,
+            providers,
+            false,
+            &tempSession);
+        if (SUCCEEDED(hr) && (tempSession != 0))
+        {
+            _pCorProfilerInfo->EventPipeStopSession(tempSession);
+        }
+    }
 }

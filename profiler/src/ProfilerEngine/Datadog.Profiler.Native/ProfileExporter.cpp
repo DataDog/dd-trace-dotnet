@@ -70,7 +70,7 @@ std::string const ProfileExporter::MetricsFilename = "metrics.json";
 
 std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
-std::string const ProfileExporter::ClassHistogramFilename = "classhistogram.json";
+std::string const ProfileExporter::ClassHistogramFilename = "histogram.json";
 
 ProfileExporter::ProfileExporter(
     std::vector<SampleValueType> sampleTypeDefinitions,

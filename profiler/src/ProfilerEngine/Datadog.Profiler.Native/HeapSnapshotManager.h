@@ -54,6 +54,11 @@ public:
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager);
+
+    // Inherited via IHeapSnapshotManager
+    void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
+    std::string GetHeapSnapshotText() override;
+
     ~HeapSnapshotManager();
 
 protected:
@@ -62,9 +67,6 @@ protected:
     {
         return "HeapSnapshotManager";
     }
-
-    // Inherited via IHeapSnapshotManager
-    std::string GetHeapSnapshotText() override;
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(
@@ -105,7 +107,7 @@ private:
     void MainLoop();
     void MainLoopIteration();
     void StartGCDump();
-    void StopGCDump();
+    void OnEndGCDump();
     void CleanupSession();
     void StartSnapshotTimerIfNeeded();
 
@@ -113,6 +115,9 @@ private:
     std::chrono::minutes _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
+    uint64_t _runtimeSessionKeywords;
+    uint32_t _runtimeSessionVerbosity;
+
     uint64_t _gen2Size;
     uint64_t _lohSize;
     uint64_t _pohSize;
@@ -134,8 +139,13 @@ private:
     bool _isHeapDumpInProgress;
 
     // set to true when the criterias are met after a GC
-    // --> will trigger a heap dump in the main loop
+    // --> will trigger a heap dump in the dedicated thread to avoid triggering a GC from the GC callback
     bool _shouldStartHeapDump;
+
+    // set to true after the heap dump GC ends
+    // --> taken into account in the dedicated thread to avoid triggering a gc from the GC callback
+    // see https://github.com/dotnet/runtime/issues/121462 for more details
+    bool _shouldCleanupHeapDumpSession;
 
     // id of the induced GC triggering a heap dump
     int32_t _inducedGCNumber;

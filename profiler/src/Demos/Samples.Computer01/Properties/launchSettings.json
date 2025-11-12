@@ -39,7 +39,7 @@
     "Tracer+Profiler": {
       "commandName": "Executable",
       "executablePath": "$(BaseOutputPath)\\$(ConfigBasedRelativeOutputPath)\\profiler\\src\\Demos\\Samples.Computer01\\$(TargetFramework)\\Samples.Computer01.exe",
-      "commandLineArgs": "--scenario 13 --iterations 1000 --param 100000",
+      "commandLineArgs": "--scenario 13 --iterations 2 --param 1500",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -53,9 +53,9 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_INTERNAL_PROFILING_ETW_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
-        "DD_PROFILING_WALLTIME_ENABLED": "0",
-        "DD_PROFILING_EXCEPTION_ENABLED": "0",
-        "DD_PROFILING_ALLOCATION_ENABLED": "0",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
+        "DD_PROFILING_ALLOCATION_ENABLED": "1",
         "DD_PROFILING_LOCK_ENABLED": "1",
         "DD_PROFILING_GC_ENABLED": "1",
         "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
