@@ -1,8 +1,9 @@
 # APMSVLS-58: Azure Functions Span Parenting Issue
 
-**Status**: Under Investigation
+**Status**: ✅ **RESOLVED** (Phase 3 Complete)
 **Branch**: `lpimentel/APMSVLS-58-azfunc-host-parenting`
 **Date Started**: October 2025
+**Date Resolved**: November 12, 2025
 
 ## Related Documentation
 
@@ -46,14 +47,18 @@ Note: Host-side azure_functions.invoke and http.request spans should be removed
 - Worker's `azure_functions.invoke` is parented to **host's root span** instead of `aspnet_core.request`
 - Need to: (1) Fix worker span parenting (high priority), (2) Remove host-side spans
 
-## Root Cause
+## Root Cause (RESOLVED)
 
-**AsyncLocal context doesn't flow** through Azure Functions middleware. When `FunctionExecutionMiddleware` creates the span, `tracer.InternalActiveScope` returns null even though `AspNetCoreDiagnosticObserver` created an active scope earlier in the pipeline.
+**Primary Issue**: Looking for wrong key in `FunctionContext.Items`
+- ❌ Was using: `"__AspNetCoreHttpContext__"` (doesn't exist)
+- ✅ Should use: `"HttpRequestContext"` (actual key set by `FunctionsHttpProxyingMiddleware`)
 
-**Relevant code locations**:
-- Worker span creation: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsCommon.cs:262-279`
-- ASP.NET Core span creation: `tracer/src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs:125`
-- Host span creation: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutorTryExecuteAsyncIntegration.cs`
+**Secondary Issue**: Stale header extraction
+- In ASP.NET Core mode, headers in gRPC message contain host's root span context
+- These stale headers were used as fallback when HttpContext.Items lookup failed
+- Worker's `azure_functions.invoke` span incorrectly parented to host's root span
+
+**Underlying Cause**: AsyncLocal context doesn't flow through Azure Functions middleware, so HttpContext.Items bridge is required.
 
 ## Investigation Findings
 
@@ -141,6 +146,34 @@ Worker spans (all in same trace ✓):
 - ✅ `aspnet_core.request` correctly parented to host's `http.request` span
 - ❌ Worker's `azure_functions.invoke` still parented to **host's root span** instead of `aspnet_core.request`
 - ❌ Host still creates unnecessary `azure_functions.invoke` and `http.request` spans
+
+### Phase 3: Fixed HttpContext.Items Bridge ✅ RESOLVED
+
+**Commit**: `1d3179aa5` - Fix Azure Functions span parenting with ASP.NET Core
+
+**Root cause identified**: Looking for wrong key in `FunctionContext.Items`
+- ❌ Old: `"__AspNetCoreHttpContext__"` (doesn't exist)
+- ✅ Fixed: `"HttpRequestContext"` (actual key set by Azure Functions Worker SDK)
+
+**Changes made**:
+1. Skip stale gRPC header extraction when ASP.NET Core integration detected (`AzureFunctionsCommon.cs:242-243`)
+2. Use correct `"HttpRequestContext"` key for HttpContext lookup (`AzureFunctionsCommon.cs:292`)
+3. Added comprehensive debug logging for troubleshooting
+
+**Analysis of trace `14656220060439490006`** (Nov 12, 2025):
+```
+Worker spans:
+├─ aspnet_core.request (span: 10174520177415259312)
+│  └─ azure_functions.invoke (span: 1243553223469235235) ✅ CORRECT PARENT!
+│     └─ test_span (span: 11352266471047046875)
+│        └─ http.request (span: 3397667712105060208)
+```
+
+**Result**:
+- ✅ Worker's `azure_functions.invoke` correctly parented to `aspnet_core.request`
+- ✅ Proper span hierarchy in worker process
+- ✅ All spans in same trace
+- ⚠️ Host spans still present (secondary priority)
 
 ## Code Changes Made
 
@@ -234,7 +267,7 @@ Added `aas.function.process` tag to distinguish host vs worker spans:
      -d '{"data":{"attributes":{"filter":{"query":"service:lucasp-premium-linux-isolated @aas.function.process:worker","from":"now-10m","to":"now"}},"type":"search_request"}}'
    ```
 
-### Verification
+### Verification ✅
 
 **Expected trace structure** (after fix):
 ```
@@ -244,10 +277,11 @@ Worker aspnet_core.request (ROOT)
       └─ http.request
 ```
 
-**Check**:
-- Worker's `azure_functions.invoke` has `parent_id` matching `aspnet_core.request` span
-- All spans in same trace
-- No host `azure_functions.invoke` or `http.request` spans
+**Verified** (Trace ID: `14656220060439490006`, Nov 12 2025):
+- ✅ Worker's `azure_functions.invoke` parent_id matches `aspnet_core.request` span_id
+- ✅ All spans in same trace
+- ✅ Proper span hierarchy in worker process
+- ⚠️ Host spans still present (secondary priority to remove)
 
 ## Minimal Reproduction
 
