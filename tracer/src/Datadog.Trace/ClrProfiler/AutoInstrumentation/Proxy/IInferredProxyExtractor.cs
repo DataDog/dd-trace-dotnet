@@ -27,7 +27,6 @@ internal interface IInferredProxyExtractor
     bool TryExtract<TCarrier, TCarrierGetter>(
         TCarrier carrier,
         TCarrierGetter carrierGetter,
-        Tracer tracer,
         out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
 }
