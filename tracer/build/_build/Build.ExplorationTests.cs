@@ -566,7 +566,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, RestSharp, serilog, polly, automapper, // FIXME: .NET 10 issue with automapper automapper, // paket, FIXME: .NET 9 - Paket doesn't support .NET 9 yet
+    eShopOnWeb, protobuf, cake, swashbuckle, RestSharp, serilog, polly, // FIXME: .NET 10 issue with automapper automapper, // paket, FIXME: .NET 9 - Paket doesn't support .NET 9 yet
 }
 
 class ExplorationTestDescription
