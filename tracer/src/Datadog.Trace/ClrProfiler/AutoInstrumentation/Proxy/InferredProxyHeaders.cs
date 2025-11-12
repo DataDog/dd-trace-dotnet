@@ -39,6 +39,11 @@ internal static class InferredProxyHeaders
     internal const string Path = "x-dd-proxy-path";
 
     /// <summary>
+    /// Header that contains the region of the proxy (e.g. "canada central").
+    /// </summary>
+    internal const string Region = "x-dd-proxy-region";
+
+    /// <summary>
     /// Header that contains the "stage" of the proxy (e.g. "prod").
     /// </summary>
     internal const string Stage = "x-dd-proxy-stage";
