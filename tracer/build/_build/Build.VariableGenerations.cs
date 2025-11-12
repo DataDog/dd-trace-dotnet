@@ -875,7 +875,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
+                            // new (publishFramework: TargetFramework.NET10_0, "trixie-10.0", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET9_0, "trixie-9.0", "debian", "trixie"),
                             new (publishFramework: TargetFramework.NET8_0, "trixie-8.0", "debian", "trixie"),
                         },
