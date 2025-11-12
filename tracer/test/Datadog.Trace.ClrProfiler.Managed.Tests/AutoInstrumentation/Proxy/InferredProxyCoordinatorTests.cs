@@ -37,7 +37,6 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(false);
 
@@ -60,7 +59,6 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out proxyData))
                   .Returns(true); // we successfully extract headers
 
@@ -88,7 +86,6 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(true)
                   .Callback((
