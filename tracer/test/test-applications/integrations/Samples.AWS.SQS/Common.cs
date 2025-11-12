@@ -22,7 +22,7 @@ namespace Samples.AWS.SQS
                     dictSpanContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonSpanContext);
                 }
 
-                var activeTraceId = SampleHelpers.GetCorrelationIdentifierTraceId();
+                var activeTraceId = SampleHelpers.GetTraceId();
                 if (dictSpanContext[ParentId] is null ||
                     !ulong.TryParse(dictSpanContext[TraceId], out ulong result) ||
                     result != activeTraceId)

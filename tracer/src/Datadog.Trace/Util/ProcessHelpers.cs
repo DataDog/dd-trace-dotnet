@@ -61,10 +61,16 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
-        /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
+        /// Gets the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
         /// </summary>
         /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
         public static bool ShouldTraceProcessStart() => !_doNotTrace;
+
+        /// <summary>
+        /// Used to override the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>.
+        /// Prefer using <see cref="StartWithDoNotTrace"/> - this should only be used to work around version conflict scenarios
+        /// </summary>
+        public static void ForceDoNotTrace(bool doNotTrace) => _doNotTrace = doNotTrace;
 
         /// <summary>
         /// Run a command and get the standard output content as a string

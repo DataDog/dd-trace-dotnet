@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -62,16 +63,15 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// from a propagated context. <see cref="Parent"/> will be null
         /// since this is a root context locally.
+        /// Internal for testing
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
-        [PublicApi]
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
             : this((TraceId)(traceId ?? 0), serviceName)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContext_Ctor);
             // public ctor must keep accepting legacy types:
             // - traceId: ulong? => TraceId
             // - samplingPriority: SamplingPriority? => int?
@@ -198,7 +198,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
         /// </summary>
-        [PublicApi]
         public ulong TraceId => TraceId128.Lower;
 
         /// <summary>

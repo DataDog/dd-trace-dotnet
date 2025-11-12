@@ -125,6 +125,7 @@ namespace Honeypot
             NugetPackages.Add("RestSharp", Array.Empty<string>());
 
             // Manual instrumentation
+            NugetPackages.Add("Datadog.Trace", new string[] { });
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
         }
