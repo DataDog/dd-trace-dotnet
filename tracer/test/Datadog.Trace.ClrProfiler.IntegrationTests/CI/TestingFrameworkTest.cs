@@ -136,6 +136,10 @@ public abstract class TestingFrameworkTest : TestHelper
         {
             AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
         }
+        else
+        {
+            AssertTargetSpanExists(targetSpan, CommonTags.OSVersion);
+        }
     }
 
     protected virtual void CheckOriginTag(MockSpan targetSpan)
