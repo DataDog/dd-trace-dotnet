@@ -184,6 +184,22 @@ public class DataStreamsMessagePackFormatterTests
         result.Should().BeEquivalentTo(expected);
     }
 
+    [Fact]
+    public void ProcessTagsGetWritten()
+    {
+        var bucketDuration = 10_000_000_000;
+        var settings = TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.Environment, "my-env" }, { ConfigurationKeys.PropagateProcessTags, "true" } });
+        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), "service=name");
+
+        using var ms = new MemoryStream();
+        formatter.Serialize(ms, bucketDuration, [], []);
+        var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(new ArraySegment<byte>(ms.GetBuffer()));
+
+        // content varies depending on how the tests are run, so we cannot really assert on the content.
+        result.ProcessTags.Should().NotBeEmpty();
+        result.ProcessTags.Should().Contain(":");
+    }
+
     private static DDSketch CreateSketch(params int[] values)
     {
         // don't actually need to pool them for these tests
