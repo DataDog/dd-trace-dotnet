@@ -613,7 +613,7 @@ partial class Build : NukeBuild
                         "ubuntu_interim",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
+                            // new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
                             new (publishFramework: TargetFramework.NET9_0, "25.04-9.0", "ubuntu", "plucky"),
                         },
                         installer: "datadog-dotnet-apm*_amd64.deb",
@@ -645,7 +645,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
+                            // new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
                             new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
@@ -760,7 +760,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "10-10.0", "centos-stream", "10"),
+                            // new (publishFramework: TargetFramework.NET10_0, "10-10.0", "centos-stream", "10"),
                             new (publishFramework: TargetFramework.NET9_0, "9-9.0", "centos-stream", "9"),
                             new (publishFramework: TargetFramework.NET6_0, "9-6.0", "centos-stream", "9"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0", "centos-stream", "8"),
@@ -859,7 +859,7 @@ partial class Build : NukeBuild
                         "ubuntu_interim",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
+                            // new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
                             new (publishFramework: TargetFramework.NET9_0, "25.04-9.0", "ubuntu", "plucky"),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb",
@@ -891,7 +891,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
+                            // new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
                             new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
@@ -1023,7 +1023,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
+                            // new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
                             new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
@@ -1229,7 +1229,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
+                            // new (publishFramework: TargetFramework.NET10_0, "42-10.0", "fedora", "42"),
                             new (publishFramework: TargetFramework.NET9_0, "40-9.0", "fedora", "40"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0", "fedora", "35"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0", "fedora", "34"),
