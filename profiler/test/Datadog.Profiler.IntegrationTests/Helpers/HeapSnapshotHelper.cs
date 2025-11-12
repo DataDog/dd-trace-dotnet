@@ -21,6 +21,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var files = mpReader.Files;
             var heapSnapshotFileInfo = files.FirstOrDefault(f => f.FileName == "histogram.json");
             return (heapSnapshotFileInfo != null);
+
+            // we can't check the file content because it may be compacted
         }
     }
 }
