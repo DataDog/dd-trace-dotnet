@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Specialized;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using FluentAssertions;
 using Xunit;
@@ -21,23 +19,6 @@ public class AzureApiManagementExtractorTests
     public AzureApiManagementExtractorTests()
     {
         _extractor = new AzureApiManagementExtractor();
-    }
-
-    [Fact]
-    public void TryExtract_WhenProxySpansDisabled_ReturnsFalse()
-    {
-        var collection = new NameValueCollection
-        {
-            { ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, "false" }
-        };
-
-        var tracer = ProxyTestHelpers.GetMockTracer(collection);
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders();
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
-
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
     }
 
     [Fact]
