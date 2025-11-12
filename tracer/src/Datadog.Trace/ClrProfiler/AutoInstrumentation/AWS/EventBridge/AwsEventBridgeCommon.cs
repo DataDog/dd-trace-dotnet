@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                     tags.PeerService = "events." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (isOutbound)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.RuleName;
                     tags.PeerServiceSource = Trace.Tags.RuleName;

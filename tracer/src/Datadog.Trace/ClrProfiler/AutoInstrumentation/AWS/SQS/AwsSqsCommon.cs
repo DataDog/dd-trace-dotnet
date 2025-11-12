@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                     tags.PeerService = "sqs." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (isOutbound)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.QueueName;
                     tags.PeerServiceSource = Trace.Tags.QueueName;

@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
 
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (isOutbound)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.BucketName;
                     tags.PeerServiceSource = Trace.Tags.BucketName;

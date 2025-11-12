@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     tags.PeerService = "kinesis." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (isOutbound)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.StreamName;
                     tags.PeerServiceSource = Trace.Tags.TopicName;

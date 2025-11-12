@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                     tags.PeerService = "dynamodb." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else
+                else if (!isServerless)
                 {
                     tags.PeerService = tags.TableName;
                     tags.PeerServiceSource = Trace.Tags.TableName;

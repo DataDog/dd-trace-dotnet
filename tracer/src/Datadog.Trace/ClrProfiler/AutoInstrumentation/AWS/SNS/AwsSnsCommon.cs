@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                     tags.PeerService = "sns." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (isOutbound)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.TopicName;
                     tags.PeerServiceSource = Trace.Tags.TopicName;
