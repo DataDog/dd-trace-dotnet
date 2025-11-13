@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
@@ -23,6 +24,17 @@ namespace Datadog.Trace.Util
         // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
         private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
+        // Cache for environment variable values. ConcurrentDictionary handles thread-safety without explicit locking.
+        private static readonly ConcurrentDictionary<string, string?> EnvironmentVariableCache = new();
+
+        // Cache for computed platform detection results
+        private static bool? _isAzureAppServices;
+        private static bool? _isAzureFunctions;
+        private static bool? _isUsingAzureAppServicesSiteExtension;
+        private static bool? _isRunningInAzureFunctionsHost;
+        private static bool? _isAwsLambda;
+        private static bool? _isGoogleCloudFunctions;
+
         /// <summary>
         /// Safe wrapper around Environment.SetEnvironmentVariable
         /// </summary>
@@ -33,6 +45,8 @@ namespace Datadog.Trace.Util
             try
             {
                 Environment.SetEnvironmentVariable(key, value);
+                // Remove from cache so next read gets the updated value
+                EnvironmentVariableCache.TryRemove(key, out _);
             }
             catch (Exception ex)
             {
@@ -66,13 +80,24 @@ namespace Datadog.Trace.Util
         /// <returns>The value of the environment variable, or the default value if an error occured</returns>
         public static string? GetEnvironmentVariable(string key, string? defaultValue = null)
         {
+            // Check cache first
+            if (EnvironmentVariableCache.TryGetValue(key, out var cachedValue))
+            {
+                return cachedValue ?? defaultValue;
+            }
+
             try
             {
-                return Environment.GetEnvironmentVariable(key);
+                var value = Environment.GetEnvironmentVariable(key);
+                // Cache the value (including null)
+                EnvironmentVariableCache.TryAdd(key, value);
+                return value;
             }
             catch (Exception ex)
             {
                 Logger.Value.Warning(ex, "Error while reading environment variable {EnvironmentVariable}", key);
+                // Cache the error case as null
+                EnvironmentVariableCache.TryAdd(key, null);
             }
 
             return defaultValue;
@@ -104,7 +129,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAzureAppServices()
         {
-            return EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
+            return _isAzureAppServices ??= EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
         }
 
         /// <summary>
@@ -115,9 +140,9 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAzureFunctions()
         {
-            return IsAzureAppServices() &&
-                   EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
-                   EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
+            return _isAzureFunctions ??= IsAzureAppServices() &&
+                                          EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
+                                          EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
         }
 
         /// <summary>
@@ -127,7 +152,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsUsingAzureAppServicesSiteExtension()
         {
-            return GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
+            return _isUsingAzureAppServicesSiteExtension ??= GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
         }
 
         /// <summary>
@@ -143,6 +168,11 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsRunningInAzureFunctionsHost()
         {
+            if (_isRunningInAzureFunctionsHost.HasValue)
+            {
+                return _isRunningInAzureFunctionsHost.Value;
+            }
+
             var cmd = Environment.CommandLine ?? string.Empty;
             // heuristic to detect the worker process
             // the worker process would be the one to have these flags
@@ -151,9 +181,9 @@ namespace Datadog.Trace.Util
             var hasWorkerId = cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) >= 0 ||
                               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
 
-            return IsAzureFunctions()
-                   && string.Equals(GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
-                   && !hasWorkerId;
+            return (_isRunningInAzureFunctionsHost = IsAzureFunctions()
+                                                      && string.Equals(GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
+                                                      && !hasWorkerId).Value;
         }
 
         /// <summary>
@@ -163,7 +193,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAwsLambda()
         {
-            return EnvironmentVariableExists(LambdaMetadata.FunctionNameEnvVar);
+            return _isAwsLambda ??= EnvironmentVariableExists(LambdaMetadata.FunctionNameEnvVar);
         }
 
         /// <summary>
@@ -174,10 +204,10 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsGoogleCloudFunctions()
         {
-            return (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
-                    EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
-                   (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
-                    EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey));
+            return _isGoogleCloudFunctions ??= (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
+                                                 EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
+                                                (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
+                                                 EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey));
         }
 
         /// <summary>
