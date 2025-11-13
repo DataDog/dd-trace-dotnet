@@ -7198,6 +7198,31 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "DatadogTraceVersionConflict",
+    "AssemblyName": "Datadog.Trace",
+    "TargetTypeName": "Datadog.Trace.Util.ProcessHelpers",
+    "TargetMethodName": "StartWithDoNotTrace",
+    "TargetReturnType": "System.Diagnostics.Process",
+    "TargetParameterTypes": [
+      "System.Diagnostics.ProcessStartInfo",
+      "System.Boolean"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 49,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ProcessHelpersStartWithDoNotTraceIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "DotnetTest",
     "AssemblyName": "coverlet.core",
     "TargetTypeName": "Coverlet.Core.Coverage",

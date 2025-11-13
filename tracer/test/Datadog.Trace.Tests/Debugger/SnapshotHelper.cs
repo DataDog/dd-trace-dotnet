@@ -5,6 +5,8 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
@@ -14,6 +16,21 @@ namespace Datadog.Trace.Tests.Debugger;
 
 internal static class SnapshotHelper
 {
+    static SnapshotHelper()
+    {
+        // Configure the serializer with a high timeout for tests to prevent rare timeout failures on slow CI machines
+        var testSettings = new DebuggerSettings(
+            new NameValueConfigurationSource(new()
+            {
+                {
+                    ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000"
+                }
+            }),
+            NullConfigurationTelemetry.Instance);
+
+        DebuggerSnapshotSerializer.SetConfig(testSettings);
+    }
+
     internal static string GenerateSnapshot(object instance, bool prettify = true)
     {
         return GenerateSnapshot(null, new object[] { }, new object[] { instance }, prettify);

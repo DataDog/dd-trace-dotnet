@@ -43,7 +43,7 @@ namespace Datadog.Trace.Configuration
                                               ? ParsingResult<bool>.Success(result: true)
                                               : ParsingResult<bool>.Failure());
 
-            DebugEnabledInternal = builder
+            DebugEnabled = builder
                                   .WithKeys(ConfigurationKeys.DebugEnabled)
                                   .AsBoolResult()
                                   .OverrideWith(in otelConfig, overrideHandler, false);
@@ -59,14 +59,7 @@ namespace Datadog.Trace.Configuration
         /// Set in code via <see cref="SetDebugEnabled"/>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled
-        {
-            get
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_DebugEnabled_Get);
-                return DebugEnabledInternal;
-            }
-        }
+        public bool DebugEnabled { get; private set; }
 
         /// <summary>
         /// Gets the global settings instance.
@@ -81,8 +74,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool DiagnosticSourceEnabled { get; }
 
-        internal bool DebugEnabledInternal { get; private set; }
-
         /// <summary>
         /// Set whether debug mode is enabled.
         /// Affects the level of logs written to file.
@@ -90,7 +81,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="enabled">Whether debug is enabled.</param>
         internal static void SetDebugEnabled(bool enabled)
         {
-            Instance.DebugEnabledInternal = enabled;
+            Instance.DebugEnabled = enabled;
 
             if (enabled)
             {
@@ -104,25 +95,6 @@ namespace Datadog.Trace.Configuration
             LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
-        }
-
-        /// <summary>
-        /// Used to refresh global settings when environment variables or config sources change.
-        /// This is not necessary if changes are set via code, only environment.
-        /// </summary>
-        [PublicApi]
-        public static void Reload()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
-            DatadogLogging.Reset();
-            var isLibdatadogAvailable = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
-            if (isLibdatadogAvailable.IsAvailable)
-            {
-                LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: false);
-            }
-
-            GlobalConfigurationSource.Reload(isLibdatadogAvailable.IsAvailable);
-            Instance = CreateFromDefaultSources();
         }
 
         private static GlobalSettings CreateFromDefaultSources()

@@ -190,6 +190,7 @@ internal static class MetricTags
         // manual integration
         [Description("integration_name:datadog")]Manual,
         [Description("integration_name:opentracing")]OpenTracing,
+        [Description("integration_name:version_conflict")]VersionConflict,
 
         // automatic "custom" integration
         [Description("integration_name:ciapp")]CiAppManual,
