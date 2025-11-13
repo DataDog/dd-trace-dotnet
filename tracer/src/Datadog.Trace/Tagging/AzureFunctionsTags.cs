@@ -14,6 +14,8 @@ namespace Datadog.Trace.Tagging
         private const string FullNameTagName = Trace.Tags.AzureFunctionMethod;
         private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
         private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
+        private const string ExtensionVersionTagName = Trace.Tags.AzureFunctionExtensionVersion;
+        private const string WorkerRuntimeTagName = Trace.Tags.AzureFunctionWorkerRuntime;
 
         [Tag(Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
@@ -33,12 +35,20 @@ namespace Datadog.Trace.Tagging
         [Tag(TriggerTypeTagName)]
         public string TriggerType { get; set; } = "Unknown";
 
+        [Tag(ExtensionVersionTagName)]
+        public string ExtensionVersion { get; set; }
+
+        [Tag(WorkerRuntimeTagName)]
+        public string WorkerRuntime { get; set; }
+
         internal static void SetRootSpanTags(
             Span span,
             string shortName,
             string fullName,
             string bindingSource,
-            string triggerType)
+            string triggerType,
+            string extensionVersion,
+            string workerRuntime)
         {
             var tags = span.Tags;
             if (span.Tags is AspNetCoreTags aspNetTags)
@@ -55,6 +65,8 @@ namespace Datadog.Trace.Tagging
             tags.SetTag(FullNameTagName, fullName);
             tags.SetTag(BindingSourceTagName, bindingSource);
             tags.SetTag(TriggerTypeTagName, triggerType);
+            tags.SetTag(ExtensionVersionTagName, extensionVersion);
+            tags.SetTag(WorkerRuntimeTagName, workerRuntime);
         }
     }
 }
