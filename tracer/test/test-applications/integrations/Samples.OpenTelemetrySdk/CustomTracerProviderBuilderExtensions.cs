@@ -8,6 +8,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Logs;
 #endif
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 
 namespace Samples.OpenTelemetrySdk;
 public static class CustomTracerProviderBuilderExtensions
@@ -74,7 +75,10 @@ public static class CustomLoggerFactoryBuilderExtensions
                 builder.AddOpenTelemetry(
                     options =>
                     {
-                        options.AddOtlpExporter();
+                        options.AddOtlpExporter((_, processorOptions) =>
+                        {
+                            processorOptions.ExportProcessorType = ExportProcessorType.Simple;
+                        });
                     }
                 );
 #endif
