@@ -44,19 +44,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsEventBridgeServiceName);
                 var operationName = GetOperationName(tracer);
-                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
-                bool isServerless = EnvironmentHelpers.IsAwsLambda();
-                if (isServerless && isOutbound && tags.AwsRegion != null)
-                {
-                    tags.PeerService = "events." + tags.AwsRegion + ".amazonaws.com";
-                    tags.PeerServiceSource = "peer.service";
-                }
-                else if (!isServerless && isOutbound)
-                {
-                    tags.PeerService = tags.RuleName;
-                    tags.PeerServiceSource = Trace.Tags.RuleName;
-                }
-
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
+        public static Scope? CreateScopeQueueUrl(Tracer tracer, string operation, IAmazonSQSRequestWithQueueUrl request, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
         {
             tags = null;
 
@@ -43,19 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags = perTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
-                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
-                bool isServerless = EnvironmentHelpers.IsAwsLambda();
-                if (isServerless && isOutbound && tags.AwsRegion != null)
-                {
-                    tags.PeerService = "sqs." + tags.AwsRegion + ".amazonaws.com";
-                    tags.PeerServiceSource = "peer.service";
-                }
-                else if (!isServerless && isOutbound)
-                {
-                    tags.PeerService = tags.QueueName;
-                    tags.PeerServiceSource = Trace.Tags.QueueName;
-                }
-
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -64,7 +51,74 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
-                perTraceSettings.Schema.RemapPeerService(tags);
+                tags.QueueUrl = request.QueueUrl;
+                tags.QueueName = GetQueueName(tags.QueueUrl);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.Region != null)
+                {
+                    tags.PeerService = "sqs." + tags.Region + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless)
+                {
+                    tags.PeerService = tags.QueueName;
+                    tags.PeerServiceSource = Trace.Tags.QueueName;
+                }
+
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // always returns the scope, even if it's null because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags)
+            return scope;
+        }
+
+        public static Scope? CreateScopeCreateQueue(Tracer tracer, string operation, ICreateQueueRequest request, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
+        {
+            tags = null;
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope? scope = null;
+
+            try
+            {
+                tags = perTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
+                string serviceName = perTraceSettings.GetServiceName(DatadogAwsSqsServiceName);
+                string operationName = GetOperationName(tracer, spanKind);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Http;
+                span.ResourceName = $"{SqsServiceName}.{operation}";
+
+                tags.Service = SqsServiceName;
+                tags.Operation = operation;
+                tags.QueueName = request.QueueName;
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.Region != null)
+                {
+                    tags.PeerService = "sqs." + tags.Region + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless)
+                {
+                    tags.PeerService = tags.QueueName;
+                    tags.PeerServiceSource = Trace.Tags.QueueName;
+                }
+
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
