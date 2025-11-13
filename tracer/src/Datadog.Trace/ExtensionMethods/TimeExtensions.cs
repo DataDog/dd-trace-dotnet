@@ -12,6 +12,16 @@ namespace Datadog.Trace.ExtensionMethods
         /// <summary>
         /// Returns the number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.
         /// </summary>
+        /// <param name="dateTime">The value to get the number of elapsed nanoseconds for.</param>
+        /// <returns>The number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.</returns>
+        public static long ToUnixTimeNanoseconds(this DateTime dateTime)
+        {
+            return (dateTime.Ticks - TimeConstants.UnixEpochInTicks) * TimeConstants.NanoSecondsPerTick;
+        }
+
+        /// <summary>
+        /// Returns the number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.
+        /// </summary>
         /// <param name="dateTimeOffset">The value to get the number of elapsed nanoseconds for.</param>
         /// <returns>The number of nanoseconds that have elapsed since 1970-01-01T00:00:00.000Z.</returns>
         public static long ToUnixTimeNanoseconds(this DateTimeOffset dateTimeOffset)
