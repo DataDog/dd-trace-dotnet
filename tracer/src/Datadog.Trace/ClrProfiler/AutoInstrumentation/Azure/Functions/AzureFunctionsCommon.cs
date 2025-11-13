@@ -240,33 +240,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    if (triggerType == "Http")
+                    switch (triggerType)
                     {
-                        // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
-                        // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
-                        // The headers in the gRPC message are STALE (contain host's root span context)
-                        // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
-                        var isAspNetCoreIntegration = context.Items?.ContainsKey("HttpRequestContext") == true;
+                        case "Http":
+                        {
+                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
+                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
+                            // The headers in the gRPC message are STALE (contain host's root span context)
+                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
+                            var isAspNetCoreIntegration = context.Items?.ContainsKey("HttpRequestContext") == true;
 
-                        if (isAspNetCoreIntegration)
-                        {
-                            // Skip extraction - will rely on HttpContext.Items bridge or create root span
-                            Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                            if (isAspNetCoreIntegration)
+                            {
+                                // Skip extraction - will rely on HttpContext.Items bridge or create root span
+                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                            }
+                            else
+                            {
+                                // Only extract from gRPC message when NOT using ASP.NET Core integration
+                                extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                                Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+                            }
+
+                            break;
                         }
-                        else
-                        {
-                            // Only extract from gRPC message when NOT using ASP.NET Core integration
-                            extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                            Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
-                        }
-                    }
-                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
-                    }
-                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+
+                        case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
+                            extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
+                            extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
