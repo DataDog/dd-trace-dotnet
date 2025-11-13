@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         internal const string Major2 = "2";
         internal const string Major3 = "3";
+        internal const string Major3Minor5 = "3.5"; // Refactor of internal methods + dropped support for v4 of mongodb
         internal const string Major2Minor1 = "2.1";
         internal const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
         internal const string MongoDbClientV2Assembly = "MongoDB.Driver.Core";
