@@ -6,6 +6,8 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -25,6 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaProducerConstructorIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaProducerConstructorIntegration));
+
     internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder consumer)
         where TProducerBuilder : IProducerBuilder
     {
@@ -58,8 +62,22 @@ public class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
+                // Extract cluster_id using AdminClient API with bootstrap servers
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    Log.Information("ROBC: Kafka producer config retrieved - BootstrapServers: {BootstrapServers}, ClusterId: {ClusterId}", bootstrapServers, clusterId);
+                    Console.WriteLine($"ROBC: Kafka producer config retrieved - BootstrapServers: {bootstrapServers}, ClusterId: {clusterId}");
+                }
+                else
+                {
+                    Log.Information("ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {BootstrapServers}", bootstrapServers);
+                    Console.WriteLine($"ROBC: Kafka producer config retrieved but no cluster_id could be obtained - BootstrapServers: {bootstrapServers}");
+                }
+
+                // Save the map between this producer and its metadata
+                ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }
         }

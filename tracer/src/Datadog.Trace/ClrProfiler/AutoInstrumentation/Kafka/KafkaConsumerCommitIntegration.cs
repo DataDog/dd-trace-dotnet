@@ -37,7 +37,7 @@ public class KafkaConsumerCommitIntegration
         var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
         if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
         {
-            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
+            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var _);
 
             foreach (var offset in offsets)
             {

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Reflection;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -13,6 +14,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -25,6 +27,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
+
+        // Thread-local flag to prevent infinite recursion when AdminClient creates internal Producer
+        [ThreadStatic]
+        private static bool _isGettingClusterId;
 
         internal static Scope? CreateProducerScope(
             Tracer tracer,
@@ -72,9 +78,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = (topicPartition?.Partition).ToString();
                 }
 
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
                 {
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                        Log.Information("ROBC: Added cluster_id tag to Kafka producer span: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka producer span: {clusterId}");
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: No cluster_id available for Kafka producer span");
+                        Console.WriteLine("ROBC: No cluster_id available for Kafka producer span");
+                    }
                 }
 
                 if (isTombstone)
@@ -212,10 +229,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var clusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                        Log.Information("ROBC: Added cluster_id tag to Kafka consumer span: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Added cluster_id tag to Kafka consumer span: {clusterId}");
+                    }
+                    else
+                    {
+                        Log.Information("ROBC: No cluster_id available for Kafka consumer span");
+                        Console.WriteLine("ROBC: No cluster_id available for Kafka consumer span");
+                    }
                 }
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
@@ -362,6 +390,132 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
             }
+        }
+
+        internal static string? GetClusterId(string bootstrapServers)
+        {
+            string clusterId = string.Empty;
+
+            // Prevent re-entrancy: AdminClient internally creates a Producer, which would trigger our instrumentation again
+            if (_isGettingClusterId)
+            {
+                Log.Information("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                Console.WriteLine("ROBC: Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                Log.Information("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                Console.WriteLine("ROBC: Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                return null;
+            }
+
+            try
+            {
+                _isGettingClusterId = true;
+                Log.Information("ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {BootstrapServers}", bootstrapServers);
+                Console.WriteLine($"ROBC: Attempting to retrieve cluster_id from Kafka using bootstrap servers: {bootstrapServers}");
+
+                // Create AdminClientConfig
+                var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+                if (configType == null)
+                {
+                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
+                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientConfig type");
+                    return null;
+                }
+
+                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
+                var config = Activator.CreateInstance(configType);
+
+                if (config == null || !config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
+                {
+                    Log.Information("ROBC: Unable to create or duck-cast AdminClientConfig");
+                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientConfig");
+                    return null;
+                }
+
+                adminConfig.BootstrapServers = bootstrapServers;
+
+                // Create AdminClientBuilder
+                var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+                if (builderType == null)
+                {
+                    Log.Information("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    Console.WriteLine("ROBC: Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    return null;
+                }
+
+                // TODO(FIX!) Type names for Confluent.Kafka are fixed/hardcoded
+                var builder = Activator.CreateInstance(builderType, new object[] { config }) ?? throw new InvalidOperationException("Unable to create AdminClientBuilder");
+                if (builder == null || !builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                {
+                    Log.Information("ROBC: Unable to create or duck-cast AdminClientBuilder");
+                    Console.WriteLine("ROBC: Unable to create or duck-cast AdminClientBuilder");
+                    return null;
+                }
+
+                // Build and use AdminClient
+                using (var adminClient = adminBuilder.Build())
+                {
+                    Console.WriteLine("ROBC: Calling DescribeClusterAsync via duck typing");
+                    var clusterOptionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+                    if (clusterOptionsType == null)
+                    {
+                        Log.Information("ROBC: Unable to find DescribeClusterOptions type");
+                        Console.WriteLine("ROBC: Unable to find DescribeClusterOptions type");
+                        return null;
+                    }
+
+                    var clusterOptionsObj = Activator.CreateInstance(clusterOptionsType);
+                    if (clusterOptionsObj == null || !clusterOptionsObj.TryDuckCast<IDescribeClusterOptions>(out var clusterOptions))
+                    {
+                        Log.Information("ROBC: Unable to create or duck-cast DescribeClusterOptions");
+                        Console.WriteLine("ROBC: Unable to create or duck-cast DescribeClusterOptions");
+                        return null;
+                    }
+
+                    // Call DescribeClusterAsync directly on the duck-typed AdminClient
+                    var result = adminClient.DescribeClusterAsync(clusterOptions);
+                    var describeClusterResult = result.GetAwaiter().GetResult();
+
+                    Console.WriteLine($"ROBC: DescribeClusterAsync completed successfully");
+                    Console.WriteLine($"ROBC: Result type: {result.GetType().FullName}");
+
+                    // Extract the ClusterId from the result
+                    clusterId = describeClusterResult.ClusterId;
+                    Console.WriteLine($"ROBC: ClusterId extracted (raw): {clusterId}");
+
+                    // Check if the clusterId is wrapped in "Some(...)" pattern and unwrap it
+                    if (!string.IsNullOrEmpty(clusterId) && clusterId.StartsWith("Some(") && clusterId.EndsWith(")"))
+                    {
+                        clusterId = clusterId.Substring(5, clusterId.Length - 6);
+                        Console.WriteLine($"ROBC: Unwrapped ClusterId from Some(...) pattern: {clusterId}");
+                    }
+
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        Log.Information("ROBC: Kafka cluster_id extracted successfully: {ClusterId}", clusterId);
+                        Console.WriteLine($"ROBC: Kafka cluster_id extracted successfully: {clusterId}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("ROBC: ClusterId is null or empty");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "ROBC: Error extracting cluster_id from Kafka metadata");
+                Console.WriteLine($"ROBC: Error extracting cluster_id from Kafka metadata: {ex}");
+            }
+            finally
+            {
+                _isGettingClusterId = false;
+            }
+
+            return clusterId;
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)

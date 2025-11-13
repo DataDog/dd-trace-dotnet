@@ -377,6 +377,11 @@ namespace Datadog.Trace
         internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
 
         /// <summary>
+        /// The unique identifier for the Kafka cluster
+        /// </summary>
+        internal const string KafkaClusterId = "messaging.kafka.cluster_id";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";
