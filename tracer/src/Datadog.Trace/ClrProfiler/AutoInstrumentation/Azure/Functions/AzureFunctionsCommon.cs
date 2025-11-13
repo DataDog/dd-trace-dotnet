@@ -115,26 +115,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
+                var aasMetadata = tracer.Settings.AzureAppServiceMetadata;
 
-                // Ignoring null because guaranteed running in AAS
-                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
-                 && tracer.InternalActiveScope is { } activeScope)
+                if (aasMetadata is { IsIsolatedFunctionsApp: true } &&
+                    tracer.InternalActiveScope is { } activeScope)
                 {
                     // We don't want to create a new scope here when running isolated functions,
                     // otherwise it is essentially a duplicate of the span created inside the
                     // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
                     var rootSpan = activeScope.Root.Span;
+
                     // The shortname is prefixed with "Functions.", so strip that off
                     var remoteFunctionName = functionName?.StartsWith("Functions.") == true
                                                  ? functionName.Substring(10)
                                                  : functionName;
+
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: remoteFunctionName,
                         fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                         bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+                        triggerType: triggerType,
+                        extensionVersion: aasMetadata.FunctionsExtensionVersion,
+                        workerRuntime: aasMetadata.FunctionsWorkerRuntime);
+
                     rootSpan.Type = SpanType;
                     return null;
                 }
@@ -146,7 +151,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         TriggerType = triggerType,
                         ShortName = functionName,
                         FullName = instanceParam.FunctionDescriptor.FullName,
-                        BindingSource = bindingSourceType.FullName
+                        BindingSource = bindingSourceType.FullName,
+                        ExtensionVersion = aasMetadata?.FunctionsExtensionVersion,
+                        WorkerRuntime = aasMetadata?.FunctionsWorkerRuntime
                     };
 
                     // This is the root scope
@@ -161,7 +168,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         shortName: functionName,
                         fullName: instanceParam.FunctionDescriptor.FullName,
                         bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+                        triggerType: triggerType,
+                        extensionVersion: aasMetadata?.FunctionsExtensionVersion,
+                        workerRuntime: aasMetadata?.FunctionsWorkerRuntime);
                 }
 
                 scope.Root.Span.Type = SpanType;
@@ -267,13 +276,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = context.FunctionDefinition.Name;
+                var aasMetadata = tracer.Settings.AzureAppServiceMetadata;
 
                 var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionName,
-                    FullName = context.FunctionDefinition.EntryPoint,
-                };
+                           {
+                               TriggerType = triggerType,
+                               ShortName = functionName,
+                               FullName = context.FunctionDefinition.EntryPoint,
+                               ExtensionVersion = aasMetadata?.FunctionsExtensionVersion,
+                               WorkerRuntime = aasMetadata?.FunctionsWorkerRuntime
+                           };
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -357,12 +369,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // AsyncLocal is working - use it as parent
                     scope = tracer.StartActiveInternal(OperationName);
                     var rootSpan = scope.Root.Span;
+
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: functionName,
                         fullName: context.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: triggerType);
+                        triggerType: triggerType,
+                        extensionVersion: aasMetadata?.FunctionsExtensionVersion,
+                        workerRuntime: aasMetadata?.FunctionsWorkerRuntime);
                 }
 
                 scope.Root.Span.Type = SpanType;
