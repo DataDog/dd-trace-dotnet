@@ -52,9 +52,9 @@ internal static class CiUtils
         }
 
         // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
-        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        TestOptimization.InitializeInstance(isEnabled: true);
+        var testOptimization = TestOptimization.Instance;
         var testOptimizationSettings = testOptimization.Settings;
-        TestOptimization.Instance = testOptimization;
 
         // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";

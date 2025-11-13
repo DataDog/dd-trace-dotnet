@@ -47,7 +47,7 @@ namespace Datadog.Trace.MSBuild
                 // .
             }
 
-            TestOptimization.Instance.Initialize();
+            TestOptimization.InitializeInstance(isEnabled: true);
         }
 
         /// <summary>

@@ -292,15 +292,19 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                // ensure global instance is created if it's not already
-                var testOptimization = TestOptimization.Instance;
-                if (testOptimization.Enabled)
+                // check if Test Optimization is enabled
+                var testOptimisationEnablement = TestOptimizationDetection.IsEnabled(
+                    GlobalConfigurationSource.Instance,
+                    TelemetryFactory.Config);
+
+                if (testOptimisationEnablement.IsEnabled)
                 {
-                    testOptimization.Initialize();
+                    // Create the global TestOptimization Instance
+                    TestOptimization.InitializeInstance(isEnabled: true);
                 }
                 else
                 {
-                    Log.Debug("Initializing tracer singleton instance.");
+                    Log.Debug("CI Visibility is not enabled.");
                 }
             }
             catch (Exception ex)
