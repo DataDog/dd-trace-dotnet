@@ -23,6 +23,9 @@ namespace Benchmarks.Trace.Asm;
 [BenchmarkAgent7]
 [BenchmarkCategory(Constants.AppSecCategory)]
 [IgnoreProfile]
+#if NETCOREAPP3_1
+[DisableTieredCompilation]
+#endif
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
@@ -61,9 +64,23 @@ public class AppSecWafBenchmark
         _stage2 = MakeRealisticNestedMapStage2();
         _stage3 = MakeRealisticNestedMapStage3();
 
-        // Warmup
-        RunWafRealisticBenchmark();
-        RunWafRealisticBenchmarkWithAttack();
+        // More aggressive warmup for native code paths (WAF library)
+        // Ensures JIT compilation completes and native context creation stabilizes
+        for (int i = 0; i < 10; i++)
+        {
+            RunWafRealisticBenchmark();
+            RunWafRealisticBenchmarkWithAttack();
+        }
+    }
+
+    [IterationSetup]
+    public void IterationSetup()
+    {
+        // Force GC to reduce variance from native memory interactions
+        // WAF library uses unmanaged memory with allocation patterns outside .NET GC control
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
 
     private static Dictionary<string, object> MakeRealisticNestedMapStage1(bool withAttack)
