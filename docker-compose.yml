@@ -20,12 +20,6 @@ services:
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_arm64:
-    image: mongo:4.0.9
-    ports:
-      - "27017"
-    command: mongod
-
-  mongo_v5_arm64:
     image: mongo:5.0.31
     ports:
       - "27017"
@@ -146,17 +140,10 @@ services:
     - "127.0.0.1:6391:6379"
 
   mongo:
-    image: mongo:4.0.9
-    profiles: ["group2"]
-    ports:
-      - "127.0.0.1:27017:27017"
-    command: mongod
-
-  mongov5:
     image: mongo:5.0.31
     profiles: ["group2"]
     ports:
-      - "27017"
+      - "127.0.0.1:27017:27017"
     command: mongod
 
   couchbase:
@@ -483,7 +470,6 @@ services:
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
-      - MONGO_V5_HOST=mongo_v5
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-replica:6379
       - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis-single:6379
@@ -722,7 +708,6 @@ services:
       - elasticsearch6
       - elasticsearch5
       - mongo
-      - mongo_v5
       - localstack
       - sqledge
       - azureservicebus-emulator
@@ -731,7 +716,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 mongo_v5:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
@@ -761,7 +746,6 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
-      - MONGO_V5_HOST=mongo_v5_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379,stackexchangeredis_arm64-replica:6379
       - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis_arm64-single:6379
@@ -810,7 +794,6 @@ services:
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
-      - mongo_v5_arm64
       - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
@@ -826,7 +809,7 @@ services:
       - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
       - sqledge_arm64
-      - mongo_v5_arm64
+      - mongo_arm64
       - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
@@ -834,7 +817,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 mongo_v5_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -1170,14 +1153,13 @@ services:
       - elasticsearch7_osx_arm64
       - sqledge_osx_arm64
       - mongo_osx_arm64
-      - mongo_v5_osx_arm64
       - postgres_osx_arm64
       - mysql_osx_arm64
       - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 mongo_v5_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -1203,15 +1185,9 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_osx_arm64:
-    image: mongo:4.0.9
-    ports:
-      - "27017:27017"
-    command: mongod
-
-  mongo_v5_osx_arm64:
     image: mongo:5.0.31
     ports:
-      - "27017"
+      - "27017:27017"
     command: mongod
 
   mysql_osx_arm64:
