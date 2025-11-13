@@ -37,21 +37,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
-                 && tracer.InternalActiveScope is null)
-                {
-                    // in a "timer" trigger, or similar. Context won't be propagated to child, so no
-                    // need to create the scope etc.
-                    return CallTargetState.GetDefault();
-                }
-
-                var scope = CreateScope(tracer, instanceParam);
-                return new CallTargetState(scope);
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
+             && tracer.InternalActiveScope is null)
+            {
+                // in a "timer" trigger, or similar. Context won't be propagated to child, so no
+                // need to create the scope etc.
+                return CallTargetState.GetDefault();
+            }
+
+            var scope = CreateScope(tracer, instanceParam);
+            return new CallTargetState(scope);
         }
 
         internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
