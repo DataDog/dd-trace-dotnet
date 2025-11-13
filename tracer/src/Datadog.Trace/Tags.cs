@@ -565,13 +565,6 @@ namespace Datadog.Trace
         internal const string AzureAppServicesSiteType = "aas.site.type";
 
         /// <summary>
-        /// The process type for Azure Functions isolated mode.
-        /// Possible values: host, worker
-        /// Only set for isolated Azure Functions (not in-process functions).
-        /// </summary>
-        internal const string AzureFunctionsProcess = "aas.function.process";
-
-        /// <summary>
         /// The subscription ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
@@ -595,6 +588,13 @@ namespace Datadog.Trace
         /// The literal type of the binding for the azure function trigger
         /// </summary>
         internal const string AzureFunctionBindingSource = "aas.function.binding";
+
+        /// <summary>
+        /// The process type for Azure Functions isolated mode.
+        /// Only set for isolated Azure Functions, not in-process functions.
+        /// Possible values: "host" or "worker"
+        /// </summary>
+        internal const string AzureFunctionProcess = "aas.function.process";
 
         /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization

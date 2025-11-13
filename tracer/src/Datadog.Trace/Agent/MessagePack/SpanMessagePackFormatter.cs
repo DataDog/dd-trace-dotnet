@@ -992,7 +992,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 if (EnvironmentHelpers.IsAzureFunctionsIsolated())
                 {
-                    _azureFunctionProcessTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureFunctionsProcess);
+                    _azureFunctionProcessTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureFunctionProcess);
 
                     _azureFunctionProcessTagValueBytes = EnvironmentHelpers.IsRunningInAzureFunctionsHost() ?
                                                              StringEncoding.UTF8.GetBytes("host") :
