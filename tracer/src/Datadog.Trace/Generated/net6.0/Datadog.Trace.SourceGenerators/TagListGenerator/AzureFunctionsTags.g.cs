@@ -26,6 +26,10 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> BindingSourceBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103 };
         // TriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
         private static ReadOnlySpan<byte> TriggerTypeBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
+        // ExtensionVersionBytes = MessagePack.Serialize("aas.function.extension_version");
+        private static ReadOnlySpan<byte> ExtensionVersionBytes => new byte[] { 190, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 101, 120, 116, 101, 110, 115, 105, 111, 110, 95, 118, 101, 114, 115, 105, 111, 110 };
+        // WorkerRuntimeBytes = MessagePack.Serialize("aas.function.worker_runtime");
+        private static ReadOnlySpan<byte> WorkerRuntimeBytes => new byte[] { 187, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 119, 111, 114, 107, 101, 114, 95, 114, 117, 110, 116, 105, 109, 101 };
 
         public override string? GetTag(string key)
         {
@@ -37,6 +41,8 @@ namespace Datadog.Trace.Tagging
                 "aas.function.method" => FullName,
                 "aas.function.binding" => BindingSource,
                 "aas.function.trigger" => TriggerType,
+                "aas.function.extension_version" => ExtensionVersion,
+                "aas.function.worker_runtime" => WorkerRuntime,
                 _ => base.GetTag(key),
             };
         }
@@ -56,6 +62,12 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "aas.function.trigger": 
                     TriggerType = value;
+                    break;
+                case "aas.function.extension_version": 
+                    ExtensionVersion = value;
+                    break;
+                case "aas.function.worker_runtime": 
+                    WorkerRuntime = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -97,6 +109,16 @@ namespace Datadog.Trace.Tagging
             if (TriggerType is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
+            }
+
+            if (ExtensionVersion is not null)
+            {
+                processor.Process(new TagItem<string>("aas.function.extension_version", ExtensionVersion, ExtensionVersionBytes));
+            }
+
+            if (WorkerRuntime is not null)
+            {
+                processor.Process(new TagItem<string>("aas.function.worker_runtime", WorkerRuntime, WorkerRuntimeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -143,6 +165,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aas.function.trigger (tag):")
                   .Append(TriggerType)
+                  .Append(',');
+            }
+
+            if (ExtensionVersion is not null)
+            {
+                sb.Append("aas.function.extension_version (tag):")
+                  .Append(ExtensionVersion)
+                  .Append(',');
+            }
+
+            if (WorkerRuntime is not null)
+            {
+                sb.Append("aas.function.worker_runtime (tag):")
+                  .Append(WorkerRuntime)
                   .Append(',');
             }
 
