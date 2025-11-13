@@ -244,6 +244,7 @@
       <type fullname="System.Diagnostics.ActivityIdFormat" />
       <type fullname="System.Diagnostics.ActivitySpanId" />
       <type fullname="System.Diagnostics.ActivityTraceId" />
+      <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />
       <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />

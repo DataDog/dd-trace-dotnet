@@ -15,9 +15,10 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
+#pragma warning disable SA1402
 namespace Datadog.Trace.DiagnosticListeners
 {
-    internal sealed class DiagnosticManager : IDiagnosticManager, IObserver<IDiagnosticListener>, IDisposable
+    internal sealed class DiagnosticManager : IDiagnosticManager, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticManager>();
 
@@ -44,7 +45,9 @@ namespace Datadog.Trace.DiagnosticListeners
             if (_allListenersSubscription == null)
             {
                 Log.Debug("Starting DiagnosticListener.AllListeners subscription");
-
+#if !NETFRAMEWORK
+                _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(new DiagnosticListenerObserver(this));
+#else
                 try
                 {
                     // Get the DiagnosticListener type
@@ -102,18 +105,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     Log.Error(ex, "Error starting DiagnosticListener.AllListeners subscription");
                 }
+#endif
             }
         }
 
-        void IObserver<IDiagnosticListener>.OnCompleted()
-        {
-        }
-
-        void IObserver<IDiagnosticListener>.OnError(Exception error)
-        {
-        }
-
-        void IObserver<IDiagnosticListener>.OnNext(IDiagnosticListener listener)
+        public void OnNext(IDiagnosticListener listener)
         {
             foreach (var subscriber in _diagnosticObservers)
             {
@@ -178,7 +174,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var listener = diagnosticListener.DuckAs<IDiagnosticListener>();
                 if (listener?.Instance != null)
                 {
-                    ((IObserver<IDiagnosticListener>)this).OnNext(listener);
+                    OnNext(listener);
                 }
             }
             catch (Exception ex)
@@ -187,4 +183,31 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
     }
+
+#if !NETFRAMEWORK
+    internal sealed class DiagnosticListenerObserver : IObserver<DiagnosticListener>
+    {
+        private DiagnosticManager _diagnosticManager;
+
+        public DiagnosticListenerObserver(DiagnosticManager diagnosticManager)
+        {
+            _diagnosticManager = diagnosticManager;
+        }
+
+        public void OnCompleted()
+        {
+            return;
+        }
+
+        public void OnError(Exception error)
+        {
+            return;
+        }
+
+        public void OnNext(DiagnosticListener value)
+        {
+            _diagnosticManager.OnDiagnosticListenerNext(value);
+        }
+    }
+#endif
 }
