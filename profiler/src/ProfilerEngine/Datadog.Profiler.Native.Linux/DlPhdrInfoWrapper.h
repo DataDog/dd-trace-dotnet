@@ -22,7 +22,7 @@ class DlPhdrInfoWrapper
 public:
     DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size, shared::pmr::memory_resource* allocator);
 
-    std::pair<struct dl_phdr_info*, std::size_t> Get();
+    std::pair<struct dl_phdr_info*, std::size_t> Get() const;
 
     bool IsSame(struct dl_phdr_info const * other) const;
 

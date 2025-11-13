@@ -174,7 +174,8 @@ int32_t CrashReporting::Panic()
     // The goal here (like with CrashProcess), is to crash the app in the test
     // Here we want the crash to happen in Rust (panic)
     auto faultySlice = ddog_CharSlice{ .ptr = (const char*)0x1, .len = 10 };
-    ddog_Vec_Tag_push((ddog_Vec_Tag*)0x1, faultySlice, faultySlice);
+    auto pushResult = ddog_Vec_Tag_push((ddog_Vec_Tag*)0x1, faultySlice, faultySlice);
+    (void)pushResult;
 
     return 1;
 }
