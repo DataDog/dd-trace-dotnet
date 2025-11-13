@@ -10,8 +10,8 @@
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/4.0.1 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/4.0.2 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
   </ItemGroup>
 
 </Project>
