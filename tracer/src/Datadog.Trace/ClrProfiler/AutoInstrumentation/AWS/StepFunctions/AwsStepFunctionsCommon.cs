@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, IAwsStepFunctionsRequestWithStateMachineArn request, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
             var perTraceSettings = tracer.CurrentTraceSettings;
@@ -41,13 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
-                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
-                if (isOutbound)
-                {
-                    tags.PeerService = tags.StateMachineName;
-                    tags.PeerServiceSource = Trace.Tags.StateMachineName;
-                }
-
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -56,6 +49,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
                 tags.Service = StepFunctionsServiceName;
                 tags.Operation = operation;
+                tags.StateMachineName = GetStateMachineName(request.StateMachineArn);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                if (isOutbound)
+                {
+                    tags.PeerService = tags.StateMachineName;
+                    tags.PeerServiceSource = Trace.Tags.StateMachineName;
+                }
+
                 perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
