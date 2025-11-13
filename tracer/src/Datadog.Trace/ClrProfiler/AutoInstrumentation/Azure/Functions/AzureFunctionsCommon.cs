@@ -206,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T context)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
-                foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
+                foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
                     var binding = entry.Value.DuckCast<BindingMetadata>();
@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
                             // The headers in the gRPC message are STALE (contain host's root span context)
                             // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
-                            var isAspNetCoreIntegration = context.Items?.ContainsKey("HttpRequestContext") == true;
+                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey("HttpRequestContext") == true;
 
                             if (isAspNetCoreIntegration)
                             {
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             else
                             {
                                 // Only extract from gRPC message when NOT using ASP.NET Core integration
-                                extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                                extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
                                 Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
                             }
 
@@ -266,25 +266,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         }
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
-                            extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
 
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
-                            extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
                     }
 
                     break;
                 }
 
-                var functionName = context.FunctionDefinition.Name;
+                var functionName = functionContext.FunctionDefinition.Name;
                 var aasMetadata = tracer.Settings.AzureAppServiceMetadata;
 
                 var tags = new AzureFunctionsTags
                            {
                                TriggerType = triggerType,
                                ShortName = functionName,
-                               FullName = context.FunctionDefinition.EntryPoint,
+                               FullName = functionContext.FunctionDefinition.EntryPoint,
                                ExtensionVersion = aasMetadata?.FunctionsExtensionVersion,
                                WorkerRuntime = aasMetadata?.FunctionsWorkerRuntime
                            };
@@ -298,8 +298,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     Scope? parentScope = null;
                     try
                     {
-                        if (context.Items != null &&
-                            context.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
+                        if (functionContext.Items != null &&
+                            functionContext.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
                             httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
                             httpContext.Items.TryGetValue("__Datadog.Trace.AspNetCore.ActiveScope", out var scopeObj) &&
                             scopeObj is Scope aspNetCoreScope)
@@ -347,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: functionName,
-                        fullName: context.FunctionDefinition.EntryPoint,
+                        fullName: functionContext.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: triggerType,
                         extensionVersion: aasMetadata?.FunctionsExtensionVersion,
