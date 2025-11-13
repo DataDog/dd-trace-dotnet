@@ -97,6 +97,11 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class AspNetCoreBenchmark
     {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
         [Benchmark]
         public string SendRequest()
         {
