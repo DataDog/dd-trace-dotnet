@@ -29,7 +29,7 @@ public class StringAspectsBenchmark
 
     private List<string> _initTaintedContextTrue;
     private List<string> _initTaintedContextFalse;
-    
+
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
         TaintedObjects taintedObjects = null;
@@ -67,10 +67,17 @@ public class StringAspectsBenchmark
 
     const int Iterations = 100;
 
-    [IterationSetup(Target = nameof(StringConcatBenchmark))]
-    public void InitTaintedContextWhenFalse()
+    [GlobalSetup]
+    public void GlobalSetup()
     {
+        // Initialize test data in GlobalSetup, not IterationSetup
+        // This ensures BenchmarkDotNet excludes allocation overhead from measurements
         _initTaintedContextFalse = InitTaintedContext(10, false);
+        _initTaintedContextTrue = InitTaintedContext(10, true);
+
+        // Warmup to reduce noise
+        StringConcatBenchmark();
+        StringConcatAspectBenchmark();
     }
 
     [Benchmark]
@@ -85,12 +92,6 @@ public class StringAspectsBenchmark
             list.Add(string.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
         }
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
-    }
-
-    [IterationSetup(Target = nameof(StringConcatAspectBenchmark))]
-    public void InitTaintedContextWhenTrue()
-    {
-        _initTaintedContextTrue = InitTaintedContext(10, true);
     }
 
     [Benchmark]
