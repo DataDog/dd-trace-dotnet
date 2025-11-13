@@ -61,6 +61,8 @@ namespace Datadog.Trace.Tagging
                 "aas.function.method" => FullName,
                 "aas.function.binding" => BindingSource,
                 "aas.function.trigger" => TriggerType,
+                "aas.function.extension_version" => ExtensionVersion,
+                "aas.function.worker_runtime" => WorkerRuntime,
                 _ => base.GetTag(key),
             };
         }
@@ -80,6 +82,12 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "aas.function.trigger": 
                     TriggerType = value;
+                    break;
+                case "aas.function.extension_version": 
+                    ExtensionVersion = value;
+                    break;
+                case "aas.function.worker_runtime": 
+                    WorkerRuntime = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -121,6 +129,16 @@ namespace Datadog.Trace.Tagging
             if (TriggerType is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
+            }
+
+            if (ExtensionVersion is not null)
+            {
+                processor.Process(new TagItem<string>("aas.function.extension_version", ExtensionVersion, ExtensionVersionBytes));
+            }
+
+            if (WorkerRuntime is not null)
+            {
+                processor.Process(new TagItem<string>("aas.function.worker_runtime", WorkerRuntime, WorkerRuntimeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -167,6 +185,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aas.function.trigger (tag):")
                   .Append(TriggerType)
+                  .Append(',');
+            }
+
+            if (ExtensionVersion is not null)
+            {
+                sb.Append("aas.function.extension_version (tag):")
+                  .Append(ExtensionVersion)
+                  .Append(',');
+            }
+
+            if (WorkerRuntime is not null)
+            {
+                sb.Append("aas.function.worker_runtime (tag):")
+                  .Append(WorkerRuntime)
                   .Append(',');
             }
 

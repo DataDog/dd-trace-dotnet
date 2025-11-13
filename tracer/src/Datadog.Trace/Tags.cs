@@ -597,6 +597,18 @@ namespace Datadog.Trace
         internal const string AzureFunctionProcess = "aas.function.process";
 
         /// <summary>
+        /// The Azure Functions extension version.
+        /// Example: ~4
+        /// </summary>
+        internal const string AzureFunctionExtensionVersion = "aas.function.extension_version";
+
+        /// <summary>
+        /// The Azure Functions worker runtime.
+        /// Example: dotnet-isolated
+        /// </summary>
+        internal const string AzureFunctionWorkerRuntime = "aas.function.worker_runtime";
+
+        /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization
         /// using the value from <see cref="TraceContext.Origin"/>.
         /// </summary>
