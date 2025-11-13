@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
@@ -141,6 +142,18 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
+                    var nAgent = NativeAgent.Instance;
+                    if (nAgent.UdsPath is { } udsPath)
+                    {
+                        Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, $"unix://{udsPath}");
+                    }
+                    else if (nAgent.BoundPort is { } boundPort)
+                    {
+                        Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, boundPort.ToString());
+                    }
+
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.MetricsUri, $"udp://127.0.0.1:{nAgent.DogStatsDPort}");
+
                     InitializeNoNativeParts(sw);
 
                     try
