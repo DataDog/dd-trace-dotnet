@@ -48,17 +48,7 @@ public class PutEventsIntegration
         }
 
         var tracer = Tracer.Instance;
-        var scope = AwsEventBridgeCommon.CreateScope(tracer, Operation, SpanKind, out var tags);
-        if (tags is not null)
-        {
-            var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
-            if (busName is not null)
-            {
-                // We use RuleName to stay consistent with other runtimes
-                // TODO rename rulename tag to busname across all runtimes
-                tags.RuleName = busName;
-            }
-        }
+        var scope = AwsEventBridgeCommon.CreateScope(tracer, Operation, SpanKind, request, out var tags);
 
         var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
         ContextPropagation.InjectContext(tracer, request, context);
