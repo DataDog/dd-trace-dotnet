@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return StringUtil.IsNullOrEmpty(arnStreamName) ? request.StreamName : arnStreamName;
         }
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)
+        public static Scope? CreateScopeArn(Tracer tracer, string operation, string spanKind, IGetRecordsRequest request, ISpanContext? parentContext, out AwsKinesisTags? tags)
         {
             tags = null;
 
@@ -63,6 +63,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
                 string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Http;
+                span.ResourceName = $"{KinesisServiceName}.{operation}";
+
+                tags.Service = KinesisServiceName;
+                tags.Operation = operation;
+                tags.StreamName = StreamNameFromARN(request.StreamARN);
                 bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
                 bool isServerless = EnvironmentHelpers.IsAwsLambda();
                 if (isServerless && isOutbound && tags.AwsRegion != null)
@@ -76,6 +85,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     tags.PeerServiceSource = Trace.Tags.TopicName;
                 }
 
+                perTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // Always returns the scope. Even if it's `null` because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags).
+            return scope;
+        }
+
+        public static Scope? CreateScopeName(Tracer tracer, string operation, string spanKind, IAmazonKinesisRequestWithStreamName request, ISpanContext? parentContext, out AwsKinesisTags? tags)
+        {
+            tags = null;
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope? scope = null;
+
+            try
+            {
+                tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
+                string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
+                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
@@ -84,6 +125,74 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
                 tags.Service = KinesisServiceName;
                 tags.Operation = operation;
+                tags.StreamName = request.StreamName;
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "kinesis." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless && isOutbound)
+                {
+                    tags.PeerService = tags.StreamName;
+                    tags.PeerServiceSource = Trace.Tags.TopicName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // Always returns the scope. Even if it's `null` because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags).
+            return scope;
+        }
+
+        public static Scope? CreateScopeArnAndName(Tracer tracer, string operation, string spanKind, IAmazonKinesisRequestWithStreamNameAndStreamArn request, ISpanContext? parentContext, out AwsKinesisTags? tags)
+        {
+            tags = null;
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope? scope = null;
+
+            try
+            {
+                tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
+                string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
+                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Http;
+                span.ResourceName = $"{KinesisServiceName}.{operation}";
+
+                tags.Service = KinesisServiceName;
+                tags.Operation = operation;
+                tags.StreamName = GetStreamName(request);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "kinesis." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless && isOutbound)
+                {
+                    tags.PeerService = tags.StreamName;
+                    tags.PeerServiceSource = Trace.Tags.TopicName;
+                }
+
                 perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
