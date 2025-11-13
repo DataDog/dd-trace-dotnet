@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.8.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='3.5.0'">$(DefineConstants);MONGODB_3_5</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='3.0.0'">$(DefineConstants);MONGODB_3</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.15.0'">$(DefineConstants);MONGODB_2_15</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>

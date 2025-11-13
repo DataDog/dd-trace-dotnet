@@ -14,9 +14,16 @@ namespace Samples.MongoDB
     public static class Program
     {
         private static readonly ActivitySourceHelper _sampleHelpers = new("Samples.MongoDB");
-        private static string Host()
+        private static (string Host, int Port) Host()
         {
-            return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
+#if MONGODB_3_5
+            var host = Environment.GetEnvironmentVariable("MONGO_V5_HOST") ?? "localhost";
+            var port = int.TryParse(Environment.GetEnvironmentVariable("MONGO_V5_PORT"), out var p) ? p : 27017;
+#else
+            var host = Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
+            var port = int.TryParse(Environment.GetEnvironmentVariable("MONGO_PORT"), out var p) ? p : 27017;
+#endif
+            return (host,  port);
         }
 
         public static void Main(string[] args)
@@ -56,7 +63,8 @@ namespace Samples.MongoDB
 
             using (var mainScope = _sampleHelpers.CreateScope("Main()"))
             {
-                var connectionString = $"mongodb://{Host()}:27017";
+                var (host, port) = Host();
+                var connectionString = $"mongodb://{host}:{port}";
                 var client = new MongoClient(connectionString);
                 var database = client.GetDatabase("test-db");
                 var collection = database.GetCollection<BsonDocument>("employees");
