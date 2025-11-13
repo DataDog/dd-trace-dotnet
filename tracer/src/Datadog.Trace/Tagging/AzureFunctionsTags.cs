@@ -51,15 +51,6 @@ namespace Datadog.Trace.Tagging
             string workerRuntime)
         {
             var tags = span.Tags;
-            if (span.Tags is AspNetCoreTags aspNetTags)
-            {
-                aspNetTags.InstrumentationName = ComponentName;
-            }
-            else if (tags.GetTag(Tags.InstrumentationName) is null)
-            {
-                // not already set, so should be safe to set it as not readonly
-                tags.SetTag(Tags.InstrumentationName, ComponentName);
-            }
 
             tags.SetTag(ShortNameTagName, shortName);
             tags.SetTag(FullNameTagName, fullName);
