@@ -45,8 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
-            AwsDynamoDbCommon.TagBatchRequest(request, tags, scope);
+            var scope = AwsDynamoDbCommon.CreateScopeBatch(Tracer.Instance, Operation, request, out AwsDynamoDbTags tags);
 
             return new CallTargetState(scope);
         }
