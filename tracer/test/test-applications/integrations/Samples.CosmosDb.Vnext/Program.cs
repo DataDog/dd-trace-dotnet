@@ -12,7 +12,8 @@ namespace Samples.CosmosDb.Vnext
 {
     enum TestMode
     {
-        Query
+        Query,
+        CRUD
     }
 
     class Program
@@ -111,12 +112,15 @@ namespace Samples.CosmosDb.Vnext
             {
                 await CreateDatabaseAsync();
                 await CreateContainerAsync();
-                await AddItemsToContainerAsync();
 
                 switch (testMode)
                 {
                     case TestMode.Query:
+                        await AddItemsToContainerAsync();
                         await QueryItemsAsync();
+                        break;
+                    case TestMode.CRUD:
+                        await CrudOperationsAsync();
                         break;
                 }
             }
@@ -302,6 +306,65 @@ namespace Samples.CosmosDb.Vnext
             }
         }
         // </QueryItemsAsync>
+
+        /// <summary>
+        /// Run CRUD operations against the container
+        /// </summary>
+        private async Task CrudOperationsAsync()
+        {
+            Console.WriteLine($"{DateTime.Now:o}: Starting CRUD operations test\n");
+
+            var testFamily = new Family
+            {
+                Id = "TestFamily.1",
+                LastName = "TestFamily",
+                Parents = new Parent[]
+                {
+                    new Parent { FirstName = "John", FamilyName = "TestFamily" }
+                },
+                Children = new Child[]
+                {
+                    new Child
+                    {
+                        FirstName = "Alice",
+                        FamilyName = "TestFamily",
+                        Gender = "female",
+                        Grade = 3
+                    }
+                },
+                Address = new Address { State = "CA", County = "Los Angeles", City = "Los Angeles" },
+                IsRegistered = true
+            };
+
+            Console.WriteLine($"{DateTime.Now:o}: Creating item...");
+            ItemResponse<Family> createResponse = await container.CreateItemAsync<Family>(
+                testFamily,
+                new PartitionKey(testFamily.LastName));
+            Console.WriteLine($"{DateTime.Now:o}: Created item with id: {createResponse.Resource.Id}, RUs: {createResponse.RequestCharge}\n");
+
+            Console.WriteLine($"{DateTime.Now:o}: Reading item...");
+            ItemResponse<Family> readResponse = await container.ReadItemAsync<Family>(
+                testFamily.Id,
+                new PartitionKey(testFamily.LastName));
+            Console.WriteLine($"{DateTime.Now:o}: Read item with id: {readResponse.Resource.Id}, RUs: {readResponse.RequestCharge}\n");
+
+            testFamily.IsRegistered = false;
+            testFamily.Address.City = "San Francisco";
+            Console.WriteLine($"{DateTime.Now:o}: Updating item...");
+            ItemResponse<Family> updateResponse = await container.ReplaceItemAsync<Family>(
+                testFamily,
+                testFamily.Id,
+                new PartitionKey(testFamily.LastName));
+            Console.WriteLine($"{DateTime.Now:o}: Updated item with id: {updateResponse.Resource.Id}, RUs: {updateResponse.RequestCharge}\n");
+
+            Console.WriteLine($"{DateTime.Now:o}: Deleting item...");
+            ItemResponse<Family> deleteResponse = await container.DeleteItemAsync<Family>(
+                testFamily.Id,
+                new PartitionKey(testFamily.LastName));
+            Console.WriteLine($"{DateTime.Now:o}: Deleted item, RUs: {deleteResponse.RequestCharge}\n");
+
+            Console.WriteLine($"{DateTime.Now:o}: CRUD operations test completed\n");
+        }
 
         // <DeleteDatabaseAndCleanupAsync>
         /// <summary>
