@@ -176,7 +176,7 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.5.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.5.*",

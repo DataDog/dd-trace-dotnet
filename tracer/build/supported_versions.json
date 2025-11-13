@@ -889,7 +889,7 @@
         "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "3.5.0",
         "maxVersionAvailableInclusive": "3.5.0",
-        "maxVersionTestedInclusive": "3.4.3"
+        "maxVersionTestedInclusive": "3.5.0"
       }
     ]
   },
@@ -906,7 +906,7 @@
         "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "3.5.0",
         "maxVersionAvailableInclusive": "3.5.0",
-        "maxVersionTestedInclusive": "3.4.3"
+        "maxVersionTestedInclusive": "3.5.0"
       },
       {
         "name": "MongoDB.Driver.Core",
