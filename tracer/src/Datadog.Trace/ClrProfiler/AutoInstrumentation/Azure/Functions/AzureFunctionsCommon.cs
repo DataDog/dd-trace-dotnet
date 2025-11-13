@@ -298,46 +298,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     Scope? parentScope = null;
                     try
                     {
-                        // Check if context.Items exists
-                        if (context.Items == null)
+                        if (context.Items != null &&
+                            context.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
+                            httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
+                            httpContext.Items.TryGetValue("__Datadog.Trace.AspNetCore.ActiveScope", out var scopeObj) &&
+                            scopeObj is Scope aspNetCoreScope)
                         {
-                            Log.Debug("Azure Functions span creation: FunctionContext.Items is null - cannot retrieve HttpContext");
-                        }
-                        else if (context.Items.TryGetValue("HttpRequestContext", out var httpContextObj))
-                        {
-                            Log.Debug("Azure Functions span creation: Found HttpRequestContext in FunctionContext.Items");
-
-                            if (httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext)
-                            {
-                                Log.Debug("Azure Functions span creation: Successfully cast to HttpContext");
-
-                                if (httpContext.Items.TryGetValue("__Datadog.Trace.AspNetCore.ActiveScope", out var scopeObj))
-                                {
-                                    Log.Debug("Azure Functions span creation: Found __Datadog.Trace.AspNetCore.ActiveScope in HttpContext.Items");
-
-                                    if (scopeObj is Scope aspNetCoreScope)
-                                    {
-                                        parentScope = aspNetCoreScope;
-                                        Log.Debug("Azure Functions span creation: Retrieved AspNetCore scope - span_id: {SpanId}, trace_id: {TraceId}", aspNetCoreScope.Span.SpanId, aspNetCoreScope.Span.TraceId);
-                                    }
-                                    else
-                                    {
-                                        Log.Debug("Azure Functions span creation: Scope object is wrong type: {TypeName}", scopeObj?.GetType().FullName);
-                                    }
-                                }
-                                else
-                                {
-                                    Log.Debug("Azure Functions span creation: HttpContext.Items does not contain __Datadog.Trace.AspNetCore.ActiveScope key");
-                                }
-                            }
-                            else
-                            {
-                                Log.Debug("Azure Functions span creation: HttpContext object is wrong type: {TypeName}", httpContextObj?.GetType().FullName);
-                            }
+                            parentScope = aspNetCoreScope;
+                            Log.Debug("Azure Functions span creation: Retrieved AspNetCore scope - span_id: {SpanId}, trace_id: {TraceId}", aspNetCoreScope.Span.SpanId, aspNetCoreScope.Span.TraceId);
                         }
                         else
                         {
-                            Log.Debug("Azure Functions span creation: FunctionContext.Items does not contain HttpRequestContext key");
+                            Log.Debug("Azure Functions span creation: Could not retrieve AspNetCore scope from HttpContext.Items");
                         }
                     }
                     catch (Exception ex)
