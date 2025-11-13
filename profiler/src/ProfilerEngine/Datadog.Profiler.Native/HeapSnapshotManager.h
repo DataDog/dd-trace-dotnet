@@ -14,6 +14,8 @@
 #include "IGarbageCollectionsListener.h"
 #include "IGCDumpListener.h"
 #include "ServiceBase.h"
+#include "MetricsRegistry.h"
+#include "ProxyMetric.h"
 
 #include "corprof.h"
 
@@ -53,7 +55,8 @@ public:
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager);
+        IThreadsCpuManager* pThreadsCpuManager,
+        MetricsRegistry& metricsRegistry);
 
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
@@ -109,7 +112,7 @@ private:
     void StartGCDump();
     void OnEndGCDump();
     void CleanupSession();
-    void StartSnapshotTimerIfNeeded();
+    void StartAsyncSnapshotIfNeeded();
 
 private:
     std::chrono::minutes _heapDumpInterval;
@@ -122,6 +125,14 @@ private:
     uint64_t _lohSize;
     uint64_t _pohSize;
     uint32_t _memPressure;
+
+    // metrics related to the last heap snapshot
+    uint64_t _objectCount;
+    uint64_t _totalSize;
+    uint64_t _duration;
+    std::shared_ptr<ProxyMetric> _heapSnapshotDurationMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotObjectCountMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotTotalSizeMetric;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
@@ -152,6 +163,8 @@ private:
 
     // keep track of each type instances count and size during heap snapshot
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
+
+    std::chrono::nanoseconds _startTimestamp;
 
     // timestamp of the last heap snapshot
     std::chrono::nanoseconds _lastTimestamp;

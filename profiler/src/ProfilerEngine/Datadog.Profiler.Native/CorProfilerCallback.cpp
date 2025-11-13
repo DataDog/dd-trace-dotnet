@@ -350,7 +350,8 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
-                _pThreadsCpuManager
+                _pThreadsCpuManager,
+                _metricsRegistry
                 );
         }
 
