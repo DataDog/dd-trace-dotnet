@@ -138,7 +138,7 @@ bool isWorkloadAllowed(const ::shared::WSTRING& process_name, const std::vector<
         return injection_status == InjectionStatus::DENY ? false : true;
     }
 
-    return injection_status == InjectionStatus::ALLOW;
+    return injection_status == InjectionStatus::ALLOW ? true : false;
 }
 
 } // namespace datadog::shared::nativeloader
