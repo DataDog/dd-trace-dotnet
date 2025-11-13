@@ -78,7 +78,14 @@ check-big-regressions:
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
   script: |
-    export ARTIFACTS_DIR="$(pwd)/platform/artifacts/"
+    export ARTIFACTS_DIR="$(pwd)/artifacts/"
+
+    echo "Checking for benchmark artifacts..."
+    ls -la "$ARTIFACTS_DIR" || echo "No artifacts directory found"
+
+    echo "Looking for baseline and candidate results..."
+    find "$ARTIFACTS_DIR" -name "*.converted.json" -o -name "baseline_branch.txt" || echo "No converted results found"
+
     if [[ -n "$CI_JOB_TOKEN" ]];
     then
       git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
@@ -90,6 +97,13 @@ check-big-regressions:
   variables:
     # Gitlab and BP specific env vars. Do not modify.
     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-dotnet
+  artifacts:
+    name: "reports"
+    when: always
+    paths:
+      - reports/
+      - artifacts/
+    expire_in: 3 months
 
 run-benchmarks:
   stage: benchmarks
@@ -107,6 +121,7 @@ run-benchmarks:
     when: always
     paths:
       - platform/artifacts
+      - artifacts/
     expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform
