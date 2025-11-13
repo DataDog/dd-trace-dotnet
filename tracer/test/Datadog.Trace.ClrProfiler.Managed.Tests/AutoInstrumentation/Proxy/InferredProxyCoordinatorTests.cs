@@ -30,6 +30,11 @@ public class InferredProxyCoordinatorTests
         _coordinator = new InferredProxyCoordinator(_extractor.Object, _factory.Object);
     }
 
+    private delegate void TryExtractCallback(
+        NameValueHeadersCollection carrier,
+        HeadersCollectionAccesor<NameValueHeadersCollection> carrierGetter,
+        out InferredProxyData data);
+
     [Fact]
     public void ExtractAndCreateScope_WhenExtractorReturnsFalse_ShouldReturnNull()
     {
@@ -88,14 +93,13 @@ public class InferredProxyCoordinatorTests
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(true)
-                  .Callback((
+                  .Callback(new TryExtractCallback((
                       NameValueHeadersCollection _,
                       HeadersCollectionAccesor<NameValueHeadersCollection> _,
-                      Tracer _,
                       out InferredProxyData data) =>
                   {
                       data = proxyData;
-                  });
+                  }));
 
         // using an actual scope that the factor will return
         using var realScope = _tracer.StartActiveInternal("test.operation");
