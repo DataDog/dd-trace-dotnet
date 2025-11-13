@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 /// </summary>
 #pragma warning disable SA1118 // parameter shouldn't span multiple lines
 [InstrumentMethod(
-    AssemblyNames = [MongoDbIntegration.MongoDbClientV2Assembly, MongoDbIntegration.MongoDbClientV3Assembly],
+    AssemblyNames = [MongoDbIntegration.MongoDbClientV3Assembly],
     IntegrationName = MongoDbIntegration.IntegrationName,
     MinimumVersion = MongoDbIntegration.Major3Minor5,
     MaximumVersion = MongoDbIntegration.Major3,
