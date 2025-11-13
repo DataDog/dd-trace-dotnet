@@ -106,7 +106,7 @@ namespace Benchmarks.Trace
             T instance = new T();
 
             // Execute [GlobalSetup] method
-            globalSetupMethod.Invoke(instance, null);
+            globalSetupMethod?.Invoke(instance, null);
 
             // Execute iterations
             if (arguments.Length > 0 || argMethod == null)
@@ -123,7 +123,7 @@ namespace Benchmarks.Trace
             }
 
             // Execute [GlobalCleanup] method
-            globalCleanupMethod.Invoke(instance, null);
+            globalCleanupMethod?.Invoke(instance, null);
 
             return 0;
         }
