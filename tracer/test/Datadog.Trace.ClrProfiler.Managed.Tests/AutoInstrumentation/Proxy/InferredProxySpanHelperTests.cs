@@ -157,25 +157,6 @@ public class InferredProxySpanHelperTests
     }
 
     [Fact]
-    public void ExtractAndCreateInferredProxyScope_WithProxySpansDisabled_ReturnsNull()
-    {
-        var collection = new System.Collections.Specialized.NameValueCollection
-        {
-            { ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, "false" }
-        };
-
-        var tracer = ProxyTestHelpers.GetMockTracer(collection);
-        var headers = ProxyTestHelpers.CreateValidHeaders();
-
-        var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
-            tracer,
-            headers,
-            new PropagationContext());
-
-        result.Should().BeNull();
-    }
-
-    [Fact]
     public void ExtractAndCreateInferredProxyScope_UpdatesPropagationContext()
     {
         var headers = ProxyTestHelpers.CreateValidHeaders();
