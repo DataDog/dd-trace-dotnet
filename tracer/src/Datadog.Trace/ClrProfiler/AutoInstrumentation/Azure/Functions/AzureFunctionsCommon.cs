@@ -240,9 +240,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    // need to extract the headers from the context.
-                    // We currently only support httpTrigger, but other triggers may also propagate context,
-                    // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
                         // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
