@@ -109,7 +109,7 @@ namespace Samples.WebRequest
 
         private static void DownloadDataAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, DownloadDataCompletedEventArgs e)
             {
@@ -126,7 +126,7 @@ namespace Samples.WebRequest
 
         private static void DownloadFileAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, EventArgs e)
             {
@@ -143,7 +143,7 @@ namespace Samples.WebRequest
 
         private static void DownloadStringAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, DownloadStringCompletedEventArgs e)
             {
@@ -160,7 +160,7 @@ namespace Samples.WebRequest
 
         private static void OpenReadAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, OpenReadCompletedEventArgs e)
             {
@@ -177,7 +177,7 @@ namespace Samples.WebRequest
 
         private static void UploadDataAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, UploadDataCompletedEventArgs e)
             {
@@ -194,7 +194,7 @@ namespace Samples.WebRequest
 
         private static void UploadFileAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, UploadFileCompletedEventArgs e)
             {
@@ -211,7 +211,7 @@ namespace Samples.WebRequest
 
         private static void UploadStringAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, UploadStringCompletedEventArgs e)
             {
@@ -228,7 +228,7 @@ namespace Samples.WebRequest
 
         private static void UploadValuesAsyncAndWait(WebClient webClient, Action operation)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             void Handler(object s, UploadValuesCompletedEventArgs e)
             {

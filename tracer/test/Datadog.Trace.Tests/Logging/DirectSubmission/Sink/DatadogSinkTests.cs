@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkSendsMessagesToLogsApi()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             var logsApi = new TestLogsApi(_ =>
             {
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkRejectsGiantMessages()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkSendsMessageAsJsonBatch()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             int logsReceived = 0;
             const int expectedCount = 2;
 
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkSendsMultipleBatches()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             int logsReceived = 0;
             const int expectedCount = 5;
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [InlineData(false)]
         public async Task EmitBatchEchoesLogsApiReturnValue(bool logsApiResponse)
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             bool LogsSentCallback(int x)
             {
                 mutex.Set();
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void IfCircuitBreakerBreaksThenNoApiRequestsAreSent()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             int logsReceived = 0;
 
             bool LogsSentCallback(int x)
