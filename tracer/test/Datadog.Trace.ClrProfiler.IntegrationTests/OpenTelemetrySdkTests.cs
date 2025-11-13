@@ -338,12 +338,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
-            var startTimeNanoseconds = DateTime.UtcNow.ToUnixTimeNanoseconds();
+            var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                var endTimeNanoseconds = DateTime.UtcNow.ToUnixTimeNanoseconds();
+                var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
                 using var httpClient = new System.Net.Http.HttpClient();
                 var logsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/logs");
