@@ -43,7 +43,7 @@ public class IWireProtocol_3_5_ExecuteAsync_Integration
         return new CallTargetState(scope);
     }
 
-    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var scope = state.Scope;
 
