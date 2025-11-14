@@ -17,9 +17,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         public IEnumerable<string> Get(IDictionary<string, object> carrier, string key)
         {
-            if (carrier.TryGetValue(key, out var value) && value is byte[] bytes)
+            if (carrier.TryGetValue(key, out var value))
             {
-                return new[] { Encoding.UTF8.GetString(bytes) };
+                switch (value)
+                {
+                    case string s:
+                        return new[] { s };
+                    case byte[] bytes:
+                        return new[] { Encoding.UTF8.GetString(bytes) };
+                }
             }
 
             return Enumerable.Empty<string>();
@@ -27,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         public void Set(IDictionary<string, object> carrier, string key, string value)
         {
-            carrier[key] = Encoding.UTF8.GetBytes(value);
+            // Use string headers for broader cross-language compatibility (e.g., Node.js extractors)
+            carrier[key] = value;
         }
     }
 }
