@@ -22,7 +22,7 @@ namespace Datadog.Trace.Util
     {
         // EnvironmentHelpers is called when initialising DataDogLogging.SharedLogger
         // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
-        private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
+        private static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
         // Cache for environment variable values. ConcurrentDictionary handles thread-safety without explicit locking.
         private static readonly ConcurrentDictionary<string, string?> EnvironmentVariableCache = new();
