@@ -53,13 +53,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags.Operation = operation;
                 tags.QueueUrl = request.QueueUrl;
                 tags.QueueName = GetQueueName(tags.QueueUrl);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
                 bool isServerless = EnvironmentHelpers.IsAwsLambda();
-                if (isServerless && tags.Region != null)
+                if (isServerless && isOutbound && tags.Region != null)
                 {
                     tags.PeerService = "sqs." + tags.Region + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (!isServerless)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.QueueName;
                     tags.PeerServiceSource = Trace.Tags.QueueName;
@@ -106,13 +107,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
                 tags.QueueName = request.QueueName;
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
                 bool isServerless = EnvironmentHelpers.IsAwsLambda();
-                if (isServerless && tags.Region != null)
+                if (isServerless && isOutbound && tags.Region != null)
                 {
                     tags.PeerService = "sqs." + tags.Region + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                 }
-                else if (!isServerless)
+                else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.QueueName;
                     tags.PeerServiceSource = Trace.Tags.QueueName;
