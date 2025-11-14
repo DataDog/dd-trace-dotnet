@@ -407,9 +407,9 @@ void HeapSnapshotManager::OnEndGCDump()
     std::cout << _objectCount << " objects for " << _totalSize / (1024 * 1024) << " MB during " << _duration << "ms" << std::endl
               << std::endl;
 
-    // dump each entry in _classHistogram
-    auto content = GetHeapSnapshotText();
-    std::cout << content << std::endl;
+//    // dump each entry in _classHistogram
+//    auto content = GetHeapSnapshotText();
+//    std::cout << content << std::endl;
 #endif
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
