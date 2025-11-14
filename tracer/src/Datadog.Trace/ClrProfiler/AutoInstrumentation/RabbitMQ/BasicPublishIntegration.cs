@@ -79,6 +79,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     {
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
+                    else if (basicProperties.Headers.IsReadOnly)
+                    {
+                        // If headers is read-only, create a new mutable dictionary with the existing headers
+                        basicProperties.Headers = new Dictionary<string, object>(basicProperties.Headers);
+                    }
 
                     var context = new PropagationContext(scope.Span.Context, Baggage.Current);
                     tracer.TracerManager.SpanContextPropagator.Inject(context, basicProperties.Headers, default(ContextPropagation));
