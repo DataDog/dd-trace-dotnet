@@ -14,7 +14,6 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.DiagnosticListeners
 {
     /// <summary>
-    /// This is code written by Cursor to do the reflection needed for DiagnosticListener.
     /// Factory for creating dynamic observer types that can subscribe to DiagnosticListener.AllListeners.
     /// Uses Reflection.Emit to generate types at runtime that implement IObserver&lt;DiagnosticListener&gt;
     /// without directly referencing the DiagnosticSource assembly.

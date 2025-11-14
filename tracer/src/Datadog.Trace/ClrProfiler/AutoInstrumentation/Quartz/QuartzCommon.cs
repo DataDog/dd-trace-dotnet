@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
         }
 
-        internal static void EnhanceActivityMetadata5(IActivity5 activity)
+        internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             activity.AddTag("operation.name", activity.DisplayName);
             var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
@@ -56,18 +56,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
         internal static void EnhanceActivityMetadata(IActivity activity)
         {
-            if (activity is IActivity5 activity5)
+            if (activity.OperationName is null)
             {
-                EnhanceActivityMetadata5(activity5);
                 return;
             }
 
-            if (activity.OperationName is not null)
+            activity.AddTag("operation.name", activity.OperationName);
+            var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
+            if (string.IsNullOrEmpty(jobName))
             {
-                // enhancing span metadata for < IActivity5
-                activity.AddTag("operation.name", activity.OperationName);
-                activity.AddTag("resource.name", CreateResourceName(activity.OperationName, activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty));
+                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                return;
             }
+
+            activity.AddTag("resource.name", CreateResourceName(activity.OperationName, jobName));
         }
 
         internal static void AddException(object exceptionArg, IActivity activity)
@@ -101,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
                     }
                     else
                     {
-                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable to set span kind.");
+                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property.");
                     }
 
                     if (activity?.Instance is not null)
