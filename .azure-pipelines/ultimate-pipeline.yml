@@ -2209,7 +2209,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2236,12 +2236,65 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory-for-tests.yml
-      parameters:
-        artifactSuffix: $(artifactSuffix)
-    - template: steps/download-samples.yml
-      parameters:
-        framework: $(publishTargetFramework)
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'build-linux-x64-working-directory'
+        patterns: "**/@(bin|obj|packages)/**"
+        path: $(System.DefaultWorkingDirectory)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - bash: |
+        input="$(artifactSuffix)"
+        output="${input/-musl/}"
+        echo "setting universalArtifactSuffix to ${output}"
+        echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'linux-universal-home-$(universalArtifactSuffix)'
+        path: $(monitoringHome)/$(artifactSuffix)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'linux-profiler-home-$(artifactSuffix)'
+        path: $(monitoringHome)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'samples-standalone'
+        path: $(outputDir)/bin
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+        patterns: |
+          */release_$(publishTargetFramework)/**
+          */release/**
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'samples-multi-version-$(publishTargetFramework)'
+        path: $(outputDir)/publish
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2312,12 +2365,66 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory-for-tests.yml
-      parameters:
-        artifactSuffix: $(artifactSuffix)
-    - template: steps/download-samples.yml
-      parameters:
-        framework: $(publishTargetFramework)
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'build-linux-x64-working-directory'
+        patterns: "**/@(bin|obj|packages)/**"
+        path: $(System.DefaultWorkingDirectory)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - bash: |
+        input="$(artifactSuffix)"
+        output="${input/-musl/}"
+        echo "setting universalArtifactSuffix to ${output}"
+        echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'linux-universal-home-$(universalArtifactSuffix)'
+        path: $(monitoringHome)/$(artifactSuffix)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'linux-profiler-home-$(artifactSuffix)'
+        path: $(monitoringHome)
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'samples-standalone'
+        path: $(outputDir)/bin
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+        patterns: |
+          */release_$(publishTargetFramework)/**
+          */release/**
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        artifactName: 'samples-multi-version-$(publishTargetFramework)'
+        path: $(outputDir)/publish
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 191018
+
     - bash: |
         if [ -z "$(IntegrationTestFilter)" ]; then
           newFilter="DockerGroup=$(dockerGroup)"
@@ -2325,6 +2432,7 @@ stages:
           newFilter="$(IntegrationTestFilter)&(DockerGroup=$(dockerGroup))"
         fi
         echo "##vso[task.setvariable variable=IntegrationTestFilter]$newFilter"
+        echo "Setting new filter to $newFilter"
       displayName: "Calculate IntegrationTestFilter"
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
