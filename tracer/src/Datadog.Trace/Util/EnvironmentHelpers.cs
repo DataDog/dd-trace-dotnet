@@ -35,6 +35,18 @@ namespace Datadog.Trace.Util
         private static bool? _isAwsLambda;
         private static bool? _isGoogleCloudFunctions;
 
+        public static void ClearCache()
+        {
+            EnvironmentVariableCache.Clear();
+
+            _isAzureAppServices = null;
+            _isAzureFunctions = null;
+            _isUsingAzureAppServicesSiteExtension = null;
+            _isRunningInAzureFunctionsHost = null;
+            _isAwsLambda = null;
+            _isGoogleCloudFunctions = null;
+        }
+
         /// <summary>
         /// Safe wrapper around Environment.SetEnvironmentVariable
         /// </summary>
