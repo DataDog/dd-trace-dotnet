@@ -32,7 +32,7 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
             Util.EnvironmentHelpers.SetEnvironmentVariable(variable, null);
         }
 
-        // Util.EnvironmentHelpers.ClearCache();
+        Util.EnvironmentHelpers.ClearCache();
         base.Before(methodUnderTest);
     }
 
