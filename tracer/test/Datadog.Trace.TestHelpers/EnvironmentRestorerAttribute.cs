@@ -22,17 +22,17 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
         _originalVariables = new(args.Length);
     }
 
-    public virtual EnvironmentVariableTarget Target => EnvironmentVariableTarget.Process;
-
     public override void Before(MethodInfo methodUnderTest)
     {
         foreach (var variable in _variables)
         {
-            _originalVariables[variable] = Environment.GetEnvironmentVariable(variable, Target);
-            // clear variable
-            Environment.SetEnvironmentVariable(variable, null, Target);
+            _originalVariables[variable] = Environment.GetEnvironmentVariable(variable);
+
+            // Clear variable. Use Datadog.Trace.Util.EnvironmentHelpers to clear any cached values.
+            Util.EnvironmentHelpers.SetEnvironmentVariable(variable, null);
         }
 
+        // Util.EnvironmentHelpers.ClearCache();
         base.Before(methodUnderTest);
     }
 
@@ -40,7 +40,8 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
     {
         foreach (var variable in _originalVariables)
         {
-            Environment.SetEnvironmentVariable(variable.Key, variable.Value, Target);
+            // Restore variable. Use Datadog.Trace.Util.EnvironmentHelpers to clear any cached values.
+            Util.EnvironmentHelpers.SetEnvironmentVariable(variable.Key, variable.Value);
         }
     }
 }
