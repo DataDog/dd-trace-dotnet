@@ -62,10 +62,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: StepFunction,
       runtime-id: Guid_1,
       span.kind: producer,
       statemachinename: StepFunction,
-      _dd.base_service: Samples.AWS.StepFunctions
+      _dd.base_service: Samples.AWS.StepFunctions,
+      _dd.peer.service.source: statemachinename
     },
     Metrics: {
       _dd.top_level: 1.0
