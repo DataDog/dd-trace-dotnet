@@ -54,6 +54,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.DisplayName = CreateResourceName(activity.DisplayName, jobName);
         }
 
+        internal static void EnhanceActivityMetadata(IActivity activity)
+        {
+            if (activity.OperationName is null)
+            {
+                return;
+            }
+
+            activity.AddTag("operation.name", activity.OperationName);
+            var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
+            if (string.IsNullOrEmpty(jobName))
+            {
+                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                return;
+            }
+
+            activity.AddTag("resource.name", CreateResourceName(activity.OperationName, jobName));
+        }
+
         internal static void AddException(object exceptionArg, IActivity activity)
         {
             if (exceptionArg is not Exception exception)
@@ -66,6 +84,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
             activity.AddTag(Tags.ErrorStack, exception.ToString());
             activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
+        }
+
+        /// <summary>
+        /// Handles Quartz diagnostic events.
+        /// This method is shared between the DiagnosticObserver (modern .NET) and reflection-based observer (.NET Framework).
+        /// </summary>
+        internal static void HandleDiagnosticEvent(string eventName, object arg)
+        {
+            switch (eventName)
+            {
+                case "Quartz.Job.Execute.Start":
+                case "Quartz.Job.Veto.Start":
+                    var activity = ActivityListener.GetCurrentActivity();
+                    if (activity is IActivity5 activity5)
+                    {
+                        SetActivityKind(activity5);
+                    }
+                    else
+                    {
+                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property.");
+                    }
+
+                    if (activity?.Instance is not null)
+                    {
+                        EnhanceActivityMetadata(activity);
+                    }
+
+                    break;
+                case "Quartz.Job.Execute.Stop":
+                case "Quartz.Job.Veto.Stop":
+                    break;
+                case "Quartz.Job.Execute.Exception":
+                case "Quartz.Job.Veto.Exception":
+                    // setting an exception manually
+                    var closingActivity = ActivityListener.GetCurrentActivity();
+                    if (closingActivity?.Instance is not null)
+                    {
+                        AddException(arg, closingActivity);
+                    }
+
+                    break;
+            }
         }
     }
 }
