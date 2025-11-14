@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 metricsResponse.EnsureSuccessStatusCode();
 
                 var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
-                var metricsData = JToken.Parse(metricsJson);
+                var metricsData = JToken.Parse(metricsJson).Last;
 
                 metricsData.Should().NotBeNullOrEmpty();
 
@@ -332,7 +332,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
-            SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -343,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 logsResponse.EnsureSuccessStatusCode();
 
                 var logsJson = await logsResponse.Content.ReadAsStringAsync();
-                var logsData = JToken.Parse(logsJson);
+                var logsData = JToken.Parse(logsJson).Last;
 
                 logsData.Should().NotBeNullOrEmpty();
 
