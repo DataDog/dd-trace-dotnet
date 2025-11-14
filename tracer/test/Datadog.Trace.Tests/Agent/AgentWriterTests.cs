@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -427,7 +428,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            tracer.Setup(x => x.PerTraceSettings).Returns(new PerTraceSettings(null, null, null!, MutableSettings.CreateWithoutDefaultSources(new(NullConfigurationSource.Instance))));
+            tracer.Setup(x => x.PerTraceSettings).Returns(new PerTraceSettings(null, null, null!, MutableSettings.CreateWithoutDefaultSources(new(NullConfigurationSource.Instance), new ConfigurationTelemetry())));
             var traceContext = new TraceContext(tracer.Object);
             var rootSpanContext = new SpanContext(null, traceContext, null);
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
