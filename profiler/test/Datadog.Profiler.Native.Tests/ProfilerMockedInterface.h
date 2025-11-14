@@ -94,6 +94,10 @@ public:
     MOCK_METHOD(bool, IsWaitHandleProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
     MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
+    MOCK_METHOD(bool, IsHeapSnapshotEnabled, (), (const override));
+    MOCK_METHOD(std::chrono::minutes, GetHeapSnapshotInterval, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
+    MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter

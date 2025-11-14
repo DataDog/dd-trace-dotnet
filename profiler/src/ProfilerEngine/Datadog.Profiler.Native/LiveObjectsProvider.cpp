@@ -67,7 +67,8 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize)
+    uint64_t pohSize,
+    uint32_t memPressure)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 

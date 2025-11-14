@@ -39,7 +39,9 @@ EtwEventsManager::EtwEventsManager(
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
-        pGCSuspensionsListener);
+        pGCSuspensionsListener,
+        nullptr // no GC dump for .NET Framework (TODO: how to trigger it from ETW?)
+        );
     _logger = std::make_unique<ProfilerLogger>();
     _IpcClient = nullptr;
     _IpcServer = nullptr;

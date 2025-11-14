@@ -344,7 +344,19 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        if (_pConfiguration->IsHeapSnapshotEnabled())
+        {
+            _pHeapSnapshotManager = RegisterService<HeapSnapshotManager>(
+                _pConfiguration.get(),
+                _pCorProfilerInfoEvents,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _metricsRegistry
+                );
+        }
+
+        // GC profiling is needed for both GC provider and heap snapshots
+        if ((_pHeapSnapshotManager != nullptr) || _pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
@@ -392,7 +404,8 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pNetworkProvider
+            _pNetworkProvider,
+            _pHeapSnapshotManager
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -402,6 +415,10 @@ void CorProfilerCallback::InitializeServices()
         if (_pLiveObjectsProvider != nullptr)
         {
             _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
+        }
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pEventPipeEventsManager->Register(_pHeapSnapshotManager);
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
@@ -568,7 +585,8 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pMetadataProvider.get(),
         _pSsiManager.get(),
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pHeapSnapshotManager
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -1390,7 +1408,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
         _pConfiguration->IsHttpProfilingEnabled() ||
-        _pConfiguration->IsWaitHandleProfilingEnabled()
+        _pConfiguration->IsWaitHandleProfilingEnabled() ||
+        _pConfiguration->IsHeapSnapshotEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1487,6 +1506,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
         //  - WaitHandle events for .NET 9+
         //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //  - HTTP events via System.Net.Http provider
+        //  - Bulkxxx events for heap snapshots
         //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1533,7 +1554,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-
             providerCount = 6;
             providers =
             {
@@ -1589,6 +1609,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             };
         }
 
+        // TODO: generating a heap snapshot requires the creation of another EventPipe session
+        //       with the same Microsoft-Windows-DotNETRuntime provider and other keywords and,
+        //       more important, possiblly a different verbosity (i.e. verbose).
+        //       CHECK if we need to keep track of the current verbosity level after the heap snapshot
+        //       probably by creating another EventPipe session just to reset the verbosity level.
+        //       Hoping that it is not required to also reset the keywords...
+
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
                 providerCount, providers.data(), false, &_session
                 );
@@ -1598,6 +1625,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             _session = 0;
             Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, ".");
             return hr;
+        }
+
+        // keep track of the keywords and verbosity so that we will be able to reset what is stored
+        // by the GC and the CLR after a heap snapshot - see https://github.com/dotnet/runtime/issues/121462
+        // for more details
+        //
+        // TODO: add a test to check in which version of the CLR this issue has been fixed
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pHeapSnapshotManager->SetRuntimeSessionParameters(activatedKeywords, verbosity);
         }
     }
     else
