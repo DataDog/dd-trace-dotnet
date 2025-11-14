@@ -31,9 +31,9 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
     {
         if (isRunningInLambda)
         {
-            Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
         }
 
         var source = CreateConfigurationSource((ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));
