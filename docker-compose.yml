@@ -20,7 +20,7 @@ services:
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017"
     command: mongod
@@ -144,7 +144,7 @@ services:
     - "127.0.0.1:6391:6379"
 
   mongo:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     profiles: ["group2"]
     ports:
       - "127.0.0.1:27017:27017"
@@ -1199,7 +1199,7 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_osx_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017:27017"
     command: mongod
