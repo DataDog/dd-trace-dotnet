@@ -26,7 +26,9 @@ public class AwsDynamoDbCommonTests
     public void TagTableNameAndResourceName_TagsProperly()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+        var request = new GetItemRequest { TableName = TableName };
+        var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+        var scope = AwsDynamoDbCommon.CreateScopeTable(tracer, "GetItem", proxy, out AwsDynamoDbTags tags);
 
         AwsDynamoDbCommon.TagTableNameAndResourceName(TableName, tags, scope);
 
@@ -40,9 +42,9 @@ public class AwsDynamoDbCommonTests
     public void TagTableNameAndResourceName_WithNullTags_SkipsTagging()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest { TableName = TableName };
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+        var scope = AwsDynamoDbCommon.CreateScopeTable(tracer, "GetItem", proxy, out AwsDynamoDbTags tags);
 
         tags = null;
         AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
@@ -55,9 +57,9 @@ public class AwsDynamoDbCommonTests
     public void TagTableNameAndResourceName_WithNullScope_SkipsTagging()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest { TableName = TableName };
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+        var scope = AwsDynamoDbCommon.CreateScopeTable(tracer, "GetItem", proxy, out AwsDynamoDbTags tags);
 
         scope = null;
         AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
@@ -69,9 +71,9 @@ public class AwsDynamoDbCommonTests
     public void TagTableNameAndResourceName_WithEmptyRequest_SkipsTagging()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest();
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+        var scope = AwsDynamoDbCommon.CreateScopeTable(tracer, "GetItem", proxy, out AwsDynamoDbTags tags);
 
         AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
 
@@ -85,7 +87,6 @@ public class AwsDynamoDbCommonTests
     public void TagBatchRequest_WithOneTable_TagsTableNameAndResourceName()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
         var request = new BatchGetItemRequest
         {
             RequestItems = new Dictionary<string, KeysAndAttributes>()
@@ -94,8 +95,7 @@ public class AwsDynamoDbCommonTests
             }
         };
         var proxy = request.DuckCast<IBatchRequest>();
-
-        AwsDynamoDbCommon.TagBatchRequest(proxy, tags, scope);
+        var scope = AwsDynamoDbCommon.CreateScopeBatch(tracer, "BatchGetItem", proxy, out AwsDynamoDbTags tags);
 
         tags.TableName.Should().Be("MyTableName");
 
@@ -107,7 +107,6 @@ public class AwsDynamoDbCommonTests
     public void TagBatchRequest_WithMultipleTables_SkipsTagging()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
         var request = new BatchGetItemRequest
         {
             RequestItems = new Dictionary<string, KeysAndAttributes>()
@@ -117,8 +116,7 @@ public class AwsDynamoDbCommonTests
             }
         };
         var proxy = request.DuckCast<IBatchRequest>();
-
-        AwsDynamoDbCommon.TagBatchRequest(proxy, tags, scope);
+        var scope = AwsDynamoDbCommon.CreateScopeBatch(tracer, "BatchGetItem", proxy, out AwsDynamoDbTags tags);
 
         tags.TableName.Should().Be(null);
 
@@ -130,14 +128,12 @@ public class AwsDynamoDbCommonTests
     public void TagBatchRequest_WithEmptyRequest_SkipsTagging()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchWriteItem", out AwsDynamoDbTags tags);
         var request = new BatchWriteItemRequest
         {
             RequestItems = new Dictionary<string, List<WriteRequest>>()
         };
         var proxy = request.DuckCast<IBatchRequest>();
-
-        AwsDynamoDbCommon.TagBatchRequest(proxy, tags, scope);
+        var scope = AwsDynamoDbCommon.CreateScopeBatch(tracer, "BatchWriteItem", proxy, out AwsDynamoDbTags tags);
 
         tags.TableName.Should().Be(null);
 

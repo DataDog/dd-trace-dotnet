@@ -8,6 +8,7 @@ using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -21,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsDynamoDb;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        public static Scope CreateScopeBatch(Tracer tracer, string operation, IBatchRequest request, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
         {
             tags = null;
 
@@ -48,6 +49,126 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
                 tags.Service = DynamoDbServiceName;
                 tags.Operation = operation;
+                TagBatchRequest(request, tags, scope);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "dynamodb." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless)
+                {
+                    tags.PeerService = tags.TableName;
+                    tags.PeerServiceSource = Trace.Tags.TableName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // always returns the scope, even if it's null because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags)
+            return scope;
+        }
+
+        public static Scope CreateScopeKeys(Tracer tracer, string operation, IAmazonDynamoDbRequestWithKnownKeys request, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        {
+            tags = null;
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
+                var serviceName = perTraceSettings.GetServiceName(DatadogAwsDynamoDbServiceName);
+                scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var span = scope.Span;
+
+                // This is needed to showcase the DynamoDB action in the
+                // span details. This will also cause to repeat an HTTP span.
+                span.Type = SpanTypes.DynamoDb;
+                span.ResourceName = $"{DynamoDbServiceName}.{operation}";
+
+                tags.Service = DynamoDbServiceName;
+                tags.Operation = operation;
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "dynamodb." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless)
+                {
+                    tags.PeerService = request.TableName;
+                    tags.PeerServiceSource = Trace.Tags.TableName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // always returns the scope, even if it's null because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags)
+            return scope;
+        }
+
+        public static Scope CreateScopeTable(Tracer tracer, string operation, IAmazonDynamoDbRequestWithTableName request, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        {
+            tags = null;
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
+                var serviceName = perTraceSettings.GetServiceName(DatadogAwsDynamoDbServiceName);
+                scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var span = scope.Span;
+
+                // This is needed to showcase the DynamoDB action in the
+                // span details. This will also cause to repeat an HTTP span.
+                span.Type = SpanTypes.DynamoDb;
+                span.ResourceName = $"{DynamoDbServiceName}.{operation}";
+
+                tags.Service = DynamoDbServiceName;
+                tags.Operation = operation;
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "dynamodb." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless)
+                {
+                    tags.PeerService = request.TableName;
+                    tags.PeerServiceSource = Trace.Tags.TableName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

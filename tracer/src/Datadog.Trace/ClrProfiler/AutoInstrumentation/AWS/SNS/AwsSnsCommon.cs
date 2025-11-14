@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSns;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSnsTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, IAmazonSNSRequestWithTopicArn request, out AwsSnsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
 
@@ -50,6 +51,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
                 tags.Service = SnsServiceName;
                 tags.Operation = operation;
+                tags.TopicArn = request.TopicArn;
+                tags.TopicName = GetTopicName(tags.TopicArn);
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "sns." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless && isOutbound)
+                {
+                    tags.PeerService = tags.TopicName;
+                    tags.PeerServiceSource = Trace.Tags.TopicName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

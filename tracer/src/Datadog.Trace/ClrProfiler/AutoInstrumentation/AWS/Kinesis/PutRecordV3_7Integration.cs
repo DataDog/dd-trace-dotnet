@@ -49,12 +49,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var tracer = Tracer.Instance;
-            var scope = AwsKinesisCommon.CreateScope(tracer, Operation, SpanKinds.Producer, null, out var tags);
+            var scope = AwsKinesisCommon.CreateScopeArnAndName(tracer, Operation, SpanKinds.Producer, request, null, out var tags);
             var streamName = AwsKinesisCommon.GetStreamName(request);
-            if (tags is not null)
-            {
-                tags.StreamName = streamName;
-            }
 
             ContextPropagation.InjectTraceIntoData(tracer, request, scope, streamName);
 

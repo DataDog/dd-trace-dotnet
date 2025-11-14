@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
@@ -38,8 +39,34 @@ public class CopyObjectAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
+        var tracer = Tracer.Instance;
+        var scope = AwsS3Common.CreateScope(tracer, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.DestinationBucketName, request.DestinationObjectKey);
+        if (tags != null)
+        {
+            bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
+            bool isServerless = EnvironmentHelpers.IsAwsLambda();
+            if (isServerless && isOutbound && tags.AwsRegion != null)
+            {
+                if (tags.BucketName != null)
+                {
+                    tags.PeerService = tags.BucketName + ".s3." + tags.AwsRegion + ".amazonaws.com";
+                }
+                else
+                {
+                    tags.PeerService = "s3." + tags.AwsRegion + ".amazonaws.com";
+                }
+
+                tags.PeerServiceSource = "peer.service";
+            }
+            else if (!isServerless && isOutbound)
+            {
+                tags.PeerService = tags.BucketName;
+                tags.PeerServiceSource = Trace.Tags.BucketName;
+            }
+
+            tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+        }
 
         return new CallTargetState(scope, request);
     }

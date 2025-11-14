@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
@@ -25,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         internal const string IntegrationName = nameof(IntegrationId.AwsEventBridge);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AwsEventBridge;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsEventBridgeTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, IPutEventsRequest request, out AwsEventBridgeTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
 
@@ -51,6 +52,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
                 tags.Service = EventBridgeServiceName;
                 tags.Operation = operation;
+                var busName = GetBusName(request.Entries.Value);
+                if (busName is not null)
+                {
+                    // We use RuleName to stay consistent with other runtimes
+                    // TODO rename rulename tag to busname across all runtimes
+                    tags.RuleName = busName;
+                }
+
+                bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                if (isServerless && isOutbound && tags.AwsRegion != null)
+                {
+                    tags.PeerService = "events." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                }
+                else if (!isServerless && isOutbound)
+                {
+                    tags.PeerService = tags.RuleName;
+                    tags.PeerServiceSource = Trace.Tags.RuleName;
+                }
+
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

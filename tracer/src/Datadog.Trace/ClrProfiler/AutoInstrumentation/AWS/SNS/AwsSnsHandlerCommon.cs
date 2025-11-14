@@ -25,14 +25,9 @@ internal static class AwsSnsHandlerCommon
         var requestProxy = request.DuckCast<IAmazonSNSRequestWithTopicArn>();
 
         var tracer = Tracer.Instance;
-        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags);
+        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, requestProxy, out var tags);
 
         var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
-        if (tags is not null && requestProxy.TopicArn is not null)
-        {
-            tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = topicName;
-        }
 
         if (scope?.Span.Context is { } context && !string.IsNullOrEmpty(topicName))
         {

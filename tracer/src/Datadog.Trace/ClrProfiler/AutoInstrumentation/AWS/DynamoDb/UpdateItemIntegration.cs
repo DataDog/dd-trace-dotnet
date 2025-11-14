@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
+            var scope = AwsDynamoDbCommon.CreateScopeKeys(Tracer.Instance, Operation, request, out AwsDynamoDbTags tags);
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
 
             if (!Tracer.Instance.Settings.SpanPointersEnabled)

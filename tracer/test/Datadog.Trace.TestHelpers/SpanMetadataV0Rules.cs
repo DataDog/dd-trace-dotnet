@@ -146,6 +146,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .Matches("component", "aws-sdk")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
@@ -167,6 +169,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .Matches("component", "aws-sdk")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
@@ -188,11 +192,13 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSqsInboundV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqs.request")
                 .Matches(Type, "http"))
@@ -212,7 +218,103 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .MatchesOneOf("span.kind", "producer", "client", "consumer"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsAwsSqsOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "sqs.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SQS")
+                .Matches("aws_service", "SQS")
+                .IsPresent("aws.queue.name")
+                .IsPresent("queuename")
+                .IsOptional("aws.queue.url")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "sqs.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SQS")
+                .Matches("aws_service", "SQS")
+                .IsPresent("aws.queue.name")
+                .IsPresent("queuename")
+                .IsOptional("aws.queue.url")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
+        public static Result IsAwsSnsInboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "sns.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SNS")
+                .Matches("aws_service", "SNS")
+                .IsPresent("aws.topic.name")
+                .IsPresent("topicname")
+                .IsOptional("aws.topic.arn")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsAwsSnsOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "sns.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SNS")
+                .Matches("aws_service", "SNS")
+                .IsPresent("aws.topic.name")
+                .IsPresent("topicname")
+                .IsOptional("aws.topic.arn")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
 
         public static Result IsAwsSnsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -232,9 +334,11 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .MatchesOneOf("span.kind", "producer", "client"));
+                .Matches("span.kind", "client"));
 
         public static Result IsAwsEventBridgeRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -252,6 +356,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
                 .MatchesOneOf("span.kind", "producer", "client"));
@@ -272,6 +378,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsPresent("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "producer"));

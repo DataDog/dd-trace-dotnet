@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
@@ -31,14 +32,9 @@ internal static class AwsSqsHandlerCommon
         var requestProxy = request.DuckCast<IAmazonSQSRequestWithQueueUrl>();
 
         var tracer = Tracer.Instance;
-        var scope = AwsSqsCommon.CreateScope(tracer, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
+        var scope = AwsSqsCommon.CreateScopeQueueUrl(tracer, sendType.OperationName, requestProxy, out var tags, spanKind: SpanKinds.Producer);
 
         var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
-        if (tags is not null && requestProxy.QueueUrl is not null)
-        {
-            tags.QueueUrl = requestProxy.QueueUrl;
-            tags.QueueName = queueName;
-        }
 
         if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
         {
@@ -111,12 +107,7 @@ internal static class AwsSqsHandlerCommon
         }
 
         var queueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
-        var scope = AwsSqsCommon.CreateScope(Tracer.Instance, "ReceiveMessage", out var tags, spanKind: SpanKinds.Consumer);
-        if (tags is not null && request.QueueUrl is not null)
-        {
-            tags.QueueUrl = request.QueueUrl;
-            tags.QueueName = queueName;
-        }
+        var scope = AwsSqsCommon.CreateScopeQueueUrl(Tracer.Instance, "ReceiveMessage", request, out var tags, spanKind: SpanKinds.Consumer);
 
         // request the message attributes that a datadog instrumentation might have set when sending
         if (request.MessageAttributeNames is null)
