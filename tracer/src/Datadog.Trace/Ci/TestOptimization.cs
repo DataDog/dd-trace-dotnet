@@ -5,16 +5,15 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.Util;
 using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
 
 namespace Datadog.Trace.Ci;
@@ -22,8 +21,6 @@ namespace Datadog.Trace.Ci;
 internal class TestOptimization : ITestOptimization
 {
     private static ITestOptimization? _instance;
-
-    private Lazy<bool> _enabledLazy;
     private int _firstInitialization = 1;
     private TestOptimizationSettings? _settings;
     private ITestOptimizationClient? _client;
@@ -38,18 +35,13 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
-    public TestOptimization(CIEnvironmentValues ciValues)
+    private TestOptimization(CIEnvironmentValues ciValues)
     {
         CIValues = ciValues;
-        _enabledLazy = new Lazy<bool>(InternalEnabled, true);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
     }
 
-    public static ITestOptimization Instance
-    {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization(CIEnvironmentValues.Instance))!;
-        internal set => _instance = value;
-    }
+    public static ITestOptimization Instance => _instance!;
 
     public static bool DefaultUseLockedTracerManager { get; set; } = true;
 
@@ -70,7 +62,7 @@ internal class TestOptimization : ITestOptimization
         }
     }
 
-    public bool Enabled => _enabledLazy.Value;
+    public bool Enabled => true;
 
     public TestOptimizationSettings Settings
     {
@@ -80,7 +72,6 @@ internal class TestOptimization : ITestOptimization
             _settings = value;
             _client = null;
             _firstInitialization = 1;
-            _enabledLazy = new(InternalEnabled, true);
             _additionalFeaturesTask = null;
             _tracerManagement = null;
             _hostInfo = null;
@@ -225,7 +216,25 @@ internal class TestOptimization : ITestOptimization
 
     public CIEnvironmentValues CIValues { get; }
 
-    public void Initialize()
+    // [MemberNotNull(nameof(Instance))] // Can't actually add this, because the compiler doesn't track the semantics of Interlocked.CompareExchange
+    public static void InitializeInstance(bool isEnabled)
+    {
+        if (isEnabled)
+        {
+            var opt = new TestOptimization(CIEnvironmentValues.Instance);
+            if (Interlocked.CompareExchange(ref _instance, opt, null) == null)
+            {
+                // First initialization
+                opt.Initialize();
+            }
+        }
+        else
+        {
+            Interlocked.CompareExchange(ref _instance, new NullTestOptimization(), null);
+        }
+    }
+
+    private void Initialize()
     {
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {
@@ -416,7 +425,6 @@ internal class TestOptimization : ITestOptimization
         _settings = null;
         _client = null;
         _firstInitialization = 1;
-        _enabledLazy = new(InternalEnabled, true);
         _additionalFeaturesTask = null;
         _tracerManagement = null;
         _hostInfo = null;
@@ -425,73 +433,6 @@ internal class TestOptimization : ITestOptimization
         _impactedTestsDetectionFeature = null;
         _flakyRetryFeature = null;
         _dynamicInstrumentationFeature = null;
-    }
-
-    private bool InternalEnabled()
-    {
-        // By configuration
-        if (Settings.Enabled is { } enabled)
-        {
-            if (enabled)
-            {
-                Log.Information("TestOptimization: CI Visibility Enabled by Configuration");
-                return true;
-            }
-
-            // explicitly disabled
-            Log.Information("TestOptimization: CI Visibility Disabled by Configuration");
-            return false;
-        }
-
-        // Try to autodetect based in the domain name.
-        var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
-        if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
-            domainName.StartsWith("xunit", StringComparison.Ordinal) ||
-            domainName.StartsWith("nunit", StringComparison.Ordinal) ||
-            domainName.StartsWith("MSBuild", StringComparison.Ordinal))
-        {
-            Log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
-            return true;
-        }
-
-        // Try to autodetect based in the process name.
-        var processName = GetProcessName();
-        if (processName.StartsWith("testhost.", StringComparison.Ordinal))
-        {
-            Log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
-            return true;
-        }
-
-        return false;
-
-        void PropagateCiVisibilityEnvironmentVariable()
-        {
-            try
-            {
-                // Set the configuration key to propagate the configuration to child processes.
-                Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
-            }
-            catch
-            {
-                // .
-            }
-        }
-
-        string GetProcessName()
-        {
-            try
-            {
-                return ProcessHelpers.GetCurrentProcessName();
-            }
-            catch (Exception exception)
-            {
-                Log.Warning(exception, "TestOptimization: Error getting current process name when checking CI Visibility status");
-            }
-
-            return string.Empty;
-        }
     }
 
     private async Task ShutdownAsync(Exception? exception)

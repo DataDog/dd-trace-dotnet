@@ -45,8 +45,6 @@ internal interface ITestOptimization
 
     CIEnvironmentValues CIValues { get; }
 
-    void Initialize();
-
     void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null);
 
     void InitializeFromManualInstrumentation();
