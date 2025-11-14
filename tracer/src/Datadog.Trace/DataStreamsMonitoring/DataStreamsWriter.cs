@@ -37,10 +37,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
-    private int _flushRequested;
     private Task? _processTask;
     private Timer? _flushTimer;
-    private TaskCompletionSource<bool>? _currentFlushTcs;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -87,6 +85,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private void Initialize()
     {
+        Log.Warning("[ROB] Custom .NET tracer branch with flush logic changes");
         lock (_initLock)
         {
             if (_processTask != null)
@@ -94,10 +93,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Run(ProcessQueueLoopAsync);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning).Unwrap();
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
-                x => ((DataStreamsWriter)x!).RequestFlush(),
+                x => ((DataStreamsWriter)x!).Flush(),
                 this,
                 dueTime: _bucketDurationMs,
                 period: _bucketDurationMs);
@@ -172,8 +171,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
         // request a final flush - as the _processExit flag is now set
         // this ensures we will definitely flush all the stats
-        // (and sets the mutex if it isn't already set)
-        RequestFlush();
+        Flush();
 
         // wait for the processing loop to complete
         var completedTask = await Task.WhenAny(
@@ -187,48 +185,74 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
+    public void Flush()
+    {
+        if (_processExit.Task.IsCompleted)
+        {
+            return;
+        }
+
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        // Fire and forget - don't wait for the flush to complete
+        _ = Task.Run(async () =>
+        {
+            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+            {
+                Log.Warning("Could not acquire flush semaphore within timeout");
+                return;
+            }
+
+            try
+            {
+                await WriteToApiAsync().ConfigureAwait(false);
+                FlushComplete?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during flush");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
+            }
+        });
+    }
+
     public async Task FlushAsync()
     {
-        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        if (_processExit.Task.IsCompleted)
+        {
+            return;
+        }
+
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        {
+            Log.Error("Data streams flush timeout");
+            return;
+        }
+
         try
         {
-            var timeout = TimeSpan.FromSeconds(5);
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-            {
-                return;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Interlocked.Exchange(ref _currentFlushTcs, tcs);
-
-            RequestFlush();
-
-            var completedTask = await Task.WhenAny(
-                tcs.Task,
-                _processExit.Task,
-                Task.Delay(timeout)).ConfigureAwait(false);
-
-            if (completedTask != tcs.Task)
-            {
-                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
-            }
+            await WriteToApiAsync().ConfigureAwait(false);
+            FlushComplete?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during flush");
         }
         finally
         {
-            _currentFlushTcs = null;
             _flushSemaphore.Release();
         }
-    }
-
-    private void RequestFlush()
-    {
-        Interlocked.Exchange(ref _flushRequested, 1);
     }
 
     private async Task WriteToApiAsync()
@@ -271,7 +295,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task ProcessQueueLoopAsync()
     {
-        var isFinalFlush = false;
         while (true)
         {
             try
@@ -285,15 +308,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 {
                     _aggregator.AddBacklog(in backlogPoint);
                 }
-
-                var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1)
-                {
-                    await WriteToApiAsync().ConfigureAwait(false);
-                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
-                    currentFlushTcs?.TrySetResult(true);
-                    FlushComplete?.Invoke(this, EventArgs.Empty);
-                }
             }
             catch (Exception ex)
             {
@@ -302,15 +316,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (_processExit.Task.IsCompleted)
             {
-                if (isFinalFlush)
-                {
-                    return;
-                }
-
-                // do one more loop to make sure everything is flushed
-                RequestFlush();
-                isFinalFlush = true;
-                continue;
+                return;
             }
 
             // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
