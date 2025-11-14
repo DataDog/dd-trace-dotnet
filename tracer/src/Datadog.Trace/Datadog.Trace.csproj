@@ -156,4 +156,15 @@
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="Configuration\supported-configurations.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+  </ItemGroup>
 </Project>

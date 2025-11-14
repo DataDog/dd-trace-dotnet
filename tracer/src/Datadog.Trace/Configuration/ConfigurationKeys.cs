@@ -14,6 +14,14 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal static partial class ConfigurationKeys
     {
+        // temporary so that ConfigurationKeys2 can resolve reference, all this is removed later
+        public const string TraceLogPath = "DD_TRACE_LOG_PATH";
+
+        /// <summary>
+        /// Configuration key to enable or disable the ActivityListener.
+        /// </summary>
+        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
         /// <summary>
         /// Configuration key to enable experimental features.
         /// </summary>
@@ -994,7 +1002,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
             /// false by default if DSM is in default state, true otherwise
             /// </summary>
-             /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+            /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
             public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
         }
     }
