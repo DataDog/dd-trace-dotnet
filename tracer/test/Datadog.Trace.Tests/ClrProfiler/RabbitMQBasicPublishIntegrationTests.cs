@@ -6,9 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.ClrProfiler
@@ -16,10 +21,12 @@ namespace Datadog.Trace.Tests.ClrProfiler
     public class RabbitMQBasicPublishIntegrationTests
     {
         [Fact]
-        public void OnMethodBegin_WithReadOnlyHeaders_DoesNotThrow()
+        public async Task OnMethodBegin_WithReadOnlyHeaders_DoesNotThrow()
         {
             var settings = new TracerSettings();
-            var tracer = new Tracer(settings);
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ITraceSampler>();
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             var readOnlyHeaders = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>
             {
@@ -45,7 +52,7 @@ namespace Datadog.Trace.Tests.ClrProfiler
                     basicProperties,
                     new TestBody());
 
-                state.Scope.Dispose();
+                state.Scope?.Dispose();
             }
             catch (Exception ex)
             {
@@ -60,10 +67,12 @@ namespace Datadog.Trace.Tests.ClrProfiler
         }
 
         [Fact]
-        public void OnMethodBegin_WithNullHeaders_CreatesNewDictionary()
+        public async Task OnMethodBegin_WithNullHeaders_CreatesNewDictionary()
         {
             var settings = new TracerSettings();
-            var tracer = new Tracer(settings);
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ITraceSampler>();
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             var basicProperties = new TestBasicProperties
             {
@@ -80,17 +89,19 @@ namespace Datadog.Trace.Tests.ClrProfiler
                 basicProperties,
                 new TestBody());
 
-            state.Scope.Dispose();
+            state.Scope?.Dispose();
 
             basicProperties.Headers.Should().NotBeNull();
             basicProperties.Headers.Should().ContainKey("x-datadog-trace-id");
         }
 
         [Fact]
-        public void OnMethodBegin_WithWritableHeaders_AddsHeaders()
+        public async Task OnMethodBegin_WithWritableHeaders_AddsHeaders()
         {
             var settings = new TracerSettings();
-            var tracer = new Tracer(settings);
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ITraceSampler>();
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             var writableHeaders = new Dictionary<string, object>
             {
@@ -112,7 +123,7 @@ namespace Datadog.Trace.Tests.ClrProfiler
                 basicProperties,
                 new TestBody());
 
-            state.Scope.Dispose();
+            state.Scope?.Dispose();
 
             basicProperties.Headers.Should().NotBeNull();
             basicProperties.Headers.Should().BeSameAs(writableHeaders, "writable headers should not be replaced");
