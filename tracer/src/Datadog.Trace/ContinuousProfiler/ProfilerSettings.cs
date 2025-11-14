@@ -8,6 +8,7 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ContinuousProfiler;
 
@@ -20,7 +21,7 @@ internal class ProfilerSettings
     {
     }
 
-    // Internal for testing only
+    [TestingAndPrivateOnly]
     internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)
@@ -68,7 +69,7 @@ internal class ProfilerSettings
         };
     }
 
-    // Internal for testing only
+    [TestingOnly]
     internal ProfilerSettings(ProfilerState state)
     {
         ProfilerState = state;

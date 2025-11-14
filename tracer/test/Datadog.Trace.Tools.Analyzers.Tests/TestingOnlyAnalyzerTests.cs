@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiAnalyzerTests.cs" company="Datadog">
+﻿// <copyright file="TestingOnlyAnalyzerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,18 +12,20 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer.PublicApiAnalyzer,
+    Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer.TestingOnlyAnalyzer,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {
-    public class PublicApiAnalyzerTests
+    public class TestingOnlyAnalyzerTests
     {
-        private const string DiagnosticId = PublicApiAnalyzer.PublicApiAnalyzer.DiagnosticId;
+        private const string DiagnosticId = TestingOnlyAnalyzer.TestingOnlyAnalyzer.DiagnosticId;
 
-        public static string[] GetPublicApiAttributes { get; } = { "PublicApi", "PublicApiAttribute" };
+        public static string[] GetTestingOnlyAttributes { get; } = { "TestingOnly", "TestingOnlyAttribute" };
 
-        public static string[] NonPublicApiAccesses { get; } =
+        public static string[] GetTestingAndPrivateOnlyAttributes { get; } = { "TestingAndPrivateOnly", "TestingAndPrivateOnlyAttribute" };
+
+        public static string[] NonTestingOnlyAccesses { get; } =
         {
             "var x = _nonPublicField;",
             "var x = NonPublicProperty;",
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             "var x = new NonPublicClass();",
         };
 
-        public static string[] PublicApiAccesses { get; } =
+        public static string[] TestingOnlyAccesses { get; } =
         {
             "var x = {|#0:_publicField|};",
             "var x = {|#0:PublicProperty|};",
@@ -65,24 +67,58 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             """,
         };
 
+        public static string[] TestingAndPrivateOnlySameTypeAccesses { get; } =
+        {
+            // Access members from the same class - should NOT be flagged
+            "var x = _publicField;",
+            "var x = PublicProperty;",
+            "PublicProperty = string.Empty;",
+            "var x = PublicMethod();",
+            "var x = new TestClass();",
+        };
+
+        public static string[] TestingAndPrivateOnlyDifferentTypeAccesses { get; } =
+        {
+            // Access members from a different class - should be flagged
+            "var x = {|#0:OtherClass._testingAndPrivateField|};",
+            "var x = {|#0:OtherClass.TestingAndPrivateProperty|};",
+            "{|#0:OtherClass.TestingAndPrivateProperty|} = string.Empty;",
+            "var x = {|#0:OtherClass.TestingAndPrivateMethod()|};",
+            "var x = {|#0:new OtherClass()|};",
+        };
+
         public static IEnumerable<object[]> NonPublicCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
-            from api in NonPublicApiAccesses
+            from api in NonTestingOnlyAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> PublicCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
-            from api in PublicApiAccesses
+            from api in TestingOnlyAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> NotSupportedCombination { get; } =
-            from attrs in GetPublicApiAttributes
+            from attrs in GetTestingOnlyAttributes
             from includeNamespace in new[] { true, false }
             from api in ShouldThrowButDoesnt
+            from conditional in new[] { true, false }
+            select new object[] { attrs, includeNamespace, api, conditional };
+
+        public static IEnumerable<object[]> TestingAndPrivateOnlySameTypeCombination { get; } =
+            from attrs in GetTestingAndPrivateOnlyAttributes
+            from includeNamespace in new[] { true, false }
+            from api in TestingAndPrivateOnlySameTypeAccesses
+            from conditional in new[] { true, false }
+            select new object[] { attrs, includeNamespace, api, conditional };
+
+        public static IEnumerable<object[]> TestingAndPrivateOnlyDifferentTypeCombination { get; } =
+            from attrs in GetTestingAndPrivateOnlyAttributes
+            from includeNamespace in new[] { true, false }
+            from api in TestingAndPrivateOnlyDifferentTypeAccesses
             from conditional in new[] { true, false }
             select new object[] { attrs, includeNamespace, api, conditional };
 
@@ -97,7 +133,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(NonPublicCombination))]
-        public async Task ShouldNotFlagUsageOfNonPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldNotFlagUsageOfNonTestingOnly(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
@@ -106,7 +142,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(PublicCombination))]
-        public async Task ShouldFlagUsageOfPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        public async Task ShouldFlagUsageOfTestingOnly(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
@@ -133,6 +169,27 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await ideallyShouldThrow.Should().ThrowAsync<InvalidOperationException>();
         }
 
+        [Theory]
+        [MemberData(nameof(TestingAndPrivateOnlySameTypeCombination))]
+        public async Task ShouldNotFlagTestingAndPrivateOnlyWhenCalledFromSameType(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        {
+            var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
+
+            // No diagnostics expected - calls from within the same type should be allowed
+            await Verifier.VerifyAnalyzerAsync(code);
+        }
+
+        [Theory]
+        [MemberData(nameof(TestingAndPrivateOnlyDifferentTypeCombination))]
+        public async Task ShouldFlagTestingAndPrivateOnlyWhenCalledFromDifferentType(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
+        {
+            var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
+
+            var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Error)
+               .WithLocation(0);
+            await Verifier.VerifyAnalyzerAsync(code, expected);
+        }
+
         private static string GetSampleCode(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             var attributePrefix = includeNamespace ? "ConsoleApplication1." : string.Empty;
@@ -147,7 +204,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                 using System.Diagnostics;
 
                 namespace ConsoleApplication1;
-                
+
                 {{GetAttributeDefinition(publicAttribute, attributeIsConditional)}}
 
                 class TestClass
@@ -161,7 +218,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
                     [{{attributePrefix}}{{publicAttribute}}]
                     public TestClass() { }
-                    
+
                     public string NonPublicProperty { get; set; }
 
                     [{{attributePrefix}}{{publicAttribute}}]
@@ -209,6 +266,22 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                     public PublicClass() { }
                     public static string PublicProperty { get; set; }
                     public static string PublicMethod() => "test";
+                }
+
+                // Class for testing different-type access with TestingAndPrivateOnly
+                class OtherClass
+                {
+                    [{{attributePrefix}}{{publicAttribute}}]
+                    public static string _testingAndPrivateField;
+
+                    [{{attributePrefix}}{{publicAttribute}}]
+                    public OtherClass() { }
+
+                    [{{attributePrefix}}{{publicAttribute}}]
+                    public static string TestingAndPrivateProperty { get; set; }
+
+                    [{{attributePrefix}}{{publicAttribute}}]
+                    public static string TestingAndPrivateMethod() => "test";
                 }
 
                 interface IPublic
