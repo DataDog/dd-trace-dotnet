@@ -153,7 +153,7 @@ internal static class OtlpLogsSerializer
         int logRecordLengthPosition = writePosition;
         writePosition += ReserveSizeForLength;
 
-        var timeUnixNano = ConvertToUnixNano(log.Timestamp);
+        var timeUnixNano = (ulong)log.Timestamp.ToUnixTimeNanoseconds();
         writePosition = ProtobufSerializer.WriteFixed64WithTag(buffer, writePosition, LogRecord_Time_Unix_Nano, timeUnixNano);
         writePosition = ProtobufSerializer.WriteFixed64WithTag(buffer, writePosition, LogRecord_Observed_Time_Unix_Nano, timeUnixNano);
         writePosition = ProtobufSerializer.WriteEnumWithTag(buffer, writePosition, LogRecord_Severity_Number, log.GetSeverityNumber());
@@ -266,13 +266,6 @@ internal static class OtlpLogsSerializer
             spanId);
 
         return writePosition + SpanIdSize;
-    }
-
-    private static ulong ConvertToUnixNano(DateTime dateTime)
-    {
-        var unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var timeSpan = dateTime.ToUniversalTime() - unixEpoch;
-        return (ulong)(timeSpan.TotalMilliseconds * 1_000_000);
     }
 
     private static bool IsHandledResourceAttribute(string tagKey)
