@@ -170,6 +170,33 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
     );
 }
 
+extern "C" void __stdcall SetProcessTagsForApplication(const char* runtimeId, const char* processTags)
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetProcessTagsForApplication is called BEFORE CLR initialize");
+        return;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    if (runtimeId == nullptr)
+    {
+        Log::Error("SetProcessTagsForApplication was called with an empty runtime id");
+        return;
+    }
+
+    profiler->GetApplicationStore()->SetProcessTags(
+        runtimeId,
+        processTags != nullptr ? processTags : std::string()
+    );
+}
+
 extern "C" void __stdcall FlushProfile()
 {
     const auto profiler = CorProfilerCallback::GetInstance();

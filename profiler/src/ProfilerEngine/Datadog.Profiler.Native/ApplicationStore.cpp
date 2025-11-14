@@ -65,6 +65,13 @@ void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string reposit
     // no need to create worker, it has already been created
 }
 
+void ApplicationStore::SetProcessTags(std::string runtimeId, std::string processTags)
+{
+    std::lock_guard lock(_infosLock);
+    auto& info = _infos[std::move(runtimeId)];
+    info.ProcessTags = std::move(processTags);
+}
+
 const char* ApplicationStore::GetName()
 {
     return _serviceName;

@@ -9,6 +9,7 @@
   SetApplicationInfoForAppDomain PRIVATE
   SetEndpointForTrace PRIVATE
   SetGitMetadataForApplication PRIVATE
+  SetProcessTagsForApplication PRIVATE
   FlushProfile PRIVATE
   CreateCrashReport PRIVATE
   SetConfiguration PRIVATE
