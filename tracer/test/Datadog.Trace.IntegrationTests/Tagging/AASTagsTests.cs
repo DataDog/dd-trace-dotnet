@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -32,7 +33,7 @@ public class AASTagsTests
     {
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -49,7 +50,7 @@ public class AASTagsTests
     public async Task NoAasTagsIfNotInAASContext()
     {
         var settings = new TracerSettings(null);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -73,7 +74,7 @@ public class AASTagsTests
 
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         ISpan span1;

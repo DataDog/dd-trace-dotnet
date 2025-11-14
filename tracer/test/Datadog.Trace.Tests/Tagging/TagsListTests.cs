@@ -14,6 +14,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 

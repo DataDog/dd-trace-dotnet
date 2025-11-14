@@ -16,16 +16,4 @@ namespace Datadog.Trace.Tests.Configuration;
 
 public class TracerSettingsSettingManagerTests
 {
-    [Fact]
-    public void UpdatingTracerSettingsDoesNotReplaceSettingsManager()
-    {
-        var tracerSettings = TracerSettings.Create([]);
-        tracerSettings.MutableSettings.Should().BeSameAs(tracerSettings.Manager.InitialMutableSettings);
-
-        var originalManager = tracerSettings.Manager;
-        var newSettings = tracerSettings with { MutableSettings = MutableSettings.CreateForTesting(tracerSettings, []) };
-
-        newSettings.MutableSettings.Should().NotBeSameAs(newSettings.Manager.InitialMutableSettings);
-        newSettings.Manager.Should().BeSameAs(originalManager);
-    }
 }

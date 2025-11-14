@@ -131,7 +131,7 @@ public partial record TracerSettings
         internal SettingChanges? BuildNewSettings(
             IConfigurationSource dynamicConfigSource,
             ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry centralTelemetry)
+            IConfigurationTelemetry telemetry)
         {
             var initialSettings = manualSource.UseDefaultSources
                                       ? InitialMutableSettings
@@ -141,14 +141,14 @@ public partial record TracerSettings
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
             var currentExporter = current?.UpdatedExporter ?? current?.PreviousExporter ?? InitialExporterSettings;
 
-            var telemetry = new ConfigurationTelemetry();
+            var overrideErrorLog = new OverrideErrorLog();
             var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
                 dynamicConfigSource,
                 manualSource,
                 initialSettings,
                 _tracerSettings,
                 telemetry,
-                new OverrideErrorLog()); // TODO: We'll later report these
+                overrideErrorLog); // TODO: We'll later report these
 
             // The only exporter setting we currently _allow_ to change is the AgentUri, but if that does change,
             // it can mean that _everything_ about the exporter settings changes. To minimize the work to do, and
@@ -156,11 +156,10 @@ public partial record TracerSettings
             // set, or unchanged, there's no need to update the exporter settings.
             // We only technically need to do this today if _manual_ config changes, not if remote config changes,
             // but for simplicity we don't distinguish currently.
-            var exporterTelemetry = new ConfigurationTelemetry();
             var newRawExporterSettings = ExporterSettings.Raw.CreateUpdatedFromManualConfig(
                 currentExporter.RawSettings,
                 manualSource,
-                exporterTelemetry,
+                telemetry,
                 manualSource.UseDefaultSources);
 
             var isSameMutableSettings = currentMutable.Equals(newMutableSettings);
@@ -169,18 +168,12 @@ public partial record TracerSettings
             if (isSameMutableSettings && isSameExporterSettings)
             {
                 Log.Debug("No changes detected in the new configuration");
-                // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
-                // need to be recorded (e.g. the customer set the value in code, but it was already set via
-                // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
-                // which we'll resolve later anyway, so just have that gap for now (it's very niche).
-                // If there are changes, they're recorded automatically in ConfigureInternal
-                telemetry.CopyTo(centralTelemetry);
                 return null;
             }
 
             Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
-            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, exporterTelemetry);
+            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry);
 
             return new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter);
         }

@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 
 namespace Datadog.Trace.Ci.Agent;
 
@@ -28,16 +29,19 @@ internal class ApmAgentWriter : IEventWriter
     public ApmAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
     {
         var partialFlushEnabled = settings.PartialFlushEnabled;
-        var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-        var api = new Api(apiRequestFactory, null, updateSampleRates, partialFlushEnabled);
+        // CI Vis doesn't allow reconfiguration, so don't need to subscribe to changes
+        var apiRequestFactory = TracesTransportStrategy.Get(settings.Manager.InitialExporterSettings);
+        var statsdManager = new StatsdManager(settings);
+        var api = new Api(apiRequestFactory, statsdManager, updateSampleRates, partialFlushEnabled, healthMetricsEnabled: false);
         var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-        _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled);
+        _agentWriter = new AgentWriter(api, statsAggregator, statsdManager, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled);
     }
 
-    public ApmAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
+    // Internal for testing
+    internal ApmAgentWriter(IApi api, IStatsdManager statsdManager, int maxBufferSize = DefaultMaxBufferSize)
     {
-        _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
+        _agentWriter = new AgentWriter(api, null, statsdManager, maxBufferSize: maxBufferSize);
     }
 
     public void WriteEvent(IEvent @event)

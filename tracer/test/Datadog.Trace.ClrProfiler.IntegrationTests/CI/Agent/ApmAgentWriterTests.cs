@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.TestHelpers.Stats;
 using Moq;
 using Xunit;
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _settings = Ci.Configuration.TestOptimizationSettings.FromDefaultSources().TracerSettings;
 
             _api = new Mock<IApi>();
-            _ciAgentWriter = new ApmAgentWriter(_api.Object);
+            _ciAgentWriter = new ApmAgentWriter(_api.Object, TestStatsdManager.NoOp);
         }
 
         [Fact]
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new ApmAgentWriter(_api.Object);
+            var w = new ApmAgentWriter(_api.Object, TestStatsdManager.NoOp);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }

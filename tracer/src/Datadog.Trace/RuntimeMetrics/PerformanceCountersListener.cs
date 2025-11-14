@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly string _processName;
         private readonly int _processId;
 
-        private IDogStatsd _statsd;
+        private readonly IStatsdManager _statsd;
 
         private string _instanceName;
         private PerformanceCounterCategory _memoryCategory;
@@ -47,8 +48,10 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private Task _initializationTask;
 
-        public PerformanceCountersListener(IDogStatsd statsd)
+        public PerformanceCountersListener(IStatsdManager statsd)
         {
+            // We assume this is always used by RuntimeMetricsWriter, and therefore we hae already called SetRequired()
+            // If it's every used outside that context, we need to update to use SetRequired instead
             _statsd = statsd;
 
             ProcessHelpers.GetCurrentProcessInformation(out _processName, out _, out _processId);
@@ -83,12 +86,17 @@ namespace Datadog.Trace.RuntimeMetrics
                 _instanceName = GetSimpleInstanceName();
             }
 
-            TryUpdateGauge(MetricsNames.Gen0HeapSize, _gen0Size);
-            TryUpdateGauge(MetricsNames.Gen1HeapSize, _gen1Size);
-            TryUpdateGauge(MetricsNames.Gen2HeapSize, _gen2Size);
-            TryUpdateGauge(MetricsNames.LohSize, _lohSize);
+            // if we can't send stats (e.g. we're shutting down), there's not much point in
+            // running all this, but seeing as we update various state, play it safe and just do no-ops
+            using var lease = _statsd.TryGetClientLease();
+            var statsd = lease.Client ?? NoOpStatsd.Instance;
 
-            TryUpdateCounter(MetricsNames.ContentionCount, _contentionCount, ref _lastContentionCount);
+            TryUpdateGauge(statsd, MetricsNames.Gen0HeapSize, _gen0Size);
+            TryUpdateGauge(statsd, MetricsNames.Gen1HeapSize, _gen1Size);
+            TryUpdateGauge(statsd, MetricsNames.Gen2HeapSize, _gen2Size);
+            TryUpdateGauge(statsd, MetricsNames.LohSize, _lohSize);
+
+            TryUpdateCounter(statsd, MetricsNames.ContentionCount, _contentionCount, ref _lastContentionCount);
 
             var gen0 = GC.CollectionCount(0);
             var gen1 = GC.CollectionCount(1);
@@ -96,29 +104,27 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (_previousGen0Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
+                statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
             if (_previousGen1Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
+                statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
             if (_previousGen2Count != null)
             {
-                _statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
+                statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }
 
             _previousGen0Count = gen0;
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
 
-            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
-        }
-
-        public void UpdateStatsd(IDogStatsd statsd)
-        {
-            Interlocked.Exchange(ref _statsd, statsd);
+            if (statsd is not NoOpStatsd)
+            {
+                Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
+            }
         }
 
         protected virtual void InitializePerformanceCounters()
@@ -152,17 +158,17 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private void TryUpdateGauge(string path, PerformanceCounterWrapper counter)
+        private void TryUpdateGauge(IDogStatsd statsd, string path, PerformanceCounterWrapper counter)
         {
             var value = counter.GetValue(_instanceName);
 
             if (value != null)
             {
-                _statsd.Gauge(path, value.Value);
+                statsd.Gauge(path, value.Value);
             }
         }
 
-        private void TryUpdateCounter(string path, PerformanceCounterWrapper counter, ref double? lastValue)
+        private void TryUpdateCounter(IDogStatsd statsd, string path, PerformanceCounterWrapper counter, ref double? lastValue)
         {
             var value = counter.GetValue(_instanceName);
 
@@ -177,7 +183,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            _statsd.Counter(path, value.Value - lastValue.Value);
+            statsd.Counter(path, value.Value - lastValue.Value);
             lastValue = value;
         }
 

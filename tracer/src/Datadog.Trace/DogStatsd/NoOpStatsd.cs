@@ -8,8 +8,10 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
 {
-    internal class NoOpStatsd : IDogStatsd
+    internal sealed class NoOpStatsd : IDogStatsd
     {
+        public static readonly NoOpStatsd Instance = new();
+
         public ITelemetryCounters TelemetryCounters => null;
 
         public void Configure(StatsdConfig config)

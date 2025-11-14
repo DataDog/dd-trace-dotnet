@@ -17,33 +17,9 @@ internal class ApplicationTelemetryCollector
     private ApplicationTelemetryData? _applicationData = null;
     private HostTelemetryData? _hostData = null;
 
-    public void RecordTracerSettings(
-        TracerSettings tracerSettings,
-        string defaultServiceName)
+    public void RecordTracerSettings(TracerSettings tracerSettings)
     {
-        // Try to retrieve config based Git Info
-        // If explicitly provided, these values take precedence
-        GitMetadata? gitMetadata = _gitMetadata;
-        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitRepositoryUrl))
-        {
-            gitMetadata = new GitMetadata(tracerSettings.MutableSettings.GitCommitSha!, tracerSettings.MutableSettings.GitRepositoryUrl!);
-            Interlocked.Exchange(ref _gitMetadata, gitMetadata);
-        }
-
-        var frameworkDescription = FrameworkDescription.Instance;
-        var application = new ApplicationTelemetryData(
-            serviceName: defaultServiceName,
-            env: tracerSettings.MutableSettings.Environment ?? string.Empty, // required, but we don't have it
-            serviceVersion: tracerSettings.MutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
-            tracerVersion: TracerConstants.AssemblyVersion,
-            languageName: TracerConstants.Language,
-            languageVersion: frameworkDescription.ProductVersion,
-            runtimeName: frameworkDescription.Name,
-            runtimeVersion: frameworkDescription.ProductVersion,
-            commitSha: gitMetadata?.CommitSha,
-            repositoryUrl: gitMetadata?.RepositoryUrl);
-
-        Interlocked.Exchange(ref _applicationData, application);
+        RecordMutableSettings(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
 
         // The host properties can't change, so only need to set them the first time
         if (Volatile.Read(ref _hostData) is not null)
@@ -51,6 +27,7 @@ internal class ApplicationTelemetryCollector
             return;
         }
 
+        var frameworkDescription = FrameworkDescription.Instance;
         var host = HostMetadata.Instance;
         var osDescription = frameworkDescription.OSArchitecture == "x86"
                                 ? $"{frameworkDescription.OSDescription} (32bit)"
@@ -66,6 +43,37 @@ internal class ApplicationTelemetryCollector
             KernelRelease = host.KernelRelease,
             KernelVersion = host.KernelVersion
         };
+    }
+
+    public void RecordMutableSettings(TracerSettings tracerSettings, MutableSettings mutableSettings)
+    {
+        // Try to retrieve config based Git Info
+        GitMetadata? gitMetadata;
+        // If explicitly provided, these values take precedence
+        if (tracerSettings.GitMetadataEnabled && !StringUtil.IsNullOrEmpty(mutableSettings.GitCommitSha) && !StringUtil.IsNullOrEmpty(mutableSettings.GitRepositoryUrl))
+        {
+            gitMetadata = new GitMetadata(mutableSettings.GitCommitSha, mutableSettings.GitRepositoryUrl);
+            Interlocked.Exchange(ref _gitMetadata, gitMetadata);
+        }
+        else
+        {
+            gitMetadata = Volatile.Read(ref _gitMetadata);
+        }
+
+        var frameworkDescription = FrameworkDescription.Instance;
+        var application = new ApplicationTelemetryData(
+            serviceName: mutableSettings.DefaultServiceName,
+            env: mutableSettings.Environment ?? string.Empty, // required, but we don't have it
+            serviceVersion: mutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
+            tracerVersion: TracerConstants.AssemblyVersion,
+            languageName: TracerConstants.Language,
+            languageVersion: frameworkDescription.ProductVersion,
+            runtimeName: frameworkDescription.Name,
+            runtimeVersion: frameworkDescription.ProductVersion,
+            commitSha: gitMetadata?.CommitSha,
+            repositoryUrl: gitMetadata?.RepositoryUrl);
+
+        Interlocked.Exchange(ref _applicationData, application);
     }
 
     public void RecordGitMetadata(GitMetadata gitMetadata)

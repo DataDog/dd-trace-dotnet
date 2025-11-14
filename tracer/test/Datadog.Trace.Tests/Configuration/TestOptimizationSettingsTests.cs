@@ -199,7 +199,7 @@ namespace Datadog.Trace.Tests.Configuration
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
             var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
-            tracerSettings.MutableSettings.GlobalTags.Should()
+            tracerSettings.Manager.InitialMutableSettings.GlobalTags.Should()
                           .ContainKey(Datadog.Trace.Ci.Tags.CommonTags.UserProvidedTestServiceTag)
                           .WhoseValue.Should()
                           .Be(expectedTag);
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Tests.Configuration
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
             var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
-            tracerSettings.MutableSettings.ServiceName.Should().Be(normalizedName);
+            tracerSettings.Manager.InitialMutableSettings.ServiceName.Should().Be(normalizedName);
         }
 
         [Fact]
