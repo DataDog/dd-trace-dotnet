@@ -48,13 +48,13 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
-        // Internal for testing only
+        [TestingOnly]
         internal ExporterSettings()
             : this(source: null, new ConfigurationTelemetry())
         {
         }
 
-        // Internal for testing only
+        [TestingOnly]
         internal ExporterSettings(IConfigurationSource? source)
             : this(source, File.Exists, new ConfigurationTelemetry())
         {
@@ -205,7 +205,7 @@ namespace Datadog.Trace.Configuration
 
         internal Raw RawSettings { get; }
 
-        // internal for testing
+        [TestingOnly]
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
 

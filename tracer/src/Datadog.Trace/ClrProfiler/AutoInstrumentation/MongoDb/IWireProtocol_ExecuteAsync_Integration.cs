@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         AssemblyNames = [MongoDbIntegration.MongoDbClientV2Assembly, MongoDbIntegration.MongoDbClientV3Assembly],
         IntegrationName = MongoDbIntegration.IntegrationName,
         MinimumVersion = MongoDbIntegration.Major2Minor1,
-        MaximumVersion = MongoDbIntegration.Major3,
+        MaximumVersion = MongoDbIntegration.Major3Minor5,
         MethodName = "ExecuteAsync",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
         ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,

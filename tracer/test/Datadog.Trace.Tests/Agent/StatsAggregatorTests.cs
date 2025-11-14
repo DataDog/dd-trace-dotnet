@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.Agent
             const int bucketDurationSeconds = 1;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             int invocationCount = 0;
 

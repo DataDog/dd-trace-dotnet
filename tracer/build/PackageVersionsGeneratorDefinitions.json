@@ -176,12 +176,11 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.5.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "2.0.*",
-      "2.5.*",
-      "2.14.*",
       "2.*.*",
+      "3.4.*",
       "3.*.*"
     ],
     "VersionConditions": [{
@@ -679,6 +678,21 @@
     "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "3.6.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "3.29.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
+    "IntegrationName": "CosmosDbVnext",
+    "SampleProjectName": "Samples.CosmosDb.Vnext",
+    "NugetPackageSearchName": "Microsoft.Azure.Cosmos",
+    "MinVersion": "3.12.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.12.*",
       "3.*.*"
     ],
     "VersionConditions": [{

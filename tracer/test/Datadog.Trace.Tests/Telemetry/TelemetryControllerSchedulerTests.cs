@@ -37,7 +37,7 @@ public class TelemetryControllerSchedulerTests
 
         // we expect an infinite flush interval, because initialization is not complete
         // we'll fast-forward to 5s for now
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         _delayFactory.Task = delay =>
         {
             delay.Should().Be(Timeout.InfiniteTimeSpan);
@@ -109,7 +109,7 @@ public class TelemetryControllerSchedulerTests
 
         // we expect an infinite flush interval, because initialization is not complete
         // we'll fast-forward to 5s for now
-        var delayMutex = new ManualResetEventSlim();
+        using var delayMutex = new ManualResetEventSlim();
         _delayFactory.Task = delay =>
         {
             delay.Should().Be(Timeout.InfiniteTimeSpan);
@@ -231,7 +231,7 @@ public class TelemetryControllerSchedulerTests
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
 
         // partial advancement
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         _delayFactory.Task = delay =>
         {
             delay.Should().Be(Timeout.InfiniteTimeSpan);
