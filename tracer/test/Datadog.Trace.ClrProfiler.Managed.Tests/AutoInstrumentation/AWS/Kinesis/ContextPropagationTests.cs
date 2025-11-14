@@ -81,7 +81,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
         await using var tracer = GetAwsSdkDisabledTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecords", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -106,7 +106,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
         await using var tracer = GetAwsKinesisDisabledTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecords", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -131,7 +131,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
         await using var tracer = GetTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecords", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -165,7 +165,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
         await using var tracer = GetTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecords", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -186,7 +186,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordRequest>();
 
         await using var tracer = GetTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecord", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecord", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoData(tracer, proxy, scope, "streamname");
 
         // Naively deserialize in order to not use tracer extraction logic
@@ -221,7 +221,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutRecordRequest>();
 
         await using var tracer = GetTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecord", SpanKinds.Producer, null, out var tags);
+        var scope = AwsKinesisCommon.CreateScopeName(tracer, "PutRecord", SpanKinds.Producer, proxy, null, out var tags);
         ContextPropagation.InjectTraceIntoData(tracer, proxy, scope, "streamname");
 
         var data = proxy.Data;

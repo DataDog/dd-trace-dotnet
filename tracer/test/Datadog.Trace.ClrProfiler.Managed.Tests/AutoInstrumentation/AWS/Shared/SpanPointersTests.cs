@@ -108,7 +108,7 @@ public class SpanPointersTests
     public void AddDynamoDbSpanPointer_ShouldAddCorrectSpanLink()
     {
         var tracer = GetTracer();
-        var scope = AwsDynamoDbCommon.CreateScope(tracer, "UpdateItem", out _);
+        var scope = AwsDynamoDbCommon.CreateScopeTable(tracer, "UpdateItem", null, out _);
         var span = scope!.Span;
         const string table = "test-table";
 
