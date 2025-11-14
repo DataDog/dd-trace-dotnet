@@ -69,7 +69,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.MutableSettings.Environment), tracerSettings.MutableSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager);
@@ -77,15 +77,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, TracerSettings tracerSettings)
         {
-            var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
+            var tags = tracerSettings.MutableSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
+            var environment = TraceUtil.NormalizeTag(tracerSettings.MutableSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = tracerSettings.ServiceVersion;
+            var serviceVersion = tracerSettings.MutableSettings.ServiceVersion;
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");

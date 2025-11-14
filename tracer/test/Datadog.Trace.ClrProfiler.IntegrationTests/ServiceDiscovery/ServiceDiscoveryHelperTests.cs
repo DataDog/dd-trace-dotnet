@@ -20,7 +20,8 @@ public class ServiceDiscoveryHelperTests
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
 
         var tracerSettings = TracerSettings.Create([]);
-        var result = ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
+        var mutableSettings = MutableSettings.CreateForTesting(tracerSettings, []);
+        var result = ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, mutableSettings);
 
         result.Should().Be(ServiceDiscoveryHelper.StoreMetadataResult.Skipped);
     }
@@ -33,7 +34,8 @@ public class ServiceDiscoveryHelperTests
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
         var tracerSettings = TracerSettings.Create([]);
-        var result = ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
+        var mutableSettings = MutableSettings.CreateForTesting(tracerSettings, []);
+        var result = ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, mutableSettings);
 
         // We are not instrumenting the test process, so we expect the result to be Skipped
         result.Should().Be(ServiceDiscoveryHelper.StoreMetadataResult.Skipped);
