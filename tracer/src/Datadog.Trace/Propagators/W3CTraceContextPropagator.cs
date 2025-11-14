@@ -694,26 +694,35 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            using var enumerator = values.GetEnumerator();
+            var enumerator = values.GetEnumerator();
 
-            if (!enumerator.MoveNext())
+            if (enumerator is null)
             {
-                // there were no items
                 value = string.Empty;
                 return false;
             }
 
-            // store first value
-            value = enumerator.Current ?? string.Empty;
-
-            // is there a second value?
-            if (enumerator.MoveNext())
+            using (enumerator)
             {
-                value = string.Empty;
-                return false; // more than one value
-            }
+                if (!enumerator.MoveNext())
+                {
+                    // there were no items
+                    value = string.Empty;
+                    return false;
+                }
 
-            return true;
+                // store first value
+                value = enumerator.Current ?? string.Empty;
+
+                // is there a second value?
+                if (enumerator.MoveNext())
+                {
+                    value = string.Empty;
+                    return false; // more than one value
+                }
+
+                return true;
+            }
         }
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)
