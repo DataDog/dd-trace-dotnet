@@ -58,48 +58,18 @@ namespace Datadog.Trace.DiagnosticListeners
                         return;
                     }
 
-                    // Get the AllListeners static property
-                    var allListenersProperty = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
-                    if (allListenersProperty == null)
-                    {
-                        Log.Warning("Unable to find DiagnosticListener.AllListeners property");
-                        return;
-                    }
+                    _allListenersSubscription = DiagnosticObserverFactory.SubscribeWithInstanceCallback(
+                        diagnosticListenerType,
+                        this,
+                        typeof(DiagnosticManager),
+                        nameof(OnDiagnosticListenerNext),
+                        "Datadog.DiagnosticManager.Dynamic",
+                        typeof(DiagnosticManager));
 
-                    // Get the value (IObservable<DiagnosticListener>)
-                    var allListenersObservable = allListenersProperty.GetValue(null);
-                    if (allListenersObservable == null)
+                    if (_allListenersSubscription != null)
                     {
-                        Log.Warning("DiagnosticListener.AllListeners returned null");
-                        return;
+                        Log.Debug("Successfully subscribed to DiagnosticListener.AllListeners");
                     }
-
-                    // Create a dynamic type that implements IObserver<DiagnosticListener>
-                    var observerType = DiagnosticListenerObserverFactory.CreateObserverType(diagnosticListenerType);
-                    if (observerType == null)
-                    {
-                        Log.Warning("Failed to create dynamic observer type");
-                        return;
-                    }
-
-                    // Create an instance of the dynamic observer, passing this manager instance
-                    var observerInstance = Activator.CreateInstance(observerType, this);
-                    if (observerInstance == null)
-                    {
-                        Log.Warning("Failed to create observer instance");
-                        return;
-                    }
-
-                    // Use reflection to call Subscribe with the observer
-                    var subscribeMethod = allListenersProperty.PropertyType.GetMethod("Subscribe");
-                    if (subscribeMethod == null)
-                    {
-                        Log.Warning("Unable to find Subscribe method on AllListeners");
-                        return;
-                    }
-
-                    _allListenersSubscription = (IDisposable?)subscribeMethod.Invoke(allListenersObservable, new object[] { observerInstance });
-                    Log.Debug("Successfully subscribed to DiagnosticListener.AllListeners");
                 }
                 catch (Exception ex)
                 {
