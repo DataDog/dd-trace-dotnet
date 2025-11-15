@@ -45,9 +45,9 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
     public async Task StartFlushingAsync()
     {
+        var currentInterval = _initialFlushInterval;
         while (!_processExit.Task.IsCompleted)
         {
-            var currentInterval = _initialFlushInterval;
             try
             {
                 await Upload().ConfigureAwait(false);
