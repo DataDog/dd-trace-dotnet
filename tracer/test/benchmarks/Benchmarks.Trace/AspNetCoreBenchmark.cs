@@ -21,9 +21,10 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class AspNetCoreBenchmark
     {
-        private static readonly HttpClient Client;
+        private HttpClient _client;
 
-        static AspNetCoreBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
@@ -33,18 +34,18 @@ namespace Benchmarks.Trace
                 .UseStartup<Startup>();
 
             var testServer = new TestServer(builder);
-            Client = testServer.CreateClient();
+            _client = testServer.CreateClient();
 
             Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
 
-            var bench = new AspNetCoreBenchmark();
-            bench.SendRequest();
+            // Warmup to initialize middleware pipeline
+            SendRequest();
         }
 
         [Benchmark]
         public string SendRequest()
         {
-            return Client.GetStringAsync("/Home").GetAwaiter().GetResult();
+            return _client.GetStringAsync("/Home").GetAwaiter().GetResult();
         }
 
         private class Startup
@@ -96,6 +97,11 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class AspNetCoreBenchmark
     {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
         [Benchmark]
         public string SendRequest()
         {
