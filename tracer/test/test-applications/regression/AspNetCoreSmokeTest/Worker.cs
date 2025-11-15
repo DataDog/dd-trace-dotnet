@@ -34,8 +34,19 @@ namespace AspNetCoreSmokeTest
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var timeout = TimeSpan.FromMinutes(2);
+            var startTime = DateTimeOffset.UtcNow;
+
             while (!_appListening && !stoppingToken.IsCancellationRequested)
             {
+                if (DateTimeOffset.UtcNow - startTime > timeout)
+                {
+                    _logger.LogError("Timed out waiting for application to start after {Timeout}", timeout);
+                    Program.ExitCode = 1;
+                    _lifetime.StopApplication();
+                    return;
+                }
+
                 _logger.LogInformation("Waiting for app started handling requests");
                 await Task.Delay(100, stoppingToken);
             }
@@ -53,7 +64,10 @@ namespace AspNetCoreSmokeTest
                 var address = addressFeature!.Addresses.First();
                 _logger.LogInformation("Found server address: {address}", address);
 
-                var client = new HttpClient();
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(30)
+                };
 
                 // By default, IIS uses a wildcard host, so switch that out for localhost
                 address = address.Replace("http://*", "http://localhost").TrimEnd('/');
@@ -67,7 +81,11 @@ namespace AspNetCoreSmokeTest
                     response.EnsureSuccessStatusCode();
                 }
 
+#if NET5_0_OR_GREATER
+                var responseContent = await response.Content.ReadAsStringAsync(stoppingToken);
+#else
                 var responseContent = await response.Content.ReadAsStringAsync();
+#endif
                 var expected = Program.GetTracerAssemblyLocation();
                 if (responseContent != expected)
                 {
