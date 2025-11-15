@@ -14,6 +14,7 @@ using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
 
@@ -23,7 +24,7 @@ internal class TestOptimization : ITestOptimization
 {
     private static ITestOptimization? _instance;
 
-    private Lazy<bool> _enabledLazy;
+    private readonly Lazy<CIEnvironmentValues> _ciVariablesLazy;
     private int _firstInitialization = 1;
     private TestOptimizationSettings? _settings;
     private ITestOptimizationClient? _client;
@@ -38,16 +39,16 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
-    public TestOptimization(CIEnvironmentValues ciValues)
+    public TestOptimization()
     {
-        CIValues = ciValues;
-        _enabledLazy = new Lazy<bool>(InternalEnabled, true);
+        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
+        Enabled = InternalEnabled();
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
     }
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization(CIEnvironmentValues.Instance))!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
         internal set => _instance = value;
     }
 
@@ -70,7 +71,7 @@ internal class TestOptimization : ITestOptimization
         }
     }
 
-    public bool Enabled => _enabledLazy.Value;
+    public bool Enabled { get; private set; }
 
     public TestOptimizationSettings Settings
     {
@@ -80,7 +81,7 @@ internal class TestOptimization : ITestOptimization
             _settings = value;
             _client = null;
             _firstInitialization = 1;
-            _enabledLazy = new(InternalEnabled, true);
+            Enabled = InternalEnabled();
             _additionalFeaturesTask = null;
             _tracerManagement = null;
             _hostInfo = null;
@@ -223,7 +224,7 @@ internal class TestOptimization : ITestOptimization
         private set => _testManagementFeature = value;
     }
 
-    public CIEnvironmentValues CIValues { get; }
+    public CIEnvironmentValues CIValues => _ciVariablesLazy.Value;
 
     public void Initialize()
     {
@@ -416,7 +417,7 @@ internal class TestOptimization : ITestOptimization
         _settings = null;
         _client = null;
         _firstInitialization = 1;
-        _enabledLazy = new(InternalEnabled, true);
+        Enabled = InternalEnabled();
         _additionalFeaturesTask = null;
         _tracerManagement = null;
         _hostInfo = null;
@@ -427,72 +428,8 @@ internal class TestOptimization : ITestOptimization
         _dynamicInstrumentationFeature = null;
     }
 
-    private bool InternalEnabled()
-    {
-        // By configuration
-        if (Settings.Enabled is { } enabled)
-        {
-            if (enabled)
-            {
-                Log.Information("TestOptimization: CI Visibility Enabled by Configuration");
-                return true;
-            }
-
-            // explicitly disabled
-            Log.Information("TestOptimization: CI Visibility Disabled by Configuration");
-            return false;
-        }
-
-        // Try to autodetect based in the domain name.
-        var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
-        if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
-            domainName.StartsWith("xunit", StringComparison.Ordinal) ||
-            domainName.StartsWith("nunit", StringComparison.Ordinal) ||
-            domainName.StartsWith("MSBuild", StringComparison.Ordinal))
-        {
-            Log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
-            return true;
-        }
-
-        // Try to autodetect based in the process name.
-        var processName = GetProcessName();
-        if (processName.StartsWith("testhost.", StringComparison.Ordinal))
-        {
-            Log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
-            return true;
-        }
-
-        return false;
-
-        void PropagateCiVisibilityEnvironmentVariable()
-        {
-            try
-            {
-                // Set the configuration key to propagate the configuration to child processes.
-                Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
-            }
-            catch
-            {
-                // .
-            }
-        }
-
-        string GetProcessName()
-        {
-            try
-            {
-                return ProcessHelpers.GetCurrentProcessName();
-            }
-            catch (Exception exception)
-            {
-                Log.Warning(exception, "TestOptimization: Error getting current process name when checking CI Visibility status");
-            }
-
-            return string.Empty;
-        }
-    }
+    private static bool InternalEnabled()
+        => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config).IsEnabled;
 
     private async Task ShutdownAsync(Exception? exception)
     {
