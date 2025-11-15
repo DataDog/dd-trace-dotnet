@@ -39,6 +39,7 @@ namespace Datadog.Trace.Agent
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
         private readonly bool _partialFlushEnabled;
+        private readonly bool _propagateProcessTags;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
         private string _cachedResponse;
@@ -49,6 +50,7 @@ namespace Datadog.Trace.Agent
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
+            bool propagateProcessTags,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -62,6 +64,7 @@ namespace Datadog.Trace.Agent
             _entityId = ContainerMetadata.GetEntityId();
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
+            _propagateProcessTags = propagateProcessTags;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
             _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
@@ -207,7 +210,7 @@ namespace Datadog.Trace.Agent
             }
 
             using var stream = new MemoryStream();
-            state.Stats.Serialize(stream, state.BucketDuration);
+            state.Stats.Serialize(stream, state.BucketDuration, _propagateProcessTags);
 
             var buffer = stream.GetBuffer();
 

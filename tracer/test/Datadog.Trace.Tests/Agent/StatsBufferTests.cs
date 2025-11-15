@@ -46,12 +46,14 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Add(key3, statsBucket3);
 
             var stream = new MemoryStream();
-            buffer.Serialize(stream, expectedDuration);
+            buffer.Serialize(stream, expectedDuration, propagateProcessTags: true);
             var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Hostname.Should().Be(payload.HostName);
             result.Env.Should().Be(payload.Environment);
             result.Version.Should().Be(payload.Version);
+            result.ProcessTags.Should().NotBeEmpty();
+            result.ProcessTags.Should().Contain(":");
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
             result.RuntimeId.Should().Be(Tracer.RuntimeId);
@@ -118,13 +120,13 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Add(key, statsBucket);
 
             var stream = new MemoryStream();
-            buffer.Serialize(stream, 1);
+            buffer.Serialize(stream, bucketDuration: 1, propagateProcessTags: false);
             var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Sequence.Should().Be(1);
 
             stream = new MemoryStream();
-            buffer.Serialize(stream, 1);
+            buffer.Serialize(stream, bucketDuration: 1, propagateProcessTags: false);
             result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Sequence.Should().Be(2);

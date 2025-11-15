@@ -20,6 +20,9 @@ namespace Datadog.Trace.TestHelpers.Stats
         [Key("Version")]
         public string Version { get; set; }
 
+        [Key("ProcessTags")]
+        public string ProcessTags { get; set; }
+
         [Key("Lang")]
         public string Lang { get; set; }
 
