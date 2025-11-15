@@ -334,6 +334,14 @@ namespace datadog::shared::nativeloader
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
+            else
+            {
+                // Default behaviour is to *always* instrument IIS
+                if (!IsRunningOnIIS())
+                {
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
         }
 
         // Guard rails have all passed, so we enable (and flush) logs if necessary
