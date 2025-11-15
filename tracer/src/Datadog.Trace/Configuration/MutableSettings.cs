@@ -1087,6 +1087,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             new OverrideErrorLog(),
             tracerSettings);
 
+    public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
+        => CreateInitialMutableSettings(
+            new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
+            new ConfigurationTelemetry(),
+            new OverrideErrorLog(),
+            tracerSettings);
+
     private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
         in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
     {
