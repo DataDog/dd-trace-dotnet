@@ -70,14 +70,15 @@ public class StringAspectsBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-        // Initialize test data in GlobalSetup, not IterationSetup
-        // This ensures BenchmarkDotNet excludes allocation overhead from measurements
-        _initTaintedContextFalse = InitTaintedContext(10, false);
-        _initTaintedContextTrue = InitTaintedContext(10, true);
-
-        // Warmup to reduce noise
         StringConcatBenchmark();
+
         StringConcatAspectBenchmark();
+    }
+
+    [IterationSetup(Target = nameof(StringConcatBenchmark))]
+    public void InitTaintedContextWhenFalse()
+    {
+        _initTaintedContextFalse = InitTaintedContext(10, false);
     }
 
     [Benchmark]
@@ -92,6 +93,12 @@ public class StringAspectsBenchmark
             list.Add(string.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
         }
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
+    }
+
+    [IterationSetup(Target = nameof(StringConcatAspectBenchmark))]
+    public void InitTaintedContextWhenTrue()
+    {
+        _initTaintedContextTrue = InitTaintedContext(10, true);
     }
 
     [Benchmark]
