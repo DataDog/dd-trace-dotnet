@@ -85,7 +85,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private void Initialize()
     {
-        Log.Warning("[ROB] Custom .NET tracer branch with flush logic changes");
+        Log.Warning("ROBC Custom .NET tracer branch with flush logic changes");
         lock (_initLock)
         {
             if (_processTask != null)
@@ -158,6 +158,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
+        Log.Debug("ROBC Flush and close...")
         if (!_processExit.TrySetResult(true))
         {
             return;
@@ -187,6 +188,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Flush()
     {
+        Log.Debug("ROBC Sync Flush")
         if (_processExit.Task.IsCompleted)
         {
             return;
@@ -224,6 +226,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task FlushAsync()
     {
+        Log.Debug("ROB Flushing Async")
         if (_processExit.Task.IsCompleted)
         {
             return;
@@ -257,6 +260,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task WriteToApiAsync()
     {
+        Debug.Log("ROBC Writing to API Async")
         // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
@@ -299,6 +303,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             try
             {
+                Log.Debug("ROBC Adding points to aggregator")
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
