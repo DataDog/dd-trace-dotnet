@@ -1,135 +1,133 @@
-﻿[
-  {
-    "resource_metrics": [
-      {
-        "resource": {
-          "attributes": [
+﻿{
+  "resource_metrics": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "string_value": "unknown_service:dotnet"
+            }
+          }
+        ]
+      },
+      "scope_metrics": [
+        {
+          "scope": {
+            "name": "OpenTelemetryMetricsMeter",
+            "version": "1.0"
+          },
+          "metrics": [
             {
-              "key": "service.name",
-              "value": {
-                "string_value": "unknown_service:dotnet"
+              "name": "example.async.counter",
+              "sum": {
+                "data_points": [
+                  {
+                    "start_time_unix_nano": "0",
+                    "time_unix_nano": "0",
+                    "as_int": "22"
+                  }
+                ],
+                "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                "is_monotonic": true
+              }
+            },
+            {
+              "name": "example.async.gauge",
+              "gauge": {
+                "data_points": [
+                  {
+                    "start_time_unix_nano": "0",
+                    "time_unix_nano": "0",
+                    "as_double": 88.0
+                  }
+                ]
+              }
+            },
+            {
+              "name": "example.counter",
+              "sum": {
+                "data_points": [
+                  {
+                    "start_time_unix_nano": "0",
+                    "time_unix_nano": "0",
+                    "as_int": "11",
+                    "attributes": [
+                      {
+                        "key": "http.method",
+                        "value": {
+                          "string_value": "GET"
+                        }
+                      },
+                      {
+                        "key": "rid",
+                        "value": {
+                          "string_value": "1234567890"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                "is_monotonic": true
+              }
+            },
+            {
+              "name": "example.histogram",
+              "histogram": {
+                "data_points": [
+                  {
+                    "start_time_unix_nano": "0",
+                    "time_unix_nano": "0",
+                    "count": "1",
+                    "sum": 33.0,
+                    "bucket_counts": [
+                      "0",
+                      "0",
+                      "0",
+                      "0",
+                      "1",
+                      "0",
+                      "0",
+                      "0",
+                      "0",
+                      "0",
+                      "0"
+                    ],
+                    "explicit_bounds": [
+                      0.0,
+                      5.0,
+                      10.0,
+                      25.0,
+                      50.0,
+                      75.0,
+                      100.0,
+                      250.0,
+                      500.0,
+                      1000.0
+                    ],
+                    "attributes": [
+                      {
+                        "key": "http.method",
+                        "value": {
+                          "string_value": "GET"
+                        }
+                      },
+                      {
+                        "key": "rid",
+                        "value": {
+                          "string_value": "1234567890"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
               }
             }
           ]
-        },
-        "scope_metrics": [
-          {
-            "scope": {
-              "name": "OpenTelemetryMetricsMeter",
-              "version": "1.0"
-            },
-            "metrics": [
-              {
-                "name": "example.async.counter",
-                "sum": {
-                  "data_points": [
-                    {
-                      "start_time_unix_nano": "0",
-                      "time_unix_nano": "0",
-                      "as_int": "22"
-                    }
-                  ],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
-                  "is_monotonic": true
-                }
-              },
-              {
-                "name": "example.async.gauge",
-                "gauge": {
-                  "data_points": [
-                    {
-                      "start_time_unix_nano": "0",
-                      "time_unix_nano": "0",
-                      "as_double": 88.0
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "example.counter",
-                "sum": {
-                  "data_points": [
-                    {
-                      "start_time_unix_nano": "0",
-                      "time_unix_nano": "0",
-                      "as_int": "11",
-                      "attributes": [
-                        {
-                          "key": "http.method",
-                          "value": {
-                            "string_value": "GET"
-                          }
-                        },
-                        {
-                          "key": "rid",
-                          "value": {
-                            "string_value": "1234567890"
-                          }
-                        }
-                      ]
-                    }
-                  ],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
-                  "is_monotonic": true
-                }
-              },
-              {
-                "name": "example.histogram",
-                "histogram": {
-                  "data_points": [
-                    {
-                      "start_time_unix_nano": "0",
-                      "time_unix_nano": "0",
-                      "count": "1",
-                      "sum": 33.0,
-                      "bucket_counts": [
-                        "0",
-                        "0",
-                        "0",
-                        "0",
-                        "1",
-                        "0",
-                        "0",
-                        "0",
-                        "0",
-                        "0",
-                        "0"
-                      ],
-                      "explicit_bounds": [
-                        0.0,
-                        5.0,
-                        10.0,
-                        25.0,
-                        50.0,
-                        75.0,
-                        100.0,
-                        250.0,
-                        500.0,
-                        1000.0
-                      ],
-                      "attributes": [
-                        {
-                          "key": "http.method",
-                          "value": {
-                            "string_value": "GET"
-                          }
-                        },
-                        {
-                          "key": "rid",
-                          "value": {
-                            "string_value": "1234567890"
-                          }
-                        }
-                      ]
-                    }
-                  ],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-]
+        }
+      ]
+    }
+  ]
+}
