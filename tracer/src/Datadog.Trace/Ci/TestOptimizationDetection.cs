@@ -49,7 +49,6 @@ internal static class TestOptimizationDetection
             domainName.StartsWith("MSBuild", StringComparison.Ordinal))
         {
             log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
 
@@ -58,25 +57,11 @@ internal static class TestOptimizationDetection
         if (processName.StartsWith("testhost.", StringComparison.Ordinal))
         {
             log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
-            PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
 
         log.Debug("TestOptimization: CI Visibility Enabled by Domain name whitelist");
         return false;
-
-        static void PropagateCiVisibilityEnvironmentVariable()
-        {
-            try
-            {
-                // Set the configuration key to propagate the configuration to child processes.
-                Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
-            }
-            catch
-            {
-                // .
-            }
-        }
 
         static string GetProcessName(IDatadogLogger log)
         {

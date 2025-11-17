@@ -26,6 +26,7 @@ internal class TestOptimization : ITestOptimization
 
     private readonly Lazy<CIEnvironmentValues> _ciVariablesLazy;
     private int _firstInitialization = 1;
+    private TestOptimizationDetection.Enablement _enablement;
     private TestOptimizationSettings? _settings;
     private ITestOptimizationClient? _client;
     private Task? _additionalFeaturesTask;
@@ -43,7 +44,7 @@ internal class TestOptimization : ITestOptimization
     {
         _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
-        Enabled = InternalEnabled(Log);
+        _enablement = InternalEnabled(Log);
     }
 
     public static ITestOptimization Instance
@@ -71,7 +72,7 @@ internal class TestOptimization : ITestOptimization
         }
     }
 
-    public bool Enabled { get; private set; }
+    public bool Enabled => _enablement.IsEnabled;
 
     public TestOptimizationSettings Settings
     {
@@ -81,7 +82,7 @@ internal class TestOptimization : ITestOptimization
             _settings = value;
             _client = null;
             _firstInitialization = 1;
-            Enabled = InternalEnabled(Log);
+            _enablement = InternalEnabled(Log);
             _additionalFeaturesTask = null;
             _tracerManagement = null;
             _hostInfo = null;
@@ -234,6 +235,11 @@ internal class TestOptimization : ITestOptimization
             return;
         }
 
+        if (_enablement.InferredEnabled)
+        {
+            PropagateCiVisibilityEnvironmentVariable();
+        }
+
         Log.Information("TestOptimization: Initializing CI Visibility");
         var settings = Settings;
 
@@ -292,6 +298,19 @@ internal class TestOptimization : ITestOptimization
             Log.Warning("TestOptimization: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             Client = new NoopTestOptimizationClient();
             InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
+        }
+
+        static void PropagateCiVisibilityEnvironmentVariable()
+        {
+            try
+            {
+                // Set the configuration key to propagate the configuration to child processes.
+                Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+            }
+            catch
+            {
+                // .
+            }
         }
     }
 
@@ -417,7 +436,7 @@ internal class TestOptimization : ITestOptimization
         _settings = null;
         _client = null;
         _firstInitialization = 1;
-        Enabled = InternalEnabled(Log);
+        _enablement = InternalEnabled(Log);
         _additionalFeaturesTask = null;
         _tracerManagement = null;
         _hostInfo = null;
@@ -428,8 +447,8 @@ internal class TestOptimization : ITestOptimization
         _dynamicInstrumentationFeature = null;
     }
 
-    private static bool InternalEnabled(IDatadogLogger log)
-        => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log).IsEnabled;
+    private static TestOptimizationDetection.Enablement InternalEnabled(IDatadogLogger log)
+        => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log);
 
     private async Task ShutdownAsync(Exception? exception)
     {
