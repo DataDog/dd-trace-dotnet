@@ -123,7 +123,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
 
                     // We don't care about sampling Exception Probes. To save memory, NopAdaptiveSampler is used.
-                    ProbeRateLimiter.Instance.TryAddSampler(ProbeId, NopAdaptiveSampler.Instance);
+                    ProbeRateLimiter.Instance.TryAddSampler(ProbeId!, NopAdaptiveSampler.Instance);
                     if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionReplayProcessor))
                     {
                         Log.Error("Could not add ExceptionReplayProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);

@@ -31,8 +31,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// To smooth out these hiccups the sampler maintains an under-sampling budget which can be used
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
+    ///
+    /// Thread Safety: This class is thread-safe. Uses atomic operations for all counter updates.
     /// </summary>
-    internal class AdaptiveSampler : IAdaptiveSampler
+    internal class AdaptiveSampler : IAdaptiveSampler, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
@@ -47,6 +49,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// weight assigned by a plain arithmetic average (= 1/N).
         /// </summary>
         private readonly double _emaAlpha;
+
         private readonly int _samplesPerWindow;
 
         private Counts _countsRef;
@@ -64,21 +67,25 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private int _countsSlotIndex = 0;
         private Counts[] _countsSlots;
 
-        private Timer _timer;
+        private IDisposable _schedulerSubscription;
         private Action _rollWindowCallback;
+        private int _maxPerWindowBurst;
 
         internal AdaptiveSampler(
             TimeSpan windowDuration,
             int samplesPerWindow,
             int averageLookback,
             int budgetLookback,
-            Action rollWindowCallback)
+            Action rollWindowCallback,
+            ISamplerScheduler scheduler = null,
+            int maxPerWindowBurst = 3)
         {
-            _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
             _rollWindowCallback = rollWindowCallback;
             _avgSamples = 0;
             _countsSlots = new Counts[2] { new(), new() };
+            _maxPerWindowBurst = maxPerWindowBurst;
+
             if (averageLookback < 1)
             {
                 averageLookback = 1;
@@ -100,7 +107,15 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             if (windowDuration != TimeSpan.Zero)
             {
-                _timer.Change(windowDuration, windowDuration);
+                if (scheduler != null)
+                {
+                    _schedulerSubscription = scheduler.Schedule(RollWindow, windowDuration);
+                }
+                else
+                {
+                    // Fallback to individual timer for backward compatibility
+                    _schedulerSubscription = new TimerSubscription(windowDuration, RollWindow);
+                }
             }
         }
 
@@ -146,7 +161,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
                               : _avgSamples + (_budgetAlpha * (sampledCount - _avgSamples));
 
             double result = Math.Round(Math.Max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback);
-            return (long)result;
+
+            // Cap burst to prevent large spikes at window start
+            var maxBurst = _maxPerWindowBurst * _samplesPerWindow;
+            return Math.Min((long)result, maxBurst);
         }
 
         internal void RollWindow()
@@ -216,6 +234,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
             };
         }
 
+        public void Dispose()
+        {
+            _schedulerSubscription?.Dispose();
+        }
+
         private class Counts
         {
             private long _testCount;
@@ -264,6 +287,21 @@ namespace Datadog.Trace.Debugger.RateLimiting
             public double Probability { get; set; }
 
             public double TotalAverage { get; set; }
+        }
+
+        private class TimerSubscription : IDisposable
+        {
+            private readonly Timer _timer;
+
+            public TimerSubscription(TimeSpan interval, Action callback)
+            {
+                _timer = new Timer(_ => callback(), null, interval, interval);
+            }
+
+            public void Dispose()
+            {
+                _timer?.Dispose();
+            }
         }
     }
 }

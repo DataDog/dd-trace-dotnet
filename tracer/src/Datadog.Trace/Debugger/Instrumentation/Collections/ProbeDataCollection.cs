@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                     return ref ProbeData.Empty;
                 }
 
-                var sampler = ProbeRateLimiter.Instance.GerOrAddSampler(probeId);
+                var sampler = ProbeRateLimiter.Instance.GetOrAddSampler(probeId);
 
                 Items[index] = new ProbeData(probeId, sampler, processor);
 
