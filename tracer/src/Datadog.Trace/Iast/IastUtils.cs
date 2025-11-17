@@ -71,7 +71,20 @@ internal static class IastUtils
 
     public static int IdentityHashCode(object item)
     {
-        return (item?.GetHashCode() ?? 0);
+        if (item == null)
+        {
+            return 0;
+        }
+
+        try
+        {
+            return item.GetHashCode();
+        }
+        catch
+        {
+            // Seen this that it appears some customer objects have overrode GetHashCode and throw
+            return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(item);
+        }
     }
 
     public static Range[] GetRangesForString(string stringValue, Source source)
