@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -77,6 +78,7 @@ internal class TelemetryTransportManager : IDisposable
     /// <summary>
     /// Internal for testing
     /// </summary>
+    [TestingAndPrivateOnly]
     internal ITelemetryTransport GetNextTransport(ITelemetryTransport? currentTransport)
     {
         // use agent if we know it's available, use agentless if we know it's not, and use agent as fallback

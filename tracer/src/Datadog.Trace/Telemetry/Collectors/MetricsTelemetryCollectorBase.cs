@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
@@ -43,6 +44,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     /// <summary>
     /// Internal for testing
     /// </summary>
+    [TestingAndPrivateOnly]
     internal abstract void AggregateMetrics();
 
     internal abstract void Clear();

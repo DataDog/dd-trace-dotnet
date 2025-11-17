@@ -71,7 +71,6 @@ internal partial class ConfigurationTelemetry : IConfigurationTelemetry
 
     public class ConfigurationTelemetryEntry
     {
-        // internal for testing
         private ConfigurationTelemetryEntry(string key, ConfigurationOrigins origin, ConfigurationTelemetryEntryType type, TelemetryErrorCode? error, string? stringValue = null, bool? boolValue = null, int? intValue = null, double? doubleValue = null)
         {
             Key = key;

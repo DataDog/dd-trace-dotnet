@@ -38,13 +38,13 @@ namespace Datadog.Trace.Configuration
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
 
-        // Internal for testing
+        [TestingOnly]
         internal TracerSettings()
             : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
         }
 
-        // Internal for testing
+        [TestingOnly]
         internal TracerSettings(IConfigurationSource? source)
         : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {

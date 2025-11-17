@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.33.0 -->
-    <PackageReference Include="Google.Protobuf" Version="3.33.0" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.33.1 -->
+    <PackageReference Include="Google.Protobuf" Version="3.33.1" />
   </ItemGroup>
 
 </Project>

@@ -15,6 +15,7 @@ using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Logging.Internal.TextFormatters;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -164,7 +165,7 @@ internal static class DatadogLoggingFactory
         return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File);
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
         => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
 

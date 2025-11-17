@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -123,7 +124,7 @@ namespace Datadog.Trace.Telemetry.Transports
 
         public abstract string GetTransportInfo();
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static string SerializeTelemetry<T>(T data) => JsonConvert.SerializeObject(data, Formatting.None, SerializerSettings);
 
         protected abstract MetricTags.TelemetryEndpoint GetEndpointMetricTag();
