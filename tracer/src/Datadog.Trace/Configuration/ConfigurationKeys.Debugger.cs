@@ -179,6 +179,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
             public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
+
+            /// <summary>
+            /// Configuration key for setting probes file path to add probes via file during DynamicInstrumentation initialization.
+            /// Default value is <c>empty</c>.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.ProbeFile"/>
+            public const string DynamicInstrumentationProbeFile = "DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE";
         }
     }
 }
