@@ -80,7 +80,7 @@ public class HandlerWrapperSetHandlerIntegration
             else
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
-                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext?.ClientContext?.Custom);
+                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateBegin");

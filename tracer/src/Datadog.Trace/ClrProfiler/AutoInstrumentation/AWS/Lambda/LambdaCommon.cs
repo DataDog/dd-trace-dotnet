@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
@@ -22,6 +23,7 @@ internal abstract class LambdaCommon
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
+    private const string LambdaRuntimeAwsRequestHeaderId = "lambda-runtime-aws-request-id";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
@@ -38,7 +40,7 @@ internal abstract class LambdaCommon
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
-    internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
+    internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
     {
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
@@ -116,14 +118,20 @@ internal abstract class LambdaCommon
         dataStream.Close();
     }
 
-    private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
+    private static void WriteRequestHeaders(WebRequest request, ILambdaContext context)
     {
-        if (context != null)
+        var clientContext = context.ClientContext?.Custom;
+        if (clientContext != null)
         {
-            foreach (var kv in context)
+            foreach (var kv in clientContext)
             {
                 request.Headers.Add(kv.Key, kv.Value);
             }
+        }
+
+        if (context.AwsRequestId != null)
+        {
+            request.Headers.Add(LambdaRuntimeAwsRequestHeaderId, context.AwsRequestId);
         }
     }
 
