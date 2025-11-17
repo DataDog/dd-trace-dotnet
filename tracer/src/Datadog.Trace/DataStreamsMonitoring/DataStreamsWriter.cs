@@ -260,7 +260,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task WriteToApiAsync()
     {
-        Debug.Log("ROBC Writing to API Async");
+        Log.Debug("ROBC Writing to API Async");
         // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
