@@ -158,7 +158,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        Log.Debug("ROBC Flush and close...")
+        Log.Debug("ROBC Flush and close...");
         if (!_processExit.TrySetResult(true))
         {
             return;
@@ -188,7 +188,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Flush()
     {
-        Log.Debug("ROBC Sync Flush")
+        Log.Debug("ROBC Sync Flush");
         if (_processExit.Task.IsCompleted)
         {
             return;
@@ -226,7 +226,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task FlushAsync()
     {
-        Log.Debug("ROB Flushing Async")
+        Log.Debug("ROB Flushing Async");
         if (_processExit.Task.IsCompleted)
         {
             return;
@@ -303,7 +303,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             try
             {
-                Log.Debug("ROBC Adding points to aggregator")
+                Log.Debug("ROBC Adding points to aggregator");
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
