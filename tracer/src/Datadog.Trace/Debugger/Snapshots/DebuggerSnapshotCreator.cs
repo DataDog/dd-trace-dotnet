@@ -30,6 +30,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         protected readonly JsonTextWriter JsonWriter;
 #pragma warning restore SA1401
         private readonly StringBuilder _jsonUnderlyingString;
+        private readonly bool _injectProcessTags;
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
         {
+            _injectProcessTags = Tracer.Instance.Settings.PropagateProcessTags;
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire();
@@ -730,7 +732,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, traceId, spanId)
+            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, ProcessTags.SerializedTags, traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -868,10 +870,16 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string processTags, string traceId, string spanId)
         {
             JsonWriter.WritePropertyName("service");
             JsonWriter.WriteValue(service ?? UnknownValue);
+
+            if (_injectProcessTags && !string.IsNullOrEmpty(processTags))
+            {
+                JsonWriter.WritePropertyName("process_tags");
+                JsonWriter.WriteValue(processTags);
+            }
 
             JsonWriter.WritePropertyName("ddsource");
             JsonWriter.WriteValue(DebuggerTags.DDSource);
