@@ -38,6 +38,9 @@
 
 #include "Log.h"
 
+#include <algorithm>
+#include <array>
+
 #define MAX_CHAR 512
 
 std::int64_t OpSysTools::s_nanosecondsPerHighPrecisionTimerTick = 0;
@@ -576,7 +579,17 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 
-    const std::string wrapperLibraryName = "Datadog.Linux.ApiWrapper.x64.so";
+    constexpr auto wrapperLibraryNames =
+#ifdef ARM64
+        std::array{
+            "Datadog.Linux.ApiWrapper.arm64.so",
+            "Datadog.Linux.ApiWrapper.x64.so"};
+#else
+        std::array{
+            "Datadog.Linux.ApiWrapper.x64.so"};
+#endif
+
+    const std::string preferredWrapperLibraryName = wrapperLibraryNames.front();
     const std::string customFnName = "dl_iterate_phdr";
     auto* dlIteratePhdr = reinterpret_cast<void*>(::dl_iterate_phdr);
 
@@ -584,7 +597,7 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
     auto res = dladdr(dlIteratePhdr, &info);
     if (res == 0 || info.dli_fname == nullptr)
     {
-        Log::Warn("Profiling is disabled: Unable to check if the library '", wrapperLibraryName, "'",
+        Log::Warn("Profiling is disabled: Unable to check if the library '", preferredWrapperLibraryName, "'",
                   " is correctly loaded and/or the function '", customFnName, "' is correctly wrapped.",
                   "Please contact the support for help with the following details:\n",
                   "Call to dladdr: ", res, "\n",
@@ -594,11 +607,15 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
 
     auto sharedObjectPath = fs::path(info.dli_fname);
 
-    if (sharedObjectPath.filename() != wrapperLibraryName)
+    const auto loadedWrapperName = sharedObjectPath.filename().string();
+
+    const auto wrapperLoaded = std::find(wrapperLibraryNames.begin(), wrapperLibraryNames.end(), loadedWrapperName) != wrapperLibraryNames.end();
+
+    if (!wrapperLoaded)
     {
         // We assume that the profiler library is in the same folder as the wrapper library
         auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-        auto wrapperLibrary = currentModulePath.parent_path() / wrapperLibraryName;
+        auto wrapperLibrary = currentModulePath.parent_path() / preferredWrapperLibraryName;
         auto wrapperLibraryPath = wrapperLibrary.string();
 
         // Check if process is running is a secure-execution mode
@@ -607,7 +624,7 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
         // Get LD_PRELOAD env var content
         auto envVarValue = shared::GetEnvironmentValue(WStr("LD_PRELOAD"));
 
-        Log::Warn("Profiling is disabled: It appears the wrapper library '", wrapperLibraryName, "' is not correctly loaded.\n",
+        Log::Warn("Profiling is disabled: It appears the wrapper library '", preferredWrapperLibraryName, "' is not correctly loaded.\n",
                   "Possible reason(s):\n",
                   "* The LD_PRELOAD environment variable might not contain the path '", wrapperLibraryPath, "'. Try adding ",
                   "'", wrapperLibraryPath, "' to LD_PRELOAD environment variable.\n",
