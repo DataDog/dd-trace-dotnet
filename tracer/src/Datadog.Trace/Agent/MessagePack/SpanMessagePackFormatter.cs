@@ -741,7 +741,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteName, azureAppServiceSettings.SiteName);
-                // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
+                // the front-end identifies AAS spans using aas.site.name and aas.site.type, so we need them on all spans
                 if (tagBytes is not null)
                 {
                     count++;
