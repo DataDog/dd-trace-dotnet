@@ -758,7 +758,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 // Add function process tag ("host" or "worker") for isolated Azure Functions
-                if (azureAppServiceSettings.IsIsolatedFunctionsApp)
+                if (azureAppServiceSettings.IsIsolatedFunctionsApp &&
+                    _azureFunctionProcessTagNameBytes is not null &&
+                    _azureFunctionProcessTagValueBytes is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _azureFunctionProcessTagNameBytes);
