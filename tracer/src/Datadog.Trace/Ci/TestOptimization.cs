@@ -42,8 +42,8 @@ internal class TestOptimization : ITestOptimization
     public TestOptimization()
     {
         _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
-        Enabled = InternalEnabled();
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
+        Enabled = InternalEnabled(Log);
     }
 
     public static ITestOptimization Instance
@@ -81,7 +81,7 @@ internal class TestOptimization : ITestOptimization
             _settings = value;
             _client = null;
             _firstInitialization = 1;
-            Enabled = InternalEnabled();
+            Enabled = InternalEnabled(Log);
             _additionalFeaturesTask = null;
             _tracerManagement = null;
             _hostInfo = null;
@@ -417,7 +417,7 @@ internal class TestOptimization : ITestOptimization
         _settings = null;
         _client = null;
         _firstInitialization = 1;
-        Enabled = InternalEnabled();
+        Enabled = InternalEnabled(Log);
         _additionalFeaturesTask = null;
         _tracerManagement = null;
         _hostInfo = null;
@@ -428,8 +428,8 @@ internal class TestOptimization : ITestOptimization
         _dynamicInstrumentationFeature = null;
     }
 
-    private static bool InternalEnabled()
-        => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config).IsEnabled;
+    private static bool InternalEnabled(IDatadogLogger log)
+        => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log).IsEnabled;
 
     private async Task ShutdownAsync(Exception? exception)
     {

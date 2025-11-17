@@ -17,9 +17,7 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 internal static class TestOptimizationDetection
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationDetection));
-
-    public static Enablement IsEnabled(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    public static Enablement IsEnabled(IConfigurationSource source, IConfigurationTelemetry telemetry, IDatadogLogger log)
     {
         // By configuration
         var config = new ConfigurationBuilder(source, telemetry);
@@ -28,20 +26,20 @@ internal static class TestOptimizationDetection
         {
             if (enabled)
             {
-                Log.Information("TestOptimization: CI Visibility Enabled by Configuration");
+                log.Information("TestOptimization: CI Visibility Enabled by Configuration");
             }
             else
             {
-                Log.Information("TestOptimization: CI Visibility Disabled by Configuration");
+                log.Information("TestOptimization: CI Visibility Disabled by Configuration");
             }
 
             return new Enablement(enabled, false);
         }
 
-        return new Enablement(null, InferredAvailable());
+        return new Enablement(null, InferredAvailable(log));
     }
 
-    private static bool InferredAvailable()
+    private static bool InferredAvailable(IDatadogLogger log)
     {
         // Try to autodetect based in the domain name.
         var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
@@ -50,24 +48,24 @@ internal static class TestOptimizationDetection
             domainName.StartsWith("nunit", StringComparison.Ordinal) ||
             domainName.StartsWith("MSBuild", StringComparison.Ordinal))
         {
-            Log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
+            log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
             PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
 
         // Try to autodetect based in the process name.
-        var processName = GetProcessName();
+        var processName = GetProcessName(log);
         if (processName.StartsWith("testhost.", StringComparison.Ordinal))
         {
-            Log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
+            log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
             PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
 
-        Log.Debug("TestOptimization: CI Visibility Enabled by Domain name whitelist");
+        log.Debug("TestOptimization: CI Visibility Enabled by Domain name whitelist");
         return false;
 
-        void PropagateCiVisibilityEnvironmentVariable()
+        static void PropagateCiVisibilityEnvironmentVariable()
         {
             try
             {
@@ -80,7 +78,7 @@ internal static class TestOptimizationDetection
             }
         }
 
-        string GetProcessName()
+        static string GetProcessName(IDatadogLogger log)
         {
             try
             {
@@ -88,7 +86,7 @@ internal static class TestOptimizationDetection
             }
             catch (Exception exception)
             {
-                Log.Warning(exception, "TestOptimization: Error getting current process name when checking CI Visibility status");
+                log.Warning(exception, "TestOptimization: Error getting current process name when checking CI Visibility status");
             }
 
             return string.Empty;

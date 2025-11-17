@@ -6,6 +6,7 @@
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -19,7 +20,7 @@ public class TestOptimizationDetectionTests : SettingsTestsBase
     public void Enabled(string value, bool? expected)
     {
         var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
-        var settings = TestOptimizationDetection.IsEnabled(source, NullConfigurationTelemetry.Instance);
+        var settings = TestOptimizationDetection.IsEnabled(source, NullConfigurationTelemetry.Instance, DatadogSerilogLogger.NullLogger);
 
         settings.ExplicitEnabled.Should().Be(expected);
     }
