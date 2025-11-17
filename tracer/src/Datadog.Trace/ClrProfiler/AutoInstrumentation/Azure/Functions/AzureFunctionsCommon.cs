@@ -403,7 +403,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 bool areAllTheSame = extractedContexts.Count == 1 ||
-                                     (extractedContexts.Count > 1 && AreAllContextsIdentical(extractedContexts));
+                                     (extractedContexts.Count > 1 && AreAllSpanContextsIdentical(extractedContexts));
 
                 if (!areAllTheSame)
                 {
@@ -440,7 +440,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool AreAllContextsIdentical(List<PropagationContext> contexts)
+        // Checks if all SpanContexts are identical (ignores baggage)
+        private static bool AreAllSpanContextsIdentical(List<PropagationContext> contexts)
         {
             if (contexts.Count <= 1)
             {
@@ -450,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             var first = contexts[0].SpanContext;
             return contexts.All(ctx =>
                 ctx.SpanContext != null &&
-                ctx.SpanContext.TraceId128.Equals(first!.TraceId128) &&
+                ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
         }
     }
