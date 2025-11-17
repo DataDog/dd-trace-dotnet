@@ -301,36 +301,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            try
-            {
-                Log.Debug("ROBC Adding points to aggregator");
-                while (_buffer.TryDequeue(out var statsPoint))
-                {
-                    _aggregator.Add(in statsPoint);
-                }
-
-                while (_backlogBuffer.TryDequeue(out var backlogPoint))
-                {
-                    _aggregator.AddBacklog(in backlogPoint);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An error occured in the processing thread");
-            }
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            var tcs = new TaskCompletionSource<bool>();
-            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            {
-                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
-            }
+            Thread.Sleep(1000);
         }
     }
 
