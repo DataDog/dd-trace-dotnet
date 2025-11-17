@@ -57,10 +57,15 @@ internal abstract class LambdaCommon
         return CreatePlaceholderScope(tracer, headers);
     }
 
-    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
+    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, object state, bool isError, string data)
     {
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
+        if (state != null)
+        {
+            request.Headers.Set(LambdaRuntimeAwsRequestHeaderId, (string)state);
+        }
+
         using var response = (HttpWebResponse)request.GetResponse();
 
         if (!ValidateOkStatus(response))
@@ -69,7 +74,7 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, object state, ILambdaExtensionRequest requestBuilder)
     {
         try
         {
@@ -92,7 +97,7 @@ internal abstract class LambdaCommon
                 span.SetException(exception);
             }
 
-            SendEndInvocation(requestBuilder, scope, exception != null, returnValue);
+            SendEndInvocation(requestBuilder, scope, state, exception != null, returnValue);
         }
         catch (Exception ex)
         {

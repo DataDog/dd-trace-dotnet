@@ -71,6 +71,7 @@ public class HandlerWrapperSetHandlerIntegration
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
+            object state = null;
             var proxyInstance = arg.DuckCast<IInvocationRequest>();
             if (proxyInstance == null)
             {
@@ -81,10 +82,11 @@ public class HandlerWrapperSetHandlerIntegration
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
+                state = proxyInstance.LambdaContext.AwsRequestId;
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateBegin");
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, state);
         }
 
         public void OnException(object sender, Exception ex)
@@ -108,18 +110,18 @@ public class HandlerWrapperSetHandlerIntegration
                 if (proxyInstance == null)
                 {
                     LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
-                    await LambdaCommon.EndInvocationAsync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                    await LambdaCommon.EndInvocationAsync(string.Empty, exception, ((CallTargetState)state!).Scope, ((CallTargetState)state!).State, RequestBuilder).ConfigureAwait(false);
                 }
                 else
                 {
                     var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
-                    await LambdaCommon.EndInvocationAsync(jsonString, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                    await LambdaCommon.EndInvocationAsync(jsonString, exception, ((CallTargetState)state!).Scope, ((CallTargetState)state!).State, RequestBuilder).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
-                await LambdaCommon.EndInvocationAsync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                await LambdaCommon.EndInvocationAsync(string.Empty, ex, ((CallTargetState)state!).Scope, ((CallTargetState)state!).State, RequestBuilder).ConfigureAwait(false);
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
