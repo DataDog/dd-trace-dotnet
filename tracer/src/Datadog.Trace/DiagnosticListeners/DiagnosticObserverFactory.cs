@@ -24,6 +24,53 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticObserverFactory));
 
         /// <summary>
+        /// Creates a module builder with the specified assembly name and visibility configuration.
+        /// </summary>
+        private static ModuleBuilder CreateModuleBuilder(string assemblyName, Type visibilityType)
+        {
+            var asmName = new AssemblyName(assemblyName);
+            asmName.Version = visibilityType.Assembly.GetName().Version;
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+
+            DuckType.EnsureTypeVisibility(moduleBuilder, visibilityType);
+
+            return moduleBuilder;
+        }
+
+        /// <summary>
+        /// Creates a TypeBuilder for an observer type that implements IObserver&lt;DiagnosticListener&gt;.
+        /// </summary>
+        private static TypeBuilder CreateObserverTypeBuilder(ModuleBuilder moduleBuilder, Type observerDiagnosticListenerType)
+        {
+            return moduleBuilder.DefineType(
+                "DiagnosticObserver",
+                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
+                typeof(object),
+                new[] { observerDiagnosticListenerType });
+        }
+
+        /// <summary>
+        /// Emits the OnCompleted method for the observer (empty implementation).
+        /// </summary>
+        private static void EmitOnCompletedMethod(TypeBuilder typeBuilder, MethodAttributes methodAttributes)
+        {
+            var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
+            var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
+            onCompletedMethodIl.Emit(OpCodes.Ret);
+        }
+
+        /// <summary>
+        /// Emits the OnError method for the observer (empty implementation).
+        /// </summary>
+        private static void EmitOnErrorMethod(TypeBuilder typeBuilder, MethodAttributes methodAttributes)
+        {
+            var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
+            var onErrorMethodIl = onErrorMethod.GetILGenerator();
+            onErrorMethodIl.Emit(OpCodes.Ret);
+        }
+
+        /// <summary>
         /// Creates and subscribes a dynamic observer with a static callback to DiagnosticListener.AllListeners.
         /// </summary>
         public static void SubscribeWithStaticCallback(
@@ -147,32 +194,15 @@ namespace Datadog.Trace.DiagnosticListeners
             string assemblyName,
             Type visibilityType)
         {
-            var asmName = new AssemblyName(assemblyName);
-            asmName.Version = visibilityType.Assembly.GetName().Version;
-            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-
-            DuckType.EnsureTypeVisibility(moduleBuilder, visibilityType);
-
-            var typeBuilder = moduleBuilder.DefineType(
-                "DiagnosticObserver",
-                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
-                typeof(object),
-                new[] { observerDiagnosticListenerType });
+            var moduleBuilder = CreateModuleBuilder(assemblyName, visibilityType);
+            var typeBuilder = CreateObserverTypeBuilder(moduleBuilder, observerDiagnosticListenerType);
 
             var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
-            // OnCompleted
-            var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
-            var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
-            onCompletedMethodIl.Emit(OpCodes.Ret);
+            EmitOnCompletedMethod(typeBuilder, methodAttributes);
+            EmitOnErrorMethod(typeBuilder, methodAttributes);
 
-            // OnError
-            var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
-            var onErrorMethodIl = onErrorMethod.GetILGenerator();
-            onErrorMethodIl.Emit(OpCodes.Ret);
-
-            // OnNext
+            // OnNext - call static method
             var onSetListenerMethodInfo = callbackType.GetMethod(callbackMethodName, BindingFlags.Static | BindingFlags.Public)!;
             var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { diagnosticListenerType });
             var onNextMethodIl = onNextMethod.GetILGenerator();
@@ -204,18 +234,8 @@ namespace Datadog.Trace.DiagnosticListeners
             string assemblyName,
             Type visibilityType)
         {
-            var asmName = new AssemblyName(assemblyName);
-            asmName.Version = visibilityType.Assembly.GetName().Version;
-            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-
-            DuckType.EnsureTypeVisibility(moduleBuilder, visibilityType);
-
-            var typeBuilder = moduleBuilder.DefineType(
-                "DiagnosticObserver",
-                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
-                typeof(object),
-                new[] { observerDiagnosticListenerType });
+            var moduleBuilder = CreateModuleBuilder(assemblyName, visibilityType);
+            var typeBuilder = CreateObserverTypeBuilder(moduleBuilder, observerDiagnosticListenerType);
 
             // Add a field to hold the manager instance
             var managerField = typeBuilder.DefineField("_manager", managerType, FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -246,15 +266,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
-            // OnCompleted
-            var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
-            var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
-            onCompletedMethodIl.Emit(OpCodes.Ret);
-
-            // OnError
-            var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
-            var onErrorMethodIl = onErrorMethod.GetILGenerator();
-            onErrorMethodIl.Emit(OpCodes.Ret);
+            EmitOnCompletedMethod(typeBuilder, methodAttributes);
+            EmitOnErrorMethod(typeBuilder, methodAttributes);
 
             // OnNext - call instance method on manager
             var onSetListenerMethodInfo = managerType.GetMethod(callbackMethodName, BindingFlags.Instance | BindingFlags.NonPublic);
