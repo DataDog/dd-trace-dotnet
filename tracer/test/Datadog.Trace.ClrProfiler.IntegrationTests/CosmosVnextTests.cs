@@ -123,6 +123,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(cosmosSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                await VerifyHelper.VerifySpans(allSpans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
+
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
             }
         }

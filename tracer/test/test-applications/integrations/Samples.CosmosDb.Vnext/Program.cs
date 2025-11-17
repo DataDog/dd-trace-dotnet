@@ -112,11 +112,11 @@ namespace Samples.CosmosDb.Vnext
             {
                 await CreateDatabaseAsync();
                 await CreateContainerAsync();
-                await AddItemsToContainerAsync();
 
                 switch (testMode)
                 {
                     case TestMode.Query:
+                        await AddItemsToContainerAsync();
                         await QueryItemsAsync();
                         break;
                     case TestMode.CRUD:

@@ -39,60 +39,39 @@ public class RequestInvokerHandlerSendAsyncIntegration
         where TContainer : IContainer, IDuckType
         where TTarget : IRequestInvokerHandlerProxy
     {
-        Log.Debug("RequestInvokerHandler.SendAsync instrumentation triggered");
-        Log.Debug("instance type: {0}", new object?[] { instance?.GetType()?.FullName ?? "null" });
-        Log.Debug("resourceUriString: {0}", new object?[] { resourceUriString ?? "null" });
-        Log.Debug("requestOptions: {0}", new object?[] { requestOptions ?? "null" });
-        // Log.Debug("cosmosContainerCore: {0}", new object?[] { cosmosContainerCore ?? "null" });
-        // Log.Debug("feedRange: {0}", new object?[] { feedRange ?? "null" });
-        // Log.Debug("streamPayload: {0}", new object?[] { streamPayload?.GetType()?.FullName ?? "null" });
-        // Log.Debug("requestEnricher type: {0}", new object?[] { requestEnricher?.GetType()?.FullName ?? "null" });
-        // Log.Debug("trace type: {0}", new object?[] { trace?.GetType()?.FullName ?? "null" });
-        // Log.Debug("cancellationToken: {0}", new object?[] { cancellationToken });
-
-        Log.Debug("operationType: {0}", new object?[] { operationType ?? "null" }); // Read/Create/Delete...
-        Log.Debug("resourceType: {0}", new object?[] { resourceType ?? "null" }); // Document/Database/Collection...
-        Log.Debug("endpoint: {0}", new object?[] { instance?.Client.Endpoint?.ToString() ?? "null" });
-
-        // Extract container and database information
-        string? containerId = null;
-        string? databaseId = null;
-
-        if (cosmosContainerCore?.Instance != null)
-        {
-            containerId = cosmosContainerCore.Id;
-
-            if (cosmosContainerCore.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
-            {
-                databaseId = databaseNew.Id;
-            }
-            else if (cosmosContainerCore.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
-            {
-                databaseId = databaseOld.Id;
-            }
-
-            Log.Debug("Container.Id: {0}", new object?[] { containerId ?? "null" });
-            Log.Debug("Container.Database.Id: {0}", new object?[] { databaseId ?? "null" });
-        }
-
         var tracer = Tracer.Instance;
         var perTraceSettings = tracer.CurrentTraceSettings;
 
-        // if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.CosmosDb))
-        // {
-        //     return CallTargetState.GetDefault();
-        // }
+        if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.CosmosDb))
+        {
+            return CallTargetState.GetDefault();
+        }
 
         try
         {
-            var parent = tracer.ActiveScope?.Span;
-
-            if (parent != null &&
-                parent.Type == SpanTypes.Sql &&
-                parent.GetTag(Tags.DbType) == "cosmosdb")
+            // Skip what's already being traced by query tracing
+            var operationTypeString = operationType?.ToString() ?? string.Empty;
+            if (operationTypeString.Equals("Query", StringComparison.Ordinal) ||
+                operationTypeString.Equals("QueryPlan", StringComparison.Ordinal))
             {
-                // We're already instrumenting this from a parent span
                 return CallTargetState.GetDefault();
+            }
+
+            string? containerId = null;
+            string? databaseId = null;
+
+            if (cosmosContainerCore?.Instance != null)
+            {
+                containerId = cosmosContainerCore.Id;
+
+                if (cosmosContainerCore.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
+                {
+                    databaseId = databaseNew.Id;
+                }
+                else if (cosmosContainerCore.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
+                {
+                    databaseId = databaseOld.Id;
+                }
             }
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName("cosmosdb");
@@ -103,14 +82,13 @@ public class RequestInvokerHandlerSendAsyncIntegration
             tags.DatabaseId = databaseId;
             tags.SetEndpoint(instance?.Client.Endpoint);
 
-            tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);
 
             var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;
-            span.ResourceName = $"{operationType} {resourceUriString}";
+            span.ResourceName = $"{operationTypeString} {resourceUriString}";
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
 
@@ -118,7 +96,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating or populating scope for CosmosDb RunWithDiagnosticsHelperAsync.");
+            Log.Error(ex, "Error creating or populating scope for CosmosDb.");
         }
 
         return CallTargetState.GetDefault();
