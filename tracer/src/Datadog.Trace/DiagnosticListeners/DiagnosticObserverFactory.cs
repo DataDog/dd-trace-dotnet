@@ -25,7 +25,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         /// <summary>
         /// Creates and subscribes a dynamic observer with a static callback to DiagnosticListener.AllListeners.
-        /// Based on ActivityListener.CreateDiagnosticSourceListenerInstance.
         /// </summary>
         public static void SubscribeWithStaticCallback(
             Type diagnosticListenerType,

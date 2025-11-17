@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
                     }
                     else
                     {
-                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property.");
+                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
                     }
 
                     if (activity?.Instance is not null)

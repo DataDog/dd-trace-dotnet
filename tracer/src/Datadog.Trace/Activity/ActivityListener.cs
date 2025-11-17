@@ -155,7 +155,12 @@ namespace Datadog.Trace.Activity
                 else
                 {
                     // if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
-                    CreateDiagnosticSourceListenerInstance(diagnosticListenerType);
+                    DiagnosticListeners.DiagnosticObserverFactory.SubscribeWithStaticCallback(
+                                                                            diagnosticListenerType,
+                                                                            typeof(DiagnosticObserverListener),
+                                                                            nameof(DiagnosticObserverListener.OnSetListener),
+                                                                            "Datadog.DiagnosticObserverListener.Dynamic",
+                                                                            typeof(ActivityListener));
                 }
 
                 return;
@@ -246,16 +251,6 @@ namespace Datadog.Trace.Activity
 
             // Set the global field after calling the `AddActivityListener` method
             _activityListenerInstance = activityListener;
-        }
-
-        private static void CreateDiagnosticSourceListenerInstance(Type diagnosticListenerType)
-        {
-            DiagnosticListeners.DiagnosticObserverFactory.SubscribeWithStaticCallback(
-                diagnosticListenerType,
-                typeof(DiagnosticObserverListener),
-                nameof(DiagnosticObserverListener.OnSetListener),
-                "Datadog.DiagnosticObserverListener.Dynamic",
-                typeof(ActivityListener));
         }
 
         private static void CreateActivityKindSetter(Type activityType)
