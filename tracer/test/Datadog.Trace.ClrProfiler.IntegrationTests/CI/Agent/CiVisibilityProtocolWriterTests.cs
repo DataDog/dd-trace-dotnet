@@ -17,10 +17,13 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -35,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessTestEventTest()
         {
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
@@ -66,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessStreamTestEventTest()
         {
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
@@ -99,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessCodeCoverageEvent()
         {
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
             var coveragePayload = new TestCoverage
@@ -172,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task SlowSenderTest()
         {
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
@@ -227,7 +230,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task ConcurrencyFlushTest()
         {
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
@@ -316,7 +319,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize + Ci.Agent.Payloads.MultipartPayload.HeaderSize;
 
-            var settings = TestOptimization.Instance.Settings;
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
 
             int bufferSize = headerSize + 1024;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);

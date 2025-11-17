@@ -134,7 +134,7 @@ public abstract class TestingFrameworkTest : TestHelper
         // we're not sure why, and will investigate later
         if (!EnvironmentTools.IsWindows())
         {
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
+            AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, new TestOptimizationHostInfo().GetOperatingSystemVersion() ?? string.Empty);
         }
         else
         {
