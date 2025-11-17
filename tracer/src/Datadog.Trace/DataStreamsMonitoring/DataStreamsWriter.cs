@@ -188,40 +188,40 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Flush()
     {
-        Log.Debug("ROBC Sync Flush");
-        if (_processExit.Task.IsCompleted)
-        {
-            return;
-        }
-
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        // Fire and forget - don't wait for the flush to complete
-        _ = Task.Run(async () =>
-        {
-            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
-            {
-                Log.Warning("Could not acquire flush semaphore within timeout");
-                return;
-            }
-
-            try
-            {
-                await WriteToApiAsync().ConfigureAwait(false);
-                FlushComplete?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during flush");
-            }
-            finally
-            {
-                _flushSemaphore.Release();
-            }
-        });
+        Log.Debug("ROBC Sync Flush -- NOOP");
+        // if (_processExit.Task.IsCompleted)
+        // {
+        //     return;
+        // }
+        //
+        // if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        // {
+        //     return;
+        // }
+        //
+        // // Fire and forget - don't wait for the flush to complete
+        // _ = Task.Run(async () =>
+        // {
+        //     if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        //     {
+        //         Log.Warning("Could not acquire flush semaphore within timeout");
+        //         return;
+        //     }
+        //
+        //     try
+        //     {
+        //         await WriteToApiAsync().ConfigureAwait(false);
+        //         FlushComplete?.Invoke(this, EventArgs.Empty);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Error(ex, "Error during flush");
+        //     }
+        //     finally
+        //     {
+        //         _flushSemaphore.Release();
+        //     }
+        // });
     }
 
     public async Task FlushAsync()
@@ -301,36 +301,38 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            try
-            {
-                Log.Debug("ROBC Adding points to aggregator");
-                while (_buffer.TryDequeue(out var statsPoint))
-                {
-                    _aggregator.Add(in statsPoint);
-                }
-
-                while (_backlogBuffer.TryDequeue(out var backlogPoint))
-                {
-                    _aggregator.AddBacklog(in backlogPoint);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An error occured in the processing thread");
-            }
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            var tcs = new TaskCompletionSource<bool>();
-            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            {
-                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
-            }
+            Log.Debug("ROBC Processing Queue Loop - NOOP");
+            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            // try
+            // {
+            //     Log.Debug("ROBC Adding points to aggregator");
+            //     while (_buffer.TryDequeue(out var statsPoint))
+            //     {
+            //         _aggregator.Add(in statsPoint);
+            //     }
+            //
+            //     while (_backlogBuffer.TryDequeue(out var backlogPoint))
+            //     {
+            //         _aggregator.AddBacklog(in backlogPoint);
+            //     }
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "An error occured in the processing thread");
+            // }
+            //
+            // if (_processExit.Task.IsCompleted)
+            // {
+            //     return;
+            // }
+            //
+            // // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
+            // // and modified to avoid dealing with exceptions
+            // var tcs = new TaskCompletionSource<bool>();
+            // using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
+            // {
+            //     await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
+            // }
         }
     }
 
