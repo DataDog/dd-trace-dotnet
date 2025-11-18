@@ -20,6 +20,7 @@ class HttpCalculator : IHttpCalculator
     private static double GetResult(string n1, string n2, [CallerMemberName] string member = null)
     {
         LoggingHelper.WriteLineWithDate($"[Server] Received {member}({n1},{n2})");
+        using var scope = SampleHelpers.CreateScope(member);
         var result = double.Parse(n1) + double.Parse(n2);
 
         LoggingHelper.WriteLineWithDate($"[Server] Return {member}: {result}");

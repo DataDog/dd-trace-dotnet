@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -98,8 +99,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = binding switch
             {
-                "Custom" => 1,
-                _ => 14,
+                "Custom" => 14,
+                "NetTcpBinding" => 32,
+                "BasicHttpBinding" => 45,
+                "WSHttpBinding" => 49,
+                _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
             using var telemetry = this.ConfigureTelemetry();
@@ -113,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
 
                 // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
+                // agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
@@ -143,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 5;
+            var expectedSpanCount = 13;
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
@@ -155,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
                 // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
+                // agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
