@@ -188,40 +188,41 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Flush()
     {
-        Log.Debug("ROBC Sync Flush -- NOOP");
-        // if (_processExit.Task.IsCompleted)
-        // {
-        //     return;
-        // }
-        //
-        // if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        // {
-        //     return;
-        // }
-        //
-        // // Fire and forget - don't wait for the flush to complete
-        // _ = Task.Run(async () =>
-        // {
-        //     if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
-        //     {
-        //         Log.Warning("Could not acquire flush semaphore within timeout");
-        //         return;
-        //     }
-        //
-        //     try
-        //     {
-        //         await WriteToApiAsync().ConfigureAwait(false);
-        //         FlushComplete?.Invoke(this, EventArgs.Empty);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Log.Error(ex, "Error during flush");
-        //     }
-        //     finally
-        //     {
-        //         _flushSemaphore.Release();
-        //     }
-        // });
+        Log.Debug("ROBC Sync Flush -- Doing work");
+        if (_processExit.Task.IsCompleted)
+        {
+            return;
+        }
+
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        // Fire and forget - don't wait for the flush to complete
+        _ = Task.Run(async () =>
+        {
+            Log.Debug("ROBC Sync Flush -- In task");
+            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+            {
+                Log.Warning("Could not acquire flush semaphore within timeout");
+                return;
+            }
+
+            try
+            {
+                await WriteToApiAsync().ConfigureAwait(false);
+                FlushComplete?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during flush");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
+            }
+        });
     }
 
     public async Task FlushAsync()
