@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -337,9 +338,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
+            var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
+                var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+
                 using var httpClient = new System.Net.Http.HttpClient();
                 var logsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/logs");
                 logsResponse.EnsureSuccessStatusCode();
@@ -348,6 +353,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var logsData = JToken.Parse(logsJson);
 
                 logsData.Should().NotBeNullOrEmpty();
+                logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
+                {
+                    var timeUnixNano = logRecord.Value<long>("time_unix_nano");
+                    var observedTimeUnixNano = logRecord.Value<long>("observed_time_unix_nano");
+
+                    timeUnixNano.Should().Be(observedTimeUnixNano);
+                    timeUnixNano.Should().BeInRange(startTimeNanoseconds, endTimeNanoseconds);
+                });
 
                 foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {

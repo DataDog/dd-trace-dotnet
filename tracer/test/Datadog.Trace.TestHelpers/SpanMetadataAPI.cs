@@ -60,110 +60,35 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreMvcV0(),
             };
 
-        public static Result IsAwsDynamoDb(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsDynamoDbV1(),
-                _ => span.IsAwsDynamoDbV0(),
-            };
+        public static Result IsAwsDynamoDb(this MockSpan span) => span.IsAwsDynamoDbV0();
 
-        public static Result IsAwsKinesisOutbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsKinesisOutboundV1(),
-                _ => span.IsAwsKinesisOutboundV0(),
-            };
+        public static Result IsAwsKinesisOutbound(this MockSpan span) => span.IsAwsKinesisOutboundV0();
 
-        public static Result IsAwsS3Request(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsS3RequestV1(),
-                _ => span.IsAwsS3RequestV0(),
-            };
+        public static Result IsAwsS3Request(this MockSpan span) => span.IsAwsS3RequestV0();
 
-        public static Result IsAwsSqsInbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSqsInboundV1(),
-                _ => span.IsAwsSqsRequestV0(),
-            };
+        public static Result IsAwsSqsInbound(this MockSpan span) => span.IsAwsSqsRequestV0();
 
-        public static Result IsAwsSqsOutbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSqsOutboundV1(),
-                _ => span.IsAwsSqsRequestV0(),
-            };
+        public static Result IsAwsSqsOutbound(this MockSpan span) => span.IsAwsSqsRequestV0();
 
-        public static Result IsAwsSqsRequest(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSqsRequestV1(),
-                _ => span.IsAwsSqsRequestV0(),
-            };
+        public static Result IsAwsSqsRequest(this MockSpan span) => span.IsAwsSqsRequestV0();
 
-        public static Result IsAwsSnsInbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSnsInboundV1(),
-                _ => span.IsAwsSnsRequestV0(),
-            };
+        public static Result IsAwsSnsInbound(this MockSpan span) => span.IsAwsSnsRequestV0();
 
-        public static Result IsAwsSnsOutbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSnsOutboundV1(),
-                _ => span.IsAwsSnsRequestV0(),
-            };
+        public static Result IsAwsSnsOutbound(this MockSpan span) => span.IsAwsSnsRequestV0();
 
-        public static Result IsAwsSnsRequest(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsSnsRequestV1(),
-                _ => span.IsAwsSnsRequestV0(),
-            };
+        public static Result IsAwsSnsRequest(this MockSpan span) => span.IsAwsSnsRequestV0();
 
-        public static Result IsAwsEventBridgeInbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsEventBridgeInboundV1(),
-                _ => span.IsAwsEventBridgeRequestV0(),
-            };
+        public static Result IsAwsEventBridgeInbound(this MockSpan span) => span.IsAwsEventBridgeRequestV0();
 
-        public static Result IsAwsEventBridgeOutbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsEventBridgeOutboundV1(),
-                _ => span.IsAwsEventBridgeRequestV0(),
-            };
+        public static Result IsAwsEventBridgeOutbound(this MockSpan span) => span.IsAwsEventBridgeRequestV0();
 
-        public static Result IsAwsEventBridgeRequest(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsEventBridgeRequestV1(),
-                _ => span.IsAwsEventBridgeRequestV0(),
-            };
+        public static Result IsAwsEventBridgeRequest(this MockSpan span) => span.IsAwsEventBridgeRequestV0();
 
-        public static Result IsAwsStepFunctionsInbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsStepFunctionsInboundV1(),
-                _ => span.IsAwsStepFunctionsRequestV0(),
-            };
+        public static Result IsAwsStepFunctionsInbound(this MockSpan span) => span.IsAwsStepFunctionsRequestV0();
 
-        public static Result IsAwsStepFunctionsOutbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsStepFunctionsOutboundV1(),
-                _ => span.IsAwsStepFunctionsRequestV0(),
-            };
+        public static Result IsAwsStepFunctionsOutbound(this MockSpan span) => span.IsAwsStepFunctionsRequestV0();
 
-        public static Result IsAwsStepFunctionsRequest(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsStepFunctionsRequestV1(),
-                _ => span.IsAwsStepFunctionsRequestV0(),
-            };
+        public static Result IsAwsStepFunctionsRequest(this MockSpan span) => span.IsAwsStepFunctionsRequestV0();
 
         public static Result IsAzureServiceBusInbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch

@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.8.0 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.8.1 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.8.1" />
   </ItemGroup>
 
 </Project>

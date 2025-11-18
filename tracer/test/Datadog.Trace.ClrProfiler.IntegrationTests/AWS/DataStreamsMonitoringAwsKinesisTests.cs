@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Producer => span.IsAwsKinesisOutbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsKinesisOutbound(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Kinesis integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 

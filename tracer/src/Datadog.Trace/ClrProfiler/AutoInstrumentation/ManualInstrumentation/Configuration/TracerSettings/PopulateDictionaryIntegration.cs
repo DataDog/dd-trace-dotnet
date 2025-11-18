@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 
@@ -41,7 +42,7 @@ public class PopulateDictionaryIntegration
         return CallTargetState.GetDefault();
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Configuration.TracerSettings settings)
     {
         // record all the settings in the dictionary

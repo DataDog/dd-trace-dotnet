@@ -21,16 +21,10 @@ namespace Datadog.Trace.Configuration
     {
         private readonly NameValueCollection _nameValueCollection;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NameValueConfigurationSource"/> class
-        /// that wraps the specified <see cref="NameValueCollection"/>.
-        /// </summary>
-        /// <param name="nameValueCollection">The collection that will be wrapped by this configuration source.</param>
-        [PublicApi]
+        [TestingOnly]
         public NameValueConfigurationSource(NameValueCollection nameValueCollection)
             : this(nameValueCollection, ConfigurationOrigins.Code)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.NameValueConfigurationSource_Ctor);
         }
 
         internal NameValueConfigurationSource(NameValueCollection nameValueCollection, ConfigurationOrigins origin)

@@ -378,6 +378,12 @@ internal sealed class Baggage : IDictionary<string, string?>
             ThrowHelper.ThrowArgumentNullException(nameof(destination));
         }
 
+        if (ReferenceEquals(this, destination))
+        {
+            // We're trying to merge with ourselves
+            return;
+        }
+
         var sourceItems = _items;
 
         if (sourceItems is null || sourceItems.Count == 0)

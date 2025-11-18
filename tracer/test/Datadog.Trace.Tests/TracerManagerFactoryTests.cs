@@ -103,6 +103,29 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DiscoveryServiceCanBeDisabled(bool enabled)
+    {
+        var source = CreateConfigurationSource((ConfigurationKeys.AgentFeaturePollingEnabled, enabled.ToString()));
+        var settings = new TracerSettings(source);
+
+        settings.AgentFeaturePollingEnabled.Should().Be(enabled);
+
+        var factory = new TracerManagerFactory();
+        var discoveryService = factory.GetDiscoveryService(settings);
+
+        if (enabled)
+        {
+            discoveryService.Should().BeOfType<DiscoveryService>();
+        }
+        else
+        {
+            discoveryService.Should().BeSameAs(NullDiscoveryService.Instance);
+        }
+    }
+
     private static TracerManager CreateTracerManager(TracerSettings settings)
     {
         return new TracerManagerFactory().CreateTracerManager(
@@ -115,7 +138,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager("env", "service", Mock.Of<IDataStreamsWriter>(), isInDefaultState: false),
+            new DataStreamsManager("env", "service", Mock.Of<IDataStreamsWriter>(), isInDefaultState: false, processTags: null),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,

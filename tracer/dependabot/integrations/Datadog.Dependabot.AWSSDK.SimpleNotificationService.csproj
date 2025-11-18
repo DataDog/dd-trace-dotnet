@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.2.2 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.2.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/4.0.2.5 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.2.5" />
   </ItemGroup>
 
 </Project>
