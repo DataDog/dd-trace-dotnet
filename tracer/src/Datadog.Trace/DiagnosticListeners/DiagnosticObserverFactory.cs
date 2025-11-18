@@ -71,6 +71,42 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
+        /// Creates a constructor that accepts a manager instance and stores it in a field.
+        /// Returns the field that holds the manager reference.
+        /// </summary>
+        private static FieldBuilder EmitConstructorWithManagerField(TypeBuilder typeBuilder, Type managerType)
+        {
+            // Add a field to hold the manager instance
+            var managerField = typeBuilder.DefineField("_manager", managerType, FieldAttributes.Private | FieldAttributes.InitOnly);
+
+            // Define constructor that takes manager as parameter
+            var constructor = typeBuilder.DefineConstructor(
+                MethodAttributes.Public,
+                CallingConventions.Standard,
+                new[] { managerType });
+
+            var ctorIl = constructor.GetILGenerator();
+
+            // Call base object constructor
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            var baseConstructor = typeof(object).GetConstructor(Type.EmptyTypes);
+            if (baseConstructor is null)
+            {
+                throw new NullReferenceException("Could not get Object constructor.");
+            }
+
+            ctorIl.Emit(OpCodes.Call, baseConstructor);
+
+            // Store the manager field: this._manager = manager;
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            ctorIl.Emit(OpCodes.Ldarg_1);
+            ctorIl.Emit(OpCodes.Stfld, managerField);
+            ctorIl.Emit(OpCodes.Ret);
+
+            return managerField;
+        }
+
+        /// <summary>
         /// Creates and subscribes a dynamic observer with a static callback to DiagnosticListener.AllListeners.
         /// </summary>
         public static void SubscribeWithStaticCallback(
@@ -237,32 +273,8 @@ namespace Datadog.Trace.DiagnosticListeners
             var moduleBuilder = CreateModuleBuilder(assemblyName, visibilityType);
             var typeBuilder = CreateObserverTypeBuilder(moduleBuilder, observerDiagnosticListenerType);
 
-            // Add a field to hold the manager instance
-            var managerField = typeBuilder.DefineField("_manager", managerType, FieldAttributes.Private | FieldAttributes.InitOnly);
-
-            // Define constructor that takes manager as parameter
-            var constructor = typeBuilder.DefineConstructor(
-                MethodAttributes.Public,
-                CallingConventions.Standard,
-                new[] { managerType });
-
-            var ctorIl = constructor.GetILGenerator();
-
-            // Call base object constructor
-            ctorIl.Emit(OpCodes.Ldarg_0);
-            var baseConstructor = typeof(object).GetConstructor(Type.EmptyTypes);
-            if (baseConstructor is null)
-            {
-                throw new NullReferenceException("Could not get Object constructor.");
-            }
-
-            ctorIl.Emit(OpCodes.Call, baseConstructor);
-
-            // Store the manager field: this._manager = manager;
-            ctorIl.Emit(OpCodes.Ldarg_0);
-            ctorIl.Emit(OpCodes.Ldarg_1);
-            ctorIl.Emit(OpCodes.Stfld, managerField);
-            ctorIl.Emit(OpCodes.Ret);
+            // Create constructor and get the manager field
+            var managerField = EmitConstructorWithManagerField(typeBuilder, managerType);
 
             var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
