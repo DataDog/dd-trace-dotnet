@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string ApiWrapperNotFound(string path) => $"The environment variable LD_PRELOAD is set to '{path}' but the file could not be found. Check the Datadog .NET Profiler documentation to set it properly.";
 
-        public static string WrongLdPreload(string path) => $"The environment variable LD_PRELOAD is set to '{path}' but it should point to Datadog.Linux.ApiWrapper.x64.so instead. Check the Datadog .NET Profiler documentation to set it properly.";
+        public static string WrongLdPreload(string path, string expectedWrapper) => $"The environment variable LD_PRELOAD is set to '{path}' but it should point to {expectedWrapper} instead. Check the Datadog .NET Profiler documentation to set it properly.";
 
         public static string ProfilerVersion(string version) => $"The native library version {version} is loaded into the process.";
 

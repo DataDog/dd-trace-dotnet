@@ -304,7 +304,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             scope.AddReportable("ExitCode", exitCode.ToString());
 
             standardOutput.Should().NotContain(ApiWrapperNotFound("/dummyPath"))
-                .And.Contain(Resources.WrongLdPreload("/dummyPath"));
+                .And.Contain(Resources.WrongLdPreload("/dummyPath", GetExpectedWrapper()));
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(1);
         }
@@ -327,7 +327,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             scope.AddReportable("ExitCode", exitCode.ToString());
 
             standardOutput.Should().Contain(ApiWrapperNotFound("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"))
-                .And.NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+                .And.NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so", GetExpectedWrapper()));
+        }
+
+        private static string GetExpectedWrapper() =>
+            RuntimeInformation.OSArchitecture == Architecture.Arm64
+                ? "Datadog.Linux.ApiWrapper.arm64.so"
+                : "Datadog.Linux.ApiWrapper.x64.so";
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(1);
         }
