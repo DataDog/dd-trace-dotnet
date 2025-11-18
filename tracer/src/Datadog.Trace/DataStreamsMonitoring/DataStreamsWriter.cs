@@ -304,6 +304,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             Log.Debug("ROBC Processing Queue Loop - NOOP");
             await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(.5)).ConfigureAwait(false))
+            {
+                Log.Error("Queue Loop Semaphore timeout");
+                return;
+            }
+
             try
             {
                 Log.Debug("ROBC Adding points to aggregator");
@@ -320,6 +326,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
             catch (Exception ex)
             {
                 Log.Error(ex, "An error occured in the processing thread");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
             }
 
             if (_processExit.Task.IsCompleted)
