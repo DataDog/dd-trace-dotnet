@@ -57,11 +57,10 @@ namespace Datadog.Trace.Agent
             Start = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
         }
 
-        public void Serialize(Stream stream, long bucketDuration, bool propagateProcessTags)
+        public void Serialize(Stream stream, long bucketDuration, string processTags)
         {
             var count = 8;
-            var processTags = ProcessTags.SerializedTags;
-            if (propagateProcessTags && !string.IsNullOrEmpty(processTags))
+            if (!string.IsNullOrEmpty(processTags))
             {
                 count++;
             }
@@ -77,7 +76,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
 
-            if (propagateProcessTags && !string.IsNullOrEmpty(processTags))
+            if (!string.IsNullOrEmpty(processTags))
             {
                 MessagePackBinary.WriteString(stream, "ProcessTags");
                 MessagePackBinary.WriteString(stream, processTags);

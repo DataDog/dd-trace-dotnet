@@ -376,6 +376,8 @@ namespace Datadog.Trace
         // Internal for testing
         internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
         {
+            var processTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null;
+
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             if (settings.DataPipelineEnabled)
             {
@@ -423,6 +425,7 @@ namespace Datadog.Trace
                         Env = settings.Environment,
                         Version = settings.ServiceVersion,
                         Service = settings.MutableSettings.DefaultServiceName,
+                        ProcessTags = processTags,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
@@ -441,7 +444,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.PartialFlushEnabled, settings.PropagateProcessTags);
+            return new Api(apiRequestFactory, statsd, updateSampleRates, settings.PartialFlushEnabled, processTags);
         }
 
         private static string GetUrl(TracerSettings settings)
