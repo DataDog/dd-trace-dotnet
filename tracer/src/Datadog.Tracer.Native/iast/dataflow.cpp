@@ -182,9 +182,9 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
 Dataflow::~Dataflow()
 {
+    CSGUARD(_cs);
     SetInitialized(false);
 
-    CSGUARD(_cs);
     REL(_profiler);
     DEL_MAP_VALUES(_modules);
     DEL_MAP_VALUES(_appDomains);
@@ -377,12 +377,12 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
+    CSGUARD(_cs);
     if (!IsInitialized())
     {
         return S_OK;
     }
 
-    CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
@@ -407,12 +407,12 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
+    CSGUARD(_cs);
     if (!IsInitialized())
     {
         return S_OK;
     }
 
-    CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
         if (it != _moduleAspects.end())
@@ -517,12 +517,12 @@ ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 
 AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
+    CSGUARD(_cs);
     if (!IsInitialized())
     {
         return nullptr;
     }
 
-    CSGUARD(_cs);
     auto found = _appDomains.find(id);
     if (found != _appDomains.end())
     {
@@ -550,12 +550,12 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
+    CSGUARD(_cs);
     if (!IsInitialized())
     {
         return nullptr;
     }
 
-    CSGUARD(_cs);
     auto found = _modules.find(id);
     if (found != _modules.end())
     {
@@ -618,7 +618,6 @@ ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
         return nullptr;
     }
 
-    CSGUARD(_cs);
     ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
     if (moduleId > 0)
@@ -685,16 +684,6 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
         }
     }
     return method;
-}
-
-inline bool Dataflow::IsInitialized() const noexcept
-{
-    return _initialized.load(std::memory_order_relaxed);
-}
-
-inline void Dataflow::SetInitialized(bool value) noexcept
-{
-    _initialized.store(value, std::memory_order_relaxed);
 }
 
 bool IsCandidate(unsigned opcode)
@@ -775,6 +764,10 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
 std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
 {
     CSGUARD(_cs);
+    if (!IsInitialized())
+    {
+        return std::vector<DataflowAspectReference*>();
+    }
 
     auto value = _moduleAspects.find(module->_id);
     if (value != _moduleAspects.end())

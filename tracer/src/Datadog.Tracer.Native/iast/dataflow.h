@@ -77,8 +77,16 @@ namespace iast
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
-        inline bool IsInitialized() const noexcept;
-        inline void SetInitialized(bool value) noexcept;
+        
+        inline bool IsInitialized() const noexcept
+        {
+            return _initialized.load(std::memory_order_acquire);
+        }
+
+        inline void SetInitialized(bool value) noexcept
+        {
+            _initialized.store(value, std::memory_order_release);
+        }
 
     public:
         HRESULT AppDomainShutdown(AppDomainID appDomainId);
