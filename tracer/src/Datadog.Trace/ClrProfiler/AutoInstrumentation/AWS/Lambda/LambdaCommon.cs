@@ -59,12 +59,10 @@ internal abstract class LambdaCommon
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, object state, bool isError, string data)
     {
-        var request = requestBuilder.GetEndInvocationRequest(scope, isError);
+        var request = requestBuilder.GetEndInvocationRequest(scope, state, isError);
         WriteRequestPayload(request, data);
-        if (state != null)
-        {
-            request.Headers.Set(LambdaRuntimeAwsRequestHeaderId, (string)state);
-        }
+        Log((string)state, debug: true);
+        Log(request.ToString());
 
         using var response = (HttpWebResponse)request.GetResponse();
 

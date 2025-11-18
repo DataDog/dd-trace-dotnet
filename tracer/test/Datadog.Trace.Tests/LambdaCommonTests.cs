@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Throws(new WebException());
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, state, true)).Returns(httpRequest.Object);
 
             Assert.Throws<WebException>(() => LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, state, true, "{}"));
         }
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, state, true)).Returns(httpRequest.Object);
             var output = new StringWriter();
             Console.SetOut(output);
             LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, state, true, "{}");
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, state, true)).Returns(httpRequest.Object);
             var output = new StringWriter();
             Console.SetOut(output);
             LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, state, true, "{}");

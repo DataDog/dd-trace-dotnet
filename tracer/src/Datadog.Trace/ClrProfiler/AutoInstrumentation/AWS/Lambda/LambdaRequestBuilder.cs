@@ -35,11 +35,16 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
         return request;
     }
 
-    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, bool isError)
+    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, object state, bool isError)
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";
         request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+
+        if (state != null)
+        {
+            request.Headers.Set("lambda-runtime-aws-request-id", (string)state);
+        }
 
         if (scope is { Span: var span })
         {
