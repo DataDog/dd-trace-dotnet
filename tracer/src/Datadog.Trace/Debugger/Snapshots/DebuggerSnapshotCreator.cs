@@ -30,10 +30,10 @@ namespace Datadog.Trace.Debugger.Snapshots
         protected readonly JsonTextWriter JsonWriter;
 #pragma warning restore SA1401
         private readonly StringBuilder _jsonUnderlyingString;
-        private readonly bool _injectProcessTags;
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
+        private readonly bool _injectProcessTags;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
@@ -43,9 +43,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags)
         {
-            _injectProcessTags = Tracer.Instance.Settings.PropagateProcessTags;
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire();
@@ -57,13 +56,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             ProbeHasCondition = hasCondition;
             Tags = tags;
             _limitInfo = limitInfo;
+            _injectProcessTags = withProcessTags;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags)
         {
             MethodScopeMembers = methodScopeMembers;
         }
