@@ -41,6 +41,7 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
+#include "NativeThreadList.h"
 #include "NetworkProvider.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -199,6 +200,7 @@ void CorProfilerCallback::InitializeServices()
         return _pCodeHotspotsThreadList->Count();
     });
 
+    _pNativeThreadList = RegisterService<NativeThreadList>();
     _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
@@ -351,7 +353,8 @@ void CorProfilerCallback::InitializeServices()
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
-                _metricsRegistry
+                _metricsRegistry,
+                _pNativeThreadList
                 );
         }
 
@@ -888,6 +891,7 @@ bool CorProfilerCallback::DisposeServices()
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
+    _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
     _pApplicationStore = nullptr;
 
@@ -2059,6 +2063,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #else
     dupOsThreadHandle = origOsThreadHandle;
 #endif
+
+    // due to reverse p/invoke done by the EventPipe stack, it is possible that some of our native
+    // threads such as the HeapSnapshotManager one could be seen as "managed" by the CLR.
+    if (_pNativeThreadList->Contains(osThreadId))
+    {
+        return S_OK;
+    }
 
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed

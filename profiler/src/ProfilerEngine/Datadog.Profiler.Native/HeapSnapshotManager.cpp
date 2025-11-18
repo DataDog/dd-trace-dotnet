@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "HeapSnapshotManager.h"
+#include "INativeThreadList.h"
 #include "OpSysTools.h"
 #include "ThreadsCpuManager.h"
 
@@ -14,7 +15,8 @@ HeapSnapshotManager::HeapSnapshotManager(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
-    MetricsRegistry& metricsRegistry) :
+    MetricsRegistry& metricsRegistry,
+    INativeThreadList* pNativeThreadList) :
     ServiceBase(),
     _inducedGCNumber(-1),
     _session(0),
@@ -26,6 +28,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _pCorProfilerInfo{pCorProfilerInfo},
     _pFrameStore{pFrameStore},
     _pThreadsCpuManager{pThreadsCpuManager},
+    _pNativeThreadList{pNativeThreadList},
     _runtimeSessionKeywords(0),
     _runtimeSessionVerbosity(0),
     _startTimestamp(0ns),
@@ -114,6 +117,7 @@ void HeapSnapshotManager::MainLoop()
 
     _loopThreadOsId = OpSysTools::GetThreadId();
     _pThreadsCpuManager->Map(_loopThreadOsId, ThreadName);
+    _pNativeThreadList->RegisterThread(_loopThreadOsId);
 
     while (!_shutdownRequested)
     {
@@ -143,7 +147,7 @@ void HeapSnapshotManager::MainLoopIteration()
 {
     if (_shouldCleanupHeapDumpSession)
     {
-        // TODO: close the session + start/stop the fake session to reset the keywords/verbosity
+        // close the session + start/stop the fake session to reset the keywords/verbosity
         _shouldCleanupHeapDumpSession = false;
         CleanupSession();
     }
@@ -155,12 +159,29 @@ void HeapSnapshotManager::MainLoopIteration()
     }
 }
 
+std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
+{
+    // TODO: this should be protected by a lock because both the dedicated thread and the exporter thread
+    //       could call this method at the same time
+    //       --> We could otherwise create the string when the heap snapshot ends.
+    std::string heapSnapshotText = GetHeapSnapshotText();
+    _classHistogram.clear();
+
+    return heapSnapshotText;
+}
+
 std::string HeapSnapshotManager::GetHeapSnapshotText()
 {
+    auto count = _classHistogram.size();
+    if (count == 0)
+    {
+        return "";
+    }
+
     std::stringstream ss;
     ss << "[" << std::endl;
     int current = 1;
-    int last = static_cast<int>(_classHistogram.size());
+    int last = static_cast<int>(count);
     for (auto& [classID, entry] : _classHistogram)
     {
         ss << "[\"";
@@ -190,7 +211,7 @@ void HeapSnapshotManager::OnBulkNodes(
 {
 #ifndef NDEBUG
     // for debugging purpose only
-    std::cout << "OnBulkNodes" << std::endl;
+    std::cout << "OnBulkNodes #" << index << " x" << count  << std::endl;
 #endif
 
     _objectCount += count;
@@ -224,11 +245,18 @@ void HeapSnapshotManager::OnBulkNodes(
 }
 
 void HeapSnapshotManager::OnBulkEdges(
-    uint32_t Index,
-    uint32_t Count,
+    uint32_t index,
+    uint32_t count,
     GCBulkEdgeValue* pEdges)
 {
-    // TODO: use to rebuild the reference chain
+#ifndef NDEBUG
+    // for debugging purpose only
+    std::cout << "OnBulkEdges #" << index << " x" << count << std::endl;
+#endif
+
+    // TODO: should be used to rebuild the reference chain. For more details,
+    //       the array of edges is strongly related to the array of nodes received in OnBulkNodes.
+    // read https://chnasarre.medium.com/net-gcdump-internals-fcce5d327be7?source=friends_link&sk=3225ff119458adafc0e6935951fcc323
 }
 
 void HeapSnapshotManager::OnGarbageCollectionStart(

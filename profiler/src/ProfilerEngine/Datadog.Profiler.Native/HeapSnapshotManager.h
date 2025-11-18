@@ -21,7 +21,7 @@
 
 // forward declarations
 class IThreadsCpuManager;
-
+class INativeThreadList;
 
 using namespace std::chrono_literals;
 
@@ -56,11 +56,15 @@ public:
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        INativeThreadList* pNativeThreadList);
 
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
-    std::string GetHeapSnapshotText() override;
+    std::string GetAndClearHeapSnapshotText() override;
+
+    // used for debugging purpose
+    std::string GetHeapSnapshotText();
 
     ~HeapSnapshotManager();
 
@@ -94,12 +98,12 @@ protected:
 
     // inherited via IGCDumpListener
     void OnBulkNodes(
-        uint32_t Index,
-        uint32_t Count,
+        uint32_t index,
+        uint32_t count,
         GCBulkNodeValue* pNodes) override;
     void OnBulkEdges(
-        uint32_t Index,
-        uint32_t Count,
+        uint32_t index,
+        uint32_t count,
         GCBulkEdgeValue* pEdges) override;
 
     // Inherited via ServiceBase
@@ -137,6 +141,7 @@ private:
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     IThreadsCpuManager* _pThreadsCpuManager;
+    INativeThreadList* _pNativeThreadList;
 
     std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;

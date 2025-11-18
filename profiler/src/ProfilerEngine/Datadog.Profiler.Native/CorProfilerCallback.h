@@ -55,6 +55,7 @@ class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
+class INativeThreadList;
 class StackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
@@ -261,6 +262,7 @@ private :
     NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
     HeapSnapshotManager* _pHeapSnapshotManager = nullptr;
+    INativeThreadList* _pNativeThreadList = nullptr;
 
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;

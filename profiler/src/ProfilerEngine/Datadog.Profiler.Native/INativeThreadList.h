@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <string>
+#include <cstdint>
 
-class IHeapSnapshotManager
+class INativeThreadList
 {
 public:
-    virtual void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) = 0;
-    virtual std::string GetAndClearHeapSnapshotText() = 0;
-    virtual ~IHeapSnapshotManager() = default;
+    virtual bool RegisterThread(uint32_t tid) = 0;
+    virtual bool Contains(uint32_t tid) const = 0;
 };

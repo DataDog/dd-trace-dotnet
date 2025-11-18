@@ -734,7 +734,7 @@ std::string ProfileExporter::CreateClassHistogramContent() const
     std::stringstream builder;
 
     // TODO: just for tests, the heap snapshot manager returns a string instead of a reference to an unorderedmap
-    auto heapSnapshot = _heapSnapshotManager->GetHeapSnapshotText();
+    auto heapSnapshot = _heapSnapshotManager->GetAndClearHeapSnapshotText();
     if (!heapSnapshot.empty())
     {
         builder << heapSnapshot;

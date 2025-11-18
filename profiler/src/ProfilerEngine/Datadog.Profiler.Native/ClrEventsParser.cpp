@@ -250,7 +250,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     // GC dump related events
     if (id == EVENT_GC_BULK_NODE)
     {
-        // TODO: get the list of objects in the GC heap dump
+        // get the list of objects in the GC heap dump
         LogGcEvent("OnGCBulkNode");
 
         if (_pGCDumpListener != nullptr)
@@ -259,7 +259,6 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             ULONG offset = 0;
             if (!EventsParserHelper::Read<GCBulkNodePayload>(payload, pEventData, cbEventData, offset))
             {
-                // TODO: log and stop the dump?
                 return;
             }
 
@@ -272,12 +271,11 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     }
     else if (id == EVENT_GC_BULK_EDGE)
     {
-        // TODO: get the list of references between objects in the GC heap dump
+        // get the list of references between objects in the GC heap dump
         LogGcEvent("OnGCBulkEdge");
 
         if (_pGCDumpListener != nullptr)
         {
-            // TODO: _pGCDumpListener->OnGCBulkEdge(...);
             GCBulkEdgePayload payload{0};
             ULONG offset = 0;
             if (!EventsParserHelper::Read<GCBulkEdgePayload>(payload, pEventData, cbEventData, offset))
