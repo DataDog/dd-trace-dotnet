@@ -125,18 +125,21 @@ internal abstract class LambdaCommon
 
     private static void WriteRequestHeaders(WebRequest request, ILambdaContext context)
     {
-        var clientContext = context.ClientContext?.Custom;
-        if (clientContext != null)
+        if (context != null)
         {
-            foreach (var kv in clientContext)
+            var clientContext = context.ClientContext?.Custom;
+            if (clientContext != null)
             {
-                request.Headers.Add(kv.Key, kv.Value);
+                foreach (var kv in clientContext)
+                {
+                    request.Headers.Add(kv.Key, kv.Value);
+                }
             }
-        }
 
-        if (context.AwsRequestId != null)
-        {
-            request.Headers.Add(LambdaRuntimeAwsRequestHeaderId, context.AwsRequestId);
+            if (context.AwsRequestId != null)
+            {
+                request.Headers.Add(LambdaRuntimeAwsRequestHeaderId, context.AwsRequestId);
+            }
         }
     }
 
