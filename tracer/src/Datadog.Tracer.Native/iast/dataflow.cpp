@@ -183,6 +183,8 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 Dataflow::~Dataflow()
 {
     _initialized = false;
+
+    CSGUARD(_cs);
     REL(_profiler);
     DEL_MAP_VALUES(_modules);
     DEL_MAP_VALUES(_appDomains);
@@ -237,9 +239,15 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
 
         LoadSecurityControls();
 
-        auto moduleAspects = _moduleAspects;
-        _moduleAspects.clear();
-        DEL_MAP_VALUES(moduleAspects);
+        // Move the map out under the lock
+        std::map<ModuleID, ModuleAspects*> oldModuleAspects;
+        {
+            CSGUARD(_cs);
+            oldModuleAspects.swap(_moduleAspects);
+        }
+
+        // Destroy outside the lock
+        DEL_MAP_VALUES(oldModuleAspects)
 
         trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
         m_rejitHandler->RegisterRejitter(this);
@@ -509,6 +517,11 @@ ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 
 AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
+    if (!_initialized)
+    {
+        return nullptr;
+    }
+
     CSGUARD(_cs);
     auto found = _appDomains.find(id);
     if (found != _appDomains.end())
@@ -537,6 +550,11 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
+    if (!_initialized)
+    {
+        return nullptr;
+    }
+
     CSGUARD(_cs);
     auto found = _modules.find(id);
     if (found != _modules.end())
@@ -595,6 +613,11 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
+    if (!_initialized)
+    {
+        return nullptr;
+    }
+
     CSGUARD(_cs);
     ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
@@ -741,6 +764,8 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
 
 std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
 {
+    CSGUARD(_cs);
+
     auto value = _moduleAspects.find(module->_id);
     if (value != _moduleAspects.end())
     {
