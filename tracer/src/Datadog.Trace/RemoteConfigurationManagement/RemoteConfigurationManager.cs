@@ -69,7 +69,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
+                    new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags, tracerSettings.PropagateProcessTags ? ProcessTags.SerializedTags : null),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager);
