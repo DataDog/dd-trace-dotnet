@@ -88,9 +88,9 @@ public class AmqpConsumerReceiveAsyncIntegration
                     eventData.Properties != null)
                 {
                     var extractedContext = AzureMessagingCommon.ExtractContext(eventData.Properties);
-                    if (extractedContext != null)
+                    if (extractedContext.SpanContext != null)
                     {
-                        extractedContexts.Add(extractedContext);
+                        extractedContexts.Add(extractedContext.SpanContext);
                     }
                 }
             }
