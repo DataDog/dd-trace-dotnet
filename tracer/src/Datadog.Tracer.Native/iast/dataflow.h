@@ -65,7 +65,7 @@ namespace iast
 
         void LoadSecurityControls();
     protected:
-        bool _initialized = false;
+        std::atomic<bool> _initialized{false};
         bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
@@ -77,6 +77,8 @@ namespace iast
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
+        inline bool IsInitialized() const noexcept;
+        inline void SetInitialized(bool value) noexcept;
 
     public:
         HRESULT AppDomainShutdown(AppDomainID appDomainId);

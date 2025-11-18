@@ -182,7 +182,7 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
 Dataflow::~Dataflow()
 {
-    _initialized = false;
+    SetInitialized(false);
 
     CSGUARD(_cs);
     REL(_profiler);
@@ -193,9 +193,9 @@ Dataflow::~Dataflow()
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
-        _initialized = true;
+        SetInitialized(true);
 
         // Init aspects
         DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
@@ -377,7 +377,7 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return S_OK;
     }
@@ -396,7 +396,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return S_OK;
     }
@@ -407,7 +407,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return S_OK;
     }
@@ -517,7 +517,7 @@ ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 
 AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return nullptr;
     }
@@ -550,7 +550,7 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return nullptr;
     }
@@ -613,7 +613,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return nullptr;
     }
@@ -641,7 +641,7 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return true;
     }
@@ -655,7 +655,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return false;
     }
@@ -665,7 +665,7 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return nullptr;
     }
@@ -685,6 +685,16 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
         }
     }
     return method;
+}
+
+inline bool Dataflow::IsInitialized() const noexcept
+{
+    return _initialized.load(std::memory_order_relaxed);
+}
+
+inline void Dataflow::SetInitialized(bool value) noexcept
+{
+    _initialized.store(value, std::memory_order_relaxed);
 }
 
 bool IsCandidate(unsigned opcode)
@@ -808,7 +818,7 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
-    if (!_initialized)
+    if (!IsInitialized())
     {
         return S_FALSE;
     }
