@@ -61,9 +61,6 @@ internal abstract class LambdaCommon
     {
         var request = requestBuilder.GetEndInvocationRequest(scope, state, isError);
         WriteRequestPayload(request, data);
-        Log((string)state, debug: true);
-        Log(request.ToString());
-
         using var response = (HttpWebResponse)request.GetResponse();
 
         if (!ValidateOkStatus(response))
