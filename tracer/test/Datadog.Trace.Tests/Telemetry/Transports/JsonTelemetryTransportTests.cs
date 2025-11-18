@@ -37,7 +37,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "testCommitSha",
-                    repositoryUrl: "testRepositoryUrl"),
+                    repositoryUrl: "testRepositoryUrl",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -100,7 +101,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "testCommitSha",
-                    repositoryUrl: "testRepositoryUrl"),
+                    repositoryUrl: "testRepositoryUrl",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -171,7 +173,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "testCommitSha",
-                    repositoryUrl: "testRepositoryUrl"),
+                    repositoryUrl: "testRepositoryUrl",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -237,7 +240,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "testCommitSha",
-                    repositoryUrl: "testRepositoryUrl"),
+                    repositoryUrl: "testRepositoryUrl",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",

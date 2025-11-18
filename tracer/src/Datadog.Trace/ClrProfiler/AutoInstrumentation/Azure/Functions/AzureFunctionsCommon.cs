@@ -344,7 +344,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static PropagationContext ExtractPropagatedContextFromMessaging<T>(T context, string singlePropertyKey, string batchPropertyKey)
+        internal static PropagationContext ExtractPropagatedContextFromMessaging<T>(T context, string singlePropertyKey, string batchPropertyKey)
             where T : IFunctionContext
         {
             try
@@ -370,15 +370,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-                var spanContexts = new List<SpanContext>();
+                var extractedContexts = new List<PropagationContext>();
 
                 // Extract from single message properties
                 if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
                 {
-                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    var singleContext = Shared.AzureMessagingCommon.ExtractContext(singleProps);
+                    if (singleContext.SpanContext != null)
                     {
-                        spanContexts.Add(singleContext);
+                        extractedContexts.Add(singleContext);
                     }
                 }
 
@@ -388,38 +389,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     foreach (var props in propsArray)
                     {
-                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        var batchContext = Shared.AzureMessagingCommon.ExtractContext(props);
+                        if (batchContext.SpanContext != null)
                         {
-                            spanContexts.Add(batchContext);
+                            extractedContexts.Add(batchContext);
                         }
                     }
                 }
 
-                if (spanContexts.Count == 0)
+                if (extractedContexts.Count == 0)
                 {
                     return default;
                 }
 
-                bool areAllTheSame = spanContexts.Count == 1 ||
-                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+                bool areAllTheSame = extractedContexts.Count == 1 ||
+                                     (extractedContexts.Count > 1 && AreAllSpanContextsIdentical(extractedContexts));
 
                 if (!areAllTheSame)
                 {
                     Log.Warning("Multiple different contexts found in messages. Using first context for parentship.");
                 }
 
-                return new PropagationContext(spanContexts[0], Baggage.Current, null);
+                return extractedContexts[0];
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated context from messaging binding");
                 return default;
             }
-        }
-
-        private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
-        {
-            return Shared.AzureMessagingCommon.ExtractContext(userProperties);
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
@@ -443,17 +440,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool AreAllContextsIdentical(List<SpanContext> contexts)
+        // Checks if all SpanContexts are identical (ignores baggage)
+        private static bool AreAllSpanContextsIdentical(List<PropagationContext> contexts)
         {
             if (contexts.Count <= 1)
             {
                 return true;
             }
 
-            var first = contexts[0];
+            var first = contexts[0].SpanContext;
             return contexts.All(ctx =>
-                ctx.TraceId128.Equals(first.TraceId128) &&
-                ctx.SpanId == first.SpanId);
+                ctx.SpanContext != null &&
+                ctx.SpanContext.TraceId128 == first!.TraceId128 &&
+                ctx.SpanContext.SpanId == first.SpanId);
         }
     }
 }
