@@ -31,9 +31,9 @@ namespace Datadog.Trace.ContinuousProfiler
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version)
+        public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version, string processTags)
         {
-            NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version);
+            NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version, processTags);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -46,12 +46,6 @@ namespace Datadog.Trace.ContinuousProfiler
         public static void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha)
         {
             NativeMethods.SetGitMetadata(runtimeId, repositoryUrl, commitSha);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void SetProcessTags(string runtimeId, string processTagsValue)
-        {
-            NativeMethods.SetProcessTags(runtimeId, processTagsValue);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -101,16 +95,13 @@ namespace Datadog.Trace.ContinuousProfiler
             public static extern IntPtr GetTraceContextNativePointer();
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetApplicationInfoForAppDomain")]
-            public static extern void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version);
+            public static extern void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version, string processTags);
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetEndpointForTrace")]
             public static extern void SetEndpoint(string runtimeId, ulong traceId, string endpoint);
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetGitMetadataForApplication")]
             public static extern void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha);
-
-            [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetProcessTagsForApplication")]
-            public static extern void SetProcessTags(string runtimeId, string processTagsValue);
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "FlushProfile")]
             public static extern void FlushProfile();

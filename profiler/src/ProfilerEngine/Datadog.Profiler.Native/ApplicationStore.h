@@ -28,9 +28,8 @@ public:
     ~ApplicationStore();
 
     ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
-    void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) override;
+    void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version, const std::string& processTags) override;
     void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) override;
-    void SetProcessTags(std::string runtimeId, std::string processTags) override;
 
     const char* GetName() override;
 

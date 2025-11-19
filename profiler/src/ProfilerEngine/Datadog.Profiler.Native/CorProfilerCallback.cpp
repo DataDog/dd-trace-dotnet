@@ -784,7 +784,8 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
             config.runtimeId,
             config.serviceName ? config.serviceName : std::string(),
             config.environment ? config.environment : std::string(),
-            config.version ? config.version : std::string());
+            config.version ? config.version : std::string(),
+            std::string()); // process tags are not set by config, only from the managed layer
     }
     else
     {

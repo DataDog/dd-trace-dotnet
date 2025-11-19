@@ -60,9 +60,6 @@ internal static class ProcessTags
         serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
         var tagsValues = StringBuilderCache.GetStringAndRelease(serializedTags);
 
-        // also send the tags to the profiler to tag profiles
-        PropagateProcessTagsToProfiler(tagsValues);
-
         return tagsValues;
     }
 
@@ -76,21 +73,5 @@ internal static class ProcessTags
         // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
         // which we don't want because we use it as a key/value separator.
         return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
-    }
-
-    private static void PropagateProcessTagsToProfiler(string values)
-    {
-        try
-        {
-            // Avoid P/Invoke if the profiler is not ready
-            if (Profiler.Instance.Status.IsProfilerReady && !string.IsNullOrEmpty(values))
-            {
-                NativeInterop.SetProcessTags(RuntimeId.Get(), values);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to share process tags with the Continuous Profiler.");
-        }
     }
 }

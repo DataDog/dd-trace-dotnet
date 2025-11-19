@@ -72,7 +72,7 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
     return pCurrentThreadInfo->GetTraceContextPointer();
 }
 
-extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version, const char* processTags)
 {
     const auto profiler = CorProfilerCallback::GetInstance();
 
@@ -92,7 +92,8 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),
         environment ? environment : std::string(),
-        version ? version : std::string());
+        version ? version : std::string(),
+        processTags ? processTags : std::string());
 }
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)
@@ -167,33 +168,6 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
         runtimeId,
         repositoryUrl != nullptr ? repositoryUrl : std::string(),
         commitSha != nullptr ? commitSha : std::string()
-    );
-}
-
-extern "C" void __stdcall SetProcessTagsForApplication(const char* runtimeId, const char* processTags)
-{
-    const auto profiler = CorProfilerCallback::GetInstance();
-
-    if (profiler == nullptr)
-    {
-        Log::Error("SetProcessTagsForApplication is called BEFORE CLR initialize");
-        return;
-    }
-
-    if (!profiler->GetClrLifetime()->IsInitialized())
-    {
-        return;
-    }
-
-    if (runtimeId == nullptr)
-    {
-        Log::Error("SetProcessTagsForApplication was called with an empty runtime id");
-        return;
-    }
-
-    profiler->GetApplicationStore()->SetProcessTags(
-        runtimeId,
-        processTags != nullptr ? processTags : std::string()
     );
 }
 

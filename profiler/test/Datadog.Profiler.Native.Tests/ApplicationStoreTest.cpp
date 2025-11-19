@@ -71,7 +71,8 @@ TEST(ApplicationStoreTest, CheckGitMetadataIfSetGitMetadataIsNotCalled)
         runtimeId,
         expectedApplicationInfo.ServiceName,
         expectedApplicationInfo.Environment,
-        expectedApplicationInfo.Version);
+        expectedApplicationInfo.Version,
+        std::string());
 
     auto const& info = applicationStore.GetApplicationInfo(runtimeId);
 
@@ -113,7 +114,8 @@ TEST(ApplicationStoreTest, MakeSureCallToSetGitMetadataOverrideThePreviousValue)
         runtimeId,
         expectedApplicationInfo.ServiceName,
         expectedApplicationInfo.Environment,
-        expectedApplicationInfo.Version);
+        expectedApplicationInfo.Version,
+        std::string());
 
     {
         auto const& info = applicationStore.GetApplicationInfo(runtimeId);
@@ -139,7 +141,7 @@ TEST(ApplicationStoreTest, MakeSureCallToSetGitMetadataOverrideThePreviousValue)
     ASSERT_EQ(info.CommitSha, expectedApplicationInfo.CommitSha);
 }
 
-TEST(ApplicationStoreTest, MakeSureCallToSetProcessTagsSetsTheValue)
+TEST(ApplicationStoreTest, SetApplicationInfoWithProcessTags)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -155,44 +157,67 @@ TEST(ApplicationStoreTest, MakeSureCallToSetProcessTagsSetsTheValue)
     ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
+    const std::string expectedProcessTags = "entrypoint.basedir:app,entrypoint.workdir:work";
 
-    const auto expectedApplicationInfo = ApplicationInfo
-    {
+    // Set application info with process tags (simulates P/Invoke call from managed layer)
+    applicationStore.SetApplicationInfo(
+        runtimeId,
         "ExpectedServiceName",
         "ExpectedEnvironment",
         "ExpectedVersion",
-        "ExpectedGitRepositoryUrl",
-        "ExpectedGitCommitSha",
-        "ExpectedProcessTags"
-    };
-
-    applicationStore.SetApplicationInfo(
-        runtimeId,
-        expectedApplicationInfo.ServiceName,
-        expectedApplicationInfo.Environment,
-        expectedApplicationInfo.Version);
-
-    {
-        auto const& info = applicationStore.GetApplicationInfo(runtimeId);
-
-        ASSERT_EQ(info.Environment, expectedApplicationInfo.Environment);
-        ASSERT_EQ(info.ServiceName, expectedApplicationInfo.ServiceName);
-        ASSERT_EQ(info.Version, expectedApplicationInfo.Version);
-        ASSERT_EQ(info.RepositoryUrl, randomRepoUrl);
-        ASSERT_EQ(info.CommitSha, randomCommitSha);
-        ASSERT_TRUE(info.ProcessTags.empty());
-    }
-
-    applicationStore.SetProcessTags(
-        runtimeId,
-        expectedApplicationInfo.ProcessTags);
+        expectedProcessTags);
 
     auto const& info = applicationStore.GetApplicationInfo(runtimeId);
 
-    ASSERT_EQ(info.Environment, expectedApplicationInfo.Environment);
-    ASSERT_EQ(info.ServiceName, expectedApplicationInfo.ServiceName);
-    ASSERT_EQ(info.Version, expectedApplicationInfo.Version);
+    ASSERT_EQ(info.ServiceName, "ExpectedServiceName");
+    ASSERT_EQ(info.Environment, "ExpectedEnvironment");
+    ASSERT_EQ(info.Version, "ExpectedVersion");
     ASSERT_EQ(info.RepositoryUrl, randomRepoUrl);
     ASSERT_EQ(info.CommitSha, randomCommitSha);
-    ASSERT_EQ(info.ProcessTags, expectedApplicationInfo.ProcessTags);
+    ASSERT_EQ(info.ProcessTags, expectedProcessTags);
+}
+
+TEST(ApplicationStoreTest, SetApplicationInfoPreservesExistingProcessTags)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    std::string randomRepoUrl = "RandomRepoUrl";
+    std::string randomCommitSha = "RandomCommitSha";
+    EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(randomRepoUrl));
+    EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(randomCommitSha));
+
+    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
+    RuntimeInfoHelper helper(6, 0, false);
+
+    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+
+    const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
+    const std::string expectedProcessTags = "entrypoint.basedir:/app,entrypoint.workdir:/work";
+
+    // First call with process tags (simulates P/Invoke from managed layer)
+    applicationStore.SetApplicationInfo(
+        runtimeId,
+        "ServiceName",
+        "Environment",
+        "Version",
+        expectedProcessTags);
+
+    // Second call with empty process tags (simulates SetConfiguration call)
+    applicationStore.SetApplicationInfo(
+        runtimeId,
+        "UpdatedServiceName",
+        "UpdatedEnvironment",
+        "UpdatedVersion",
+        std::string());
+
+    auto const& info = applicationStore.GetApplicationInfo(runtimeId);
+
+    // Service info should be updated
+    ASSERT_EQ(info.ServiceName, "UpdatedServiceName");
+    ASSERT_EQ(info.Environment, "UpdatedEnvironment");
+    ASSERT_EQ(info.Version, "UpdatedVersion");
+    
+    // But process tags should be preserved (not overwritten by empty string)
+    ASSERT_EQ(info.ProcessTags, expectedProcessTags);
 }
