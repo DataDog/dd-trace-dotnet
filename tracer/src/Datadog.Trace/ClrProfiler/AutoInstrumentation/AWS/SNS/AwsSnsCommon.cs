@@ -55,20 +55,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 tags.TopicName = GetTopicName(tags.TopicArn);
                 bool isOutbound = (spanKind == SpanKinds.Client) || (spanKind == SpanKinds.Producer);
                 bool isServerless = EnvironmentHelpers.IsAwsLambda();
-                Log.Information("spanKind: {Kind}", spanKind);
-                Log.Information("isOutbound: {Outbound}", isOutbound);
-                Log.Information("isServerless: {IsServerless}", isServerless);
+                Console.WriteLine($"spanKind: {spanKind}");
+                Console.WriteLine($"isOutbound: {isOutbound}");
+                Console.WriteLine($"isServerless: {isServerless}");
                 if (isServerless && isOutbound && tags.AwsRegion != null)
                 {
                     tags.PeerService = "sns." + tags.AwsRegion + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
-                    Log.Information("peer service tag for serverless: {Service}", tags.PeerService);
+                    Console.WriteLine($"peer service tag for serverless: {tags.PeerService}");
                 }
                 else if (!isServerless && isOutbound)
                 {
                     tags.PeerService = tags.TopicName;
                     tags.PeerServiceSource = Trace.Tags.TopicName;
-                    Log.Information("peer service tag for serverfull: {Service}", tags.PeerService);
+                    Console.WriteLine($"peer service tag for serverfull: {tags.PeerService}");
                 }
 
                 perTraceSettings.Schema.RemapPeerService(tags);
