@@ -16,6 +16,10 @@ stages:
   - build
   - benchmarks
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 build-dd-trace-dotnet-microbenchmarks-ami:
   stage: build
   tags: ["arch:amd64"]
