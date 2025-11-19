@@ -188,7 +188,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Flush()
     {
-        Log.Debug("ROBC Sync Flush -- Doing work");
+        Log.Debug("ROBC Sync Flush");
         if (_processExit.Task.IsCompleted)
         {
             return;
@@ -199,7 +199,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // Fire and forget - don't wait for the flush to complete
         _ = Task.Run(async () =>
         {
             Log.Debug("ROBC Sync Flush -- In task");
@@ -302,8 +301,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            Log.Debug("ROBC Processing Queue Loop - NOOP");
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            Log.Debug("ROBC Processing Queue Loop - Sleep");
+            Thread.Sleep(_waitTimeSpan);
             if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(.5)).ConfigureAwait(false))
             {
                 Log.Error("Queue Loop Semaphore timeout");
@@ -336,14 +335,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             {
                 return;
             }
-
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            // var tcs = new TaskCompletionSource<bool>();
-            // using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            // {
-            //     await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
-            // }
         }
     }
 

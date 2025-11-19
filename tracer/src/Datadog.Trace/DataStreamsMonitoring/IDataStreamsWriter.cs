@@ -15,8 +15,6 @@ internal interface IDataStreamsWriter
 
     void AddBacklog(in BacklogPoint point);
 
-    void Flush();
-
     Task FlushAsync();
 
     Task DisposeAsync();

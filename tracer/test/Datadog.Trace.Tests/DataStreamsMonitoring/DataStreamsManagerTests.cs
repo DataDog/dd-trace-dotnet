@@ -327,11 +327,6 @@ public class DataStreamsManagerTests
             BacklogPoints.Enqueue(point);
         }
 
-        public void Flush()
-        {
-            // No-op for mock
-        }
-
         public async Task DisposeAsync()
         {
             Interlocked.Increment(ref _disposeCount);
