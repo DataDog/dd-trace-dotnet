@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
 {
@@ -17,12 +18,14 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
 
         private readonly string _stopUrl;
         private readonly string _runUrl;
+        private readonly ITestOutputHelper _output;
 
-        public DebuggerSampleProcessHelper(string baseUrl, Process process, Action<string> onDataReceived = null)
+        public DebuggerSampleProcessHelper(string baseUrl, Process process, ITestOutputHelper output, Action<string> onDataReceived = null)
             : base(process, onDataReceived)
         {
             _stopUrl = $"{baseUrl}{StopSuffix}";
             _runUrl = baseUrl;
+            _output = output;
         }
 
         internal async Task StopSample()
@@ -34,6 +37,13 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
             if (!isExited)
             {
                 throw new InvalidOperationException($"The process did not exit after {timeout}ms");
+            }
+
+            if (Process.ExitCode != 0)
+            {
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Process exited with code {Process.ExitCode} (0x{Process.ExitCode:X})");
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Standard output:\n{StandardOutput}");
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Error output:\n{ErrorOutput}");
             }
 
             ExitCodeException.ThrowIfNonZero(Process.ExitCode);

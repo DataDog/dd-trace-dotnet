@@ -71,6 +71,8 @@ namespace Datadog.Trace.TestHelpers
 
         protected ITestOutputHelper Output { get; }
 
+        public ITestOutputHelper GetOutput() => Output;
+
         public virtual void Dispose()
         {
         }

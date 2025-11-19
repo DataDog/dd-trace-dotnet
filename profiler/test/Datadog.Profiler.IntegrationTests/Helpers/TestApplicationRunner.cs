@@ -235,9 +235,16 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new XunitException("An error occured during the test. See the error output above.");
             }
 
-            Assert.True(
-                0 == process.ExitCode,
-                $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode.ToString("X")})");
+            if (process.ExitCode != 0)
+            {
+                _output.WriteLine($"[TestRunner] Process exited with code {process.ExitCode} (0x{process.ExitCode:X})");
+                _output.WriteLine($"[TestRunner] Standard output:\n{standardOutput}");
+                _output.WriteLine($"[TestRunner] Error output:\n{errorOutput}");
+
+                Assert.True(
+                    false,
+                    $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode:X})");
+            }
         }
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
