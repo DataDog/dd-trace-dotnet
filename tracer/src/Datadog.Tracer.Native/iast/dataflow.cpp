@@ -700,6 +700,10 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
     HRESULT hr = S_OK;
 
     CSGUARD(_cs);
+    if (!IsInitialized())
+    {
+        return S_FALSE;
+    }
 
     if (!pFunctionControl)
     {
