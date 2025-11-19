@@ -58,9 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 Console.WriteLine($"spanKind: {spanKind}");
                 Console.WriteLine($"isOutbound: {isOutbound}");
                 Console.WriteLine($"isServerless: {isServerless}");
-                if (isServerless && isOutbound && tags.AwsRegion != null)
+                if (isServerless && isOutbound && tags.Region != null)
                 {
-                    tags.PeerService = "sns." + tags.AwsRegion + ".amazonaws.com";
+                    tags.PeerService = "sns." + tags.Region + ".amazonaws.com";
                     tags.PeerServiceSource = "peer.service";
                     Console.WriteLine($"peer service tag for serverless: {tags.PeerService}");
                 }
