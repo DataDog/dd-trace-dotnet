@@ -101,7 +101,6 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 3. **Shared mutable state** → Use instance fields, reset in IterationSetup if needed
 4. **First-call JIT effects** → Call benchmark method in GlobalSetup warmup
 5. **Async timing variance** → Ensure fake implementations complete synchronously
-6. **Tiered JIT recompilation (netcoreapp3.1)** → Use `[DisableTieredCompilation]` attribute
 
 ## References
 
