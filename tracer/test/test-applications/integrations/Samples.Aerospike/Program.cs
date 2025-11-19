@@ -12,12 +12,14 @@ namespace Samples.Aerospike
             var host = Host();
             AsyncClient client = null;
 
+            var clientPolicy = CreatePolicy();
+
             int retries = 3;
             while (true)
             {
                 try
                 {
-                    client = new AsyncClient(new AsyncClientPolicy { timeout = 10_000 }, host.Item1, host.Item2);
+                    client = new AsyncClient(clientPolicy, host.Item1, host.Item2);
                     break;
                 }
                 catch (AerospikeException) when (retries > 0)
@@ -34,7 +36,7 @@ namespace Samples.Aerospike
 
             var bin1 = new Bin("name", "John");
             var bin2 = new Bin("age", 25);
-            var bin3 = new Bin("hello", "world");
+            var bin3 = new Bin("count", 5);
             var bin4 = new Bin("first", "first");
             var bin5 = new Bin("first", "last");
 
@@ -59,9 +61,10 @@ namespace Samples.Aerospike
                 Filter = Filter.Range("age", 20, 30)
             };
 
-            var result = client.Query(new QueryPolicy(), statement);
-
-            while (result.Next()) ; // Force the query to execute
+            using (var result = client.Query(null, statement)) // inherits the configured defaults.
+            {
+                while (result.Next()) { } // Force the query to execute
+            }
 
             client.Delete(null, key1);
 
@@ -81,6 +84,45 @@ namespace Samples.Aerospike
             client.DropIndex(null, "test", "myset1", indexName: "age").Wait();
 
             client.Close();
+        }
+
+        private static AsyncClientPolicy CreatePolicy()
+        {
+            var clientPolicy = new AsyncClientPolicy
+            {
+                timeout = 10_000,
+                failIfNotConnected = true
+            };
+
+            // Read/Write ops
+            clientPolicy.readPolicyDefault = new Policy
+            {
+                totalTimeout = 10_000,
+                maxRetries = 2
+            };
+            clientPolicy.writePolicyDefault = new WritePolicy
+            {
+                totalTimeout = 10_000,
+                maxRetries = 2
+            };
+
+            clientPolicy.batchPolicyDefault = new BatchPolicy
+            {
+                totalTimeout = 10_000,
+                maxRetries = 2
+            };
+
+            // Queries and index ops usually need longer:
+            clientPolicy.queryPolicyDefault = new QueryPolicy
+            {
+                totalTimeout = 20_000,
+                maxRetries = 1
+            };
+            clientPolicy.infoPolicyDefault = new InfoPolicy
+            {
+                timeout = 10_000
+            };
+            return clientPolicy;
         }
 
         private static Tuple<string, int> Host()

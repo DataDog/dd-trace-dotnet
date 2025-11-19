@@ -28,6 +28,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -225,6 +226,7 @@ namespace Datadog.Trace
         /// Run all the shutdown tasks for a standalone <see cref="TracerManager"/> instance,
         /// stopping the background processes.
         /// </summary>
+        [TestingOnly]
         internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
@@ -393,7 +395,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
-                    writer.WriteValue(GlobalSettings.Instance.DebugEnabledInternal);
+                    writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
 
                     writer.WritePropertyName("health_checks_enabled");
                     writer.WriteValue(mutableSettings.TracerMetricsEnabled);

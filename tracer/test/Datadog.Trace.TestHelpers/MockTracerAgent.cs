@@ -627,9 +627,10 @@ namespace Datadog.Trace.TestHelpers
                     request.Headers.TryGetValue(TelemetryConstants.ApiVersionHeader, out var apiVersion);
                     request.Headers.TryGetValue(TelemetryConstants.RequestTypeHeader, out var requestType);
 
+                    // request.ReadStreamBody() already decompress the data if content-encoding is gzip
                     using var stream = new MemoryStream(request.ReadStreamBody());
 
-                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
+                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType, false);
                     Telemetry.Push(telemetry);
 
                     lock (this)

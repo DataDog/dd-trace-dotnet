@@ -28,19 +28,22 @@ internal struct CString : IDisposable
         {
             var encoding = StringEncoding.UTF8;
             var maxBytesCount = encoding.GetMaxByteCount(str.Length);
-            Ptr = Marshal.AllocHGlobal(maxBytesCount);
+            Ptr = Marshal.AllocHGlobal(maxBytesCount + 1); // Make space for null character.
             unsafe
             {
                 fixed (char* strPtr = str)
                 {
                     try
                     {
-                        Length = (nuint)encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                        int byteCount = encoding.GetBytes(strPtr, str.Length, (byte*)Ptr, maxBytesCount);
+                        ((byte*)Ptr)[byteCount] = 0;
+                        Length = (nuint)byteCount;
                     }
                     catch
                     {
                         Marshal.FreeHGlobal(Ptr);
                         Ptr = IntPtr.Zero;
+                        Length = UIntPtr.Zero;
                     }
                 }
             }

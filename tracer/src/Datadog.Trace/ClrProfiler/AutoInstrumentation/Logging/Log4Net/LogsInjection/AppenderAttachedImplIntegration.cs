@@ -37,21 +37,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
+            if (loggingEvent?.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var tracer = Tracer.Instance;
 
             var mutableSettings = tracer.CurrentTraceSettings.Settings;
-            if (mutableSettings.LogsInjectionEnabled &&
-                !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
+            var properties = loggingEvent.Properties;
+            if (mutableSettings.LogsInjectionEnabled && properties != null && !properties.Contains(CorrelationIdentifier.ServiceKey))
             {
-                loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName;
-                loggingEvent.Properties[CorrelationIdentifier.VersionKey] = mutableSettings.ServiceVersion ?? string.Empty;
-                loggingEvent.Properties[CorrelationIdentifier.EnvKey] = mutableSettings.Environment ?? string.Empty;
+                properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName;
+                properties[CorrelationIdentifier.VersionKey] = mutableSettings.ServiceVersion ?? string.Empty;
+                properties[CorrelationIdentifier.EnvKey] = mutableSettings.Environment ?? string.Empty;
 
                 if (tracer.DistributedSpanContext is { } context &&
                     LogContext.TryGetValues(context, out var traceId, out var spanId, tracer.Settings.TraceId128BitLoggingEnabled))
                 {
-                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
-                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
+                    properties[CorrelationIdentifier.TraceIdKey] = traceId;
+                    properties[CorrelationIdentifier.SpanIdKey] = spanId;
                 }
             }
 

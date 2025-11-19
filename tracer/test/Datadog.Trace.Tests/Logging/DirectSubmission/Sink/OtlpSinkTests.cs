@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkSendsLogsToOtlpExporter()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkBatchesMultipleLogs()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
             int batchCount = 0;
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkIncludesTraceContextWhenAvailable()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkIncludesAttributesInLogs()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
@@ -156,7 +156,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkIgnoresNonOtlpLogEvents()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public void SinkHandlesAllLogLevels()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 6, queueLimit: DefaultQueueLimit, period: TinyWait);

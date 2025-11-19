@@ -600,6 +600,13 @@ namespace Datadog.Trace.Configuration
         public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
         /// <summary>
+        /// Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+        /// Default value is true (polling enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+        public const string AgentFeaturePollingEnabled = "DD_AGENT_FEATURE_POLLING_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -765,29 +772,6 @@ namespace Datadog.Trace.Configuration
             /// The list is space-separated.
             /// </summary>
             public const string ProxyNoProxy = "DD_PROXY_NO_PROXY";
-        }
-
-        /// <summary>
-        /// String format patterns used to match integration-specific configuration keys.
-        /// </summary>
-        public static class Integrations
-        {
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling an integration.
-            /// </summary>
-            public const string Enabled = "DD_TRACE_{0}_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling Analytics in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for setting Analytics sampling rate in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
         }
 
         /// <summary>
@@ -973,6 +957,12 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key to allow telemetry compression.
+            /// <see cref="TelemetrySettings.CompressionMethod"/>
+            /// </summary>
+            public const string TelemetryCompressionMethod = "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD";
 
             /// <summary>
             /// Configuration key for whether to enable redacted error log collection.

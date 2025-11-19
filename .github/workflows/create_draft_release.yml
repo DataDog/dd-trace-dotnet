@@ -13,6 +13,7 @@ on:
 jobs:
   create_draft_release:
     runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
     permissions:
       contents: write # create release
       actions: read # read secrets
@@ -112,7 +113,7 @@ jobs:
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v1.0.0
+        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v1.0.0
         with:
           token: "${{ steps.generate-token.outputs.token }}"
           draft: true
@@ -143,5 +144,10 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{steps.assets.outputs.artifacts_path}}
-          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          public_symbols_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
+          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
+          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
+          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
+          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
+          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
+          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
+          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

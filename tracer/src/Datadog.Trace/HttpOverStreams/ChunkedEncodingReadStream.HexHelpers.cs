@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.SourceGenerators;
 
 #if NETCOREAPP3_1_OR_GREATER
 using System.Buffers.Text;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.HttpOverStreams;
 
 internal partial class ChunkedEncodingReadStream
 {
-    // internal for testing
+    [TestingAndPrivateOnly]
     internal static ulong ParseChunkHexString(byte[] buffer, int offset, int length)
     {
         // Try to format into our output buffer directly.

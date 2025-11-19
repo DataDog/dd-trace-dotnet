@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -45,6 +46,23 @@ public class ConfigureIntegration
     internal static void ConfigureSettingsWithManualOverrides(Dictionary<string, object?> values, bool useLegacySettings)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
+
+        // There's an edge case in our APIs where if a user changes the agent URI to UDS on Windows
+        // then we can no longer use the trace exporter, but this is something that we assume is
+        // immutable today. To work around this edge case, we block updating the exporter settings to
+        // point to UDS when you're running on Windows. Note that it's fine to set to UDS _initially_,
+        // it's only _updating_ it to UDS on Windows that we block
+        if (FrameworkDescription.Instance.IsWindows()
+         && values.TryGetValue(TracerSettingKeyConstants.AgentUriKey, out var raw)
+         && raw is Uri uri
+         && uri.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            InvalidConfigurationException.Throw(
+                $"Error changing AgentUri. " +
+                "AgentUri can not be set to a UDS endpoint in code when running on Windows. " +
+                "If you need to use UDS on Windows, set the environment variable DD_TRACE_AGENT_URL instead to " +
+                "ensure the app starts with the correct configuration");
+        }
 
         // Is this from calling new TracerSettings() or TracerSettings.Global?
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;

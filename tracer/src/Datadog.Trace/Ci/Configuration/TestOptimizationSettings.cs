@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -361,7 +362,7 @@ namespace Datadog.Trace.Ci.Configuration
         private TracerSettings InitializeTracerSettings()
             => InitializeTracerSettings(GlobalConfigurationSource.Instance);
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal TracerSettings InitializeTracerSettings(IConfigurationSource source)
         {
             // This is a somewhat hacky way to "tell" TracerSettings that we're running in CI Visibility

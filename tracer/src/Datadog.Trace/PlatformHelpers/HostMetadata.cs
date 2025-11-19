@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
@@ -61,7 +62,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         public string? KernelVersion { get; }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static void ParseKernel(string fullVersion, out string? kernel, out string? kernelRelease, out string? kernelVersion)
         {
             kernel = null;

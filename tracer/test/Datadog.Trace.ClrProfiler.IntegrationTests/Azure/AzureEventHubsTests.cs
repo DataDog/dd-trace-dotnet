@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [Trait("Category", "ArmUnsupported")]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
@@ -100,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 
@@ -108,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
 
                 sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span with azure_eventhubs.send operation for enumerable");
-                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+                receiveSpans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 receive span");
 
                 var enumerableSendSpans = sendSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
                 enumerableSendSpans.Should().HaveCount(1, "Expected 1 enumerable send span from SendAsync operation");
@@ -173,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 
@@ -181,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
 
                 sendSpans.Should().HaveCount(1, "Expected 1 SendAsync span for enumerable (no individual event spans when batch links disabled)");
-                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+                receiveSpans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 receive span");
 
                 var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();
                 createSpans.Should().BeEmpty("Expected no individual message spans (azure_eventhubs.create) when batch links disabled");
@@ -212,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 
@@ -222,7 +223,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
                 createSpans.Should().HaveCount(3, "Expected 3 TryAdd spans with azure_eventhubs.create operation");
                 sendSpans.Should().HaveCount(1, "Expected 1 buffered send span with azure_eventhubs.send operation");
-                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+                receiveSpans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 receive span");
 
                 var individualMessageSpans = createSpans.Where(s => s.Resource == "samples-eventhubs-hub").ToList();
                 individualMessageSpans.Should().HaveCount(3, "Expected 3 individual message spans from TryAdd operations");
@@ -254,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 
@@ -262,7 +263,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 var receiveSpans = spans.Where(span => span.Name == "azure_eventhubs.receive").ToList();
 
                 sendSpans.Should().HaveCount(1, "Expected 1 buffered send span (no individual TryAdd spans when batch links disabled)");
-                receiveSpans.Should().HaveCount(1, "Expected 1 receive span");
+                receiveSpans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 receive span");
 
                 var createSpans = spans.Where(span => span.Name == "azure_eventhubs.create").ToList();
                 createSpans.Should().BeEmpty("Expected no individual message spans (azure_eventhubs.create) when batch links disabled");

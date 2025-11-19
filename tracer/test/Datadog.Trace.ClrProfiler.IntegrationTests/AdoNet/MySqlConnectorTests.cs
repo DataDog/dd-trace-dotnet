@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     public class MySqlConnectorTests : TracingIntegrationTest
     {
         public MySqlConnectorTests(ITestOutputHelper output)

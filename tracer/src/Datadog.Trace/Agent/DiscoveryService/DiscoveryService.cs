@@ -17,6 +17,9 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Agent.DiscoveryService
 {
+    /// <summary>
+    /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
+    /// </summary>
     internal class DiscoveryService : IDiscoveryService
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";

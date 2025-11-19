@@ -89,6 +89,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
             IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
             IntegrationId.Protobuf => MetricTags.IntegrationName.Protobuf,
+            IntegrationId.DatadogTraceVersionConflict => MetricTags.IntegrationName.VersionConflict,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

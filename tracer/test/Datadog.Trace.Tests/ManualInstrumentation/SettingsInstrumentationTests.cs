@@ -341,9 +341,9 @@ public class SettingsInstrumentationTests
             { ConfigurationKeys.TraceEnabled, false },
             { ConfigurationKeys.TracerMetricsEnabled, true },
             { ConfigurationKeys.AgentUri, "http://localhost:1234" },
-            { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.Aerospike)), "false" },
-            { string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, nameof(IntegrationId.Grpc)), "true" },
-            { string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, nameof(IntegrationId.Couchbase)), 0.5 },
+            { string.Format(IntegrationSettings.IntegrationEnabled, nameof(IntegrationId.Aerospike)), "false" },
+            { string.Format(IntegrationSettings.AnalyticsEnabledKey, nameof(IntegrationId.Grpc)), "true" },
+            { string.Format(IntegrationSettings.AnalyticsSampleRateKey, nameof(IntegrationId.Couchbase)), 0.5 },
         });
 
         // verify that all the settings are as expected

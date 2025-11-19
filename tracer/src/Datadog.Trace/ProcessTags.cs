@@ -24,12 +24,7 @@ internal static class ProcessTags
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
-    private static readonly Lazy<string> LazySerializedTags = new(GetSerializedTags);
-
-    public static string SerializedTags
-    {
-        get => LazySerializedTags.Value;
-    }
+    public static readonly string SerializedTags = GetSerializedTags();
 
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
@@ -44,13 +39,13 @@ internal static class ProcessTags
     private static string GetSerializedTags()
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        var tags = new List<KeyValuePair<string, string?>>
-        {
+        List<KeyValuePair<string, string?>> tags =
+        [
             new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
-            new(EntrypointName, EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName),
+            new(EntrypointName, GetEntryPointName()),
             // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
             new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
-        };
+        ];
 
         // then normalize values and put all tags in a string
         var serializedTags = StringBuilderCache.Acquire();
@@ -69,6 +64,11 @@ internal static class ProcessTags
         PropagateProcessTagsToProfiler(tagsValues);
 
         return tagsValues;
+    }
+
+    private static string? GetEntryPointName()
+    {
+        return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
     }
 
     private static string NormalizeTagValue(string tagValue)

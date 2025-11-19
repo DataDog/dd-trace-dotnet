@@ -65,7 +65,7 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: producer,
       topicname: MyTopic,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },
@@ -96,7 +96,7 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: producer,
       topicname: MyTopic,
       _dd.base_service: Samples.AWS.SimpleNotificationService
     },

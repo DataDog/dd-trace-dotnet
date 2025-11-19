@@ -168,4 +168,14 @@ public class BaggageTests
         baggage1.GetValueOrDefault("key1").Should().Be("new value");
         baggage1.GetValueOrDefault("key2").Should().Be("value2");
     }
+
+    [Fact]
+    public void MergeInto_SameInstance()
+    {
+        var baggage = new Baggage { { "key1", "value1" } };
+
+        baggage.MergeInto(baggage);
+        baggage.Count.Should().Be(1);
+        baggage.GetValueOrDefault("key1").Should().Be("value1");
+    }
 }

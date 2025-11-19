@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: OpenTelemetry.Api -->
     <!--    Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.13.1 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.13.1" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.14.0 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.14.0" />
   </ItemGroup>
 
 </Project>
