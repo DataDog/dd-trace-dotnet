@@ -81,8 +81,11 @@ update-bp-infra:
       - scheduler_failure
       - api_failure
       - script_failure
+  when: on_success
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
     - source build-id.txt
@@ -263,10 +266,12 @@ profiler_cpu_timer_create-x86:
       - scheduler_failure
       - api_failure
       - script_failure
+  when: on_success
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
-
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
@@ -447,7 +452,6 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
-  interruptible: true
   timeout: 2h
   retry:
     max: 2
@@ -458,8 +462,11 @@ profiler_cpu_timer_create-arm64:
       - scheduler_failure
       - api_failure
       - script_failure
+  when: on_success
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
