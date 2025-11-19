@@ -88,7 +88,6 @@ run-benchmarks:
     when: always
     paths:
       - platform/artifacts
-      - artifacts
     expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform
