@@ -103,44 +103,6 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 5. **Async timing variance** → Ensure fake implementations complete synchronously
 6. **Tiered JIT recompilation (netcoreapp3.1)** → Use `[DisableTieredCompilation]` attribute
 
-### 5. Disable Tiered Compilation for .NET Core 3.1 Variance
-
-**.NET Core 3.1 specific issue:**
-- Tiered compilation is enabled by default in .NET Core 3.0+
-- Methods can be recompiled mid-benchmark (Tier 0 → Tier 1)
-- No Dynamic PGO (only available in .NET 6+)
-- Known run-to-run variance of 30-150% in affected benchmarks
-
-**When to use:**
-- Benchmarks showing flakiness **only** on netcoreapp3.1 TFM
-- Not needed for .NET 6+ (has Dynamic PGO which stabilizes performance)
-- High CV (>10%) that disappears on newer TFMs
-
-**Example:**
-```csharp
-[MemoryDiagnoser]
-[BenchmarkAgent7]
-#if NETCOREAPP3_1
-[DisableTieredCompilation]  // Reduces netcoreapp3.1-specific variance
-#endif
-public class AppSecWafBenchmark
-{
-    // Benchmark methods...
-}
-```
-
-**Important:** Always use `#if NETCOREAPP3_1` conditional compilation to ensure the attribute only applies to the affected TFM and has zero impact on other frameworks.
-
-**Why only netcoreapp3.1?**
-- .NET Core 3.1: Tiered compilation without Dynamic PGO → unpredictable recompilation timing
-- .NET 6+: Tiered compilation **with** Dynamic PGO → stable performance after warmup
-- .NET Framework: No tiered compilation
-
-**Trade-off:**
-- Pros: Eliminates JIT variance, stable measurements
-- Cons: Measures Tier 0 performance (less optimized) instead of real-world Tier 1 performance
-- Acceptable for benchmarks prioritizing **stability** over measuring production-like optimizations
-
 ## References
 
 - [BenchmarkDotNet Setup and Cleanup](https://benchmarkdotnet.org/articles/features/setup-and-cleanup.html)
