@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests
             bool hasHeapSnapshot = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                hasHeapSnapshot = HeapSnapshotHelper.HasHeapSnapshot(ctx.Value.Request);
+                hasHeapSnapshot |= HeapSnapshotHelper.HasHeapSnapshot(ctx.Value.Request);
             };
 
             runner.Run(agent);

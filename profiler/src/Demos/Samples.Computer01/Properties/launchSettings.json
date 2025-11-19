@@ -39,7 +39,7 @@
     "Tracer+Profiler": {
       "commandName": "Executable",
       "executablePath": "$(BaseOutputPath)\\$(ConfigBasedRelativeOutputPath)\\profiler\\src\\Demos\\Samples.Computer01\\$(TargetFramework)\\Samples.Computer01.exe",
-      "commandLineArgs": "--scenario 13 --iterations 2 --param 1500",
+      "commandLineArgs": "--scenario 13 --iterations 25 --param 10000",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -69,7 +69,7 @@
         "DD_TRACE_DEBUG": "1",
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
       },
-      "nativeDebugging": false
+      "nativeDebugging": true
     }
   }
 }
