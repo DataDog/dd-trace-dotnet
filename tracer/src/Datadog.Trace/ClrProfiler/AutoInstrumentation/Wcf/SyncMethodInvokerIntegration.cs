@@ -9,7 +9,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -40,12 +39,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, ref object[] outputs)
         {
-            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            var tracer = Tracer.Instance;
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            return new CallTargetState(Tracer.Instance.ActiveScope as Scope);
+            return WcfCommon.ActivateScopeFromContext();
         }
 
         /// <summary>
@@ -64,9 +64,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             {
                 // Add the exception but do not dispose the scope.
                 // BeforeSendReplyIntegration is responsible for closing the span.
-                state.Scope.Span?.SetException(exception);
+                state.Scope.Span.SetException(exception);
             }
 
+            WcfCommon.RestorePreviousScope(in state);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

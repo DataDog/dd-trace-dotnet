@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             }
 
             var rpcProxy = rpc.DuckCast<MessageRpcStruct>();
-            if (((IDuckType?)rpcProxy.OperationContext.RequestContext)?.Instance is object requestContextInstance
+            if (rpcProxy.OperationContext.RequestContext?.Instance is { } requestContextInstance
                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
             {
                 return new CallTargetState(scope);
