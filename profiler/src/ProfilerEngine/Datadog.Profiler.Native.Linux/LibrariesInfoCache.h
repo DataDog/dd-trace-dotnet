@@ -69,7 +69,10 @@ private:
         uintptr_t mappingId; // Unique identifier for the mapping
     };
     
-    shared::pmr::vector<ManagedRegion> _managedRegions;
+    using ManagedRegionAllocator = shared::pmr::polymorphic_allocator<ManagedRegion>;
+    using ManagedRegionVector = std::vector<ManagedRegion, ManagedRegionAllocator>;
+
+    ManagedRegionVector _managedRegions;
     std::atomic<size_t> _managedRegionCount;
     
     // Flag to indicate that we've encountered unknown mappings
