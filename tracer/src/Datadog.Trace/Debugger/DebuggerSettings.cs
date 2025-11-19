@@ -23,6 +23,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
         public const int DefaultMaxStringLength = 1000;
+        public const int DefaultMaxProbesPerType = 0;
 
         private const int DefaultUploadBatchSize = 100;
         public const int DefaultSymbolBatchSizeInBytes = 100000;
@@ -62,6 +63,11 @@ namespace Datadog.Trace.Debugger
                                          .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes)
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
+
+            MaxProbesPerType = config
+                              .WithKeys(ConfigurationKeys.Debugger.InternalMaxProbesPerType)
+                              .AsInt32(DefaultMaxProbesPerType, maxProbes => maxProbes >= 0)
+                              .Value;
 
             var thirdPartyIncludes = config
                                   .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
@@ -164,6 +170,8 @@ namespace Datadog.Trace.Debugger
         public int UploadBatchSize { get; }
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
+
+        public int MaxProbesPerType { get; }
 
         public ImmutableHashSet<string> ThirdPartyDetectionIncludes { get; }
 
