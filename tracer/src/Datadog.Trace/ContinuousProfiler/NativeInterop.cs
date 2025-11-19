@@ -31,9 +31,9 @@ namespace Datadog.Trace.ContinuousProfiler
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version, string processTags)
+        public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version)
         {
-            NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version, processTags);
+            NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -83,6 +83,8 @@ namespace Datadog.Trace.ContinuousProfiler
             public string ServiceName;
             [MarshalAs(UnmanagedType.LPStr)]
             public string Version;
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string ProcessTags;
         }
 
         // These methods are rewritten by the native tracer to use the correct paths
@@ -95,7 +97,7 @@ namespace Datadog.Trace.ContinuousProfiler
             public static extern IntPtr GetTraceContextNativePointer();
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetApplicationInfoForAppDomain")]
-            public static extern void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version, string processTags);
+            public static extern void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version);
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetEndpointForTrace")]
             public static extern void SetEndpoint(string runtimeId, ulong traceId, string endpoint);

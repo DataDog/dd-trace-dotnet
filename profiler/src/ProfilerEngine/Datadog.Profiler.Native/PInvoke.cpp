@@ -72,7 +72,7 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
     return pCurrentThreadInfo->GetTraceContextPointer();
 }
 
-extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version, const char* processTags)
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
 {
     const auto profiler = CorProfilerCallback::GetInstance();
 
@@ -93,7 +93,7 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         serviceName ? serviceName : std::string(),
         environment ? environment : std::string(),
         version ? version : std::string(),
-        processTags ? processTags : std::string());
+        std::string()); // process tags are only configured via the shared config for now.
 }
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)

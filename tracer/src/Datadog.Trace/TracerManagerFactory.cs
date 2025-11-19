@@ -76,7 +76,7 @@ namespace Datadog.Trace
                 if (Profiler.Instance.Status.IsProfilerReady)
                 {
                     var mutableSettings = tracer.PerTraceSettings.Settings;
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion);
                 }
             }
             catch (Exception ex)

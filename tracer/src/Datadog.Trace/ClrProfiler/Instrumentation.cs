@@ -103,6 +103,11 @@ namespace Datadog.Trace.ClrProfiler
                 Version = tracerSettings.ServiceVersion
             };
 
+            if (tracerSettings.PropagateProcessTags)
+            {
+                config.ProcessTags = ProcessTags.SerializedTags;
+            }
+
             // Make sure nothing bubbles up, even if there are issues
             try
             {

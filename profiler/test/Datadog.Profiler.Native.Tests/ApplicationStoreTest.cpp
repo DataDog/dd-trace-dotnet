@@ -159,7 +159,7 @@ TEST(ApplicationStoreTest, SetApplicationInfoWithProcessTags)
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
     const std::string expectedProcessTags = "entrypoint.basedir:app,entrypoint.workdir:work";
 
-    // Set application info with process tags (simulates P/Invoke call from managed layer)
+    // Set application info with process tags (simulates SetConfiguration call with SharedConfig.processTags)
     applicationStore.SetApplicationInfo(
         runtimeId,
         "ExpectedServiceName",
@@ -193,9 +193,9 @@ TEST(ApplicationStoreTest, SetApplicationInfoPreservesExistingProcessTags)
     ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
-    const std::string expectedProcessTags = "entrypoint.basedir:/app,entrypoint.workdir:/work";
+    const std::string expectedProcessTags = "entrypoint.basedir:app,entrypoint.workdir:work";
 
-    // First call with process tags (simulates P/Invoke from managed layer)
+    // First call with process tags (simulates SetConfiguration with SharedConfig.processTags)
     applicationStore.SetApplicationInfo(
         runtimeId,
         "ServiceName",
@@ -203,7 +203,7 @@ TEST(ApplicationStoreTest, SetApplicationInfoPreservesExistingProcessTags)
         "Version",
         expectedProcessTags);
 
-    // Second call with empty process tags (simulates SetConfiguration call)
+    // Second call with empty process tags (simulates SetApplicationInfoForAppDomain without process tags)
     applicationStore.SetApplicationInfo(
         runtimeId,
         "UpdatedServiceName",
