@@ -22,25 +22,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class WcfTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
-
-        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
-        {
-            "custom-tag",
-        };
+        private static readonly HashSet<string> ExcludeTags = ["custom-tag"];
 
         public WcfTests(ITestOutputHelper output)
             : base("Wcf", output)
         {
             SetServiceVersion(ServiceVersion);
+            EnvironmentHelper.DebugModeEnabled = true;
         }
 
-        public static string[] Bindings => new string[]
-        {
+        public static string[] Bindings =>
+        [
             "WSHttpBinding",
             "BasicHttpBinding",
             "NetTcpBinding",
-            "Custom",
-        };
+            "Custom"
+        ];
 
         public static IEnumerable<object[]> GetData()
         {
@@ -102,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "Custom" => 14,
                 "NetTcpBinding" => 32,
                 "BasicHttpBinding" => 45,
-                "WSHttpBinding" => 49,
+                "WSHttpBinding" => 52,
                 _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
@@ -112,12 +109,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, arguments: $"{binding} Port={wcfPort}"))
             {
-                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
-                // so we can wait on the exact number of spans we expect.
-                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-
-                // The test adds a custom span to show that propagation works with WCF headers
-                // agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
@@ -155,11 +146,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, arguments: $"WebHttpBinding Port={wcfPort}"))
             {
-                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
-                // so we can wait on the exact number of spans we expect.
-                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                // The test adds a custom span to show that propagation works with WCF headers
-                // agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 

@@ -493,6 +493,84 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
     TraceId: Id_11,
     SpanId: Id_29,
     Name: http.server.request,
+    Resource: http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_13,
+    Tags: {
+      component: Wcf,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_30,
+    Name: http.server.request,
+    Resource: http://schemas.xmlsoap.org/ws/2005/02/trust/RSTR/Issue,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_14,
+    Tags: {
+      component: Wcf,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_31,
+    Name: http.server.request,
+    Resource: http://schemas.xmlsoap.org/ws/2005/02/trust/RST/SCT,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_15,
+    Tags: {
+      component: Wcf,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_32,
+    Name: http.server.request,
     Resource: /WcfSample/123,123/CalculatorService,
     Service: Samples.Wcf,
     Type: web,
@@ -518,7 +596,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_30,
+    SpanId: Id_33,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
@@ -545,7 +623,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_31,
+    SpanId: Id_34,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
@@ -572,7 +650,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_32,
+    SpanId: Id_35,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
@@ -599,7 +677,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_33,
+    SpanId: Id_36,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
@@ -626,7 +704,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_34,
+    SpanId: Id_37,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
@@ -653,7 +731,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_35,
+    SpanId: Id_38,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
@@ -680,7 +758,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_36,
+    SpanId: Id_39,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -707,7 +785,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_37,
+    SpanId: Id_40,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -734,7 +812,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_38,
+    SpanId: Id_41,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -761,7 +839,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_39,
+    SpanId: Id_42,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -788,7 +866,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_40,
+    SpanId: Id_43,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -815,7 +893,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_41,
+    SpanId: Id_44,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -842,48 +920,9 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_42,
+    SpanId: Id_45,
     Name: ServerEmptyActionAdd,
     Resource: ServerEmptyActionAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_29,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_11,
-    SpanId: Id_43,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_30,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_11,
-    SpanId: Id_44,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_31,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_11,
-    SpanId: Id_45,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
     Service: Samples.Wcf,
     ParentId: Id_32,
     Tags: {
@@ -895,8 +934,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_46,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
     Service: Samples.Wcf,
     ParentId: Id_33,
     Tags: {
@@ -908,8 +947,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_47,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
     Service: Samples.Wcf,
     ParentId: Id_34,
     Tags: {
@@ -921,8 +960,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_48,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
     Service: Samples.Wcf,
     ParentId: Id_35,
     Tags: {
@@ -934,8 +973,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_49,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
     Service: Samples.Wcf,
     ParentId: Id_36,
     Tags: {
@@ -947,8 +986,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_50,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
     Service: Samples.Wcf,
     ParentId: Id_37,
     Tags: {
@@ -960,8 +999,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_51,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
     Service: Samples.Wcf,
     ParentId: Id_38,
     Tags: {
@@ -986,19 +1025,6 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   {
     TraceId: Id_11,
     SpanId: Id_53,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_39,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_11,
-    SpanId: Id_54,
     Name: BeginServerAsyncAdd,
     Resource: BeginServerAsyncAdd,
     Service: Samples.Wcf,
@@ -1011,11 +1037,63 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_11,
-    SpanId: Id_55,
+    SpanId: Id_54,
     Name: BeginServerAsyncAdd,
     Resource: BeginServerAsyncAdd,
     Service: Samples.Wcf,
     ParentId: Id_41,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_55,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_42,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_56,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_42,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_57,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_43,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_58,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_44,
     Tags: {
       env: integration_tests,
       language: dotnet,
