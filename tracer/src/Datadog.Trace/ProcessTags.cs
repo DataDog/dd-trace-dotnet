@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
@@ -18,8 +16,6 @@ namespace Datadog.Trace;
 
 internal static class ProcessTags
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessTags));
-
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
@@ -58,9 +54,7 @@ internal static class ProcessTags
         }
 
         serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
-        var tagsValues = StringBuilderCache.GetStringAndRelease(serializedTags);
-
-        return tagsValues;
+        return StringBuilderCache.GetStringAndRelease(serializedTags);
     }
 
     private static string? GetEntryPointName()
