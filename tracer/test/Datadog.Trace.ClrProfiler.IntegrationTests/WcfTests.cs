@@ -96,10 +96,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = binding switch
             {
-                "Custom" => 14,
-                "NetTcpBinding" => 32,
-                "BasicHttpBinding" => 45,
-                "WSHttpBinding" => 52,
+                "Custom" => 26,
+                "NetTcpBinding" => 44,
+                "BasicHttpBinding" => 57,
+                "WSHttpBinding" => 64,
                 _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 13;
+            var expectedSpanCount = 16;
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
