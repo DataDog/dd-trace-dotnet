@@ -170,9 +170,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // request a final flush - as the _processExit flag is now set
-        // this ensures we will definitely flush all the stats
-        Flush();
+        await FlushAsync().ConfigureAwait(false);
 
         // wait for the processing loop to complete
         var completedTask = await Task.WhenAny(
@@ -183,6 +181,40 @@ internal class DataStreamsWriter : IDataStreamsWriter
         if (completedTask != _processTask)
         {
             Log.Error("Could not flush all data streams stats before process exit");
+        }
+    }
+
+    public async Task FlushAsync()
+    {
+        Log.Debug("ROB Flushing Async");
+        if (_processExit.Task.IsCompleted)
+        {
+            return;
+        }
+
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        {
+            Log.Error("Data streams flush timeout");
+            return;
+        }
+
+        try
+        {
+            await WriteToApiAsync().ConfigureAwait(false);
+            FlushComplete?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during flush");
+        }
+        finally
+        {
+            _flushSemaphore.Release();
         }
     }
 
@@ -222,40 +254,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 _flushSemaphore.Release();
             }
         });
-    }
-
-    public async Task FlushAsync()
-    {
-        Log.Debug("ROB Flushing Async");
-        if (_processExit.Task.IsCompleted)
-        {
-            return;
-        }
-
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
-        {
-            Log.Error("Data streams flush timeout");
-            return;
-        }
-
-        try
-        {
-            await WriteToApiAsync().ConfigureAwait(false);
-            FlushComplete?.Invoke(this, EventArgs.Empty);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error during flush");
-        }
-        finally
-        {
-            _flushSemaphore.Release();
-        }
     }
 
     private async Task WriteToApiAsync()
