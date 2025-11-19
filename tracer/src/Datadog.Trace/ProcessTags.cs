@@ -19,7 +19,7 @@ namespace Datadog.Trace;
 internal static class ProcessTags
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessTags));
-    
+
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";

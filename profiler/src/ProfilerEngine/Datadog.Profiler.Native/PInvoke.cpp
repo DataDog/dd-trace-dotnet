@@ -180,7 +180,7 @@ extern "C" void __stdcall SetProcessTagsForApplication(const char* runtimeId, co
         return;
     }
 
-    if (!profiler->GetClrLifetime()->IsRunning())
+    if (!profiler->GetClrLifetime()->IsInitialized())
     {
         return;
     }
