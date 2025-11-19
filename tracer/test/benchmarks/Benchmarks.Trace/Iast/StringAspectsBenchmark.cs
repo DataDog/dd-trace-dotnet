@@ -70,9 +70,6 @@ public class StringAspectsBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-        StringConcatBenchmark();
-
-        StringConcatAspectBenchmark();
     }
 
     [IterationSetup(Target = nameof(StringConcatBenchmark))]

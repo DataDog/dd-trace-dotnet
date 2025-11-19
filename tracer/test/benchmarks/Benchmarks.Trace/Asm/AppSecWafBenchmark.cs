@@ -23,9 +23,6 @@ namespace Benchmarks.Trace.Asm;
 [BenchmarkAgent7]
 [BenchmarkCategory(Constants.AppSecCategory)]
 [IgnoreProfile]
-#if NETCOREAPP3_1
-[DisableTieredCompilation]
-#endif
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

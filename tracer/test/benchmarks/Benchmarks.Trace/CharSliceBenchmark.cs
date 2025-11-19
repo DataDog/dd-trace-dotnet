@@ -13,9 +13,6 @@ namespace Benchmarks.Trace;
 [MemoryDiagnoser]
 [BenchmarkAgent1]
 [BenchmarkCategory(Constants.TracerCategory)]
-#if NETCOREAPP3_1
-[DisableTieredCompilation]
-#endif
 public class CharSliceBenchmark
 {
     [IterationSetup]
