@@ -121,7 +121,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo);
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, Tracer.Instance.Settings.PropagateProcessTags);
         }
 
         private void SetExpressions(ProbeDefinition probe)
