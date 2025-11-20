@@ -93,7 +93,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning).Unwrap();
+            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
                 x => ((DataStreamsWriter)x!).Flush(),
@@ -295,14 +295,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private async Task ProcessQueueLoopAsync()
+    private void ProcessQueueLoopAsync()
     {
         while (true)
         {
             Log.Debug("ROBC Processing Queue Loop - Sleep");
-            // Thread.Sleep(_waitTimeSpan);
-            await Task.Delay(_waitTimeSpan).ConfigureAwait(false);
-            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(.5)).ConfigureAwait(false))
+            Thread.Sleep(_waitTimeSpan);
+            // await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(.5)))
             {
                 Log.Error("Queue Loop Semaphore timeout");
                 return;
