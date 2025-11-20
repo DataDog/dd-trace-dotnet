@@ -84,7 +84,7 @@ run-benchmarks:
       aud: dd-octo-sts
   when: on_success
   rules:
-    - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
       interruptible: false
     - interruptible: true
   artifacts:
