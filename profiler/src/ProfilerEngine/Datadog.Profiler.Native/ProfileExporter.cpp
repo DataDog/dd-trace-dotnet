@@ -647,7 +647,7 @@ bool ProfileExporter::Export(bool lastCall)
         }
         if (!applicationInfo.ProcessTags.empty())
         {
-            additionalTags.Add("_dd.tags.process", applicationInfo.ProcessTags);
+            additionalTags.Add("process_tags", applicationInfo.ProcessTags);
         }
 
         auto filesToSend = std::vector<std::pair<std::string, std::string>>{};

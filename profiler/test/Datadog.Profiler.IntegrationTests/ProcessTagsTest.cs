@@ -15,12 +15,12 @@ using MessagePack;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Profiler.IntegrationTests.DebugInfo
+namespace Datadog.Profiler.IntegrationTests.ProcessTags
 {
     public class ProcessTagsTest
     {
         private const string Scenario = "--scenario 2";
-        private static readonly Regex ProcessTagsPattern = new("_dd\\.tags\\.process:(?<process_tags>[^,\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        private static readonly Regex ProcessTagsPattern = new("process_tags:(?<process_tags>[^,\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
         private readonly ITestOutputHelper _output;
 
@@ -76,16 +76,18 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var (profilerProcessTags, tracerProcessTags) = RunTest(runner);
 
             Assert.NotEmpty(profilerProcessTags);
-            var processTags = profilerProcessTags.First();
 
-            // Process tags should be in format: key1:value1,key2:value2
-            Assert.Contains(":", processTags);
-            Assert.Contains(",", processTags);
+            foreach (var processTags in profilerProcessTags)
+            {
+                // Process tags should be in format: key1:value1,key2:value2
+                Assert.Contains(":", processTags);
+                Assert.Contains(",", processTags);
 
-            // Should contain expected tags
-            Assert.Contains("entrypoint.basedir:", processTags);
-            Assert.Contains("entrypoint.workdir:", processTags);
-            // entrypoint.name may not always be present, depending on the application
+                // Should contain expected tags
+                Assert.Contains("entrypoint.basedir:", processTags);
+                Assert.Contains("entrypoint.workdir:", processTags);
+                // entrypoint.name may not always be present, depending on the application
+            }
         }
 
         private static void CollectProfilerProcessTags(HttpListenerRequest request, HashSet<string> profilerProcessTags)
