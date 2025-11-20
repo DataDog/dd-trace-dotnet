@@ -62,7 +62,7 @@ namespace Datadog.Trace.ServiceFabric
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
