@@ -50,6 +50,18 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] TriggerTypeBytes = new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
 #endif
+        // ExtensionVersionBytes = MessagePack.Serialize("aas.function.extension_version");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ExtensionVersionBytes => new byte[] { 190, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 101, 120, 116, 101, 110, 115, 105, 111, 110, 95, 118, 101, 114, 115, 105, 111, 110 };
+#else
+        private static readonly byte[] ExtensionVersionBytes = new byte[] { 190, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 101, 120, 116, 101, 110, 115, 105, 111, 110, 95, 118, 101, 114, 115, 105, 111, 110 };
+#endif
+        // WorkerRuntimeBytes = MessagePack.Serialize("aas.function.worker_runtime");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> WorkerRuntimeBytes => new byte[] { 187, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 119, 111, 114, 107, 101, 114, 95, 114, 117, 110, 116, 105, 109, 101 };
+#else
+        private static readonly byte[] WorkerRuntimeBytes = new byte[] { 187, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 119, 111, 114, 107, 101, 114, 95, 114, 117, 110, 116, 105, 109, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
