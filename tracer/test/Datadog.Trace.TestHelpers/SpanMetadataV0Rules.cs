@@ -548,6 +548,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
+                .IsOptional("db.response.status_code")
+                .IsOptional("cosmosdb.response.sub_status_code")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));

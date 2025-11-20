@@ -631,6 +631,16 @@ namespace Datadog.Trace
         internal const string CosmosDbContainer = "cosmosdb.container";
 
         /// <summary>
+        /// The HTTP status code of the database response.
+        /// </summary>
+        internal const string DbResponseStatusCode = "db.response.status_code";
+
+        /// <summary>
+        /// The CosmosDb sub-status code of the response.
+        /// </summary>
+        internal const string CosmosDbResponseSubStatusCode = "cosmosdb.response.sub_status_code";
+
+        /// <summary>
         /// If a span was involved with an application security event
         /// </summary>
         internal const string AppSecEvent = "appsec.event";

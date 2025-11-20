@@ -8,6 +8,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      db.response.status_code: 201,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -35,6 +36,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      db.response.status_code: 201,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -64,6 +66,7 @@
       component: CosmosDb,
       cosmosdb.container: items,
       db.name: db,
+      db.response.status_code: 201,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -91,6 +94,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      db.response.status_code: 204,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -120,6 +124,7 @@
       component: CosmosDb,
       cosmosdb.container: items,
       db.name: db,
+      db.response.status_code: 204,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -147,6 +152,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      db.response.status_code: 404,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -174,6 +180,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      db.response.status_code: 404,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -203,6 +210,7 @@
       component: CosmosDb,
       cosmosdb.container: items,
       db.name: db,
+      db.response.status_code: 200,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
@@ -232,6 +240,7 @@
       component: CosmosDb,
       cosmosdb.container: items,
       db.name: db,
+      db.response.status_code: 200,
       db.type: cosmosdb,
       env: integration_tests,
       language: dotnet,
