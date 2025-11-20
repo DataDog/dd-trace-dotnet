@@ -3,16 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
+#nullable enable
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
+
+/// <summary>
+/// Interface for duck typing AmazonDynamoDbRequest implementations with the TableName property
+/// </summary>
+internal interface IAmazonDynamoDbRequestWithTableName
 {
     /// <summary>
-    /// Interface for duck typing AmazonDynamoDbRequest implementations with the TableName property
+    /// Gets the Name of the Table
+    /// Should never be null, but there's no guards, so _could_ be
     /// </summary>
-    internal interface IAmazonDynamoDbRequestWithTableName
-    {
-        /// <summary>
-        /// Gets the Name of the Table
-        /// </summary>
-        string TableName { get; }
-    }
+    string? TableName { get; }
 }
