@@ -6,6 +6,10 @@ stages:
   - check-azure-pipeline
   - benchmarks
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
