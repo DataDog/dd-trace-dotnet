@@ -9,6 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
@@ -69,8 +70,10 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, object state, ILambdaExtensionRequest requestBuilder)
+    internal static async Task EndInvocationAsync(string returnValue, Exception exception, object stateObject, ILambdaExtensionRequest requestBuilder)
     {
+        var state = (CallTargetState)stateObject!;
+        var scope = state.Scope;
         try
         {
             await Task.WhenAll(
@@ -92,7 +95,7 @@ internal abstract class LambdaCommon
                 span.SetException(exception);
             }
 
-            SendEndInvocation(requestBuilder, scope, state, exception != null, returnValue);
+            SendEndInvocation(requestBuilder, scope, state.State, exception != null, returnValue);
         }
         catch (Exception ex)
         {
