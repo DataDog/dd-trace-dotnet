@@ -227,7 +227,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             // First, capture the active scope
             var tracer = Tracer.Instance;
             var activeScope = tracer.InternalActiveScope;
-            var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
 
             var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
             if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
@@ -238,9 +237,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 if (requestContext?.Instance is { } requestContextInstance
                  && Scopes.TryGetValue(requestContextInstance, out var scope)
                     && scope is not null
-                    && scope.Span.SpanId != activeScope?.Span?.SpanId)
+                    && scope.Span.SpanId != activeScope?.Span.SpanId)
                 {
+                    // capture the raw context for later activation
+                    var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span.Context;
                     Log.Debug("Activating scope from operation context {ActivatedSpan}", scope.Span);
+
                     tracer.ActivateSpan(scope.Span);
                     // Add the exception but do not dispose the span.
                     // BeforeSendReplyIntegration is responsible for closing the span.
