@@ -350,6 +350,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
+                .IsOptional("db.response.status_code")
+                .IsOptional("cosmosdb.response.sub_status_code")
                 .IsOptional("_dd.base_service")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")

@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb;
@@ -102,13 +103,35 @@ public class RequestInvokerHandlerSendAsyncIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(
-        TTarget instance,
-        TReturn returnValue,
-        Exception exception,
-        in CallTargetState state)
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        where TReturn : IResponseMessage
     {
-        state.Scope?.DisposeWithException(exception);
+        var scope = state.Scope;
+
+        if (scope != null && returnValue.Instance is not null)
+        {
+            try
+            {
+                var tags = (CosmosDbTags)scope.Span.Tags;
+                var statusCode = (int)returnValue.StatusCode;
+                tags.ResponseStatusCode = statusCode.ToString();
+
+                if (returnValue.Headers?.Instance != null)
+                {
+                    var subStatusCode = returnValue.Headers.SubStatusCodeLiteral;
+                    if (!StringUtil.IsNullOrEmpty(subStatusCode))
+                    {
+                        tags.ResponseSubStatusCode = subStatusCode;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error handling CosmosDb response.");
+            }
+        }
+
+        scope?.DisposeWithException(exception);
         return returnValue;
     }
 }
