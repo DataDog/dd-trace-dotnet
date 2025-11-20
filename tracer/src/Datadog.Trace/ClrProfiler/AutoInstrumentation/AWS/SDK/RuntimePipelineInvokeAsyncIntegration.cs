@@ -51,6 +51,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
+                bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
+                bool isServerless = EnvironmentHelpers.IsAwsLambda();
+                Console.WriteLine($"runtime pipeline spanKind: {tags.SpanKind}");
+                Console.WriteLine($"runtime pipeline isOutbound: {isOutbound}");
+                Console.WriteLine($"runtime pipeline isServerless: {isServerless}");
+                Console.WriteLine($"runtime pipieline tags.Region: {tags.Region}");
+                if (isServerless && isOutbound && tags.Region != null && tags.AwsService == "SNS")
+                {
+                    tags.PeerService = "sns." + tags.Region + ".amazonaws.com";
+                    tags.PeerServiceSource = "peer.service";
+                    Console.WriteLine($"runtime pipeline peer service tag for serverless: {tags.PeerService}");
+                }
             }
 
             return new CallTargetState(scope, state: executionContext);
