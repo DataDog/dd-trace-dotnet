@@ -85,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             // TableName tagging only when batch is from one table.
             var iterator = request.RequestItems.GetEnumerator();
+            using var disposable = iterator as IDisposable;
             while (iterator.MoveNext())
             {
                 var tableName = iterator.Key as string;
