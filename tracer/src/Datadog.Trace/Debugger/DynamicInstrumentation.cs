@@ -180,9 +180,18 @@ namespace Datadog.Trace.Debugger
                     {
                         try
                         {
-                            switch (GetProbeLocationType(addedProbe))
+                            string? errorMessage = null;
+
+                            if (addedProbe is LogProbe { CaptureSnapshot: true, CaptureExpressions.Length: > 0 })
                             {
-                                case ProbeLocationType.Line:
+                                errorMessage = "Log probes cannot define both 'captureSnapshot' and 'captureExpressions'.";
+                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: errorMessage)));
+                            }
+                            else
+                            {
+                                switch (GetProbeLocationType(addedProbe))
+                                {
+                                    case ProbeLocationType.Line:
                                     {
                                         var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
                                         var status = lineProbeResult.Status;
@@ -205,13 +214,14 @@ namespace Datadog.Trace.Debugger
                                             case LiveProbeResolveStatus.Error:
                                                 Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, message);
                                                 fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
+                                                errorMessage = message;
                                                 break;
                                         }
 
                                         break;
                                     }
 
-                                case ProbeLocationType.Method:
+                                    case ProbeLocationType.Method:
                                     {
                                         SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
 
@@ -232,13 +242,14 @@ namespace Datadog.Trace.Debugger
                                         break;
                                     }
 
-                                case ProbeLocationType.Unrecognized:
-                                    fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
-                                    result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, "Unknown probe type"));
-                                    break;
+                                    case ProbeLocationType.Unrecognized:
+                                        errorMessage = "Unknown probe type";
+                                        fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: errorMessage)));
+                                        break;
+                                }
                             }
 
-                            result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, null));
+                            result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, errorMessage));
                         }
                         catch (Exception e)
                         {

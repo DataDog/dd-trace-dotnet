@@ -19,6 +19,7 @@ namespace Datadog.Trace.Debugger.Expressions
         string[] Tags,
         TargetSpan? TargetSpan,
         CaptureLimitInfo CaptureLimitInfo,
+        bool HasCaptureExpressions = false,
         bool IsEmitted = false)
     {
         internal string ProbeId { get; } = ProbeId;
@@ -44,6 +45,8 @@ namespace Datadog.Trace.Debugger.Expressions
         internal TargetSpan? TargetSpan { get; } = TargetSpan;
 
         internal CaptureLimitInfo CaptureLimitInfo { get; } = CaptureLimitInfo;
+
+        internal bool HasCaptureExpressions { get; } = HasCaptureExpressions;
     }
 
     internal readonly record struct CaptureLimitInfo(

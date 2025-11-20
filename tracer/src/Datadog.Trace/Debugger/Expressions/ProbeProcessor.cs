@@ -33,6 +33,8 @@ namespace Datadog.Trace.Debugger.Expressions
         private DebuggerExpression? _condition;
         private DebuggerExpression? _metric;
         private KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? _spanDecorations;
+        private KeyValuePair<string, DebuggerExpression?>[]? _captureExpressions;
+        private CaptureLimitInfo[]? _captureExpressionLimits;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -74,7 +76,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
             SetExpressions(probe);
 
-            var capture = (probe as LogProbe)?.Capture;
+            var logProbe = probe as LogProbe;
+            var capture = logProbe?.Capture;
             var maxInfo = capture != null
                 ? new CaptureLimitInfo(
                     MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
@@ -87,6 +90,28 @@ namespace Datadog.Trace.Debugger.Expressions
                     MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
                     MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
+            if (logProbe?.CaptureExpressions is { Length: > 0 } captureExpressions && _captureExpressions != null)
+            {
+                _captureExpressionLimits = new CaptureLimitInfo[captureExpressions.Length];
+                for (int i = 0; i < captureExpressions.Length; i++)
+                {
+                    var expressionCapture = captureExpressions[i].Capture;
+                    if (expressionCapture.HasValue)
+                    {
+                        var exprCaptureValue = expressionCapture.Value;
+                        _captureExpressionLimits[i] = new CaptureLimitInfo(
+                            MaxReferenceDepth: exprCaptureValue.MaxReferenceDepth > 0 ? exprCaptureValue.MaxReferenceDepth : maxInfo.MaxReferenceDepth,
+                            MaxCollectionSize: exprCaptureValue.MaxCollectionSize > 0 ? exprCaptureValue.MaxCollectionSize : maxInfo.MaxCollectionSize,
+                            MaxLength: exprCaptureValue.MaxLength > 0 ? exprCaptureValue.MaxLength : maxInfo.MaxLength,
+                            MaxFieldCount: exprCaptureValue.MaxFieldCount > 0 ? exprCaptureValue.MaxFieldCount : maxInfo.MaxFieldCount);
+                    }
+                    else
+                    {
+                        _captureExpressionLimits[i] = maxInfo;
+                    }
+                }
+            }
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probe.Version ?? 0,
@@ -98,11 +123,15 @@ namespace Datadog.Trace.Debugger.Expressions
                 HasCondition(),
                 probe.Tags,
                 (probe as SpanDecorationProbe)?.TargetSpan,
-                maxInfo);
+                maxInfo,
+                HasCaptureExpressions());
         }
 
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
+
+        [DebuggerStepThrough]
+        private bool HasCaptureExpressions() => _captureExpressions != null && _captureExpressions.Length > 0;
 
         private DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
@@ -121,7 +150,17 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo);
+            // When capture expressions are defined for a log probe, we switch to a mode where
+            // only the capture expressions are serialized.
+            var captureNonExpressionData = !ProbeInfo.HasCaptureExpressions;
+
+            return new DebuggerSnapshotCreator(
+                ProbeInfo.IsFullSnapshot,
+                ProbeInfo.ProbeLocation,
+                ProbeInfo.HasCondition,
+                ProbeInfo.Tags,
+                ProbeInfo.CaptureLimitInfo,
+                captureNonExpressionData);
         }
 
         private void SetExpressions(ProbeDefinition probe)
@@ -132,6 +171,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 case LogProbe logProbe:
                     _templates = logProbe.Segments?.Select(ToDebuggerExpression).ToArray();
                     _condition = ToDebuggerExpression(logProbe.When);
+                    _captureExpressions = logProbe.CaptureExpressions?
+                        .Select(ce => new KeyValuePair<string, DebuggerExpression?>(ce.Name, ToDebuggerExpression(ce.Expr)))
+                        .ToArray();
                     break;
                 case MetricProbe metricProbe:
                     _metric = ToDebuggerExpression(metricProbe.Value);
@@ -160,7 +202,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations), null);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations, _captureExpressions), null);
             return _evaluator;
         }
 
@@ -333,6 +375,19 @@ namespace Datadog.Trace.Debugger.Expressions
                     // we are taking the duration at the evaluation time - this might be different from what we have in the snapshot
                     snapshotCreator.SetDuration();
                     evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
+
+                    if (ProbeInfo.HasCaptureExpressions && _captureExpressions != null && evaluationResult.CaptureExpressions != null)
+                    {
+                        for (int i = 0; i < evaluationResult.CaptureExpressions.Length && i < _captureExpressions.Length; i++)
+                        {
+                            var name = _captureExpressions[i].Key;
+                            var value = evaluationResult.CaptureExpressions[i];
+                            var limit = _captureExpressionLimits != null && _captureExpressionLimits.Length > i
+                                            ? _captureExpressionLimits[i]
+                                            : ProbeInfo.CaptureLimitInfo;
+                            snapshotCreator.AddCaptureExpression(name, value, limit);
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -359,7 +414,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
             {
-                Log.Debug("Evaluation errors: {Errors}", evaluationResult.Errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
+                Log.Debug("Evaluation errors: {Errors}", evaluationResult.Errors?.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
             }
 
             if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)

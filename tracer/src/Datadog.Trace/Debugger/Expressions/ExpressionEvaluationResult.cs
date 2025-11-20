@@ -18,13 +18,20 @@ internal ref struct ExpressionEvaluationResult
 
     internal DecorationResult[] Decorations { get; set; }
 
+    internal object[] CaptureExpressions { get; set; }
+
     internal List<EvaluationError> Errors { get; set; }
 
     internal readonly bool HasError => Errors is { Count: > 0 };
 
     internal readonly bool IsNull()
     {
-        return Template == null && Condition == null && Metric == null && Decorations?.Length == 0 && Errors == null;
+        return Template == null
+            && Condition == null
+            && Metric == null
+            && Decorations?.Length == 0
+            && (CaptureExpressions == null || CaptureExpressions.Length == 0)
+            && Errors == null;
     }
 
     internal struct DecorationResult

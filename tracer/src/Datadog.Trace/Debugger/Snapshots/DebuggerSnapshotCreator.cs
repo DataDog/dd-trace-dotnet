@@ -33,7 +33,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
+        private readonly bool _captureNonExpressionData;
 
+        private List<CaptureExpression> _captureExpressions;
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
         private CaptureBehaviour _captureBehaviour;
@@ -42,7 +44,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool captureNonExpressionData = true)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -55,13 +57,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             ProbeHasCondition = hasCondition;
             Tags = tags;
             _limitInfo = limitInfo;
+            _captureNonExpressionData = captureNonExpressionData;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool captureNonExpressionData = true)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, captureNonExpressionData)
         {
             MethodScopeMembers = methodScopeMembers;
         }
@@ -280,6 +283,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 JsonWriter.WriteEndObject();
             }
 
+            WriteCaptureExpressions();
+
             // end entry
             JsonWriter.WriteEndObject();
         }
@@ -302,6 +307,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 // end arguments or locals
                 JsonWriter.WriteEndObject();
             }
+
+            WriteCaptureExpressions();
 
             // end line number or method return
             JsonWriter.WriteEndObject();
@@ -346,6 +353,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             if (instance == null)
             {
                 return;
@@ -356,6 +368,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public void CaptureStaticFields<T>(ref CaptureInfo<T> info)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             if (info.IsAsyncCapture())
             {
                 DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, JsonWriter, _limitInfo);
@@ -368,6 +385,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureArgument<TArg>(TArg value, string name, Type type = null)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo);
@@ -375,6 +397,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureLocal<TLocal>(TLocal value, string name, Type type = null)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, JsonWriter, _limitInfo);
@@ -382,6 +409,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureException(Exception ex)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             JsonWriter.WritePropertyName("throwable");
             JsonWriter.WriteStartObject();
             JsonWriter.WritePropertyName("message");
@@ -488,6 +520,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private bool CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
         {
+            if (!_captureNonExpressionData)
+            {
+                return false;
+            }
+
             // capture hoisted arguments
             var hasArgument = false;
             for (var index = 0; index < asyncHoistedArguments.Length; index++)
@@ -514,6 +551,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private void CaptureAsyncMethodLocals(AsyncHelper.FieldInfoNameSanitized[] hoistedLocals, object moveNextInvocationTarget)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             // MethodMetadataInfo saves locals from MoveNext localVarSig,
             // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
             // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
@@ -603,6 +645,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureScopeMembers(ScopeMember[] members, ScopeMemberKind? kind = null)
         {
+            if (!_captureNonExpressionData)
+            {
+                return;
+            }
+
             foreach (var member in members)
             {
                 if (member.Type == null)
@@ -756,6 +803,30 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             JsonWriter.WriteEndArray();
             return this;
+        }
+
+        internal void AddCaptureExpression(string name, object value, CaptureLimitInfo limit)
+        {
+            (_captureExpressions ??= new List<CaptureExpression>()).Add((new CaptureExpression(name, value, limit)));
+        }
+
+        private void WriteCaptureExpressions()
+        {
+            if (_captureExpressions == null || _captureExpressions.Count == 0)
+            {
+                return;
+            }
+
+            JsonWriter.WritePropertyName("captureExpressions");
+            JsonWriter.WriteStartObject();
+
+            foreach (var capture in _captureExpressions)
+            {
+                var valueType = capture.Value?.GetType() ?? typeof(object);
+                DebuggerSnapshotSerializer.Serialize(capture.Value, valueType, capture.Name, JsonWriter, capture.LimitInfo);
+            }
+
+            JsonWriter.WriteEndObject();
         }
 
         internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, int probeVersion, T methodNameOrLineNumber, string typeFullNameOrFilePath)
@@ -921,6 +992,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 // ignored
             }
+        }
+
+        private record CaptureExpression(string Name, object Value, CaptureLimitInfo LimitInfo)
+        {
         }
     }
 }

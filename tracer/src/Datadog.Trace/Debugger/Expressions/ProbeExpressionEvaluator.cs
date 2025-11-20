@@ -28,18 +28,22 @@ internal class ProbeExpressionEvaluator
 
     private Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>? _compiledDecorations;
 
+    private Lazy<KeyValuePair<string, CompiledExpression<object>>[]?>? _compiledCaptureExpressions;
+
     private int _expressionsCompiled;
 
     internal ProbeExpressionEvaluator(
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
-        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations)
+        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
+        KeyValuePair<string, DebuggerExpression?>[]? captureExpressions)
     {
         Templates = templates;
         Condition = condition;
         Metric = metric;
         SpanDecorations = spanDecorations;
+        CaptureExpressions = captureExpressions;
     }
 
     /// <summary>
@@ -88,6 +92,16 @@ internal class ProbeExpressionEvaluator
 
     internal KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? SpanDecorations { get; }
 
+    internal KeyValuePair<string, DebuggerExpression?>[]? CaptureExpressions { get; }
+
+    internal KeyValuePair<string, CompiledExpression<object>>[]? CompiledCaptureExpressions
+    {
+        get
+        {
+            return _compiledCaptureExpressions?.Value;
+        }
+    }
+
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
         if (Interlocked.CompareExchange(ref _expressionsCompiled, 1, 0) == 0)
@@ -96,6 +110,7 @@ internal class ProbeExpressionEvaluator
             Interlocked.CompareExchange(ref _compiledCondition, new Lazy<CompiledExpression<bool>?>(() => CompileCondition(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledMetric, new Lazy<CompiledExpression<double>?>(() => CompileMetric(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>(() => CompileDecorations(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledCaptureExpressions, new Lazy<KeyValuePair<string, CompiledExpression<object>>[]?>(() => CompileCaptureExpressions(scopeMembers)), null);
         }
 
         ExpressionEvaluationResult result = default;
@@ -103,7 +118,59 @@ internal class ProbeExpressionEvaluator
         EvaluateCondition(ref result, scopeMembers);
         EvaluateMetric(ref result, scopeMembers);
         EvaluateSpanDecorations(ref result, scopeMembers);
+        EvaluateCaptureExpressions(ref result, scopeMembers);
         return result;
+    }
+
+    private void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    {
+        EnsureNotNull(_compiledCaptureExpressions);
+
+        var compiledCaptureExpressions = _compiledCaptureExpressions?.Value;
+        if (compiledCaptureExpressions == null || compiledCaptureExpressions.Length == 0)
+        {
+            return;
+        }
+
+        var values = new object?[compiledCaptureExpressions.Length];
+
+        for (int i = 0; i < compiledCaptureExpressions.Length; i++)
+        {
+            var captureExpression = compiledCaptureExpressions[i].Value;
+            try
+            {
+                if (IsLiteral(captureExpression))
+                {
+                    values[i] = captureExpression.RawExpression;
+                    continue;
+                }
+
+                if (IsExpression(captureExpression))
+                {
+                    values[i] = captureExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                    if (captureExpression.Errors != null)
+                    {
+                        (result.Errors ??= new List<EvaluationError>()).AddRange(captureExpression.Errors);
+                    }
+
+                    continue;
+                }
+
+                // invalid capture expression
+                (result.Errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = captureExpression.RawExpression, Message = "Invalid capture expression" });
+            }
+            catch (Exception e)
+            {
+                result.Errors ??= new List<EvaluationError>();
+                result.Errors.Add(new EvaluationError { Expression = captureExpression.RawExpression ?? "NA", Message = e.Message });
+                if (captureExpression.Errors != null)
+                {
+                    result.Errors.AddRange(captureExpression.Errors);
+                }
+            }
+        }
+
+        result.CaptureExpressions = values;
     }
 
     private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
@@ -455,6 +522,39 @@ internal class ProbeExpressionEvaluator
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
             Log.Debug("{Class}.{Method}: Finished to compile span decorations", nameof(ProbeExpressionEvaluator), nameof(CompileDecorations));
+        }
+
+        return compiledExpressions;
+    }
+
+    private KeyValuePair<string, CompiledExpression<object>>[]? CompileCaptureExpressions(MethodScopeMembers scopeMembers)
+    {
+        if (CaptureExpressions == null || CaptureExpressions.Length == 0)
+        {
+            return null;
+        }
+
+        var compiledExpressions = new KeyValuePair<string, CompiledExpression<object>>[CaptureExpressions.Length];
+        for (int i = 0; i < CaptureExpressions.Length; i++)
+        {
+            var current = CaptureExpressions[i];
+            if (current.Value == null)
+            {
+                continue;
+            }
+
+            if (current.Value.Value.Json != null)
+            {
+                compiledExpressions[i] = new KeyValuePair<string, CompiledExpression<object>>(
+                    current.Key,
+                    ProbeExpressionParser<object>.ParseExpression(current.Value.Value.Json, scopeMembers));
+            }
+            else
+            {
+                compiledExpressions[i] = new KeyValuePair<string, CompiledExpression<object>>(
+                    current.Key,
+                    new CompiledExpression<object>(null, null, current.Value.Value.Str, null));
+            }
         }
 
         return compiledExpressions;
