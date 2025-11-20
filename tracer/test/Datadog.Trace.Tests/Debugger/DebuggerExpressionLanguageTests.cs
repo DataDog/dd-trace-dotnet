@@ -35,6 +35,8 @@ namespace Datadog.Trace.Tests.Debugger
 
         private const string MetricsFolder = "Metrics";
 
+        private const string CaptureExpressionsFolder = "CaptureExpressions";
+
         public DebuggerExpressionLanguageTests()
         {
             TestObject = new TestStruct
@@ -85,6 +87,13 @@ namespace Datadog.Trace.Tests.Debugger
             return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
         }
 
+        public static IEnumerable<object[]> CaptureExpressionsResources()
+        {
+            var sourceFilePath = GetSourceFilePath();
+            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources", CaptureExpressionsFolder);
+            return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
+        }
+
         public static string GetSourceFilePath([CallerFilePath] string sourceFilePath = null)
         {
             return sourceFilePath ?? throw new InvalidOperationException("Can't obtain source file path");
@@ -111,6 +120,41 @@ namespace Datadog.Trace.Tests.Debugger
             await Test(expressionTestFilePath);
         }
 
+        [Theory]
+        [MemberData(nameof(CaptureExpressionsResources))]
+        public async Task TestCaptureExpressions(string expressionTestFilePath)
+        {
+            await Test(expressionTestFilePath);
+        }
+
+        [Fact]
+        public void CaptureExpressions_WithLiteralValues_AreEvaluatedCorrectly()
+        {
+            // Arrange
+            var scopeMembers = CreateScopeMembers();
+            DebuggerExpression? condition = null;
+            DebuggerExpression?[] templates = [new(null, null, "ignored template")];
+            DebuggerExpression? metric = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations = null;
+            var captureExpressions = new[]
+            {
+                new KeyValuePair<string, DebuggerExpression?>("first", new DebuggerExpression(null, null, "value1")),
+                new KeyValuePair<string, DebuggerExpression?>("second", new DebuggerExpression(null, null, "value2"))
+            };
+
+            var evaluator = new ProbeExpressionEvaluator(templates, condition, metric, spanDecorations, captureExpressions);
+
+            // Act
+            var result = evaluator.Evaluate(scopeMembers);
+
+            // Assert
+            Assert.NotNull(result.CaptureExpressions);
+            Assert.Equal(2, result.CaptureExpressions.Length);
+            Assert.Equal("value1", result.CaptureExpressions[0]);
+            Assert.Equal("value2", result.CaptureExpressions[1]);
+            Assert.True(result.Errors == null || result.Errors.Count == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
@@ -135,6 +179,7 @@ namespace Datadog.Trace.Tests.Debugger
             DebuggerExpression?[] templates;
             DebuggerExpression? metrics = null;
             KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations = null;
+            KeyValuePair<string, DebuggerExpression?>[] captureExpressions = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {
@@ -150,12 +195,17 @@ namespace Datadog.Trace.Tests.Debugger
                 metrics = new DebuggerExpression(dsl, json, null);
                 templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
+            else if (dirName == CaptureExpressionsFolder)
+            {
+                templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+                captureExpressions = new[] { new KeyValuePair<string, DebuggerExpression?>("capture", new DebuggerExpression(dsl, json, null)) };
+            }
             else
             {
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations, captureExpressions), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -238,13 +288,13 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
-        private (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
+        private (string Template, bool? Condition, double? Metric, object[] CaptureExpressions, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
         {
             var result = evaluator.Evaluator.Evaluate(evaluator.ScopeMembers);
-            return (result.Template, result.Condition, result.Metric, result.Errors);
+            return (result.Template, result.Condition, result.Metric, result.CaptureExpressions, result.Errors);
         }
 
-        private string GetStringToVerify(ProbeExpressionEvaluator evaluator, (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) evaluationResult)
+        private string GetStringToVerify(ProbeExpressionEvaluator evaluator, (string Template, bool? Condition, double? Metric, object[] CaptureExpressions, List<EvaluationError> Errors) evaluationResult)
         {
             var builder = new StringBuilder();
             if (evaluationResult.Condition.HasValue)
@@ -269,6 +319,34 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine($"Json:{evaluator.Metric.Value.Json}");
                 builder.AppendLine($"Expression: {evaluator.CompiledMetric.Value.ParsedExpression.ToReadableString()}");
                 builder.AppendLine($"Result: {evaluationResult.Metric}");
+            }
+
+            if (evaluationResult.CaptureExpressions is { Length: > 0 })
+            {
+                builder.AppendLine("CaptureExpressions:");
+
+                var captureDefinitions = evaluator.CaptureExpressions;
+                var compiledCaptureExpressions = evaluator.CompiledCaptureExpressions;
+
+                for (int i = 0; i < evaluationResult.CaptureExpressions.Length; i++)
+                {
+                    var name = captureDefinitions != null && captureDefinitions.Length > i ? captureDefinitions[i].Key : $"#{i}";
+                    builder.AppendLine($"Name: {name}");
+
+                    if (captureDefinitions != null && captureDefinitions.Length > i && captureDefinitions[i].Value.HasValue)
+                    {
+                        builder.AppendLine("Json:");
+                        builder.AppendLine(captureDefinitions[i].Value.Value.Json);
+                    }
+
+                    if (compiledCaptureExpressions != null && compiledCaptureExpressions.Length > i && compiledCaptureExpressions[i].Value.ParsedExpression != null)
+                    {
+                        builder.AppendLine("Expression:");
+                        builder.AppendLine(compiledCaptureExpressions[i].Value.ParsedExpression.ToReadableString());
+                    }
+
+                    builder.AppendLine($"Result: {evaluationResult.CaptureExpressions[i]}");
+                }
             }
 
             if (evaluationResult.Errors is { Count: > 0 })

@@ -1,0 +1,11 @@
+{
+  "dsl": "ref index(ref CollectionLocal, 100)",
+  "index": [
+    {
+      "ref": "CollectionLocal"
+    },
+    100
+  ]
+}
+
+

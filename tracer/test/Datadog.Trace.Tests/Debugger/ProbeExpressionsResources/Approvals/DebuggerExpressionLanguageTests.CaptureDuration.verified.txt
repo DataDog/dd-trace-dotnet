@@ -1,0 +1,21 @@
+﻿CaptureExpressions:
+Name: capture
+Json:
+
+{
+  "ref": "@duration"
+}
+
+
+
+Expression:
+"N/A"
+Result: 
+Errors:
+EvaluationError { Expression = 
+{
+  "ref": "@duration"
+}
+
+
+, Message = Expression of type 'System.TimeSpan' cannot be used for assignment to type 'System.Object' }

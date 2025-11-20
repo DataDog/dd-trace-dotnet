@@ -1,0 +1,48 @@
+CaptureExpressions:
+Name: capture
+Json:
+
+{
+  "ref": "StringLocal"
+}
+
+
+
+Expression:
+(
+    scopeMember,
+    scopeMember,
+    scopeMember,
+    exception,
+    scopeMemberArray) =>
+{
+    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
+    var @exception = exception;
+    var IntLocal = (int)scopeMemberArray[0].Value;
+    var DoubleLocal = (double)scopeMemberArray[1].Value;
+    var StringLocal = (string)scopeMemberArray[2].Value;
+    var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
+    var CollectionIntLocal = (List<int>)scopeMemberArray[4].Value;
+    var HashIntLocal = (HashSet<int>)scopeMemberArray[5].Value;
+    var ArrayLocal = (string[])scopeMemberArray[6].Value;
+    var CustomArrayLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject[])scopeMemberArray[7].Value;
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[8].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
+    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[10].Value;
+    var BooleanValue = (bool)scopeMemberArray[11].Value;
+    var Char = (char)scopeMemberArray[12].Value;
+    var AnotherChar = (char)scopeMemberArray[13].Value;
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[14].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[15].Value;
+    var IntArg = (int)scopeMemberArray[16].Value;
+    var DoubleArg = (double)scopeMemberArray[17].Value;
+    var StringArg = (string)scopeMemberArray[18].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[19].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
+    object $dd_el_result = StringLocal;
+
+    return $dd_el_result;
+}
+Result: Hello world!
