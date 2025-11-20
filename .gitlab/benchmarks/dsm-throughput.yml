@@ -21,15 +21,17 @@ check_azure_pipeline:
     expire_in: 3 months
   tags: ["arch:amd64"]
   timeout: 1h
+  when: on_success
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+      interruptible: false
+    - interruptible: true
 
 dsm_throughput:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
   image: $DSM_THROUGHPUT_CI_IMAGE
-  interruptible: true
   timeout: 1h
   script:
     - source build-id.txt
@@ -44,5 +46,8 @@ dsm_throughput:
     paths:
       - artifacts/
     expire_in: 3 months
+  when: on_success
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+      interruptible: false
+    - interruptible: true
