@@ -81,7 +81,7 @@ public:
     virtual bool IsWaitHandleProfilingEnabled() const = 0;
     virtual bool IsManagedActivationEnabled() const = 0;
 
-    // this setter function isneeded for Stable Configuration support
+    // this setter function is needed for Stable Configuration support
     virtual void SetEnablementStatus(EnablementStatus status) = 0;
 
     virtual bool IsHeapSnapshotEnabled() const = 0;

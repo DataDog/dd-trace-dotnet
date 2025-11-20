@@ -1613,13 +1613,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             };
         }
 
-        // TODO: generating a heap snapshot requires the creation of another EventPipe session
-        //       with the same Microsoft-Windows-DotNETRuntime provider and other keywords and,
-        //       more important, possiblly a different verbosity (i.e. verbose).
-        //       CHECK if we need to keep track of the current verbosity level after the heap snapshot
-        //       probably by creating another EventPipe session just to reset the verbosity level.
-        //       Hoping that it is not required to also reset the keywords...
-
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
                 providerCount, providers.data(), false, &_session
                 );
@@ -1634,8 +1627,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // keep track of the keywords and verbosity so that we will be able to reset what is stored
         // by the GC and the CLR after a heap snapshot - see https://github.com/dotnet/runtime/issues/121462
         // for more details
-        //
-        // TODO: add a test to check in which version of the CLR this issue has been fixed
         if (_pHeapSnapshotManager != nullptr)
         {
             _pHeapSnapshotManager->SetRuntimeSessionParameters(activatedKeywords, verbosity);

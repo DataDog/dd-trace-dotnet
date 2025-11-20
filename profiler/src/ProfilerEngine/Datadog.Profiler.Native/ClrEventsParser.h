@@ -254,36 +254,6 @@ struct WaitHandleWaitStopPayload // for .NET 9+
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
 };
 
-//struct GCBulkNodeValue
-//{
-//    uintptr_t Address;
-//    uint64_t Size;
-//    uint64_t TypeID;
-//    uint64_t EdgeCount;
-//};
-//struct GCBulkNodePayload
-//{
-//    uint32_t Index;
-//    uint32_t Count;
-//    uint16_t ClrInstanceID;
-//
-//    // this is followed by an array of Count GCBulkNodeValue structures
-//};
-//
-//struct GCBulkEdgeValue
-//{
-//    uintptr_t Value;
-//    uint32_t ReferencingFieldID;
-//};
-//struct GCBulkEdgePayload
-//{
-//    uint32_t Index;
-//    uint32_t Count;
-//    uint16_t ClrInstanceID;
-//
-//    // this is followed by an array of Count GCBulkEdgeValue structures
-//};
-
 #pragma pack()
 
 
