@@ -36,7 +36,7 @@ check_azure_pipeline:
   timeout: 1h
   when: on_success
   rules:
-    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME =~ /^hotfix.*$/ || $CI_COMMIT_REF_NAME =~ /^release.*$/ || $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       interruptible: false
     - interruptible: true
 
@@ -90,7 +90,7 @@ update-bp-infra:
       - script_failure
   when: on_success
   rules:
-    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME =~ /^hotfix.*$/ || $CI_COMMIT_REF_NAME =~ /^release.*$/ || $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       interruptible: false
     - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -275,7 +275,7 @@ profiler_cpu_timer_create-x86:
       - script_failure
   when: on_success
   rules:
-    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME =~ /^hotfix.*$/ || $CI_COMMIT_REF_NAME =~ /^release.*$/ || $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       interruptible: false
     - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -471,7 +471,7 @@ profiler_cpu_timer_create-arm64:
       - script_failure
   when: on_success
   rules:
-    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME == "release/*" || $CI_COMMIT_REF_NAME == "hotfix/*"
+    - if: $CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_REF_NAME =~ /^hotfix.*$/ || $CI_COMMIT_REF_NAME =~ /^release.*$/ || $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       interruptible: false
     - interruptible: true
   artifacts:
