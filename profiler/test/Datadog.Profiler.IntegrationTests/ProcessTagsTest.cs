@@ -79,14 +79,8 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
 
             foreach (var processTags in profilerProcessTags)
             {
-                // Process tags should be in format: key1:value1,key2:value2
-                Assert.Contains(":", processTags);
-                Assert.Contains(",", processTags);
-
-                // Should contain expected tags
+                // Should contain at least the basedir tag
                 Assert.Contains("entrypoint.basedir:", processTags);
-                Assert.Contains("entrypoint.workdir:", processTags);
-                // entrypoint.name may not always be present, depending on the application
             }
         }
 

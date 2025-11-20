@@ -40,7 +40,7 @@ internal static class ProcessTags
             new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
             new(EntrypointName, GetEntryPointName()),
             // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-            new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
+            new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory)) // will be empty if workdir is the root directory
         ];
 
         // then normalize values and put all tags in a string
