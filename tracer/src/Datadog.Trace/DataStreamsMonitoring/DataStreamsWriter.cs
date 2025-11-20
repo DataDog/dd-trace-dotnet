@@ -300,7 +300,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
         while (true)
         {
             Log.Debug("ROBC Processing Queue Loop - Sleep");
-            Thread.Sleep(_waitTimeSpan);
+            // Thread.Sleep(_waitTimeSpan);
+            await Task.Delay(_waitTimeSpan).ConfigureAwait(false);
             if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(.5)).ConfigureAwait(false))
             {
                 Log.Error("Queue Loop Semaphore timeout");
