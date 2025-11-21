@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Processors;
 
 namespace Benchmarks.Trace
@@ -13,7 +14,7 @@ namespace Benchmarks.Trace
         private readonly ITraceProcessor _normalizerTraceProcessor;
         private readonly ITraceProcessor _trucantorTraceProcessor;
         private readonly ITraceProcessor _obfuscatorTraceProcessor;
-        private ArraySegment<Span> _spans;
+        private SpanCollection _spans;
 
         public TraceProcessorBenchmark()
         {
@@ -26,25 +27,25 @@ namespace Benchmarks.Trace
             var span = new Span(spanContext, DateTimeOffset.Now);
             span.ResourceName = "My Resource Name";
             span.Type = "sql";
-            _spans = new ArraySegment<Span>(Enumerable.Repeat(span, 100).ToArray());
+            _spans = new SpanCollection(Enumerable.Repeat(span, 100).ToArray(), 100);
         }
 
         [Benchmark]
         public void NormalizerProcessor()
         {
-            _normalizerTraceProcessor.Process(_spans);
+            _normalizerTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]
         public void TruncatorProcessor()
         {
-            _trucantorTraceProcessor.Process(_spans);
+            _trucantorTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]
         public void ObfuscatorProcessor()
         {
-            _obfuscatorTraceProcessor.Process(_spans);
+            _obfuscatorTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]
