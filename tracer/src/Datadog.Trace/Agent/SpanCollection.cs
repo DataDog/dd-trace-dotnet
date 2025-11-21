@@ -10,6 +10,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
+#if NETFRAMEWORK
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+#endif
 
 namespace Datadog.Trace.Agent;
 
@@ -18,8 +21,7 @@ namespace Datadog.Trace.Agent;
 /// </summary>
 internal readonly struct SpanCollection : IEnumerable<Span>
 {
-    private readonly Span? _span;
-    private readonly Span[]? _spans;
+    private readonly object? _values;
     public readonly int Count;
 
     /// <summary>
@@ -28,7 +30,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <param name="value">The span to include in the collection.</param>
     public SpanCollection(Span value)
     {
-        _span = value;
+        _values = value;
         Count = 1;
     }
 
@@ -38,7 +40,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <param name="arrayBuilderCapacity">The value to initializer</param>
     public SpanCollection(int arrayBuilderCapacity)
     {
-        _spans = new Span[arrayBuilderCapacity];
+        _values = new Span[arrayBuilderCapacity];
         Count = 0;
     }
 
@@ -49,7 +51,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     {
         // We assume that the caller is "sensible" here, and doesn't set count > values.Length,
         // but that will get hit "safely" elsewhere if it happens
-        _spans = values;
+        _values = values;
         Count = count;
     }
 
@@ -67,18 +69,20 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (_span is not null)
+            // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
+            var value = _values;
+            if (value is Span span)
             {
-                return _span;
+                return span;
             }
 
-            if (_spans is null)
+            if (value is null)
             {
                 return null;
             }
 
             // Not Span, not null, can only be SpanArray
-            return _spans[0];
+            return Unsafe.As<Span[]>(value)[0];
         }
     }
 
@@ -92,16 +96,19 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (_span is not null)
+            // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
+            object? value = _values;
+            if (index < Count)
             {
-                if (index == 0)
+                if (value is Span str)
                 {
-                    return _span;
+                    return str;
                 }
-            }
-            else if (_spans is not null && index < Count)
-            {
-                return _spans[index];
+                else if (value != null)
+                {
+                    // Not Span, not null, can only be Span[]
+                    return Unsafe.As<Span[]>(value)[index];
+                }
             }
 
             return OutOfBounds(); // throws
@@ -116,19 +123,23 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <returns>The concatenation of <paramref name="values"/> and <paramref name="value"/>.</returns>
     public static SpanCollection Append(in SpanCollection values, Span value)
     {
-        if (values._span is not null)
-        {
-            // We use a default capacity of 4 spans
-            // 2 Spans would cover 25% not covered by single span case, 4 covers ~ 70%, 8 covers ~92%
-            return new SpanCollection([values._span, value, null!, null!], 2);
-        }
-
-        if (values._spans is null)
+        // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
+        var current = values._values;
+        if (current is null)
         {
             return new SpanCollection(value);
         }
 
-        var array = GrowIfNeeded(values._spans, values.Count);
+        if (current is Span span)
+        {
+            // We use a default capacity of 4 spans
+            // 2 Spans would cover 25% not covered by single span case, 4 covers ~ 70%, 8 covers ~92%
+            return new SpanCollection([span, value, null!, null!], 2);
+        }
+
+        // Not Span, not null, can only be Span[], so add the span
+        var array = Unsafe.As<Span[]>(current);
+        array = GrowIfNeeded(array, values.Count);
         array[values.Count] = value;
         return new SpanCollection(array, values.Count + 1);
     }
@@ -150,17 +161,20 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// </remarks>
     public ArraySegment<Span> ToArray()
     {
-        if (_spans is not null)
+        // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
+        object? value = _values;
+        if (value is Span[] values)
         {
-            return new ArraySegment<Span>(_spans, 0, Count);
+            return new ArraySegment<Span>(values, 0, Count);
         }
-        else if (_span is not null)
+        else if (value != null)
         {
-            return new ArraySegment<Span>([_span], 0, 1);
+            // value not array, can only be Span
+            return new ArraySegment<Span>([Unsafe.As<Span>(value)], 0, 1);
         }
         else
         {
-            return new ArraySegment<Span>([], 0, 0);
+            return new ArraySegment<Span>(Array.Empty<Span>(), 0, 0);
         }
     }
 
@@ -183,7 +197,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <returns>An enumerator that can be used to iterate through the <see cref="SpanCollection" />.</returns>
     public Enumerator GetEnumerator()
     {
-        return new Enumerator(_span, _spans, Count);
+        return new Enumerator(_values, Count);
     }
 
     /// <inheritdoc cref="GetEnumerator()" />
@@ -208,9 +222,9 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         private int _index;
         private Span? _current;
 
-        internal Enumerator(Span? span, Span[]? spans, int count)
+        internal Enumerator(object? value, int count)
         {
-            if (span is not null)
+            if (value is Span span)
             {
                 _values = null;
                 _current = span;
@@ -219,11 +233,20 @@ internal readonly struct SpanCollection : IEnumerable<Span>
             else
             {
                 _current = null;
-                _values = spans;
+                _values = Unsafe.As<Span[]>(value);
                 _count = count;
             }
 
             _index = 0;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Enumerator"/> struct.
+        /// </summary>
+        /// <param name="values">The <see cref="SpanCollection"/> to enumerate.</param>
+        public Enumerator(ref SpanCollection values)
+            : this(values._values, values.Count)
+        {
         }
 
         /// <summary>
