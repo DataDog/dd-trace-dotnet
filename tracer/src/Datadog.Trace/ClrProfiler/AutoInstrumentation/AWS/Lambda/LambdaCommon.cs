@@ -48,7 +48,7 @@ internal abstract class LambdaCommon
         WriteRequestHeaders(request, context?.ClientContext?.Custom);
         if (context?.AwsRequestId != null)
         {
-            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context?.AwsRequestId);
+            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context.AwsRequestId);
         }
 
         using var response = (HttpWebResponse)request.GetResponse();
