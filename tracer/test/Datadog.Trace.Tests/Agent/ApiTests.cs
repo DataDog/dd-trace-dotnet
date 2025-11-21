@@ -165,9 +165,15 @@ namespace Datadog.Trace.Tests.Agent
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+            var api = new Api(factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload());
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload
+            {
+                Environment = "myEnv",
+                HostName = "myHost",
+                ProcessTags = "tag.a:b,tag.c:d",
+                Version = "myVersion"
+            });
 
             await api.SendStatsAsync(statsBuffer, 1);
 

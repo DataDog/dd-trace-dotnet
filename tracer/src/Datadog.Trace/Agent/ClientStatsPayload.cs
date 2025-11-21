@@ -17,6 +17,8 @@ namespace Datadog.Trace.Agent
 
         public string Version { get; set; }
 
+        public string ProcessTags { get; set; }
+
         public long GetSequenceNumber() => Interlocked.Increment(ref _sequence);
     }
 }
