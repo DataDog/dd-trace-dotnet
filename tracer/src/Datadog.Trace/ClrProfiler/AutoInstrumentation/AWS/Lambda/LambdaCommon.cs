@@ -24,7 +24,7 @@ internal abstract class LambdaCommon
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
-    private const string LambdaRuntimeAwsRequestHeaderId = "lambda-runtime-aws-request-id";
+    private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
@@ -45,7 +45,12 @@ internal abstract class LambdaCommon
     {
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
-        WriteRequestHeaders(request, context);
+        WriteRequestHeaders(request, context.ClientContext?.Custom);
+        if (context.AwsRequestId != null)
+        {
+            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context.AwsRequestId);
+        }
+
         using var response = (HttpWebResponse)request.GetResponse();
 
         var headers = response.Headers.Wrap();
@@ -121,23 +126,11 @@ internal abstract class LambdaCommon
         dataStream.Close();
     }
 
-    private static void WriteRequestHeaders(WebRequest request, ILambdaContext context)
+    private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
     {
-        if (context != null)
+        foreach (var kv in context)
         {
-            var clientContext = context.ClientContext?.Custom;
-            if (clientContext != null)
-            {
-                foreach (var kv in clientContext)
-                {
-                    request.Headers.Add(kv.Key, kv.Value);
-                }
-            }
-
-            if (context.AwsRequestId != null)
-            {
-                request.Headers.Add(LambdaRuntimeAwsRequestHeaderId, context.AwsRequestId);
-            }
+            request.Headers.Add(kv.Key, kv.Value);
         }
     }
 
