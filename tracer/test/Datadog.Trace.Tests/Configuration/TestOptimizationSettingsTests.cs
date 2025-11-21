@@ -18,16 +18,6 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly string ExpectedExcludedSession = "/session/FakeSessionIdForPollingPurposes".ToUpperInvariant();
 
         [Theory]
-        [MemberData(nameof(NullableBooleanTestCases), null)]
-        public void Enabled(string value, bool? expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
-            var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.Enabled.Should().Be(expected);
-        }
-
-        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void Agentless(string value, bool expected)
         {

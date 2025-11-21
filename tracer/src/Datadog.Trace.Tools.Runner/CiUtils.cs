@@ -52,7 +52,7 @@ internal static class CiUtils
         }
 
         // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
-        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        var testOptimization = new TestOptimization();
         var testOptimizationSettings = testOptimization.Settings;
         TestOptimization.Instance = testOptimization;
 
