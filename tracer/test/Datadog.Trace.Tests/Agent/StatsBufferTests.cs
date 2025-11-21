@@ -119,13 +119,13 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Add(key, statsBucket);
 
             var stream = new MemoryStream();
-            buffer.Serialize(stream, bucketDuration: 1);
+            buffer.Serialize(stream, 1);
             var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Sequence.Should().Be(1);
 
             stream = new MemoryStream();
-            buffer.Serialize(stream, bucketDuration: 1);
+            buffer.Serialize(stream, 1);
             result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Sequence.Should().Be(2);
