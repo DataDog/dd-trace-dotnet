@@ -18,6 +18,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 class LibrariesInfoCache : public ServiceBase
 {
@@ -51,6 +52,7 @@ private:
 public:
 #endif
     void NotifyCacheUpdateImpl();
+    static bool ShouldTreatAsManagedMapping(const std::string& pathname, unsigned long inode);
 #ifdef DD_TEST
 private:
 #endif

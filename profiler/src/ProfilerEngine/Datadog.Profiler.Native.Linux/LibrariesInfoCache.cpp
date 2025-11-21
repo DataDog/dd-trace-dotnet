@@ -8,14 +8,122 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <unistd.h>
+#include <vector>
 
 using namespace std::chrono_literals;
+
+namespace
+{
+    struct ProcMapRange
+    {
+        uintptr_t Start;
+        uintptr_t End;
+    };
+
+    bool IsExecutable(const std::string& perms)
+    {
+        return perms.size() >= 3 && perms[2] == 'x';
+    }
+
+    void CollectExecutableAnonymousMappings(std::vector<ProcMapRange>& ranges)
+    {
+        std::ifstream maps("/proc/self/maps");
+        if (!maps.is_open())
+        {
+            return;
+        }
+
+        std::string line;
+        while (std::getline(maps, line))
+        {
+            if (line.empty())
+            {
+                continue;
+            }
+
+            std::istringstream iss(line);
+            std::string rangeToken;
+            std::string perms;
+            std::string offsetToken;
+            std::string device;
+            unsigned long inode = 0;
+
+            if (!(iss >> rangeToken >> perms >> offsetToken >> device >> inode))
+            {
+                continue;
+            }
+
+            std::string pathname;
+            std::getline(iss, pathname);
+            if (!pathname.empty() && pathname.front() == ' ')
+            {
+                pathname.erase(0, 1);
+            }
+
+            auto dashPos = rangeToken.find('-');
+            if (dashPos == std::string::npos)
+            {
+                continue;
+            }
+
+            uintptr_t start = 0;
+            uintptr_t end = 0;
+            try
+            {
+                start = static_cast<uintptr_t>(std::stoull(rangeToken.substr(0, dashPos), nullptr, 16));
+                end = static_cast<uintptr_t>(std::stoull(rangeToken.substr(dashPos + 1), nullptr, 16));
+            }
+            catch (const std::exception&)
+            {
+                continue;
+            }
+
+            if (!IsExecutable(perms))
+            {
+                continue;
+            }
+
+            if (!LibrariesInfoCache::ShouldTreatAsManagedMapping(pathname, inode))
+            {
+                continue;
+            }
+
+            if (start < end)
+            {
+                ranges.push_back({start, end});
+            }
+        }
+    }
+
+}
 
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
+
+bool LibrariesInfoCache::ShouldTreatAsManagedMapping(const std::string& pathname, unsigned long inode)
+{
+    if (pathname.empty())
+    {
+        return true;
+    }
+
+    if (pathname.find("memfd:") != std::string::npos)
+    {
+        return true;
+    }
+
+    if (inode == 0)
+    {
+        return true;
+    }
+
+    return false;
+}
 
 LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
@@ -141,6 +249,9 @@ void LibrariesInfoCache::UpdateCache()
     // Pre-compute managed regions for signal-safe lookup
     ManagedRegionVector newManagedRegions{ManagedRegionAllocator{_wrappersAllocator}};
     
+    const bool debugEnabled = Log::IsDebugEnabled();
+    std::size_t trackedRegions = 0;
+
     for (const auto& wrapper : newCache)
     {
         auto [info, size] = wrapper.Get();
@@ -165,7 +276,61 @@ void LibrariesInfoCache::UpdateCache()
                 uintptr_t segmentEnd = segmentStart + phdr.p_memsz;
 
                 newManagedRegions.push_back({segmentStart, segmentEnd, info->dlpi_addr});
+                trackedRegions++;
+
+                if (debugEnabled)
+                {
+                    const char* name = (libName != nullptr && libName[0] != '\0') ? libName : "<anonymous>";
+                    Log::Debug(
+                        "LibrariesInfoCache: managed region start=0x",
+                        std::hex,
+                        segmentStart,
+                        ", end=0x",
+                        segmentEnd,
+                        ", mappingId=0x",
+                        info->dlpi_addr,
+                        std::dec,
+                        ", phdrIndex=",
+                        i,
+                        ", lib=",
+                        name);
+                }
             }
+        }
+    }
+
+    // Supplement with executable anonymous mappings obtained via /proc/self/maps
+    std::vector<ProcMapRange> procMapRanges;
+    CollectExecutableAnonymousMappings(procMapRanges);
+
+    for (const auto& range : procMapRanges)
+    {
+        const auto alreadyTracked = std::any_of(
+            newManagedRegions.begin(),
+            newManagedRegions.end(),
+            [&range](const ManagedRegion& region) {
+                return region.start == range.Start && region.end == range.End;
+            });
+
+        if (alreadyTracked)
+        {
+            continue;
+        }
+
+        newManagedRegions.push_back({range.Start, range.End, range.Start});
+        trackedRegions++;
+
+        if (debugEnabled)
+        {
+            Log::Debug(
+                "LibrariesInfoCache: managed region (proc-maps) start=0x",
+                std::hex,
+                range.Start,
+                ", end=0x",
+                range.End,
+                ", mappingId=0x",
+                range.Start,
+                std::dec);
         }
     }
 
@@ -177,6 +342,11 @@ void LibrariesInfoCache::UpdateCache()
         
         // Reset the missing mappings flag since we just did a full update
         _hasMissingMappings.store(false, std::memory_order_release);
+    }
+
+    if (debugEnabled)
+    {
+        Log::Debug("LibrariesInfoCache: total managed regions tracked=", trackedRegions);
     }
 
     newCache.clear();

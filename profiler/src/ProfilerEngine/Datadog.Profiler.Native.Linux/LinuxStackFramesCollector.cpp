@@ -3,6 +3,7 @@
 
 #include "LinuxStackFramesCollector.h"
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <errno.h>
@@ -29,6 +30,166 @@ using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
+
+void LinuxStackFramesCollector::HybridTraceBuffer::Reset(pid_t threadId, uintptr_t contextPointer)
+{
+    _threadId = threadId;
+    _contextPointer = contextPointer;
+    _initFlags = 0;
+    _count.store(0, std::memory_order_relaxed);
+    _overflow.store(false, std::memory_order_relaxed);
+}
+
+void LinuxStackFramesCollector::HybridTraceBuffer::SetInitFlags(std::uint32_t flags)
+{
+    _initFlags = flags;
+}
+
+void LinuxStackFramesCollector::HybridTraceBuffer::Append(HybridTraceEvent event, uintptr_t value, uintptr_t aux, std::int32_t result)
+{
+    auto index = _count.load(std::memory_order_relaxed);
+    if (index >= static_cast<std::uint32_t>(MaxEntries))
+    {
+        _overflow.store(true, std::memory_order_relaxed);
+        return;
+    }
+
+    _entries[static_cast<std::size_t>(index)] = HybridTraceEntry{event, value, aux, result};
+    _count.store(static_cast<std::uint32_t>(index + 1U), std::memory_order_release);
+}
+
+std::uint32_t LinuxStackFramesCollector::HybridTraceBuffer::Count() const
+{
+    return _count.load(std::memory_order_acquire);
+}
+
+bool LinuxStackFramesCollector::HybridTraceBuffer::HasOverflow() const
+{
+    return _overflow.load(std::memory_order_acquire);
+}
+
+LinuxStackFramesCollector::HybridTraceEntry LinuxStackFramesCollector::HybridTraceBuffer::EntryAt(std::size_t index) const
+{
+    return _entries[index];
+}
+
+void LinuxStackFramesCollector::HybridTraceBuffer::ResetAfterFlush()
+{
+    _count.store(0, std::memory_order_relaxed);
+    _overflow.store(false, std::memory_order_relaxed);
+}
+
+const char* LinuxStackFramesCollector::HybridTraceEventName(HybridTraceEvent event)
+{
+    switch (event)
+    {
+        case HybridTraceEvent::Start:
+            return "Start";
+        case HybridTraceEvent::AbortRequested:
+            return "AbortRequested";
+        case HybridTraceEvent::GetContextFailed:
+            return "GetContextFailed";
+        case HybridTraceEvent::InitFailed:
+            return "InitFailed";
+        case HybridTraceEvent::GetIpFailed:
+            return "GetIpFailed";
+        case HybridTraceEvent::AddFrameFailed:
+            return "AddFrameFailed";
+        case HybridTraceEvent::ManagedFrame:
+            return "ManagedFrame";
+        case HybridTraceEvent::NativeFrame:
+            return "NativeFrame";
+        case HybridTraceEvent::ManualStart:
+            return "ManualStart";
+        case HybridTraceEvent::ManualFramePointerUnavailable:
+            return "ManualFramePointerUnavailable";
+        case HybridTraceEvent::ManualFramePointerReadFailed:
+            return "ManualFramePointerReadFailed";
+        case HybridTraceEvent::ManualFramePointerInvalidReturn:
+            return "ManualFramePointerInvalidReturn";
+        case HybridTraceEvent::ManualFramePointerSuccess:
+            return "ManualFramePointerSuccess";
+        case HybridTraceEvent::ManualLinkRegisterSuccess:
+            return "ManualLinkRegisterSuccess";
+        case HybridTraceEvent::ManualFallback:
+            return "ManualFallback";
+        case HybridTraceEvent::StepResult:
+            return "StepResult";
+        case HybridTraceEvent::Finish:
+            return "Finish";
+        case HybridTraceEvent::CacheMissing:
+            return "CacheMissing";
+    }
+
+    return "Unknown";
+}
+
+void LinuxStackFramesCollector::RecordHybridEvent(HybridTraceEvent event, uintptr_t value, uintptr_t aux, std::int32_t result)
+{
+    if (!_useHybridUnwinding)
+    {
+        return;
+    }
+
+    _hybridTrace.Append(event, value, aux, result);
+}
+
+void LinuxStackFramesCollector::FlushHybridTrace(std::int32_t finalResult)
+{
+    if (!_useHybridUnwinding)
+    {
+        return;
+    }
+
+    auto count = _hybridTrace.Count();
+    const auto overflow = _hybridTrace.HasOverflow();
+
+    if (count == 0 && !overflow)
+    {
+        return;
+    }
+
+    Log::Debug(
+        "HybridUnwindTrace: threadId=",
+        _hybridTrace.GetThreadId(),
+        ", ctx=0x",
+        std::hex,
+        _hybridTrace.GetContextPointer(),
+        std::dec,
+        ", initFlags=",
+        _hybridTrace.GetInitFlags(),
+        ", finalResult=",
+        finalResult,
+        ", entries=",
+        count,
+        overflow ? ", overflow=1" : "");
+
+    const auto limit = std::min<std::uint32_t>(count, HybridTraceBuffer::MaxEntries);
+    for (std::uint32_t i = 0; i < limit; i++)
+    {
+        const auto entry = _hybridTrace.EntryAt(i);
+        Log::Debug(
+            "HybridUnwindTrace: [",
+            i,
+            "] ",
+            HybridTraceEventName(entry.Event),
+            " value=0x",
+            std::hex,
+            entry.Value,
+            ", aux=0x",
+            entry.Aux,
+            std::dec,
+            ", result=",
+            entry.Result);
+    }
+
+    if (overflow)
+    {
+        Log::Debug("HybridUnwindTrace: entries truncated at ", HybridTraceBuffer::MaxEntries);
+    }
+
+    _hybridTrace.ResetAfterFlush();
+}
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
@@ -181,6 +342,11 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     if (errorCode < 0)
     {
         UpdateErrorStats(errorCode);
+    }
+
+    if (_useHybridUnwinding)
+    {
+        FlushHybridTrace(static_cast<std::int32_t>(errorCode));
     }
 
     *pHR = (errorCode == 0) ? S_OK : E_FAIL;
@@ -428,6 +594,11 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
 {
     std::int32_t resultErrorCode;
 
+    const auto threadId = (_pCurrentCollectionThreadInfo != nullptr)
+                              ? static_cast<pid_t>(_pCurrentCollectionThreadInfo->GetOsThreadId())
+                              : 0;
+    _hybridTrace.Reset(threadId, reinterpret_cast<uintptr_t>(ctx));
+
     // Initialize libunwind context as in CollectStackManually
     auto flag = UNW_INIT_SIGNAL_FRAME;
     unw_context_t context;
@@ -441,17 +612,22 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
         resultErrorCode = unw_getcontext(&context);
         if (resultErrorCode != 0)
         {
+            RecordHybridEvent(HybridTraceEvent::GetContextFailed, 0, 0, resultErrorCode);
             return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
         }
 
         flag = static_cast<unw_init_local2_flags_t>(0);
     }
 
+    _hybridTrace.SetInitFlags(static_cast<std::uint32_t>(flag));
+    RecordHybridEvent(HybridTraceEvent::Start, reinterpret_cast<uintptr_t>(ctx), static_cast<uintptr_t>(flag), 0);
+
     unw_cursor_t cursor;
     resultErrorCode = unw_init_local2(&cursor, &context, flag);
 
     if (resultErrorCode < 0)
     {
+        RecordHybridEvent(HybridTraceEvent::InitFailed, 0, 0, resultErrorCode);
         return resultErrorCode;
     }
 
@@ -461,6 +637,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
         if (IsCurrentCollectionAbortRequested())
         {
             AddFakeFrame();
+            RecordHybridEvent(HybridTraceEvent::AbortRequested);
             return E_ABORT;
         }
 
@@ -468,16 +645,21 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
         resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
         if (resultErrorCode != 0)
         {
+            RecordHybridEvent(HybridTraceEvent::GetIpFailed, 0, 0, resultErrorCode);
             return resultErrorCode;
         }
 
         if (!AddFrame(ip))
         {
+            RecordHybridEvent(HybridTraceEvent::AddFrameFailed, static_cast<uintptr_t>(ip), 0, S_FALSE);
             return S_FALSE;
         }
 
         // HYBRID LOGIC: Check if current frame is managed
-        if (IsManagedCode(ip))
+        const auto isManaged = IsManagedCode(ip);
+        RecordHybridEvent(isManaged ? HybridTraceEvent::ManagedFrame : HybridTraceEvent::NativeFrame, static_cast<uintptr_t>(ip));
+
+        if (isManaged)
         {
             // Use manual unwinding for managed frames
             resultErrorCode = UnwindManagedFrameManually(&cursor, ip);
@@ -488,7 +670,11 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
             resultErrorCode = unw_step(&cursor);
         }
 
+        RecordHybridEvent(HybridTraceEvent::StepResult, static_cast<uintptr_t>(ip), 0, resultErrorCode);
+
     } while (resultErrorCode > 0);
+
+    RecordHybridEvent(HybridTraceEvent::Finish, 0, 0, resultErrorCode);
 
     return resultErrorCode;
 }
@@ -501,6 +687,7 @@ bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
     if (librariesCache == nullptr)
     {
         // Fallback: assume native if no cache available
+        RecordHybridEvent(HybridTraceEvent::CacheMissing, instructionPointer);
         return false;
     }
 
@@ -513,6 +700,7 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
 {
 #ifdef ARM64
     // ARM64-specific manual unwinding for managed frames
+    RecordHybridEvent(HybridTraceEvent::ManualStart, ip);
     unw_word_t fp, sp, lr;
 
     // Get current frame pointer (x29), stack pointer, link register (x30)
@@ -522,31 +710,61 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
 
     if (fp_result == 0 && fp != 0)
     {
-        // Frame pointer available - use it
-        // ARM64 frame layout: [previous_fp][return_address]
+        constexpr size_t MaxFrameDistanceBytes = 1 << 20; // 1 MB safety bound
+
         unw_word_t prev_fp = 0;
         unw_word_t return_addr = 0;
 
-        // Read previous frame pointer and return address from stack
-        if (ReadStackMemory(fp, &prev_fp, sizeof(prev_fp)) &&
-            ReadStackMemory(fp + 8, &return_addr, sizeof(return_addr)))
+        // TODO: Guard this memory access using a signal-safe probe (see SafeAccess in Java profiler).
+        const bool readPrev =
+            ReadStackMemory(fp, &prev_fp, sizeof(prev_fp)) &&
+            ReadStackMemory(fp + sizeof(prev_fp), &return_addr, sizeof(return_addr));
+
+        if (readPrev)
         {
-            // Validate the return address looks reasonable
-            if (IsValidReturnAddress(return_addr))
+            const bool stackOrderValid =
+                (prev_fp > fp) && (static_cast<uintptr_t>(prev_fp) - static_cast<uintptr_t>(fp) < MaxFrameDistanceBytes);
+
+            const bool returnValid = IsValidReturnAddress(return_addr);
+
+            if (stackOrderValid && returnValid)
             {
-                // Update cursor registers for next frame
+                RecordHybridEvent(
+                    HybridTraceEvent::ManualFramePointerSuccess,
+                    static_cast<uintptr_t>(return_addr),
+                    static_cast<uintptr_t>(prev_fp));
+
                 unw_set_reg(cursor, UNW_AARCH64_X29, prev_fp);
-                unw_set_reg(cursor, UNW_REG_SP, fp + 16); // Skip saved fp + lr
+                unw_set_reg(cursor, UNW_REG_SP, static_cast<uintptr_t>(fp) + 2 * sizeof(uintptr_t));
                 unw_set_reg(cursor, UNW_REG_IP, return_addr);
 
-                return 1; // Success, frame unwound
+                return 1;
             }
+
+            RecordHybridEvent(
+                HybridTraceEvent::ManualFramePointerInvalidReturn,
+                static_cast<uintptr_t>(return_addr),
+                static_cast<uintptr_t>(prev_fp));
         }
+        else
+        {
+            RecordHybridEvent(
+                HybridTraceEvent::ManualFramePointerReadFailed,
+                static_cast<uintptr_t>(fp));
+        }
+    }
+    else
+    {
+        RecordHybridEvent(
+            HybridTraceEvent::ManualFramePointerUnavailable,
+            static_cast<uintptr_t>(fp),
+            static_cast<uintptr_t>(fp_result));
     }
 
     // Fallback: try to use link register if it looks valid
     if (lr_result == 0 && lr != 0 && IsValidReturnAddress(lr))
     {
+        RecordHybridEvent(HybridTraceEvent::ManualLinkRegisterSuccess, static_cast<uintptr_t>(lr), static_cast<uintptr_t>(sp));
         unw_set_reg(cursor, UNW_REG_IP, lr);
         // Estimate stack adjustment (this is heuristic)
         unw_set_reg(cursor, UNW_REG_SP, sp + EstimateStackFrameSize(ip));
@@ -554,10 +772,12 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
     }
 
     // Last resort: fall back to libunwind
+    RecordHybridEvent(HybridTraceEvent::ManualFallback, static_cast<uintptr_t>(ip));
     return unw_step(cursor);
 
 #else
     // For x86_64, similar logic but with different registers
+    RecordHybridEvent(HybridTraceEvent::ManualStart, ip);
     unw_word_t rbp, rsp;
 
     // Get current frame pointer (RBP), stack pointer (RSP)
@@ -566,29 +786,59 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
 
     if (rbp_result == 0 && rbp != 0)
     {
-        // Frame pointer available - use it
-        // x86_64 frame layout: [previous_rbp][return_address]
+        constexpr size_t MaxFrameDistanceBytes = 1 << 20;
+
         unw_word_t prev_rbp = 0;
         unw_word_t return_addr = 0;
 
-        // Read previous frame pointer and return address from stack
-        if (ReadStackMemory(rbp, &prev_rbp, sizeof(prev_rbp)) &&
-            ReadStackMemory(rbp + 8, &return_addr, sizeof(return_addr)))
+        // TODO: Guard this memory access using a signal-safe probe (see SafeAccess in Java profiler).
+        const bool readPrev =
+            ReadStackMemory(rbp, &prev_rbp, sizeof(prev_rbp)) &&
+            ReadStackMemory(rbp + sizeof(prev_rbp), &return_addr, sizeof(return_addr));
+
+        if (readPrev)
         {
-            // Validate the return address looks reasonable
-            if (IsValidReturnAddress(return_addr))
+            const bool stackOrderValid =
+                (prev_rbp > rbp) && (static_cast<uintptr_t>(prev_rbp) - static_cast<uintptr_t>(rbp) < MaxFrameDistanceBytes);
+
+            const bool returnValid = IsValidReturnAddress(return_addr);
+
+            if (stackOrderValid && returnValid)
             {
-                // Update cursor registers for next frame
+                RecordHybridEvent(
+                    HybridTraceEvent::ManualFramePointerSuccess,
+                    static_cast<uintptr_t>(return_addr),
+                    static_cast<uintptr_t>(prev_rbp));
+
                 unw_set_reg(cursor, UNW_X86_64_RBP, prev_rbp);
-                unw_set_reg(cursor, UNW_REG_SP, rbp + 16); // Skip saved rbp + return addr
+                unw_set_reg(cursor, UNW_REG_SP, static_cast<uintptr_t>(rbp) + 2 * sizeof(uintptr_t));
                 unw_set_reg(cursor, UNW_REG_IP, return_addr);
 
-                return 1; // Success, frame unwound
+                return 1;
             }
+
+            RecordHybridEvent(
+                HybridTraceEvent::ManualFramePointerInvalidReturn,
+                static_cast<uintptr_t>(return_addr),
+                static_cast<uintptr_t>(prev_rbp));
         }
+        else
+        {
+            RecordHybridEvent(
+                HybridTraceEvent::ManualFramePointerReadFailed,
+                static_cast<uintptr_t>(rbp));
+        }
+    }
+    else
+    {
+        RecordHybridEvent(
+            HybridTraceEvent::ManualFramePointerUnavailable,
+            static_cast<uintptr_t>(rbp),
+            static_cast<uintptr_t>(rbp_result));
     }
 
     // Fallback to libunwind for x86_64
+    RecordHybridEvent(HybridTraceEvent::ManualFallback, static_cast<uintptr_t>(ip));
     return unw_step(cursor);
 #endif
 }
@@ -664,14 +914,14 @@ bool LinuxStackFramesCollector::IsValidReturnAddress(uintptr_t address)
         return false;
     }
 
-    // Additional validation: try to read a few bytes to see if it's accessible
-    uint32_t instruction;
-    if (!ReadStackMemory(address, &instruction, sizeof(instruction)))
+    auto* librariesCache = LibrariesInfoCache::GetInstance();
+    if (librariesCache != nullptr && librariesCache->IsAddressInManagedRegion(address))
     {
-        return false;
+        return true;
     }
 
-    return true;
+    // Fallback heuristic for native return addresses
+    return address >= 0x10000 && address < 0x7f0000000000ULL;
 }
 
 size_t LinuxStackFramesCollector::EstimateStackFrameSize(uintptr_t ip)

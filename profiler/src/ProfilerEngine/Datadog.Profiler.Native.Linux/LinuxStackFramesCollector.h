@@ -18,6 +18,9 @@
 #include <mutex>
 #include <signal.h>
 #include <unordered_map>
+#include <array>
+#include <cstdint>
+#include <sys/types.h>
 
 class IManagedThreadList;
 class ProfilerSignalManager;
@@ -107,4 +110,64 @@ private:
     std::shared_ptr<CounterMetric> _samplingRequest;
 
     std::shared_ptr<DiscardMetrics> _discardMetrics;
+
+    enum class HybridTraceEvent : uint8_t
+    {
+        Start,
+        AbortRequested,
+        GetContextFailed,
+        InitFailed,
+        GetIpFailed,
+        AddFrameFailed,
+        ManagedFrame,
+        NativeFrame,
+        ManualStart,
+        ManualFramePointerUnavailable,
+        ManualFramePointerReadFailed,
+        ManualFramePointerInvalidReturn,
+        ManualFramePointerSuccess,
+        ManualLinkRegisterSuccess,
+        ManualFallback,
+        StepResult,
+        Finish,
+        CacheMissing,
+    };
+
+    struct HybridTraceEntry
+    {
+        HybridTraceEvent Event;
+        uintptr_t Value;
+        uintptr_t Aux;
+        std::int32_t Result;
+    };
+
+    struct HybridTraceBuffer
+    {
+        static constexpr std::size_t MaxEntries = 128;
+
+        void Reset(pid_t threadId, uintptr_t contextPointer);
+        void SetInitFlags(std::uint32_t flags);
+        void Append(HybridTraceEvent event, uintptr_t value, uintptr_t aux, std::int32_t result);
+        std::uint32_t Count() const;
+        bool HasOverflow() const;
+        HybridTraceEntry EntryAt(std::size_t index) const;
+        pid_t GetThreadId() const { return _threadId; }
+        uintptr_t GetContextPointer() const { return _contextPointer; }
+        std::uint32_t GetInitFlags() const { return _initFlags; }
+        void ResetAfterFlush();
+
+    private:
+        pid_t _threadId{0};
+        uintptr_t _contextPointer{0};
+        std::uint32_t _initFlags{0};
+        std::atomic<std::uint32_t> _count{0};
+        std::atomic<bool> _overflow{false};
+        std::array<HybridTraceEntry, MaxEntries> _entries{};
+    };
+
+    void RecordHybridEvent(HybridTraceEvent event, uintptr_t value = 0, uintptr_t aux = 0, std::int32_t result = 0);
+    void FlushHybridTrace(std::int32_t finalResult);
+    static const char* HybridTraceEventName(HybridTraceEvent event);
+
+    HybridTraceBuffer _hybridTrace;
 };
