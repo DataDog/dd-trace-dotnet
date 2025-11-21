@@ -5,12 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.RequestContext interface for duck-typing
     /// </summary>
-    internal interface IRequestContext
+    internal interface IRequestContext : IDuckType
     {
         /// <summary>
         /// Gets the request message

@@ -2,6 +2,54 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
+    Name: internal,
+    Resource: ServerSyncAddJson,
+    Service: Samples.Wcf,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.Wcf,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: http.request,
+    Resource: GET localhost:00000/ServerSyncAddJson/?/n2=2,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/ServerSyncAddJson/1/n2=2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_2,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
     Name: wcf.request,
     Resource: GET /ServerSyncAddJson/{n1}/n2={n2},
     Service: Samples.Wcf,
@@ -15,7 +63,7 @@
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/ServerSyncAddJson/1/n2=2,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
       version: 1.0.0
     },
@@ -28,90 +76,22 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
-    Name: wcf.request,
-    Resource: GET /ServerSyncAddXml/{n1}/n2={n2},
+    SpanId: Id_5,
+    Name: ServerSyncAddJson,
+    Resource: ServerSyncAddJson,
     Service: Samples.Wcf,
-    Type: web,
-    ParentId: Id_5,
+    ParentId: Id_4,
     Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
       env: integration_tests,
-      http.method: GET,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/ServerSyncAddXml/1/n2=2,
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_6,
-    Name: wcf.request,
-    Resource: POST /ServerSyncAddWrapped,
-    Service: Samples.Wcf,
-    Type: web,
-    ParentId: Id_7,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/ServerSyncAddWrapped,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_8,
-    Name: wcf.request,
-    Resource: POST /ServerTaskAddPost,
-    Service: Samples.Wcf,
-    Type: web,
-    ParentId: Id_9,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/ServerTaskAddPost,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_10,
+    TraceId: Id_6,
+    SpanId: Id_7,
     Name: internal,
-    Resource: WebClient,
+    Resource: ServerSyncAddWrapped,
     Service: Samples.Wcf,
     Type: custom,
     Tags: {
@@ -119,8 +99,8 @@
       language: dotnet,
       otel.library.name: Samples.Wcf,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_2,
-      runtime-id: Guid_1,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0
     },
@@ -129,6 +109,246 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_8,
+    Name: http.request,
+    Resource: POST localhost:00000/ServerSyncAddWrapped,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/ServerSyncAddWrapped,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_2,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_9,
+    Name: wcf.request,
+    Resource: POST /ServerSyncAddWrapped,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_8,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/ServerSyncAddWrapped,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_10,
+    Name: ServerSyncAddWrapped,
+    Resource: ServerSyncAddWrapped,
+    Service: Samples.Wcf,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: internal,
+    Resource: ServerSyncAddXml,
+    Service: Samples.Wcf,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.Wcf,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_13,
+    Name: http.request,
+    Resource: GET localhost:00000/ServerSyncAddXml/?/n2=2,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_12,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/ServerSyncAddXml/1/n2=2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_2,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_14,
+    Name: wcf.request,
+    Resource: GET /ServerSyncAddXml/{n1}/n2={n2},
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_13,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/ServerSyncAddXml/1/n2=2,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_15,
+    Name: ServerSyncAddXml,
+    Resource: ServerSyncAddXml,
+    Service: Samples.Wcf,
+    ParentId: Id_14,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_17,
+    Name: internal,
+    Resource: ServerTaskAddPost,
+    Service: Samples.Wcf,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.Wcf,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_18,
+    Name: http.request,
+    Resource: POST localhost:00000/ServerTaskAddPost,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/ServerTaskAddPost,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_2,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_19,
+    Name: wcf.request,
+    Resource: POST /ServerTaskAddPost,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_18,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/ServerTaskAddPost,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_20,
+    Name: ServerTaskAddPost,
+    Resource: ServerTaskAddPost,
+    Service: Samples.Wcf,
+    ParentId: Id_19,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
     }
   }
 ]

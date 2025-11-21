@@ -10,6 +10,7 @@ namespace Samples.Wcf.Server
         public double ServerSyncAdd(double n1, double n2)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received ServerSyncAdd({n1},{n2})");
+            using var scope = SampleHelpers.CreateScope("ServerSyncAdd");
 
             Thread.Sleep(1);
 
@@ -22,6 +23,7 @@ namespace Samples.Wcf.Server
         public async Task<double> ServerTaskAdd(double n1, double n2)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received ServerTaskAdd({n1},{n2})");
+            using var scope = SampleHelpers.CreateScope("ServerTaskAdd");
             double result = await PerformAddWithDelay(n1, n2);
             LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
             return result;
@@ -30,6 +32,7 @@ namespace Samples.Wcf.Server
         public IAsyncResult BeginServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received BeginServerAsyncAdd({n1},{n2},{throwsException},{synchronouslyCompletes})");
+            using var scope = SampleHelpers.CreateScope("BeginServerAsyncAdd");
 
             Thread.Sleep(1);
 
@@ -62,6 +65,7 @@ namespace Samples.Wcf.Server
         public double EndServerAsyncAdd(IAsyncResult asyncResult)
         {
             LoggingHelper.WriteLineWithDate("[Server] Received EndServerAsyncAdd(asyncResult)");
+            using var scope = SampleHelpers.CreateScope("EndServerAsyncAdd");
             LoggingHelper.WriteLineWithDate($"[Server] Return: {asyncResult}");
 
             Thread.Sleep(1);
@@ -85,6 +89,8 @@ namespace Samples.Wcf.Server
         public double ServerEmptyActionAdd(double n1, double n2)
         {
             LoggingHelper.WriteLineWithDate($"[Server] Received ServerEmptyActionAdd({n1}, {n2})");
+            using var scope = SampleHelpers.CreateScope("ServerEmptyActionAdd");
+
             double result = n1 + n2;
 
             Thread.Sleep(1);
