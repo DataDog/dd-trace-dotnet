@@ -58,7 +58,7 @@ namespace Datadog.Trace.Util
 
                 tags.PeerServiceSource = "peer.service";
             }
-            else
+            else if (!isAwsLambda)
             {
                 switch (service)
                 {
