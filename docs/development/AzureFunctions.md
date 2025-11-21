@@ -152,7 +152,8 @@ In ASP.NET Core integration mode:
 - Our HTTP client instrumentation (intercepting `SocketsHttpHandler`):
   - Creates a span for the host→worker HTTP call
   - Injects trace context headers (`x-datadog-*`) into the proxied HTTP request
-- Worker's ASP.NET Core instrumentation extracts context from HTTP headers
+- Worker's `FunctionExecutionMiddleware` extracts context from HTTP headers (NOT from ASP.NET Core instrumentation, as `AspNetCoreDiagnosticObserver` is disabled in Azure Functions)
+- The worker uses `IHttpCoordinator` to synchronize the gRPC invocation with the proxied HTTP request using the invocation ID as correlation
 
 #### Distributed Tracing Architecture
 
@@ -172,17 +173,15 @@ Each process tags its spans with `aas.function.process: host` or `aas.function.p
 Trace ID: 68e948220000000047fef7bad8bb854e
 
 Host spans (serialized by PID 27, tagged as "host"):
-├─ aspnet_core.request (s_id: 8ec7..., p_id: null)           [ROOT]
-├─ azure_functions.invoke (s_id: 10c8..., p_id: 8ec7...)     [Child of root]
-└─ http.request (s_id: 2ac3..., p_id: 10c8...)               [HTTP call to worker]
+├─ azure_functions.invoke (s_id: 8ec7..., p_id: null)           [ROOT - HTTP trigger span]
+└─ http.request (s_id: 2ac3..., p_id: 8ec7...)                  [HTTP proxy call to worker]
 
 Worker spans (serialized by PID 56, tagged as "worker"):
-└─ aspnet_core.request (s_id: 9ddf..., p_id: 2ac3...)        [Child of host's http.request]
-   └─ azure_functions.invoke (s_id: 114d..., p_id: 9ddf...)  [Child of worker's aspnet_core]
-      └─ ... (additional spans)
+└─ azure_functions.invoke (s_id: 114d..., p_id: 2ac3...)        [Child of host's http.request]
+   └─ ... (additional spans)
 ```
 
-<!-- TODO: Update this section if/when span parenting is fixed to properly connect host and worker spans -->
+**Note**: Both host and worker create `azure_functions.invoke` spans (NOT `aspnet_core.request`) because `AspNetCoreDiagnosticObserver` is disabled in Azure Functions environments. The host's root span represents the HTTP trigger invocation, and the worker's span represents the function execution. The host's `http.request` span represents the HTTP proxy call from host to worker (created automatically by HTTP client instrumentation when proxying the request).
 
 **Key insight**: When troubleshooting traces in Datadog, a single distributed trace will contain spans from both processes with different `aas.function.process` tag values. This is expected behavior.
 
