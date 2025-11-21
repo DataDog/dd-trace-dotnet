@@ -83,6 +83,12 @@ public class RequestInvokerHandlerSendAsyncIntegration
             tags.DatabaseId = databaseId;
             tags.SetEndpoint(instance?.Client.Endpoint);
 
+            if (instance?.Client.ClientContext != null &&
+                instance.Client.ClientContext.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+            {
+                tags.UserAgent = clientContext.UserAgent;
+            }
+
             perTraceSettings.Schema.RemapPeerService(tags);
 
             var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);

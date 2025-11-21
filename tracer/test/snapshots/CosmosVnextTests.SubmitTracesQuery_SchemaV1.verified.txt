@@ -17,6 +17,7 @@
       peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: out.host
     },
@@ -45,6 +46,7 @@
       peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: out.host
     },
@@ -75,6 +77,7 @@
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: db.name
     },
@@ -105,6 +108,7 @@
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: db.name
     },
@@ -133,6 +137,7 @@
       peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: out.host
     },
@@ -161,6 +166,7 @@
       peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: out.host
     },
@@ -189,6 +195,7 @@
       peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: out.host
     },
@@ -219,6 +226,7 @@
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: db.name
     },
@@ -249,6 +257,7 @@
       peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       version: 1.0.0,
       _dd.peer.service.source: db.name
     },
