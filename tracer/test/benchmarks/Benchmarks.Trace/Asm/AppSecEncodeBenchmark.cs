@@ -21,9 +21,10 @@ namespace Benchmarks.Trace.Asm;
 [BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {
+    private static readonly NestedMap _args = MakeNestedMap(20);
+
     private Encoder _encoder;
     private EncoderLegacy _encoderLegacy;
-    private NestedMap _args;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -32,10 +33,6 @@ public class AppSecEncoderBenchmark
         _encoder = new Encoder();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
-
-        // Create test data in GlobalSetup, not static initializer
-        // This ensures BenchmarkDotNet excludes allocation overhead from measurements
-        _args = MakeNestedMap(20);
 
         // Warmup
         EncodeArgs();
