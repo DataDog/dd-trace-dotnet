@@ -8,6 +8,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       db.response.status_code: 201,
       db.type: cosmosdb,
       env: integration_tests,
@@ -37,6 +38,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       db.response.status_code: 201,
       db.type: cosmosdb,
       env: integration_tests,
@@ -66,6 +68,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
       db.response.status_code: 201,
@@ -97,6 +100,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       db.response.status_code: 204,
       db.type: cosmosdb,
       env: integration_tests,
@@ -126,6 +130,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
       db.response.status_code: 204,
@@ -157,6 +162,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       db.response.status_code: 404,
       db.type: cosmosdb,
       env: integration_tests,
@@ -186,6 +192,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       db.response.status_code: 404,
       db.type: cosmosdb,
       env: integration_tests,
@@ -215,6 +222,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
       db.response.status_code: 200,
@@ -246,6 +254,7 @@
     Type: sql,
     Tags: {
       component: CosmosDb,
+      cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
       db.response.status_code: 200,
