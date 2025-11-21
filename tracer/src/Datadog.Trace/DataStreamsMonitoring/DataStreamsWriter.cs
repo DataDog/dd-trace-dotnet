@@ -35,6 +35,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
+    private readonly ManualResetEventSlim _serializationMutex = new(initialState: false, spinCount: 0);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private Task? _processTask;
@@ -93,8 +94,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning);
-            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _processTask = Task.Factory.StartNew(SerializeStatsLoop, TaskCreationOptions.LongRunning);
+            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
                 async x => await ((DataStreamsWriter)x!).FlushAsync().ConfigureAwait(false),
                 this,
@@ -116,6 +117,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (_buffer.TryEnqueue(point))
             {
+                if (!_serializationMutex.IsSet)
+                {
+                    _serializationMutex.Set();
+                }
+
                 return;
             }
         }
@@ -134,6 +140,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             if (_backlogBuffer.TryEnqueue(point))
             {
+                if (!_serializationMutex.IsSet)
+                {
+                    _serializationMutex.Set();
+                }
+
                 return;
             }
         }
@@ -154,6 +165,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
         _flushSemaphore.Dispose();
+        _serializationMutex.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -169,6 +181,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             return;
         }
+
+        _serializationMutex.Set();
 
         await FlushAsync().ConfigureAwait(false);
 
@@ -197,7 +211,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false))
         {
             Log.Error("Data streams flush timeout");
             return;
@@ -217,44 +231,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             _flushSemaphore.Release();
         }
-    }
-
-    public void Flush()
-    {
-        Log.Debug("ROBC Sync Flush");
-        if (_processExit.Task.IsCompleted)
-        {
-            return;
-        }
-
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        _ = Task.Run(async () =>
-        {
-            Log.Debug("ROBC Sync Flush -- In task");
-            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
-            {
-                Log.Warning("Could not acquire flush semaphore within timeout");
-                return;
-            }
-
-            try
-            {
-                await WriteToApiAsync().ConfigureAwait(false);
-                FlushComplete?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during flush");
-            }
-            finally
-            {
-                _flushSemaphore.Release();
-            }
-        });
     }
 
     private async Task WriteToApiAsync()
@@ -296,13 +272,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private void ProcessQueueLoopAsync()
+    private void SerializeStatsLoop()
     {
         while (true)
         {
-            Log.Debug("ROBC Processing Queue Loop - Sleep");
-            Thread.Sleep(_waitTimeSpan);
-            // await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            bool hasProcessedPoints = false;
+
             if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(.5)))
             {
                 Log.Error("Queue Loop Semaphore timeout");
@@ -314,11 +289,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 Log.Debug("ROBC Adding points to aggregator");
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
+                    hasProcessedPoints = true;
                     _aggregator.Add(in statsPoint);
                 }
 
                 while (_backlogBuffer.TryDequeue(out var backlogPoint))
                 {
+                    hasProcessedPoints = true;
                     _aggregator.AddBacklog(in backlogPoint);
                 }
             }
@@ -334,6 +311,20 @@ internal class DataStreamsWriter : IDataStreamsWriter
             if (_processExit.Task.IsCompleted)
             {
                 return;
+            }
+
+            if (hasProcessedPoints)
+            {
+                Log.Debug("ROBC Processing Queue Loop - Sleep");
+                Thread.Sleep(_waitTimeSpan);
+            }
+            else
+            {
+                // No points were pushed in the last period, wait indefinitely
+                Log.Debug("ROBC No points were pushed in the last period, waiting");
+                _serializationMutex.Wait();
+                Log.Debug("ROBC No points were pushed in the last period, resetting mutex");
+                _serializationMutex.Reset();
             }
         }
     }
