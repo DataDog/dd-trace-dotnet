@@ -30,6 +30,8 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> ResponseStatusCodeBytes => new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
         // ResponseSubStatusCodeBytes = MessagePack.Serialize("cosmosdb.response.sub_status_code");
         private static ReadOnlySpan<byte> ResponseSubStatusCodeBytes => new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        // UserAgentBytes = MessagePack.Serialize("user_agent.original");
+        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 179, 117, 115, 101, 114, 95, 97, 103, 101, 110, 116, 46, 111, 114, 105, 103, 105, 110, 97, 108 };
 
         public override string? GetTag(string key)
         {
@@ -43,6 +45,7 @@ namespace Datadog.Trace.Tagging
                 "out.host" => Host,
                 "db.response.status_code" => ResponseStatusCode,
                 "cosmosdb.response.sub_status_code" => ResponseSubStatusCode,
+                "user_agent.original" => UserAgent,
                 _ => base.GetTag(key),
             };
         }
@@ -65,6 +68,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "cosmosdb.response.sub_status_code": 
                     ResponseSubStatusCode = value;
+                    break;
+                case "user_agent.original": 
+                    UserAgent = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -117,6 +123,11 @@ namespace Datadog.Trace.Tagging
             if (ResponseSubStatusCode is not null)
             {
                 processor.Process(new TagItem<string>("cosmosdb.response.sub_status_code", ResponseSubStatusCode, ResponseSubStatusCodeBytes));
+            }
+
+            if (UserAgent is not null)
+            {
+                processor.Process(new TagItem<string>("user_agent.original", UserAgent, UserAgentBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -177,6 +188,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("cosmosdb.response.sub_status_code (tag):")
                   .Append(ResponseSubStatusCode)
+                  .Append(',');
+            }
+
+            if (UserAgent is not null)
+            {
+                sb.Append("user_agent.original (tag):")
+                  .Append(UserAgent)
                   .Append(',');
             }
 

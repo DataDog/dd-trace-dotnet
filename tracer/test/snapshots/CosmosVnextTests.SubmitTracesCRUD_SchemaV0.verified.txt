@@ -15,6 +15,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -40,6 +41,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -67,6 +69,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -92,6 +95,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -119,6 +123,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -144,6 +149,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -169,6 +175,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -196,6 +203,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
@@ -223,6 +231,7 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
+      user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       _dd.base_service: Samples.CosmosDb.Vnext
     },
     Metrics: {
