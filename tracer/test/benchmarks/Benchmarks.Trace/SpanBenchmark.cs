@@ -3,6 +3,7 @@ extern alias DatadogTraceManual;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
@@ -10,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using BindingFlags = System.Reflection.BindingFlags;
 using Tracer = Datadog.Trace.Tracer;
 using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
@@ -35,9 +37,11 @@ namespace Benchmarks.Trace
             {
                 { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
                 { ConfigurationKeys.TraceEnabled, false },
+                { ConfigurationKeys.AgentFeaturePollingEnabled, false },
+                { ConfigurationKeys.Telemetry.Enabled, false },
             });
 
-            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
+            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null, telemetry: NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();
@@ -88,6 +92,18 @@ namespace Benchmarks.Trace
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
+        }
+
+        /// <summary>
+        /// Starts and finishes two scopes in the same trace benchmark
+        /// </summary>
+        [Benchmark]
+        public void StartFinishTwoScopes()
+        {
+            using var scope1 = Tracer.StartActiveInternal("operation1");
+            scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+
+            using var scope2 = Tracer.StartActiveInternal("operation2");
         }
     }
 }

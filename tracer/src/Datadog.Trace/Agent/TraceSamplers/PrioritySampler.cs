@@ -10,7 +10,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class PrioritySampler : ITraceChunkSampler
     {
-        public bool Sample(ArraySegment<Span> trace) =>
-            SamplingHelpers.IsKeptBySamplingPriority(trace);
+        public bool Sample(in SpanCollection trace) =>
+            SamplingHelpers.IsKeptBySamplingPriority(in trace);
     }
 }

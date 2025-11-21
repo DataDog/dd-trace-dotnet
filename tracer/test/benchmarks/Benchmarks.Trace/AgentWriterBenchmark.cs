@@ -21,7 +21,7 @@ namespace Benchmarks.Trace
         private const int SpanCount = 1000;
 
         private static readonly IAgentWriter AgentWriter;
-        private static readonly ArraySegment<Span> EnrichedSpans;
+        private static readonly SpanCollection EnrichedSpans;
         static AgentWriterBenchmark()
         {
             var overrides = new NameValueConfigurationSource(new()
@@ -46,7 +46,7 @@ namespace Benchmarks.Trace
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            EnrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            EnrichedSpans = new SpanCollection(enrichedSpans, SpanCount);
 
             // Run benchmarks once to reduce noise
             new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
