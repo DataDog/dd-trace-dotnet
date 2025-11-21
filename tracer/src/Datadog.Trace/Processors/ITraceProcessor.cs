@@ -5,14 +5,15 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Processors
 {
     internal interface ITraceProcessor
     {
-        ArraySegment<Span> Process(ArraySegment<Span> trace);
+        SpanCollection Process(in SpanCollection trace);
 
-        Span? Process(Span? span);
+        Span? Process(Span span);
 
         ITagProcessor? GetTagProcessor();
     }

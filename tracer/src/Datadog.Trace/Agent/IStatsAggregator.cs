@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Agent
 {
@@ -30,22 +31,23 @@ namespace Datadog.Trace.Agent
         /// Receives an array of spans and computes stats points for them.
         /// </summary>
         /// <param name="spans">The array of spans to process.</param>
+        [TestingOnly]
         void Add(params Span[] spans);
 
         /// <summary>
         /// Receives an array of spans and computes stats points for them.
         /// </summary>
         /// <param name="spans">The ArraySegment of spans to process.</param>
-        void AddRange(ArraySegment<Span> spans);
+        void AddRange(in SpanCollection spans);
 
         /// <summary>
         /// Runs a series of samplers over the entire trace chunk
         /// </summary>
         /// <param name="spans">The trace chunk to sample</param>
         /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
-        bool ShouldKeepTrace(ArraySegment<Span> spans);
+        bool ShouldKeepTrace(in SpanCollection spans);
 
-        ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace);
+        SpanCollection ProcessTrace(in SpanCollection trace);
 
         Task DisposeAsync();
     }

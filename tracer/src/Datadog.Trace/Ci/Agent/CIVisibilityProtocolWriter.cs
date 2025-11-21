@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
@@ -158,15 +159,12 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         return Task.FromResult(true);
     }
 
-    public void WriteTrace(ArraySegment<Span> trace)
+    public void WriteTrace(in SpanCollection trace)
     {
         // Transform spans to events
-        for (var i = trace.Offset; i < trace.Count; i++)
+        foreach (var span in trace)
         {
-            if (trace.Array is { } array)
-            {
-                WriteEvent(CIVisibilityEventsFactory.FromSpan(array[i]));
-            }
+            WriteEvent(CIVisibilityEventsFactory.FromSpan(span));
         }
     }
 

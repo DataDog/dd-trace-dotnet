@@ -758,15 +758,16 @@ namespace Datadog.Trace
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(in SpanCollection trace)
         {
+            var chunk = trace;
             foreach (var processor in TraceProcessors)
             {
                 if (processor is not null)
                 {
                     try
                     {
-                        trace = processor.Process(trace);
+                        chunk = processor.Process(in chunk);
                     }
                     catch (Exception e)
                     {
@@ -775,9 +776,9 @@ namespace Datadog.Trace
                 }
             }
 
-            if (trace.Count > 0)
+            if (chunk.Count > 0)
             {
-                AgentWriter.WriteTrace(trace);
+                AgentWriter.WriteTrace(in chunk);
             }
         }
     }

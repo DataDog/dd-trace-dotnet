@@ -273,11 +273,11 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(ArraySegment<Span> trace)
+        void IDatadogTracer.Write(in SpanCollection trace)
         {
             if (CurrentTraceSettings.Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
             {
-                TracerManager.WriteTrace(trace);
+                TracerManager.WriteTrace(in trace);
             }
         }
 

@@ -16,13 +16,13 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public void AddRange(ArraySegment<Span> spans)
+        public void AddRange(in SpanCollection spans)
         {
         }
 
-        public bool ShouldKeepTrace(ArraySegment<Span> spans) => true;
+        public bool ShouldKeepTrace(in SpanCollection spans) => true;
 
-        public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace) => trace;
+        public SpanCollection ProcessTrace(in SpanCollection trace) => trace;
 
         public Task DisposeAsync()
         {

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors
@@ -24,11 +25,11 @@ namespace Datadog.Trace.Processors
             Log.Information("TruncatorTraceProcessor initialized.");
         }
 
-        public ArraySegment<Span> Process(ArraySegment<Span> trace)
+        public SpanCollection Process(in SpanCollection trace)
         {
-            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
+            foreach (var span in trace)
             {
-                trace.Array![i] = Process(trace.Array[i]);
+                Process(span);
             }
 
             return trace;
