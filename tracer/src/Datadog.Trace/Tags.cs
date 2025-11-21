@@ -646,6 +646,11 @@ namespace Datadog.Trace
         internal const string CosmosDbResponseSubStatusCode = "cosmosdb.response.sub_status_code";
 
         /// <summary>
+        /// The CosmosDb connection mode.
+        /// </summary>
+        internal const string CosmosDbConnectionMode = "cosmosdb.connection.mode";
+
+        /// <summary>
         /// If a span was involved with an application security event
         /// </summary>
         internal const string AppSecEvent = "appsec.event";

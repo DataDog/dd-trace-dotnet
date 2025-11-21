@@ -28,5 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         /// </summary>
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
         public string UserAgent;
+
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
+        public CosmosClientOptionsStruct ClientOptions;
     }
 }
