@@ -87,6 +87,9 @@ public class RequestInvokerHandlerSendAsyncIntegration
                 instance.Client.ClientContext.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
             {
                 tags.UserAgent = clientContext.UserAgent;
+
+                var connectionMode = clientContext.ClientOptions.ConnectionMode;
+                tags.ConnectionMode = connectionMode == 0 ? "gateway" : "direct";
             }
 
             perTraceSettings.Schema.RemapPeerService(tags);

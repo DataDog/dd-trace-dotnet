@@ -40,6 +40,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.UserAgentOriginal)]
         public string UserAgent { get; set; }
 
+        [Tag(Trace.Tags.CosmosDbConnectionMode)]
+        public string ConnectionMode { get; set; }
+
         public virtual void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.ToString();
