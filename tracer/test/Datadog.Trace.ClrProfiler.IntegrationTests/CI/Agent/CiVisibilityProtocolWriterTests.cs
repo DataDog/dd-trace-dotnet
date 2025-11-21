@@ -59,8 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                            return Task.CompletedTask;
                        });
 
-            var trace = new[] { span };
-            agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));
+            agentlessWriter.WriteTrace(new SpanCollection(span));
             await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             Assert.True(finalPayload.SequenceEqual(expectedBytes));
@@ -92,8 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                            return Task.CompletedTask;
                        });
 
-            var trace = new[] { span };
-            agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));
+            agentlessWriter.WriteTrace(new SpanCollection(span));
             await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             Assert.True(finalPayload.SequenceEqual(expectedBytes));
