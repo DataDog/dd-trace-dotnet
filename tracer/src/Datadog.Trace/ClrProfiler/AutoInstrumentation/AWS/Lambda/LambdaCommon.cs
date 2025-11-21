@@ -128,9 +128,12 @@ internal abstract class LambdaCommon
 
     private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
     {
-        foreach (var kv in context)
+        if (context != null)
         {
-            request.Headers.Add(kv.Key, kv.Value);
+            foreach (var kv in context)
+            {
+                request.Headers.Add(kv.Key, kv.Value);
+            }
         }
     }
 
