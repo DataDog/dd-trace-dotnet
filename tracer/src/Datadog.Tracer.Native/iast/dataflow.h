@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include "../../../../shared/src/native-src/pal.h"
 #include "iast_util.h"
 #include "aspect.h"
@@ -65,7 +66,7 @@ namespace iast
 
         void LoadSecurityControls();
     protected:
-        bool _initialized = false;
+        std::atomic<bool> _initialized{false};
         bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
@@ -77,6 +78,16 @@ namespace iast
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
+        
+        inline bool IsInitialized() const noexcept
+        {
+            return _initialized.load(std::memory_order_acquire);
+        }
+
+        inline void SetInitialized(bool value) noexcept
+        {
+            _initialized.store(value, std::memory_order_release);
+        }
 
     public:
         HRESULT AppDomainShutdown(AppDomainID appDomainId);
