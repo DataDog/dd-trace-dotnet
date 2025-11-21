@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
@@ -18,7 +19,7 @@ namespace Benchmarks.Trace
         private const int SpanCount = 1000;
 
         private IEventWriter _eventWriter;
-        private ArraySegment<Span> _enrichedSpans;
+        private SpanCollection _enrichedSpans;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -34,7 +35,7 @@ namespace Benchmarks.Trace
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            _enrichedSpans = new SpanCollection(enrichedSpans, SpanCount);
 
             var overrides = new NameValueConfigurationSource(new()
             {

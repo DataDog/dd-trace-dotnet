@@ -4,15 +4,11 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Sampling;
 using Moq;
-
-// <copyright file="EmptyDatadogTracer.cs" company="Datadog">
-// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
-// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
-// </copyright>
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
@@ -34,7 +30,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public PerTraceSettings PerTraceSettings { get; }
 
-        void IDatadogTracer.Write(ArraySegment<Span> span)
+        void IDatadogTracer.Write(in SpanCollection span)
         {
         }
     }
