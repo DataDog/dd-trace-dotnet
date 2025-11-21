@@ -179,6 +179,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
             public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
+
+            /// <summary>
+            /// Internal configuration key to optionally limit the maximum number of probes of each type.
+            /// Default value is <c>0</c>, no probe-count limit is enforced.
+            /// </summary>
+            internal const string InternalMaxProbesPerType = "INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE";
         }
     }
 }
