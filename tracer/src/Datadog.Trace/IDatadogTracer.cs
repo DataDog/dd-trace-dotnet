@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace
@@ -22,6 +23,6 @@ namespace Datadog.Trace
 
         PerTraceSettings PerTraceSettings { get; }
 
-        void Write(ArraySegment<Span> span);
+        void Write(in SpanCollection span);
     }
 }

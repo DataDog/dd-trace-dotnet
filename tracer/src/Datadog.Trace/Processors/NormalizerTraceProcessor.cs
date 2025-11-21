@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Processors
             Log.Information("NormalizerTraceProcessor initialized.");
         }
 
-        public ArraySegment<Span> Process(ArraySegment<Span> trace)
+        public SpanCollection Process(in SpanCollection trace)
         {
             /*
                 +----------+--------------------------------------------------------------------------------------------------------+
@@ -51,16 +52,15 @@ namespace Datadog.Trace.Processors
                 | Meta     | “http.status_code” key is deleted if it’s an invalid numeric value smaller than 100 or bigger than 600 |
                 +----------+--------------------------------------------------------------------------------------------------------+
              */
-
-            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
+            foreach (var span in trace)
             {
-                trace.Array![i] = Process(trace.Array[i]);
+                Process(span);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+            var traceContext = trace.RootSpan?.Context.TraceContext;
 
-            if (!string.IsNullOrEmpty(traceContext.Environment))
+            if (!string.IsNullOrEmpty(traceContext?.Environment))
             {
                 traceContext.Environment = TraceUtil.NormalizeTag(traceContext.Environment);
             }

@@ -9,11 +9,11 @@ namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class ErrorSampler : ITraceChunkSampler
     {
-        public bool Sample(ArraySegment<Span> trace)
+        public bool Sample(in SpanCollection trace)
         {
-            for (int i = 0; i < trace.Count; i++)
+            foreach (var span in trace)
             {
-                if (trace.Array[i + trace.Offset].Error)
+                if (span.Error)
                 {
                     return true;
                 }
