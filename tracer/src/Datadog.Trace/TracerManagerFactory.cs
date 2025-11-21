@@ -423,7 +423,6 @@ namespace Datadog.Trace
                         Env = settings.Environment,
                         Version = settings.ServiceVersion,
                         Service = settings.MutableSettings.DefaultServiceName,
-                        ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = TracerConstants.Language,
                         LanguageVersion = frameworkDescription.ProductVersion,
