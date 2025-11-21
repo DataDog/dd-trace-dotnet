@@ -123,8 +123,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var processTags = new CharSlice(value);
             // TODO: uncomment when this is implemented in libdatadog
+            // using var processTags = new CharSlice(value);
             // using var error = NativeInterop.Config.SetProcessTags(this, processTags);
             // error.ThrowIfError();
         }

@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
             var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
             var settings = new TracerSettings(sources);
 
-            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false, processTags: "entrypoint.basedir:app,entrypoint.workdir:work");
+            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
 
