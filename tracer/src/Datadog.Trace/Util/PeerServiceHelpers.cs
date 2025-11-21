@@ -10,7 +10,7 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.Util
 {
     /// <summary>
-    /// Helpers to access environment variables
+    /// Helper to set peer.service and peer.service.source tags
     /// </summary>
     internal static class PeerServiceHelpers
     {
@@ -22,8 +22,8 @@ namespace Datadog.Trace.Util
         {
             var service = tags.AwsService;
             var region = tags.Region;
-            var isServerless = EnvironmentHelpers.IsAwsLambda();
-            if (isServerless && tags.AwsRegion != null)
+            var isAwsLambda = EnvironmentHelpers.IsAwsLambda();
+            if (isAwsLambda && tags.Region != null)
             {
                 switch (service)
                 {
@@ -63,39 +63,67 @@ namespace Datadog.Trace.Util
                 switch (service)
                 {
                     case "DynamoDB":
-                        var dbTags = (AwsDynamoDbTags)tags;
-                        tags.PeerService = dbTags.TableName;
-                        tags.PeerServiceSource = Trace.Tags.TableName;
+                        if (tags is AwsDynamoDbTags)
+                        {
+                            var dbTags = (AwsDynamoDbTags)tags;
+                            tags.PeerService = dbTags.TableName;
+                            tags.PeerServiceSource = Trace.Tags.TableName;
+                        }
+
                         break;
                     case "EventBridge":
-                        var eventTags = (AwsEventBridgeTags)tags;
-                        tags.PeerService = eventTags.RuleName;
-                        tags.PeerServiceSource = Trace.Tags.RuleName;
+                        if (tags is AwsEventBridgeTags)
+                        {
+                            var eventTags = (AwsEventBridgeTags)tags;
+                            tags.PeerService = eventTags.RuleName;
+                            tags.PeerServiceSource = Trace.Tags.RuleName;
+                        }
+
                         break;
                     case "Kinesis":
-                        var kinesisTags = (AwsKinesisTags)tags;
-                        tags.PeerService = kinesisTags.StreamName;
-                        tags.PeerServiceSource = Trace.Tags.StreamName;
+                        if (tags is AwsKinesisTags)
+                        {
+                            var kinesisTags = (AwsKinesisTags)tags;
+                            tags.PeerService = kinesisTags.StreamName;
+                            tags.PeerServiceSource = Trace.Tags.StreamName;
+                        }
+
                         break;
                     case "S3":
-                        var s3Tags = (AwsS3Tags)tags;
-                        tags.PeerService = s3Tags.BucketName;
-                        tags.PeerServiceSource = Trace.Tags.BucketName;
+                        if (tags is AwsS3Tags)
+                        {
+                            var s3Tags = (AwsS3Tags)tags;
+                            tags.PeerService = s3Tags.BucketName;
+                            tags.PeerServiceSource = Trace.Tags.BucketName;
+                        }
+
                         break;
                     case "SNS":
-                        var snsTags = (AwsSnsTags)tags;
-                        tags.PeerService = snsTags.TopicName;
-                        tags.PeerServiceSource = Trace.Tags.TopicName;
+                        if (tags is AwsSnsTags)
+                        {
+                            var snsTags = (AwsSnsTags)tags;
+                            tags.PeerService = snsTags.TopicName;
+                            tags.PeerServiceSource = Trace.Tags.TopicName;
+                        }
+
                         break;
                     case "SQS":
-                        var sqsTags = (AwsSqsTags)tags;
-                        tags.PeerService = sqsTags.QueueName;
-                        tags.PeerServiceSource = Trace.Tags.QueueName;
+                        if (tags is AwsSqsTags)
+                        {
+                            var sqsTags = (AwsSqsTags)tags;
+                            tags.PeerService = sqsTags.QueueName;
+                            tags.PeerServiceSource = Trace.Tags.QueueName;
+                        }
+
                         break;
                     case "StepFunctions":
-                        var stepTags = (AwsStepFunctionsTags)tags;
-                        tags.PeerService = stepTags.StateMachineName;
-                        tags.PeerServiceSource = Trace.Tags.StateMachineName;
+                        if (tags is AwsStepFunctionsTags)
+                        {
+                            var stepTags = (AwsStepFunctionsTags)tags;
+                            tags.PeerService = stepTags.StateMachineName;
+                            tags.PeerServiceSource = Trace.Tags.StateMachineName;
+                        }
+
                         break;
                 }
             }
