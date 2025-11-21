@@ -17,8 +17,8 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class Log4netBenchmark
     {
-        private static Tracer _logInjectionTracer;
-        private static log4net.ILog _logger;
+        private Tracer _logInjectionTracer;
+        private log4net.ILog _logger;
 
         [GlobalSetup]
         public void GlobalSetup()

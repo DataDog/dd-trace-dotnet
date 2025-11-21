@@ -17,8 +17,8 @@ namespace Benchmarks.Trace
     {
         private const int SpanCount = 1000;
 
-        private static IEventWriter _eventWriter;
-        private static ArraySegment<Span> _enrichedSpans;
+        private IEventWriter _eventWriter;
+        private ArraySegment<Span> _enrichedSpans;
 
         [GlobalSetup]
         public void GlobalSetup()

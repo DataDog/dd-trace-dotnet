@@ -27,8 +27,8 @@ public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    private static List<string> _initTaintedContextTrue;
-    private static List<string> _initTaintedContextFalse;
+    private List<string> _initTaintedContextTrue;
+    private List<string> _initTaintedContextFalse;
 
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {

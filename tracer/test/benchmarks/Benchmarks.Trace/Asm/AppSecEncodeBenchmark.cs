@@ -21,9 +21,9 @@ namespace Benchmarks.Trace.Asm;
 [BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {
-    private static Encoder _encoder;
-    private static EncoderLegacy _encoderLegacy;
-    private static NestedMap _args;
+    private Encoder _encoder;
+    private EncoderLegacy _encoderLegacy;
+    private NestedMap _args;
 
     [GlobalSetup]
     public void GlobalSetup()

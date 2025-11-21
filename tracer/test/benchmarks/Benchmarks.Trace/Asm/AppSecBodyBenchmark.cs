@@ -29,14 +29,14 @@ namespace Benchmarks.Trace.Asm
     [IgnoreProfile]
     public class AppSecBodyBenchmark
     {
-        private static Security _security;
-        private static ComplexModel _complexModel;
-        private static Props10String _props10;
-        private static Props100String _props100;
-        private static Props1000String _props1000;
-        private static Props10Rec _props10x3;
-        private static Props10Rec _props10x6;
-        private static HttpContext _httpContext;
+        private Security _security;
+        private ComplexModel _complexModel;
+        private Props10String _props10;
+        private Props100String _props100;
+        private Props1000String _props1000;
+        private Props10Rec _props10x3;
+        private Props10Rec _props10x6;
+        private HttpContext _httpContext;
 
         [GlobalSetup]
         public void GlobalSetup()

@@ -27,11 +27,11 @@ public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    private static Waf _waf;
-    private static Dictionary<string, object> _stage1;
-    private static Dictionary<string, object> _stage1Attack;
-    private static Dictionary<string, object> _stage2;
-    private static Dictionary<string, object> _stage3;
+    private Waf _waf;
+    private Dictionary<string, object> _stage1;
+    private Dictionary<string, object> _stage1Attack;
+    private Dictionary<string, object> _stage2;
+    private Dictionary<string, object> _stage3;
 
     [GlobalSetup]
     public void GlobalSetup()

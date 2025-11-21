@@ -21,7 +21,7 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class AspNetCoreBenchmark
     {
-        private static HttpClient _client;
+        private HttpClient _client;
 
         [GlobalSetup]
         public void GlobalSetup()
