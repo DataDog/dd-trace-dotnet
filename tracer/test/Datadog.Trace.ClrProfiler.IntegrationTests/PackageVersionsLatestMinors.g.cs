@@ -6037,6 +6037,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET5_0
                 new object[] { "3.12.0" },
@@ -6082,6 +6083,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET6_0
                 new object[] { "3.12.0" },
@@ -6127,6 +6129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET7_0
                 new object[] { "3.12.0" },
@@ -6172,6 +6175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET8_0
                 new object[] { "3.12.0" },
@@ -6217,6 +6221,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET9_0
                 new object[] { "3.12.0" },
@@ -6262,6 +6267,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #if NET10_0
                 new object[] { "3.12.0" },
@@ -6307,6 +6313,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.52.1" },
                 new object[] { "3.53.2" },
                 new object[] { "3.54.1" },
+                new object[] { "3.55.0" },
 #endif
 #endif
             };

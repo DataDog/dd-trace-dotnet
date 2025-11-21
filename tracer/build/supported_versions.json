@@ -494,9 +494,9 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.6.0",
         "minVersionTestedInclusive": "3.6.0",
-        "maxVersionSupportedInclusive": "3.54.1",
-        "maxVersionAvailableInclusive": "3.54.1",
-        "maxVersionTestedInclusive": "3.54.1"
+        "maxVersionSupportedInclusive": "3.55.0",
+        "maxVersionAvailableInclusive": "3.55.0",
+        "maxVersionTestedInclusive": "3.55.0"
       }
     ]
   },

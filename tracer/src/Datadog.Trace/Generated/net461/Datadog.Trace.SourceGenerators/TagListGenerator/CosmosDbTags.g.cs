@@ -26,6 +26,14 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> DatabaseIdBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
         // HostBytes = MessagePack.Serialize("out.host");
         private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+        // ResponseStatusCodeBytes = MessagePack.Serialize("db.response.status_code");
+        private static ReadOnlySpan<byte> ResponseStatusCodeBytes => new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        // ResponseSubStatusCodeBytes = MessagePack.Serialize("cosmosdb.response.sub_status_code");
+        private static ReadOnlySpan<byte> ResponseSubStatusCodeBytes => new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        // UserAgentBytes = MessagePack.Serialize("user_agent.original");
+        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 179, 117, 115, 101, 114, 95, 97, 103, 101, 110, 116, 46, 111, 114, 105, 103, 105, 110, 97, 108 };
+        // ConnectionModeBytes = MessagePack.Serialize("cosmosdb.connection.mode");
+        private static ReadOnlySpan<byte> ConnectionModeBytes => new byte[] { 184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101 };
 
         public override string? GetTag(string key)
         {
@@ -37,6 +45,10 @@ namespace Datadog.Trace.Tagging
                 "cosmosdb.container" => ContainerId,
                 "db.name" => DatabaseId,
                 "out.host" => Host,
+                "db.response.status_code" => ResponseStatusCode,
+                "cosmosdb.response.sub_status_code" => ResponseSubStatusCode,
+                "user_agent.original" => UserAgent,
+                "cosmosdb.connection.mode" => ConnectionMode,
                 _ => base.GetTag(key),
             };
         }
@@ -53,6 +65,18 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "out.host": 
                     Host = value;
+                    break;
+                case "db.response.status_code": 
+                    ResponseStatusCode = value;
+                    break;
+                case "cosmosdb.response.sub_status_code": 
+                    ResponseSubStatusCode = value;
+                    break;
+                case "user_agent.original": 
+                    UserAgent = value;
+                    break;
+                case "cosmosdb.connection.mode": 
+                    ConnectionMode = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -95,6 +119,26 @@ namespace Datadog.Trace.Tagging
             if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
+            }
+
+            if (ResponseStatusCode is not null)
+            {
+                processor.Process(new TagItem<string>("db.response.status_code", ResponseStatusCode, ResponseStatusCodeBytes));
+            }
+
+            if (ResponseSubStatusCode is not null)
+            {
+                processor.Process(new TagItem<string>("cosmosdb.response.sub_status_code", ResponseSubStatusCode, ResponseSubStatusCodeBytes));
+            }
+
+            if (UserAgent is not null)
+            {
+                processor.Process(new TagItem<string>("user_agent.original", UserAgent, UserAgentBytes));
+            }
+
+            if (ConnectionMode is not null)
+            {
+                processor.Process(new TagItem<string>("cosmosdb.connection.mode", ConnectionMode, ConnectionModeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -141,6 +185,34 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
+                  .Append(',');
+            }
+
+            if (ResponseStatusCode is not null)
+            {
+                sb.Append("db.response.status_code (tag):")
+                  .Append(ResponseStatusCode)
+                  .Append(',');
+            }
+
+            if (ResponseSubStatusCode is not null)
+            {
+                sb.Append("cosmosdb.response.sub_status_code (tag):")
+                  .Append(ResponseSubStatusCode)
+                  .Append(',');
+            }
+
+            if (UserAgent is not null)
+            {
+                sb.Append("user_agent.original (tag):")
+                  .Append(UserAgent)
+                  .Append(',');
+            }
+
+            if (ConnectionMode is not null)
+            {
+                sb.Append("cosmosdb.connection.mode (tag):")
+                  .Append(ConnectionMode)
                   .Append(',');
             }
 
