@@ -144,10 +144,10 @@ public static class Program
         }
 
 #if OTEL_1_2
+        meterProvider?.ForceFlush();
         meterProvider?.Dispose();
 #endif
 #if OTEL_1_9
-
         loggerFactory?.Dispose();
 #endif
     }
