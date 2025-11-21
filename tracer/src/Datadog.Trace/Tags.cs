@@ -212,6 +212,11 @@ namespace Datadog.Trace
         internal const string HttpUserAgent = "http.useragent";
 
         /// <summary>
+        /// The original user agent string. Used for SDK clients such as Azure SDK.
+        /// </summary>
+        internal const string UserAgentOriginal = "user_agent.original";
+
+        /// <summary>
         /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
         /// </summary>
         internal const string HttpClientIp = "http.client_ip";

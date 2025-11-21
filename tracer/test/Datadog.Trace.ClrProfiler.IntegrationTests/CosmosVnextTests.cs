@@ -121,6 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: cosmosdb-emulator");
             settings.AddSimpleScrubber("peer.service: cosmosdb-emulator_arm64", "peer.service: cosmosdb-emulator");
+            settings.AddRegexScrubber(new(@"user_agent\.original: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "user_agent.original: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
             return settings;
         }
     }
