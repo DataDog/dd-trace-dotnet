@@ -31,6 +31,7 @@ internal class TraceExporter : SafeHandle, IApi
         _updateSampleRates = updateSampleRates;
         _log = log ?? DatadogLogging.GetLoggerFor<TraceExporter>();
         _log.Debug("Creating new TraceExporter");
+        _log.Information("Configuration: {Configuration}", configuration);
         _cachedResponse = string.Empty;
         using var errPtr = NativeInterop.Exporter.New(out var ptr, configuration);
         errPtr.ThrowIfError();
