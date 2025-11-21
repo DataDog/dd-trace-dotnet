@@ -18,6 +18,7 @@
 #include "CorProfilerCallback.h"
 #include "DiscardMetrics.h"
 #include "IConfiguration.h"
+#include "JitCodeCache.h"
 #include "LibrariesInfoCache.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -117,6 +118,12 @@ const char* LinuxStackFramesCollector::HybridTraceEventName(HybridTraceEvent eve
             return "StepResult";
         case HybridTraceEvent::Finish:
             return "Finish";
+        case HybridTraceEvent::ManagedViaJitCache:
+            return "ManagedViaJitCache";
+        case HybridTraceEvent::ManagedViaProcMaps:
+            return "ManagedViaProcMaps";
+        case HybridTraceEvent::ManagedDetectionMiss:
+            return "ManagedDetectionMiss";
         case HybridTraceEvent::CacheMissing:
             return "CacheMissing";
     }
@@ -681,6 +688,17 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
 
 bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
 {
+#ifdef LINUX
+    if (const auto* methodInfo = JitCodeCache::Instance().FindMethod(instructionPointer))
+    {
+        RecordHybridEvent(
+            HybridTraceEvent::ManagedViaJitCache,
+            instructionPointer,
+            methodInfo->Start);
+
+        return true;
+    }
+#endif
     // Use the LibrariesInfoCache to detect if the instruction pointer falls within
     // .NET runtime or managed code regions
     auto* librariesCache = LibrariesInfoCache::GetInstance();
@@ -693,86 +711,133 @@ bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
 
     // Check if the instruction pointer falls within any known mapping
     // This will return the cached result if found, or trigger missing mapping flag if not found
-    return librariesCache->IsAddressInManagedRegion(instructionPointer);
-}
+    const bool inManagedRegion = librariesCache->IsAddressInManagedRegion(instructionPointer);
+    if (inManagedRegion)
+    {
+        RecordHybridEvent(HybridTraceEvent::ManagedViaProcMaps, instructionPointer);
+    }
+    else
+    {
+        RecordHybridEvent(HybridTraceEvent::ManagedDetectionMiss, instructionPointer);
+    }
 
+    return inManagedRegion;
+}
 std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip)
 {
 #ifdef ARM64
-    // ARM64-specific manual unwinding for managed frames
     RecordHybridEvent(HybridTraceEvent::ManualStart, ip);
-    unw_word_t fp, sp, lr;
 
-    // Get current frame pointer (x29), stack pointer, link register (x30)
+    unw_word_t fp, sp, lr;
     int fp_result = unw_get_reg(cursor, UNW_AARCH64_X29, &fp);
     int sp_result = unw_get_reg(cursor, UNW_REG_SP, &sp);
     int lr_result = unw_get_reg(cursor, UNW_AARCH64_X30, &lr);
 
+    const auto* methodInfo = JitCodeCache::Instance().FindMethod(ip);
+    constexpr size_t DefaultMaxFrameDistanceBytes = 1ULL << 20;
+    const size_t maxFrameDistanceBytes =
+        (methodInfo != nullptr && methodInfo->FrameSize > 0)
+            ? static_cast<size_t>(methodInfo->FrameSize) + 128
+            : DefaultMaxFrameDistanceBytes;
+
+    const int32_t cachedFpOffset =
+        (methodInfo != nullptr && methodInfo->SavedFpOffset >= 0) ? methodInfo->SavedFpOffset : 0;
+    const int32_t cachedLrOffset =
+        (methodInfo != nullptr && methodInfo->SavedLrOffset >= 0) ? methodInfo->SavedLrOffset : static_cast<int32_t>(sizeof(uintptr_t));
+    const bool hasCachedOffsets =
+        (methodInfo != nullptr) && (methodInfo->SavedFpOffset >= 0) && (methodInfo->SavedLrOffset >= 0);
+
+    // ----------------------------------------------------------
+    // SAFETY: SP must *always* move UP (toward larger addresses)
+    // Never decrease SP or go below the current one.
+    // TODO: Once real stack boundaries are available, validate
+    //       fp and prev_fp against them.
+    // ----------------------------------------------------------
+
     if (fp_result == 0 && fp != 0)
     {
-        constexpr size_t MaxFrameDistanceBytes = 1 << 20; // 1 MB safety bound
-
         unw_word_t prev_fp = 0;
         unw_word_t return_addr = 0;
 
-        // TODO: Guard this memory access using a signal-safe probe (see SafeAccess in Java profiler).
+        const uintptr_t prevFpAddress = static_cast<uintptr_t>(fp) + static_cast<uintptr_t>(hasCachedOffsets ? cachedFpOffset : 0);
+        const uintptr_t returnAddressLocation =
+            static_cast<uintptr_t>(fp) + static_cast<uintptr_t>(hasCachedOffsets ? cachedLrOffset : sizeof(prev_fp));
+
         const bool readPrev =
-            ReadStackMemory(fp, &prev_fp, sizeof(prev_fp)) &&
-            ReadStackMemory(fp + sizeof(prev_fp), &return_addr, sizeof(return_addr));
+            ReadStackMemory(prevFpAddress, &prev_fp, sizeof(prev_fp)) &&
+            ReadStackMemory(returnAddressLocation, &return_addr, sizeof(return_addr));
 
         if (readPrev)
         {
-            const bool stackOrderValid =
-                (prev_fp > fp) && (static_cast<uintptr_t>(prev_fp) - static_cast<uintptr_t>(fp) < MaxFrameDistanceBytes);
+            const bool fp_chain_ok =
+                (prev_fp > fp) &&
+                ((uintptr_t)prev_fp - (uintptr_t)fp < maxFrameDistanceBytes);
 
-            const bool returnValid = IsValidReturnAddress(return_addr);
+            const bool return_valid = IsValidReturnAddress(return_addr);
 
-            if (stackOrderValid && returnValid)
+            uintptr_t new_sp = 0;
+            if (methodInfo != nullptr && methodInfo->FrameSize > 0)
             {
-                RecordHybridEvent(
-                    HybridTraceEvent::ManualFramePointerSuccess,
-                    static_cast<uintptr_t>(return_addr),
-                    static_cast<uintptr_t>(prev_fp));
+                new_sp = static_cast<uintptr_t>(fp) + methodInfo->FrameSize;
+            }
+            else
+            {
+                new_sp = static_cast<uintptr_t>(fp) + 2 * sizeof(uintptr_t);
+            }
+
+            const bool sp_forward = new_sp >= sp;   // <- critical invariant
+
+            if (fp_chain_ok && return_valid && sp_forward)
+            {
+                RecordHybridEvent(HybridTraceEvent::ManualFramePointerSuccess,
+                                  (uintptr_t)return_addr, (uintptr_t)prev_fp);
 
                 unw_set_reg(cursor, UNW_AARCH64_X29, prev_fp);
-                unw_set_reg(cursor, UNW_REG_SP, static_cast<uintptr_t>(fp) + 2 * sizeof(uintptr_t));
+                unw_set_reg(cursor, UNW_REG_SP, new_sp);
                 unw_set_reg(cursor, UNW_REG_IP, return_addr);
 
                 return 1;
             }
 
-            RecordHybridEvent(
-                HybridTraceEvent::ManualFramePointerInvalidReturn,
-                static_cast<uintptr_t>(return_addr),
-                static_cast<uintptr_t>(prev_fp));
+            RecordHybridEvent(HybridTraceEvent::ManualFramePointerInvalidReturn,
+                              (uintptr_t)return_addr, (uintptr_t)prev_fp);
         }
         else
         {
-            RecordHybridEvent(
-                HybridTraceEvent::ManualFramePointerReadFailed,
-                static_cast<uintptr_t>(fp));
+            RecordHybridEvent(HybridTraceEvent::ManualFramePointerReadFailed,
+                              (uintptr_t)fp);
         }
     }
     else
     {
-        RecordHybridEvent(
-            HybridTraceEvent::ManualFramePointerUnavailable,
-            static_cast<uintptr_t>(fp),
-            static_cast<uintptr_t>(fp_result));
+        RecordHybridEvent(HybridTraceEvent::ManualFramePointerUnavailable,
+                          (uintptr_t)fp, (uintptr_t)fp_result);
     }
 
-    // Fallback: try to use link register if it looks valid
+    // ----------------------------------------------------------------------
+    // FALLBACK: LR-based unwinding (leaf-ish or tail-call methods)
+    //
+    // *We DO NOT modify SP anymore.*
+    //
+    // Rationale: LR might be correct even when no FP exists, but we do not
+    //            know the frame size. Moving SP heuristically is unsafe.
+    //            Keeping SP stable ensures libunwind can recover correctly.
+    // ----------------------------------------------------------------------
     if (lr_result == 0 && lr != 0 && IsValidReturnAddress(lr))
     {
-        RecordHybridEvent(HybridTraceEvent::ManualLinkRegisterSuccess, static_cast<uintptr_t>(lr), static_cast<uintptr_t>(sp));
+        RecordHybridEvent(HybridTraceEvent::ManualLinkRegisterSuccess,
+                          (uintptr_t)lr, (uintptr_t)sp);
+
+        // Only update IP. SP stays untouched.
         unw_set_reg(cursor, UNW_REG_IP, lr);
-        // Estimate stack adjustment (this is heuristic)
-        unw_set_reg(cursor, UNW_REG_SP, sp + EstimateStackFrameSize(ip));
         return 1;
     }
 
-    // Last resort: fall back to libunwind
-    RecordHybridEvent(HybridTraceEvent::ManualFallback, static_cast<uintptr_t>(ip));
+    // ----------------------------------------------------
+    // Last fallback: allow libunwind to step normally
+    // (will likely fail, but better than corrupting SP)
+    // ----------------------------------------------------
+    RecordHybridEvent(HybridTraceEvent::ManualFallback, (uintptr_t)ip);
     return unw_step(cursor);
 
 #else

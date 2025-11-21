@@ -130,6 +130,9 @@ private:
         ManualFallback,
         StepResult,
         Finish,
+        ManagedViaJitCache,
+        ManagedViaProcMaps,
+        ManagedDetectionMiss,
         CacheMissing,
     };
 

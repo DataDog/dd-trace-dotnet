@@ -93,8 +93,6 @@ rsync -avz --delete \
   workspace-r1:~/dd/dd-trace-dotnet/
 ```
 
-
-
 ## Uwinding logic
 
 ### ARM64 JIT Frame Notes
@@ -135,3 +133,12 @@ ret
 - The dynamic prologue means we cannot assume the saved LR lives at `[fp + 8]`. In large frames it can be farther down, and in tail-call optimized methods it may never be on the stack at all.
 - The JIT sometimes reuses the frame space for helper calls, so a naïve read can observe scratch data instead of the actual return address.
 - Only disassembling the method body (or letting the runtime expose unwind metadata) tells us which registers were saved and where the spill slots ended up. Without scanning the code we lack a reliable offset for the saved LR, so the hybrid unwinder must stay conservative and fall back unless the canonical layout is clearly detected.
+
+### JIT Metadata Cache
+
+- `JITCompilationFinished` now records each method's native `[start, end)` range and prologue size into `JitCodeCache`.
+- The cache captures the decoded stack frame summary (frame size, saved FP/LR offsets, callee-saved register slots) plus the raw prologue bytes for later inspection.
+- The cache uses a lock-free, signal-safe linked list so hybrid unwinding can query it from the sampler thread.
+- `LinuxStackFramesCollector::IsManagedCode` consults the cache first, reducing the reliance on `/proc/self/maps` refreshes.
+- ARM64 manual unwinding now reads the caller FP/LR using the cached offsets and restores SP with the cached frame size when available.
+- Sampling can land inside musl’s `__clone` / `__syscall_cp_asm` wrappers; we currently let libunwind handle those native frames. No action needed, but note this in case we later want to skip straight to the managed entry point.
