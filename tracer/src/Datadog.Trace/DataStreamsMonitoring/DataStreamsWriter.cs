@@ -170,9 +170,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        await FlushAsync().ConfigureAwait(false);
-
-        // wait for the processing loop to complete
         var completedTask = await Task.WhenAny(
                                            _processTask,
                                            Task.Delay(TimeSpan.FromSeconds(20)))
@@ -182,16 +179,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             Log.Error("Could not flush all data streams stats before process exit");
         }
+
+        await FlushAsync().ConfigureAwait(false);
     }
 
     public async Task FlushAsync()
     {
         Log.Debug("ROB Flushing Async");
-        if (_processExit.Task.IsCompleted)
-        {
-            return;
-        }
-
         if (!Volatile.Read(ref _isInitialized) || _processTask == null)
         {
             return;
@@ -217,44 +211,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             _flushSemaphore.Release();
         }
-    }
-
-    public void Flush()
-    {
-        Log.Debug("ROBC Sync Flush");
-        if (_processExit.Task.IsCompleted)
-        {
-            return;
-        }
-
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-        {
-            return;
-        }
-
-        _ = Task.Run(async () =>
-        {
-            Log.Debug("ROBC Sync Flush -- In task");
-            if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
-            {
-                Log.Warning("Could not acquire flush semaphore within timeout");
-                return;
-            }
-
-            try
-            {
-                await WriteToApiAsync().ConfigureAwait(false);
-                FlushComplete?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during flush");
-            }
-            finally
-            {
-                _flushSemaphore.Release();
-            }
-        });
     }
 
     private async Task WriteToApiAsync()
@@ -302,11 +258,16 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             Log.Debug("ROBC Processing Queue Loop - Sleep");
             Thread.Sleep(_waitTimeSpan);
-            // await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-            if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(.5)))
+
+            if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(10)))
             {
-                Log.Error("Queue Loop Semaphore timeout");
-                return;
+                Log.Warning("Queue Loop Semaphore timeout - continuing");
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                continue;
             }
 
             try
