@@ -45,10 +45,10 @@ internal abstract class LambdaCommon
     {
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
-        WriteRequestHeaders(request, context.ClientContext?.Custom);
-        if (context.AwsRequestId != null)
+        WriteRequestHeaders(request, context?.ClientContext?.Custom);
+        if (context?.AwsRequestId != null)
         {
-            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context.AwsRequestId);
+            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context?.AwsRequestId);
         }
 
         using var response = (HttpWebResponse)request.GetResponse();
