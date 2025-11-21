@@ -92,6 +92,11 @@ namespace Datadog.Trace.Util
                         tags.PeerService = sqsTags.QueueName;
                         tags.PeerServiceSource = Trace.Tags.QueueName;
                         break;
+                    case "StepFunctions":
+                        var stepTags = (AwsStepFunctionsTags)tags;
+                        tags.PeerService = stepTags.StateMachineName;
+                        tags.PeerServiceSource = Trace.Tags.StateMachineName;
+                        break;
                 }
             }
 
