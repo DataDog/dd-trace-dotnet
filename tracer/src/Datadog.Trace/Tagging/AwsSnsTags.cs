@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.SourceGenerators;
 
@@ -24,13 +26,13 @@ namespace Datadog.Trace.Tagging
 #pragma warning disable CS0618 // Duplicate of TopicName
         [Tag(Trace.Tags.AwsTopicName)]
 #pragma warning restore CS0618
-        public string AwsTopicName => TopicName;
+        public string? AwsTopicName => TopicName;
 
         [Tag(Trace.Tags.TopicName)]
-        public string TopicName { get; set; }
+        public string? TopicName { get; set; }
 
         [Tag(Trace.Tags.AwsTopicArn)]
-        public string TopicArn { get; set; }
+        public string? TopicArn { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }

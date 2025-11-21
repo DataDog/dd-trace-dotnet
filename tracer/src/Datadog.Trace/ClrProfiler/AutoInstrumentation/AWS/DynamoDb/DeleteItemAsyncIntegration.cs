@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -33,15 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         private const string Operation = "DeleteItem";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemAsyncIntegration>();
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TDeleteItemRequest">Type of the request object</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the DynamoDB operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TDeleteItemRequest>(TTarget instance, TDeleteItemRequest request, CancellationToken cancellationToken)
             where TDeleteItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType
         {
@@ -50,10 +43,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
+            var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out var tags);
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
 
-            if (!Tracer.Instance.Settings.SpanPointersEnabled)
+            if (!Tracer.Instance.Settings.SpanPointersEnabled || scope is null)
             {
                 return new CallTargetState(scope);
             }
@@ -72,17 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             return new CallTargetState(scope);
         }
 
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">Response instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">CallTarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return response;

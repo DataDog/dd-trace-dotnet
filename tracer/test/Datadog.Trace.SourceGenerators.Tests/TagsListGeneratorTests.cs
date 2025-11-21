@@ -43,7 +43,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -199,7 +199,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -395,7 +395,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
