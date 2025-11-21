@@ -96,7 +96,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
-                x => ((DataStreamsWriter)x!).Flush(),
+                async x => await ((DataStreamsWriter)x!).FlushAsync().ConfigureAwait(false),
                 this,
                 dueTime: _bucketDurationMs,
                 period: _bucketDurationMs);
@@ -205,6 +205,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
         try
         {
+            Log.Debug("ROB Write API async");
             await WriteToApiAsync().ConfigureAwait(false);
             FlushComplete?.Invoke(this, EventArgs.Empty);
         }
