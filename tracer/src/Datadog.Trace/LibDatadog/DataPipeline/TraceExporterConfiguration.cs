@@ -119,17 +119,6 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string? ProcessTags
-    {
-        init
-        {
-            // TODO: uncomment when this is implemented in libdatadog
-            // using var processTags = new CharSlice(value);
-            // using var error = NativeInterop.Config.SetProcessTags(this, processTags);
-            // error.ThrowIfError();
-        }
-    }
-
     public TelemetryClientConfiguration? TelemetryClientConfiguration
     {
         init
