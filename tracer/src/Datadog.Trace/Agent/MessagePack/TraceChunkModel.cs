@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Agent.MessagePack;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Agent.MessagePack;
 internal readonly struct TraceChunkModel
 {
     // for small trace chunks, use the ArraySegment<Span> copy directly, no heap allocations
-    private readonly ArraySegment<Span> _spans;
+    private readonly SpanCollection _spans;
 
     // for large trace chunks, use a HashSet<ulong> instead of iterating the array.
     // there are 3 possible states:
@@ -75,8 +76,8 @@ internal readonly struct TraceChunkModel
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
     /// <param name="isFirstChunkInPayload">Indicates if this is the first trace chunk being written to the output buffer.</param>
-    public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null, bool isFirstChunkInPayload = false)
-        : this(spans, TraceContext.GetTraceContext(spans), samplingPriority, isFirstChunkInPayload)
+    public TraceChunkModel(in SpanCollection spans, int? samplingPriority = null, bool isFirstChunkInPayload = false)
+        : this(in spans, TraceContext.GetTraceContext(in spans), samplingPriority, isFirstChunkInPayload)
     {
         // since all we have is an array of spans, use the trace context from the first span
         // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
@@ -85,8 +86,8 @@ internal readonly struct TraceChunkModel
     }
 
     // used only to chain constructors
-    private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInPayload)
-        : this(spans, traceContext?.RootSpan)
+    private TraceChunkModel(in SpanCollection spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInPayload)
+        : this(in spans, traceContext?.RootSpan)
     {
         // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;
@@ -128,8 +129,8 @@ internal readonly struct TraceChunkModel
         }
     }
 
-    // used in tests
-    internal TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
+    [TestingAndPrivateOnly]
+    internal TraceChunkModel(in SpanCollection spans, Span? localRootSpan)
     {
         _spans = spans;
 
@@ -161,7 +162,7 @@ internal readonly struct TraceChunkModel
             ThrowHelper.ThrowArgumentOutOfRangeException(nameof(spanIndex));
         }
 
-        var span = _spans.Array![_spans.Offset + spanIndex];
+        var span = _spans[spanIndex];
         var parentId = span.Context.ParentId ?? 0;
         bool isLocalRoot = parentId is 0 || span.SpanId == LocalRootSpanId;
         bool isFirstSpan = spanIndex == 0;
@@ -225,9 +226,9 @@ internal readonly struct TraceChunkModel
 
             if (hashSet.Count == 0)
             {
-                for (var i = 0; i < _spans.Count; i++)
+                foreach (var span in _spans)
                 {
-                    hashSet.Add(_spans.Array![_spans.Offset + i].SpanId);
+                    hashSet.Add(span.SpanId);
                 }
             }
 
@@ -243,15 +244,28 @@ internal readonly struct TraceChunkModel
     private int IndexOf(ulong spanId, int startIndex)
     {
         // wrap around the end of the array
-        if (startIndex >= _spans.Count)
+        var count = _spans.Count;
+        if (count == 0)
+        {
+            return -1;
+        }
+
+        if (startIndex >= count)
         {
             startIndex = 0;
         }
 
-        // iterate over the span array starting at the specified index + 1
-        for (var i = startIndex; i < _spans.Count; i++)
+        if (count == 1)
         {
-            if (spanId == _spans.Array![_spans.Offset + i].SpanId)
+            return _spans[0].SpanId == spanId ? 0 : -1;
+        }
+
+        var array = _spans.ToArray();
+
+        // iterate over the span array starting at the specified index + 1
+        for (var i = startIndex; i < count; i++)
+        {
+            if (spanId == array.Array![array.Offset + i].SpanId)
             {
                 return i;
             }
@@ -260,7 +274,7 @@ internal readonly struct TraceChunkModel
         // if not found above, wrap around to the beginning to search the rest of the array
         for (var i = 0; i < startIndex; i++)
         {
-            if (spanId == _spans.Array![_spans.Offset + i].SpanId)
+            if (spanId == array.Array![array.Offset + i].SpanId)
             {
                 return i;
             }
