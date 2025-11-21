@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
@@ -22,6 +24,7 @@ internal abstract class LambdaCommon
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
+    private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
@@ -38,11 +41,16 @@ internal abstract class LambdaCommon
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
-    internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
+    internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
     {
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
-        WriteRequestHeaders(request, context);
+        WriteRequestHeaders(request, context?.ClientContext?.Custom);
+        if (context?.AwsRequestId != null)
+        {
+            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context.AwsRequestId);
+        }
+
         using var response = (HttpWebResponse)request.GetResponse();
 
         var headers = response.Headers.Wrap();
@@ -55,9 +63,9 @@ internal abstract class LambdaCommon
         return CreatePlaceholderScope(tracer, headers);
     }
 
-    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
+    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, object state, bool isError, string data)
     {
-        var request = requestBuilder.GetEndInvocationRequest(scope, isError);
+        var request = requestBuilder.GetEndInvocationRequest(scope, state, isError);
         WriteRequestPayload(request, data);
         using var response = (HttpWebResponse)request.GetResponse();
 
@@ -67,8 +75,10 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+    internal static async Task EndInvocationAsync(string returnValue, Exception exception, object stateObject, ILambdaExtensionRequest requestBuilder)
     {
+        var state = (CallTargetState)stateObject!;
+        var scope = state.Scope;
         try
         {
             await Task.WhenAll(
@@ -90,7 +100,7 @@ internal abstract class LambdaCommon
                 span.SetException(exception);
             }
 
-            SendEndInvocation(requestBuilder, scope, exception != null, returnValue);
+            SendEndInvocation(requestBuilder, scope, state.State, exception != null, returnValue);
         }
         catch (Exception ex)
         {

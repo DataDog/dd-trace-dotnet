@@ -20,7 +20,7 @@ internal interface ILambdaExtensionRequest
     /// Get the end invocation request
     /// </summary>
     /// <returns>The end invocation request</returns>
-    WebRequest GetEndInvocationRequest(Scope scope, bool isError);
+    WebRequest GetEndInvocationRequest(Scope scope, object state, bool isError);
 }
 
 #endif
