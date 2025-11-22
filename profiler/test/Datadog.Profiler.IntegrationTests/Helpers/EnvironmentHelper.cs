@@ -367,9 +367,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private string GetLinuxApiWrapperPath()
         {
-            var filename = "Datadog.Linux.ApiWrapper.x64.so";
+            var archSubfolder = GetArchitectureSubfolder();
+            var filename = archSubfolder.Contains("arm64", StringComparison.OrdinalIgnoreCase)
+                ? "Datadog.Linux.ApiWrapper.arm64.so"
+                : "Datadog.Linux.ApiWrapper.x64.so";
             var deployDir = IsRunningInCi() ? GetMonitoringHome() : GetDeployDir();
-            return Path.Combine(deployDir, GetArchitectureSubfolder(), filename);
+            return Path.Combine(deployDir, archSubfolder, filename);
         }
 
         private string GetNativeDllExtension()

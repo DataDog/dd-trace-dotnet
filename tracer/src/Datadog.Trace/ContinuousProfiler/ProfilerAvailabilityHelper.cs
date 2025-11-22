@@ -61,7 +61,7 @@ internal static class ProfilerAvailabilityHelper
             return fd.OSPlatform switch
             {
                 OSPlatformName.Windows when fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.X86 => true,
-                OSPlatformName.Linux when fd.ProcessArchitecture is ProcessArchitecture.X64 => true,
+                OSPlatformName.Linux when fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.Arm64 => true,
                 _ => false,
             };
         }
