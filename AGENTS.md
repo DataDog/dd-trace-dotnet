@@ -287,6 +287,9 @@ The tracer runs in-process with customer applications and must have minimal perf
 - Use struct implementations with generic constraints for zero-allocation production code
 - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
 
+📖 **Load when**: Debugging the tracer locally, setting up IDE debugging configurations, or troubleshooting tracer loading issues
+- **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
+
 ## Commit & Pull Request Guidelines
 
 **Commits:**
@@ -313,6 +316,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Development guides:**
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
 - `docs/development/DuckTyping.md` — Duck typing guide
+- `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/Serverless.md` — Serverless instrumentation

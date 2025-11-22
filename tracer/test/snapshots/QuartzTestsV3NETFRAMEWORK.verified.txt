@@ -12,9 +12,8 @@
       error.msg: Expected InvalidOperationException thrown,
       error.stack:
 Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False 
-Quartz.JobExecutionException: Expected InvalidOperationException thrown
----> System.InvalidOperationException: Expected InvalidOperationException thrown
-at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context),
+Quartz.JobExecutionException: Expected InvalidOperationException thrown ---> System.InvalidOperationException: Expected InvalidOperationException thrown
+at QuartzSampleApp.Jobs.ExceptionJob.<Quartz-IJob-Execute>d__0.MoveNext(),
       error.type: Quartz.JobExecutionException,
       fire.instance.id: <fire.instance.id>,
       job.group: group2,
