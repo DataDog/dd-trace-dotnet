@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tests
     [UsesVerify]
     public class MultipartFormTests
     {
+        private const string AwrMultipartTest = "ApiWebRequest_MultipartTest";
+        private const string AwrValidationTest = "ApiWebRequest_ValidationTest";
         private static readonly Uri Localhost = new Uri("http://localhost");
         private readonly ITestOutputHelper _output;
 
@@ -37,28 +39,6 @@ namespace Datadog.Trace.Tests
             from useStream in new[] { true, false }
             from useGzip in new[] { true, false }
             select new object[] { useStream, useGzip };
-
-        [Theory]
-        [MemberData(nameof(GetTestData))]
-        public async Task ApiWebRequest_MultipartTest(bool useStream, bool useGzip)
-        {
-            using var agent = MockTracerAgent.Create(_output);
-            var url = new Uri($"http://localhost:{agent.Port}/");
-            var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunTest(agent, () => factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
-        }
-
-        [Theory]
-        [MemberData(nameof(GetTestData))]
-        public async Task ApiWebRequest_ValidationTest(bool useStream, bool useGzip)
-        {
-            using var agent = MockTracerAgent.Create(_output);
-            var url = new Uri($"http://localhost:{agent.Port}/");
-            var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunValidationTest(agent, () => factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
-        }
-
-#if NETCOREAPP3_1_OR_GREATER
 
         [Theory]
         [MemberData(nameof(GetTestData))]
@@ -104,7 +84,7 @@ namespace Datadog.Trace.Tests
                 Localhost);
             await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
         }
-#else
+#elif NETCOREAPP3_1_OR_GREATER
         [Theory]
         [MemberData(nameof(GetTestData))]
         public async Task HttpStreamRequest_UDS_MultipartTest(bool useStream, bool useGzip)
@@ -114,7 +94,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
+            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrMultipartTest);
         }
 
         [Theory]
@@ -126,9 +106,8 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                 Localhost);
-            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrValidationTest);
         }
-#endif
 #endif
 
         [Theory]
@@ -164,7 +143,7 @@ namespace Datadog.Trace.Tests
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
                     new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                     Localhost);
-                await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
+                await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrMultipartTest);
             }
         }
 
@@ -201,7 +180,7 @@ namespace Datadog.Trace.Tests
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
                     new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
                     Localhost);
-                await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
+                await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, AwrValidationTest);
             }
         }
 
