@@ -147,9 +147,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         if (!isError)
                         {
                             var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                            dataStreams.TrackBacklog(
-                                $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce",
-                                report.Offset.Value);
+                            // Try to get cluster_id from span tags
+                            var backlogTags = $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce";
+                            if (tags.ClusterId != null)
+                            {
+                                backlogTags = $"kafka_cluster_id:{tags.ClusterId},{backlogTags}";
+                            }
+
+                            dataStreams.TrackBacklog(backlogTags, report.Offset.Value);
                         }
                     }
 

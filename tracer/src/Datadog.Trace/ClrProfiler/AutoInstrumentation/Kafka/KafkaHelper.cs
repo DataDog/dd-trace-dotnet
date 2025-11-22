@@ -6,13 +6,17 @@
 #nullable enable
 
 using System;
+using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Console = System.Console;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -25,6 +29,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
+
+        // Thread-local flag to prevent infinite recursion when AdminClient creates internal Producer
+        [ThreadStatic]
+        private static bool _isGettingClusterId;
 
         internal static Scope? CreateProducerScope(
             Tracer tracer,
@@ -72,9 +80,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = (topicPartition?.Partition).ToString();
                 }
 
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
                 {
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                        DebugLog($"Added cluster_id tag to Kafka producer span: {clusterId}");
+                    }
+                    else
+                    {
+                        DebugLog("No cluster_id available for Kafka producer span");
+                    }
                 }
 
                 if (isTombstone)
@@ -212,10 +229,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                var consumerClusterId = string.Empty;
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var clusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                        consumerClusterId = clusterId;
+                        DebugLog($"Added cluster_id tag to Kafka consumer span: {clusterId}");
+                    }
+                    else
+                    {
+                        DebugLog("No cluster_id available for Kafka consumer span");
+                    }
                 }
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
@@ -244,9 +272,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    string[] edgeTags;
+                    if (!string.IsNullOrEmpty(consumerClusterId))
+                    {
+                        DebugLog($"DataStreams consume checkpoint - cluster_id: {consumerClusterId}, group: {groupId}, topic: {topic}");
+                        // Include cluster_id in edge tags (sorted alphabetically)
+                        edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { $"kafka_cluster_id:{consumerClusterId}", "direction:in", $"group:{groupId}", "type:kafka" }
+                                       : new[] { $"kafka_cluster_id:{consumerClusterId}", "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
+                    }
+                    else
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
+                    }
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -339,9 +379,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    // Try to get cluster_id from span tags (it was set in CreateProducerScope)
+                    var producerClusterId = string.Empty;
+                    if (span.Tags is KafkaTags kafkaTags && !string.IsNullOrEmpty(kafkaTags.ClusterId))
+                    {
+                        producerClusterId = kafkaTags.ClusterId;
+                    }
+
+                    string[] edgeTags;
+                    if (!string.IsNullOrEmpty(producerClusterId))
+                    {
+                        DebugLog($"DataStreams produce checkpoint - cluster_id: {producerClusterId}, topic: {topic}");
+                        // Include cluster_id in edge tags (sorted alphabetically)
+                        edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { $"kafka_cluster_id:{producerClusterId}", "direction:out", "type:kafka" }
+                                       : new[] { $"kafka_cluster_id:{producerClusterId}", "direction:out", $"topic:{topic}", "type:kafka" };
+                    }
+                    else
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
                                        ? DefaultProduceEdgeTags
-                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
+                                       : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                    }
+
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
@@ -362,6 +422,241 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
             }
+        }
+
+        private static void DebugLog(string message)
+        {
+            string? envVar = Environment.GetEnvironmentVariable("DD_TRACE_CUSTOM_DEBUG_LOGS");
+            if (!string.IsNullOrEmpty(envVar))
+            {
+                Log.Information("KAFKA-CLUSTER-ID: {Message}", message);
+                Console.WriteLine($"KAFKA-CLUSTER-ID: {message}");
+            }
+        }
+
+        internal static string? GetClusterId(string bootstrapServers)
+        {
+            string clusterId = string.Empty;
+
+            // Prevent re-entrancy: AdminClient internally creates a Producer, which would trigger our instrumentation again
+            if (_isGettingClusterId)
+            {
+                DebugLog("Skipping cluster_id retrieval to prevent re-entrancy (AdminClient internal Producer creation)");
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                DebugLog("Cannot retrieve cluster_id - bootstrap servers is null or empty");
+                return null;
+            }
+
+            try
+            {
+                _isGettingClusterId = true;
+                DebugLog($"Attempting to retrieve cluster_id from Kafka using bootstrap servers: {bootstrapServers}");
+
+                // 1. Create AdminClientConfig using pure reflection
+                var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+                if (configType == null)
+                {
+                    DebugLog("Unable to find Confluent.Kafka.AdminClientConfig type");
+                    return null;
+                }
+
+                var config = Activator.CreateInstance(configType);
+                if (config == null)
+                {
+                    DebugLog("Unable to create AdminClientConfig instance");
+                    return null;
+                }
+
+                DebugLog($"Created AdminClientConfig: {config.GetType().FullName}");
+
+                // 2. Set BootstrapServers property using reflection
+                var bootstrapServersProperty = configType.GetProperty("BootstrapServers");
+                if (bootstrapServersProperty == null)
+                {
+                    DebugLog("Unable to find BootstrapServers property");
+                    return null;
+                }
+
+                bootstrapServersProperty.SetValue(config, bootstrapServers);
+                DebugLog($"Set BootstrapServers to: {bootstrapServers}");
+
+                // 3. Create AdminClientBuilder using reflection
+                var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+                if (builderType == null)
+                {
+                    DebugLog("Unable to find Confluent.Kafka.AdminClientBuilder type");
+                    return null;
+                }
+
+                var builder = Activator.CreateInstance(builderType, new object[] { config });
+                if (builder == null)
+                {
+                    DebugLog("Unable to create AdminClientBuilder instance");
+                    return null;
+                }
+
+                DebugLog($"Created AdminClientBuilder: {builder.GetType().FullName}");
+
+                // 4. Call Build() method using reflection
+                var buildMethod = builderType.GetMethod("Build", BindingFlags.Public | BindingFlags.Instance);
+                if (buildMethod == null)
+                {
+                    DebugLog("Unable to find Build method on AdminClientBuilder");
+                    return null;
+                }
+
+                var adminClient = buildMethod.Invoke(builder, null);
+                if (adminClient == null)
+                {
+                    DebugLog("AdminClientBuilder.Build() returned null");
+                    return null;
+                }
+
+                DebugLog($"Built AdminClient: {adminClient.GetType().FullName}");
+
+                try
+                {
+                    // 5. Get DescribeClusterAsync method using reflection
+                    var adminClientType = adminClient.GetType();
+                    var describeClusterAsyncMethod = adminClientType.GetMethod("DescribeClusterAsync", BindingFlags.Public | BindingFlags.Instance);
+                    if (describeClusterAsyncMethod == null)
+                    {
+                        DebugLog("Unable to find DescribeClusterAsync method on AdminClient");
+                        return null;
+                    }
+
+                    DebugLog("Found DescribeClusterAsync method");
+
+                    // 6. Create DescribeClusterOptions using reflection (optional parameter, can pass null)
+                    var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+                    object? options = null;
+                    if (optionsType != null)
+                    {
+                        options = Activator.CreateInstance(optionsType);
+                        DebugLog($"Created DescribeClusterOptions: {options}");
+                    }
+                    else
+                    {
+                        DebugLog("DescribeClusterOptions type not found, using null");
+                    }
+
+                    // 7. Invoke DescribeClusterAsync
+                    var taskObj = describeClusterAsyncMethod.Invoke(adminClient, new object?[] { options });
+                    if (taskObj == null)
+                    {
+                        DebugLog("DescribeClusterAsync returned null");
+                        return null;
+                    }
+
+                    DebugLog($"DescribeClusterAsync returned: {taskObj.GetType().FullName}");
+
+                    // 8. Wait for the task to complete using reflection
+                    var taskType = taskObj.GetType();
+                    var getAwaiterMethod = taskType.GetMethod("GetAwaiter");
+                    if (getAwaiterMethod == null)
+                    {
+                        DebugLog("Unable to find GetAwaiter method on Task");
+                        return null;
+                    }
+
+                    var awaiter = getAwaiterMethod.Invoke(taskObj, null);
+                    if (awaiter == null)
+                    {
+                        DebugLog("GetAwaiter returned null");
+                        return null;
+                    }
+
+                    var getResultMethod = awaiter.GetType().GetMethod("GetResult");
+                    if (getResultMethod == null)
+                    {
+                        DebugLog("Unable to find GetResult method on TaskAwaiter");
+                        return null;
+                    }
+
+                    var result = getResultMethod.Invoke(awaiter, null);
+                    DebugLog($"Task completed, result: {result?.GetType().FullName}");
+
+                    // 9. Extract ClusterId from the result using reflection
+                    if (result != null)
+                    {
+                        var resultType = result.GetType();
+                        var clusterIdProperty = resultType.GetProperty("ClusterId");
+                        if (clusterIdProperty != null)
+                        {
+                            var clusterIdValue = clusterIdProperty.GetValue(result);
+                            DebugLog($"ClusterId raw value type: {clusterIdValue?.GetType().FullName}, value: {clusterIdValue}");
+
+                            // ClusterId might be wrapped in an optional type (e.g., Option<string> or Nullable)
+                            // Or it might be a string that contains "Some(...)" pattern
+                            if (clusterIdValue != null)
+                            {
+                                var clusterIdType = clusterIdValue.GetType();
+
+                                // Check if it's a string directly
+                                if (clusterIdValue is string strValue)
+                                {
+                                    DebugLog($"ClusterId is a string: {strValue}");
+
+                                    // Check if the string itself contains the "Some(...)" wrapper pattern
+                                    if (strValue.StartsWith("Some(") && strValue.EndsWith(")"))
+                                    {
+                                        clusterId = strValue.Substring(5, strValue.Length - 6);
+                                        DebugLog($"Parsed ClusterId from Some(...) string pattern: {clusterId}");
+                                    }
+                                    else
+                                    {
+                                        clusterId = strValue;
+                                    }
+                                }
+                                else
+                                {
+                                    DebugLog($"ClusterId is not a string, unexpected type: {clusterIdType.FullName}");
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(clusterId))
+                            {
+                                DebugLog($"Kafka cluster_id extracted successfully: {clusterId}");
+                            }
+                            else
+                            {
+                                DebugLog("ClusterId is null or empty");
+                            }
+                        }
+                        else
+                        {
+                            DebugLog("ClusterId property not found on result");
+                        }
+                    }
+                    else
+                    {
+                        DebugLog("DescribeClusterAsync result is null");
+                    }
+                }
+                finally
+                {
+                    // 10. Dispose AdminClient using reflection
+                    if (adminClient is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                        DebugLog("Disposed AdminClient");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLog($"Error extracting cluster_id from Kafka metadata: {ex}");
+            }
+            finally
+            {
+                _isGettingClusterId = false;
+            }
+
+            return clusterId;
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
