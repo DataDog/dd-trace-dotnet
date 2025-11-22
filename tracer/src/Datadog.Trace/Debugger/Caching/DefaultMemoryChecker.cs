@@ -6,9 +6,7 @@
 #nullable enable
 
 using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System;
 
@@ -29,15 +27,10 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     public bool IsLowResourceEnvironment { get; }
 
-    [return: MarshalAs(UnmanagedType.Bool)]
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
-
     private bool CheckLowResourceEnvironment()
     {
         try
         {
-            Logger.Debug("Checking if environment is low on resources");
             // Check if we're using more than 75% of available memory or there is less than 1GB of RAM available.
             return IsLowResourceEnvironmentGc() || IsLowResourceEnvironmentSystem();
         }
@@ -76,7 +69,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
     {
         try
         {
-            if (MEMORYSTATUSEX.GetAvailablePhysicalMemory(out var availableMemory))
+            if (WindowsMemoryInfo.TryGetAvailablePhysicalMemory(out var availableMemory))
             {
                 // If less than 1GB of RAM is available, consider it a low-resource environment
                 return availableMemory < 1_073_741_824; // 1 GB in bytes
@@ -150,44 +143,5 @@ internal class DefaultMemoryChecker : IMemoryChecker
         }
 
         return value.Slice(0, spaceIndex);
-    }
-
-    // Windows API for memory information
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private class MEMORYSTATUSEX
-    {
-#pragma warning disable IDE0044 // Add readonly modifier
-#pragma warning disable CS0169 // Field is never used
-        private uint dwLength;
-        private uint dwMemoryLoad;
-        private ulong ullTotalPhys;
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-        private ulong ullAvailPhys;
-#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
-        private ulong ullTotalPageFile;
-        private ulong ullAvailPageFile;
-        private ulong ullTotalVirtual;
-        private ulong ullAvailVirtual;
-        private ulong ullAvailExtendedVirtual;
-#pragma warning restore CS0169 // Field is never used
-#pragma warning restore IDE0044 // Add readonly modifier
-
-        private MEMORYSTATUSEX()
-        {
-            dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
-        }
-
-        internal static bool GetAvailablePhysicalMemory(out ulong availableMemory)
-        {
-            availableMemory = 0;
-            MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
-            if (GlobalMemoryStatusEx(memStatus))
-            {
-                availableMemory = memStatus.ullAvailPhys;
-                return true;
-            }
-
-            return false;
-        }
     }
 }
