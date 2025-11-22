@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Samples.Computer01
 {
@@ -46,7 +47,13 @@ namespace Samples.Computer01
                     //root[count] = new byte[BufferSize];
                     //root[0, count] = new byte[BufferSize];
 #endif
-                    GC.Collect();
+                    // 1 instead of 2 so the heap snapshot manager won't mess up
+                    // i.e. it could detect this GC as the collection used to generate the GCBulkXXX events
+                    GC.Collect(1);
+
+                    //// DEBUG: just to avoid flooding the logs
+                    // Console.WriteLine("Press ENTER to continue...");
+                    // Console.ReadLine();
 
                     count++;
                 }
