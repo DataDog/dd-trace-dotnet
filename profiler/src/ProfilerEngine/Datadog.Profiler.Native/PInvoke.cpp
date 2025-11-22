@@ -92,7 +92,8 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),
         environment ? environment : std::string(),
-        version ? version : std::string());
+        version ? version : std::string(),
+        std::string()); // process tags are only configured via the shared config for now.
 }
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)

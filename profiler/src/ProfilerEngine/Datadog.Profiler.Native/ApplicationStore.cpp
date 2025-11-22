@@ -43,7 +43,7 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
         return info;
     }
 }
-void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
+void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version, const std::string& processTags)
 {
     Log::Debug("Setting application info for runtimeId: ", runtimeId, ", serviceName: ", serviceName, ", environment: ", environment, ", version: ", version);
 
@@ -52,6 +52,13 @@ void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const st
     info.ServiceName = serviceName;
     info.Environment = environment;
     info.Version = version;
+
+    // do not overwrite previously set value if the parameter is the default empty string
+    if (info.ProcessTags.empty() || !processTags.empty())
+    {
+        info.ProcessTags = processTags;
+    }
+
     info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
     info.CommitSha = _pConfiguration->GetGitCommitSha();
 }

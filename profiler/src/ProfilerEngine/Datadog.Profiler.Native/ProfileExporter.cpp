@@ -645,6 +645,10 @@ bool ProfileExporter::Export(bool lastCall)
         {
             additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
         }
+        if (!applicationInfo.ProcessTags.empty())
+        {
+            additionalTags.Add("process_tags", applicationInfo.ProcessTags);
+        }
 
         auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
 
