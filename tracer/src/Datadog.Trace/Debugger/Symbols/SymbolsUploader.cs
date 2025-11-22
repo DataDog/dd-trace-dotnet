@@ -344,7 +344,15 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
-            return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            try
+            {
+                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Log.ErrorSkipTelemetry(e, "Error uploading symbol database");
+                return false;
+            }
         }
 
         private bool TrySerializeClass(Model.Scope classScope, StringBuilder sb, int currentBytes, out int newTotalBytes)
