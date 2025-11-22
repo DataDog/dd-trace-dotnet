@@ -22,15 +22,16 @@ namespace Benchmarks.Trace
             PathAndQuery = "PathAndQuery"
         };
 
-        static ElasticsearchBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            var bench = new ElasticsearchBenchmark();
-            bench.CallElasticsearch();
-            bench.CallElasticsearchAsync();
+            // Warmup
+            CallElasticsearch();
+            CallElasticsearchAsync();
         }
 
         [Benchmark]

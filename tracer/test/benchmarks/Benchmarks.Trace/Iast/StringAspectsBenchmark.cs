@@ -29,7 +29,7 @@ public class StringAspectsBenchmark
 
     private List<string> _initTaintedContextTrue;
     private List<string> _initTaintedContextFalse;
-    
+
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
         TaintedObjects taintedObjects = null;
@@ -66,6 +66,11 @@ public class StringAspectsBenchmark
     }
 
     const int Iterations = 100;
+
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+    }
 
     [IterationSetup(Target = nameof(StringConcatBenchmark))]
     public void InitTaintedContextWhenFalse()

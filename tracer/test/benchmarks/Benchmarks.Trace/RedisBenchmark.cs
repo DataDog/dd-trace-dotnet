@@ -14,29 +14,34 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class RedisBenchmark
     {
-        private static readonly RedisNativeClient Client = new RedisNativeClient();
         private static readonly Func<int> Fn = () => 42;
         private static readonly Action<Func<int>> CompletePipelineFn = _ => { };
-        private static readonly byte[][] RawCommands;
+        private static readonly byte[][] RawCommands = new[] {"Command", "arg1", "arg2"}
+            .Select(Encoding.UTF8.GetBytes)
+            .ToArray();
 
-        static RedisBenchmark()
+        private RedisNativeClient _client;
+
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            RawCommands = new[] {"Command", "arg1", "arg2"}
-                .Select(Encoding.UTF8.GetBytes)
-                .ToArray();
+            _client = new RedisNativeClient();
+
+            // Warmup
+            SendReceive();
         }
 
         [Benchmark]
         public unsafe int SendReceive()
         {
             return CallTarget.Run<RedisNativeClientSendReceiveIntegration, RedisNativeClient, byte[][], Func<int>, Action<Func<int>>, bool, int>
-                (Client, RawCommands, Fn, CompletePipelineFn, true, &SendReceive);
+                (_client, RawCommands, Fn, CompletePipelineFn, true, &SendReceiveImpl);
 
-            static int SendReceive(byte[][] cmdWithBinaryArgs, Func<int> fn, Action<Func<int>> completePipelineFn, bool sendWithoutRead) => fn();
+            static int SendReceiveImpl(byte[][] cmdWithBinaryArgs, Func<int> fn, Action<Func<int>> completePipelineFn, bool sendWithoutRead) => fn();
         }
     }
 }

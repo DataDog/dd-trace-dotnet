@@ -14,36 +14,48 @@ namespace Benchmarks.Trace
     public class GraphQLBenchmark
     {
         private static readonly Task<ExecutionResult> Result = Task.FromResult(new ExecutionResult { Value = 42 });
-        private static readonly GraphQLClient Client = new GraphQLClient();
         private static readonly ExecutionContext Context = new ExecutionContext();
 
-        static GraphQLBenchmark()
+        private GraphQLClient _client;
+
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            new GraphQLBenchmark().ExecuteAsync();
+            _client = new GraphQLClient(Result);
+
+            // Warmup
+            ExecuteAsync();
         }
 
         [Benchmark]
         public unsafe int ExecuteAsync()
         {
             var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
-                Client,
+                _client,
                 Context,
-                &ExecuteAsync);
+                &ExecuteAsyncImpl);
 
             return task.GetAwaiter().GetResult().Value;
 
-            static Task<ExecutionResult> ExecuteAsync(ExecutionContext context) => Result;
+            static Task<ExecutionResult> ExecuteAsyncImpl(ExecutionContext context) => Result;
         }
 
         private class GraphQLClient : IExecutionStrategy
         {
+            private readonly Task<ExecutionResult> _result;
+
+            public GraphQLClient(Task<ExecutionResult> result)
+            {
+                _result = result;
+            }
+
             public Task<ExecutionResult> ExecuteAsync(ExecutionContext context)
             {
-                return Result;
+                return _result;
             }
         }
     }

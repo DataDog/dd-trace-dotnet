@@ -15,17 +15,17 @@ namespace Benchmarks.Trace
     public class HttpClientBenchmark
     {
         private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
-
         private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
 
-        static HttpClientBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            var bench = new HttpClientBenchmark();
-            bench.SendAsync();
+            // Warmup
+            SendAsync();
         }
 
         [Benchmark]
