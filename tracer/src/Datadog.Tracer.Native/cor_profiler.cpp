@@ -2070,6 +2070,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    auto definitions = definitions_ids.Get(); // Synchronize Aspects loading
 
     auto dataflow = _dataflow;
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
@@ -2082,7 +2083,10 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     {
         Logger::Info("Registering Callsite Aspects.");
         dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
-        _dataflow = dataflow;
+        if (_dataflow == nullptr)
+        {
+            _dataflow = dataflow;
+        }
         return aspectsLength;
     }
     else
