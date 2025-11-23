@@ -182,19 +182,15 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
 Dataflow::~Dataflow()
 {
-    _initialized = false;
     REL(_profiler);
-    DEL_MAP_VALUES(_modules);
-    DEL_MAP_VALUES(_appDomains);
-    DEL_MAP_VALUES(_moduleAspects);
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
-    if (!_initialized)
-    {
-        _initialized = true;
+    CSGUARD(_cs);
 
+    if (_aspects.size() == 0)
+    {
         // Init aspects
         DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
 
@@ -369,11 +365,6 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
-    if (!_initialized)
-    {
-        return S_OK;
-    }
-
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
@@ -388,22 +379,12 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    if (!_initialized)
-    {
-        return S_OK;
-    }
-
     GetModuleInfo(moduleId);
     return S_OK;
 }
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
-    if (!_initialized)
-    {
-        return S_OK;
-    }
-
     CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
@@ -608,6 +589,7 @@ ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 
 MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 {
+    CSGUARD(_cs);
     auto module = GetModuleInfo(moduleId);
     if (module)
     {
@@ -618,11 +600,6 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    if (!_initialized)
-    {
-        return true;
-    }
-
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
     if (method)
     {
@@ -632,21 +609,12 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_initialized)
-    {
-        return false;
-    }
-
     auto method = JITProcessMethod(moduleId, methodId);
     return method != nullptr;
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    if (!_initialized)
-    {
-        return nullptr;
-    }
-
+    CSGUARD(_cs);
     MethodInfo* method = nullptr;
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
@@ -783,11 +751,6 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
     auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
     if (method && method->IsWritten())
     {
