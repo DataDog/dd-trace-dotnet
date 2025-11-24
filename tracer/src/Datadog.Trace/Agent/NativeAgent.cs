@@ -104,7 +104,8 @@ internal class NativeAgent : IDisposable
                 {
                     AppSecEnabled = true,
                     LogLevel = NativeAgent.LogLevel.Debug,
-                    DogStatsDEnabled = true
+                    DogStatsDEnabled = true,
+                    OperationalMode = OperationalMode.HttpUds,
                 });
             LifetimeManager.Instance.AddShutdownTask(_ =>
             {
