@@ -31,9 +31,6 @@ public class MyBenchmark
     {
         _client = new MyClient();
         _data = CreateExpensiveData();
-
-        // Warmup to ensure JIT compilation
-        MyBenchmarkMethod();
     }
 }
 ```
@@ -82,9 +79,6 @@ public class MyBenchmark
         _rawCommands = new[] { "cmd", "arg1" }
             .Select(Encoding.UTF8.GetBytes)
             .ToArray();
-
-        // Warmup
-        MyBenchmarkMethod();
     }
 }
 ```
@@ -131,9 +125,6 @@ public void GlobalSetup()
         spans[i].SetTag("key", "value");
     }
     _enrichedSpans = new ArraySegment<Span>(spans);
-
-    // Warmup to ensure JIT compilation
-    MyBenchmarkMethod();
 }
 ```
 
@@ -157,21 +148,21 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 ### DO:
 - ✅ Use `[GlobalSetup]` for **all** initialization
 - ✅ Use **instance fields** for all benchmark state
-- ✅ Add warmup calls in GlobalSetup
 - ✅ Use `[IterationSetup]` with GC for native/unmanaged code benchmarks
 - ✅ Use `static readonly` with static constructor ONLY for pure reflection metadata (MethodHandle, TypeHandle)
+- ✅ Trust BenchmarkDotNet's warmup algorithm (it handles JIT compilation automatically)
 
 ### DON'T:
 - ❌ Use static constructors for any runtime initialization
 - ❌ Use `static` or `static readonly` fields for test data, mocks, or runtime objects
-- ❌ Skip warmup for native code or complex initialization
+- ❌ Add manual warmup calls in GlobalSetup (BenchmarkDotNet does this more carefully)
 
 ## Common Causes of Flaky Benchmarks
 
 1. **Static constructor/initializer timing** → Use `[GlobalSetup]` with instance fields for everything
 2. **Shared state between benchmark methods** → Use instance fields, not static
 3. **Unpredictable GC** → Use `[IterationSetup]` with GC.Collect() (only for unmanaged memory)
-4. **First-call JIT effects** → Call benchmark method in GlobalSetup warmup
+4. **Manual warmup interference** → Trust BenchmarkDotNet's automatic warmup (don't add manual calls)
 5. **Async timing variance** → Ensure fake implementations complete synchronously
 
 ## Pattern Examples
@@ -193,9 +184,6 @@ public class SimpleBenchmark
 
         _testString = "Hello, World!";
         _client = new MyClient();
-
-        // Warmup
-        MyBenchmarkMethod();
     }
 
     [Benchmark]
@@ -221,12 +209,6 @@ public class NativeBenchmark
         var settings = new IastSettings(...);
         _waf = Waf.Create(...);
         _testData = CreateTestData();
-
-        // Aggressive warmup for native code
-        for (int i = 0; i < 10; i++)
-        {
-            RunWaf();
-        }
     }
 
     [IterationSetup]
@@ -269,9 +251,6 @@ public class ReflectionBenchmark
     {
         var settings = TracerSettings.Create(new() { ... });
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, ...));
-
-        // Warmup
-        MyBenchmarkMethod();
     }
 
     [Benchmark]

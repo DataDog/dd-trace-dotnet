@@ -51,9 +51,6 @@ namespace Benchmarks.Trace
 
             // Run the automatic instrumentation initialization code once outside of the microbenchmark
             _ = DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc;
-
-            // Warmup
-            EnrichedLog();
         }
 
         [Benchmark]

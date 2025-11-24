@@ -32,9 +32,6 @@ namespace Benchmarks.Trace
             _rawCommands = new[] {"Command", "arg1", "arg2"}
                 .Select(Encoding.UTF8.GetBytes)
                 .ToArray();
-
-            // Warmup
-            SendReceive();
         }
 
         [Benchmark]

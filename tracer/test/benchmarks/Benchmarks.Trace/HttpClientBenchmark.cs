@@ -26,9 +26,6 @@ namespace Benchmarks.Trace
 
             _httpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
             _cachedResult = Task.FromResult(new HttpResponseMessage());
-
-            // Warmup
-            SendAsync();
         }
 
         [Benchmark]

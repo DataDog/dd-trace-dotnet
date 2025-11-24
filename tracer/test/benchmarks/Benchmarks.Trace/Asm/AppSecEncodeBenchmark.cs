@@ -34,10 +34,6 @@ public class AppSecEncoderBenchmark
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
 
         _args = MakeNestedMap(20);
-
-        // Warmup
-        EncodeArgs();
-        EncodeLegacyArgs();
     }
 
     /// <summary>

@@ -31,10 +31,6 @@ namespace Benchmarks.Trace
                 Uri = new Uri("http://localhost/"),
                 PathAndQuery = "PathAndQuery"
             };
-
-            // Warmup
-            CallElasticsearch();
-            CallElasticsearchAsync();
         }
 
         [Benchmark]

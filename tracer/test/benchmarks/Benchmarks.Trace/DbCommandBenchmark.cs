@@ -23,9 +23,6 @@ namespace Benchmarks.Trace
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             _customCommand = new CustomDbCommand();
-
-            // Warmup
-            ExecuteNonQuery();
         }
 
         [Benchmark]

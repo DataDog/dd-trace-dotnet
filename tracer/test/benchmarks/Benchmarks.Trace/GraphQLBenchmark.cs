@@ -27,9 +27,6 @@ namespace Benchmarks.Trace
             _result = Task.FromResult(new ExecutionResult { Value = 42 });
             _context = new ExecutionContext();
             _client = new GraphQLClient(_result);
-
-            // Warmup
-            ExecuteAsync();
         }
 
         [Benchmark]

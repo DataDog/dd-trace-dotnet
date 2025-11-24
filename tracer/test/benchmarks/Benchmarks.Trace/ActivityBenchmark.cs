@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,9 +41,6 @@ public class ActivityBenchmark
         ActivitySource.AddActivityListener(activityListener);
 
         _duckSource = new Datadog.Trace.Activity.DuckTypes.ActivitySource { Name = _source.Name, Version = _source.Version ?? string.Empty };
-
-        // Warmup
-        StartStopWithChild();
     }
 
     [Benchmark]

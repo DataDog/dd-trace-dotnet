@@ -53,9 +53,6 @@ namespace Benchmarks.Trace
             repository.Configured = true;
 
             _logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
-
-            // Warmup
-            EnrichedLog();
         }
 
         [Benchmark]

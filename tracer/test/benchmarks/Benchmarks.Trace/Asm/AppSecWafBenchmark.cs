@@ -58,14 +58,6 @@ public class AppSecWafBenchmark
         _stage1Attack = MakeRealisticNestedMapStage1(true);
         _stage2 = MakeRealisticNestedMapStage2();
         _stage3 = MakeRealisticNestedMapStage3();
-
-        // More aggressive warmup for native code paths (WAF library)
-        // Ensures JIT compilation completes and native context creation stabilizes
-        for (int i = 0; i < 10; i++)
-        {
-            RunWafRealisticBenchmark();
-            RunWafRealisticBenchmarkWithAttack();
-        }
     }
 
     [IterationSetup]
