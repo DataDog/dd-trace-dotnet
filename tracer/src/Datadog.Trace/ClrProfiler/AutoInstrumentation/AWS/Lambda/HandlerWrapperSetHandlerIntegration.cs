@@ -71,7 +71,7 @@ public class HandlerWrapperSetHandlerIntegration
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
-            object requestid = null;
+            object requestId = null;
             var proxyInstance = arg.DuckCast<IInvocationRequest>();
             if (proxyInstance == null)
             {
@@ -82,11 +82,11 @@ public class HandlerWrapperSetHandlerIntegration
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
-                requestid = proxyInstance.LambdaContext?.AwsRequestId;
+                requestId = proxyInstance.LambdaContext?.AwsRequestId;
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateBegin");
-            return new CallTargetState(scope, requestid);
+            return new CallTargetState(scope, requestId);
         }
 
         public void OnException(object sender, Exception ex)
