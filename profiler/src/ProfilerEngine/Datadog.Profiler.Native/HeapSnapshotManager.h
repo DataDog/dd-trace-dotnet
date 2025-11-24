@@ -29,11 +29,11 @@ using namespace std::chrono_literals;
 class ClassHistogramEntry
 {
 public:
-    ClassHistogramEntry(std::string& className)
+    ClassHistogramEntry(std::string&& className)
         :
         InstanceCount(0),
         TotalSize(0),
-        ClassName(className)
+        ClassName(std::move(className))
     {
     }
 
@@ -152,22 +152,23 @@ private:
     EVENTPIPE_SESSION _session;
 
     // set to true when a heap dump is requested by starting an EventPipe session
-    bool _isHeapDumpInProgress;
+    std::atomic<bool> _isHeapDumpInProgress;
 
     // set to true when the criterias are met after a GC
     // --> will trigger a heap dump in the dedicated thread to avoid triggering a GC from the GC callback
-    bool _shouldStartHeapDump;
+    std::atomic<bool> _shouldStartHeapDump;
 
     // set to true after the heap dump GC ends
     // --> taken into account in the dedicated thread to avoid triggering a gc from the GC callback
     // see https://github.com/dotnet/runtime/issues/121462 for more details
-    bool _shouldCleanupHeapDumpSession;
+    std::atomic<bool> _shouldCleanupHeapDumpSession;
 
     // id of the induced GC triggering a heap dump
-    int32_t _inducedGCNumber;
+    std::atomic<int32_t> _inducedGCNumber;
 
     // keep track of each type instances count and size during heap snapshot
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
+    std::recursive_mutex _histogramLock;
 
     std::chrono::nanoseconds _startTimestamp;
 

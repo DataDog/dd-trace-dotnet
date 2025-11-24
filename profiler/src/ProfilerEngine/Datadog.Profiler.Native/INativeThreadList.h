@@ -8,6 +8,8 @@
 class INativeThreadList
 {
 public:
+    virtual ~INativeThreadList() = default;
+
     virtual bool RegisterThread(uint32_t tid) = 0;
     virtual bool Contains(uint32_t tid) const = 0;
 };

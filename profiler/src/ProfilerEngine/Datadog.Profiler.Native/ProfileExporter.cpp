@@ -730,17 +730,18 @@ std::string ProfileExporter::CreateClassHistogramContent() const
         return "";
     }
 
-    // prepare class histogram to be sent
-    std::stringstream builder;
-
-    // TODO: just for tests, the heap snapshot manager returns a string instead of a reference to an unorderedmap
+    // TODO: is it a problem to have the manager responsible for the serialization format?
+    // Otherwhise, we would need to return the map while clearing it
     auto heapSnapshot = _heapSnapshotManager->GetAndClearHeapSnapshotText();
     if (!heapSnapshot.empty())
     {
+        // prepare class histogram to be sent
+        std::stringstream builder;
         builder << heapSnapshot;
+        return builder.str();
     }
 
-    return builder.str();
+    return "";
 }
 
 std::string ProfileExporter::GetMetadata() const

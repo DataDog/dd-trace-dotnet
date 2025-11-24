@@ -18,13 +18,11 @@ HeapSnapshotManager::HeapSnapshotManager(
     MetricsRegistry& metricsRegistry,
     INativeThreadList* pNativeThreadList) :
     ServiceBase(),
-    _inducedGCNumber(-1),
     _session(0),
     _gen2Size(0),
     _lohSize(0),
     _pohSize(0),
     _memPressure(0),
-    _isHeapDumpInProgress(false),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pFrameStore{pFrameStore},
     _pThreadsCpuManager{pThreadsCpuManager},
@@ -35,13 +33,15 @@ HeapSnapshotManager::HeapSnapshotManager(
     _lastTimestamp(0ns),
     _lastOldHeapSize(0),
     _lastMemPressure(0),
-    _shouldStartHeapDump(false),
-    _shouldCleanupHeapDumpSession(false),
     _loopThreadOsId(0),
     _objectCount(0),
     _totalSize(0),
     _duration(0)
 {
+    _isHeapDumpInProgress.store(false),
+    _inducedGCNumber.store(-1);
+    _shouldStartHeapDump.store(false);
+    _shouldCleanupHeapDumpSession.store(false);
     _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
@@ -145,31 +145,34 @@ void HeapSnapshotManager::MainLoop()
 
 void HeapSnapshotManager::MainLoopIteration()
 {
-    if (_shouldCleanupHeapDumpSession)
+    if (_shouldCleanupHeapDumpSession.load())
     {
         // close the session + start/stop the fake session to reset the keywords/verbosity
-        _shouldCleanupHeapDumpSession = false;
+        _shouldCleanupHeapDumpSession.store(false);
         CleanupSession();
     }
     else
-    if (_shouldStartHeapDump)
+    if (_shouldStartHeapDump.load())
     {
-        _shouldStartHeapDump = false;
+        _shouldStartHeapDump.store(false);
         StartGCDump();
     }
 }
 
 std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
 {
-    // TODO: this should be protected by a lock because both the dedicated thread and the exporter thread
-    //       could call this method at the same time
-    //       --> We could otherwise create the string when the heap snapshot ends.
+    // this should be protected by a lock because both the dedicated thread and the exporter thread
+    // could call this method at the same time
+    // --> We could otherwise create the string when the heap snapshot ends.
+    std::lock_guard lock(_histogramLock);
+
     std::string heapSnapshotText = GetHeapSnapshotText();
     _classHistogram.clear();
 
     return heapSnapshotText;
 }
 
+// NOTE: must be called under the lock
 std::string HeapSnapshotManager::GetHeapSnapshotText()
 {
     auto count = _classHistogram.size();
@@ -214,20 +217,21 @@ void HeapSnapshotManager::OnBulkNodes(
     std::cout << "OnBulkNodes #" << index << " x" << count  << std::endl;
 #endif
 
+    std::lock_guard lock(_histogramLock);
+
     _objectCount += count;
     for (size_t i = 0; i < count; i++)
     {
         auto size = pNodes[i].Size;
         _totalSize += size;
 
-        // TODO: we should not be called from different threads so no need to lock
         auto entry = _classHistogram.find(pNodes[i].TypeID);
         if (entry == _classHistogram.end())
         {
             std::string className;
             if (_pFrameStore->GetTypeName(static_cast<ClassID>(pNodes[i].TypeID), className))
             {
-                ClassHistogramEntry histogramEntry(className);
+                ClassHistogramEntry histogramEntry(std::move(className));
                 histogramEntry.InstanceCount = 1;
                 histogramEntry.TotalSize = size;
                 _classHistogram.emplace(pNodes[i].TypeID, histogramEntry);
@@ -268,7 +272,7 @@ void HeapSnapshotManager::OnGarbageCollectionStart(
 {
     // waiting for the first induced foreground gen2 collection corresponding to the one
     // triggered by the session creation
-    if (_isHeapDumpInProgress && (_inducedGCNumber == -1))
+    if (_isHeapDumpInProgress.load() && (_inducedGCNumber.load() == -1))
     {
         if ((reason == GCReason::Induced) && (generation == 2) && (type == GCType::NonConcurrentGC))
         {
@@ -277,7 +281,7 @@ void HeapSnapshotManager::OnGarbageCollectionStart(
             std::cout << "OnGarbageCollectionStart" << std::endl;
 #endif
 
-            _inducedGCNumber = number;
+            _inducedGCNumber.store(number);
             _objectCount = 0;
             _totalSize = 0;
             _duration = 0;
@@ -306,9 +310,9 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
     _pohSize = pohSize;
     _memPressure = memPressure;
 
-    if (_isHeapDumpInProgress)
+    if (_isHeapDumpInProgress.load())
     {
-        if (number == _inducedGCNumber)
+        if (number == _inducedGCNumber.load())
         {
 #ifndef NDEBUG
             // for debugging purpose only
@@ -316,8 +320,8 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
 #endif
 
             // the induced GC triggered to generate the heap snapshot has ended
-            _inducedGCNumber = -1;
-            _isHeapDumpInProgress = false;
+            _inducedGCNumber.store(-1);
+            _isHeapDumpInProgress.store(false);
 
             // keep track of the last metrics
             _lastOldHeapSize = gen2Size + lohSize + pohSize;
@@ -346,7 +350,7 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     // DEBUG: we cannot start a gcdump: it breaks in the CLR because it is not allowed to start a GC during another GC
 
     // already set so no need to check again
-    if (_shouldStartHeapDump || _shouldCleanupHeapDumpSession)
+    if (_shouldStartHeapDump.load() || _shouldCleanupHeapDumpSession.load())
     {
         return;
     }
@@ -371,7 +375,7 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
             // wait at least _heapDumpInterval after the first snapshot
             _lastTimestamp = now;
 
-            _shouldStartHeapDump = true;
+            _shouldStartHeapDump.store(true);
             return;
         }
     }
@@ -382,7 +386,7 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
         {
             return;
         }
-        _shouldStartHeapDump = true;
+        _shouldStartHeapDump.store(true);
     }
 }
 
@@ -395,7 +399,10 @@ void HeapSnapshotManager::StartGCDump()
     }
 
     // reset the class histogram
-    _classHistogram.clear();
+    {
+        std::lock_guard lock(_histogramLock);
+        _classHistogram.clear();
+    }
 
     // creating an EventPipe session with the right keywords/verbosity on the .NET profider triggers a GC heap dump
     // i.e. an induced GC will be started and specific BulkXXX events will be emitted while dumping the surviving objects in the managed heap
@@ -415,15 +422,15 @@ void HeapSnapshotManager::StartGCDump()
             nullptr},
     };
 
-    // TODO: Maybe this is sort of synchronous so we won't get the session before some events might be received.
-    //       It might also imply that _session won't be set when the induced GC ends; i.e. impossible to cleanup
-    //       --> clean up in the loop or when the next snapshot is triggered
-    _isHeapDumpInProgress = true;
+    // Maybe this is sort of synchronous so we won't get the session before some events might be received.
+    // It might also imply that _session won't be set when the induced GC ends; i.e. impossible to cleanup
+    // --> clean up in the loop or when the next snapshot is triggered
+    _isHeapDumpInProgress.store(true);
     auto hr =_pCorProfilerInfo->EventPipeStartSession(1, providers, false, &_session);
     if (FAILED(hr))
     {
         _session = 0;
-        _isHeapDumpInProgress = false;
+        _isHeapDumpInProgress.store(false);
         Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, " for heap snapshot.");
     }
 }
@@ -435,14 +442,17 @@ void HeapSnapshotManager::OnEndGCDump()
     std::cout << _objectCount << " objects for " << _totalSize / (1024 * 1024) << " MB during " << _duration << "ms" << std::endl
               << std::endl;
 
-//    // dump each entry in _classHistogram
-//    auto content = GetHeapSnapshotText();
-//    std::cout << content << std::endl;
+//    {
+//        // dump each entry in _classHistogram
+//        std::lock_guard lock(_histogramLock);
+//        auto content = GetHeapSnapshotText();
+//        std::cout << content << std::endl;
+//    }
 #endif
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
     //        because it could deadlock the GC
-    _shouldCleanupHeapDumpSession = true;
+    _shouldCleanupHeapDumpSession.store(true);
 }
 
 void HeapSnapshotManager::CleanupSession()
@@ -456,9 +466,6 @@ void HeapSnapshotManager::CleanupSession()
     {
         // TODO: could this happen if the dedicated thread is scheduled BEFORE the GC End callback returns?
     }
-
-    // TODO: check that reverse P/Invoke would not make us see this native thread as a managed thread
-    // ---> look at the logs + ICorProfilerCallback2::ThreadAssignedToOSThread
 
     // Before the fix of https://github.com/dotnet/runtime/issues/121462, it is needed to start
     // and stop a session JUST to reset the keywords/verbosity of the Microsoft-Windows-DotNETRuntime provider

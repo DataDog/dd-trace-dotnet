@@ -27,7 +27,7 @@ public:
     const char* GetName() override;
 
     // Inherited via INativeThreadList
-    bool RegisterThread(uint32_t tid);
+    bool RegisterThread(uint32_t tid) override;
     bool Contains(uint32_t tid) const override;
 
 private:
