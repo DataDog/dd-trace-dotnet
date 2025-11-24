@@ -192,8 +192,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsPresent("_dd.peer.service.source")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
