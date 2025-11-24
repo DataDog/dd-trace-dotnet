@@ -429,6 +429,7 @@
   "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK_ENABLED": "dd_exception_debugging_capture_full_callstack_enabled",
   "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS": "dd_exception_debugging_rate_limit_seconds",
   "DD_EXCEPTION_DEBUGGING_MAX_EXCEPTION_ANALYSIS_LIMIT": "dd_exception_debugging_max_exception_analysis_limit",
+  "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED": "dd_exception_replay_agentless_enabled",
   "DD_EXCEPTION_REPLAY_ENABLED": "dd_exception_replay_enabled",
   "DD_EXCEPTION_REPLAY_MAX_FRAMES_TO_CAPTURE": "dd_exception_replay_max_frames_to_capture",
   "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED": "dd_exception_replay_capture_full_callstack_enabled",

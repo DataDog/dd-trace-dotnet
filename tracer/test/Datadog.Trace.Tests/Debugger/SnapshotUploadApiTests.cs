@@ -29,7 +29,9 @@ namespace Datadog.Trace.Tests.Debugger
 
             success.Should().BeTrue();
             factory.RequestsSent.Should().ContainSingle();
-            factory.RequestsSent[0].Endpoint.Should().Be(new Uri("https://debugger-intake.example/api/v2/debugger"));
+            var requestUri = factory.RequestsSent[0].Endpoint;
+            requestUri.GetLeftPart(UriPartial.Path).Should().Be("https://debugger-intake.example/api/v2/debugger");
+            requestUri.Query.Should().Contain("ddtags=");
         }
     }
 }
