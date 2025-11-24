@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+extern alias AnalyzerCodeFixes;
 
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer;
@@ -10,7 +11,7 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer.DuckTypeNullCheckAnalyzer,
-    Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer.DuckTypeNullCheckCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.DuckTypeAnalyzer.DuckTypeNullCheckCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.DuckTypeAnalyzers;
