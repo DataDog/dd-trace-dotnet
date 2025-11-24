@@ -67,7 +67,8 @@ namespace Datadog.Trace.Agent
             {
                 Environment = settings.Environment,
                 Version = settings.ServiceVersion,
-                HostName = HostMetadata.Instance.Hostname
+                HostName = HostMetadata.Instance.Hostname,
+                ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null
             };
 
             for (int i = 0; i < _buffers.Length; i++)
