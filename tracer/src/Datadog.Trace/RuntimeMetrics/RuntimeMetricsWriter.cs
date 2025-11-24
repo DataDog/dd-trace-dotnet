@@ -298,8 +298,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 while (newDelay > 0 && Volatile.Read(ref _disposed) == 0)
                 {
-                    Thread.Sleep(Math.Min(newDelay, loopDurationMs));
-                    newDelay -= loopDurationMs;
+                    var sleepDuration = Math.Min(newDelay, loopDurationMs);
+                    Thread.Sleep(sleepDuration);
+                    newDelay -= sleepDuration;                     
                 }
 #else
                 var newDelay = _delay - callbackExecutionDuration;
