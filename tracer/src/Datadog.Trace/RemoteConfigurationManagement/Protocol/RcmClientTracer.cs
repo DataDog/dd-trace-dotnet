@@ -12,7 +12,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClientTracer
     {
-        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string? appVersion, List<string> tags, List<string> processTags)
+        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string? appVersion, List<string> tags, List<string>? processTags)
         {
             RuntimeId = runtimeId;
             Language = TracerConstants.Language;
@@ -37,7 +37,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string Service { get; }
 
         [JsonProperty("process_tags")]
-        public List<string> ProcessTags { get; }
+        public List<string>? ProcessTags { get; }
 
         [JsonProperty("extra_services")]
         public string[]? ExtraServices { get; set; }
