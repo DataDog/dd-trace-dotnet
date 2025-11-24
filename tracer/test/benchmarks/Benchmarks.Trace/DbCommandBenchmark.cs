@@ -13,7 +13,7 @@ namespace Benchmarks.Trace
 
     public class DbCommandBenchmark
     {
-        private CustomDbCommand _customCommand;
+        private static readonly CustomDbCommand _customCommand = new CustomDbCommand();
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -21,8 +21,6 @@ namespace Benchmarks.Trace
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
-            _customCommand = new CustomDbCommand();
 
             // Warmup
             ExecuteNonQuery();

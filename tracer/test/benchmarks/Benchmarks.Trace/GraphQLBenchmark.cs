@@ -15,8 +15,7 @@ namespace Benchmarks.Trace
     {
         private static readonly Task<ExecutionResult> Result = Task.FromResult(new ExecutionResult { Value = 42 });
         private static readonly ExecutionContext Context = new ExecutionContext();
-
-        private GraphQLClient _client;
+        private static readonly GraphQLClient _client = new GraphQLClient(Result);
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -24,8 +23,6 @@ namespace Benchmarks.Trace
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
-            _client = new GraphQLClient(Result);
 
             // Warmup
             ExecuteAsync();
