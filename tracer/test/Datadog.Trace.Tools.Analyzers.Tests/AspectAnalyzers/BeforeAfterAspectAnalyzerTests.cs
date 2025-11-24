@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests.AspectAnalyzers;
 
 public class BeforeAfterAspectAnalyzerTests
 {
-    private const string DiagnosticId = BeforeAfterAspectAnalyzer.DiagnosticId;
+    private const string DiagnosticId = Diagnostics.BeforeAfterAspectDiagnosticId;
     private const DiagnosticSeverity Severity = BeforeAfterAspectAnalyzer.Severity;
 
     // No diagnostics expected to show up

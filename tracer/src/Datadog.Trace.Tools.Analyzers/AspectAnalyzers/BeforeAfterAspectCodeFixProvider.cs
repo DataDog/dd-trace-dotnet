@@ -30,7 +30,7 @@ public class BeforeAfterAspectCodeFixProvider : CodeFixProvider
     /// <inheritdoc />
     public sealed override ImmutableArray<string> FixableDiagnosticIds
     {
-        get => ImmutableArray.Create(BeforeAfterAspectAnalyzer.DiagnosticId);
+        get => ImmutableArray.Create(Diagnostics.BeforeAfterAspectDiagnosticId);
     }
 
     /// <inheritdoc />

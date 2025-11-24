@@ -29,7 +29,7 @@ public class ReplaceAspectCodeFixProvider : CodeFixProvider
     /// <inheritdoc />
     public sealed override ImmutableArray<string> FixableDiagnosticIds
     {
-        get => ImmutableArray.Create(ReplaceAspectAnalyzer.DiagnosticId);
+        get => ImmutableArray.Create(Diagnostics.ReplaceAspectDiagnosticId);
     }
 
     /// <inheritdoc />

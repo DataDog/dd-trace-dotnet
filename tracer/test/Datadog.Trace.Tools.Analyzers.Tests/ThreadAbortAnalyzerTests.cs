@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 {
     public class ThreadAbortAnalyzerTests
     {
-        private const string DiagnosticId = ThreadAbortAnalyzer.ThreadAbortAnalyzer.DiagnosticId;
+        private const string DiagnosticId = ThreadAbortAnalyzer.Diagnostics.ThreadAbortDiagnosticId;
 
         public static TheoryData<string> GetExceptions() => new() { "Exception", "SystemException", "ThreadAbortException" };
 
