@@ -45,5 +45,7 @@ bool NativeThreadList::RegisterThread(uint32_t tid)
 bool NativeThreadList::Contains(uint32_t tid) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    return _nativeThreadIds.contains(tid);
+
+    // NOTE: contains() does not seem to be available when compiled on ARM
+    return _nativeThreadIds.find(tid) != _nativeThreadIds.end();
 }
