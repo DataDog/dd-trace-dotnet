@@ -27,7 +27,7 @@ internal static class ProcessTags
     private static List<string> GetTagsList()
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        List<string> tags = [];
+        var tags = new List<string>(3); // Update if you add more entries below
         tags.AddNormalizedTag(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
         tags.AddNormalizedTag(EntrypointName, GetEntryPointName());
         // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
