@@ -14,8 +14,8 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class HttpClientBenchmark
     {
-        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
-        private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
+        private HttpRequestMessage _httpRequest;
+        private Task<HttpResponseMessage> _cachedResult;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -23,6 +23,9 @@ namespace Benchmarks.Trace
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+
+            _httpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+            _cachedResult = Task.FromResult(new HttpResponseMessage());
 
             // Warmup
             SendAsync();
@@ -32,10 +35,10 @@ namespace Benchmarks.Trace
         public unsafe string SendAsync()
         {
             CallTarget.Run<HttpClientHandlerIntegration, HttpClientBenchmark, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>
-                (this, HttpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
+                (this, _httpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
             return "OK";
 
-            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => CachedResult;
+            Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => _cachedResult;
         }
     }
 }

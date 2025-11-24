@@ -29,23 +29,13 @@ namespace Benchmarks.Trace.Asm
     [IgnoreProfile]
     public class AppSecBodyBenchmark
     {
-        private static readonly ComplexModel _complexModel = new()
-        {
-            Age = 12,
-            Gender = "Female",
-            Name = "Tata",
-            LastName = "Toto",
-            Address = new Address { Number = 12, City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = false, NameStreet = "lorem ipsum dolor sit amet" },
-            Address2 = new Address { Number = 15, City = new City { Name = "Madrid", Country = new Country { Name = "Spain", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = true, NameStreet = "lorem ipsum dolor sit amet" },
-            Dogs = new List<Dog> { new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } }, new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } }, new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } } }
-        };
-        private static readonly Props10String _props10 = ConstructionUtils.ConstructProps10String();
-        private static readonly Props100String _props100 = ConstructionUtils.ConstructProps100String();
-        private static readonly Props1000String _props1000 = ConstructionUtils.ConstructProps1000String();
-        private static readonly Props10Rec _props10x3 = ConstructionUtils.ConstructProps10Rec(3);
-        private static readonly Props10Rec _props10x6 = ConstructionUtils.ConstructProps10Rec(6);
-
         private Security _security;
+        private ComplexModel _complexModel;
+        private Props10String _props10;
+        private Props100String _props100;
+        private Props1000String _props1000;
+        private Props10Rec _props10x3;
+        private Props10Rec _props10x6;
         private HttpContext _httpContext;
 
         [GlobalSetup]
@@ -64,6 +54,23 @@ namespace Benchmarks.Trace.Asm
 #else
             _httpContext = new DefaultHttpContext();
 #endif
+
+            _complexModel = new()
+            {
+                Age = 12,
+                Gender = "Female",
+                Name = "Tata",
+                LastName = "Toto",
+                Address = new Address { Number = 12, City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = false, NameStreet = "lorem ipsum dolor sit amet" },
+                Address2 = new Address { Number = 15, City = new City { Name = "Madrid", Country = new Country { Name = "Spain", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = true, NameStreet = "lorem ipsum dolor sit amet" },
+                Dogs = new List<Dog> { new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } }, new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } }, new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } } }
+            };
+
+            _props10 = ConstructionUtils.ConstructProps10String();
+            _props100 = ConstructionUtils.ConstructProps100String();
+            _props1000 = ConstructionUtils.ConstructProps1000String();
+            _props10x3 = ConstructionUtils.ConstructProps10Rec(3);
+            _props10x6 = ConstructionUtils.ConstructProps10Rec(6);
 
             // Warmup
             AllCycleSimpleBody();

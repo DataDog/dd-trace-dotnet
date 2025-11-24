@@ -11,7 +11,7 @@ public class MyBenchmark
     private static readonly SomeData _data;
     private static readonly MyClient _client;
 
-    static MyBenchmark()  // BAD: Static constructor for runtime setup
+    static MyBenchmark()  // BAD: Static constructor for any runtime initialization
     {
         _data = CreateExpensiveData();
         _client = new MyClient();
@@ -23,10 +23,8 @@ public class MyBenchmark
 ```csharp
 public class MyBenchmark
 {
-    private static readonly Func<int> SimpleFunc = () => 42;  // OK: Static readonly for immutable data
-
-    private MyClient _client;     // Instance field for client objects
-    private SomeData _data;       // Instance field for state initialized in GlobalSetup
+    private MyClient _client;     // Instance field
+    private SomeData _data;       // Instance field
 
     [GlobalSetup]
     public void GlobalSetup()  // GOOD: BenchmarkDotNet controls timing
@@ -43,49 +41,32 @@ public class MyBenchmark
 **Why?**
 - `[GlobalSetup]` runs **once per benchmark method**, not once per class
 - Using instance fields ensures proper isolation between benchmark methods
-- Static constructors run at CLR-controlled times, potentially during measurement
+- Static constructors and static field initializers run at CLR-controlled times, potentially during measurement
 - BenchmarkDotNet explicitly excludes `[GlobalSetup]` from timing
+- Consistent pattern: all benchmark state is instance fields initialized in GlobalSetup
 - See: https://github.com/dotnet/BenchmarkDotNet/issues/1304
 
-### 2. When to Use `static readonly` vs Instance Fields
-
-**Use `static readonly` for:**
-- ✅ Simple immutable data: primitives, strings, simple POCOs
-- ✅ Lambdas/delegates without side effects: `() => 42`, `_ => { }`
-- ✅ Pre-computed test data: `byte[][] RawCommands = ...`
-- ✅ Result objects: `Task.FromResult(...)`, simple data objects
-- ✅ Pure reflection metadata with static constructor:
-  ```csharp
-  private static readonly RuntimeMethodHandle MethodHandle;
-
-  static MyBenchmark()  // OK: Only for pure reflection metadata
-  {
-      var method = typeof(MyClass).GetMethod("MyMethod");
-      MethodHandle = method.MethodHandle;
-  }
-  ```
+### 2. Use Instance Fields for All Benchmark State
 
 **Use instance fields for:**
-- ✅ Client/service objects: `RedisClient`, `HttpClient`, `GraphQLClient`, etc.
-- ✅ Objects that need initialization in `[GlobalSetup]`
-- ✅ Objects that depend on tracer/configuration setup
-- ✅ Anything that needs per-benchmark-method isolation
+- ✅ **Everything** initialized in `[GlobalSetup]`: clients, services, test data, lambdas, mocks
+- ✅ Ensures consistent pattern with no ambiguity about static vs instance
+- ✅ Avoids any static initialization timing issues
 
-**Examples:**
+**Exception - `static readonly` with static constructor ONLY for:**
+- ✅ Pure reflection metadata: `RuntimeMethodHandle`, `RuntimeTypeHandle`
+- These are immutable handles that must be initialized via reflection before GlobalSetup runs
+
+**Example:**
 ```csharp
 public class MyBenchmark
 {
-    // Static readonly: Immutable data/lambdas
-    private static readonly Func<int> SimpleFunc = () => 42;
-    private static readonly string ConstantValue = "immutable";
-    private static readonly byte[][] TestData = new[] { "cmd", "arg1" }
-        .Select(Encoding.UTF8.GetBytes)
-        .ToArray();
-
-    // Instance fields: Client objects and state
-    private MyClient _client;              // Client object needs isolation
-    private MyService _service;            // Service object needs isolation
-    private List<MyData> _testData;        // Initialized in GlobalSetup
+    // Instance fields: ALL benchmark state
+    private MyClient _client;
+    private MyService _service;
+    private List<MyData> _testData;
+    private Func<int> _simpleFunc;
+    private byte[][] _rawCommands;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -93,9 +74,14 @@ public class MyBenchmark
         var settings = TracerSettings.Create(new() { ... });
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, ...));
 
+        // Initialize ALL fields in GlobalSetup
         _client = new MyClient();
         _service = new MyService();
         _testData = CreateTestData();
+        _simpleFunc = () => 42;
+        _rawCommands = new[] { "cmd", "arg1" }
+            .Select(Encoding.UTF8.GetBytes)
+            .ToArray();
 
         // Warmup
         MyBenchmarkMethod();
@@ -137,7 +123,7 @@ private ArraySegment<Span> _enrichedSpans;
 [GlobalSetup]
 public void GlobalSetup()
 {
-    // Allocate test data once
+    // Allocate test data once in GlobalSetup
     var spans = new Span[1000];
     for (int i = 0; i < 1000; i++)
     {
@@ -169,24 +155,20 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 ## Quick Reference: DO vs DON'T
 
 ### DO:
-- ✅ Use `[GlobalSetup]` for runtime initialization
-- ✅ Use **instance fields** for state initialized in `[GlobalSetup]`
-- ✅ Use **`static readonly`** for simple immutable data/lambdas
-- ✅ Use **instance fields for client objects** (ensures isolation)
+- ✅ Use `[GlobalSetup]` for **all** initialization
+- ✅ Use **instance fields** for all benchmark state
 - ✅ Add warmup calls in GlobalSetup
 - ✅ Use `[IterationSetup]` with GC for native/unmanaged code benchmarks
-- ✅ Use static constructor ONLY for pure reflection metadata
+- ✅ Use `static readonly` with static constructor ONLY for pure reflection metadata (MethodHandle, TypeHandle)
 
 ### DON'T:
-- ❌ Use static constructors for runtime setup (tracer, config, clients)
-- ❌ Initialize `static` fields in `[GlobalSetup]` (use instance fields)
-- ❌ Use instance fields for simple immutable values (use `static readonly`)
-- ❌ Make client/service objects `static` (use instance fields)
+- ❌ Use static constructors for any runtime initialization
+- ❌ Use `static` or `static readonly` fields for test data, mocks, or runtime objects
 - ❌ Skip warmup for native code or complex initialization
 
 ## Common Causes of Flaky Benchmarks
 
-1. **Static constructor timing** → Use `[GlobalSetup]` with instance fields
+1. **Static constructor/initializer timing** → Use `[GlobalSetup]` with instance fields for everything
 2. **Shared state between benchmark methods** → Use instance fields, not static
 3. **Unpredictable GC** → Use `[IterationSetup]` with GC.Collect() (only for unmanaged memory)
 4. **First-call JIT effects** → Call benchmark method in GlobalSetup warmup
@@ -200,8 +182,7 @@ BenchmarkDotNet has a smart algorithm to choose optimal iteration counts based o
 [BenchmarkCategory(Constants.TracerCategory)]
 public class SimpleBenchmark
 {
-    private static readonly string TestString = "Hello, World!";
-
+    private string _testString;
     private MyClient _client;
 
     [GlobalSetup]
@@ -210,6 +191,7 @@ public class SimpleBenchmark
         var settings = TracerSettings.Create(new() { ... });
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, ...));
 
+        _testString = "Hello, World!";
         _client = new MyClient();
 
         // Warmup
@@ -219,7 +201,7 @@ public class SimpleBenchmark
     [Benchmark]
     public void MyBenchmarkMethod()
     {
-        _client.Process(TestString);
+        _client.Process(_testString);
     }
 }
 ```
@@ -230,8 +212,7 @@ public class SimpleBenchmark
 [BenchmarkCategory(Constants.AppSecCategory)]
 public class NativeBenchmark
 {
-    private static readonly Dictionary<string, object> TestData = CreateTestData();
-
+    private Dictionary<string, object> _testData;
     private Waf _waf;
 
     [GlobalSetup]
@@ -239,6 +220,7 @@ public class NativeBenchmark
     {
         var settings = new IastSettings(...);
         _waf = Waf.Create(...);
+        _testData = CreateTestData();
 
         // Aggressive warmup for native code
         for (int i = 0; i < 10; i++)
@@ -260,7 +242,7 @@ public class NativeBenchmark
     public void RunWaf()
     {
         var context = _waf.CreateContext();
-        context.Run(TestData, 1_000_000);
+        context.Run(_testData, 1_000_000);
         context.Dispose();
     }
 }
