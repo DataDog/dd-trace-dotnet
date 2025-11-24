@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -236,7 +237,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                       var headersAndContext = ExtractHeadersAndPropagatedContextFromHttp(context, entry.Key as string);
+                       var extractedHeaders = headersAndContext.Headers;
+                       extractedContext = headersAndContext.Context;
+                       InferredProxyScopePropagationContext? proxyContext = null;
+
+                       // Check if there's an active AspNetCore span
+                       var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
+                                                activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
+
+                       if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
+                       {
+                           proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, extractedHeaders, extractedContext);
+                           if (proxyContext != null)
+                           {
+                               extractedContext = proxyContext.Value.Context;
+                           }
+                       }
                     }
                     else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
@@ -293,7 +310,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static (HttpHeadersCollection Headers, PropagationContext Context) ExtractHeadersAndPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -335,7 +352,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                var headers = new HttpHeadersCollection(httpRequest.Headers);
+
+                return (headers, Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headers));
             }
             catch (Exception ex)
             {
