@@ -283,7 +283,7 @@ namespace Foo
             {
                 File.ReadAllText(filename)
                     .Should()
-                    .BeEmpty();
+                    .BeEmpty(); // Check that file exists but it's empty.
             }
         }
 
