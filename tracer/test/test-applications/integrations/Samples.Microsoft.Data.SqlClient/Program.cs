@@ -25,19 +25,10 @@ namespace Samples.Microsoft.Data.SqlClient
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
             var loadFileType = AssemblyHelpers.LoadFileAndRetrieveType(typeof(SqlConnection));
 
-            try
+            using (var connection = OpenConnection(loadFileType))
             {
-                using (var connection = OpenConnection(loadFileType))
-                {
-                    // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
-                    await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
-                }
-            }
-            catch(SqlException ex)
-            {
-                Console.WriteLine("No SQL connection could be established. Exiting with skip code (13)");
-                Console.WriteLine("Exception during execution " + ex);
-                return 13;
+                // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
+                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
 
             // allow time to flush
@@ -47,31 +38,47 @@ namespace Samples.Microsoft.Data.SqlClient
 
         private static DbConnection OpenConnection(Type connectionType)
         {
-            var remainingAttempts = 3;
+            const int maxAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
 @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
-            DbConnection connection = null;
-            retry:
-            try
-            {
-                connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
-                connection.Open();
-                return connection;
-            }
-            catch (Exception ex)
-            {
-                if (remainingAttempts > 0)
-                {
-                    Console.WriteLine(ex);
-                    connection?.Dispose();
-                    remainingAttempts--;
-                    goto retry;
-                }
+            SqlException lastException = null;
 
-                // else
-                throw;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                DbConnection connection = null;
+                try
+                {
+                    connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
+                    connection.Open();
+                    return connection;
+                }
+                catch (SqlException ex)
+                {
+                    lastException = ex;
+                    connection?.Dispose();
+
+                    if (attempt < maxAttempts)
+                    {
+                        Console.WriteLine($"Connection attempt {attempt}/{maxAttempts} failed. Retrying...");
+                        Console.WriteLine($"SqlException Number: {ex.Number}, State: {ex.State}, Class: {ex.Class}");
+                        Console.WriteLine($"Message: {ex.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Non-SqlException errors (reflection issues, etc.) should fail the test
+                    Console.WriteLine($"Unexpected error opening connection: {ex}");
+                    throw;
+                }
             }
+
+            // After all retry attempts exhausted, exit with skip code
+            Console.WriteLine($"Unable to establish SQL connection after {maxAttempts} attempts. Exiting with skip code (13)");
+            Console.WriteLine($"Final SqlException Number: {lastException.Number}, State: {lastException.State}, Class: {lastException.Class}");
+            Console.WriteLine($"Message: {lastException.Message}");
+            Environment.Exit(13);
+            throw lastException; // Never reached, but satisfies compiler
         }
     }
 }
