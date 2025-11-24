@@ -151,7 +151,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             Log.Debug("Disposing Runtime Metrics timer");
 #if NETFRAMEWORK
-            if (_pushEventsTask.Wait(TimeSpan.FromMilliseconds(5_000)))
+            if (!_pushEventsTask.Wait(TimeSpan.FromMilliseconds(5_000)))
             {
                 Log.Warning("Failed to dispose Runtime Metrics timer after 5 seconds");
             }
