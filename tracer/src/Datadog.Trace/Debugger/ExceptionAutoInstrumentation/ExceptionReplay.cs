@@ -7,13 +7,11 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -65,23 +63,26 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
             _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-            var apiFactory = AgentTransportStrategy.Get(
-                tracer.Settings.Exporter,
-                productName: "debugger",
-                tcpTimeout: TimeSpan.FromSeconds(15),
-                AgentHttpHeaderNames.MinimalHeaders,
-                () => new MinimalAgentHeaderHelper(),
-                uri => uri);
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
+            var transportInfo = ExceptionReplayTransportFactory.Create(tracer.Settings, Settings, discoveryService);
 
-            var snapshotUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+            var snapshotUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(
+                transportInfo.ApiRequestFactory,
+                transportInfo.DiscoveryService,
+                gitMetadataTagsProvider,
+                transportInfo.StaticEndpoint);
             var snapshotBatchUploader = BatchUploader.Create(snapshotUploadApi);
 
             _uploader = SnapshotUploader.Create(
                 snapshotSink: _snapshotSink,
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
+
+            if (transportInfo.IsAgentless)
+            {
+                Log.Information("Exception Replay agentless uploads enabled. Symbol uploads remain unavailable without the Datadog Agent.");
+            }
 
             _ = Task.Run(() => _uploader.StartFlushingAsync())
                     .ContinueWith(

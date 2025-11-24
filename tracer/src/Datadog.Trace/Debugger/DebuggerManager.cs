@@ -200,6 +200,12 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                if (ExceptionReplaySettings.AgentlessEnabled)
+                {
+                    Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
+                    return;
+                }
+
                 if (Interlocked.CompareExchange(ref _symDbInitialized, 1, 0) != 0)
                 {
                     // Once created, the symbol uploader persists even if DI is later disabled

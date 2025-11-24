@@ -19,23 +19,36 @@ namespace Datadog.Trace.Debugger.Upload
 
         private SnapshotUploadApi(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            discoveryService.SubscribeToChanges(c =>
+            if (!string.IsNullOrEmpty(staticEndpoint))
             {
-                Endpoint = c.DebuggerV2Endpoint ?? c.DiagnosticsEndpoint;
-                Log.Debug("SnapshotUploadApi: Updated endpoint to {Endpoint}", Endpoint);
-            });
+                Endpoint = staticEndpoint;
+            }
+            else if (discoveryService is not null)
+            {
+                discoveryService.SubscribeToChanges(c =>
+                {
+                    Endpoint = c.DebuggerV2Endpoint ?? c.DiagnosticsEndpoint;
+                    Log.Debug("SnapshotUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+                });
+            }
+            else
+            {
+                Log.Warning("SnapshotUploadApi: No discovery service or static endpoint available. Snapshots will not be uploaded until an endpoint is configured.");
+            }
         }
 
         public static SnapshotUploadApi Create(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint)
         {
-            return new SnapshotUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return new SnapshotUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
