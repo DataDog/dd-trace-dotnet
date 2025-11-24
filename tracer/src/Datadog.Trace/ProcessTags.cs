@@ -64,8 +64,16 @@ internal static class ProcessTags
 
     private static string NormalizeTagValue(string tagValue)
     {
-        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
-        // which we don't want because we use it as a key/value separator.
-        return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
+        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':', which we don't want because we use it as a key/value separator.
+        // We need to replace ':' before calling NormalizeTag because there is a logic to remove duplicate underscores.
+        var normalized = TraceUtil.NormalizeTag(tagValue.Replace(oldChar: ':', newChar: '_'));
+
+        // truncate to 100 char, which the max allowed for a service name, and this is the only usage for those tags
+        if (normalized.Length > 100)
+        {
+            return normalized.Substring(startIndex: 0, length: 100);
+        }
+
+        return normalized;
     }
 }
