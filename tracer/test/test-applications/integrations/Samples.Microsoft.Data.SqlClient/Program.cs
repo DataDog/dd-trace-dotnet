@@ -63,6 +63,7 @@ namespace Samples.Microsoft.Data.SqlClient
                         Console.WriteLine($"Connection attempt {attempt}/{maxAttempts} failed. Retrying...");
                         Console.WriteLine($"SqlException Number: {ex.Number}, State: {ex.State}, Class: {ex.Class}");
                         Console.WriteLine($"Message: {ex.Message}");
+                        Thread.Sleep(1000 * attempt);
                     }
                 }
                 catch (Exception ex)
@@ -78,7 +79,7 @@ namespace Samples.Microsoft.Data.SqlClient
             Console.WriteLine($"Final SqlException Number: {lastException.Number}, State: {lastException.State}, Class: {lastException.Class}");
             Console.WriteLine($"Message: {lastException.Message}");
             Environment.Exit(13);
-            throw lastException; // Never reached, but satisfies compiler
+            return null;
         }
     }
 }
