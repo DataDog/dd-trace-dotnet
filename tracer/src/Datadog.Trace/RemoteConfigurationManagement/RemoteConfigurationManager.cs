@@ -42,7 +42,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager,
-            List<string>? processTags)
+            IList<string>? processTags)
         {
             _discoveryService = discoveryService;
             _pollInterval = pollInterval;

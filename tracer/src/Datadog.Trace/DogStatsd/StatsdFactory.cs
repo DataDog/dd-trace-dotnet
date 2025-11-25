@@ -18,19 +18,19 @@ internal static class StatsdFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StatsdFactory));
 
-    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, string? prefix = null)
+    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, bool includeProcessTags, string? prefix = null)
     {
+        var customTagCount = settings.GlobalTags.Count;
+        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + (includeProcessTags ? ProcessTags.TagsList.Count : 0);
+        var constantTags = new List<string>(tagsCount);
         if (includeDefaultTags)
         {
-            var customTagCount = settings.GlobalTags.Count;
-            var constantTags = new List<string>(5 + customTagCount)
-            {
-                "lang:.NET",
-                $"lang_interpreter:{FrameworkDescription.Instance.Name}",
-                $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
-            };
+            constantTags.Add("lang:.NET");
+            constantTags.Add($"lang_interpreter:{FrameworkDescription.Instance.Name}");
+            constantTags.Add($"lang_version:{FrameworkDescription.Instance.ProductVersion}");
+            constantTags.Add($"tracer_version:{TracerConstants.AssemblyVersion}");
+            constantTags.Add($"{Tags.RuntimeId}:{Tracer.RuntimeId}");
+            // update count above if adding new tags
 
             if (customTagCount > 0)
             {
@@ -43,11 +43,14 @@ internal static class StatsdFactory
                     constantTags.Add($"{key}:{value}");
                 }
             }
-
-            return CreateDogStatsdClient(settings, exporter, constantTags, prefix);
         }
 
-        return CreateDogStatsdClient(settings, exporter, constantTags: null, prefix);
+        if (includeProcessTags)
+        {
+            constantTags.AddRange(ProcessTags.TagsList);
+        }
+
+        return CreateDogStatsdClient(settings, exporter, constantTags, prefix);
     }
 
     private static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, List<string>? constantTags, string? prefix = null)
