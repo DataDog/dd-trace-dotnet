@@ -92,6 +92,10 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+      # If we got here, all retries failed – fail the job:
+      Write-Error "Failed to upload artifacts to S3 after $i attempts."
+      exit 1
+
 
 download-single-step-artifacts:
   stage: package
