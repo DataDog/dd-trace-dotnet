@@ -34,6 +34,51 @@
 
 
 
+
+## [Release 3.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.32.0)
+
+## Summary
+
+- [Tracer] Fix orphaned spans in WCF traces
+- [AWS Lambda] Add request-id as header to Lambda start/end invocation
+
+## Changes
+
+### Tracer
+* Add process tags to client-side stats (#7791)
+
+### CI Visibility
+* Avoid allocating and preparing CI Visibility stuff in startup hot path (#7821)
+
+### Debugger
+* Add process tags to dynamic instrumentation snapshots (#7839)
+
+### Serverless
+* Respect baggage in Azure messaging integrations (#7818)
+* [AWS Lambda] Add request-id as header to Lambda start/end invocation (#7835)
+* Add `#nullable enable` and fix `NullReferenceException` in DynamoDB (#7849)
+
+### Fixes
+* Fix orphaned spans in WCF traces (#7842)
+
+### Data Streams Monitoring
+* Add process tags to DSM (#7775)
+
+### Miscellaneous
+* Add process tags to telemetry (#7780)
+* [Docs] fix CLI commands to download logs from AAS apps (#7802)
+
+### Build / Test
+* Fix microbenchmark artifacts (#7816)
+* Add testing for latest Microsoft.Extensions.Telemetry version (#7817)
+* Fix broken CI when running tests against a specific sample (#7819)
+* Publish native symbols in all DCs (#7828)
+* Update .gitlab/one-pipeline.locked.yaml (#7836)
+* Add support for VS 2026 to Nuke detection (#7843)
+
+
+[Changes since 3.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.31.0...v3.32.0)
+
 ## [Release 3.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.31.0)
 
 ## Summary
