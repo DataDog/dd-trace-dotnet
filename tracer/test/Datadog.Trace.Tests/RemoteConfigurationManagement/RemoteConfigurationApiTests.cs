@@ -243,7 +243,8 @@ public class RemoteConfigurationApiTests
             service: nameof(RemoteConfigurationApiTests),
             env: "RCM Test",
             appVersion: "1.0.0",
-            tags: []);
+            tags: [],
+            processTags: ["a.b:c", "x.y:z"]);
 
         var state = new RcmClientState(
             rootVersion: 1,

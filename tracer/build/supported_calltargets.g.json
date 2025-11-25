@@ -9492,6 +9492,31 @@
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
     ],
@@ -9502,10 +9527,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9527,10 +9577,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9552,10 +9627,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9577,10 +9677,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9602,10 +9727,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9627,7 +9777,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9652,7 +9802,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9677,7 +9827,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9702,7 +9852,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9727,7 +9877,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9752,7 +9902,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9777,7 +9927,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9802,7 +9952,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9827,7 +9977,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9852,7 +10002,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9877,7 +10027,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9902,7 +10052,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9927,7 +10077,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9952,7 +10102,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9977,7 +10127,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -10052,7 +10202,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -10077,7 +10227,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -10102,7 +10252,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -10127,7 +10277,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -12886,7 +13036,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12911,7 +13061,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12933,7 +13083,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12957,7 +13107,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12979,7 +13129,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13003,7 +13153,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13028,7 +13178,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13050,7 +13200,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13074,7 +13224,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13124,7 +13274,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13148,7 +13298,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13170,7 +13320,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13194,7 +13344,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },

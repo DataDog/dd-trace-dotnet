@@ -40,7 +40,7 @@ internal class Program
 
         async Task OtherStuff()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             var shouldBeAttached = Environment.GetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED") == "1";
             var runInstrumentationChecks = shouldBeAttached;

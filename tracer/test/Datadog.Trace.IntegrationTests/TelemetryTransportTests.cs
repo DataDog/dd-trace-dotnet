@@ -167,7 +167,8 @@ namespace Datadog.Trace.IntegrationTests
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "aaaaaaaaaaaaaaaaaa",
-                    repositoryUrl: "https://github.com/myOrg/myRepo"),
+                    repositoryUrl: "https://github.com/myOrg/myRepo",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData("SOME_HOST", "Windows", "x64"),
                 payload: null);
 

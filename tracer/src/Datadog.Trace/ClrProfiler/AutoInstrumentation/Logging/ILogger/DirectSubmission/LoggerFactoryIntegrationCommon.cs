@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LoggerFactoryIntegrationCommon<TLoggerFactory>));
 
         // ReSharper disable once StaticMemberInGenericType
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static readonly Type? ProviderInterfaces;
 
         static LoggerFactoryIntegrationCommon()
@@ -84,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             return TryAddDirectSubmissionLoggerProvider(loggerFactory, provider);
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
         {
             if (ProviderInterfaces is null)

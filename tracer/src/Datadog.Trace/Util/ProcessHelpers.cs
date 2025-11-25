@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Util
 {
@@ -202,6 +203,7 @@ namespace Datadog.Trace.Util
         /// <summary>
         /// Internal for testing to make it easier to call using reflection from a sample app
         /// </summary>
+        [TestingOnly]
         internal static void TestingOnly_RunCommand(string cmd, string? args)
         {
             RunCommand(new Command(cmd, args));

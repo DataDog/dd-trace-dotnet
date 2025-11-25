@@ -51,7 +51,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
             }
-            else if (framework == "net9.0" || framework =="net10.0")
+            else if (framework == "net9.0")
             {
                 if (IntPtr.Size == 4)
                 {
@@ -66,6 +66,23 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     expectedStack = new StackTrace(
                         new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
                         new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object exceptionObj, ExInfo& exInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
+            else if (framework =="net10.0")
+            {
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }

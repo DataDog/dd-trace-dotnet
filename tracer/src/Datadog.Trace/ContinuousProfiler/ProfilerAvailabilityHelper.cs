@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ContinuousProfiler;
@@ -25,7 +26,7 @@ internal static class ProfilerAvailabilityHelper
     /// </summary>
     public static bool IsContinuousProfilerAvailable => ProfilerIsAvailable.Value;
 
-    // Internal for testing
+    [TestingOnly]
     internal static bool IsContinuousProfilerAvailable_TestingOnly(Func<bool> isClrProfilerAttached)
         => GetIsContinuousProfilerAvailable(isClrProfilerAttached);
 

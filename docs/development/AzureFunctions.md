@@ -363,10 +363,10 @@ Use the Azure CLI to download all log files at once:
 
 ```bash
 # Download logs to a local zip file
-az functionapp log download \
+az webapp log download \
   --name lucasp-premium-linux-isolated \
   --resource-group lucasp \
-  --log-path D:/temp/azure-logs.zip
+  --log-file D:/temp/azure-logs.zip
 
 # Extract the logs
 unzip D:/temp/azure-logs.zip -d D:/temp/LogFiles
@@ -548,7 +548,7 @@ grep "2025-10-10 17:53:3[89]" worker.log | grep "Span started"
    # Trigger function first
    curl https://<app>.azurewebsites.net/api/HttpTest
    # Wait a few seconds, then download
-   az functionapp log download --name <app> --resource-group <rg> --log-path logs.zip
+   az webapp log download --name <app> --resource-group <rg> --log-file logs.zip
    ```
 
 #### Scenario 3: Wrong Tracer Version After Deployment
@@ -671,10 +671,10 @@ curl https://<app>.azurewebsites.net/api/HttpTest
 sleep 5
 
 # 3. Download logs with timestamp in filename
-az functionapp log download \
+az webapp log download \
   --name <app> \
   --resource-group <rg> \
-  --log-path D:/temp/logs-$(date +%H%M%S).zip
+  --log-file "D:/temp/logs-$(date +%H%M%S).zip"
 ```
 
 This creates a snapshot of logs for each test execution.
@@ -692,10 +692,10 @@ curl https://lucasp-premium-linux-isolated.azurewebsites.net/api/HttpTest
 sleep 5  # Wait for logs to be written
 
 # === Step 2: Download logs ===
-az functionapp log download \
+az webapp log download \
   --name lucasp-premium-linux-isolated \
   --resource-group lucasp \
-  --log-path D:/temp/logs-175339.zip
+  --log-file D:/temp/logs-175339.zip
 
 unzip -q D:/temp/logs-175339.zip -d D:/temp/LogFiles
 

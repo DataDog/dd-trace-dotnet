@@ -10,6 +10,7 @@ on:
 jobs:
   publish_native_debug_symbols:
     runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
     env:
       ARTIFACTS_PATH: ${{ github.workspace }}/artifacts
 
@@ -33,5 +34,10 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{ env.ARTIFACTS_PATH }}
-          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          public_symbols_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
+          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
+          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
+          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
+          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
+          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
+          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
+          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

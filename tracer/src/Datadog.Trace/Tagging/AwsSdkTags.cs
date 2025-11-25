@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -16,40 +18,40 @@ namespace Datadog.Trace.Tagging
         public string AgentName => "dotnet-aws-sdk";
 
         [Tag(Trace.Tags.AwsOperationName)]
-        public string Operation { get; set; }
+        public string? Operation { get; set; }
 
 #pragma warning disable CS0618
         [Tag(Trace.Tags.AwsRegion)]
 #pragma warning restore CS0618
-        public string AwsRegion => Region;
+        public string? AwsRegion => Region;
 
         [Tag(Trace.Tags.Region)]
-        public string Region { get; set; }
+        public string? Region { get; set; }
 
         [Tag(Trace.Tags.AwsRequestId)]
-        public string RequestId { get; set; }
+        public string? RequestId { get; set; }
 
 #pragma warning disable CS0618
         [Tag(Trace.Tags.AwsServiceName)]
 #pragma warning restore CS0618
-        public string AwsService => Service;
+        public string? AwsService => Service;
 
         [Tag(Trace.Tags.AwsService)]
-        public string Service { get; set; }
+        public string? Service { get; set; }
 
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService { get; set; }
+        public string? PeerService { get; set; }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource { get; set; }
+        public string? PeerServiceSource { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
-        public string HttpMethod { get; set; }
+        public string? HttpMethod { get; set; }
 
         [Tag(Trace.Tags.HttpUrl)]
-        public string HttpUrl { get; set; }
+        public string? HttpUrl { get; set; }
 
         [Tag(Trace.Tags.HttpStatusCode)]
-        public string HttpStatusCode { get; set; }
+        public string? HttpStatusCode { get; set; }
     }
 }

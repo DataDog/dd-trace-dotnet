@@ -20,7 +20,7 @@ services:
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017"
     command: mongod
@@ -64,6 +64,10 @@ services:
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
+
+  cosmosdb-emulator_arm64:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    command: ["--protocol", "https"]
 
   stackexchangeredis_arm64:
     image: redis:4-alpine
@@ -140,7 +144,7 @@ services:
     - "127.0.0.1:6391:6379"
 
   mongo:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     profiles: ["group2"]
     ports:
       - "127.0.0.1:27017:27017"
@@ -266,6 +270,11 @@ services:
       - METADATA_SERVER=azurite
     volumes:
       - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
+
+  cosmosdb-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    profiles: ["group2"]
+    command: ["--protocol", "https"]
 
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
@@ -395,8 +404,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -446,8 +455,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -490,6 +499,7 @@ services:
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - DD_LOGGER_DD_API_KEY
@@ -519,7 +529,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
-      - TEST_AGENT_HOST=test-agent
     hostname: integrationtests
 
   IntegrationTests.Debugger:
@@ -527,8 +536,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -579,8 +588,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -636,8 +645,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -714,18 +723,19 @@ services:
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
+      - cosmosdb-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 test-agent:8126
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -759,6 +769,7 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -800,6 +811,7 @@ services:
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
+      - cosmosdb-emulator_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -816,17 +828,18 @@ services:
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
+      - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.2.25502.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -1186,7 +1199,7 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_osx_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017:27017"
     command: mongod

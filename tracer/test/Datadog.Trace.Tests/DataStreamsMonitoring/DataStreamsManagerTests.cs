@@ -163,7 +163,7 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: new PathwayHash(0));
 
@@ -182,11 +182,23 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: parent.Hash);
 
         context.Value.Hash.Value.Should().Be(hash.Value);
+    }
+
+    [Fact]
+    public void ProcessTagsUsedInBaseHash()
+    {
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, "hello:world");
+
+        hashWith.Value.Should().NotBe(hashWithout.Value);
     }
 
     [Fact]
@@ -304,7 +316,8 @@ public class DataStreamsManagerTests
             env: "foo",
             defaultServiceName: "bar",
             writer,
-            isInDefaultState: false);
+            isInDefaultState: false,
+            processTags: null);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

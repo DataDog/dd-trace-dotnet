@@ -29,6 +29,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -373,7 +374,7 @@ namespace Datadog.Trace
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes

@@ -84,22 +84,23 @@ namespace Samples.AspNet.VersionConflict.Controllers
             else
             {
                 // Same test but without a parent automatic trace
-                var mutex = new ManualResetEventSlim();
-
-                ThreadPool.UnsafeQueueUserWorkItem(_ =>
+                using (var mutex = new ManualResetEventSlim())
                 {
-                    try
+                    ThreadPool.UnsafeQueueUserWorkItem(_ =>
                     {
-                        CreateTraces();
-                    }
-                    finally
-                    {
-                        mutex.Set();
-                    }
+                        try
+                        {
+                            CreateTraces();
+                        }
+                        finally
+                        {
+                            mutex.Set();
+                        }
 
-                }, null);
+                    }, null);
 
-                mutex.Wait();
+                    mutex.Wait();
+                }
             }
             
             return View();

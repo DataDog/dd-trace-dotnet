@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         public void PushEvents()
         {
             var listener = new Mock<IRuntimeMetricsListener>();
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             listener.Setup(l => l.Refresh())
                 .Callback(() => mutex.Set());

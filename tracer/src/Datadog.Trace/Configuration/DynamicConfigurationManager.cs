@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -176,7 +177,7 @@ namespace Datadog.Trace.Configuration
                            .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static List<RemoteConfiguration> CombineApmTracingConfiguration(
             Dictionary<string, RemoteConfiguration> activeConfigurations,
             Dictionary<string, List<RemoteConfiguration>> configByProduct,
