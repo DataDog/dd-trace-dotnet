@@ -38,23 +38,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
                                     .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                     .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
-        var aliasSection = additionalText.Collect()
-                                        .Select(static (files, ct) =>
-                                        {
-                                            if (files.Length == 0)
-                                            {
-                                                // No supported-configurations.json file found
-                                                return new Result<string>(
-                                                    string.Empty,
-                                                    new EquatableArray<DiagnosticInfo>(
-                                                    [
-                                                        CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{SupportedConfigurationsFileName}' was not found. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
-                                                    ]));
-                                            }
-
-                                            // Extract from the first (and should be only) file
-                                            return ExtractAliasesSection(files[0], ct);
-                                        });
+        var aliasSection = additionalText.Select(static (file, ct) => ExtractAliasesSection(file, ct));
 
         var aliasesContent = aliasSection.Select(static (extractResult, ct) =>
                                           {
@@ -248,7 +232,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 
     private static MethodDeclarationSyntax GenerateGetAliasesMethod(ConfigurationAliases configurationAliases)
     {
-        var switchSections = new List<SwitchSectionSyntax>();
+        var switchArms = new List<SwitchExpressionArmSyntax>();
 
         // Add cases for keys that have aliases
         foreach (var alias in configurationAliases.Aliases.OrderBy(a => a.Key))
@@ -256,44 +240,35 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             var mainKey = alias.Key;
             var aliasKeys = alias.Value;
 
-            var arrayElements = aliasKeys
-                               .OrderBy(a => a)
-                               .Select(aliasKey => LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(aliasKey)))
-                               .Cast<ExpressionSyntax>()
-                               .ToArray();
+            // Create collection expression elements
+            var collectionElements = aliasKeys
+                                    .OrderBy(a => a)
+                                    .Select(aliasKey => ExpressionElement(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(aliasKey))))
+                                    .Cast<CollectionElementSyntax>()
+                                    .ToArray();
 
-            var arrayCreation = ArrayCreationExpression(
-                    ArrayType(PredefinedType(Token(SyntaxKind.StringKeyword)))
-                       .WithRankSpecifiers(SingletonList(ArrayRankSpecifier(SingletonSeparatedList<ExpressionSyntax>(OmittedArraySizeExpression())))))
-               .WithInitializer(InitializerExpression(SyntaxKind.ArrayInitializerExpression, SeparatedList(arrayElements)));
+            // Create collection expression [ "alias1", "alias2" ]
+            var collectionExpression = CollectionExpression(SeparatedList(collectionElements));
 
-            var switchSection = SwitchSection()
-                               .WithLabels(
-                                    SingletonList<SwitchLabelSyntax>(
-                                        CaseSwitchLabel(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(mainKey)))))
-                               .WithStatements(SingletonList<StatementSyntax>(ReturnStatement(arrayCreation)));
-            switchSections.Add(switchSection);
+            // Create switch arm: "DD_AGENT_HOST" => [ "alias1", "alias2" ],
+            var switchArm = SwitchExpressionArm(
+                ConstantPattern(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(mainKey))),
+                collectionExpression);
+
+            switchArms.Add(switchArm);
         }
 
-        // Add default case
-        var defaultSection = SwitchSection()
-                            .WithLabels(SingletonList<SwitchLabelSyntax>(DefaultSwitchLabel()))
-                            .WithStatements(
-                                 SingletonList<StatementSyntax>(
-                                     ReturnStatement(
-                                         InvocationExpression(
-                                             MemberAccessExpression(
-                                                 SyntaxKind.SimpleMemberAccessExpression,
-                                                 IdentifierName("Array"),
-                                                 GenericName("Empty")
-                                                    .WithTypeArgumentList(
-                                                         TypeArgumentList(
-                                                             SingletonSeparatedList<TypeSyntax>(
-                                                                 PredefinedType(Token(SyntaxKind.StringKeyword))))))))));
-        switchSections.Add(defaultSection);
+        // Add default case: _ => []
+        var defaultArm = SwitchExpressionArm(
+            DiscardPattern(),
+            CollectionExpression());
 
-        var switchStatement = SwitchStatement(IdentifierName(MainKeyParamName))
-           .WithSections(List(switchSections));
+        switchArms.Add(defaultArm);
+
+        // Create switch expression: mainKey switch { ... }
+        var switchExpression = SwitchExpression(
+            IdentifierName(MainKeyParamName),
+            SeparatedList(switchArms));
 
         return MethodDeclaration(
                    ArrayType(PredefinedType(Token(SyntaxKind.StringKeyword)))
@@ -311,7 +286,8 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
                    Comment("/// </summary>"),
                    Comment($"/// <param name=\"{MainKeyParamName}\">The configuration key.</param>"),
                    Comment("/// <returns>An array of aliases for the key, or empty array if no aliases exist.</returns>"))
-              .WithBody(Block(switchStatement));
+              .WithExpressionBody(ArrowExpressionClause(switchExpression))
+              .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
     }
 
     private sealed class ConfigurationAliases(Dictionary<string, string[]> aliases) : IEquatable<ConfigurationAliases>

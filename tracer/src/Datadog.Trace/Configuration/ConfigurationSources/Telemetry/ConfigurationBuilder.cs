@@ -468,61 +468,46 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(parser));
 
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
-            => converter is null
-                   ? GetResult(Selectors.AsString, validator, recordValue)
-                   : GetResult(Selectors.AsStringWithConverter, validator, converter, recordValue);
-
-        private ConfigurationResult<bool> GetBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
-            => converter is null
-                   ? GetResult(Selectors.AsBool, validator, recordValue: true)
-                   : GetResult(Selectors.AsBoolWithConverter, validator, converter, recordValue: true);
-
-        private ConfigurationResult<int> GetInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
-            => converter is null
-                   ? GetResult(Selectors.AsInt32, validator, recordValue: true)
-                   : GetResult(Selectors.AsInt32WithConverter, validator, converter, recordValue: true);
-
-        private ConfigurationResult<double> GetDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
-            => converter is null
-                   ? GetResult(Selectors.AsDouble, validator, recordValue: true)
-                   : GetResult(Selectors.AsDoubleWithConverter, validator, converter, recordValue: true);
-
-        private ConfigurationResult<T> GetAs<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
-            => GetResult(
-                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
-                validator,
-                converter,
-                recordValue: true);
-
-        /// <summary>
-        /// Gets the raw <see cref="ConfigurationResult{T}"/> from the configuration source, recording the access in telemetry
-        /// </summary>
-        /// <param name="selector">The method to invoke to retrieve the parameter</param>
-        /// <param name="validator">The validator to call to decide if a provided value is valid</param>
-        /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
-        /// <typeparam name="T">The type being retrieved</typeparam>
-        /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
-        private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
         {
             var source = Source;
             var telemetry = Telemetry;
-            return GetResultWithFallback(key => selector(source, key, telemetry, validator, recordValue));
+            return converter is null
+                ? GetResultWithFallback(key => source.GetString(key, telemetry, validator, recordValue))
+                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue));
         }
 
-        /// <summary>
-        /// Gets the raw <see cref="ConfigurationResult{T}"/> from the configuration source, recording the access in telemetry
-        /// </summary>
-        /// <param name="selector">The method to invoke to retrieve the parameter</param>
-        /// <param name="validator">The validator to call to decide if a provided value is valid</param>
-        /// <param name="converter">The converter to run when calling <see cref="IConfigurationSource.GetAs{T}"/></param>
-        /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
-        /// <typeparam name="T">The type being retrieved</typeparam>
-        /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
-        private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, Func<string, ParsingResult<T>>, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, bool recordValue)
+        private ConfigurationResult<bool> GetBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
             var source = Source;
             var telemetry = Telemetry;
-            return GetResultWithFallback(key => selector(source, key, telemetry, validator, converter, recordValue));
+            return converter is null
+                ? GetResultWithFallback(key => source.GetBool(key, telemetry, validator))
+                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+        }
+
+        private ConfigurationResult<int> GetInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
+        {
+            var source = Source;
+            var telemetry = Telemetry;
+            return converter is null
+                ? GetResultWithFallback(key => source.GetInt32(key, telemetry, validator))
+                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+        }
+
+        private ConfigurationResult<double> GetDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
+        {
+            var source = Source;
+            var telemetry = Telemetry;
+            return converter is null
+                ? GetResultWithFallback(key => source.GetDouble(key, telemetry, validator))
+                : GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
+        }
+
+        private ConfigurationResult<T> GetAs<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        {
+            var source = Source;
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator)
@@ -553,7 +538,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return result;
             }
 
-            string[] aliases = _providedAliases ?? ConfigKeyAliasesSwitcher.GetAliases(Key);
+            var aliases = _providedAliases ?? ConfigKeyAliasesSwitcher.GetAliases(Key);
 
             foreach (var alias in aliases)
             {
@@ -724,34 +709,5 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             Telemetry.Record(Key, defaultValue.Value.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Value.Result;
         }
-    }
-
-    private static class Selectors
-    {
-        // static accessor functions
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, bool, ConfigurationResult<string>> AsString
-            = (source, key, telemetry, validator, recordValue) => source.GetString(key, telemetry, validator, recordValue);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, bool, ConfigurationResult<bool>> AsBool
-            = (source, key, telemetry, validator, _) => source.GetBool(key, telemetry, validator);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, bool, ConfigurationResult<int>> AsInt32
-            = (source, key, telemetry, validator, _) => source.GetInt32(key, telemetry, validator);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, bool, ConfigurationResult<double>> AsDouble
-            = (source, key, telemetry, validator, _) => source.GetDouble(key, telemetry, validator);
-
-        // static accessor functions with converters
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, Func<string, ParsingResult<string>>, bool, ConfigurationResult<string>> AsStringWithConverter
-            = (source, key, telemetry, validator, converter, recordValue) => source.GetAs(key, telemetry, converter, validator, recordValue);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, Func<string, ParsingResult<bool>>, bool, ConfigurationResult<bool>> AsBoolWithConverter
-            = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, Func<string, ParsingResult<int>>, bool, ConfigurationResult<int>> AsInt32WithConverter
-            = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
-
-        internal static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, Func<string, ParsingResult<double>>, bool, ConfigurationResult<double>> AsDoubleWithConverter
-            = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
     }
 }
