@@ -55,27 +55,17 @@ internal static partial class ConfigKeyAliasesSwitcher
     /// Gets all aliases for the given configuration key.
     /// </summary>
     /// <param name="mainKey">The configuration key.</param>
-    /// <returns>An array of aliases for the key, or empty array if no aliases exist.</returns>
-    public static string[] GetAliases(string mainKey)
+    /// <returns>A read-only span of aliases for the key (on .NET Core), or an array of aliases (on .NET Framework). Returns empty if no aliases exist.</returns>
+#if NETCOREAPP
+    public static System.ReadOnlySpan<string> GetAliases(string mainKey) => mainKey switch
+#else
+    public static string[] GetAliases(string mainKey) => mainKey switch
+#endif
     {
-        switch (mainKey)
-        {
-            case "DD_AGENT_HOST":
-                return new string[]
-                {
-                    "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED",
-                    "DD_TRACE_AGENT_HOSTNAME"
-                };
-            case "DD_TRACE_AGENT_URL":
-                return new string[]
-                {
-                    "DD_AGENT_URL",
-                    "DD_TRACE_AGENT_PORT"
-                };
-            default:
-                return Array.Empty<string>();
-        }
-    }
+        "DD_AGENT_HOST" => ["DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED", "DD_TRACE_AGENT_HOSTNAME"],
+        "DD_TRACE_AGENT_URL" => ["DD_AGENT_URL", "DD_TRACE_AGENT_PORT"],
+        _ => []
+    };
 }
 """;
 
@@ -129,15 +119,15 @@ internal static partial class ConfigKeyAliasesSwitcher
     /// Gets all aliases for the given configuration key.
     /// </summary>
     /// <param name="mainKey">The configuration key.</param>
-    /// <returns>An array of aliases for the key, or empty array if no aliases exist.</returns>
-    public static string[] GetAliases(string mainKey)
+    /// <returns>A read-only span of aliases for the key (on .NET Core), or an array of aliases (on .NET Framework). Returns empty if no aliases exist.</returns>
+#if NETCOREAPP
+    public static System.ReadOnlySpan<string> GetAliases(string mainKey) => mainKey switch
+#else
+    public static string[] GetAliases(string mainKey) => mainKey switch
+#endif
     {
-        switch (mainKey)
-        {
-            default:
-                return Array.Empty<string>();
-        }
-    }
+        _ => []
+    };
 }
 """;
 
@@ -190,15 +180,15 @@ internal static partial class ConfigKeyAliasesSwitcher
     /// Gets all aliases for the given configuration key.
     /// </summary>
     /// <param name="mainKey">The configuration key.</param>
-    /// <returns>An array of aliases for the key, or empty array if no aliases exist.</returns>
-    public static string[] GetAliases(string mainKey)
+    /// <returns>A read-only span of aliases for the key (on .NET Core), or an array of aliases (on .NET Framework). Returns empty if no aliases exist.</returns>
+#if NETCOREAPP
+    public static System.ReadOnlySpan<string> GetAliases(string mainKey) => mainKey switch
+#else
+    public static string[] GetAliases(string mainKey) => mainKey switch
+#endif
     {
-        switch (mainKey)
-        {
-            default:
-                return Array.Empty<string>();
-        }
-    }
+        _ => []
+    };
 }
 """;
 

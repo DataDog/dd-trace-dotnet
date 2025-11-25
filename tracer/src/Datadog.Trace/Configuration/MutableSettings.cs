@@ -261,7 +261,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal OverrideErrorLog ErrorLog { get; }
 
-    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
             key.AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled);
@@ -996,10 +996,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.HeaderTags), headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTagsConfig = config.WithKeys(ConfigurationKeys.HeaderTags);
+        var headerTags = InitializeHeaderTags(in headerTagsConfig, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config.WithKeys(ConfigurationKeys.GrpcTags), headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTagsConfig = config.WithKeys(ConfigurationKeys.GrpcTags);
+        var grpcTags = InitializeHeaderTags(in grpcTagsConfig, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 

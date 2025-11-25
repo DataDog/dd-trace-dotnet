@@ -176,7 +176,7 @@ internal static class DatadogLoggingFactory
         if (string.IsNullOrEmpty(logDirectory))
         {
             // todo, handle in phase 2 with deprecations
-// ProfilerLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later we want to pull deprecations differently as part of centralized file
+// TraceLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later (config registry v2) we want to pull deprecations differently as part of centralized file
 #pragma warning disable DD0008, 618
             var nativeLogFile = configurationBuilder.WithKeys(ConfigurationKeys.TraceLogPath).AsString();
 #pragma warning restore DD0008, 618
