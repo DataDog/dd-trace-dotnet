@@ -53,7 +53,7 @@ namespace Samples.Microsoft.Data.SqlClient
                     connection.Open();
                     return connection;
                 }
-                catch (SqlException ex)
+                catch (SqlException ex) when (IsRetryableConnectionError(ex))
                 {
                     lastException = ex;
                     connection?.Dispose();
@@ -68,7 +68,7 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
                 catch (Exception ex)
                 {
-                    // Non-SqlException errors (reflection issues, etc.) should fail the test
+                    // Other errors (reflection issues, etc.) should fail the test
                     Console.WriteLine($"Unexpected error opening connection: {ex}");
                     throw;
                 }
@@ -80,6 +80,21 @@ namespace Samples.Microsoft.Data.SqlClient
             Console.WriteLine($"Message: {lastException.Message}");
             Environment.Exit(13);
             return null;
+        }
+
+        static bool IsRetryableConnectionError(SqlException ex)
+        {
+            return ex.Number == -1 || // Generic network error
+            ex.Number == -2 || // Connection timeout
+            ex.Number == 2 || // Network path not found
+            ex.Number == 53 || // SQL Server not found
+            ex.Number == 64 || // Connection broken
+            ex.Number == 258 || // Wait timeout
+            ex.Number == 10053 || // Connection aborted
+            ex.Number == 10054 || // Connection reset
+            ex.Number == 10060 || // Connection timeout
+            ex.Number == 10061 || // Connection refused
+            ex.Number == 11001; // DNS failure
         }
     }
 }
