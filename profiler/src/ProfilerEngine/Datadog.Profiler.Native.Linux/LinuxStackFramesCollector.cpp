@@ -979,6 +979,11 @@ bool LinuxStackFramesCollector::IsValidReturnAddress(uintptr_t address)
         return false;
     }
 
+    if (JitCodeCache::Instance().FindMethod(address) != nullptr)
+    {
+        return true;
+    }
+
     auto* librariesCache = LibrariesInfoCache::GetInstance();
     if (librariesCache != nullptr && librariesCache->IsAddressInManagedRegion(address))
     {

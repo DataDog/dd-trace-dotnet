@@ -247,6 +247,38 @@ int32_t DecodeSignedOffsetScale8(uint32_t instruction)
     return (((static_cast<int32_t>(instruction)) << 10) >> 25) * static_cast<int32_t>(sizeof(uintptr_t));
 }
 
+bool DecodeSubSpInstruction(uint32_t instruction, uint32_t& frameSizeBytes)
+{
+    // ADD/SUB (immediate): bits[28:24] == 10001
+    if (((instruction >> 24) & 0x1fu) != 0x11u)
+    {
+        return false;
+    }
+
+    const uint32_t sf = (instruction >> 31) & 0x1u;
+    const uint32_t op = (instruction >> 30) & 0x1u;
+    const uint32_t setFlags = (instruction >> 29) & 0x1u;
+    const uint32_t rn = (instruction >> 5) & 0x1fu;
+    const uint32_t rd = instruction & 0x1fu;
+
+    // We only care about `sub sp, sp, #imm` (64-bit, op=1, S=0, rn=sp, rd=sp)
+    if (sf != 1u || op != 1u || setFlags != 0u || rn != 31u || rd != 31u)
+    {
+        return false;
+    }
+
+    const uint32_t shift = (instruction >> 22) & 0x3u;
+    if (shift > 1u)
+    {
+        return false;
+    }
+
+    const uint32_t imm12 = (instruction >> 10) & 0xfffu;
+    const uint32_t imm = imm12 << (shift == 0u ? 0u : 12u);
+    frameSizeBytes = imm;
+    return imm != 0u;
+}
+
 bool DecodeStorePairInstruction(uint32_t instruction, uint32_t& rt, uint32_t& rt2, uint32_t& rn, int32_t& offsetBytes)
 {
     // Only handle 64-bit register pairs (opc == 0b10) and store variants (bit 22 == 0)
@@ -286,10 +318,11 @@ Arm64PrologueSummary AnalyzeArm64Prologue(uintptr_t start, size_t prologSize, ui
         std::memcpy(summary.PrologBytes.data(), reinterpret_cast<const void*>(start), captureSize);
     }
 
-    const size_t instructionCount = std::min<size_t>(captureSize / sizeof(uint32_t), 16);
+    const size_t instructionCount = std::min<size_t>(captureSize / sizeof(uint32_t), 32);
     const auto* code = reinterpret_cast<const uint32_t*>(start);
 
     bool frameCaptured = false;
+    uint32_t frameSizeCandidate = 0;
 
     for (size_t i = 0; i < instructionCount; i++)
     {
@@ -299,13 +332,35 @@ Arm64PrologueSummary AnalyzeArm64Prologue(uintptr_t start, size_t prologSize, ui
         uint32_t rn = 0;
         int32_t offsetBytes = 0;
 
+        uint32_t subAmount = 0;
+        if (DecodeSubSpInstruction(instruction, subAmount))
+        {
+            frameSizeCandidate = std::max(frameSizeCandidate, subAmount);
+            summary.FrameSize = std::max(summary.FrameSize, subAmount);
+            continue;
+        }
+
         if (DecodeStorePairInstruction(instruction, rt, rt2, rn, offsetBytes) && rn == 31)
         {
-            if (!frameCaptured && rt == 29 && rt2 == 30 && offsetBytes < 0)
+            if (!frameCaptured && rt == 29 && rt2 == 30)
             {
-                summary.FrameSize = static_cast<uint32_t>(-offsetBytes);
-                summary.SavedFpOffset = 0;
-                summary.SavedLrOffset = static_cast<int32_t>(sizeof(uintptr_t));
+                if (offsetBytes < 0)
+                {
+                    summary.FrameSize = std::max(summary.FrameSize, static_cast<uint32_t>(-offsetBytes));
+                    summary.SavedFpOffset = 0;
+                    summary.SavedLrOffset = static_cast<int32_t>(sizeof(uintptr_t));
+                }
+                else
+                {
+                    if (summary.FrameSize == 0 && frameSizeCandidate != 0)
+                    {
+                        summary.FrameSize = frameSizeCandidate;
+                    }
+                    summary.FrameSize = std::max(summary.FrameSize, static_cast<uint32_t>(offsetBytes + static_cast<int32_t>(2 * sizeof(uintptr_t))));
+                    summary.SavedFpOffset = offsetBytes;
+                    summary.SavedLrOffset = offsetBytes + static_cast<int32_t>(sizeof(uintptr_t));
+                }
+
                 frameCaptured = true;
                 continue;
             }
@@ -330,8 +385,26 @@ Arm64PrologueSummary AnalyzeArm64Prologue(uintptr_t start, size_t prologSize, ui
 
                 recordRegister(rt, offsetBytes);
                 recordRegister(rt2, offsetBytes + static_cast<int32_t>(sizeof(uintptr_t)));
+
+                summary.FrameSize = std::max(
+                    summary.FrameSize,
+                    static_cast<uint32_t>(offsetBytes + static_cast<int32_t>(2 * sizeof(uintptr_t))));
+            }
+            else
+            {
+                summary.FrameSize = std::max(summary.FrameSize, static_cast<uint32_t>(-offsetBytes));
             }
         }
+    }
+
+    if (summary.FrameSize == 0 && frameSizeCandidate != 0)
+    {
+        summary.FrameSize = frameSizeCandidate;
+    }
+
+    if (summary.FrameSize != 0 && (summary.FrameSize % 16) != 0)
+    {
+        summary.FrameSize = (summary.FrameSize + 15) & ~15u;
     }
 
     return summary;
@@ -388,6 +461,7 @@ void RegisterJitMethodMetadata(
     HRESULT hrStatus,
     BOOL safeToBlock)
 {
+    // todo: handle safeToBlock == FALSE
     if (profilerInfo == nullptr)
     {
         return;

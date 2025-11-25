@@ -33,8 +33,8 @@ dotnet build tracer/build/_build/_build.csproj
 ```
 
 ```bash
-DD_INTERNAL_USE_HYBRID_UNWINDING=1 dotnet tracer/build/_build/bin/Debug/_build.dll BuildTracerHome
-DD_INTERNAL_USE_HYBRID_UNWINDING=1 dotnet tracer/build/_build/bin/Debug/_build.dll BuildNativeWrapper
+dotnet tracer/build/_build/bin/Debug/_build.dll BuildTracerHome
+dotnet tracer/build/_build/bin/Debug/_build.dll BuildNativeWrapper
 DD_INTERNAL_USE_HYBRID_UNWINDING=1 dotnet tracer/build/_build/bin/Debug/_build.dll BuildProfilerHome
 ```
 
@@ -50,6 +50,10 @@ dotnet publish profiler/src/Demos/Samples.Computer01/Samples.Computer01.csproj \
   -f net10.0 \
   --no-self-contained \
   -o /project/profiler/_build/bin/Release-arm64/profiler/src/Demos/Samples.Computer01/net10.0
+```
+
+```
+dotnet Samples.Computer01.dll --timeout 15 --scenario ManagedStackExercise
 ```
 
 ### Quick iteration (native-only rebuild)
@@ -137,7 +141,7 @@ ret
 ### JIT Metadata Cache
 
 - `JITCompilationFinished` now records each method's native `[start, end)` range and prologue size into `JitCodeCache`.
-- The cache captures the decoded stack frame summary (frame size, saved FP/LR offsets, callee-saved register slots) plus the raw prologue bytes for later inspection.
+- The cache captures the decoded stack frame summary (frame size, saved FP/LR offsets, callee-saved register slots) plus the raw prologue bytes for later inspection. Updated decoder now handles `sub sp, sp, #imm` followed by large callee-save blocks so we get accurate frame sizes for Newtonsoft hot paths.
 - The cache uses a lock-free, signal-safe linked list so hybrid unwinding can query it from the sampler thread.
 - `LinuxStackFramesCollector::IsManagedCode` consults the cache first, reducing the reliance on `/proc/self/maps` refreshes.
 - ARM64 manual unwinding now reads the caller FP/LR using the cached offsets and restores SP with the cached frame size when available.
