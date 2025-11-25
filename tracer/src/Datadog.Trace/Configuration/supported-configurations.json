@@ -23,6 +23,11 @@
         "A"
       ]
     },
+    "DD_AGENT_FEATURE_POLLING_ENABLED": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_API_KEY": {
       "version": [
         "A"
@@ -661,6 +666,12 @@
       "product": "Telemetry"
     },
     "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "Telemetry"
+    },
+    "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD": {
       "version": [
         "A"
       ],

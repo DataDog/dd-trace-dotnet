@@ -30,6 +30,12 @@ internal static partial class ConfigurationKeys2
         public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
 
         /// <summary>
+        /// Configuration key to allow telemetry compression.
+        /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.CompressionMethod"/>
+        /// </summary>
+        public const string TelemetryCompressionMethod = "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD";
+
+        /// <summary>
         /// Configuration key for enabling or disabling internal telemetry.
         /// Default value is <c>true</c> (enabled).
         /// </summary>

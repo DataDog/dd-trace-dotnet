@@ -17,6 +17,10 @@
       "const_name": "AgentHost"
     },
     {
+      "env_var": "DD_AGENT_FEATURE_POLLING_ENABLED",
+      "const_name": "AgentFeaturePollingEnabled"
+    },
+    {
       "env_var": "DD_API_KEY",
       "const_name": "ApiKey"
     },
@@ -463,6 +467,10 @@
     {
       "env_var": "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED",
       "const_name": "AgentProxyEnabled"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD",
+      "const_name": "TelemetryCompressionMethod"
     },
     {
       "env_var": "DD_INSTRUMENTATION_TELEMETRY_ENABLED",

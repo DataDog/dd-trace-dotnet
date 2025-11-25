@@ -26,6 +26,13 @@ internal static partial class ConfigurationKeys2
     public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
 
     /// <summary>
+    /// Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+    /// Default value is true (polling enabled).
+    /// </summary>
+    /// <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+    public const string AgentFeaturePollingEnabled = "DD_AGENT_FEATURE_POLLING_ENABLED";
+
+    /// <summary>
     /// Configuration key for the Agent host where the Tracer can send traces.
     /// Overridden by <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> if present.
     /// Default value is "localhost".
