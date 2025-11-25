@@ -21,120 +21,29 @@ internal static partial class ConfigKeyAliasesSwitcher
     /// </summary>
     /// <param name="mainKey">The configuration key.</param>
     /// <returns>An array of aliases for the key, or empty array if no aliases exist.</returns>
-    public static string[] GetAliases(string mainKey)
+    public static string[] GetAliases(string mainKey) => mainKey switch
     {
-        switch (mainKey)
-        {
-            case "DD_AGENT_HOST":
-                return new string[]
-                {
-                    "DATADOG_TRACE_AGENT_HOSTNAME",
-                    "DD_TRACE_AGENT_HOSTNAME"
-                };
-            case "DD_API_SECURITY_ENABLED":
-                return new string[]
-                {
-                    "DD_EXPERIMENTAL_API_SECURITY_ENABLED"
-                };
-            case "DD_EXCEPTION_REPLAY_ENABLED":
-                return new string[]
-                {
-                    "DD_EXCEPTION_DEBUGGING_ENABLED"
-                };
-            case "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS":
-                return new string[]
-                {
-                    "DD_INTERNAL_RCM_POLL_INTERVAL"
-                };
-            case "DD_SERVICE":
-                return new string[]
-                {
-                    "DD_SERVICE_NAME"
-                };
-            case "DD_TAGS":
-                return new string[]
-                {
-                    "DD_TRACE_GLOBAL_TAGS"
-                };
-            case "DD_TRACE_AGENT_PORT":
-                return new string[]
-                {
-                    "DATADOG_TRACE_AGENT_PORT"
-                };
-            case "DD_TRACE_CLIENT_IP_HEADER":
-                return new string[]
-                {
-                    "DD_APPSEC_IPHEADER"
-                };
-            case "DD_TRACE_CONFIG_FILE":
-                return new string[]
-                {
-                    "DD_DOTNET_TRACER_CONFIG_FILE"
-                };
-            case "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES":
-                return new string[]
-                {
-                    "DD_HTTP_CLIENT_ERROR_STATUSES"
-                };
-            case "DD_TRACE_HTTP_SERVER_ERROR_STATUSES":
-                return new string[]
-                {
-                    "DD_HTTP_SERVER_ERROR_STATUSES"
-                };
-            case "DD_TRACE_OTEL_ENABLED":
-                return new string[]
-                {
-                    "DD_TRACE_ACTIVITY_LISTENER_ENABLED"
-                };
-            case "DD_TRACE_PROPAGATION_STYLE_EXTRACT":
-                return new string[]
-                {
-                    "DD_PROPAGATION_STYLE_EXTRACT",
-                    "DD_TRACE_PROPAGATION_STYLE"
-                };
-            case "DD_TRACE_PROPAGATION_STYLE_INJECT":
-                return new string[]
-                {
-                    "DD_PROPAGATION_STYLE_INJECT",
-                    "DD_TRACE_PROPAGATION_STYLE"
-                };
-            case "DD_TRACE_RATE_LIMIT":
-                return new string[]
-                {
-                    "DD_MAX_TRACES_PER_SECOND"
-                };
-            case "OTEL_EXPORTER_OTLP_LOGS_HEADERS":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_HEADERS"
-                };
-            case "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_PROTOCOL"
-                };
-            case "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_TIMEOUT"
-                };
-            case "OTEL_EXPORTER_OTLP_METRICS_HEADERS":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_HEADERS"
-                };
-            case "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_PROTOCOL"
-                };
-            case "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT":
-                return new string[]
-                {
-                    "OTEL_EXPORTER_OTLP_TIMEOUT"
-                };
-            default:
-                return Array.Empty<string>();
-        }
-    }
+        "DD_AGENT_HOST" => ["DATADOG_TRACE_AGENT_HOSTNAME", "DD_TRACE_AGENT_HOSTNAME"],
+        "DD_API_SECURITY_ENABLED" => ["DD_EXPERIMENTAL_API_SECURITY_ENABLED"],
+        "DD_EXCEPTION_REPLAY_ENABLED" => ["DD_EXCEPTION_DEBUGGING_ENABLED"],
+        "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS" => ["DD_INTERNAL_RCM_POLL_INTERVAL"],
+        "DD_SERVICE" => ["DD_SERVICE_NAME"],
+        "DD_TAGS" => ["DD_TRACE_GLOBAL_TAGS"],
+        "DD_TRACE_AGENT_PORT" => ["DATADOG_TRACE_AGENT_PORT"],
+        "DD_TRACE_CLIENT_IP_HEADER" => ["DD_APPSEC_IPHEADER"],
+        "DD_TRACE_CONFIG_FILE" => ["DD_DOTNET_TRACER_CONFIG_FILE"],
+        "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES" => ["DD_HTTP_CLIENT_ERROR_STATUSES"],
+        "DD_TRACE_HTTP_SERVER_ERROR_STATUSES" => ["DD_HTTP_SERVER_ERROR_STATUSES"],
+        "DD_TRACE_OTEL_ENABLED" => ["DD_TRACE_ACTIVITY_LISTENER_ENABLED"],
+        "DD_TRACE_PROPAGATION_STYLE_EXTRACT" => ["DD_PROPAGATION_STYLE_EXTRACT", "DD_TRACE_PROPAGATION_STYLE"],
+        "DD_TRACE_PROPAGATION_STYLE_INJECT" => ["DD_PROPAGATION_STYLE_INJECT", "DD_TRACE_PROPAGATION_STYLE"],
+        "DD_TRACE_RATE_LIMIT" => ["DD_MAX_TRACES_PER_SECOND"],
+        "OTEL_EXPORTER_OTLP_LOGS_HEADERS" => ["OTEL_EXPORTER_OTLP_HEADERS"],
+        "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL" => ["OTEL_EXPORTER_OTLP_PROTOCOL"],
+        "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT" => ["OTEL_EXPORTER_OTLP_TIMEOUT"],
+        "OTEL_EXPORTER_OTLP_METRICS_HEADERS" => ["OTEL_EXPORTER_OTLP_HEADERS"],
+        "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL" => ["OTEL_EXPORTER_OTLP_PROTOCOL"],
+        "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT" => ["OTEL_EXPORTER_OTLP_TIMEOUT"],
+        _ => []
+    };
 }

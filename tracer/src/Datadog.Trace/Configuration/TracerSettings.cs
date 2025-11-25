@@ -1303,16 +1303,6 @@ namespace Datadog.Trace.Configuration
             return list.ToArray();
         }
 
-        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
-            => MutableSettings.IsErrorStatusCode(statusCode, serverStatusCode);
-
-        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
-            => MutableSettings.IsIntegrationEnabled(integration, defaultValue);
-
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
-            => MutableSettings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
-
         internal string GetDefaultHttpClientExclusions()
         {
             if (IsRunningInAzureAppService)
