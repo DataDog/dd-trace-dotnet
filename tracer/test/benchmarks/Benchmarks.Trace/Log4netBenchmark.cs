@@ -17,10 +17,11 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class Log4netBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly log4net.ILog Logger;
+        private Tracer _logInjectionTracer;
+        private log4net.ILog _logger;
 
-        static Log4netBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var logInjectionSettings = TracerSettings.Create(new()
             {
@@ -30,8 +31,8 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.ServiceVersion, "version" },
             });
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
 
             var repository = (Hierarchy)log4net.LogManager.GetRepository();
             var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
@@ -51,17 +52,17 @@ namespace Benchmarks.Trace
             repository.Root.Level = Level.Info;
             repository.Configured = true;
 
-            Logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
+            _logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
         }
 
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (_logInjectionTracer.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (_logInjectionTracer.StartActive("Child"))
                 {
-                    Logger.Info("Hello");
+                    _logger.Info("Hello");
                 }
             }
         }

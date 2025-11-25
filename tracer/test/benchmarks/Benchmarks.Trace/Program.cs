@@ -90,6 +90,10 @@ namespace Benchmarks.Trace
             var initMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(IterationSetupAttribute)) != null);
             var cleanupMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(IterationCleanupAttribute)) != null);
 
+            // Retrieve the [GlobalSetup] and [GlobalCleanup] methods, if any
+            var globalSetupMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(GlobalSetupAttribute)) != null);
+            var globalCleanupMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(GlobalCleanupAttribute)) != null);
+
             //Retrieve Arguments
             MethodInfo argMethod = null;
             var argAttribute = Attribute.GetCustomAttribute(benchmarkMethod, typeof(ArgumentsSourceAttribute));
@@ -100,6 +104,11 @@ namespace Benchmarks.Trace
             }
 
             T instance = new T();
+
+            // Execute [GlobalSetup] method
+            globalSetupMethod?.Invoke(instance, null);
+
+            // Execute iterations
             if (arguments.Length > 0 || argMethod == null)
             {
                 Debug(instance, benchmarkMethod, arguments, initMethod, cleanupMethod);
@@ -112,6 +121,9 @@ namespace Benchmarks.Trace
                     Debug(instance, benchmarkMethod, new object[] { arg }, initMethod, cleanupMethod);
                 }
             }
+
+            // Execute [GlobalCleanup] method
+            globalCleanupMethod?.Invoke(instance, null);
 
             return 0;
         }

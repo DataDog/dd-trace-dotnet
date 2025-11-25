@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -25,13 +25,14 @@ namespace Benchmarks.Trace;
 public class ActivityBenchmark
 {
     private const string SourceName = "BenchmarkSource";
-    private static readonly Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
     private static readonly DateTime _startTime = DateTimeOffset.FromUnixTimeSeconds(0).UtcDateTime;
     private static readonly DateTime _endTime = DateTimeOffset.FromUnixTimeSeconds(5).UtcDateTime;
 
-    private static readonly ActivitySource _source;
+    private Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
+    private ActivitySource _source;
 
-    static ActivityBenchmark()
+    [GlobalSetup]
+    public void GlobalSetup()
     {
         _source = new ActivitySource(SourceName);
 
@@ -59,7 +60,7 @@ public class ActivityBenchmark
         handler.ActivityStopped(SourceName, parentMock);
     }
 
-    private static Activity CreateActivity(Activity? parent = null)
+    private Activity CreateActivity(Activity? parent = null)
     {
         var activity = parent is null
                            ? _source.CreateActivity("parent", System.Diagnostics.ActivityKind.Internal)
