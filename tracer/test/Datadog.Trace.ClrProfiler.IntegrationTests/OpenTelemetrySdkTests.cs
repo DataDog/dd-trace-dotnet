@@ -213,7 +213,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
-        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
         [Trait("DockerGroup", "1")]
@@ -259,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 metricsResponse.EnsureSuccessStatusCode();
 
                 var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
-                var metricsData = JToken.Parse(metricsJson);
+                var metricsData = JToken.Parse(metricsJson).Last;
 
                 metricsData.Should().NotBeNullOrEmpty();
 
@@ -302,7 +301,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
-        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [Trait("RequiresDockerDependency", "true")]
         [Trait("DockerGroup", "1")]
@@ -335,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
-            SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
@@ -350,7 +348,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 logsResponse.EnsureSuccessStatusCode();
 
                 var logsJson = await logsResponse.Content.ReadAsStringAsync();
-                var logsData = JToken.Parse(logsJson);
+                var logsData = JToken.Parse(logsJson).Last;
 
                 logsData.Should().NotBeNullOrEmpty();
                 logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
