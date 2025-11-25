@@ -28,9 +28,6 @@ namespace Benchmarks.Trace
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
-            // Warmup
-            RunOnMethodBegin();
         }
 
         [Benchmark]

@@ -13,7 +13,7 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class GraphQLBenchmark
     {
-        private Task<ExecutionResult> _result;
+        private readonly static Task<ExecutionResult> _result = Task.FromResult(new ExecutionResult { Value = 42 });
         private ExecutionContext _context;
         private GraphQLClient _client;
 
@@ -24,7 +24,6 @@ namespace Benchmarks.Trace
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            _result = Task.FromResult(new ExecutionResult { Value = 42 });
             _context = new ExecutionContext();
             _client = new GraphQLClient(_result);
         }
@@ -39,7 +38,7 @@ namespace Benchmarks.Trace
 
             return task.GetAwaiter().GetResult().Value;
 
-            Task<ExecutionResult> ExecuteAsyncImpl(ExecutionContext context) => _result;
+            static Task<ExecutionResult> ExecuteAsyncImpl(ExecutionContext context) => _result;
         }
 
         private class GraphQLClient : IExecutionStrategy

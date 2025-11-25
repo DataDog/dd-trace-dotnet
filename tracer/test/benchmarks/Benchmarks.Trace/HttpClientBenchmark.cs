@@ -15,7 +15,7 @@ namespace Benchmarks.Trace
     public class HttpClientBenchmark
     {
         private HttpRequestMessage _httpRequest;
-        private Task<HttpResponseMessage> _cachedResult;
+        private static readonly Task<HttpResponseMessage> _cachedResult = Task.FromResult(new HttpResponseMessage());
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -25,7 +25,6 @@ namespace Benchmarks.Trace
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             _httpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
-            _cachedResult = Task.FromResult(new HttpResponseMessage());
         }
 
         [Benchmark]
@@ -35,7 +34,7 @@ namespace Benchmarks.Trace
                 (this, _httpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
             return "OK";
 
-            Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => _cachedResult;
+            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => _cachedResult;
         }
     }
 }

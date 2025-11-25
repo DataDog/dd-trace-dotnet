@@ -40,7 +40,7 @@ namespace Benchmarks.Trace
             return CallTarget.Run<RedisNativeClientSendReceiveIntegration, RedisNativeClient, byte[][], Func<int>, Action<Func<int>>, bool, int>
                 (_client, _rawCommands, _fn, _completePipelineFn, true, &SendReceiveImpl);
 
-            int SendReceiveImpl(byte[][] cmdWithBinaryArgs, Func<int> fn, Action<Func<int>> completePipelineFn, bool sendWithoutRead) => fn();
+            static int SendReceiveImpl(byte[][] cmdWithBinaryArgs, Func<int> fn, Action<Func<int>> completePipelineFn, bool sendWithoutRead) => fn();
         }
     }
 }
