@@ -2075,7 +2075,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     auto dataflow = _dataflow;
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
-        Logger::Info("Creating Dataflow.");
+        Logger::Debug("Creating Dataflow.");
         dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
     }
 
