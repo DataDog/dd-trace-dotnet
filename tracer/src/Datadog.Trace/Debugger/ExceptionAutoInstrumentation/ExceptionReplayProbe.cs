@@ -5,19 +5,23 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionReplayProbe
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionReplayProbe>();
         private readonly int _hashCode;
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
@@ -107,6 +111,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void AddExceptionCase(ExceptionCase @case, bool isPartOfCase)
         {
+            var shouldRefreshAfterLock = false;
+
             lock (_locker)
             {
                 if (isPartOfCase && ShouldInstrument())
@@ -134,6 +140,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 _exceptionCases.Add(@case);
                 ProcessCase(@case);
+
+                shouldRefreshAfterLock = @case.Probes?.Length == 1;
+            }
+
+            if (shouldRefreshAfterLock)
+            {
+                TryRefreshSingleFrameProbeStatus();
             }
         }
 
@@ -165,6 +178,80 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public override int GetHashCode()
         {
             return _hashCode;
+        }
+
+        /// <summary>
+        /// If an exception case only contains a single customer frame, we never build parent/child call-path hashes,
+        /// meaning the ordinary probe-status polling code in <see cref="ExceptionProbeProcessor"/> never executes.
+        /// For CI Visibility (and other single-frame scenarios) this left probes permanently stuck in the default
+        /// <see cref="Status.RECEIVED"/> state, so snapshots were never captured. To avoid changing the behaviour
+        /// for multi-frame cases, we perform a one-off eager poll right after the probe is attached. The poll is
+        /// executed outside the probe lock because we may wait up to a few seconds while the CLR completes ReJIT and
+        /// we do not want to block unrelated instrumentation updates.
+        /// </summary>
+        private void TryRefreshSingleFrameProbeStatus()
+        {
+            if (string.IsNullOrEmpty(ProbeId))
+            {
+                return;
+            }
+
+            try
+            {
+                // In practice the native tracer reports INSTALLED for ~500 ms after we request ReJIT, but CI Visibility
+                // tests regularly need a little longer (module load + async offloader). We therefore try a handful of
+                // times with a generous delay so we can observe the final INSTRUMENTED status without changing the
+                // behaviour for other scenarios.
+                const int maxAttempts = 20;
+                var stopwatch = Stopwatch.StartNew();
+
+                for (var attempt = 0; attempt < maxAttempts; attempt++)
+                {
+                    var statuses = DebuggerNativeMethods.GetProbesStatuses(new[] { ProbeId });
+                    if (statuses.Length == 0)
+                    {
+                        return;
+                    }
+
+                    var previous = ProbeStatus;
+                    ProbeStatus = statuses[0].Status;
+                    ErrorMessage = statuses[0].ErrorMessage;
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var message = $"Eager status refresh for single-frame probe {ProbeId}. Previous={previous}, Current={ProbeStatus}, Attempt={attempt + 1}, ElapsedMs={stopwatch.ElapsedMilliseconds}";
+                        Log.Debug("{Message}", message);
+                    }
+
+                    if (ProbeStatus == Status.INSTRUMENTED)
+                    {
+                        break;
+                    }
+
+                    if (ProbeStatus == Status.ERROR || ProbeStatus == Status.BLOCKED)
+                    {
+                        break;
+                    }
+
+                    if (attempt < maxAttempts - 1)
+                    {
+                        Thread.Sleep(attempt == 0 ? 1_500 : 250);
+                    }
+                }
+
+                if (ProbeStatus != Status.INSTRUMENTED)
+                {
+                    Log.Warning(
+                        "Single-frame probe {ProbeId} never reported INSTRUMENTED during eager refresh. FinalStatus={Status}, TotalWaitMs={ElapsedMs}",
+                        ProbeId,
+                        ProbeStatus,
+                        stopwatch.ElapsedMilliseconds);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to eagerly refresh probe status for {ProbeId}", ProbeId);
+            }
         }
     }
 }
