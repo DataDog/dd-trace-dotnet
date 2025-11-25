@@ -404,7 +404,9 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                 var trimmedLine = line.TrimStart();
 
                 // Check if line contains seealso tag (self-closing /> or closing </seealso>) as we need to extract it
-                if (trimmedLine.StartsWith("<seealso") && (trimmedLine.Contains("/>") || trimmedLine.Contains("</seealso>")))
+                if (trimmedLine.StartsWith("<seealso", StringComparison.Ordinal) &&
+                    (trimmedLine.IndexOf("/>", StringComparison.Ordinal) >= 0 ||
+                     trimmedLine.IndexOf("</seealso>", StringComparison.Ordinal) >= 0))
                 {
                     // seealso tags go outside summary - save for later
                     seeAlsoLines.Add(line.Trim());
@@ -472,7 +474,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         {
             foreach (var productName in productNames)
             {
-                if (pascalName!.Length > productName.Length &&
+                if (pascalName.Length > productName.Length &&
                     pascalName.StartsWith(productName, StringComparison.InvariantCulture))
                 {
                     pascalName = pascalName.Substring(productName.Length);

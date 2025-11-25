@@ -324,7 +324,7 @@ public class ConfigurationKeysGeneratorTests
     }
 
     [Fact]
-    public void SortsEntriesAlphabetically()
+    public void SortsEntriesAlphabeticallyByEnvironmentVariable()
     {
         const string supportedConfigJson = """
                                            {
