@@ -20,7 +20,43 @@ internal static class ProcessTags
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
-    public static readonly string SerializedTags = GetSerializedTags();
+    // two views on the same data
+    public static readonly List<string> TagsList = GetTagsList();
+    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
+
+    private static List<string> GetTagsList()
+    {
+        // ⚠️ make sure entries are added in alphabetical order of keys
+        var tags = new List<string>(3); // Update if you add more entries below
+        tags.AddNormalizedTag(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
+        tags.AddNormalizedTag(EntrypointName, GetEntryPointName());
+        // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
+        tags.AddNormalizedTag(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+
+        return tags;
+    }
+
+    /// <summary>
+    /// normalizes the tag value (keys are hardcoded so they don't need that)
+    /// and adds it to the list iff not null or empty
+    /// </summary>
+    private static void AddNormalizedTag(this List<string> tags, string key, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
+        // which we don't want because we use it as a key/value separator.
+        var normalizedValue = TraceUtil.NormalizeTag(value).Replace(oldChar: ':', newChar: '_');
+        tags.Add($"{key}:{normalizedValue}");
+    }
+
+    private static string GetSerializedTagsFromList(List<string> tags)
+    {
+        return string.Join(",", tags);
+    }
 
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
@@ -32,40 +68,8 @@ internal static class ProcessTags
         return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
     }
 
-    private static string GetSerializedTags()
-    {
-        // ⚠️ make sure entries are added in alphabetical order of keys
-        List<KeyValuePair<string, string?>> tags =
-        [
-            new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
-            new(EntrypointName, GetEntryPointName()),
-            // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-            new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
-        ];
-
-        // then normalize values and put all tags in a string
-        var serializedTags = StringBuilderCache.Acquire();
-        foreach (var kvp in tags)
-        {
-            if (!string.IsNullOrEmpty(kvp.Value))
-            {
-                serializedTags.Append($"{kvp.Key}:{NormalizeTagValue(kvp.Value!)},");
-            }
-        }
-
-        serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
-        return StringBuilderCache.GetStringAndRelease(serializedTags);
-    }
-
     private static string? GetEntryPointName()
     {
         return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
-    }
-
-    private static string NormalizeTagValue(string tagValue)
-    {
-        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
-        // which we don't want because we use it as a key/value separator.
-        return TraceUtil.NormalizeTag(tagValue).Replace(oldChar: ':', newChar: '_');
     }
 }
