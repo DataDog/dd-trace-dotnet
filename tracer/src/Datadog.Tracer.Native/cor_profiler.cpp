@@ -2083,16 +2083,14 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     {
         Logger::Info("Registering Callsite Aspects.");
         dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
-        if (_dataflow == nullptr)
-        {
-            _dataflow = dataflow;
-        }
+        _dataflow = dataflow;
         return aspectsLength;
     }
     else
     {
         Logger::Info("Callsite instrumentation is disabled.");
     }
+
     return 0;
 }
 
