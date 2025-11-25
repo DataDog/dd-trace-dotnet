@@ -300,7 +300,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     var sleepDuration = Math.Min(newDelay, loopDurationMs);
                     Thread.Sleep(sleepDuration);
-                    newDelay -= sleepDuration;                     
+                    newDelay -= sleepDuration;
                 }
 #else
                 var newDelay = _delay - callbackExecutionDuration;
