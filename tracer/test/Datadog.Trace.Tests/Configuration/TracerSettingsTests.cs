@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void Constructor_HandlesEmptyource()
+        public void Constructor_HandlesEmptySource()
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
             tracerSettings.Should().NotBeNull();

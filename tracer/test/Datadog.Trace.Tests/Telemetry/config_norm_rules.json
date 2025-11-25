@@ -309,6 +309,7 @@
   "dbm_propagation_mode": "dbm_propagation_mode",
   "trace.remove_root_span_laravel_queue": "trace_remove_root_span_laravel_queue_enabled",
   "trace.remove_autoinstrumentation_orphans": "trace_remove_auto_instrumentation_orphans_enabled",
+  "DD_AGENT_FEATURE_POLLING_ENABLED": "agent_feature_polling_enabled",
   "DD_TRACE_AWS_ADD_SPAN_POINTERS": "trace_aws_add_span_pointers",
   "DD_TRACE_CONFIG_FILE": "trace_config_file",
   "DD_DOTNET_TRACER_CONFIG_FILE": "trace_config_file",

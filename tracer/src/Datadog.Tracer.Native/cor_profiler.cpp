@@ -876,6 +876,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
         }
 
+        auto perform_calltarget_instrumentation_on_version_conflict_assembly = false;
         if (IsVersionCompatibilityEnabled())
         {
             // We need to call EmitDistributedTracerTargetMethod on every Datadog.Trace.dll, not just on the automatic one.
@@ -895,6 +896,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                 else
                 {
                     RewriteForDistributedTracing(module_metadata, module_id);
+                    perform_calltarget_instrumentation_on_version_conflict_assembly = true;
                 }
             }
         }
@@ -906,297 +908,302 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
         // Rewrite methods for exposing the native tracer version to managed for telemetry purposes
         RewriteForTelemetry(module_metadata, module_id);
+
+        if (!perform_calltarget_instrumentation_on_version_conflict_assembly)
+        {
+            // We're not in version conflict scenario, so we don't need to rewrite Datadog.Trace
+            return S_OK;
+        }
+
+        // We're in a version conflict scenario so continue with rejit inspection etc
     }
-    else
+    else if (module_info.assembly.name == manual_instrumentation_name)
     {
         // Datadog.Trace.Manual is _mostly_ treated as a third-party assembly,
         // but we do some rewriting to support manual-only scenarios
         // If/when we go with v3 part deux, we will need to update this to
         // also rewrite to support version mismatch via IDistributedTracer
-        if (module_info.assembly.name == manual_instrumentation_name)
+        // Rewrite key methods for version mismatch +
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                 metadata_interfaces.GetAddressOf());
+
+        if (hr != S_OK)
         {
-            // Rewrite key methods for version mismatch +
-            ComPtr<IUnknown> metadata_interfaces;
-            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                     metadata_interfaces.GetAddressOf());
-
-            if (hr != S_OK)
-            {
-                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                             module_info.assembly.name);
-                return S_OK;
-            }
-
-            const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-            const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-            const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-            const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-            // NOTE: I'm not entirely comfortable that we're passing corAssemblyProperty in here...
-            // but I don't know if I _should_ worry, or if we can avoid it
-            const auto& module_metadata =
-                ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
-                               module_info.assembly.app_domain_id, &corAssemblyProperty, false, false);
-            const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
-
-            const auto& assemblyVersion = assemblyImport.version.str();
-
-            Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
-            managedInternalModules_.push_back(module_id);
-
-            // Rewrite Instrumentation.IsManualInstrumentationOnly()
-            RewriteIsManualInstrumentationOnly(module_metadata, module_id);
+            Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
+                         module_info.assembly.name);
+            return S_OK;
         }
 
-        modules.push_back(module_id);
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-        bool searchForTraceAttribute = trace_annotations_enabled;
-        if (searchForTraceAttribute)
+        // NOTE: I'm not entirely comfortable that we're passing corAssemblyProperty in here...
+        // but I don't know if I _should_ worry, or if we can avoid it
+        const auto& module_metadata =
+            ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
+                           module_info.assembly.app_domain_id, &corAssemblyProperty, false, false);
+        const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
+
+        const auto& assemblyVersion = assemblyImport.version.str();
+
+        Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
+        managedInternalModules_.push_back(module_id);
+
+        // Rewrite Instrumentation.IsManualInstrumentationOnly()
+        RewriteIsManualInstrumentationOnly(module_metadata, module_id);
+    }
+
+    modules.push_back(module_id);
+
+    bool searchForTraceAttribute = trace_annotations_enabled;
+    if (searchForTraceAttribute)
+    {
+        for (auto&& skip_assembly_pattern : skip_traceattribute_assembly_prefixes)
         {
-            for (auto&& skip_assembly_pattern : skip_traceattribute_assembly_prefixes)
+            if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
             {
-                if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
+                DBG("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ", module_info.assembly.name);
+                searchForTraceAttribute = false;
+                break;
+            }
+        }
+    }
+
+    // Scan module for [Trace] methods
+    if (searchForTraceAttribute)
+    {
+        mdTypeDef typeDef = mdTypeDefNil;
+        mdTypeRef typeRef = mdTypeRefNil;
+        bool foundType = false;
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                                 metadata_interfaces.GetAddressOf());
+
+        if (hr != S_OK)
+        {
+            Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
+                         module_info.assembly.name);
+            return S_OK;
+        }
+
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+
+        // First, detect if the assembly has defined its own Datadog trace attribute.
+        // If this fails, detect if the assembly references the Datadog trace atttribute or other trace attributes
+        hr = metadata_import->FindTypeDefByName(traceAttribute_typename_cstring, mdTypeDefNil, &typeDef);
+        if (SUCCEEDED(hr))
+        {
+            foundType = true;
+            DBG("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
+                " defined in Module ", module_info.assembly.name);
+        }
+        else
+        {
+            // Now we enumerate all type refs in this assembly to see if the trace attribute is referenced
+            auto enumTypeRefs = Enumerator<mdTypeRef>(
+                [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+                    return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
+                },
+                [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+
+            auto enumIterator = enumTypeRefs.begin();
+            while (enumIterator != enumTypeRefs.end())
+            {
+                mdTypeRef typeRef = *enumIterator;
+
+                // Check if the typeref matches
+                mdToken parent_token = mdTokenNil;
+                WCHAR type_name[kNameMaxSize]{};
+                DWORD type_name_len = 0;
+
+                hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
+                                                      &type_name_len);
+                if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                 {
-                    DBG("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ", module_info.assembly.name);
-                    searchForTraceAttribute = false;
+                    foundType = true;
+                    DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
+                        " defined in Module ", module_info.assembly.name);
                     break;
                 }
+
+                enumIterator = ++enumIterator;
             }
         }
 
-        // Scan module for [Trace] methods
-        if (searchForTraceAttribute)
+        // We have a typeRef and it matches the trace attribute
+        // Since it is referenced, it should be in-use somewhere in this module
+        // So iterate over all methods in the module
+        if (foundType)
         {
-            mdTypeDef typeDef = mdTypeDefNil;
-            mdTypeRef typeRef = mdTypeRefNil;
-            bool foundType = false;
+            std::vector<MethodReference> methodReferences;
+            std::vector<IntegrationDefinition> integrationDefinitions;
 
-            ComPtr<IUnknown> metadata_interfaces;
-            auto hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
-                                                     metadata_interfaces.GetAddressOf());
+            // Now we enumerate all custom attributes in this assembly to see if the trace attribute is used
+            auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
+                [&metadata_import](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
+                    return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, mdTokenNil, arr, max, cnt);
+                },
+                [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+            auto customAttributesIterator = enumCustomAttributes.begin();
 
-            if (hr != S_OK)
+            while (customAttributesIterator != enumCustomAttributes.end())
             {
-                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                             module_info.assembly.name);
-                return S_OK;
-            }
+                mdCustomAttribute customAttribute = *customAttributesIterator;
 
-            const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                // Check if the typeref matches
+                mdToken parent_token = mdTokenNil;
+                mdToken attribute_ctor_token = mdTokenNil;
+                const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
+                DWORD data_size = 0;
 
-            // First, detect if the assembly has defined its own Datadog trace attribute.
-            // If this fails, detect if the assembly references the Datadog trace atttribute or other trace attributes
-            hr = metadata_import->FindTypeDefByName(traceAttribute_typename_cstring, mdTypeDefNil, &typeDef);
-            if (SUCCEEDED(hr))
-            {
-                foundType = true;
-                DBG("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
-                    " defined in Module ", module_info.assembly.name);
-            }
-            else
-            {
-                // Now we enumerate all type refs in this assembly to see if the trace attribute is referenced
-                auto enumTypeRefs = Enumerator<mdTypeRef>(
-                    [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                        return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
-                    },
-                    [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+                hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
+                                                              &attribute_data, &data_size);
 
-                auto enumIterator = enumTypeRefs.begin();
-                while (enumIterator != enumTypeRefs.end())
+                // We are only concerned with the trace attribute on method definitions
+                if (TypeFromToken(parent_token) == mdtMethodDef)
                 {
-                    mdTypeRef typeRef = *enumIterator;
+                    mdTypeDef attribute_type_token = mdTypeDefNil;
+                    WCHAR function_name[kNameMaxSize]{};
+                    DWORD function_name_len = 0;
 
-                    // Check if the typeref matches
-                    mdToken parent_token = mdTokenNil;
-                    WCHAR type_name[kNameMaxSize]{};
-                    DWORD type_name_len = 0;
-
-                    hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
-                                                          &type_name_len);
-                    if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
+                    // Get the type name from the constructor
+                    const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
+                    if (attribute_ctor_token_type == mdtMemberRef)
                     {
-                        foundType = true;
-                        DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
-                            " defined in Module ", module_info.assembly.name);
-                        break;
+                        hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
+                                                                function_name, kNameMaxSize, &function_name_len,
+                                                                nullptr, nullptr);
+                    }
+                    else if (attribute_ctor_token_type == mdtMethodDef)
+                    {
+                        hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
+                                                             function_name, kNameMaxSize, &function_name_len,
+                                                             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                                                             nullptr, nullptr);
+                    }
+                    else
+                    {
+                        hr = E_FAIL;
                     }
 
-                    enumIterator = ++enumIterator;
-                }
-            }
-
-            // We have a typeRef and it matches the trace attribute
-            // Since it is referenced, it should be in-use somewhere in this module
-            // So iterate over all methods in the module
-            if (foundType)
-            {
-                std::vector<MethodReference> methodReferences;
-                std::vector<IntegrationDefinition> integrationDefinitions;
-
-                // Now we enumerate all custom attributes in this assembly to see if the trace attribute is used
-                auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
-                    [&metadata_import](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                        return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, mdTokenNil, arr, max, cnt);
-                    },
-                    [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-                auto customAttributesIterator = enumCustomAttributes.begin();
-
-                while (customAttributesIterator != enumCustomAttributes.end())
-                {
-                    mdCustomAttribute customAttribute = *customAttributesIterator;
-
-                    // Check if the typeref matches
-                    mdToken parent_token = mdTokenNil;
-                    mdToken attribute_ctor_token = mdTokenNil;
-                    const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
-                    DWORD data_size = 0;
-
-                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
-                                                                  &attribute_data, &data_size);
-
-                    // We are only concerned with the trace attribute on method definitions
-                    if (TypeFromToken(parent_token) == mdtMethodDef)
+                    if (SUCCEEDED(hr))
                     {
-                        mdTypeDef attribute_type_token = mdTypeDefNil;
-                        WCHAR function_name[kNameMaxSize]{};
-                        DWORD function_name_len = 0;
+                        mdToken resolution_token = mdTokenNil;
+                        WCHAR type_name[kNameMaxSize]{};
+                        DWORD type_name_len = 0;
 
-                        // Get the type name from the constructor
-                        const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
-                        if (attribute_ctor_token_type == mdtMemberRef)
+                        const auto token_type = TypeFromToken(attribute_type_token);
+                        if (token_type == mdtTypeDef)
                         {
-                            hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
-                                                                    function_name, kNameMaxSize, &function_name_len,
-                                                                    nullptr, nullptr);
+                            DWORD type_flags;
+                            mdToken type_extends = mdTokenNil;
+                            hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, kNameMaxSize,
+                                                                  &type_name_len, &type_flags, &type_extends);
                         }
-                        else if (attribute_ctor_token_type == mdtMethodDef)
+                        else if (token_type == mdtTypeRef)
                         {
-                            hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
-                                                                 function_name, kNameMaxSize, &function_name_len,
-                                                                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                                                                 nullptr, nullptr);
+                            hr = metadata_import->GetTypeRefProps(attribute_type_token, &resolution_token,
+                                                                  type_name, kNameMaxSize, &type_name_len);
                         }
                         else
                         {
-                            hr = E_FAIL;
+                            type_name_len = 0;
                         }
 
-                        if (SUCCEEDED(hr))
+                        if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                         {
-                            mdToken resolution_token = mdTokenNil;
-                            WCHAR type_name[kNameMaxSize]{};
-                            DWORD type_name_len = 0;
+                            mdMethodDef methodDef = (mdMethodDef) parent_token;
 
-                            const auto token_type = TypeFromToken(attribute_type_token);
-                            if (token_type == mdtTypeDef)
+                            // Matches! Let's mark the attached method for ReJIT
+                            // Extract the function info from the mdMethodDef
+                            const auto caller = GetFunctionInfo(metadata_import, methodDef);
+                            if (!caller.IsValid())
                             {
-                                DWORD type_flags;
-                                mdToken type_extends = mdTokenNil;
-                                hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, kNameMaxSize,
-                                                                      &type_name_len, &type_flags, &type_extends);
-                            }
-                            else if (token_type == mdtTypeRef)
-                            {
-                                hr = metadata_import->GetTypeRefProps(attribute_type_token, &resolution_token,
-                                                                      type_name, kNameMaxSize, &type_name_len);
-                            }
-                            else
-                            {
-                                type_name_len = 0;
+                                Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                                    ": the methoddef is not valid!");
+                                customAttributesIterator = ++customAttributesIterator;
+                                continue;
                             }
 
-                            if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
+                            // We create a new function info into the heap from the caller functionInfo in the
+                            // stack, to be used later in the ReJIT process
+                            auto functionInfo = FunctionInfo(caller);
+                            auto hr = functionInfo.method_signature.TryParse();
+                            if (FAILED(hr))
                             {
-                                mdMethodDef methodDef = (mdMethodDef) parent_token;
-
-                                // Matches! Let's mark the attached method for ReJIT
-                                // Extract the function info from the mdMethodDef
-                                const auto caller = GetFunctionInfo(metadata_import, methodDef);
-                                if (!caller.IsValid())
-                                {
-                                    Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
-                                        ": the methoddef is not valid!");
-                                    customAttributesIterator = ++customAttributesIterator;
-                                    continue;
-                                }
-
-                                // We create a new function info into the heap from the caller functionInfo in the
-                                // stack, to be used later in the ReJIT process
-                                auto functionInfo = FunctionInfo(caller);
-                                auto hr = functionInfo.method_signature.TryParse();
-                                if (FAILED(hr))
-                                {
-                                    Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
-                                                 ": the method signature cannot be parsed.");
-                                    customAttributesIterator = ++customAttributesIterator;
-                                    continue;
-                                }
-
-                                // As we are in the right method, we gather all information we need and stored it in to
-                                // the ReJIT handler.
-                                std::vector<shared::WSTRING> signatureTypes;
-                                methodReferences.push_back(MethodReference(
-                                    tracemethodintegration_assemblyname, caller.type.name, caller.name,
-                                    Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
-                                    signatureTypes));
+                                Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                             ": the method signature cannot be parsed.");
+                                customAttributesIterator = ++customAttributesIterator;
+                                continue;
                             }
+
+                            // As we are in the right method, we gather all information we need and stored it in to
+                            // the ReJIT handler.
+                            std::vector<shared::WSTRING> signatureTypes;
+                            methodReferences.push_back(MethodReference(
+                                tracemethodintegration_assemblyname, caller.type.name, caller.name,
+                                Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
+                                signatureTypes));
                         }
                     }
-
-                    customAttributesIterator = ++customAttributesIterator;
                 }
 
-                if (trace_annotation_integration_type == nullptr)
-                {
-                    DBG("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=",
-                        module_id,
-                        ", ModuleName=", module_info.assembly.name,
-                        ", methodReferences.size()=", methodReferences.size());
-
-                    if (methodReferences.size() > 0)
-                    {
-                        rejit_module_method_pairs.push_back(std::make_pair(module_id, methodReferences));
-                    }
-                }
-                else
-                {
-                    DBG("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
-                        ", ModuleName=", module_info.assembly.name,
-                        ", methodReferences.size()=", methodReferences.size());
-
-                    integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-                    // Push integration definitions from this module
-                    for (const auto& methodReference : methodReferences)
-                    {
-                        integration_definitions_.push_back(IntegrationDefinition(
-                            methodReference, *trace_annotation_integration_type.get(), false, false, false));
-                    }
-                }
+                customAttributesIterator = ++customAttributesIterator;
             }
-        }
 
-        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
-        {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
-                                                                                promise);
-
-            // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(200ms);
-
-            if (status != std::future_status::timeout)
+            if (trace_annotation_integration_type == nullptr)
             {
-                const auto& numReJITs = future.get();
-                DBG("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+                DBG("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=",
+                    module_id,
+                    ", ModuleName=", module_info.assembly.name,
+                    ", methodReferences.size()=", methodReferences.size());
+
+                if (methodReferences.size() > 0)
+                {
+                    rejit_module_method_pairs.push_back(std::make_pair(module_id, methodReferences));
+                }
             }
             else
             {
-                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+                DBG("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
+                    ", ModuleName=", module_info.assembly.name,
+                    ", methodReferences.size()=", methodReferences.size());
+
+                integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
+
+                // Push integration definitions from this module
+                for (const auto& methodReference : methodReferences)
+                {
+                    integration_definitions_.push_back(IntegrationDefinition(
+                        methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                }
             }
+        }
+    }
+
+    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+    if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
+    {
+        auto promise = std::make_shared<std::promise<ULONG>>();
+        std::future<ULONG> future = promise->get_future();
+        tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
+                                                                            promise);
+
+        // wait and get the value from the future<ULONG>
+        const auto status = future.wait_for(200ms);
+
+        if (status != std::future_status::timeout)
+        {
+            const auto& numReJITs = future.get();
+            DBG("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+        }
+        else
+        {
+            Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
         }
     }
 

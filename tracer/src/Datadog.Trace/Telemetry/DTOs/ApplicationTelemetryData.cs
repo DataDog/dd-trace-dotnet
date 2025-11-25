@@ -9,7 +9,7 @@ namespace Datadog.Trace.Telemetry;
 
 internal class ApplicationTelemetryData
 {
-    public ApplicationTelemetryData(string serviceName, string env, string serviceVersion, string tracerVersion, string languageName, string languageVersion, string runtimeName, string runtimeVersion, string? commitSha, string? repositoryUrl)
+    public ApplicationTelemetryData(string serviceName, string env, string serviceVersion, string tracerVersion, string languageName, string languageVersion, string runtimeName, string runtimeVersion, string? commitSha, string? repositoryUrl, string? processTags)
     {
         ServiceName = serviceName;
         Env = env;
@@ -21,6 +21,7 @@ internal class ApplicationTelemetryData
         RuntimeVersion = runtimeVersion;
         CommitSha = commitSha;
         RepositoryUrl = repositoryUrl;
+        ProcessTags = processTags;
     }
 
     public string ServiceName { get; set; }
@@ -44,4 +45,6 @@ internal class ApplicationTelemetryData
     public string? CommitSha { get; set; }
 
     public string? RepositoryUrl { get; set; }
+
+    public string? ProcessTags { get; set; }
 }

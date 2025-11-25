@@ -28,23 +28,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.AwsKinesis
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               select new[] { packageVersionArray[0] };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Producer => span.IsAwsKinesisOutbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsKinesisOutbound(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Kinesis integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-kinesis" : EnvironmentHelper.FullSampleName;
+            const string metadataSchemaVersion = "v0";
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-kinesis";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -62,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 kinesisSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(kinesisSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(kinesisSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

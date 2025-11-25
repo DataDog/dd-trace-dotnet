@@ -17,16 +17,12 @@ namespace Samples.Wcf.Client
             int exceptionsSeen = 0;
             using (var calculator = new CalculatorClient(binding, address))
             {
-                using(var scope = _sampleHelpers.CreateScope("WebClient"))
-                {
-                    calculator.DatadogScope = scope;
-                    // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
-                    calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
+                // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
+                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
 
-                    exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
-                    exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
-                    exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator);
-                }
+                exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
+                exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
+                exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator);
             }
 
             if (exceptionsSeen != expectedExceptionCount)
@@ -57,6 +53,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("ServerEmptyActionAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerEmptyActionAdd(1, 2)");
                 double result = calculator.ServerEmptyActionAdd(1, 2);
@@ -70,6 +68,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Sync_ServerSyncAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerSyncAdd(1, 2)");
                 double result = calculator.Sync_ServerSyncAdd(1, 2);
@@ -83,6 +83,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("BeginEnd_ServerSyncAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerSyncAdd(1, 2)");
                 IAsyncResult asyncResult = calculator.Begin_ServerSyncAdd(1, 2, null, null);
@@ -98,6 +100,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Task_ServerSyncAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerSyncAdd(1, 2)");
                 double result = await calculator.Task_ServerSyncAdd(1, 2);
@@ -130,6 +134,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Sync_ServerTaskAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerTaskAdd(1, 2)");
                 double result = calculator.Sync_ServerTaskAdd(1, 2);
@@ -143,6 +149,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("BeginEnd_ServerTaskAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerTaskAdd(1, 2)");
                 IAsyncResult asyncResult = calculator.Begin_ServerTaskAdd(1, 2, null, null);
@@ -158,6 +166,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Task_ServerTaskAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerTaskAdd(1, 2)");
                 double result = await calculator.Task_ServerTaskAdd(1, 2);
@@ -189,6 +199,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Sync_ServerAsyncAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerAsyncAdd(1, 2, false, false)");
                 double result = calculator.Sync_ServerAsyncAdd(1, 2, false, false);
@@ -202,6 +214,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Begin_ServerAsyncAdd_false_false");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, false)");
                 IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, false, null, null);
@@ -217,6 +231,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Begin_ServerAsyncAdd_true_false");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, false)");
                 IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, false, null, null);
@@ -232,6 +248,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Begin_ServerAsyncAdd_false_true");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, true)");
                 IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, true, null, null);
@@ -247,6 +265,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Begin_ServerAsyncAdd_true_true");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, true)");
                 IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, true, null, null);
@@ -262,6 +282,8 @@ namespace Samples.Wcf.Client
 
             try
             {
+                using var scope = SampleHelpers.CreateScope("Task_ServerAsyncAdd");
+                calculator.DatadogScope = scope;
                 Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerAsyncAdd(1, 2, false, false)");
                 double result = await calculator.Task_ServerAsyncAdd(1, 2, false, false);

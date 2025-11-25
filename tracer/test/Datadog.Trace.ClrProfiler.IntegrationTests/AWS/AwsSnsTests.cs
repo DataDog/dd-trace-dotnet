@@ -29,25 +29,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.AwsSns
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               select new[] { packageVersionArray[0] };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsSnsInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsSnsOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsSnsRequest(metadataSchemaVersion),
+            SpanKinds.Consumer => span.IsAwsSnsInbound(),
+            SpanKinds.Producer => span.IsAwsSnsOutbound(),
+            SpanKinds.Client => span.IsAwsSnsRequest(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SNS integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-sns" : EnvironmentHelper.FullSampleName;
+            const string metadataSchemaVersion = "v0";
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-sns";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -64,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var snsSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 snsSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

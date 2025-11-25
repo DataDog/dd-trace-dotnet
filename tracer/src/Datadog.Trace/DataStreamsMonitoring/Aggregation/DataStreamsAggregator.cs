@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 
@@ -111,8 +112,8 @@ internal class DataStreamsAggregator
 
     /// <summary>
     /// Exports the currently aggregated stats
-    /// Internal for testing
     /// </summary>
+    [TestingAndPrivateOnly]
     internal List<SerializableStatsBucket>? Export(long maxBucketFlushTimeNs)
     {
         // we don't have overlapping buckets so any buckets with a start time greater than

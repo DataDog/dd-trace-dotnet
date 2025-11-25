@@ -40,7 +40,8 @@ public class TelemetryHelperTests
             runtimeName: "dotnet",
             runtimeVersion: "7.0.1",
             commitSha: "testCommitSha",
-            repositoryUrl: "testRepositoryUrl");
+            repositoryUrl: "testRepositoryUrl",
+            processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads");
         _host = new HostTelemetryData("MY_HOST", "Windows", "x64");
         _output = output;
     }

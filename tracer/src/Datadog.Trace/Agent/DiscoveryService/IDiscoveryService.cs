@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.Agent.DiscoveryService
 {
     /// <summary>
-    /// Queries datadog-agent and discovers which version we are running against and what endpoints it supports.
+    /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
     internal interface IDiscoveryService
     {

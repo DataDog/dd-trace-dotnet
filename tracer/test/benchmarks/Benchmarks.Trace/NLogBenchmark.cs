@@ -14,10 +14,11 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class NLogBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly NLog.Logger Logger;
+        private Tracer _logInjectionTracer;
+        private NLog.Logger _logger;
 
-        static NLogBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var logInjectionSettings = TracerSettings.Create(new()
             {
@@ -27,8 +28,8 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.ServiceVersion, "version" },
             });
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
 
             var config = new LoggingConfiguration();
 
@@ -46,7 +47,7 @@ namespace Benchmarks.Trace
             config.AddRuleForAllLevels(target);
 
             LogManager.Configuration = config;
-            Logger = LogManager.GetCurrentClassLogger();
+            _logger = LogManager.GetCurrentClassLogger();
 
             // Run the automatic instrumentation initialization code once outside of the microbenchmark
             _ = DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc;
@@ -55,18 +56,18 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (_logInjectionTracer.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (_logInjectionTracer.StartActive("Child"))
                 {
                     // None of the arguments are used directly
                     // First arg is a marker type, so needs to be an NLog type
                     // Remainder can be any object
-                    var callTargetState = LoggerImplWriteIntegrationV5.OnMethodBegin(Logger, typeof(NLog.Logger), Logger, Logger, Logger);
+                    var callTargetState = LoggerImplWriteIntegrationV5.OnMethodBegin(_logger, typeof(NLog.Logger), _logger, _logger, _logger);
 
-                    Logger.Info("Hello");
+                    _logger.Info("Hello");
 
-                    LoggerImplWriteIntegrationV5.OnMethodEnd(Logger, exception: null, callTargetState);
+                    LoggerImplWriteIntegrationV5.OnMethodEnd(_logger, exception: null, callTargetState);
                 }
             }
         }

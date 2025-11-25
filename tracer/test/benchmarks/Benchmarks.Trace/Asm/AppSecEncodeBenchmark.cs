@@ -21,16 +21,18 @@ namespace Benchmarks.Trace.Asm;
 [BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {
-    private static readonly Encoder _encoder;
-    private static readonly EncoderLegacy _encoderLegacy;
-    private static readonly NestedMap _args;
+    private Encoder _encoder;
+    private EncoderLegacy _encoderLegacy;
+    private NestedMap _args;
 
-    static AppSecEncoderBenchmark()
+    [GlobalSetup]
+    public void GlobalSetup()
     {
         AppSecBenchmarkUtils.SetupDummyAgent();
         _encoder = new Encoder();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
+
         _args = MakeNestedMap(20);
     }
 

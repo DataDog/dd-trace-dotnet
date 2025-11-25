@@ -600,6 +600,13 @@ namespace Datadog.Trace.Configuration
         public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
         /// <summary>
+        /// Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+        /// Default value is true (polling enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+        public const string AgentFeaturePollingEnabled = "DD_AGENT_FEATURE_POLLING_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

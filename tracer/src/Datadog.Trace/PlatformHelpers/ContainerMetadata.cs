@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
@@ -157,7 +158,7 @@ namespace Datadog.Trace.PlatformHelpers
             => TryGetInodeUsingPInvoke(path, out result)
             || TryGetInodeUsingStat(path, out result);
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static bool TryGetInodeUsingPInvoke(string path, out long result)
         {
             result = 0;
@@ -195,7 +196,7 @@ namespace Datadog.Trace.PlatformHelpers
 #pragma warning restore DDLOG004
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static bool TryGetInodeUsingStat(string path, out long result)
         {
             result = 0;

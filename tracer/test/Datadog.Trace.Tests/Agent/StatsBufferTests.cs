@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             const long expectedDuration = 42;
 
-            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", Version = "v99.99" };
+            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", Version = "v99.99", ProcessTags = "a.b:c_d,x.y:z" };
 
             var buffer = new StatsBuffer(payload);
 
@@ -52,6 +52,7 @@ namespace Datadog.Trace.Tests.Agent
             result.Hostname.Should().Be(payload.HostName);
             result.Env.Should().Be(payload.Environment);
             result.Version.Should().Be(payload.Version);
+            result.ProcessTags.Should().Be(payload.ProcessTags);
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
             result.RuntimeId.Should().Be(Tracer.RuntimeId);

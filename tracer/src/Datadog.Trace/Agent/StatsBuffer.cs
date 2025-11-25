@@ -59,7 +59,13 @@ namespace Datadog.Trace.Agent
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            MessagePackBinary.WriteMapHeader(stream, 8);
+            var count = 8;
+            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            {
+                count++;
+            }
+
+            MessagePackBinary.WriteMapHeader(stream, count);
 
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
@@ -69,6 +75,12 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            {
+                MessagePackBinary.WriteString(stream, "ProcessTags");
+                MessagePackBinary.WriteString(stream, _header.ProcessTags);
+            }
 
             MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);

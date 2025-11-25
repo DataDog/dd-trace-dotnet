@@ -71,6 +71,8 @@ namespace Datadog.Trace.TestHelpers
 
         protected ITestOutputHelper Output { get; }
 
+        public ITestOutputHelper GetOutput() => Output;
+
         public virtual void Dispose()
         {
         }
@@ -209,7 +211,7 @@ namespace Datadog.Trace.TestHelpers
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
 
-            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
+            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode, standardError);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }

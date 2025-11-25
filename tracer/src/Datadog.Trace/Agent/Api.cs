@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
@@ -94,7 +95,7 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_tracesEndpoint, _sendTraces, state);
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal bool LogPartialFlushWarningIfRequired(string agentVersion)
         {
             if (agentVersion != _agentVersion)

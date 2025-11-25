@@ -48,31 +48,16 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExporterSettings"/> class with default values.
-        /// </summary>
-        [PublicApi]
-        public ExporterSettings()
+        [TestingOnly]
+        internal ExporterSettings()
             : this(source: null, new ConfigurationTelemetry())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExporterSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <remarks>
-        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
-        /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(TracerSettings)"/>
-        /// </remarks>
-        [PublicApi]
-        public ExporterSettings(IConfigurationSource? source)
+        [TestingOnly]
+        internal ExporterSettings(IConfigurationSource? source)
             : this(source, File.Exists, new ConfigurationTelemetry())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor_Source);
         }
 
         internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -220,7 +205,7 @@ namespace Datadog.Trace.Configuration
 
         internal Raw RawSettings { get; }
 
-        // internal for testing
+        [TestingOnly]
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
 

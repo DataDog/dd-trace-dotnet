@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
@@ -52,6 +53,7 @@ internal class DDSketchPool
     /// <summary>
     /// Internal for testing
     /// </summary>
+    [TestingAndPrivateOnly]
     internal static DDSketch CreateSketch()
     {
         // dd-go and dd-java use different sketch parameters here

@@ -29,6 +29,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -373,7 +374,7 @@ namespace Datadog.Trace
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal static IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
@@ -391,7 +392,7 @@ namespace Datadog.Trace
                         logger.Enable(fileConfig, DomainMetadata.Instance);
 
                         // hacky to use the global setting, but about the only option we have atm
-                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabledInternal);
+                        logger.SetLogLevel(GlobalSettings.Instance.DebugEnabled);
                     }
 
                     // TODO: we should refactor this so that we're not re-building the telemetry settings, and instead using the existing ones
@@ -458,9 +459,6 @@ namespace Datadog.Trace
             }
         }
 
-        protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => DiscoveryService.Create(settings.Exporter);
-
         internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null, TimeSpan? telemtryFlushInterval = null)
         {
             try
@@ -506,6 +504,12 @@ namespace Datadog.Trace
                 return new NoOpStatsd();
             }
         }
+
+        // internal for testing
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
+            => settings.AgentFeaturePollingEnabled ?
+                   DiscoveryService.Create(settings.Exporter) :
+                   NullDiscoveryService.Instance;
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {

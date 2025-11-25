@@ -25,14 +25,11 @@ on:
         required: true
       GH_APP_PRIVATE_KEY:
         required: true
-      DD_PREPROD_API_KEY:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY:
-        required: true
 
 jobs:
   create_draft_release:
     runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
     permissions:
       contents: write # create release
       actions: read # read secrets
@@ -163,5 +160,10 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{steps.assets.outputs.artifacts_path}}
-          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          public_symbols_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
+          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
+          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
+          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
+          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
+          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
+          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
+          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

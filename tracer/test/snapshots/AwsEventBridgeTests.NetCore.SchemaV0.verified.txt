@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -64,7 +64,7 @@
       language: dotnet,
       rulename: MyEventBus,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: producer,
       _dd.base_service: Samples.AWS.EventBridge
     },
     Metrics: {

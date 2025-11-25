@@ -14,29 +14,29 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory)]
     public class ElasticsearchBenchmark
     {
-        private static readonly RequestPipeline Pipeline = new RequestPipeline();
-        private static readonly RequestData Data = new RequestData
-        {
-            Method = HttpMethod.POST,
-            Uri = new Uri("http://localhost/"),
-            PathAndQuery = "PathAndQuery"
-        };
+        private RequestPipeline _pipeline;
+        private RequestData _data;
 
-        static ElasticsearchBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            var bench = new ElasticsearchBenchmark();
-            bench.CallElasticsearch();
-            bench.CallElasticsearchAsync();
+            _pipeline = new RequestPipeline();
+            _data = new RequestData
+            {
+                Method = HttpMethod.POST,
+                Uri = new Uri("http://localhost/"),
+                PathAndQuery = "PathAndQuery"
+            };
         }
 
         [Benchmark]
         public unsafe object CallElasticsearch()
         {
-            return CallTarget.Run<RequestPipeline_CallElasticsearch_Integration, RequestPipeline, RequestData, int>(Pipeline, Data, &GetData);
+            return CallTarget.Run<RequestPipeline_CallElasticsearch_Integration, RequestPipeline, RequestData, int>(_pipeline, _data, &GetData);
 
             static int GetData(RequestData data) => default;
         }
@@ -46,7 +46,7 @@ namespace Benchmarks.Trace
         public unsafe int CallElasticsearchAsync()
         {
             return CallTarget.Run<RequestPipeline_CallElasticsearchAsync_Integration, RequestPipeline, RequestData, CancellationToken, Task<int>>
-                (Pipeline, Data, CancellationToken.None, &GetData).GetAwaiter().GetResult();
+                (_pipeline, _data, CancellationToken.None, &GetData).GetAwaiter().GetResult();
 
             static Task<int> GetData(RequestData data, CancellationToken cancellationToken) => Task.FromResult<int>(default);
         }

@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
@@ -83,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             return scope;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)

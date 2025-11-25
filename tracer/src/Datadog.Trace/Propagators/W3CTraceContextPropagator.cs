@@ -665,7 +665,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        // internal for regression testing
+        [TestingAndPrivateOnly]
         internal static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
             // null values is handled in TryGetSingleRare
@@ -685,7 +685,7 @@ namespace Datadog.Trace.Propagators
             return TryGetSingleRare(values, out value);
         }
 
-        // internal for regression testing
+        [TestingAndPrivateOnly]
         internal static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
         {
             if (values is null)

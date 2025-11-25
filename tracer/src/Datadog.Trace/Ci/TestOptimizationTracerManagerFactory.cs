@@ -107,7 +107,7 @@ namespace Datadog.Trace.Ci
             return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
         }
 
-        protected override IDiscoveryService GetDiscoveryService(TracerSettings settings)
+        internal override IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => _testOptimizationTracerManagement.DiscoveryService;
     }
 }

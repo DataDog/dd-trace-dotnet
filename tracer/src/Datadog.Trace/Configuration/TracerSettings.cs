@@ -38,31 +38,16 @@ namespace Datadog.Trace.Configuration
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
-        /// </summary>
-        [PublicApi]
-        public TracerSettings()
+        [TestingOnly]
+        internal TracerSettings()
             : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <remarks>
-        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
-        /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(TracerSettings)"/>
-        /// </remarks>
-        [PublicApi]
-        public TracerSettings(IConfigurationSource? source)
+        [TestingOnly]
+        internal TracerSettings(IConfigurationSource? source)
         : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
         /// <summary>
@@ -464,6 +449,10 @@ namespace Datadog.Trace.Configuration
             AzureEventHubsBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
+
+            AgentFeaturePollingEnabled = config
+                                        .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
+                                        .AsBool(defaultValue: true);
 
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
@@ -1007,6 +996,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
         public bool AzureEventHubsBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the agent discovery service is enabled.
+        /// When disabled, the tracer will not query the agent for available endpoints.
+        /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
+        /// Default value is true (discovery service enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AgentFeaturePollingEnabled"/>
+        public bool AgentFeaturePollingEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
