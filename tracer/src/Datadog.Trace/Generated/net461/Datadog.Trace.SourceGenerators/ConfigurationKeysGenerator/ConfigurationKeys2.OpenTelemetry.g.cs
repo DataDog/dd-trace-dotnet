@@ -16,6 +16,11 @@ internal static partial class ConfigurationKeys2
     internal static class OpenTelemetry
     {
         /// <summary>
+        /// Configuration key to enable or disable the ActivityListener.
+        /// </summary>
+        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
+        /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
         /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.

@@ -72,10 +72,5 @@ internal static partial class ConfigurationKeys2
         /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
         /// </summary>
         public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
-
-        /// <summary>
-        /// Configuration key to enable or disable the ActivityListener.
-        /// </summary>
-        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
     }
 }

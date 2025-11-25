@@ -960,7 +960,7 @@
       "version": [
         "A"
       ],
-      "product": "Telemetry"
+      "product": "OpenTelemetry"
     },
     "DD_TRACE_AGENT_ARGS": {
       "version": [
