@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -40,7 +41,7 @@ namespace Samples.Microsoft.Data.SqlClient
         {
             const int maxAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+@"Server=ertpoer\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             SqlException lastException = null;
 
@@ -66,6 +67,15 @@ namespace Samples.Microsoft.Data.SqlClient
                         Thread.Sleep(1000 * attempt);
                     }
                 }
+                catch (SqlException ex) when (!IsRetryableConnectionError(ex))
+                {
+                    if (attempt < maxAttempts)
+                    {
+                        Console.WriteLine($"Fatal SqlException Number: {ex.Number}, State: {ex.State}, Class: {ex.Class}");
+                        Console.WriteLine($"Message: {ex.Message}");
+                        throw;
+                    }
+                }
                 catch (Exception ex)
                 {
                     // Other errors (reflection issues, etc.) should fail the test
@@ -84,17 +94,25 @@ namespace Samples.Microsoft.Data.SqlClient
 
         static bool IsRetryableConnectionError(SqlException ex)
         {
-            return ex.Number == -1 || // Generic network error
-            ex.Number == -2 || // Connection timeout
-            ex.Number == 2 || // Network path not found
-            ex.Number == 53 || // SQL Server not found
-            ex.Number == 64 || // Connection broken
-            ex.Number == 258 || // Wait timeout
-            ex.Number == 10053 || // Connection aborted
-            ex.Number == 10054 || // Connection reset
-            ex.Number == 10060 || // Connection timeout
-            ex.Number == 10061 || // Connection refused
-            ex.Number == 11001; // DNS failure
+            // Known reliable error codes
+            if (ex.Number == -1 ||      // Generic network error
+                ex.Number == -2 ||      // Connection timeout
+                ex.Number == 53 ||      // SQL Server not found
+                ex.Number == 10053 ||   // Connection aborted
+                ex.Number == 10054 ||   // Connection reset
+                ex.Number == 10060 ||   // Connection timeout
+                ex.Number == 11001)     // DNS failure
+            {
+                return true;
+            }
+
+            // Number=0 with SocketException indicates network issue
+            if (ex.Number == 0 && ex.InnerException is SocketException)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
