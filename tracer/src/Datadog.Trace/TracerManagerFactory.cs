@@ -513,8 +513,9 @@ namespace Datadog.Trace
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
+            var processTags = settings.PropagateProcessTags ? ProcessTags.TagsList : [];
             var customTagCount = settings.GlobalTags.Count;
-            var constantTags = new List<string>(5 + customTagCount)
+            var constantTags = new List<string>(5 + customTagCount + processTags.Count)
             {
                 "lang:.NET",
                 $"lang_interpreter:{FrameworkDescription.Instance.Name}",
@@ -522,6 +523,8 @@ namespace Datadog.Trace
                 $"tracer_version:{TracerConstants.AssemblyVersion}",
                 $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
             };
+
+            constantTags.AddRange(processTags);
 
             if (customTagCount > 0)
             {

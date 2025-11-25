@@ -67,7 +67,8 @@ internal class DebuggerFactory
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, prefix: DebuggerSettings.DebuggerMetricPrefix, telemtryFlushInterval: null);
+            var processTags = tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : null;
+            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, processTags, DebuggerSettings.DebuggerMetricPrefix, telemtryFlushInterval: null);
         }
 
         return statsd;
