@@ -49,6 +49,7 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private int _disposeState;
+        private int _initializationState;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -88,11 +89,16 @@ namespace Datadog.Trace.Debugger
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized { get; private set; }
+        public bool IsInitialized => Volatile.Read(ref _initializationState) == 2;
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled)
+            if (!_settings.DynamicInstrumentationEnabled || IsInitialized)
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _initializationState, 1, 0) != 0)
             {
                 return;
             }
@@ -161,7 +167,7 @@ namespace Datadog.Trace.Debugger
 
             AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
             StartBackgroundProcess();
-            IsInitialized = true;
+            Volatile.Write(ref _initializationState, 2);
         }
 
         private void StartBackgroundProcess()
