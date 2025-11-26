@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
     internal record CaptureExpression
@@ -10,12 +11,12 @@ namespace Datadog.Trace.Debugger.Configurations.Models
         /// <summary>
         /// Gets or sets the name of the capture expression section that will be generated into the snapshot.
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the debugger expression describing what should be evaluated and captured.
         /// </summary>
-        public SnapshotSegment Expr { get; set; }
+        public required SnapshotSegment Expr { get; set; }
 
         /// <summary>
         /// Gets or sets the optional capture limits specific to this capture expression.

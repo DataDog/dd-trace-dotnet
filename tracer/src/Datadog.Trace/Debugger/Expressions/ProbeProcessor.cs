@@ -262,6 +262,9 @@ namespace Datadog.Trace.Debugger.Expressions
                         captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, ProbeInfo.EvaluateAt, HasCondition());
                         switch (captureBehaviour)
                         {
+                            case CaptureBehaviour.NoCapture:
+                                // Nothing to do at ExitStart when we're not capturing for this probe state
+                                return true;
                             case CaptureBehaviour.Stop:
                                 return true;
                             case CaptureBehaviour.Delay:
@@ -294,7 +297,20 @@ namespace Datadog.Trace.Debugger.Expressions
                             switch (captureBehaviour)
                             {
                                 case CaptureBehaviour.NoCapture or CaptureBehaviour.Stop:
-                                    return true;
+                                    // For captureExpressions-only method probes we still need to
+                                    // finalize the snapshot at ExitEnd so that the
+                                    // debugger.snapshot.captures.return.captureExpressions block
+                                    // is emitted, even if we're not capturing any non-expression
+                                    // data. In that specific case, don't short-circuit here.
+                                    if (!(ProbeInfo.ProbeLocation == ProbeLocation.Method &&
+                                          !ProbeInfo.IsFullSnapshot &&
+                                          ProbeInfo.HasCaptureExpressions &&
+                                          (info.MethodState == MethodState.ExitEnd || info.MethodState == MethodState.ExitEndAsync)))
+                                    {
+                                        return true;
+                                    }
+
+                                    break;
                                 case CaptureBehaviour.Capture:
                                     snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                     break;
@@ -643,7 +659,15 @@ namespace Datadog.Trace.Debugger.Expressions
             switch (info.MethodState)
             {
                 case MethodState.EntryStart:
-                    snapshotCreator.CaptureEntryMethodStartMarker(ref info);
+                    // For captureExpressions-only method probes we don't need to emit an "entry"
+                    // capture section at all; we only care about the "return" section. We still
+                    // evaluate expressions at EntryEnd, but we avoid opening the "entry" object
+                    // here to keep the JSON structure minimal and avoid redundant containers.
+                    if (ProbeInfo.IsFullSnapshot || !ProbeInfo.HasCaptureExpressions)
+                    {
+                        snapshotCreator.CaptureEntryMethodStartMarker(ref info);
+                    }
+
                     break;
                 case MethodState.EntryAsync:
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
@@ -651,7 +675,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
-                    if (!ProbeInfo.IsFullSnapshot)
+                    if (!ProbeInfo.IsFullSnapshot && !ProbeInfo.HasCaptureExpressions)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
@@ -670,15 +694,22 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
-                    if (!ProbeInfo.IsFullSnapshot)
+                    if (!ProbeInfo.IsFullSnapshot && !ProbeInfo.HasCaptureExpressions)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
-                    snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
-                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument ?? false);
+                    // In captureExpressions-only mode for method probes we don't open/close the
+                    // "entry" capture section, so we skip the delayed snapshot reconstruction and
+                    // the entry end marker. Evaluation has already happened at EntryEnd; the
+                    // actual snapshot (with captureExpressions under "return") will be emitted at ExitEnd.
+                    if (ProbeInfo.IsFullSnapshot || !ProbeInfo.HasCaptureExpressions)
+                    {
+                        snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
+                        snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument ?? false);
+                    }
 
                     break;
                 case MethodState.ExitStart:
@@ -693,9 +724,20 @@ namespace Datadog.Trace.Debugger.Expressions
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
                         }
 
+                        // For full snapshots we need to potentially reconstruct state using
+                        // delayed processing before capturing the exit marker. For "log only"
+                        // probes (IsFullSnapshot == false) we only need to execute the
+                        // exit marker logic when we're in captureExpressions-only mode so
+                        // that the "return" capture section is correctly opened/closed and
+                        // any capture expressions are emitted under:
+                        // debugger.snapshot.captures.return.captureExpressions
                         if (ProbeInfo.IsFullSnapshot)
                         {
                             snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
+                            snapshotCreator.CaptureExitMethodEndMarker(ref info);
+                        }
+                        else if (ProbeInfo.HasCaptureExpressions)
+                        {
                             snapshotCreator.CaptureExitMethodEndMarker(ref info);
                         }
 
@@ -735,6 +777,16 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (ProbeInfo.IsFullSnapshot)
                     {
                         snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
+                        snapshotCreator.CaptureEndLine(ref info);
+                    }
+                    else if (ProbeInfo.HasCaptureExpressions)
+                    {
+                        // In captureExpressions-only mode for line probes we still need to
+                        // materialize the "captures.lines[<lineNumber>]" section before
+                        // writing the captureExpressions block. We don't capture any
+                        // non-expression data here (_captureNonExpressionData == false),
+                        // but we must create the correct JSON container hierarchy.
+                        snapshotCreator.CaptureBeginLine(ref info);
                         snapshotCreator.CaptureEndLine(ref info);
                     }
 
