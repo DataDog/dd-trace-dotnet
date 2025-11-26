@@ -30,7 +30,7 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DynamicInstrumentation : IDisposable
+    internal partial class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
@@ -261,8 +261,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static void SetRateLimit(ProbeDefinition probe)
+        private void SetRateLimit(ProbeDefinition probe)
         {
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                return;
+            }
+
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
