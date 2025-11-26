@@ -34,6 +34,11 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
         }
 
+        public string[] GetBoundedProbes()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public string[] GetBoundedProbes(string[] candidateProbeIds)
         {
             return [];
