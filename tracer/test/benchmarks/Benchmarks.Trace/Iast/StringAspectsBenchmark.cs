@@ -20,7 +20,7 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
-[BenchmarkCategory(Constants.AppSecCategory)]
+[BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class StringAspectsBenchmark
 {

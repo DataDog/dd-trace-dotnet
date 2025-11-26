@@ -12,7 +12,7 @@ using IExternalScopeProvider = Microsoft.Extensions.Logging.IExternalScopeProvid
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ILoggerBenchmark
     {
         private Tracer _logInjectionTracer;

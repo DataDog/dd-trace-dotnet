@@ -35,6 +35,8 @@ namespace Benchmarks.Trace
             const string jetBrainsDotTraceTimeline = "-jetbrains:dottrace:timeline";
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
             const string datadogProfiler = "-datadog:profiler";
+            const string isPrTrue = "-is_pr:True";
+            const string isPrFalse = "-is_pr:False";
 
             bool? useDatadogProfiler = null;
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
@@ -61,6 +63,13 @@ namespace Benchmarks.Trace
                 args = args.Where(a => a != datadogProfiler).ToArray();
                 useDatadogProfiler = true;
             }
+
+            if (args?.Any(a => a == isPrTrue) == true)
+            {
+                Console.WriteLine("Setting Jetbrains trace collection... (could take time downloading collector binaries)");
+                args = args.Where(a => a != jetBrainsDotTrace).ToArray();
+            }
+
 
             config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed);

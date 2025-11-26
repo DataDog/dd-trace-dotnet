@@ -24,7 +24,7 @@ using Microsoft.AspNetCore.Http.Features;
 namespace Benchmarks.Trace.Asm
 {
     [MemoryDiagnoser]
-    [BenchmarkCategory(Constants.AppSecCategory)]
+    [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     [IgnoreProfile]
     public class AppSecBodyBenchmark
     {

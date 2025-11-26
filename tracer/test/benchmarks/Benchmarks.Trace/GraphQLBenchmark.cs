@@ -9,7 +9,7 @@ using GraphQL.Execution;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class GraphQLBenchmark
     {
         private readonly static Task<ExecutionResult> _result = Task.FromResult(new ExecutionResult { Value = 42 });

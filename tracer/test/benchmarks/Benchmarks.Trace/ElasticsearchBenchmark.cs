@@ -10,7 +10,7 @@ using Elasticsearch.Net;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ElasticsearchBenchmark
     {
         private RequestPipeline _pipeline;
