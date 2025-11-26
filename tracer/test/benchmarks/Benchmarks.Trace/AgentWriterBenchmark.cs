@@ -39,13 +39,9 @@ namespace Benchmarks.Trace
 
             _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            var overrides = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
-                { ConfigurationKeys.TraceEnabled, false.ToString() },
-            });
-            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
-            var settings = new TracerSettings(sources);
+            var config = TracerHelper.DefaultConfig;
+            config.Add(ConfigurationKeys.TraceEnabled, false);
+            var settings = TracerSettings.Create(config);
 
             var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
@@ -53,6 +49,12 @@ namespace Benchmarks.Trace
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _agentWriter.FlushAndCloseAsync();
         }
 
         /// <summary>

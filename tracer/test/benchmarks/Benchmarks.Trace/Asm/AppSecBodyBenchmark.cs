@@ -42,7 +42,6 @@ namespace Benchmarks.Trace.Asm
         public void GlobalSetup()
         {
             AppSecBenchmarkUtils.SetupDummyAgent();
-            var dir = Directory.GetCurrentDirectory();
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             _security = Security.Instance;
 
@@ -71,6 +70,13 @@ namespace Benchmarks.Trace.Asm
             _props1000 = ConstructionUtils.ConstructProps1000String();
             _props10x3 = ConstructionUtils.ConstructProps10Rec(3);
             _props10x6 = ConstructionUtils.ConstructProps10Rec(6);
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", null);
+            AppSecBenchmarkUtils.CleanupDummyAgent();
         }
 
         [Benchmark]
