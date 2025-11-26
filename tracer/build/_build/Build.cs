@@ -617,7 +617,7 @@ partial class Build : NukeBuild
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} -is_pr:{isPr} --allCategories {categories} --iterationTime 200")
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --allCategories {categories} --iterationTime 200")
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
