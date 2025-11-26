@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(key, value);
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(key).Should().Be(value);
         }
 
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(Tags.PeerService, "a-peer-service");
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
             span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
         }
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Once);
+            _writerMock.Verify(x => x.WriteTrace(in It.Ref<SpanCollection>.IsAny), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 

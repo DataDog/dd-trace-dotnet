@@ -10,12 +10,10 @@ namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class AnalyticsEventsSampler : ITraceChunkSampler
     {
-        public bool Sample(ArraySegment<Span> trace)
+        public bool Sample(in SpanCollection trace)
         {
-            for (int i = 0; i < trace.Count; i++)
+            foreach (var span in trace)
             {
-                var span = trace.Array![i + trace.Offset];
-
                 if (span.GetMetric(Tags.Analytics) is { } rate)
                 {
                     return SamplingHelpers.SampleByRate(span.TraceId128, rate);
