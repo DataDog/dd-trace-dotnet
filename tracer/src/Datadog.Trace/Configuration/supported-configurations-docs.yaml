@@ -16,6 +16,11 @@ DD_AGENT_HOST: |
   Default value is "localhost".
   <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
 
+DD_AGENT_FEATURE_POLLING_ENABLED: |
+  Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+  Default value is true (polling enabled).
+  <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+
 DD_API_KEY: |
   Configuration key for setting the API key, used by the Agent.
 
@@ -426,6 +431,10 @@ DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED: |
   Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
   via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
   is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
+
+DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD: |
+  Configuration key to allow telemetry compression.
+  <see cref="Datadog.Trace.Telemetry.TelemetrySettings.CompressionMethod"/>
 
 DD_INSTRUMENTATION_TELEMETRY_ENABLED: |
   Configuration key for enabling or disabling internal telemetry.
