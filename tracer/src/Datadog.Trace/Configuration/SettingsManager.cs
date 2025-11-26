@@ -7,41 +7,56 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Configuration;
 
 public partial record TracerSettings
 {
-    internal class SettingsManager(
-        TracerSettings tracerSettings,
-        MutableSettings initialMutable,
-        ExporterSettings initialExporter)
+    internal class SettingsManager
     {
-        private readonly TracerSettings _tracerSettings = tracerSettings;
+        private readonly TracerSettings _tracerSettings;
+        private readonly ConfigurationTelemetry _initialTelemetry;
         private readonly List<SettingChangeSubscription> _subscribers = [];
 
         private IConfigurationSource _dynamicConfigurationSource = NullConfigurationSource.Instance;
         private ManualInstrumentationConfigurationSourceBase _manualConfigurationSource =
             new ManualInstrumentationConfigurationSource(new Dictionary<string, object?>(), useDefaultSources: true);
 
+        // We delay creating these, as we likely won't need them
+        private ConfigurationTelemetry? _noDefaultSettingsTelemetry;
+        private MutableSettings? _noDefaultSourcesSettings;
+
         private SettingChanges? _latest;
+
+        public SettingsManager(IConfigurationSource source, TracerSettings tracerSettings, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+        {
+            // We record the telemetry for the initial settings in a dedicated ConfigurationTelemetry,
+            // because we need to be able to reapply this configuration on dynamic config updates
+            // We don't re-record error logs, so we just use the built-in for that
+            var initialTelemetry = new ConfigurationTelemetry();
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, initialTelemetry, errorLog, tracerSettings);
+            InitialExporterSettings = new ExporterSettings(source, initialTelemetry);
+            _tracerSettings = tracerSettings;
+            _initialTelemetry = initialTelemetry;
+            initialTelemetry.CopyTo(telemetry);
+        }
 
         /// <summary>
         /// Gets the initial <see cref="MutableSettings"/>. On app startup, these will be the values read from
         /// static sources. To subscribe to updates to these settings, from code or remote config, call <see cref="SubscribeToChanges"/>.
         /// </summary>
-        public MutableSettings InitialMutableSettings { get; } = initialMutable;
+        public MutableSettings InitialMutableSettings { get; }
 
         /// <summary>
         /// Gets the initial <see cref="ExporterSettings"/>. On app startup, these will be the values read from
         /// static sources. To subscribe to updates to these settings, from code or remote config, call <see cref="SubscribeToChanges"/>.
         /// </summary>
-        public ExporterSettings InitialExporterSettings { get; } = initialExporter;
+        public ExporterSettings InitialExporterSettings { get; }
 
         /// <summary>
         /// Subscribe to changes in <see cref="MutableSettings"/> and/or <see cref="ExporterSettings"/>.
@@ -131,24 +146,48 @@ public partial record TracerSettings
         internal SettingChanges? BuildNewSettings(
             IConfigurationSource dynamicConfigSource,
             ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry centralTelemetry)
+            IConfigurationTelemetry telemetry)
         {
-            var initialSettings = manualSource.UseDefaultSources
-                                      ? InitialMutableSettings
-                                      : MutableSettings.CreateWithoutDefaultSources(_tracerSettings);
+            // Set the correct default telemetry and initial settings depending
+            // on whether the manual config source explicitly disables using the default sources
+            ConfigurationTelemetry defaultTelemetry;
+            MutableSettings initialSettings;
+            if (manualSource.UseDefaultSources)
+            {
+                defaultTelemetry = _initialTelemetry;
+                initialSettings = InitialMutableSettings;
+            }
+            else
+            {
+                // We only need to initialize the "no default sources" settings once
+                // and we don't want to initialize them if we don't _need_ to
+                // so lazy-initialize here
+                if (_noDefaultSourcesSettings is null || _noDefaultSettingsTelemetry is null)
+                {
+                    InitialiseNoDefaultSourceSettings();
+                }
+
+                defaultTelemetry = _noDefaultSettingsTelemetry;
+                initialSettings = _noDefaultSourcesSettings;
+            }
 
             var current = _latest;
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
             var currentExporter = current?.UpdatedExporter ?? current?.PreviousExporter ?? InitialExporterSettings;
 
-            var telemetry = new ConfigurationTelemetry();
+            // we create a temporary ConfigurationTelemetry object to hold the changes to settings
+            // if nothing is actually written, and nothing changes compared to the default, then we
+            // don't need to report it to the provided telemetry
+            var tempTelemetry = new ConfigurationTelemetry();
+
+            var overrideErrorLog = new OverrideErrorLog();
             var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
                 dynamicConfigSource,
                 manualSource,
                 initialSettings,
                 _tracerSettings,
-                telemetry,
-                new OverrideErrorLog()); // TODO: We'll later report these
+                tempTelemetry,
+                overrideErrorLog); // TODO: We'll later report these
 
             // The only exporter setting we currently _allow_ to change is the AgentUri, but if that does change,
             // it can mean that _everything_ about the exporter settings changes. To minimize the work to do, and
@@ -156,11 +195,10 @@ public partial record TracerSettings
             // set, or unchanged, there's no need to update the exporter settings.
             // We only technically need to do this today if _manual_ config changes, not if remote config changes,
             // but for simplicity we don't distinguish currently.
-            var exporterTelemetry = new ConfigurationTelemetry();
             var newRawExporterSettings = ExporterSettings.Raw.CreateUpdatedFromManualConfig(
                 currentExporter.RawSettings,
                 manualSource,
-                exporterTelemetry,
+                tempTelemetry,
                 manualSource.UseDefaultSources);
 
             var isSameMutableSettings = currentMutable.Equals(newMutableSettings);
@@ -169,20 +207,34 @@ public partial record TracerSettings
             if (isSameMutableSettings && isSameExporterSettings)
             {
                 Log.Debug("No changes detected in the new configuration");
-                // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
-                // need to be recorded (e.g. the customer set the value in code, but it was already set via
-                // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
-                // which we'll resolve later anyway, so just have that gap for now (it's very niche).
-                // If there are changes, they're recorded automatically in ConfigureInternal
-                telemetry.CopyTo(centralTelemetry);
                 return null;
             }
 
+            // we have changes, so we need to report them
+            // First record the "default"/fallback values, then record the "new" values
+            defaultTelemetry.CopyTo(telemetry);
+            tempTelemetry.CopyTo(telemetry);
+
             Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
-            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, exporterTelemetry);
+            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry);
 
             return new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter);
+        }
+
+        [MemberNotNull(nameof(_noDefaultSettingsTelemetry))]
+        [MemberNotNull(nameof(_noDefaultSourcesSettings))]
+        private void InitialiseNoDefaultSourceSettings()
+        {
+            if (_noDefaultSourcesSettings is not null
+             && _noDefaultSettingsTelemetry is not null)
+            {
+                return;
+            }
+
+            var telemetry = new ConfigurationTelemetry();
+            _noDefaultSettingsTelemetry = telemetry;
+            _noDefaultSourcesSettings = MutableSettings.CreateWithoutDefaultSources(_tracerSettings, telemetry);
         }
 
         private void NotifySubscribers(SettingChanges settings)

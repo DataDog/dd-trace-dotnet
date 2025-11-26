@@ -246,8 +246,8 @@ internal class TestOptimization : ITestOptimization
         // In case we are running using the agent, check if the event platform proxy is supported.
         TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
-            getDiscoveryServiceFunc: static s => DiscoveryService.Create(
-                s.TracerSettings.Exporter,
+            getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
+                s.TracerSettings.Manager.InitialExporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
@@ -264,7 +264,7 @@ internal class TestOptimization : ITestOptimization
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.MutableSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.Manager.InitialMutableSettings.ServiceName);
 
         // Initialize Tracer
         Log.Information("TestOptimization: Initialize Test Tracer instance");
@@ -328,7 +328,7 @@ internal class TestOptimization : ITestOptimization
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.MutableSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.Manager.InitialMutableSettings.ServiceName);
 
         // Initialize Tracer
         Log.Information("TestOptimization: Initialize Test Tracer instance");
