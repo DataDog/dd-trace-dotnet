@@ -77,6 +77,8 @@ private:
     bool StopImpl() override;
 
 private:
+    uint32_t _heapHandleLimit;
+
      // used to access the CLR to create weak handles
      // and get object generation
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
