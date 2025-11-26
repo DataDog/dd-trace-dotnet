@@ -17,6 +17,7 @@ namespace Datadog.Trace.ContinuousProfiler
         private readonly object _lockObj;
         private bool _isInitialized;
         private IntPtr _engineStatusPtr;
+        private bool? _isProfilerReadyCache;
 
         public ProfilerStatus(ProfilerSettings settings)
         {
@@ -42,8 +43,16 @@ namespace Datadog.Trace.ContinuousProfiler
                     return false;
                 }
 
+                // once _isProfilerReadyCache is true, it's never false anymore
+                if (_isProfilerReadyCache.HasValue && _isProfilerReadyCache.Value)
+                {
+                    return true;
+                }
+
                 EnsureNativeIsIntialized();
-                return _engineStatusPtr != IntPtr.Zero && Marshal.ReadByte(_engineStatusPtr) != 0;
+                var isReady = _engineStatusPtr != IntPtr.Zero && Marshal.ReadByte(_engineStatusPtr) != 0;
+                _isProfilerReadyCache = isReady;
+                return isReady;
             }
         }
 
