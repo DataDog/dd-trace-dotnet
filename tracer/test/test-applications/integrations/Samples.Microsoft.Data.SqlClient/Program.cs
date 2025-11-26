@@ -69,12 +69,9 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
                 catch (SqlException ex) when (!IsRetryableConnectionError(ex))
                 {
-                    if (attempt < maxAttempts)
-                    {
-                        Console.WriteLine($"Fatal SqlException Number: {ex.Number}, State: {ex.State}, Class: {ex.Class}");
-                        Console.WriteLine($"Message: {ex.Message}");
-                        throw;
-                    }
+                    Console.WriteLine($"Fatal SqlException Number: {ex.Number}, State: {ex.State}, Class: {ex.Class}");
+                    Console.WriteLine($"Message: {ex.Message}");
+                    throw;
                 }
                 catch (Exception ex)
                 {
