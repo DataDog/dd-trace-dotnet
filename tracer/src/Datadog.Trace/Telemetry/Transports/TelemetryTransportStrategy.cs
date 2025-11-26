@@ -20,13 +20,8 @@ internal static class TelemetryTransportStrategy
 
     public static IApiRequestFactory GetDirectIntakeFactory(TelemetrySettings.AgentlessSettings settings)
     {
-#if NETCOREAPP
         Log.Information("Using {FactoryType} for telemetry transport direct to intake.", nameof(HttpClientRequestFactory));
         return new HttpClientRequestFactory(settings.AgentlessUri, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(settings), timeout: Timeout);
-#else
-        Log.Information("Using {FactoryType} for telemetry transport direct to intake.", nameof(ApiWebRequestFactory));
-        return new ApiWebRequestFactory(settings.AgentlessUri, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(settings), timeout: Timeout);
-#endif
     }
 
     public static IApiRequestFactory GetAgentIntakeFactory(ExporterSettings settings)

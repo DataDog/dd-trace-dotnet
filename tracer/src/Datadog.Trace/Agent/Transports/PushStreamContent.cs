@@ -11,8 +11,6 @@
 
 #nullable enable
 
-#if NETCOREAPP
-
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -72,4 +70,3 @@ internal class PushStreamContent : HttpContent
         return false;
     }
 }
-#endif

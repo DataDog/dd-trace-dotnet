@@ -66,7 +66,7 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Try to mimick as much as possible the overhead of the ApiWebRequestFactory,
+        /// Try to mimick as much as possible the overhead of the HttpClientRequestFactory,
         /// without actually sending the requests
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
@@ -77,7 +77,7 @@ namespace Benchmarks.Trace
             public FakeApiRequestFactory(Uri baseEndpointUri)
             {
                 _baseEndpointUri = baseEndpointUri;
-                _realFactory = new ApiWebRequestFactory(baseEndpointUri, AgentHttpHeaderNames.DefaultHeaders);
+                _realFactory = new HttpClientRequestFactory(baseEndpointUri, AgentHttpHeaderNames.DefaultHeaders);
             }
 
             public string Info(Uri endpoint)

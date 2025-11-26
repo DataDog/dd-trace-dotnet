@@ -234,8 +234,6 @@ src/Datadog.Trace/Agent/TraceSamplers/ErrorSampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/ITraceChunkSampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/PrioritySampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/RareSampler.cs
-src/Datadog.Trace/Agent/Transports/ApiWebRequest.cs
-src/Datadog.Trace/Agent/Transports/ApiWebRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs

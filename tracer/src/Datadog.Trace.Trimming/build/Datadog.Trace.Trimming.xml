@@ -439,7 +439,6 @@
       <type fullname="System.Net.Sockets.UnixDomainSocketEndPoint" />
    </assembly>
    <assembly fullname="System.Net.WebHeaderCollection">
-      <type fullname="System.Net.HttpRequestHeader" />
       <type fullname="System.Net.WebHeaderCollection" />
    </assembly>
    <assembly fullname="System.Net.WebProxy">
