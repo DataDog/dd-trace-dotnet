@@ -56,6 +56,12 @@ namespace Benchmarks.Trace
             StartFinishSpan();
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+        }
+
         // /// <summary>
         // /// Starts and finishes scope benchmark using the manual instrumentation
         // /// </summary>
