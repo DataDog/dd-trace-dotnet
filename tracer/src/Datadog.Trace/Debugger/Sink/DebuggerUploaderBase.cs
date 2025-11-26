@@ -113,6 +113,14 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
     protected abstract int GetRemainingCapacity();
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Dispose();
+        }
+    }
+
     public void Dispose()
     {
         _processExit.TrySetResult(true);

@@ -192,8 +192,8 @@ namespace Datadog.Trace.Debugger
         public bool CodeOriginForSpansCanBeEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
-		
-		public bool IsSnapshotExplorationTestEnabled { get; }
+
+        public bool IsSnapshotExplorationTestEnabled { get; }
 
         public string SnapshotExplorationTestProbesFilePath { get; }
 

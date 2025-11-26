@@ -21,6 +21,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    debuggerV2Endpoint: "debuggerV2Endpoint",
                     diagnosticsEndpoint: "diagnosticsEndpoint",
                     symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
@@ -30,7 +31,8 @@ namespace Datadog.Trace.Debugger.Helpers
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     tracerFlareEndpoint: "tracerFlareEndpoint",
                     clientDropP0: false,
-                    spanMetaStructs: true));
+                    spanMetaStructs: true,
+                    spanEvents: false));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)
