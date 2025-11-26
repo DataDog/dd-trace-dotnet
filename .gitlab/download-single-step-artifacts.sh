@@ -98,7 +98,7 @@ if [ -z "${downloadUrl}" ]; then
   exit 1
 fi
 
-echo "Downloading artifacts from '$downloadUrl'..."
+echo "Downloading artifacts from ${downloadUrl}"
 curl -o $target_dir/artifacts.zip "$downloadUrl"
 unzip $target_dir/artifacts.zip -d $target_dir
 mv $target_dir/$artifactName/* $target_dir
