@@ -198,6 +198,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private void SetRcmEnabled(AgentConfiguration c)
         {
             _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
+
+            // force first poll
+            if (_isRcmEnabled && _subscriptionManager.HasAnySubscription)
+            {
+                try
+                {
+                    Poll();
+                }
+                catch (Exception ex)
+                {
+                    // It shouldn't happen because the RcmSubscriptionManager swallows exceptions.
+                    // But hey, we all know what's going to happen sooner or later.
+                    Log.Error(ex, "Error while polling remote configuration management service");
+                }
+            }
         }
     }
 }

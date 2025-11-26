@@ -41,6 +41,8 @@ internal static class AgentTransportStrategy
         Func<HttpHeaderHelperBase> getHttpHeaderHelper,
         Func<Uri, Uri> getBaseEndpoint)
     {
+        return new AgentlessRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders);
+/*
         var strategy = settings.TracesTransport;
 
         switch (strategy)
@@ -80,5 +82,6 @@ internal static class AgentTransportStrategy
                 return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
 #endif
         }
+*/
     }
 }
