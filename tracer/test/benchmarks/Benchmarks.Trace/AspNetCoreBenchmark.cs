@@ -133,6 +133,11 @@ namespace Benchmarks.Trace
         {
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+        }
+
         [Benchmark]
         public string SendRequest()
         {
