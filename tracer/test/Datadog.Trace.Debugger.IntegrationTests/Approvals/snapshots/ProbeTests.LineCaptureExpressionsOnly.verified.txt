@@ -1,0 +1,48 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "21": {
+              "captureExpressions": {
+                "expr1": {
+                  "type": "String",
+                  "value": "literal"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncInstanceMethod.cs",
+            "lines": [
+              "21"
+            ]
+          },
+          "version": 0
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncInstanceMethod",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

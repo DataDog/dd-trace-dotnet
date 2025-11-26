@@ -134,6 +134,264 @@ public class ProbesTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public async Task LogProbeWithCaptureSnapshotAndCaptureExpressions_IsRejected()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SimpleMethodWithLocalsAndArgsTest));
+        SkipOverTestIfNeeded(testDescription);
+
+        var guidGenerator = new DeterministicGuidGenerator();
+        var probeId = guidGenerator.New().ToString();
+
+        var probeTestData = new LogMethodProbeTestDataAttribute(probeId: probeId, captureSnapshot: true);
+        var logProbe = (LogProbe)DebuggerTestHelper.CreateDefaultLogProbe(
+            nameof(SimpleMethodWithLocalsAndArgsTest),
+            "Method",
+            guidGenerator: null,
+            probeTestData: probeTestData);
+
+        logProbe.CaptureExpressions = new[]
+        {
+            new CaptureExpression
+            {
+                Name = "expr1",
+                Expr = new SnapshotSegment(null, null, "literal"),
+                Capture = null
+            }
+        };
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+
+        try
+        {
+            SetProbeConfiguration(agent, new ProbeDefinition[] { logProbe });
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            // we expect the probe to be rejected, so there should be no snapshots
+            Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+
+            var statuses = await agent.WaitForProbesStatuses(statusCount: 1, expectedFailedStatuses: 1);
+            statuses.Should().ContainSingle();
+            statuses[0].Should().Contain("Error installing probe");
+            statuses[0].Should().Contain("captureSnapshot");
+            statuses[0].Should().Contain("captureExpressions");
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task LogProbeWithCaptureExpressionsOnly_EmitsCaptureExpressionsAndNoLocalsOrArgs()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SimpleMethodWithLocalsAndArgsTest));
+        SkipOverTestIfNeeded(testDescription);
+
+        var guidGenerator = new DeterministicGuidGenerator();
+        var probeId = guidGenerator.New().ToString();
+
+        var probeTestData = new LogMethodProbeTestDataAttribute(probeId: probeId, captureSnapshot: false);
+        var logProbe = (LogProbe)DebuggerTestHelper.CreateDefaultLogProbe(
+            nameof(SimpleMethodWithLocalsAndArgsTest),
+            "Method",
+            guidGenerator: null,
+            probeTestData: probeTestData);
+
+        // Use a literal capture expression to avoid depending on specific DSL/json here
+        logProbe.CaptureExpressions = new[]
+        {
+            new CaptureExpression
+            {
+                Name = "expr1",
+                Expr = new SnapshotSegment(null, null, "literal"),
+                Capture = null
+            }
+        };
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+
+        try
+        {
+            SetProbeConfiguration(agent, new ProbeDefinition[] { logProbe });
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotCount: 1);
+            snapshots.Should().HaveCount(1);
+
+            var snapshotJson = JToken.Parse(snapshots[0]);
+
+            var captureExpressions = snapshotJson.SelectToken("debugger.snapshot.captures.return.captureExpressions");
+            captureExpressions.Should().NotBeNull("captureExpressions should be present under return");
+            captureExpressions["expr1"].Should().NotBeNull("expr1 capture expression should be present");
+
+            snapshotJson.SelectToken("debugger.snapshot.captures.return.arguments").Should().BeNull("arguments should not be present when using captureExpressions-only mode");
+            snapshotJson.SelectToken("debugger.snapshot.captures.return.locals").Should().BeNull("locals should not be present when using captureExpressions-only mode");
+            snapshotJson.SelectToken("debugger.snapshot.captures.return.throwable").Should().BeNull("throwable should not be present when using captureExpressions-only mode");
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task MethodLogProbeWithCaptureExpressionsOnly_HasExpectedSnapshotShape()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SimpleMethodWithLocalsAndArgsTest));
+        SkipOverTestIfNeeded(testDescription);
+
+        var guidGenerator = new DeterministicGuidGenerator();
+        var probeId = guidGenerator.New().ToString();
+
+        var probeTestData = new LogMethodProbeTestDataAttribute(
+            probeId: probeId,
+            captureSnapshot: false,
+            expectedNumberOfSnapshots: 1);
+
+        var logProbe = (LogProbe)DebuggerTestHelper.CreateDefaultLogProbe(
+            nameof(SimpleMethodWithLocalsAndArgsTest),
+            "Method",
+            guidGenerator: null,
+            probeTestData: probeTestData);
+
+        // Use a literal capture expression to avoid depending on specific DSL/json here
+        logProbe.CaptureExpressions = new[]
+        {
+            new CaptureExpression
+            {
+                Name = "expr1",
+                Expr = new SnapshotSegment(null, null, "literal"),
+                Capture = null
+            }
+        };
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+
+        try
+        {
+            SetProbeConfiguration(agent, new ProbeDefinition[] { logProbe });
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotCount: 1);
+            snapshots.Should().HaveCount(1);
+
+            await Approver.ApproveSnapshots(
+                snapshots,
+                $"{nameof(ProbeTests)}.MethodCaptureExpressionsOnly",
+                Output);
+
+            agent.ClearSnapshots();
+
+            var statuses = await agent.WaitForProbesStatuses(statusCount: 1, expectedFailedStatuses: 0);
+
+            await Approver.ApproveStatuses(
+                statuses,
+                $"{nameof(ProbeTests)}.MethodCaptureExpressionsOnly",
+                Output);
+
+            agent.ClearProbeStatuses();
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task LineLogProbeWithCaptureExpressionsOnly_HasExpectedSnapshotShape()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncInstanceMethod));
+        SkipOverTestIfNeeded(testDescription);
+
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        // Line 21 in AsyncInstanceMethod.Method(string input)
+        var lineProbeData = new LogLineProbeTestDataAttribute(
+            lineNumber: 21,
+            captureSnapshot: false,
+            expectedNumberOfSnapshots: 1);
+
+        var logProbe = (LogProbe)DebuggerTestHelper.CreateLogLineProbe(
+            typeof(AsyncInstanceMethod),
+            lineProbeData,
+            guidGenerator);
+
+        // Use a literal capture expression to avoid depending on specific DSL/json here
+        logProbe.CaptureExpressions = new[]
+        {
+            new CaptureExpression
+            {
+                Name = "expr1",
+                Expr = new SnapshotSegment(null, null, "literal"),
+                Capture = null
+            }
+        };
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+
+        try
+        {
+            SetProbeConfiguration(agent, new ProbeDefinition[] { logProbe });
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotCount: 1);
+            snapshots.Should().HaveCount(1);
+
+            await Approver.ApproveSnapshots(
+                snapshots,
+                $"{nameof(ProbeTests)}.LineCaptureExpressionsOnly",
+                Output);
+
+            agent.ClearSnapshots();
+
+            var statuses = await agent.WaitForProbesStatuses(statusCount: 1, expectedFailedStatuses: 0);
+
+            await Approver.ApproveStatuses(
+                statuses,
+                $"{nameof(ProbeTests)}.LineCaptureExpressionsOnly",
+                Output);
+
+            agent.ClearProbeStatuses();
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public async Task AsyncMethodInGenericClassTest()
     {
         Skip.If(true, "Not supported yet. Internal Jira Ticket: #DEBUG-1092.");
@@ -848,6 +1106,8 @@ public class ProbesTests : TestHelper
 
     private void SetDebuggerEnvironment(MockTracerAgent agent)
     {
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_LOG_LEVEL", "DEBUG");
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
