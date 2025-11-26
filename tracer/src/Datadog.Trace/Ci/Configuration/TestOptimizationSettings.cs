@@ -368,5 +368,41 @@ namespace Datadog.Trace.Ci.Configuration
             var newSource = new CompositeConfigurationSource([new DictionaryObjectConfigurationSource(additionalSource), source]);
             return new TracerSettings(newSource, telemetry, new OverrideErrorLog(), new LibDatadogAvailableResult(false));
         }
+
+        public override string ToString()
+        {
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            sb.AppendFormat(
+                "{{ Enabled={0}, Agentless={1}, Site={2}, ApiKey={3}, AgentlessUrl={4}, MaximumAgentlessPayloadSize={5}, ProxyHttps={6}, ProxyNoProxy={7}, Logs={8}, CodeCoverageEnabled={9}, CodeCoverageSnkFilePath={10}, CodeCoveragePath={11}, CodeCoverageEnableJitOptimizations={12}, CodeCoverageMode={13}, GitUploadEnabled={14}, TestsSkippingEnabled={15}, IntelligentTestRunnerEnabled={16}, ForceAgentsEvpProxy={17}, InstallDatadogTraceInGac={18}, EarlyFlakeDetectionEnabled={19}, KnownTestsEnabled={20}, RumFlushWaitMillis={21}, TestSessionName='{22}', FlakyRetryEnabled={23}, FlakyRetryCount={24}, TotalFlakyRetryCount={25}, ImpactedTestsDetectionEnabled={26}, TestManagementEnabled={27} }}",
+                Enabled,
+                Agentless,
+                Site,
+                !string.IsNullOrEmpty(ApiKey) ? "<redacted>" : "null",
+                AgentlessUrl,
+                MaximumAgentlessPayloadSize,
+                ProxyHttps,
+                string.Join(", ", ProxyNoProxy ?? []),
+                Logs,
+                CodeCoverageEnabled,
+                CodeCoverageSnkFilePath,
+                CodeCoveragePath,
+                CodeCoverageEnableJitOptimizations,
+                CodeCoverageMode,
+                GitUploadEnabled,
+                TestsSkippingEnabled,
+                IntelligentTestRunnerEnabled,
+                ForceAgentsEvpProxy,
+                InstallDatadogTraceInGac,
+                EarlyFlakeDetectionEnabled,
+                KnownTestsEnabled,
+                RumFlushWaitMillis,
+                TestSessionName,
+                FlakyRetryEnabled,
+                FlakyRetryCount,
+                TotalFlakyRetryCount,
+                ImpactedTestsDetectionEnabled,
+                TestManagementEnabled);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
     }
 }
