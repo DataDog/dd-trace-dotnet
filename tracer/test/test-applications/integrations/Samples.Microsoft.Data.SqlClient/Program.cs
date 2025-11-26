@@ -41,7 +41,7 @@ namespace Samples.Microsoft.Data.SqlClient
         {
             const int maxAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=ertpoer\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             SqlException lastException = null;
 
