@@ -727,9 +727,10 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
-            MutableSettings = InitialMutableSettings;
-            Manager = new(this, InitialMutableSettings, Exporter);
+            // Move the creation of these settings inside SettingsManager?
+            var initialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
+            Manager = new(this, initialMutableSettings, Exporter);
+            MutableSettings = initialMutableSettings;
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -742,26 +743,9 @@ namespace Datadog.Trace.Configuration
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings InitialMutableSettings { get; }
-
         internal MutableSettings MutableSettings { get; init; }
 
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
-
-        /// <inheritdoc cref="MutableSettings.Environment"/>
-        public string? Environment => MutableSettings.Environment;
-
-        /// <inheritdoc cref="MutableSettings.ServiceName"/>
-        public string? ServiceName => MutableSettings.ServiceName;
-
-        /// <inheritdoc cref="MutableSettings.ServiceVersion"/>
-        public string? ServiceVersion => MutableSettings.ServiceVersion;
-
-        /// <inheritdoc cref="MutableSettings.GitRepositoryUrl"/>
-        internal string? GitRepositoryUrl => MutableSettings.GitRepositoryUrl;
-
-        /// <inheritdoc cref="MutableSettings.GitCommitSha"/>
-        internal string? GitCommitSha => MutableSettings.GitCommitSha;
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
@@ -770,18 +754,12 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
         internal bool GitMetadataEnabled { get; }
 
-        /// <inheritdoc cref="MutableSettings.TraceEnabled"/>
-        public bool TraceEnabled => MutableSettings.TraceEnabled;
-
         /// <summary>
         /// Gets a value indicating whether APM traces are enabled.
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabled { get; }
-
-        /// <inheritdoc cref="MutableSettings.DisabledIntegrationNames"/>
-        public HashSet<string> DisabledIntegrationNames => MutableSettings.DisabledIntegrationNames;
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry Metrics are enabled.
@@ -919,21 +897,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public ExporterSettings Exporter { get; init; }
 
-        /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
-
-        /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => MutableSettings.LogsInjectionEnabled;
-
-        /// <inheritdoc cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
-        public int MaxTracesSubmittedPerSecond => MutableSettings.MaxTracesSubmittedPerSecond;
-
-        /// <inheritdoc cref="MutableSettings.CustomSamplingRules"/>
-        public string? CustomSamplingRules => MutableSettings.CustomSamplingRules;
-
-        internal bool CustomSamplingRulesIsRemote => MutableSettings.CustomSamplingRulesIsRemote;
-
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
         /// If the value is not recognized, trace sampling rules are disabled.
@@ -947,18 +910,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
         internal string? SpanSamplingRules { get; }
 
-        /// <inheritdoc cref="MutableSettings.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate => MutableSettings.GlobalSamplingRate;
-
-        /// <inheritdoc cref="MutableSettings.Integrations"/>
-        public IntegrationSettingsCollection Integrations => MutableSettings.Integrations;
-
-        /// <inheritdoc cref="MutableSettings.GlobalTags"/>
-        public IReadOnlyDictionary<string, string> GlobalTags => MutableSettings.GlobalTags;
-
-        /// <inheritdoc cref="MutableSettings.HeaderTags"/>
-        public IReadOnlyDictionary<string, string> HeaderTags => MutableSettings.HeaderTags;
-
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
@@ -969,19 +920,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool IpHeaderEnabled { get; }
 
-        /// <inheritdoc cref="MutableSettings.GrpcTags"/>
-        public IReadOnlyDictionary<string, string> GrpcTags => MutableSettings.GrpcTags;
-
-        /// <inheritdoc cref="MutableSettings.TracerMetricsEnabled"/>
-        public bool TracerMetricsEnabled => MutableSettings.TracerMetricsEnabled;
-
         /// <summary>
         /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
         public bool StatsComputationEnabled { get; }
-
-        /// <inheritdoc cref="MutableSettings.KafkaCreateConsumerScopeEnabled"/>
-        public bool KafkaCreateConsumerScopeEnabled => MutableSettings.KafkaCreateConsumerScopeEnabled;
 
         /// <summary>
         /// Gets a value indicating whether to enable span linking for individual messages
@@ -1054,11 +996,6 @@ namespace Datadog.Trace.Configuration
         /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the diagnostic log at startup is enabled
-        /// </summary>
-        public bool StartupDiagnosticLogEnabled => MutableSettings.StartupDiagnosticLogEnabled;
 
         /// <summary>
         /// Gets the time interval (in seconds) for sending stats
@@ -1136,15 +1073,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
         internal string[] HttpClientExcludedUrlSubstrings { get; }
-
-        /// <inheritdoc cref="MutableSettings.HttpServerErrorStatusCodes"/>
-        internal bool[] HttpServerErrorStatusCodes => MutableSettings.HttpServerErrorStatusCodes;
-
-        /// <inheritdoc cref="MutableSettings.HttpClientErrorStatusCodes"/>
-        internal bool[] HttpClientErrorStatusCodes => MutableSettings.HttpClientErrorStatusCodes;
-
-        /// <inheritdoc cref="MutableSettings.ServiceNameMappings"/>
-        internal IReadOnlyDictionary<string, string> ServiceNameMappings => MutableSettings.ServiceNameMappings;
 
         /// <summary>
         /// Gets configuration values for changing peer service names based on configuration

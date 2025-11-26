@@ -123,17 +123,20 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
+            // TODO: Update anything that accesses tracerSettings.MutableSettings or tracerSettings.Manager.InitialTracerSettings
+            // to subscribe to changes, once we stop creating a new TracerManager whenever there's a config change
+
             var defaultServiceName = settings.MutableSettings.DefaultServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
 
             bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
 
-            statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
+            statsd = (settings.MutableSettings.TracerMetricsEnabled || runtimeMetricsEnabled)
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
+            agentWriter ??= GetAgentWriter(settings, settings.MutableSettings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
             if (runtimeMetricsEnabled && runtimeMetrics is { })
@@ -151,15 +154,15 @@ namespace Datadog.Trace
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.InitialMutableSettings, scopeManager, telemetry);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings,
                 settings.LogSubmissionSettings,
                 settings.AzureAppServiceMetadata,
                 defaultServiceName,
-                settings.Environment,
-                settings.ServiceVersion,
+                settings.MutableSettings.Environment,
+                settings.MutableSettings.ServiceVersion,
                 gitMetadataTagsProvider);
 
             telemetry.RecordTracerSettings(settings, defaultServiceName);
@@ -295,13 +298,13 @@ namespace Datadog.Trace
                 return samplerStandalone.Build();
             }
 
-            var sampler = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
+            var sampler = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: settings.MutableSettings.MaxTracesSubmittedPerSecond, intervalMilliseconds: null));
 
             // sampling rules (remote value overrides local value)
-            var samplingRulesJson = settings.CustomSamplingRules;
+            var samplingRulesJson = settings.MutableSettings.CustomSamplingRules;
 
             // check if the rules are remote or local because they have different JSON schemas
-            if (settings.CustomSamplingRulesIsRemote)
+            if (settings.MutableSettings.CustomSamplingRulesIsRemote)
             {
                 // remote sampling rules
                 if (!string.IsNullOrWhiteSpace(samplingRulesJson))
@@ -332,14 +335,14 @@ namespace Datadog.Trace
             }
 
             // global sampling rate (remote value overrides local value)
-            if (settings.GlobalSamplingRate is { } globalSamplingRate)
+            if (settings.MutableSettings.GlobalSamplingRate is { } globalSamplingRate)
             {
                 if (globalSamplingRate is < 0f or > 1f)
                 {
                     Log.Warning(
                         "{ConfigurationKey} configuration of {ConfigurationValue} is out of range",
                         ConfigurationKeys.GlobalSamplingRate,
-                        settings.GlobalSamplingRate);
+                        settings.MutableSettings.GlobalSamplingRate);
                 }
                 else
                 {
@@ -421,8 +424,8 @@ namespace Datadog.Trace
                     {
                         Url = GetUrl(settings),
                         TraceVersion = TracerConstants.AssemblyVersion,
-                        Env = settings.Environment,
-                        Version = settings.ServiceVersion,
+                        Env = settings.MutableSettings.Environment,
+                        Version = settings.MutableSettings.ServiceVersion,
                         Service = settings.MutableSettings.DefaultServiceName,
                         Hostname = HostMetadata.Instance.Hostname,
                         Language = TracerConstants.Language,
@@ -470,8 +473,8 @@ namespace Datadog.Trace
                     Prefix = prefix,
                     // note that if these are null, statsd tries to grab them directly from the environment, which could be unsafe
                     ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
-                    Environment = settings.Environment,
-                    ServiceVersion = settings.ServiceVersion,
+                    Environment = settings.MutableSettings.Environment,
+                    ServiceVersion = settings.MutableSettings.ServiceVersion,
                     Advanced = { TelemetryFlushInterval = telemtryFlushInterval }
                 };
 
@@ -513,7 +516,7 @@ namespace Datadog.Trace
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
-            var customTagCount = settings.GlobalTags.Count;
+            var customTagCount = settings.MutableSettings.GlobalTags.Count;
             var constantTags = new List<string>(5 + customTagCount)
             {
                 "lang:.NET",
@@ -526,7 +529,7 @@ namespace Datadog.Trace
             if (customTagCount > 0)
             {
                 var tagProcessor = new TruncatorTagsProcessor();
-                foreach (var kvp in settings.GlobalTags)
+                foreach (var kvp in settings.MutableSettings.GlobalTags)
                 {
                     var key = kvp.Key;
                     var value = kvp.Value;

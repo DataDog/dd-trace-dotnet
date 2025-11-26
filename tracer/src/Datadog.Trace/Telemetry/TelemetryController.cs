@@ -99,7 +99,7 @@ internal class TelemetryController : ITelemetryController
         // if the mutable settings have changed since the start, re-record them
         // to ensure they have the correct values. This is a temporary measure before
         // we fully extract mutable settings
-        if (!ReferenceEquals(settings.MutableSettings, settings.InitialMutableSettings))
+        if (!ReferenceEquals(settings.MutableSettings, settings.Manager.InitialMutableSettings))
         {
             settings.MutableSettings.Telemetry.CopyTo(_configuration);
         }

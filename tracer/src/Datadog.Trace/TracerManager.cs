@@ -686,7 +686,7 @@ namespace Datadog.Trace
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
             // Record the service discovery metadata
-            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
+            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
 
             // Register for rebuilding the settings on changes
             // TODO: This is only temporary, we want to _stop_ rebuilding everything whenever settings change in the future

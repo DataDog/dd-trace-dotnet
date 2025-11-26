@@ -72,11 +72,11 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var settings = _testOptimization.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(settings.TracerSettings.Environment ?? "none") ?? "none";
-        _serviceName = NormalizerTraceProcessor.NormalizeService(settings.TracerSettings.ServiceName) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(settings.TracerSettings.MutableSettings.Environment ?? "none") ?? "none";
+        _serviceName = NormalizerTraceProcessor.NormalizeService(settings.TracerSettings.MutableSettings.ServiceName) ?? string.Empty;
 
         // Extract custom tests configurations from DD_TAGS
-        _customConfigurations = GetCustomTestsConfigurations(settings.TracerSettings.GlobalTags);
+        _customConfigurations = GetCustomTestsConfigurations(settings.TracerSettings.MutableSettings.GlobalTags);
 
         _apiRequestFactory = _testOptimization.TracerManagement!.GetRequestFactory(settings.TracerSettings, TimeSpan.FromSeconds(45));
         _eventPlatformProxySupport = settings.Agentless ? EventPlatformProxySupport.None : _testOptimization.TracerManagement.EventPlatformProxySupport;

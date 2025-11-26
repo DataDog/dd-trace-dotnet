@@ -24,9 +24,9 @@ internal class ApplicationTelemetryCollector
         // Try to retrieve config based Git Info
         // If explicitly provided, these values take precedence
         GitMetadata? gitMetadata = _gitMetadata;
-        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.GitRepositoryUrl))
+        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitRepositoryUrl))
         {
-            gitMetadata = new GitMetadata(tracerSettings.GitCommitSha!, tracerSettings.GitRepositoryUrl!);
+            gitMetadata = new GitMetadata(tracerSettings.MutableSettings.GitCommitSha!, tracerSettings.MutableSettings.GitRepositoryUrl!);
             Interlocked.Exchange(ref _gitMetadata, gitMetadata);
         }
 
@@ -39,8 +39,8 @@ internal class ApplicationTelemetryCollector
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
-            env: tracerSettings.Environment ?? string.Empty, // required, but we don't have it
-            serviceVersion: tracerSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
+            env: tracerSettings.MutableSettings.Environment ?? string.Empty, // required, but we don't have it
+            serviceVersion: tracerSettings.MutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
             tracerVersion: TracerConstants.AssemblyVersion,
             languageName: TracerConstants.Language,
             languageVersion: frameworkDescription.ProductVersion,
