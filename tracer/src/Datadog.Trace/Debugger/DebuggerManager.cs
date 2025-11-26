@@ -398,7 +398,7 @@ namespace Datadog.Trace.Debugger
 
         private bool ShouldSkipDiUpdate(bool requested, bool current, DebuggerSettings debuggerSettings)
         {
-            if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
+            if (requested && debuggerSettings is { DynamicInstrumentationCanBeEnabled: false, IsSnapshotExplorationTestEnabled: false })
             {
                 Log.Debug("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
                 return true;
@@ -425,7 +425,7 @@ namespace Datadog.Trace.Debugger
 
                 var disabled = !DebuggerSettings.DynamicInstrumentationCanBeEnabled || DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
-                if (disabled)
+                if (disabled && !DebuggerSettings.IsSnapshotExplorationTestEnabled)
                 {
                     DisableDynamicInstrumentation(DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == false);
                     return;
@@ -470,23 +470,34 @@ namespace Datadog.Trace.Debugger
             {
                 var tracerManager = TracerManager.Instance;
                 var discoveryService = tracerManager.DiscoveryService;
-                di = DebuggerFactory.CreateDynamicInstrumentation(
-                    discoveryService,
-                    RcmSubscriptionManager.Instance,
-                    tracerSettings,
-                    ServiceName,
-                    DebuggerSettings,
-                    tracerManager.GitMetadataTagsProvider);
 
-                if (!_isDebuggerEndpointAvailable)
+                if (DebuggerSettings.IsSnapshotExplorationTestEnabled)
                 {
-                    var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
-                    if (!isDiscoverySuccessful)
+                    di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerSettings, ServiceName, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                    di.WithProbesFromFile();
+                    Log.Information("Initializing live debugger for snapshot exploration test.");
+                    di.Initialize();
+                }
+                else
+                {
+                    di = DebuggerFactory.CreateDynamicInstrumentation(
+                        discoveryService,
+                        RcmSubscriptionManager.Instance,
+                        tracerSettings,
+                        ServiceName,
+                        DebuggerSettings,
+                        tracerManager.GitMetadataTagsProvider);
+
+                    if (!_isDebuggerEndpointAvailable)
                     {
-                        Log.Information("Debugger endpoint is not available");
-                        Volatile.Write(ref _diState, 0);
-                        SafeDisposal.TryDispose(di);
-                        return;
+                        var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
+                        if (!isDiscoverySuccessful)
+                        {
+                            Log.Information("Debugger endpoint is not available");
+                            Volatile.Write(ref _diState, 0);
+                            SafeDisposal.TryDispose(di);
+                            return;
+                        }
                     }
                 }
 
