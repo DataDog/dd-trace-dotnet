@@ -26,6 +26,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         private Timer _pollerTimer;
         private bool _isPolling;
         private bool _isRecentlyForcedSchedule;
+        private bool _disposed;
 
         private ProbeStatusPoller(DiagnosticsSink diagnosticsSink)
         {
@@ -82,7 +83,10 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             try
             {
-                _pollerTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                if (!_disposed)
+                {
+                    _pollerTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                }
             }
             catch (Exception ex)
             {
@@ -94,9 +98,12 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             try
             {
-                var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
-                _pollerTimer?.Change(waitPeriod, waitPeriod);
-                _isRecentlyForcedSchedule = false;
+                if (!_disposed)
+                {
+                    var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
+                    _pollerTimer?.Change(waitPeriod, waitPeriod);
+                    _isRecentlyForcedSchedule = false;
+                }
             }
             catch (Exception ex)
             {
@@ -172,7 +179,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             lock (_locker)
             {
-                if (_isPolling)
+                if (_isPolling && !_disposed)
                 {
                     _pollerTimer?.Change(TimeSpan.FromSeconds(1), _shortPeriod);
                     _isRecentlyForcedSchedule = true;
@@ -226,7 +233,16 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         public void Dispose()
         {
-            _pollerTimer?.Dispose();
+            lock (_locker)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                _pollerTimer?.Dispose();
+            }
         }
     }
 }
