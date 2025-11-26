@@ -1,4 +1,4 @@
-// <copyright file="LiveDebugger.ExplorationTests.cs" company="Datadog">
+// <copyright file="DynamicInstrumentation.ExplorationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,11 +12,11 @@ using Datadog.Trace.Debugger.Configurations.Models;
 
 namespace Datadog.Trace.Debugger
 {
-    internal partial class LiveDebugger
+    internal partial class DynamicInstrumentation
     {
         internal void WithProbesFromFile()
         {
-            var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesFilePath);
+            var probes = ReadProbesFromCsv(_settings.SnapshotExplorationTestProbesFilePath);
             UpdateAddedProbeInstrumentations(probes.Skip(700).Take(30).ToList());
         }
 
