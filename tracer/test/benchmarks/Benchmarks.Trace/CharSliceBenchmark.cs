@@ -11,7 +11,6 @@ using Datadog.Trace.Util;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkAgent1]
 [BenchmarkCategory(Constants.TracerCategory)]
 public class CharSliceBenchmark
 {

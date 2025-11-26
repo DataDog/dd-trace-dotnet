@@ -10,7 +10,6 @@ using Elasticsearch.Net;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent5]
     [BenchmarkCategory(Constants.TracerCategory)]
     public class ElasticsearchBenchmark
     {

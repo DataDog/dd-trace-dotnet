@@ -11,7 +11,6 @@ using Datadog.Trace.Configuration.Telemetry;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]
     [BenchmarkCategory(Constants.TracerCategory)]
     public class CIVisibilityProtocolWriterBenchmark
     {

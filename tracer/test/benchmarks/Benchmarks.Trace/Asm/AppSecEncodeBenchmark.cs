@@ -17,7 +17,6 @@ using Datadog.Trace.AppSec.WafEncoding;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
 [BenchmarkCategory(Constants.AppSecCategory)]
 public class AppSecEncoderBenchmark
 {

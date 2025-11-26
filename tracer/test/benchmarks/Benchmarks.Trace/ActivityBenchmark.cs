@@ -20,7 +20,6 @@ using ActivityStatusCode = Datadog.Trace.Activity.DuckTypes.ActivityStatusCode;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkAgent6]
 [BenchmarkCategory(Constants.TracerCategory)]
 public class ActivityBenchmark
 {

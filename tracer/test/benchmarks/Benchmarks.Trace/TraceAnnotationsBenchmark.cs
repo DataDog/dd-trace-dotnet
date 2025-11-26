@@ -8,7 +8,6 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent6]
     [BenchmarkCategory(Constants.TracerCategory)]
     public class TraceAnnotationsBenchmark
     {
