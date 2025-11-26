@@ -461,7 +461,7 @@ void RegisterJitMethodMetadata(
     HRESULT hrStatus,
     BOOL safeToBlock)
 {
-    // todo: handle safeToBlock == FALSE
+    // todo: be smarter about safe to block
     if (profilerInfo == nullptr)
     {
         return;
@@ -556,7 +556,6 @@ void RegisterJitMethodMetadata(
     methodInfo.Class = classId;
     methodInfo.PrologSize = prologSize;
     methodInfo.RangeCount = rangeCount;
-
 #ifdef ARM64
     methodInfo.FrameSize = prologueSummary.FrameSize;
     methodInfo.SavedFpOffset = prologueSummary.SavedFpOffset;

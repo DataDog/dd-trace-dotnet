@@ -37,8 +37,8 @@ export DD_PROFILING_CPU_ENABLED=1
 export DD_PROFILING_WALLTIME_ENABLED=1
 export DD_INTERNAL_PROFILING_OUTPUT_DIR="/project/test_profiles"
 export DD_TRACE_LOG_DIRECTORY="/project/test_logs"
-export DD_INTERNAL_USE_HYBRID_UNWINDING=1
-export DD_TRACE_DEBUG=0
+export DD_INTERNAL_USE_HYBRID_UNWINDING=1 # <-- Thing to change to test hybrid unwinding
+export DD_TRACE_DEBUG=0 # <-- Thing to change to test if logging is crashing things
 export DD_TRACE_ENABLED=0
 # export DD_PROFILING_MANAGED_ACTIVATION_ENABLED=0
 export DD_SERVICE="hybrid-unwinding-test"
@@ -116,13 +116,30 @@ echo "Available files: $(ls -la)"
 echo ""
 echo "=== Starting Computer01 with PI computation (15 seconds) ==="
 RUN_CMD=(dotnet Samples.Computer01.dll --timeout 15 --scenario PiComputation)
-# handle SIGUSR1 nostop noprint pass
+# Configure gdb to not stop on profiler signals
 if [ "${ENABLED_DEBUGGER:-}" = "True" ]; then
     echo "ENABLED_DEBUGGER=True detected: launching application under gdb"
-    gdb --args "${RUN_CMD[@]}"
+    
+    # Create a gdb init script to handle profiler signals
+    GDB_INIT="/tmp/gdb_init_$$"
+    cat > "$GDB_INIT" << 'EOF'
+handle SIGUSR1 nostop noprint pass
+handle SIGPROF nostop noprint pass
+handle SIGRTMIN nostop noprint pass
+handle SIGRTMAX nostop noprint pass
+EOF
+    
+    gdb -x "$GDB_INIT" --args "${RUN_CMD[@]}"
+    rm -f "$GDB_INIT"
 else
     "${RUN_CMD[@]}"
 fi
+
+# todo lldb conf
+    # lldb \
+    #   -o "plugin load /root/.dotnet/tools/.store/dotnet-sos/9.0.652701/dotnet-sos/9.0.652701/tools/net8.0/any/linux-musl-x64/libsosplugin.so" \
+    #   -o "process launch" \
+    #   -- "${RUN_CMD[@]}"
 
 echo ""
 echo "=== Application completed ==="

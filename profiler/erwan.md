@@ -7,11 +7,26 @@
 ## What?
 
 The unwinding switches to manual when in managed code regions (detected via `LibrariesInfoCache`), and uses `libunwind` for native libraries.
+The aim is to push this logic to libunwind in time. However to iterate faster, we are adding unwinding logics within `dd-trace-dotnet`.
 
 ## Build & Test
 
-From within the docker
+Build the image
+
+```bash
+#
+# Rebuild the base build image (pulls in latest dependencies, including .NET 10 SDK/runtime)
+# NOTE: this runs from the repo root and mirrors CI builds
+#
+./tracer/build_in_docker.sh --help >/dev/null
+
+# Sanity check that the container has the expected SDK
+./tracer/build_in_docker.sh dotnet --info | grep -E "SDKs installed|10\."
 ```
+
+From within the docker
+
+```bash
 docker run -it --rm \
     --privileged \
     --mount type=bind,source="$(pwd)",target=/project \
@@ -28,17 +43,18 @@ docker run -it --rm \
 
 if you touch the build, you need to update the build dll:
 
-```
+
+```bash
 dotnet build tracer/build/_build/_build.csproj
 ```
+
+Todo: figure out how the dll gets delivered
 
 ```bash
 dotnet tracer/build/_build/bin/Debug/_build.dll BuildTracerHome
 dotnet tracer/build/_build/bin/Debug/_build.dll BuildNativeWrapper
 DD_INTERNAL_USE_HYBRID_UNWINDING=1 dotnet tracer/build/_build/bin/Debug/_build.dll BuildProfilerHome
 ```
-
-You need a couple of libraries to run.
 
 Build a test app
 

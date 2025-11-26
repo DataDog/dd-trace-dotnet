@@ -792,11 +792,27 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
                 RecordHybridEvent(HybridTraceEvent::ManualFramePointerSuccess,
                                   (uintptr_t)return_addr, (uintptr_t)prev_fp);
 
-                unw_set_reg(cursor, UNW_AARCH64_X29, prev_fp);
-                unw_set_reg(cursor, UNW_REG_SP, new_sp);
-                unw_set_reg(cursor, UNW_REG_IP, return_addr);
-
-                return 1;
+                // Create a new context with the unwound register state
+                // This approach works reliably across architectures
+                // todo: think of how to avoid this at every iteration
+                unw_context_t new_context;
+                if (unw_getcontext(&new_context) == 0)
+                {
+                    // Update the context with our manually unwound values
+                    #if defined(__aarch64__)
+                    auto* uctx = reinterpret_cast<ucontext_t*>(&new_context);
+                    uctx->uc_mcontext.pc = return_addr;
+                    uctx->uc_mcontext.sp = new_sp;
+                    uctx->uc_mcontext.regs[29] = prev_fp;  // x29 is FP
+                    
+                    // Reinitialize cursor with the new context
+                    int init_result = unw_init_local2(cursor, &new_context, static_cast<unw_init_local2_flags_t>(0));
+                    if (init_result == 0)
+                    {
+                        return 1;  // Success - cursor reinitialized with unwound state
+                    }
+                    #endif
+                }
             }
 
             RecordHybridEvent(HybridTraceEvent::ManualFramePointerInvalidReturn,
@@ -828,9 +844,22 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
         RecordHybridEvent(HybridTraceEvent::ManualLinkRegisterSuccess,
                           (uintptr_t)lr, (uintptr_t)sp);
 
-        // Only update IP. SP stays untouched.
-        unw_set_reg(cursor, UNW_REG_IP, lr);
-        return 1;
+        // Use reinit approach for LR-based unwinding too
+        unw_context_t new_context;
+        if (unw_getcontext(&new_context) == 0)
+        {
+            #if defined(__aarch64__)
+            auto* uctx = reinterpret_cast<ucontext_t*>(&new_context);
+            uctx->uc_mcontext.pc = lr;
+            // Keep SP and FP unchanged - we don't know the frame size
+            
+            int init_result = unw_init_local2(cursor, &new_context, static_cast<unw_init_local2_flags_t>(0));
+            if (init_result == 0)
+            {
+                return 1;
+            }
+            #endif
+        }
     }
 
     // ----------------------------------------------------
@@ -874,12 +903,28 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
                     HybridTraceEvent::ManualFramePointerSuccess,
                     static_cast<uintptr_t>(return_addr),
                     static_cast<uintptr_t>(prev_rbp));
-
-                unw_set_reg(cursor, UNW_X86_64_RBP, prev_rbp);
-                unw_set_reg(cursor, UNW_REG_SP, static_cast<uintptr_t>(rbp) + 2 * sizeof(uintptr_t));
-                unw_set_reg(cursor, UNW_REG_IP, return_addr);
-
-                return 1;
+                
+                // Create a new context with the unwound register state
+                // todo: think of how to avoid this at every iteration
+                unw_context_t new_context;
+                if (unw_getcontext(&new_context) == 0)
+                {
+                    // Update the context with our manually unwound values
+                    // For x86_64, we need to update RIP, RSP, and RBP in the context
+                    #if defined(__x86_64__)
+                    auto* uctx = reinterpret_cast<ucontext_t*>(&new_context);
+                    uctx->uc_mcontext.gregs[REG_RIP] = return_addr;
+                    uctx->uc_mcontext.gregs[REG_RSP] = static_cast<uintptr_t>(rbp) + 2 * sizeof(uintptr_t);
+                    uctx->uc_mcontext.gregs[REG_RBP] = prev_rbp;
+                    
+                    // Reinitialize cursor with the new context
+                    int init_result = unw_init_local2(cursor, &new_context, static_cast<unw_init_local2_flags_t>(0));
+                    if (init_result == 0)
+                    {
+                        return 1;  // Success - cursor reinitialized with unwound state
+                    }
+                    #endif
+                }
             }
 
             RecordHybridEvent(
