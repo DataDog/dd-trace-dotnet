@@ -91,7 +91,7 @@ internal static partial class ConfigurationKeys2
     /// Default is empty (all integrations are enabled).
     /// Supports multiple values separated with semi-colons.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DisabledIntegrationNames"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.DisabledIntegrationNames"/>
     public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
     /// <summary>
@@ -135,31 +135,31 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.Environment"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
     public const string Environment = "DD_ENV";
 
     /// <summary>
     /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitCommitSha"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
     public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
 
     /// <summary>
     /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitRepositoryUrl"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
     public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientErrorStatusCodes"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
     /// <summary>
     /// Configuration key for the application's server http statuses to set spans as errors by.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpServerErrorStatusCodes"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
     public const string DeprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
 
     /// <summary>
@@ -197,7 +197,7 @@ internal static partial class ConfigurationKeys2
     /// Configuration key for enabling or disabling the automatic injection
     /// of correlation identifiers into the logging context.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.LogsInjectionEnabled"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.LogsInjectionEnabled"/>
     public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
 
     /// <summary>
@@ -211,7 +211,7 @@ internal static partial class ConfigurationKeys2
     /// Configuration key for setting the number of traces allowed
     /// to be submitted per second.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.MaxTracesSubmittedPerSecond"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
     [System.Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`")]
     public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
@@ -226,7 +226,7 @@ internal static partial class ConfigurationKeys2
     /// Used as the service name for top-level spans,
     /// and used to determine service name of some child spans.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceName"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceName"/>
     public const string ServiceName = "DD_SERVICE";
 
     /// <summary>
@@ -271,7 +271,7 @@ internal static partial class ConfigurationKeys2
     /// Supports multiple key key-value pairs which are comma-separated, and for which the key and
     /// value are colon-separated. For example Key1:Value1, Key2:Value2
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.GlobalTags"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GlobalTags"/>
     public const string GlobalTags = "DD_TAGS";
 
     /// <summary>
@@ -301,7 +301,7 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for enabling or disabling default Analytics.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.AnalyticsEnabled"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.AnalyticsEnabled"/>
     [System.Obsolete("Deprecated - App Analytics is deprecated")]
     public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
@@ -447,7 +447,7 @@ internal static partial class ConfigurationKeys2
     /// Configuration key for enabling or disabling the Tracer.
     /// Default value is true (enabled).
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.TraceEnabled"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.TraceEnabled"/>
     public const string TraceEnabled = "DD_TRACE_ENABLED";
 
     /// <summary>
@@ -481,20 +481,20 @@ internal static partial class ConfigurationKeys2
     /// Configuration key for a map of metadata keys to tag names.
     /// Automatically apply GRPC metadata values as tags on traces.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HeaderTags"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
     public const string GrpcTags = "DD_TRACE_GRPC_TAGS";
 
     /// <summary>
     /// Configuration key for a map of header keys to tag names.
     /// Automatically apply header values as tags on traces.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HeaderTags"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
     public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientErrorStatusCodes"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
     /// <summary>
@@ -506,7 +506,7 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for the application's server http statuses to set spans as errors by.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpServerErrorStatusCodes"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
     public const string HttpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
     /// <summary>
@@ -514,7 +514,7 @@ internal static partial class ConfigurationKeys2
     /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
     /// Default value is <c>true</c> (enabled).
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.KafkaCreateConsumerScopeEnabled"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.KafkaCreateConsumerScopeEnabled"/>
     public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
     /// <summary>
@@ -650,7 +650,7 @@ internal static partial class ConfigurationKeys2
     /// Configuration key for setting the number of traces allowed
     /// to be submitted per second.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.MaxTracesSubmittedPerSecond"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
     public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
     /// <summary>
@@ -693,11 +693,11 @@ internal static partial class ConfigurationKeys2
     /// 
     /// If no rules are specified, or none match, default internal sampling logic will be used.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.CustomSamplingRules"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>
     public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
     /// <summary>
-    /// Configuration key for setting the format of <see cref="Datadog.Trace.Configuration.TracerSettings.CustomSamplingRules"/>.
+    /// Configuration key for setting the format of <see cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>.
     /// Valid values are <c>regex</c> or <c>glob</c>.
     /// If the value is not recognized, trace sampling rules are disabled.
     /// </summary>
@@ -706,7 +706,7 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for a map of services to rename.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceNameMappings"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceNameMappings"/>
     public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
 
     /// <summary>
@@ -719,7 +719,7 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for enabling or disabling the diagnostic log at startup
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.StartupDiagnosticLogEnabled"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.StartupDiagnosticLogEnabled"/>
     public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
 
     /// <summary>
@@ -730,6 +730,6 @@ internal static partial class ConfigurationKeys2
     /// <summary>
     /// Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
     /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceVersion"/>
+    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceVersion"/>
     public const string ServiceVersion = "DD_VERSION";
 }
