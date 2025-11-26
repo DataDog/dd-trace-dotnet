@@ -18,6 +18,12 @@ namespace Samples.Microsoft.Data.SqlClient
 
             using (var connection = OpenConnection(typeof(SqlConnection)))
             {
+                if (connection is null)
+                {
+                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
+                    return 13;
+                }
+
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
@@ -28,6 +34,12 @@ namespace Samples.Microsoft.Data.SqlClient
 
             using (var connection = OpenConnection(loadFileType))
             {
+                if (connection is null)
+                {
+                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
+                    return 13;
+                }
+
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
@@ -81,20 +93,23 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
             }
 
-            // After all retry attempts exhausted, exit with skip code
-            Console.WriteLine($"Unable to establish SQL connection after {maxAttempts} attempts. Exiting with skip code (13)");
-            Console.WriteLine($"Final SqlException Number: {lastException.Number}, State: {lastException.State}, Class: {lastException.Class}");
-            Console.WriteLine($"Message: {lastException.Message}");
-            Environment.Exit(13);
+            // After all retry attempts exhausted, return null to signal connection failure
+            Console.WriteLine($"Unable to establish SQL connection after {maxAttempts} attempts.");
+            if (lastException != null)
+            {
+                Console.WriteLine($"Final SqlException Number: {lastException.Number}, State: {lastException.State}, Class: {lastException.Class}");
+                Console.WriteLine($"Message: {lastException.Message}");
+            }
             return null;
         }
 
         static bool IsRetryableConnectionError(SqlException ex)
         {
-            // Known reliable error codes
+            // Known retryable error codes
             if (ex.Number == -1 ||      // Generic network error
                 ex.Number == -2 ||      // Connection timeout
                 ex.Number == 53 ||      // SQL Server not found
+                ex.Number == 258 ||     // Connection timeout
                 ex.Number == 10053 ||   // Connection aborted
                 ex.Number == 10054 ||   // Connection reset
                 ex.Number == 10060 ||   // Connection timeout
