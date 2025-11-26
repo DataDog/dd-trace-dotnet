@@ -65,8 +65,8 @@ namespace Datadog.Trace.Agent
 
             var header = new ClientStatsPayload
             {
-                Environment = settings.Environment,
-                Version = settings.ServiceVersion,
+                Environment = settings.MutableSettings.Environment,
+                Version = settings.MutableSettings.ServiceVersion,
                 HostName = HostMetadata.Instance.Hostname,
                 ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null
             };

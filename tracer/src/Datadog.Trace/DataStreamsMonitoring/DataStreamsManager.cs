@@ -60,7 +60,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+        return new DataStreamsManager(settings.MutableSettings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
     }
 
     public async Task DisposeAsync()

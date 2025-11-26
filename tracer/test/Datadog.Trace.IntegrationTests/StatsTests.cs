@@ -532,7 +532,7 @@ namespace Datadog.Trace.IntegrationTests
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
                 var span = scope.Span;
                 span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(200, isServer: true, tracerSettings.InitialMutableSettings);
+                span.SetHttpStatusCode(200, isServer: true, tracerSettings.Manager.InitialMutableSettings);
                 span.Type = "span1";
 
                 return scope;
@@ -583,9 +583,9 @@ namespace Datadog.Trace.IntegrationTests
 
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
-                stats.Env.Should().Be(settings.Environment);
+                stats.Env.Should().Be(settings.MutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
-                stats.Version.Should().Be(settings.ServiceVersion);
+                stats.Version.Should().Be(settings.MutableSettings.ServiceVersion);
                 stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);

@@ -185,7 +185,7 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            if (tracerSettings.StartupDiagnosticLogEnabled)
+            if (tracerSettings.MutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }

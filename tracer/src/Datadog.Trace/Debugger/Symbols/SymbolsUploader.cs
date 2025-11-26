@@ -63,8 +63,8 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
-            _environment = tracerSettings.Environment;
-            _serviceVersion = tracerSettings.ServiceVersion;
+            _environment = tracerSettings.MutableSettings.Environment;
+            _serviceVersion = tracerSettings.MutableSettings.ServiceVersion;
             _serviceName = serviceName;
             _discoveryService = discoveryService;
             _api = api;

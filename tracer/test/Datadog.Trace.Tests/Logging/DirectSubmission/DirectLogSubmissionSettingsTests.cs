@@ -376,7 +376,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
 
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+            tracerSettings.MutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
     }
 }

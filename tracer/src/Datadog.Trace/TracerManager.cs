@@ -686,7 +686,26 @@ namespace Datadog.Trace
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
             // Record the service discovery metadata
-            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings);
+            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
+
+            // Register for rebuilding the settings on changes
+            // TODO: This is only temporary, we want to _stop_ rebuilding everything whenever settings change in the future
+            // We also don't bother to dispose this because we never unsubscribe
+            tracerSettings.Manager.SubscribeToChanges(updatedSettings =>
+            {
+                var newSettings = updatedSettings switch
+                {
+                    { UpdatedExporter: { } e, UpdatedMutable: { } m } => Tracer.Instance.Settings with { Exporter = e, MutableSettings = m },
+                    { UpdatedExporter: { } e } => Tracer.Instance.Settings with { Exporter = e },
+                    { UpdatedMutable: { } m } => Tracer.Instance.Settings with { MutableSettings = m },
+                    _ => null,
+                };
+                if (newSettings != null)
+                {
+                    // Update the global instance
+                    Trace.Tracer.Configure(newSettings);
+                }
+            });
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);

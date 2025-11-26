@@ -56,7 +56,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
             _use128Bits = settings.TraceId128BitLoggingEnabled;
 
-            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTags;
+            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.MutableSettings.GlobalTags;
             Tags = EnrichTagsWithAasMetadata(StringifyGlobalTags(globalTags), aasSettings);
         }
 
