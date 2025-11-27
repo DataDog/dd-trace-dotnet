@@ -83,11 +83,11 @@ run-benchmarks:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
     - if: $CI_COMMIT_REF_NAME == "master"
       when: on_success
       interruptible: false
-    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
-      when: never
     - when: on_success
       interruptible: true
   artifacts:
