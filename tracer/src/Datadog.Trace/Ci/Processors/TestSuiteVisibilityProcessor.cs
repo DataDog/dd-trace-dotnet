@@ -50,19 +50,22 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
         Span[]? spans = null;
         var copiedCount = 0;
         var haveDrops = false;
+        var haveKeeps = false;
         // TODO: we could reuse the same underlying array rather than re-allocating when we need to recreate, but that can be a separate optimization
         for (var i = segment.Offset; i < segment.Count + segment.Offset; i++)
         {
             var span = segment.Array![i];
             if (Process(span) is { } processedSpan)
             {
+                haveKeeps = true;
                 if (haveDrops)
                 {
+                    // if we have _any_ drops, we know we need to start copying the spans across
                     if (spans is null)
                     {
-                        // first kept span after dropping some spans
-                        spans = new Span[trace.Count];
-                        Array.Copy(segment.Array!, segment.Offset, spans, destinationIndex: 0, length: i - segment.Offset);
+                        // This is the first kept span after all previous were dropped
+                        // At most we will keep all the remaining spans
+                        spans = new Span[segment.Count - (i - segment.Offset)];
                     }
 
                     spans[copiedCount++] = processedSpan;
@@ -71,6 +74,14 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
             else
             {
                 haveDrops = true;
+                if (haveKeeps && spans is null)
+                {
+                    // all previous were keep, so we need to copy all those previous kept spans across
+                    spans = new Span[segment.Count];
+                    Array.Copy(segment.Array!, segment.Offset, spans, destinationIndex: 0, length: i - segment.Offset);
+                    copiedCount = i - segment.Offset;
+                }
+
                 Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={Type}]", span.Type);
             }
         }
