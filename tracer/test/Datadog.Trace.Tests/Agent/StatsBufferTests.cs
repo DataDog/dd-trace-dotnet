@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
@@ -29,7 +30,18 @@ namespace Datadog.Trace.Tests.Agent
         {
             const long expectedDuration = 42;
 
-            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", Version = "v99.99", ProcessTags = "a.b:c_d,x.y:z" };
+            var settings = MutableSettings.CreateForTesting(
+                new(),
+                new()
+                {
+                    { ConfigurationKeys.Environment, "Env" },
+                    { ConfigurationKeys.ServiceVersion, "v99.99" },
+                });
+            var payload = new ClientStatsPayload(settings)
+            {
+                HostName = "Hostname",
+                ProcessTags = "a.b:c_d,x.y:z",
+            };
 
             var buffer = new StatsBuffer(payload);
 
@@ -50,8 +62,8 @@ namespace Datadog.Trace.Tests.Agent
             var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Hostname.Should().Be(payload.HostName);
-            result.Env.Should().Be(payload.Environment);
-            result.Version.Should().Be(payload.Version);
+            result.Env.Should().Be(payload.Details.Environment);
+            result.Version.Should().Be(payload.Details.Version);
             result.ProcessTags.Should().Be(payload.ProcessTags);
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
@@ -75,7 +87,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Reset()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload());
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
             var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", 2, false);
@@ -111,7 +123,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void IncrementSequence()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload());
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
             var statsBucket = new StatsBucket(key) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };

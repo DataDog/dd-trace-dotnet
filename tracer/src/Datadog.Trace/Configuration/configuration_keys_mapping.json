@@ -1,0 +1,1080 @@
+{
+  "mappings": [
+    {
+      "env_var": "DD_AAS_DOTNET_EXTENSION_VERSION",
+      "const_name": "SiteExtensionVersionKey"
+    },
+    {
+      "env_var": "DD_AAS_ENABLE_CUSTOM_METRICS",
+      "const_name": "AasEnableCustomMetrics"
+    },
+    {
+      "env_var": "DD_AAS_ENABLE_CUSTOM_TRACING",
+      "const_name": "AasEnableCustomTracing"
+    },
+    {
+      "env_var": "DD_AGENT_HOST",
+      "const_name": "AgentHost"
+    },
+    {
+      "env_var": "DD_AGENT_FEATURE_POLLING_ENABLED",
+      "const_name": "AgentFeaturePollingEnabled"
+    },
+    {
+      "env_var": "DD_API_KEY",
+      "const_name": "ApiKey"
+    },
+    {
+      "env_var": "DD_API_SECURITY_ENABLED",
+      "const_name": "ApiSecurityEnabled"
+    },
+    {
+      "env_var": "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED",
+      "const_name": "ApiSecurityEndpointCollectionEnabled"
+    },
+    {
+      "env_var": "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT",
+      "const_name": "ApiSecurityEndpointCollectionMessageLimit"
+    },
+    {
+      "env_var": "DD_API_SECURITY_PARSE_RESPONSE_BODY",
+      "const_name": "ApiSecurityParseResponseBody"
+    },
+    {
+      "env_var": "DD_API_SECURITY_SAMPLE_DELAY",
+      "const_name": "ApiSecuritySampleDelay"
+    },
+    {
+      "env_var": "DD_APM_ENABLE_RARE_SAMPLER",
+      "const_name": "RareSamplerEnabled"
+    },
+    {
+      "env_var": "DD_APM_RECEIVER_PORT",
+      "const_name": "TraceAgentPortKey"
+    },
+    {
+      "env_var": "DD_APM_RECEIVER_SOCKET",
+      "const_name": "TracesUnixDomainSocketPath"
+    },
+    {
+      "env_var": "DD_APM_TRACING_ENABLED",
+      "const_name": "ApmTracingEnabled"
+    },
+    {
+      "env_var": "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED",
+      "const_name": "ApplicationMonitoringConfigFileEnabled"
+    },
+    {
+      "env_var": "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING",
+      "const_name": "UserEventsAutomatedTracking"
+    },
+    {
+      "env_var": "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE",
+      "const_name": "UserEventsAutoInstrumentationMode"
+    },
+    {
+      "env_var": "DD_APPSEC_ENABLED",
+      "const_name": "Enabled"
+    },
+    {
+      "env_var": "DD_APPSEC_EXTRA_HEADERS",
+      "const_name": "ExtraHeaders"
+    },
+    {
+      "env_var": "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML",
+      "const_name": "HtmlBlockedTemplate"
+    },
+    {
+      "env_var": "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON",
+      "const_name": "JsonBlockedTemplate"
+    },
+    {
+      "env_var": "DD_APPSEC_IPHEADER",
+      "const_name": "CustomIpHeader"
+    },
+    {
+      "env_var": "DD_APPSEC_KEEP_TRACES",
+      "const_name": "KeepTraces"
+    },
+    {
+      "env_var": "DD_APPSEC_MAX_STACK_TRACES",
+      "const_name": "MaxStackTraces"
+    },
+    {
+      "env_var": "DD_APPSEC_MAX_STACK_TRACE_DEPTH",
+      "const_name": "MaxStackTraceDepth"
+    },
+    {
+      "env_var": "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT",
+      "const_name": "MaxStackTraceDepthTopPercent"
+    },
+    {
+      "env_var": "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP",
+      "const_name": "ObfuscationParameterKeyRegex"
+    },
+    {
+      "env_var": "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP",
+      "const_name": "ObfuscationParameterValueRegex"
+    },
+    {
+      "env_var": "DD_APPSEC_RASP_ENABLED",
+      "const_name": "RaspEnabled"
+    },
+    {
+      "env_var": "DD_APPSEC_RULES",
+      "const_name": "Rules"
+    },
+    {
+      "env_var": "DD_APPSEC_SCA_ENABLED",
+      "const_name": "ScaEnabled"
+    },
+    {
+      "env_var": "DD_APPSEC_STACK_TRACE_ENABLED",
+      "const_name": "StackTraceEnabled"
+    },
+    {
+      "env_var": "DD_APPSEC_TRACE_RATE_LIMIT",
+      "const_name": "TraceRateLimit"
+    },
+    {
+      "env_var": "DD_APPSEC_WAF_DEBUG",
+      "const_name": "WafDebugEnabled"
+    },
+    {
+      "env_var": "DD_APPSEC_WAF_TIMEOUT",
+      "const_name": "WafTimeout"
+    },
+    {
+      "env_var": "DD_AZURE_APP_SERVICES",
+      "const_name": "AzureAppServicesContextKey"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_AGENTLESS_ENABLED",
+      "const_name": "AgentlessEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_AGENTLESS_URL",
+      "const_name": "AgentlessUrl"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH",
+      "const_name": "CodeCoverageCollectorPath"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED",
+      "const_name": "CodeCoverage"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS",
+      "const_name": "CodeCoverageEnableJitOptimizations"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
+      "const_name": "CodeCoverageMode"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_PATH",
+      "const_name": "CodeCoveragePath"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH",
+      "const_name": "CodeCoverageSnkFile"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_DI_ENABLED",
+      "const_name": "DynamicInstrumentationEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED",
+      "const_name": "EarlyFlakeDetectionEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_ENABLED",
+      "const_name": "Enabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH",
+      "const_name": "ExternalCodeCoveragePath"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_FLAKY_RETRY_COUNT",
+      "const_name": "FlakyRetryCount"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED",
+      "const_name": "FlakyRetryEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY",
+      "const_name": "ForceAgentsEvpProxy"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_GAC_INSTALL_ENABLED",
+      "const_name": "InstallDatadogTraceInGac"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED",
+      "const_name": "GitUploadEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED",
+      "const_name": "ImpactedTestsDetectionEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_ITR_ENABLED",
+      "const_name": "IntelligentTestRunnerEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED",
+      "const_name": "KnownTestsEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_LOGS_ENABLED",
+      "const_name": "Logs"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS",
+      "const_name": "RumFlushWaitMillis"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED",
+      "const_name": "TestsSkippingEnabled"
+    },
+    {
+      "env_var": "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT",
+      "const_name": "TotalFlakyRetryCount"
+    },
+    {
+      "env_var": "DD_CODE_ORIGIN_FOR_SPANS_ENABLED",
+      "const_name": "CodeOriginForSpansEnabled"
+    },
+    {
+      "env_var": "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES",
+      "const_name": "CodeOriginMaxUserFrames"
+    },
+    {
+      "env_var": "DD_DATA_STREAMS_ENABLED",
+      "const_name": "Enabled"
+    },
+    {
+      "env_var": "DD_DATA_STREAMS_LEGACY_HEADERS",
+      "const_name": "LegacyHeadersEnabled"
+    },
+    {
+      "env_var": "DD_DBM_PROPAGATION_MODE",
+      "const_name": "DbmPropagationMode"
+    },
+    {
+      "env_var": "DD_DIAGNOSTIC_SOURCE_ENABLED",
+      "const_name": "DiagnosticSourceEnabled"
+    },
+    {
+      "env_var": "DD_DISABLED_INTEGRATIONS",
+      "const_name": "DisabledIntegrations"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_ARGS",
+      "const_name": "DogStatsDArgs"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_PATH",
+      "const_name": "DogStatsDPath"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_PIPE_NAME",
+      "const_name": "MetricsPipeName"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_PORT",
+      "const_name": "DogStatsdPort"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_SOCKET",
+      "const_name": "MetricsUnixDomainSocketPath"
+    },
+    {
+      "env_var": "DD_DOGSTATSD_URL",
+      "const_name": "MetricsUri"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL",
+      "const_name": "DiagnosticsInterval"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_ENABLED",
+      "const_name": "DynamicInstrumentationEnabled"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE",
+      "const_name": "MaxDepthToSerialize"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE",
+      "const_name": "MaxTimeToSerialize"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS",
+      "const_name": "RedactedExcludedIdentifiers"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS",
+      "const_name": "RedactedIdentifiers"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES",
+      "const_name": "RedactedTypes"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS",
+      "const_name": "RedactionExcludedIdentifiers"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE",
+      "const_name": "UploadBatchSize"
+    },
+    {
+      "env_var": "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL",
+      "const_name": "UploadFlushInterval"
+    },
+    {
+      "env_var": "DD_ENV",
+      "const_name": "Environment"
+    },
+    {
+      "env_var": "DD_EXCEPTION_DEBUGGING_ENABLED",
+      "const_name": "ExceptionDebuggingEnabled"
+    },
+    {
+      "env_var": "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED",
+      "const_name": "ExceptionReplayCaptureFullCallStackEnabled"
+    },
+    {
+      "env_var": "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES",
+      "const_name": "ExceptionReplayCaptureMaxFrames"
+    },
+    {
+      "env_var": "DD_EXCEPTION_REPLAY_ENABLED",
+      "const_name": "ExceptionReplayEnabled"
+    },
+    {
+      "env_var": "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT",
+      "const_name": "MaxExceptionAnalysisLimit"
+    },
+    {
+      "env_var": "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS",
+      "const_name": "RateLimitSeconds"
+    },
+    {
+      "env_var": "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER",
+      "const_name": "UseUnsafeEncoder"
+    },
+    {
+      "env_var": "DD_GIT_COMMIT_SHA",
+      "const_name": "GitCommitSha"
+    },
+    {
+      "env_var": "DD_GIT_REPOSITORY_URL",
+      "const_name": "GitRepositoryUrl"
+    },
+    {
+      "env_var": "DD_HTTP_CLIENT_ERROR_STATUSES",
+      "const_name": "DeprecatedHttpClientErrorStatusCodes"
+    },
+    {
+      "env_var": "DD_HTTP_SERVER_ERROR_STATUSES",
+      "const_name": "DeprecatedHttpServerErrorStatusCodes"
+    },
+    {
+      "env_var": "DD_HTTP_SERVER_TAG_QUERY_STRING",
+      "const_name": "QueryStringReportingEnabled"
+    },
+    {
+      "env_var": "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE",
+      "const_name": "QueryStringReportingSize"
+    },
+    {
+      "env_var": "DD_IAST_COOKIE_FILTER_PATTERN",
+      "const_name": "CookieFilterRegex"
+    },
+    {
+      "env_var": "DD_IAST_DB_ROWS_TO_TAINT",
+      "const_name": "DataBaseRowsToTaint"
+    },
+    {
+      "env_var": "DD_IAST_DEDUPLICATION_ENABLED",
+      "const_name": "IsIastDeduplicationEnabled"
+    },
+    {
+      "env_var": "DD_IAST_ENABLED",
+      "const_name": "Enabled"
+    },
+    {
+      "env_var": "DD_IAST_MAX_CONCURRENT_REQUESTS",
+      "const_name": "MaxConcurrentRequests"
+    },
+    {
+      "env_var": "DD_IAST_MAX_RANGE_COUNT",
+      "const_name": "MaxRangeCount"
+    },
+    {
+      "env_var": "DD_IAST_REDACTION_ENABLED",
+      "const_name": "RedactionEnabled"
+    },
+    {
+      "env_var": "DD_IAST_REDACTION_NAME_PATTERN",
+      "const_name": "RedactionKeysRegex"
+    },
+    {
+      "env_var": "DD_IAST_REDACTION_VALUE_PATTERN",
+      "const_name": "RedactionValuesRegex"
+    },
+    {
+      "env_var": "DD_IAST_REGEXP_TIMEOUT",
+      "const_name": "RegexTimeout"
+    },
+    {
+      "env_var": "DD_IAST_REQUEST_SAMPLING",
+      "const_name": "RequestSampling"
+    },
+    {
+      "env_var": "DD_IAST_TELEMETRY_VERBOSITY",
+      "const_name": "TelemetryVerbosity"
+    },
+    {
+      "env_var": "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH",
+      "const_name": "TruncationMaxValueLength"
+    },
+    {
+      "env_var": "DD_IAST_VULNERABILITIES_PER_REQUEST",
+      "const_name": "VulnerabilitiesPerRequest"
+    },
+    {
+      "env_var": "DD_IAST_WEAK_CIPHER_ALGORITHMS",
+      "const_name": "WeakCipherAlgorithms"
+    },
+    {
+      "env_var": "DD_IAST_WEAK_HASH_ALGORITHMS",
+      "const_name": "WeakHashAlgorithms"
+    },
+    {
+      "env_var": "DD_INJECTION_ENABLED",
+      "const_name": "SsiDeployed"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED",
+      "const_name": "AgentlessEnabled"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED",
+      "const_name": "AgentProxyEnabled"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD",
+      "const_name": "TelemetryCompressionMethod"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_ENABLED",
+      "const_name": "Enabled"
+    },
+    {
+      "env_var": "DD_INSTRUMENTATION_TELEMETRY_URL",
+      "const_name": "Uri"
+    },
+    {
+      "env_var": "DD_INTERNAL_RCM_POLL_INTERVAL",
+      "const_name": "PollIntervalInternal"
+    },
+    {
+      "env_var": "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED",
+      "const_name": "DebugEnabled"
+    },
+    {
+      "env_var": "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH",
+      "const_name": "WaitForDebuggerAttach"
+    },
+    {
+      "env_var": "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH",
+      "const_name": "WaitForNativeDebuggerAttach"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED",
+      "const_name": "AzureFunctionsHostEnabled"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS",
+      "const_name": "BatchPeriodSeconds"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_HOST",
+      "const_name": "Host"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS",
+      "const_name": "EnabledIntegrations"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE",
+      "const_name": "BatchSizeLimit"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE",
+      "const_name": "QueueSizeLimit"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL",
+      "const_name": "MinimumLevel"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_SOURCE",
+      "const_name": "Source"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_TAGS",
+      "const_name": "GlobalTags"
+    },
+    {
+      "env_var": "DD_LOGS_DIRECT_SUBMISSION_URL",
+      "const_name": "Url"
+    },
+    {
+      "env_var": "DD_LOGS_INJECTION",
+      "const_name": "LogsInjectionEnabled"
+    },
+    {
+      "env_var": "DD_MAX_LOGFILE_SIZE",
+      "const_name": "MaxLogFileSize"
+    },
+    {
+      "env_var": "DD_MAX_TRACES_PER_SECOND",
+      "const_name": "MaxTracesSubmittedPerSecond"
+    },
+    {
+      "env_var": "DD_METRICS_OTEL_ENABLED",
+      "const_name": "OpenTelemetryMetricsEnabled"
+    },
+    {
+      "env_var": "DD_METRICS_OTEL_METER_NAMES",
+      "const_name": "OpenTelemetryMeterNames"
+    },
+    {
+      "env_var": "DD_PROFILING_CODEHOTSPOTS_ENABLED",
+      "const_name": "CodeHotspotsEnabled"
+    },
+    {
+      "env_var": "DD_PROFILING_ENABLED",
+      "const_name": "ProfilingEnabled"
+    },
+    {
+      "env_var": "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED",
+      "const_name": "EndpointProfilingEnabled"
+    },
+    {
+      "env_var": "DD_PROFILING_MANAGED_ACTIVATION_ENABLED",
+      "const_name": "ProfilerManagedActivationEnabled"
+    },
+    {
+      "env_var": "DD_PROXY_HTTPS",
+      "const_name": "ProxyHttps"
+    },
+    {
+      "env_var": "DD_PROXY_NO_PROXY",
+      "const_name": "ProxyNoProxy"
+    },
+    {
+      "env_var": "DD_REMOTE_CONFIGURATION_ENABLED",
+      "const_name": "RemoteConfigurationEnabled"
+    },
+    {
+      "env_var": "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS",
+      "const_name": "PollInterval"
+    },
+    {
+      "env_var": "DD_RUNTIME_METRICS_ENABLED",
+      "const_name": "RuntimeMetricsEnabled"
+    },
+    {
+      "env_var": "DD_SERVICE",
+      "const_name": "ServiceName"
+    },
+    {
+      "env_var": "DD_SITE",
+      "const_name": "Site"
+    },
+    {
+      "env_var": "DD_SPAN_SAMPLING_RULES",
+      "const_name": "SpanSamplingRules"
+    },
+    {
+      "env_var": "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES",
+      "const_name": "SymbolDatabaseBatchSizeInBytes"
+    },
+    {
+      "env_var": "DD_SYMBOL_DATABASE_COMPRESSION_ENABLED",
+      "const_name": "SymbolDatabaseCompressionEnabled"
+    },
+    {
+      "env_var": "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES",
+      "const_name": "SymDbThirdPartyDetectionExcludes"
+    },
+    {
+      "env_var": "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES",
+      "const_name": "SymDbThirdPartyDetectionIncludes"
+    },
+    {
+      "env_var": "DD_SYMBOL_DATABASE_UPLOAD_ENABLED",
+      "const_name": "SymbolDatabaseUploadEnabled"
+    },
+    {
+      "env_var": "DD_TAGS",
+      "const_name": "GlobalTags"
+    },
+    {
+      "env_var": "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED",
+      "const_name": "DependencyCollectionEnabled"
+    },
+    {
+      "env_var": "DD_TELEMETRY_HEARTBEAT_INTERVAL",
+      "const_name": "HeartbeatIntervalSeconds"
+    },
+    {
+      "env_var": "DD_TELEMETRY_LOG_COLLECTION_ENABLED",
+      "const_name": "TelemetryLogsEnabled"
+    },
+    {
+      "env_var": "DD_TELEMETRY_METRICS_ENABLED",
+      "const_name": "MetricsEnabled"
+    },
+    {
+      "env_var": "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES",
+      "const_name": "TestManagementAttemptToFixRetries"
+    },
+    {
+      "env_var": "DD_TEST_MANAGEMENT_ENABLED",
+      "const_name": "TestManagementEnabled"
+    },
+    {
+      "env_var": "DD_TEST_SESSION_NAME",
+      "const_name": "TestSessionName"
+    },
+    {
+      "env_var": "DD_THIRD_PARTY_DETECTION_EXCLUDES",
+      "const_name": "ThirdPartyDetectionExcludes"
+    },
+    {
+      "env_var": "DD_THIRD_PARTY_DETECTION_INCLUDES",
+      "const_name": "ThirdPartyDetectionIncludes"
+    },
+    {
+      "env_var": "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED",
+      "const_name": "TraceId128BitGenerationEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED",
+      "const_name": "TraceId128BitLoggingEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_ACTIVITY_LISTENER_ENABLED",
+      "const_name": "ActivityListenerEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_AGENT_ARGS",
+      "const_name": "TraceAgentArgs"
+    },
+    {
+      "env_var": "DD_TRACE_AGENT_PATH",
+      "const_name": "TraceAgentPath"
+    },
+    {
+      "env_var": "DD_TRACE_AGENT_PORT",
+      "const_name": "AgentPort"
+    },
+    {
+      "env_var": "DD_TRACE_AGENT_URL",
+      "const_name": "AgentUri"
+    },
+    {
+      "env_var": "DD_TRACE_ANALYTICS_ENABLED",
+      "const_name": "GlobalAnalyticsEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_AWS_ADD_SPAN_POINTERS",
+      "const_name": "SpanPointersEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED",
+      "const_name": "AzureEventHubsBatchLinksEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED",
+      "const_name": "AzureServiceBusBatchLinksEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_BAGGAGE_MAX_BYTES",
+      "const_name": "BaggageMaximumBytes"
+    },
+    {
+      "env_var": "DD_TRACE_BAGGAGE_MAX_ITEMS",
+      "const_name": "BaggageMaximumItems"
+    },
+    {
+      "env_var": "DD_TRACE_BAGGAGE_TAG_KEYS",
+      "const_name": "BaggageTagKeys"
+    },
+    {
+      "env_var": "DD_TRACE_BATCH_INTERVAL",
+      "const_name": "SerializationBatchInterval"
+    },
+    {
+      "env_var": "DD_TRACE_BUFFER_SIZE",
+      "const_name": "BufferSize"
+    },
+    {
+      "env_var": "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED",
+      "const_name": "BypassHttpRequestUrlCachingEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_CLIENT_IP_ENABLED",
+      "const_name": "IpHeaderEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_CLIENT_IP_HEADER",
+      "const_name": "IpHeader"
+    },
+    {
+      "env_var": "DD_TRACE_COMMANDS_COLLECTION_ENABLED",
+      "const_name": "CommandsCollectionEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_CONFIG_FILE",
+      "const_name": "ConfigurationFileName"
+    },
+    {
+      "env_var": "DD_TRACE_DATA_PIPELINE_ENABLED",
+      "const_name": "TraceDataPipelineEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_DEBUG",
+      "const_name": "DebugEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_DEBUG_LOOKUP_FALLBACK",
+      "const_name": "ForceFallbackLookup"
+    },
+    {
+      "env_var": "DD_TRACE_DEBUG_LOOKUP_MDTOKEN",
+      "const_name": "ForceMdTokenLookup"
+    },
+    {
+      "env_var": "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED",
+      "const_name": "DelayWcfInstrumentationEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_DISABLED_ACTIVITY_SOURCES",
+      "const_name": "DisabledActivitySources"
+    },
+    {
+      "env_var": "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES",
+      "const_name": "DisabledAdoNetCommandTypes"
+    },
+    {
+      "env_var": "DD_TRACE_ENABLED",
+      "const_name": "TraceEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED",
+      "const_name": "ExpandRouteTemplatesEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED",
+      "const_name": "ExperimentalFeaturesEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_GIT_METADATA_ENABLED",
+      "const_name": "GitMetadataEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS",
+      "const_name": "GraphQLErrorExtensions"
+    },
+    {
+      "env_var": "DD_TRACE_GRPC_TAGS",
+      "const_name": "GrpcTags"
+    },
+    {
+      "env_var": "DD_TRACE_HEADER_TAGS",
+      "const_name": "HeaderTags"
+    },
+    {
+      "env_var": "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED",
+      "const_name": "HeaderTagsNormalizationFixEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES",
+      "const_name": "HttpClientErrorStatusCodes"
+    },
+    {
+      "env_var": "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS",
+      "const_name": "HttpClientExcludedUrlSubstrings"
+    },
+    {
+      "env_var": "DD_TRACE_HTTP_SERVER_ERROR_STATUSES",
+      "const_name": "HttpServerErrorStatusCodes"
+    },
+    {
+      "env_var": "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED",
+      "const_name": "InferredProxySpansEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED",
+      "const_name": "InjectContextIntoStoredProceduresEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED",
+      "const_name": "KafkaCreateConsumerScopeEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_LOGFILE_RETENTION_DAYS",
+      "const_name": "LogFileRetentionDays"
+    },
+    {
+      "env_var": "DD_TRACE_LOGGING_RATE",
+      "const_name": "LogRateLimit"
+    },
+    {
+      "env_var": "DD_TRACE_LOG_DIRECTORY",
+      "const_name": "LogDirectory"
+    },
+    {
+      "env_var": "DD_TRACE_LOG_SINKS",
+      "const_name": "LogSinks"
+    },
+    {
+      "env_var": "DD_TRACE_METHODS",
+      "const_name": "TraceMethods"
+    },
+    {
+      "env_var": "DD_TRACE_METRICS_ENABLED",
+      "const_name": "TracerMetricsEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP",
+      "const_name": "ObfuscationQueryStringRegex"
+    },
+    {
+      "env_var": "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT",
+      "const_name": "ObfuscationQueryStringRegexTimeout"
+    },
+    {
+      "env_var": "DD_TRACE_OTEL_ENABLED",
+      "const_name": "OpenTelemetryEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_PARTIAL_FLUSH_ENABLED",
+      "const_name": "PartialFlushEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS",
+      "const_name": "PartialFlushMinSpans"
+    },
+    {
+      "env_var": "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED",
+      "const_name": "PeerServiceDefaultsEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_PEER_SERVICE_MAPPING",
+      "const_name": "PeerServiceNameMappings"
+    },
+    {
+      "env_var": "DD_TRACE_PIPE_NAME",
+      "const_name": "TracesPipeName"
+    },
+    {
+      "env_var": "DD_TRACE_PIPE_TIMEOUT_MS",
+      "const_name": "TracesPipeTimeoutMs"
+    },
+    {
+      "env_var": "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT",
+      "const_name": "PropagationBehaviorExtract"
+    },
+    {
+      "env_var": "DD_TRACE_PROPAGATION_EXTRACT_FIRST",
+      "const_name": "PropagationExtractFirstOnly"
+    },
+    {
+      "env_var": "DD_TRACE_PROPAGATION_STYLE",
+      "const_name": "PropagationStyle"
+    },
+    {
+      "env_var": "DD_TRACE_PROPAGATION_STYLE_EXTRACT",
+      "const_name": "PropagationStyleExtract"
+    },
+    {
+      "env_var": "DD_TRACE_PROPAGATION_STYLE_INJECT",
+      "const_name": "PropagationStyleInject"
+    },
+    {
+      "env_var": "DD_TRACE_RATE_LIMIT",
+      "const_name": "TraceRateLimit"
+    },
+    {
+      "env_var": "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED",
+      "const_name": "RemoveClientServiceNamesEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED",
+      "const_name": "RouteTemplateResourceNamesEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_SAMPLE_RATE",
+      "const_name": "GlobalSamplingRate"
+    },
+    {
+      "env_var": "DD_TRACE_SAMPLING_RULES",
+      "const_name": "CustomSamplingRules"
+    },
+    {
+      "env_var": "DD_TRACE_SAMPLING_RULES_FORMAT",
+      "const_name": "CustomSamplingRulesFormat"
+    },
+    {
+      "env_var": "DD_TRACE_SERVICE_MAPPING",
+      "const_name": "ServiceNameMappings"
+    },
+    {
+      "env_var": "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA",
+      "const_name": "MetadataSchemaVersion"
+    },
+    {
+      "env_var": "DD_TRACE_STARTUP_LOGS",
+      "const_name": "StartupDiagnosticLogEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_STATS_COMPUTATION_ENABLED",
+      "const_name": "StatsComputationEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED",
+      "const_name": "WcfObfuscationEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED",
+      "const_name": "WcfWebHttpResourceNamesEnabled"
+    },
+    {
+      "env_var": "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH",
+      "const_name": "HeaderMaxLength"
+    },
+    {
+      "env_var": "DD_VERSION",
+      "const_name": "ServiceVersion"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "const_name": "ExporterOtlpEndpoint"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT",
+      "const_name": "ExporterOtlpLogsTimeoutMs"
+    },
+    {
+      "env_var": "DD_LOGS_OTEL_ENABLED",
+      "const_name": "OpenTelemetryLogsEnabled"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+      "const_name": "ExporterOtlpLogsHeaders"
+    },
+    {
+      "env_var": "OTEL_LOGS_EXPORTER",
+      "const_name": "LogsExporter"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+      "const_name": "ExporterOtlpLogsEndpoint"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_HEADERS",
+      "const_name": "ExporterOtlpHeaders"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+      "const_name": "ExporterOtlpMetricsEndpoint"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
+      "const_name": "ExporterOtlpMetricsHeaders"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+      "const_name": "ExporterOtlpMetricsProtocol"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+      "const_name": "ExporterOtlpMetricsTemporalityPreference"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT",
+      "const_name": "ExporterOtlpMetricsTimeoutMs"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_PROTOCOL",
+      "const_name": "ExporterOtlpProtocol"
+    },
+    {
+      "env_var": "OTEL_EXPORTER_OTLP_TIMEOUT",
+      "const_name": "ExporterOtlpTimeoutMs"
+    },
+    {
+      "env_var": "OTEL_LOG_LEVEL",
+      "const_name": "LogLevel"
+    },
+    {
+      "env_var": "OTEL_METRICS_EXPORTER",
+      "const_name": "MetricsExporter"
+    },
+    {
+      "env_var": "OTEL_METRIC_EXPORT_INTERVAL",
+      "const_name": "MetricExportIntervalMs"
+    },
+    {
+      "env_var": "OTEL_METRIC_EXPORT_TIMEOUT",
+      "const_name": "MetricExportTimeoutMs"
+    },
+    {
+      "env_var": "OTEL_PROPAGATORS",
+      "const_name": "Propagators"
+    },
+    {
+      "env_var": "OTEL_RESOURCE_ATTRIBUTES",
+      "const_name": "ResourceAttributes"
+    },
+    {
+      "env_var": "OTEL_SDK_DISABLED",
+      "const_name": "SdkDisabled"
+    },
+    {
+      "env_var": "OTEL_SERVICE_NAME",
+      "const_name": "ServiceName"
+    },
+    {
+      "env_var": "OTEL_TRACES_EXPORTER",
+      "const_name": "TracesExporter"
+    },
+    {
+      "env_var": "OTEL_TRACES_SAMPLER",
+      "const_name": "TracesSampler"
+    },
+    {
+      "env_var": "OTEL_TRACES_SAMPLER_ARG",
+      "const_name": "TracesSamplerArg"
+    },
+    {
+      "env_var": "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY",
+      "const_name": "IsRunningInCiVisMode"
+    },
+    {
+      "env_var": "_DD_TRACE_STATS_COMPUTATION_INTERVAL",
+      "const_name": "StatsComputationInterval"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        public void RecordTracerSettings(TracerSettings settings)
+        public void RecordTracerSettings(MutableSettings settings)
         {
             for (var i = 0; i < settings.Integrations.Settings.Length; i++)
             {

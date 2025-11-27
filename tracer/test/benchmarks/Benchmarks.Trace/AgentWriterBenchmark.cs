@@ -8,6 +8,7 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
@@ -15,27 +16,18 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     [BenchmarkAgent1]
     [BenchmarkCategory(Constants.TracerCategory)]
-
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
 
-        private static readonly IAgentWriter AgentWriter;
-        private static readonly ArraySegment<Span> EnrichedSpans;
-        static AgentWriterBenchmark()
+        private IAgentWriter _agentWriter;
+        private ArraySegment<Span> _enrichedSpans;
+
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            var overrides = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
-                { ConfigurationKeys.TraceEnabled, false.ToString() },
-            });
-            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
-            var settings = new TracerSettings(sources);
-
-            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
-
-            AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
-
+            // Create spans in GlobalSetup, not static constructor
+            // This ensures BenchmarkDotNet excludes allocation overhead from measurements
             var enrichedSpans = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
@@ -46,10 +38,27 @@ namespace Benchmarks.Trace
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            EnrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            // Run benchmarks once to reduce noise
-            new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+            var overrides = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
+                { ConfigurationKeys.TraceEnabled, false.ToString() },
+            });
+            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
+            var settings = new TracerSettings(sources);
+
+            var api = new Api(
+                new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
+                statsd: new StatsdManager(settings, (_, _) => null!),
+                updateSampleRates: null,
+                partialFlushEnabled: false,
+                healthMetricsEnabled: false);
+
+            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
+
+            // Warmup to reduce noise
+            WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -58,8 +67,8 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushEnrichedTraces()
         {
-            AgentWriter.WriteTrace(EnrichedSpans);
-            return AgentWriter.FlushTracesAsync();
+            _agentWriter.WriteTrace(_enrichedSpans);
+            return _agentWriter.FlushTracesAsync();
         }
 
         /// <summary>

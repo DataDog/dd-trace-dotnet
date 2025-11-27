@@ -17,16 +17,17 @@ namespace Benchmarks.Trace
 
         static TraceAnnotationsBenchmark()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
             var targetMethod = typeof(TraceAnnotationsBenchmark).GetMethod("InstrumentedMethod");
             MethodHandle = targetMethod.MethodHandle;
             TypeHandle = targetMethod.DeclaringType.TypeHandle;
+        }
 
-            var bench = new TraceAnnotationsBenchmark();
-            bench.RunOnMethodBegin();
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
+
+            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
         }
 
         [Benchmark]

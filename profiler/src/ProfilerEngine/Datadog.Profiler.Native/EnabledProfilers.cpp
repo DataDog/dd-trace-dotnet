@@ -60,6 +60,11 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
             _enabledProfilers |= RuntimeProfiler::Network;
         }
 
+        if (pConfiguration->IsHeapSnapshotEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::HeapSnapshot;
+        }
+
         // TODO: add new CLR event driven profilers
     }
 }

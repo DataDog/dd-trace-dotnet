@@ -88,12 +88,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                return TraceUtil.NormalizeTag(tracerSettings.MutableSettings.DefaultServiceName);
+                return TraceUtil.NormalizeTag(tracerSettings.Manager.InitialMutableSettings.DefaultServiceName);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                return tracerSettings.MutableSettings.DefaultServiceName;
+                return tracerSettings.Manager.InitialMutableSettings.DefaultServiceName;
             }
         }
 
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            if (tracerSettings.StartupDiagnosticLogEnabled)
+            if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }

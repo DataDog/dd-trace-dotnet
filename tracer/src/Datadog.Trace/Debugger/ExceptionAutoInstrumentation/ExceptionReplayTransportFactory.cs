@@ -48,7 +48,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static ExceptionReplayTransportInfo CreateAgentTransport(TracerSettings tracerSettings, IDiscoveryService discoveryService)
         {
             var apiFactory = Agent.AgentTransportStrategy.Get(
-                tracerSettings.Exporter,
+                tracerSettings.Manager.InitialExporterSettings,
                 productName: "exception-replay",
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 AgentHttpHeaderNames.MinimalHeaders,

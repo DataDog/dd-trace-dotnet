@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
