@@ -114,8 +114,15 @@ echo "Available files: $(ls -la)"
 
 # Run Computer01 with PI computation for 15 seconds
 echo ""
-echo "=== Starting Computer01 with PI computation (15 seconds) ==="
-RUN_CMD=(dotnet Samples.Computer01.dll --timeout 15 --scenario PiComputation)
+# Default to ManagedStackExercise (23), allow override with TEST_SCENARIO env var
+# e.g., TEST_SCENARIO=4 for PiComputation
+TEST_SCENARIO="${TEST_SCENARIO:-23}"
+SCENARIO_NAME="ManagedStackExercise"
+if [ "$TEST_SCENARIO" = "4" ]; then
+    SCENARIO_NAME="PiComputation"
+fi
+echo "=== Starting Computer01 with $SCENARIO_NAME scenario (15 seconds) ==="
+RUN_CMD=(dotnet Samples.Computer01.dll --timeout 15 --scenario "$TEST_SCENARIO")
 # Configure gdb to not stop on profiler signals
 if [ "${ENABLED_DEBUGGER:-}" = "True" ]; then
     echo "ENABLED_DEBUGGER=True detected: launching application under gdb"
