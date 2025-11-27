@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -40,8 +41,11 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly TimeSpan _delay;
 
+#if NETFRAMEWORK
+        private readonly Task _pushEventsTask;
+#else
         private readonly Timer _timer;
-
+#endif
         private readonly IRuntimeMetricsListener _listener;
 
         private readonly bool _enableProcessMetrics;
@@ -122,7 +126,14 @@ namespace Datadog.Trace.RuntimeMetrics
                 Log.Warning(ex, "Unable to initialize runtime listener, some runtime metrics will be missing");
             }
 
+#if NETFRAMEWORK
+            // This delay is set to infinite in tests, so don't start the loop in that case
+            _pushEventsTask = delay != Timeout.InfiniteTimeSpan
+                                  ? Task.Factory.StartNew(PushEventsLoop, TaskCreationOptions.LongRunning)
+                                  : Task.CompletedTask;
+#else
             _timer = new Timer(_ => PushEvents(), null, delay, Timeout.InfiniteTimeSpan);
+#endif
         }
 
         /// <summary>
@@ -139,6 +150,12 @@ namespace Datadog.Trace.RuntimeMetrics
             }
 
             Log.Debug("Disposing Runtime Metrics timer");
+#if NETFRAMEWORK
+            if (!_pushEventsTask.Wait(TimeSpan.FromMilliseconds(5_000)))
+            {
+                Log.Warning("Failed to dispose Runtime Metrics timer after 5 seconds");
+            }
+#else
             // Callbacks can occur after the Dispose() method overload has been called,
             // because the timer queues callbacks for execution by thread pool threads.
             // Using the Dispose(WaitHandle) method overload to waits until all callbacks have completed.
@@ -150,7 +167,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     Log.Warning("Failed to dispose Runtime Metrics timer after 5 seconds");
                 }
             }
-
+#endif
             Log.Debug("Disposing other resources for Runtime Metrics");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
@@ -160,12 +177,21 @@ namespace Datadog.Trace.RuntimeMetrics
             _exceptionCounts.Clear();
         }
 
-        internal void PushEvents()
+#if NETFRAMEWORK
+        internal void PushEventsLoop()
+        {
+            while (PushEvents())
+            {
+            }
+        }
+#endif
+
+        internal bool PushEvents()
         {
             if (Volatile.Read(ref _disposed) == 1)
             {
                 Log.Debug("Runtime metrics is disposed and can't push new events");
-                return;
+                return false;
             }
 
             var now = DateTime.UtcNow;
@@ -259,6 +285,24 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 var callbackExecutionDuration = DateTime.UtcNow - now;
 
+#if NETFRAMEWORK
+                // Ideally we'd wait for the full time, but we need to make sure we shutdown in a relatively timely fashion
+                const int loopDurationMs = 200;
+                var newDelay = (int)(_delay - callbackExecutionDuration).TotalMilliseconds;
+
+                // Missed it, so just reset
+                if (newDelay <= 0)
+                {
+                    newDelay = (int)_delay.TotalMilliseconds;
+                }
+
+                while (newDelay > 0 && Volatile.Read(ref _disposed) == 0)
+                {
+                    var sleepDuration = Math.Min(newDelay, loopDurationMs);
+                    Thread.Sleep(sleepDuration);
+                    newDelay -= sleepDuration;
+                }
+#else
                 var newDelay = _delay - callbackExecutionDuration;
 
                 if (newDelay < TimeSpan.Zero)
@@ -273,7 +317,10 @@ namespace Datadog.Trace.RuntimeMetrics
                 catch (ObjectDisposedException)
                 {
                 }
+#endif
             }
+
+            return true;
         }
 
         private static IRuntimeMetricsListener InitializeListener(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext)
