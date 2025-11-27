@@ -25,7 +25,6 @@ check_azure_pipeline:
     expire_in: 3 months
   tags: ["arch:amd64"]
   timeout: 1h
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -50,7 +49,6 @@ dsm_throughput:
     paths:
       - artifacts/
     expire_in: 3 months
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
