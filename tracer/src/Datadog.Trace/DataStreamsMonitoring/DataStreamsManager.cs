@@ -28,6 +28,7 @@ internal class DataStreamsManager
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDisposable _updateSubscription;
+    private readonly bool _isLegacyDsmHeadersEnabled;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private bool _isEnabled;
     private bool _isInDefaultState;
@@ -40,6 +41,7 @@ internal class DataStreamsManager
     {
         UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings);
         _isEnabled = writer is not null;
+        _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
@@ -129,7 +131,7 @@ internal class DataStreamsManager
             return;
         }
 
-        DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
+        DataStreamsContextPropagator.Instance.Inject(context.Value, headers, _isLegacyDsmHeadersEnabled);
     }
 
     public void TrackBacklog(string tags, long value)
