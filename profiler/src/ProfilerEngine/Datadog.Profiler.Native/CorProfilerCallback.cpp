@@ -2023,6 +2023,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     return S_OK;
 }
 
+
+#ifdef LINUX
+extern "C" unsigned long long dd_inside_wrapped_functions2() __attribute__((weak));
+#endif
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId)
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
@@ -2098,6 +2103,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // initializing the TLS'd data structures for the current thread.
     uintptr_t tab[1];
     unw_backtrace((void**)tab, 1);
+    if (dd_inside_wrapped_functions2 != nullptr)
+    {
+        dd_inside_wrapped_functions2();
+    }
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
