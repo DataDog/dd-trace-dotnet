@@ -25,6 +25,8 @@ namespace Datadog.Trace.Tools.Analyzers.SealedAnalyzer;
 [ExportCodeFixProvider(LanguageNames.CSharp)]
 public sealed class SealedAnalyzerCodeFixProvider : CodeFixProvider
 {
+    private const string Title = "Seal class";
+
     /// <inheritdoc/>
     public override ImmutableArray<string> FixableDiagnosticIds { get; } = ImmutableArray.Create(Diagnostics.DiagnosticId);
 
@@ -35,9 +37,9 @@ public sealed class SealedAnalyzerCodeFixProvider : CodeFixProvider
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var codeAction = CodeAction.Create(
-            "Seal class",
+            Title,
             SealClassDeclarationsAsync,
-            "Seal class");
+            Title);
         context.RegisterCodeFix(codeAction, context.Diagnostics);
         return Task.CompletedTask;
 
