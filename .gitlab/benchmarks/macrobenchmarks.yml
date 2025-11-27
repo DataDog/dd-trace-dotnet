@@ -34,7 +34,6 @@ check_azure_pipeline:
     expire_in: 3 months
   tags: ["arch:amd64"]
   timeout: 1h
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -88,7 +87,6 @@ update-bp-infra:
       - scheduler_failure
       - api_failure
       - script_failure
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -273,7 +271,6 @@ profiler_cpu_timer_create-x86:
       - scheduler_failure
       - api_failure
       - script_failure
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -469,7 +466,6 @@ profiler_cpu_timer_create-arm64:
       - scheduler_failure
       - api_failure
       - script_failure
-  when: on_success
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
