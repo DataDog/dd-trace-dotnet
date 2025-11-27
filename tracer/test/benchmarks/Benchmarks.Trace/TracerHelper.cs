@@ -34,7 +34,7 @@ public static class TracerHelper
         Tracer.UnsafeSetTracerInstance(CreateTracer(config));
     }
 
-    public static void CleanupGlobalTracer(Dictionary<string, object> config = null)
+    public static void CleanupGlobalTracer()
     {
         Tracer.Instance.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
         Tracer.UnsafeSetTracerInstance(null);
