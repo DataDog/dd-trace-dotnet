@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -21,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsDynamoDb;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, out AwsDynamoDbTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
 
@@ -32,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -61,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             return scope;
         }
 
-        public static void TagTableNameAndResourceName(string tableName, AwsDynamoDbTags tags, Scope scope)
+        public static void TagTableNameAndResourceName(string? tableName, AwsDynamoDbTags? tags, Scope? scope)
         {
             if (scope == null || tags == null || tableName == null)
             {
@@ -73,16 +75,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             span.ResourceName = $"{span.ResourceName} {tableName}";
         }
 
-        public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags tags, Scope scope)
+        public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags? tags, Scope? scope)
             where TBatchRequest : IBatchRequest
         {
-            if (request.RequestItems.Count != 1)
+            if (request.RequestItems?.Count != 1)
             {
                 return;
             }
 
             // TableName tagging only when batch is from one table.
             var iterator = request.RequestItems.GetEnumerator();
+            using var disposable = iterator as IDisposable;
             while (iterator.MoveNext())
             {
                 var tableName = iterator.Key as string;

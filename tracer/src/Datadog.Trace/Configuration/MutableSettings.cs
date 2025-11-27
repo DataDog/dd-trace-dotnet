@@ -61,8 +61,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ReadOnlyDictionary<string, string> serviceNameMappings,
         string? gitRepositoryUrl,
         string? gitCommitSha,
-        OverrideErrorLog errorLog,
-        IConfigurationTelemetry telemetry)
+        OverrideErrorLog errorLog)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -92,7 +91,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
-        Telemetry = telemetry;
     }
 
     // Settings that can be set via remote config
@@ -262,8 +260,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     internal bool IsInitialSettings { get; }
 
     internal OverrideErrorLog ErrorLog { get; }
-
-    internal IConfigurationTelemetry Telemetry { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
@@ -737,8 +733,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog,
-            telemetry: telemetry);
+            errorLog: errorLog);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -1071,8 +1066,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog,
-            telemetry: telemetry);
+            errorLog: errorLog);
     }
 
     /// <summary>
@@ -1080,9 +1074,16 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// by excluding all the default sources. Effectively gives all the settings their default
     /// values. Should only be used with the manual instrumentation source
     /// </summary>
-    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings)
+    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings, ConfigurationTelemetry telemetry)
         => CreateInitialMutableSettings(
             NullConfigurationSource.Instance,
+            telemetry,
+            new OverrideErrorLog(),
+            tracerSettings);
+
+    public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
+        => CreateInitialMutableSettings(
+            new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
             new ConfigurationTelemetry(),
             new OverrideErrorLog(),
             tracerSettings);

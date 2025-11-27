@@ -29,12 +29,8 @@ internal class DataStreamsContextPropagator
     /// </summary>
     /// <param name="context">A <see cref="PathwayContext"/> value that will be propagated into <paramref name="headers"/>.</param>
     /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
+    /// <param name="isDataStreamsLegacyHeadersEnabled">Are legacy DSM headers enabled</param>
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
-    public void Inject<TCarrier>(PathwayContext context, TCarrier headers)
-        where TCarrier : IBinaryHeadersCollection
-        => Inject(context, headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
-
-    [TestingAndPrivateOnly]
     internal void Inject<TCarrier>(PathwayContext context, TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
         where TCarrier : IBinaryHeadersCollection
     {

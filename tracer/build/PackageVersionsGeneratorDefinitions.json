@@ -292,14 +292,17 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "10.0.0",
+    "MaxVersionExclusive": "11.0.0",
     "SpecificVersions": [
       "4.*.*",
       "6.*.*",
-      "8.*.*",
-      "9.*.*"
+      "9.*.*",
+      "10.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "10.0.0",
+      "ExcludeTargetFrameworks": ["net48","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    },{
       "MinVersion": "9.0.0",
       "ExcludeTargetFrameworks": ["net48","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     },{
@@ -760,10 +763,11 @@
     "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
     "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
     "MinVersion": "8.0.0",
-    "MaxVersionExclusive": "10.0.0",
+    "MaxVersionExclusive": "11.0.0",
     "SpecificVersions": [
       "8.*.*",
-      "9.*.*"
+      "9.*.*",
+      "10.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "9.0.0",

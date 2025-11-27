@@ -85,6 +85,11 @@ public:
     bool IsWaitHandleProfilingEnabled() const override;
     bool IsManagedActivationEnabled() const override;
     void SetEnablementStatus(EnablementStatus status) override;
+    bool IsHeapSnapshotEnabled() const override;
+    std::chrono::minutes GetHeapSnapshotInterval() const override;
+    std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
+    uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
+
 
 private:
     static tags ExtractUserTags();
@@ -110,6 +115,9 @@ private:
     EnablementStatus ExtractEnablementStatus();
     std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
     std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
+    std::chrono::minutes ExtractHeapSnapshotInterval() const;
+    std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
+    std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -123,6 +131,8 @@ private:
     static std::chrono::seconds const DefaultProdUploadInterval;
     static std::chrono::milliseconds const DefaultCpuProfilingInterval;
     static CpuProfilerType const DefaultCpuProfilerType;
+    static std::chrono::minutes const DefaultDevHeapSnapshotInterval;
+    static std::chrono::minutes const DefaultProdHeapSnapshotInterval;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -187,4 +197,9 @@ private:
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
     bool _isWaitHandleProfilingEnabled;
+
+    bool _isHeapSnapshotEnabled;
+    std::chrono::minutes _heapSnapshotInterval;
+    std::chrono::milliseconds _heapSnapshotCheckInterval;
+    uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
 };

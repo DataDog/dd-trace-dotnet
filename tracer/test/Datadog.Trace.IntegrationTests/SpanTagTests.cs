@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.IntegrationTests
         public SpanTagTests()
         {
             _testApi = new MockApi();
-            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
 
         [Fact]

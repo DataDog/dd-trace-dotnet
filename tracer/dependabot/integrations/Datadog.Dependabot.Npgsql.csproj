@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Npgsql -->
     <!--    Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/9.0.4 -->
-    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/10.0.0 -->
+    <PackageReference Include="Npgsql" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
