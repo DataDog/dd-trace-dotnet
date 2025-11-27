@@ -518,6 +518,13 @@ void RegisterJitMethodMetadata(
 
 #ifdef ARM64
     const auto prologueSummary = AnalyzeArm64Prologue(minStart, prologSize, maxEnd);
+    
+    if (Log::IsDebugEnabled())
+    {
+        Log::Debug("JITCompilationFinished: fpOff=", prologueSummary.SavedFpOffset, 
+                   " lrOff=", prologueSummary.SavedLrOffset,
+                   " prologLen=", prologueSummary.PrologLength);
+    }
 #endif
 
     if (Log::IsDebugEnabled())
@@ -1071,6 +1078,7 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuSampleProvider,
+            nullptr, // LinuxStackFramesCollector not needed for static hybrid unwinding
             _metricsRegistry);
     }
 #endif

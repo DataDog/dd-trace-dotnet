@@ -11,7 +11,7 @@ The aim is to push this logic to libunwind in time. However to iterate faster, w
 
 ## Build & Test
 
-Build the image
+Build the image. Sadly this is alpine so crash analysis can be tricky.
 
 ```bash
 #

@@ -45,6 +45,9 @@ public:
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
 
+    // Public static method for CPU profiler to use hybrid unwinding
+    static std::int32_t CollectStackHybridStatic(void* ctx, uintptr_t* buffer, size_t bufferSize);
+
 protected:
     // Linux collector is different from Windows:
     // There is no notion to Suspend/Resume a thread and to have an external thread walk the suspended thread.
@@ -80,7 +83,8 @@ private:
 
     // Hybrid unwinding helper methods
     bool IsManagedCode(uintptr_t instructionPointer);
-    std::int32_t UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip);
+    std::int32_t UnwindManagedFrameManually(unw_cursor_t* cursor, uintptr_t ip, unw_context_t* original_context);
+    std::int32_t WalkManagedStackChain(uintptr_t initial_ip, uintptr_t initial_fp, uintptr_t initial_sp);
     bool ReadStackMemory(uintptr_t address, void* buffer, size_t size);
     bool IsValidReturnAddress(uintptr_t address);
     size_t EstimateStackFrameSize(uintptr_t ip);

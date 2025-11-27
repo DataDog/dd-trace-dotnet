@@ -22,6 +22,7 @@ class IThreadInfo;
 class IManagedThreadList;
 class ProfilerSignalManager;
 class CpuSampleProvider;
+class LinuxStackFramesCollector;
 
 class TimerCreateCpuProfiler : public ServiceBase
 {
@@ -31,6 +32,7 @@ public:
         ProfilerSignalManager* pSignalManager,
         IManagedThreadList* pManagedThreadsList,
         CpuSampleProvider* pProvider,
+        LinuxStackFramesCollector* pStackFramesCollector,
         MetricsRegistry& metricsRegistry) noexcept;
 
     ~TimerCreateCpuProfiler();
@@ -55,6 +57,8 @@ private:
     ProfilerSignalManager* _pSignalManager;
     IManagedThreadList* _pManagedThreadsList;
     CpuSampleProvider* _pProvider;
+    LinuxStackFramesCollector* _pStackFramesCollector;
+    IConfiguration const* _pConfiguration;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
     std::shared_ptr<CounterMetric> _totalSampling;
