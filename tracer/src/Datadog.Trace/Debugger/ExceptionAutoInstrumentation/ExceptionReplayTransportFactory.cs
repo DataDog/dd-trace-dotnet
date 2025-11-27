@@ -30,14 +30,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (string.IsNullOrWhiteSpace(settings.AgentlessApiKey))
             {
-                Log.Warning("Exception Replay agentless uploads enabled but DD_API_KEY is not set. Falling back to agent transport.");
-                return CreateAgentTransport(tracerSettings, discoveryService);
+                Log.Error("Exception Replay agentless uploads enabled but DD_API_KEY is not set. Disabling Exception Replay.");
+                throw new InvalidOperationException("Exception Replay agentless mode requires DD_API_KEY.");
             }
 
             if (!TryResolveAgentlessEndpoint(settings, out var baseUri, out var relativePath))
             {
-                Log.Warning("Exception Replay agentless uploads enabled but a valid intake URL could not be determined. Falling back to agent transport.");
-                return CreateAgentTransport(tracerSettings, discoveryService);
+                Log.Error("Exception Replay agentless uploads enabled but a valid intake URL could not be determined. Disabling Exception Replay.");
+                throw new InvalidOperationException("Exception Replay agentless mode requires a valid intake URL.");
             }
 
             var apiFactory = DebuggerTransportStrategy.Get(baseUri);
