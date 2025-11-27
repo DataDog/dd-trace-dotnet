@@ -255,7 +255,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // CallSite stuff
+    // Legacy callSite stuff
     if (!IsCallSiteManagedActivationEnabled())
     {
         Logger::Info("Callsite managed activation is disabled.");
@@ -1301,8 +1301,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler = nullptr;
     }
 
-    DEL(_dataflow);
-
     auto definitions = definitions_ids.Get();
 
     Logger::Info("Exiting...");
@@ -2072,10 +2070,12 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    auto definitions = definitions_ids.Get(); // Synchronize Aspects loading
 
     auto dataflow = _dataflow;
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
+        Logger::Debug("Creating Dataflow.");
         dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
     }
 
@@ -2090,6 +2090,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     {
         Logger::Info("Callsite instrumentation is disabled.");
     }
+
     return 0;
 }
 
