@@ -83,13 +83,28 @@ DD_INTERNAL_USE_HYBRID_UNWINDING=1 ./tracer/build_in_docker.sh BuildProfilerHome
 DD_INTERNAL_USE_HYBRID_UNWINDING=1 ./tracer/build_in_docker.sh BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform x64 --filter "Category=Smoke"
 ```
 
+### Specific unwinding test
+
+Build samples first (from root)
+
+```bash
+cd tracer
+./build.sh BuildProfilerSamples --BuildConfiguration Debug
+```
+
+Then run the test (from root)
+```bash
+cd profiler/test/Datadog.Profiler.IntegrationTests
+dotnet test --filter "FullyQualifiedName~CheckHybridUnwindingCapturesDeepManagedStacks"   --logger "console;verbosity=detailed"   -c Debug   -e DD_INTERNAL_USE_HYBRID_UNWINDING=1
+```
+
 ### Manual test with logging
 ```bash
 # Rebuild with hybrid unwinding enabled
 DD_INTERNAL_USE_HYBRID_UNWINDING=1 ./tracer/build_in_docker.sh BuildProfilerHome
 
 # Run test script (see test_hybrid_unwinding.sh)
-DD_TRACE_DEBUG=1 ./test_hybrid_unwinding.sh
+./test_hybrid_unwinding.sh
 
 # Check logs
 cat test_logs/DD-DotNet-Profiler-Native-*.log
@@ -98,13 +113,14 @@ cat test_logs/DD-DotNet-Profiler-Native-*.log
 ## Key Files
 
 - `LinuxStackFramesCollector.cpp`: Hybrid unwinding logic (`CollectStackHybrid`)
-- `LibrariesInfoCache.cpp`: Signal-safe managed region detection
-- `test_hybrid_unwinding.sh`: Simple .NET 10 test harness
+- `test_hybrid_unwinding.sh`: Simple .NET 10 test
 
 
 ## How to sync
 
-```
+I send files over to a different arch (workspaces)
+
+```bash
 rsync -avz --delete \
   --exclude 'build/' --exclude '.cache/' --exclude packages/ --exclude artifacts/ \
   --exclude build_data/ --exclude bin/Release/ \
