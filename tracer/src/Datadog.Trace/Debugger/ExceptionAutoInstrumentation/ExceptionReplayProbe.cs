@@ -191,6 +191,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// </summary>
         private void TryRefreshSingleFrameProbeStatus()
         {
+            // Only apply this patch to the test optimization product
+            if (!Datadog.Trace.Ci.TestOptimization.Instance.IsRunning)
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(ProbeId))
             {
                 return;
