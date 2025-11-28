@@ -22,8 +22,6 @@ internal class ApmAgentWriter : IEventWriter
 {
     private const int DefaultMaxBufferSize = 1024 * 1024 * 10;
 
-    [ThreadStatic]
-    private static Span[]? _spanArray;
     private readonly AgentWriter _agentWriter;
 
     public ApmAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
@@ -48,17 +46,9 @@ internal class ApmAgentWriter : IEventWriter
     {
         // To keep compatibility with the agent version of the payload, any IEvent conversion to span
         // goes here.
-
-        if (_spanArray is not { } spanArray)
-        {
-            spanArray = new Span[1];
-            _spanArray = spanArray;
-        }
-
         if (CIVisibilityEventsFactory.GetSpan(@event) is { } span)
         {
-            spanArray[0] = span;
-            WriteTrace(new ArraySegment<Span>(spanArray));
+            WriteTrace(new SpanCollection(span));
         }
     }
 
@@ -77,8 +67,8 @@ internal class ApmAgentWriter : IEventWriter
         return _agentWriter.Ping();
     }
 
-    public void WriteTrace(ArraySegment<Span> trace)
+    public void WriteTrace(in SpanCollection trace)
     {
-        _agentWriter.WriteTrace(trace);
+        _agentWriter.WriteTrace(in trace);
     }
 }

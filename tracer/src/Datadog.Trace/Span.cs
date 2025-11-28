@@ -47,10 +47,8 @@ namespace Datadog.Trace
 
             if (links is not null)
             {
-                foreach (var link in links)
-                {
-                    AddLink(link);
-                }
+                // We know we're not finished and this allows optimizations vs using AddLink()
+                SpanLinks = [..links];
             }
 
             if (IsLogLevelDebugEnabled)
