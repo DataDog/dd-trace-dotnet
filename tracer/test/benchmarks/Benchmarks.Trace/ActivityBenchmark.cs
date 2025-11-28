@@ -29,17 +29,25 @@ public class ActivityBenchmark
 
     private Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
     private ActivitySource _source;
+    private ActivityListener _activityListener;
 
     [GlobalSetup]
     public void GlobalSetup()
     {
         _source = new ActivitySource(SourceName);
 
-        var activityListener = new ActivityListener { ShouldListenTo = _ => true, Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData };
+        _activityListener = new ActivityListener { ShouldListenTo = _ => true, Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData };
 
-        ActivitySource.AddActivityListener(activityListener);
+        ActivitySource.AddActivityListener(_activityListener);
 
         _duckSource = new Datadog.Trace.Activity.DuckTypes.ActivitySource { Name = _source.Name, Version = _source.Version ?? string.Empty };
+    }
+
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+        _source.Dispose();
+        _activityListener.Dispose();
     }
 
     [Benchmark]

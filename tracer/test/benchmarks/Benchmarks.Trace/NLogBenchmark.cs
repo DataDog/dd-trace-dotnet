@@ -13,22 +13,16 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class NLogBenchmark
     {
-        private Tracer _logInjectionTracer;
         private NLog.Logger _logger;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
+            var settings = TracerHelper.DefaultConfig;
+            settings[ConfigurationKeys.LogsInjectionEnabled] = true;
+            settings[ConfigurationKeys.Environment] = "env";
+            settings[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(settings);
 
             var config = new LoggingConfiguration();
 
@@ -52,12 +46,19 @@ namespace Benchmarks.Trace
             _ = DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc;
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            LogManager.Shutdown();
+            TracerHelper.CleanupGlobalTracer();
+        }
+
         [Benchmark]
         public void EnrichedLog()
         {
-            using (_logInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (_logInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
                     // None of the arguments are used directly
                     // First arg is a marker type, so needs to be an NLog type

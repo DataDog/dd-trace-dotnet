@@ -35,19 +35,22 @@ namespace Benchmarks.Trace
 
             _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            var overrides = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
-                { ConfigurationKeys.TraceEnabled, false.ToString() },
-            });
-            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
-            var settings = new TestOptimizationSettings(sources, NullConfigurationTelemetry.Instance);
+            var config = TracerHelper.DefaultConfig;
+            config[ConfigurationKeys.TraceEnabled] = false;
+            var settings = new TestOptimizationSettings(new DictionaryObjectConfigurationSource(config), NullConfigurationTelemetry.Instance);
 
             _eventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter());
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
         }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _eventWriter.FlushAndCloseAsync();
+        }
+
 
         /// <summary>
         /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)

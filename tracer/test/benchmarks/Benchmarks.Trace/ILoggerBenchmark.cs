@@ -15,42 +15,49 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ILoggerBenchmark
     {
-        private Tracer _logInjectionTracer;
         private ILogger _logger;
+        private ServiceProvider _serviceProvider;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
+            var config = TracerHelper.DefaultConfig;
+            config[ConfigurationKeys.LogsInjectionEnabled] = true;
+            config[ConfigurationKeys.Environment] = "env";
+            config[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(config);
 
             var services = new ServiceCollection();
             services.AddLogging();
 
             services.AddSingleton<ILoggerProvider, TestProvider>();
 
-            var serviceProvider = services.BuildServiceProvider();
+            _serviceProvider = services.BuildServiceProvider();
 
-            _logger = serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
+            _logger = _serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
 
             // Warmup
             EnrichedLog();
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            if (_logger is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            _serviceProvider.Dispose();
+            TracerHelper.CleanupGlobalTracer();
+        }
+
         [Benchmark]
         public void EnrichedLog()
         {
-            using (_logInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (_logInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
                     _logger.LogInformation("Hello");
                 }

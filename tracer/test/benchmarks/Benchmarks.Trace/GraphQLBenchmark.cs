@@ -19,12 +19,16 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+            TracerHelper.SetGlobalTracer();
 
             _context = new ExecutionContext();
             _client = new GraphQLClient(_result);
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]

@@ -35,6 +35,17 @@ public class AppSecEncoderBenchmark
         _args = MakeNestedMap(20);
     }
 
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+        AppSecBenchmarkUtils.CleanupDummyAgent();
+        AppSecBenchmarkUtils.CleanupWafLibraryInvoker();
+        if (Encoder.Pool is { IsDisposed: false } pool)
+        {
+            pool.Dispose();
+        }
+    }
+
     /// <summary>
     /// Generates dummy arguments for the waf
     /// </summary>
