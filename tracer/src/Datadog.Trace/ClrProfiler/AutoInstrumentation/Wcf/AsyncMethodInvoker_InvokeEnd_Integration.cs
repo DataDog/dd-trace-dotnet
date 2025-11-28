@@ -1,4 +1,4 @@
-﻿// <copyright file="AsyncMethodInvoker_InvokeEnd_Integration.cs" company="Datadog">
+// <copyright file="AsyncMethodInvoker_InvokeEnd_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AsyncMethodInvoker_InvokeEnd_Integration
+    public sealed class AsyncMethodInvoker_InvokeEnd_Integration
     {
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? instanceArg, object[]? outputs, IAsyncResult? result)
         {

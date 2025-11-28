@@ -1,4 +1,4 @@
-﻿// <copyright file="AerospikeCommon.cs" company="Datadog">
+// <copyright file="AerospikeCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
-    internal static class AerospikeCommon
+    internal sealed class AerospikeCommon
     {
         private const string DatabaseType = "aerospike";
         private const string OperationName = "aerospike.command";

@@ -1,4 +1,4 @@
-﻿// <copyright file="AwsSnsHandlerCommon.cs" company="Datadog">
+// <copyright file="AwsSnsHandlerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 
-internal static class AwsSnsHandlerCommon
+internal sealed class AwsSnsHandlerCommon
 {
     public static CallTargetState BeforePublish<TPublishRequest>(TPublishRequest request, SendType sendType)
     {

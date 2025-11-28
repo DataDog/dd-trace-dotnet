@@ -1,4 +1,4 @@
-﻿// <copyright file="MapExtensionsMapIntegrationV2V3.cs" company="Datadog">
+// <copyright file="MapExtensionsMapIntegrationV2V3.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class MapExtensionsMapIntegrationV2V3
+public sealed class MapExtensionsMapIntegrationV2V3
 {
     internal static CallTargetState OnMethodBegin<TTarget, TApp, TPathMatch, TConfiguration>(ref TApp? app, ref TPathMatch pathMatch, ref TConfiguration? configuration)
     {

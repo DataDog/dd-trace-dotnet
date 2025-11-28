@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
+// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class KafkaProduceSyncDeliveryHandlerIntegration
+    public sealed class KafkaProduceSyncDeliveryHandlerIntegration
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(KafkaProduceSyncDeliveryHandlerIntegration));
 
@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// Helper class for creating a <typeparamref name="TActionDelegate"/> that wraps an <see cref="Action{T}"/>,
         /// </summary>
         /// <typeparam name="TActionDelegate">Makes the assumption that TActionDelegate is an <see cref="Action{T}"/></typeparam>
-        internal static class CachedWrapperDelegate<TActionDelegate>
+        internal sealed class CachedWrapperDelegate<TActionDelegate>
         {
             private static readonly CreateWrapperDelegate _createWrapper;
 

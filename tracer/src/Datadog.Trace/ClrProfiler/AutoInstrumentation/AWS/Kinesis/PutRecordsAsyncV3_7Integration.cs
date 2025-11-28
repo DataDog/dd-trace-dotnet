@@ -1,4 +1,4 @@
-﻿// <copyright file="PutRecordsAsyncV3_7Integration.cs" company="Datadog">
+// <copyright file="PutRecordsAsyncV3_7Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class PutRecordsAsyncV3_7Integration
+    public sealed class PutRecordsAsyncV3_7Integration
     {
         private const string Operation = "PutRecords";
 

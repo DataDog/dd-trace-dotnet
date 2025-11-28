@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionMultiplexerSelectServerIntegration.cs" company="Datadog">
+// <copyright file="ConnectionMultiplexerSelectServerIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange;
     IntegrationName = StackExchangeRedisHelper.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class ConnectionMultiplexerSelectServerIntegration
+public sealed class ConnectionMultiplexerSelectServerIntegration
 {
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult result, Exception exception, in CallTargetState state)
     {

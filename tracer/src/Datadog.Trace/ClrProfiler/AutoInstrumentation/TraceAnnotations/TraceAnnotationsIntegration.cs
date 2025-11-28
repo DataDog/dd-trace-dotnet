@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceAnnotationsIntegration.cs" company="Datadog">
+// <copyright file="TraceAnnotationsIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class TraceAnnotationsIntegration
+    public sealed class TraceAnnotationsIntegration
     {
         internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
         private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();

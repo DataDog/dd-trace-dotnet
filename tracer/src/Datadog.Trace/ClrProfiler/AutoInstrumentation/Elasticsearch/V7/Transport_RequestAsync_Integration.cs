@@ -1,4 +1,4 @@
-﻿// <copyright file="Transport_RequestAsync_Integration.cs" company="Datadog">
+// <copyright file="Transport_RequestAsync_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class Transport_RequestAsync_Integration
+    public sealed class Transport_RequestAsync_Integration
     {
         /// <summary>
         /// OnMethodBegin callback
