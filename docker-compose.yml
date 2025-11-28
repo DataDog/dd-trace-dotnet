@@ -942,6 +942,8 @@ services:
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -966,6 +968,8 @@ services:
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -988,6 +992,8 @@ services:
         # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1010,6 +1016,8 @@ services:
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1032,6 +1040,8 @@ services:
         # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1054,6 +1064,8 @@ services:
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1076,6 +1088,8 @@ services:
         # - PUBLISH_FRAMEWORK=
     image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1099,6 +1113,8 @@ services:
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1122,6 +1138,8 @@ services:
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1147,6 +1165,8 @@ services:
         # - RUNTIME_IDENTIFIER=
     image: dd-trace-dotnet/${dockerTag:-not-set}-trimming-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
