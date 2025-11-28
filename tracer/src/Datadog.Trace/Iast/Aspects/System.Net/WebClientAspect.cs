@@ -1,4 +1,4 @@
-﻿// <copyright file="WebClientAspect.cs" company="Datadog">
+// <copyright file="WebClientAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 [AspectClass("System.Net.WebClient,System", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class WebClientAspect
+public sealed class WebClientAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url is tainted

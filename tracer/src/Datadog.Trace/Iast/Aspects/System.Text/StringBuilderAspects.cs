@@ -1,4 +1,4 @@
-﻿// <copyright file="StringBuilderAspects.cs" company="Datadog">
+// <copyright file="StringBuilderAspects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Text;
 [AspectClass("mscorlib,netstandard,System.Runtime")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class StringBuilderAspects
+public sealed class StringBuilderAspects
 {
     /// <summary> StringBuildr ctor aspect </summary>
     /// <param name="value"> Init string </param>
