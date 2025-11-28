@@ -12,7 +12,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> String class aspects </summary>
-internal class DebugAspects
+internal sealed class DebugAspects
 {
     private interface ITestStruct
     {

@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting
 {
-    internal class LoggerLogFormatter
+    internal static class LoggerLogFormatter
     {
         private const string MessageTemplateKey = "{OriginalFormat}";
         internal const string LoggerNameKey = "Category";
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
 
-        private class WriterWrapper
+        private sealed class WriterWrapper
         {
             private List<object>? _values;
 

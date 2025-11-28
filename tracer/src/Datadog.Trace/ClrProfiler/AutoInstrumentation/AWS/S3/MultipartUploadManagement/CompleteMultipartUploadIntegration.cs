@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadMa
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class CompleteMultipartUploadIntegration
+public sealed class CompleteMultipartUploadIntegration
 {
     private const string Operation = "CompleteMultipartUpload";
 

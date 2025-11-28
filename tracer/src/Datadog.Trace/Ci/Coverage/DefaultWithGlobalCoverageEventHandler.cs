@@ -1,4 +1,4 @@
-// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
+﻿// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
+internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
 {
     private readonly List<CoverageContextContainer> _coverages = new();
 

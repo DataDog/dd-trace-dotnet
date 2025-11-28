@@ -13,7 +13,7 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Remove IIS instrumentation completely
 /// </summary>
-internal class RemoveIisInstrumentationCommand : CommandBase
+internal sealed class RemoveIisInstrumentationCommand : CommandBase
 {
     private const string Command = "remove-iis-instrumentation";
     private const string CommandDescription = "Removes instrumentation with the .NET library from IIS";

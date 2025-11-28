@@ -12,7 +12,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 
-internal static class AwsSnsHandlerCommon
+internal sealed class AwsSnsHandlerCommon
 {
     public static CallTargetState BeforePublish<TPublishRequest>(TPublishRequest request, SendType sendType)
     {
@@ -68,7 +68,7 @@ internal static class AwsSnsHandlerCommon
         return new CallTargetState(scope);
     }
 
-    public class SendType
+    public sealed class SendType
     {
         public static readonly SendType SingleMessage = new("Publish");
 

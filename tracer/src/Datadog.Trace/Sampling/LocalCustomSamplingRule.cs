@@ -78,7 +78,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
         return [];
     }
 
-    internal class RuleConfigJsonModel
+    internal sealed class RuleConfigJsonModel
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]

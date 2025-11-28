@@ -15,9 +15,9 @@ using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
-public partial record TracerSettings
+public sealed partial record TracerSettings
 {
-    internal class SettingsManager
+    internal sealed class SettingsManager
     {
         private readonly TracerSettings _tracerSettings;
         private readonly ConfigurationTelemetry _initialTelemetry;

@@ -1,4 +1,4 @@
-// <copyright file="EndpointDetector.cs" company="Datadog">
+﻿// <copyright file="EndpointDetector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -336,5 +336,5 @@ internal static class EndpointDetector
         return $"{nameSpace}.{name}";
     }
 
-    private record Entity(string Name, EntityHandle Handle);
+    private sealed record Entity(string Name, EntityHandle Handle);
 }

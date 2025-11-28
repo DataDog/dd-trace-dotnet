@@ -15,7 +15,7 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Installs a new version of the .NET Tracer. Could be the first version, or simply a new version
 /// </summary>
-internal class AvailableCommandsCommand : CommandBase
+internal sealed class AvailableCommandsCommand : CommandBase
 {
     private const string Command = "available-commands";
     private const string CommandDescription = "Prints the list of available commands in this version of the .NET Fleet Installer to stdout";

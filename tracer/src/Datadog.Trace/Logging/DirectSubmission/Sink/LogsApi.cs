@@ -1,4 +1,4 @@
-// <copyright file="LogsApi.cs" company="Datadog">
+﻿// <copyright file="LogsApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal class LogsApi : ILogsApi
+    internal sealed class LogsApi : ILogsApi
     {
         internal const string LogIntakePath = "/api/v2/logs";
         internal const string IntakeHeaderNameApiKey = "DD-API-KEY";

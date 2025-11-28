@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ChannelHandlerIntegration
+    public sealed class ChannelHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.Wcf);
 

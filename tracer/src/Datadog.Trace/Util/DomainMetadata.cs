@@ -1,4 +1,4 @@
-// <copyright file="DomainMetadata.cs" company="Datadog">
+﻿// <copyright file="DomainMetadata.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ namespace Datadog.Trace.Util
     /// <summary>
     /// Dedicated helper class for consistently referencing Process and AppDomain information.
     /// </summary>
-    internal class DomainMetadata
+    internal sealed class DomainMetadata
     {
         private static readonly Lazy<DomainMetadata> _instance = new(() => new DomainMetadata(), isThreadSafe: true);
 

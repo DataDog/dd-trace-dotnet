@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace Datadog.Trace.Configuration;
 
-internal class ExtraServicesProvider
+internal sealed class ExtraServicesProvider
 {
     private const int MaxExtraServices = 64;
     private const string? FakeValue = null;

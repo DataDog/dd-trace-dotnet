@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
 [AspectClass("System.Web.Extensions")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class JavaScriptSerializerAspects
+public sealed class JavaScriptSerializerAspects
 {
     /// <summary>
     /// DeserializeObject aspect

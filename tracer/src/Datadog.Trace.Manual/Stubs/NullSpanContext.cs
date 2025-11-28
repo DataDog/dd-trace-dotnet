@@ -5,7 +5,7 @@
 
 namespace Datadog.Trace.Stubs;
 
-internal class NullSpanContext : ISpanContext
+internal sealed class NullSpanContext : ISpanContext
 {
     public static readonly NullSpanContext Instance = new();
 

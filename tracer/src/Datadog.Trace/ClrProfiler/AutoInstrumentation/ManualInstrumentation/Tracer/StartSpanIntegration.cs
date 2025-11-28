@@ -1,4 +1,4 @@
-﻿// <copyright file="StartSpanIntegration.cs" company="Datadog">
+// <copyright file="StartSpanIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class StartSpanIntegration
+public sealed class StartSpanIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StartSpanIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StartSpanIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TSpanContext>(TTarget instance, string operationName, TSpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         where TTarget : ITracerProxy

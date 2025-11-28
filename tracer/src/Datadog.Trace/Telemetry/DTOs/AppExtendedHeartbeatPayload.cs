@@ -12,7 +12,7 @@ namespace Datadog.Trace.Telemetry;
 /// This event will be used as a failsafe if there are any catastrophic data failure.
 /// The data will be used to reconstruct application records in our db.
 /// </summary>
-internal class AppExtendedHeartbeatPayload : IPayload
+internal sealed class AppExtendedHeartbeatPayload : IPayload
 {
     public ICollection<ConfigurationKeyValue>? Configuration { get; set; }
 

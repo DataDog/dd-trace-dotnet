@@ -1,4 +1,4 @@
-// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
+﻿// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 {
-    internal class GrpcLegacyServerCommon
+    internal static class GrpcLegacyServerCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcLegacyServerCommon));
 

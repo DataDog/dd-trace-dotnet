@@ -13,7 +13,7 @@ using Datadog.Trace.Util.Streams;
 
 namespace Datadog.Trace.HttpOverStreams;
 
-internal class ChunkedEncodingWriteStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
+internal sealed class ChunkedEncodingWriteStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
 {
     private static readonly byte[] CrLfBytes = { 0x0D, 0x0A }; // UTF-8 for \r\n
     private static readonly byte[] FinalChunkBytes = { 0x30, 0x0D, 0x0A, 0x0D, 0x0A, }; // UTF-8 for 0\r\n\r\n

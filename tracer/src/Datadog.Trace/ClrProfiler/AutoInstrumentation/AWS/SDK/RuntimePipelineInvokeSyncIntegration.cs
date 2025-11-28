@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         IntegrationName = AwsConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RuntimePipelineInvokeSyncIntegration
+    public sealed class RuntimePipelineInvokeSyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

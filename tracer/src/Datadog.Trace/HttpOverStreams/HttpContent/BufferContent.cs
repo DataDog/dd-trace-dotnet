@@ -1,4 +1,4 @@
-// <copyright file="BufferContent.cs" company="Datadog">
+﻿// <copyright file="BufferContent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
-    internal class BufferContent : IHttpContent
+    internal sealed class BufferContent : IHttpContent
     {
         private readonly ArraySegment<byte> _buffer;
 

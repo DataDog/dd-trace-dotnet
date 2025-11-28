@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 /// <summary>
 /// An exception indicating that an invalid value was specified for a setting in the public API.
 /// </summary>
-internal class InvalidConfigurationException(string message) : CallTargetBubbleUpException(message)
+internal sealed class InvalidConfigurationException(string message) : CallTargetBubbleUpException(message)
 {
     [DoesNotReturn]
     public static void Throw(string message) => throw new InvalidConfigurationException(message);

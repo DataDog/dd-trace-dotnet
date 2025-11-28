@@ -9,7 +9,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
-internal class LambdaMetadata
+internal sealed class LambdaMetadata
 {
     private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
     internal const string ExtensionPathEnvVar = "_DD_EXTENSION_PATH";

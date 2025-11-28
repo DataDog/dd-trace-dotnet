@@ -10,7 +10,7 @@ using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
-internal partial class SecurityReporter
+internal sealed partial class SecurityReporter
 {
     private bool CanAccessHeaders => true;
 

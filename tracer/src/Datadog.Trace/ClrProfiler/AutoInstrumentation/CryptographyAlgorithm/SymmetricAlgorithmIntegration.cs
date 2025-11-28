@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SymmetricAlgorithmIntegration
+public sealed class SymmetricAlgorithmIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

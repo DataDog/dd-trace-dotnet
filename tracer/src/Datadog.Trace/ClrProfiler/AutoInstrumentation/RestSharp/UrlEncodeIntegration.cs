@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp;
     IntegrationName = nameof(Configuration.IntegrationId.Ssrf))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class UrlEncodeIntegration
+public sealed class UrlEncodeIntegration
 {
     private static bool errorLogged = false;
 

@@ -16,7 +16,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 
-internal class DataStreamsApi : IDataStreamsApi
+internal sealed class DataStreamsApi : IDataStreamsApi
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsApi>();
     private RequestDetails _config;
@@ -72,5 +72,5 @@ internal class DataStreamsApi : IDataStreamsApi
         }
     }
 
-    private record RequestDetails(IApiRequestFactory RequestFactory, Uri Endpoint);
+    private sealed record RequestDetails(IApiRequestFactory RequestFactory, Uri Endpoint);
 }

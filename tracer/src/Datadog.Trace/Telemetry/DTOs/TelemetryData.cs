@@ -11,7 +11,7 @@ namespace Datadog.Trace.Telemetry
     /// DTO that is serialized.
     /// Be aware that the property names control serialization
     /// </summary>
-    internal class TelemetryData
+    internal sealed class TelemetryData
     {
         public TelemetryData(
             string requestType,

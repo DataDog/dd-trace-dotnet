@@ -1,4 +1,4 @@
-// <copyright file="TelemetryDataBuilder.cs" company="Datadog">
+﻿// <copyright file="TelemetryDataBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryDataBuilder
+internal sealed class TelemetryDataBuilder
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilder>();
     private int _sequence = 0;

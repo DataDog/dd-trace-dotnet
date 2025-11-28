@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
         IntegrationName = AerospikeCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class SyncCommandIntegration
+    public sealed class SyncCommandIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

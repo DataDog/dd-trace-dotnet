@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class HttpWebRequest_BeginGetRequestStream_Integration
+    public sealed class HttpWebRequest_BeginGetRequestStream_Integration
     {
         private const string MethodName = "BeginGetRequestStream";
 

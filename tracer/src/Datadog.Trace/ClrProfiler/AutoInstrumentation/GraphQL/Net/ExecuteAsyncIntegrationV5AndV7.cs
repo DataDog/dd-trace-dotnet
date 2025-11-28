@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         MaximumVersion = GraphQLCommon.Major8)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExecuteAsyncIntegrationV5AndV7
+    public sealed class ExecuteAsyncIntegrationV5AndV7
     {
         /// <summary>
         /// OnMethodBegin callback

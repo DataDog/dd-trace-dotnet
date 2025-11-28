@@ -18,7 +18,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("EntityFramework", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class EntityCommandAspect
+public sealed class EntityCommandAspect
 {
     /// <summary>
     /// ExecuteReader aspect

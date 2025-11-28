@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
     IntegrationName = nameof(IntegrationId.AzureEventHubs))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class EventDataBatchTryAddIntegration
+public sealed class EventDataBatchTryAddIntegration
 {
     private const string OperationName = "create";
 

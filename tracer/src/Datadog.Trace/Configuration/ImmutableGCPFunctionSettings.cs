@@ -1,4 +1,4 @@
-// <copyright file="ImmutableGCPFunctionSettings.cs" company="Datadog">
+﻿// <copyright file="ImmutableGCPFunctionSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Configuration
     /// References:
     /// https://cloud.google.com/functions/docs/configuring/env-var#runtime_environment_variables_set_automatically
     /// </summary>
-    internal class ImmutableGCPFunctionSettings
+    internal sealed class ImmutableGCPFunctionSettings
     {
         public ImmutableGCPFunctionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {

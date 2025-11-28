@@ -23,7 +23,7 @@ using System;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
-    internal class BatchingSinkOptions
+    internal sealed class BatchingSinkOptions
     {
         public BatchingSinkOptions(
             int batchSizeLimit,

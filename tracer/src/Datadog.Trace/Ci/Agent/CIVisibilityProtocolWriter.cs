@@ -1,4 +1,4 @@
-// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
+﻿// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -300,7 +300,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         }
     }
 
-    internal class WatermarkEvent : IEvent
+    internal sealed class WatermarkEvent : IEvent
     {
         public WatermarkEvent(AsyncCountdownEvent countdownEvent)
         {
@@ -310,7 +310,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         public AsyncCountdownEvent Countdown { get; }
     }
 
-    private class Buffers
+    private sealed class Buffers
     {
         private static int _globalIndexes;
         private readonly ICIVisibilityProtocolWriterSender _sender;

@@ -1,4 +1,4 @@
-// <copyright file="ProbeConfigurationComparer.cs" company="Datadog">
+﻿// <copyright file="ProbeConfigurationComparer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ProbeConfigurationComparer
+    internal sealed class ProbeConfigurationComparer
     {
         public ProbeConfigurationComparer(ProbeConfiguration currentConfiguration, ProbeConfiguration incomingConfiguration)
         {

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class NullTracerFlareManager : ITracerFlareManager
+internal sealed class NullTracerFlareManager : ITracerFlareManager
 {
     public void Start()
     {

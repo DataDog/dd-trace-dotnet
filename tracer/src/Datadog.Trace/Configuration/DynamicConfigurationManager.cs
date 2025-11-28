@@ -1,4 +1,4 @@
-// <copyright file="DynamicConfigurationManager.cs" company="Datadog">
+﻿// <copyright file="DynamicConfigurationManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
 {
-    internal class DynamicConfigurationManager : IDynamicConfigurationManager
+    internal sealed class DynamicConfigurationManager : IDynamicConfigurationManager
     {
         internal const string ProductName = "APM_TRACING";
 

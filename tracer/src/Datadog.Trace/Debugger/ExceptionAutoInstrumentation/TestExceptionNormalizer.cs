@@ -1,4 +1,4 @@
-// <copyright file="TestExceptionNormalizer.cs" company="Datadog">
+﻿// <copyright file="TestExceptionNormalizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     /// <summary>
     /// Important: Should only be used in testing. Not thread-safe.
     /// </summary>
-    internal class TestExceptionNormalizer : ExceptionNormalizer
+    internal sealed class TestExceptionNormalizer : ExceptionNormalizer
     {
         private StringBuilder? _debug;
 

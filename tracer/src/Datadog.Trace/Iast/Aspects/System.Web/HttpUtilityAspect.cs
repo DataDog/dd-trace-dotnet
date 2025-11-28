@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 [AspectClass("System.Web;System.Runtime.Extensions;System.Web.HttpUtility", AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpUtilityAspect
+public sealed class HttpUtilityAspect
 {
     /// <summary>
     /// Escapes the HTML string making it safe for XSS
