@@ -7,10 +7,11 @@
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.Sink
 {
-    internal class SnapshotSink
+    internal class SnapshotSink : ISnapshotSink
     {
         private const int DefaultQueueLimit = 1000;
 
@@ -25,9 +26,16 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
         }
 
-        public static SnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer)
+        public static ISnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer)
         {
-            return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer);
+            if (settings.IsSnapshotExplorationTestEnabled)
+            {
+                return new SnapshotExplorationTestSink(settings.SnapshotExplorationTestReportFolderPath, snapshotSlicer);
+            }
+            else
+            {
+                return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer);
+            }
         }
 
         public void Add(string probeId, string snapshot)
@@ -35,7 +43,7 @@ namespace Datadog.Trace.Debugger.Sink
             _queue.TryEnqueue(_snapshotSlicer.SliceIfNeeded(probeId, snapshot));
         }
 
-        public List<string> GetSnapshots()
+        public IList<string> GetSnapshots()
         {
             var snapshots = new List<string>();
             var counter = 0;
@@ -55,6 +63,10 @@ namespace Datadog.Trace.Debugger.Sink
         public int RemainingCapacity()
         {
             return DefaultQueueLimit - _queue.Count;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

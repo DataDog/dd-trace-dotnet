@@ -210,7 +210,7 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
             // value. After the signature modification we need to emit the following IL to initialize and load into the
             // stack.
             //    ldloca.s [localIndex]
-            //    initobj [valueType]
+            //    initobj [valueType] 
             //    ldloc.s [localIndex]
             Logger::Warn(
                 "*** DebuggerMethodRewriter::Rewrite() Static methods in a ValueType cannot be instrumented. ");
@@ -2331,9 +2331,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     // TODO support multiple line probes & multiple line probes on the same bytecode offset (by deduplicating the probe ids)
 
+    WSTRING probeId;
     bool appliedAtLeastOneLineProbeInstrumentation = false;
     if (!lineProbes.empty())
     {
+        probeId = methodProbes[0]->probeId;
+
         if (isAsyncMethod)
         {
             Logger::Info("Applying ", lineProbes.size(), " Async Line Probe(s)");
@@ -2372,6 +2375,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool appliedAtLeastOneSpanProbeInstrumentation = false;
     if (!spanOnMethodProbes.empty())
     {
+        probeId = methodProbes[0]->probeId;
+
         // TODO accept multiple probeIds
         const auto& spanProbe = spanOnMethodProbes[0];
         const auto& spanProbeId = spanProbe->probeId;
@@ -2418,6 +2423,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool appliedAtLeastOneMethodProbeInstrumentation = false;
     if (!methodProbes.empty())
     {
+        probeId = methodProbes[0]->probeId;
+
         if (isAsyncMethod)
         {
             Logger::Info("Applying Async Method Probe instrumentation with ", methodProbes.size(), " probes.");
@@ -2502,8 +2509,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         return E_FAIL;
     }
 
-    Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
-                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+    Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: ", 
+                probeId.empty() ? WStr("null") : probeId, 
+                " Method: ", caller->type.name, ".", caller->name,
+                "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
 
     hr = this->m_corProfiler->info_->ApplyMetaData(module_id);
     if (FAILED(hr))

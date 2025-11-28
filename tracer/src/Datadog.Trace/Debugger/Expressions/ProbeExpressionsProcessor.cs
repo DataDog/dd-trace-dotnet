@@ -39,7 +39,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal void AddProbeProcessor(ProbeDefinition probe)
         {
-            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false && DebuggerManager.Instance.DebuggerSettings.IsSnapshotExplorationTestEnabled != true)
             {
                 Log.Error("Failed to create probe processor for probe: {Id} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probe.Id);
             }

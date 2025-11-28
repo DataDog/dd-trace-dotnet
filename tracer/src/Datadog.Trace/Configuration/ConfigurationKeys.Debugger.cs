@@ -179,6 +179,27 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
             public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling snapshot exploration test.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.IsSnapshotExplorationTestEnabled"/>
+            public const string IsSnapshotExplorationTestEnabled = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
+
+            /// <summary>
+            /// Configuration key for snapshot exploration test probe path.
+            /// Default value is empty.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestProbesFilePath"/>
+            public const string SnapshotExplorationTestProbesFilePath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_FILE_PATH";
+
+            /// <summary>
+            /// Configuration key for snapshot exploration test report path.
+            /// Default value is empty.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestReportFolderPath"/>
+            public const string SnapshotExplorationTestReportFolderPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_FOLDER_PATH";
         }
     }
 }

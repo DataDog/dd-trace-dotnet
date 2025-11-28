@@ -515,12 +515,22 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                _ = manager.UpdateConfiguration(tracerSettings)
-                           .ContinueWith(
-                                t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
+                if (manager.DebuggerSettings.IsSnapshotExplorationTestEnabled)
+                {
+                    if (Process.GetCurrentProcess().ProcessName.Contains("testhost"))
+                    {
+                        manager.InitForSnapshotExploration();
+                    }
+                }
+                else
+                {
+                    _ = manager.UpdateConfiguration(tracerSettings)
+                               .ContinueWith(
+                                    t => Log.Error(t?.Exception, "Error initializing debugger"),
+                                    CancellationToken.None,
+                                    TaskContinuationOptions.OnlyOnFaulted,
+                                    TaskScheduler.Default);
+                }
             }
         }
 

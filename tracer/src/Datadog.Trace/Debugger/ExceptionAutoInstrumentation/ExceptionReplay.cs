@@ -23,7 +23,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
         private bool _isDisabled;
         private SnapshotUploader? _uploader;
-        private SnapshotSink? _snapshotSink;
+        private ISnapshotSink? _snapshotSink;
         private ExceptionTrackManager? _exceptionTrackManager;
 
         private ExceptionReplay(ExceptionReplaySettings settings)
