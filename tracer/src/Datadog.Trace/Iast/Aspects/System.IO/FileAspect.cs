@@ -1,4 +1,4 @@
-﻿// <copyright file="FileAspect.cs" company="Datadog">
+// <copyright file="FileAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class FileAspect
+public sealed class FileAspect
 {
     /// <summary>
     /// Launches a path traversal vulnerability if the file is tainted

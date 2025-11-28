@@ -1,4 +1,4 @@
-﻿// <copyright file="JavaScriptSerializerAspects.cs" company="Datadog">
+// <copyright file="JavaScriptSerializerAspects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
 [AspectClass("System.Web.Extensions")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class JavaScriptSerializerAspects
+public sealed class JavaScriptSerializerAspects
 {
     /// <summary>
     /// DeserializeObject aspect
