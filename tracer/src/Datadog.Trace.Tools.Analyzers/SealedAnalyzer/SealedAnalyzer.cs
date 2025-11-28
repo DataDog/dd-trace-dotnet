@@ -51,7 +51,8 @@ public class SealedAnalyzer : DiagnosticAnalyzer
                     !type.IsAbstract &&
                     !type.IsStatic &&
                     !type.IsSealed &&
-                    !type.HasAnyAttribute(attributesToMatch))
+                    !type.HasAnyAttribute(attributesToMatch) &&
+                    !type.IsTopLevelStatementsEntryPointType())
                 {
                     candidateTypes.Add(type);
                 }

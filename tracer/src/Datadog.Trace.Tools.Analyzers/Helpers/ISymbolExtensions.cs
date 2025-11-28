@@ -128,4 +128,22 @@ internal static class ISymbolExtensions
     {
         return symbol.GetAttributes(attributeTypesToMatch).Any();
     }
+
+    /// <summary>
+    /// Check if the given <paramref name="methodSymbol"/> is an implicitly generated method for top level statements.
+    /// </summary>
+    public static bool IsTopLevelStatementsEntryPointMethod([NotNullWhen(true)] this IMethodSymbol? methodSymbol)
+        => methodSymbol?.IsStatic == true && methodSymbol.Name switch
+        {
+            "$Main" => true,
+            "<Main>$" => true,
+            _ => false
+        };
+
+    /// <summary>
+    /// Check if the given <paramref name="typeSymbol"/> is an implicitly generated type for top level statements.
+    /// </summary>
+    public static bool IsTopLevelStatementsEntryPointType([NotNullWhen(true)] this INamedTypeSymbol? typeSymbol)
+        => typeSymbol is not null &&
+           typeSymbol.GetMembers().OfType<IMethodSymbol>().Any(m => m.IsTopLevelStatementsEntryPointMethod());
 }
