@@ -124,7 +124,7 @@ namespace Datadog.Trace.AppSec
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
 
-            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled)
                                        .AsBool(true);
 
             ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)

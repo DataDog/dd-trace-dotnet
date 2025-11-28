@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key pattern for enabling or disabling an integration.
         /// </summary>
-        public const string IntegrationEnabled = "DD_TRACE_{0}_ENABLED";
+        public const string IntegrationEnabledKey = "DD_TRACE_{0}_ENABLED";
 
         /// <summary>
         /// Configuration key pattern for enabling or disabling Analytics in an integration.
@@ -50,31 +51,19 @@ namespace Datadog.Trace.Configuration
 
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
-            var upperName = integrationName.ToUpperInvariant();
             Enabled = isExplicitlyDisabled
                           ? false
                           : config
-                           .WithKeys(
-                                string.Format(IntegrationEnabled, upperName),
-                                string.Format(IntegrationEnabled, integrationName),
-                                $"DD_{integrationName}_ENABLED")
-                           .AsBool()
-                         ?? fallback?.Enabled;
+                           .WithIntegrationKey(integrationName)
+                           .AsBool() ?? fallback?.Enabled;
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
-                              .WithKeys(
-                                   string.Format(AnalyticsEnabledKey, upperName),
-                                   string.Format(AnalyticsEnabledKey, integrationName),
-                                   $"DD_{integrationName}_ANALYTICS_ENABLED")
-                              .AsBool()
-                            ?? fallback?.AnalyticsEnabled;
+                              .WithIntegrationAnalyticsKey(integrationName)
+                              .AsBool() ?? fallback?.AnalyticsEnabled;
 
             AnalyticsSampleRate = config
-                                 .WithKeys(
-                                      string.Format(AnalyticsSampleRateKey, upperName),
-                                      string.Format(AnalyticsSampleRateKey, integrationName),
-                                      $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
+                                 .WithIntegrationAnalyticsSampleRateKey(integrationName)
                                  .AsDouble(fallback?.AnalyticsSampleRate ?? 1.0);
 #pragma warning restore 618
         }
