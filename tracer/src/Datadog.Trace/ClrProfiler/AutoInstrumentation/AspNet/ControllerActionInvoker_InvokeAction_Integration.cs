@@ -1,4 +1,4 @@
-﻿// <copyright file="ControllerActionInvoker_InvokeAction_Integration.cs" company="Datadog">
+// <copyright file="ControllerActionInvoker_InvokeAction_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class ControllerActionInvoker_InvokeAction_Integration
+    public sealed class ControllerActionInvoker_InvokeAction_Integration
     {
         private const string AssemblyName = "System.Web.Mvc";
         private const string ActionResultTypeName = "System.Web.Mvc.ActionResult";
