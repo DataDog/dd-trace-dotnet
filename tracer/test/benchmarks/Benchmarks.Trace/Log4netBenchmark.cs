@@ -13,8 +13,7 @@ using log4net.Repository.Hierarchy;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent4]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class Log4netBenchmark
     {
         private Tracer _logInjectionTracer;

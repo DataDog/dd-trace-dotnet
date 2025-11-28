@@ -8,13 +8,13 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -47,7 +47,12 @@ namespace Benchmarks.Trace
             var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
             var settings = new TracerSettings(sources);
 
-            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+            var api = new Api(
+                new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
+                statsd: new StatsdManager(settings, (_, _) => null!),
+                updateSampleRates: null,
+                partialFlushEnabled: false,
+                healthMetricsEnabled: false);
 
             _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
 
