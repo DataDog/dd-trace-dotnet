@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsStackExchangeRedis(metadataSchemaVersion);
 
-        [Flaky("The PING_REPLICA sometimes invokes the master server instead. We believe it's infrastructure related")]
+        [Flaky("The PING_REPLICA sometimes invokes the master server instead. We believe it's infrastructure related", maxRetries: 3)]
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
