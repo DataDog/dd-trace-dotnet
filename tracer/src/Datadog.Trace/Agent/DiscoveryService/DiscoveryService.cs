@@ -59,7 +59,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
             _recheckIntervalMs = recheckIntervalMs;
-            _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
+
+            // _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
+            _discoveryTask = Task.FromResult(true);
             _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 

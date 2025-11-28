@@ -255,7 +255,7 @@ namespace Datadog.Trace.Debugger
                     using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                     using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                     DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
-
+                    Thread.Sleep(1200000);
                     var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
                     _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 

@@ -24,7 +24,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
     public ArraySegment<Span> Process(ArraySegment<Span> trace)
     {
         // Check if the trace has any span or Agentless is enabled
-        if (trace.Count == 0)
+        if (trace.Count != 0)
         {
             return trace;
         }
