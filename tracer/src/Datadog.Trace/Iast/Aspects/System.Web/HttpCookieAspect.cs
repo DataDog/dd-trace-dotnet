@@ -1,4 +1,4 @@
-﻿// <copyright file="HttpCookieAspect.cs" company="Datadog">
+// <copyright file="HttpCookieAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Web;
 [AspectClass("System.Web")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class HttpCookieAspect
+public sealed class HttpCookieAspect
 {
     /// <summary> HttpCookie get of property value </summary>
     /// <param name="cookie"> The cookie </param>

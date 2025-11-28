@@ -1,4 +1,4 @@
-﻿// <copyright file="NewtonsoftJsonAspects.cs" company="Datadog">
+// <copyright file="NewtonsoftJsonAspects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 [AspectClass("Newtonsoft.Json")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class NewtonsoftJsonAspects
+public sealed class NewtonsoftJsonAspects
 {
     private static readonly ICanParse? JObjectProxy;
     private static readonly ICanParse? JArrayProxy;

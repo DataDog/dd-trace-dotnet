@@ -1,4 +1,4 @@
-﻿// <copyright file="MongoDatabaseAspect.cs" company="Datadog">
+// <copyright file="MongoDatabaseAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [AspectClass("MongoDB.Driver", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static class MongoDatabaseAspect
+public sealed class MongoDatabaseAspect
 {
     /// <summary>
     ///     MongoDB Driver aspect
