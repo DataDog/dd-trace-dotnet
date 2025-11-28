@@ -7,6 +7,7 @@ extern alias AnalyzerCodeFixes;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.SealedAnalyzer;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Test = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<
@@ -283,6 +284,21 @@ public class SealedAnalyzerTests
                       """;
 
         await Verifier.VerifyAnalyzerAsync(source); // no diagnostics expected
+    }
+
+    [Fact]
+    public Task TopLevelStatementsProgram()
+    {
+        var test = new Test
+        {
+            CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            TestState =
+            {
+                Sources = { @"System.Console.WriteLine();", },
+                OutputKind = OutputKind.ConsoleApplication,
+            }
+        };
+        return test.RunAsync(); // no diagnostics expected
     }
 
     [Fact]
