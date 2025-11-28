@@ -147,6 +147,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
             (Architecture.X64, true, _) => true, // Windows x64
             (Architecture.X86, true, _) => true, // Windows x86
             (Architecture.X64, _, true) => true, // Linux x64
+            (Architecture.Arm64, _, true) => true, // Linux arm64
             _ => false // Unsupported platforms
         };
 

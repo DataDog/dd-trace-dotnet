@@ -4,6 +4,7 @@ asprintf
 free
 getenv
 malloc
+mmap
 strcasecmp
 strcmp
 strcpy

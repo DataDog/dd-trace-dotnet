@@ -105,7 +105,7 @@ internal class Utils
                 var archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
                 tracerProfilerArm64 = tracerProfiler64;
-                ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
+                ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.arm64.so"));
             }
             else
             {

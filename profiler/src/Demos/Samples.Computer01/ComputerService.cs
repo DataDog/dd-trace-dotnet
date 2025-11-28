@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.Computer01
@@ -55,6 +56,7 @@ namespace Samples.Computer01
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
         private SyncOverAsync _syncOverAsync;
+        private Thread _managedStackExerciseThread;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -196,6 +198,10 @@ namespace Samples.Computer01
                     _syncOverAsync.Start();
                     break;
 
+                case Scenario.ManagedStackExercise:
+                    StartManagedStackExercise();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -332,6 +338,11 @@ namespace Samples.Computer01
                 case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
                 case Scenario.SyncOverAsyncWithResult:
                     _syncOverAsync.Stop();
+                    break;
+
+                case Scenario.ManagedStackExercise:
+                    ManagedStackExercise.Stop();
+                    _managedStackExerciseThread?.Join(TimeSpan.FromSeconds(5));
                     break;
             }
         }
@@ -472,6 +483,10 @@ namespace Samples.Computer01
                         RunSyncOverAsync(nbThreads, true);
                         break;
 
+                    case Scenario.ManagedStackExercise:
+                        ManagedStackExercise.Run();
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -512,6 +527,17 @@ namespace Samples.Computer01
         {
             _piComputation = new PiComputation();
             _piComputation.Start();
+        }
+
+        private void StartManagedStackExercise()
+        {
+            Console.WriteLine("Starting ManagedStackExercise scenario...");
+            _managedStackExerciseThread = new Thread(() => ManagedStackExercise.Run())
+            {
+                IsBackground = true,
+                Name = "ManagedStackExercise"
+            };
+            _managedStackExerciseThread.Start();
         }
 
         private void StartFibonacciComputation(int nbThreads)
