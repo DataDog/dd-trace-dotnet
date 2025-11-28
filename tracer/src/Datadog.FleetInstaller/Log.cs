@@ -11,7 +11,7 @@ internal static class Log
 {
     public static ILogger Instance { get; } = new SimpleLogger();
 
-    private class SimpleLogger : ILogger
+    private sealed class SimpleLogger : ILogger
     {
         public void WriteInfo(string message)
         {
