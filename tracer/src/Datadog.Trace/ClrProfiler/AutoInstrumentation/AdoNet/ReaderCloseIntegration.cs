@@ -1,4 +1,4 @@
-// <copyright file="ReaderCloseIntegration.cs" company="Datadog">
+﻿// <copyright file="ReaderCloseIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ReaderCloseIntegration
+    public static class ReaderCloseIntegration
     {
         private static bool errorLogged = false;
 

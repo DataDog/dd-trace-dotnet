@@ -11,7 +11,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting
 {
-    internal class NLogDirectSubmissionLogEvent : DirectSubmissionLogEvent
+    internal sealed class NLogDirectSubmissionLogEvent : DirectSubmissionLogEvent
     {
         private readonly string _serializedEvent;
 

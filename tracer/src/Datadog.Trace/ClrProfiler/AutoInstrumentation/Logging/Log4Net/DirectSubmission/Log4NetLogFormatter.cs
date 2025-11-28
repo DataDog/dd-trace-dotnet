@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
-    internal class Log4NetLogFormatter
+    internal sealed class Log4NetLogFormatter
     {
         internal const string LoggerNameKey = "logger";
 

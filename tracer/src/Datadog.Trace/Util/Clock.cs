@@ -1,4 +1,4 @@
-// <copyright file="Clock.cs" company="Datadog">
+﻿// <copyright file="Clock.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Util
 {
-    internal class Clock
+    internal static class Clock
     {
         /// <summary>
         /// Flag used to avoid checking the threadstatic field when running outside of tests
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Util
             return new Lease();
         }
 
-        private class Lease : IDisposable
+        private sealed class Lease : IDisposable
         {
             public void Dispose()
             {

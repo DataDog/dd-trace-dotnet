@@ -1,4 +1,4 @@
-// <copyright file="BaseBranchInfo.cs" company="Datadog">
+﻿// <copyright file="BaseBranchInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// Contains information about the detected base branch.
 /// <see cref="GitCommandHelper.DetectBaseBranch"/>
 /// </summary>
-public class BaseBranchInfo
+public sealed class BaseBranchInfo
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseBranchInfo"/> class.

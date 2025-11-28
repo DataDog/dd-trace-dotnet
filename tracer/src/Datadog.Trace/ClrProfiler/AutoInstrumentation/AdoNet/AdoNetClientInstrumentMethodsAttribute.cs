@@ -1,4 +1,4 @@
-// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
+﻿// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         public Type[] TargetMethodAttributes { get; set; }
 
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class AdoNetTargetSignatureAttribute : Attribute
+        internal sealed class AdoNetTargetSignatureAttribute : Attribute
         {
             internal enum AdoNetTargetSignatureReturnType
             {
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(CommandExecuteNonQueryAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteNonQueryAsyncAttribute : Attribute
+        internal sealed class CommandExecuteNonQueryAsyncAttribute : Attribute
         {
         }
 
@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
             CallTargetIntegrationKind = CallTargetKind.Default)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteNonQueryAttribute : Attribute
+        internal sealed class CommandExecuteNonQueryAttribute : Attribute
         {
         }
 
@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
             CallTargetIntegrationKind = CallTargetKind.Derived)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteNonQueryDerivedAttribute : Attribute
+        internal sealed class CommandExecuteNonQueryDerivedAttribute : Attribute
         {
         }
 
@@ -159,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(CommandExecuteNonQueryWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteNonQueryWithBehaviorAttribute : Attribute
+        internal sealed class CommandExecuteNonQueryWithBehaviorAttribute : Attribute
         {
         }
 
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
             CallTargetType = typeof(CommandExecuteReaderAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderAsyncAttribute : Attribute
+        internal sealed class CommandExecuteReaderAsyncAttribute : Attribute
         {
         }
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(CommandExecuteReaderWithCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderWithCancellationAsyncAttribute : Attribute
+        internal sealed class CommandExecuteReaderWithCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderWithBehaviorAsyncAttribute : Attribute
+        internal sealed class CommandExecuteReaderWithBehaviorAsyncAttribute : Attribute
         {
         }
 
@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        internal sealed class CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        internal sealed class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
             CallTargetType = typeof(CommandExecuteReaderIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderAttribute : Attribute
+        internal sealed class CommandExecuteReaderAttribute : Attribute
         {
         }
 
@@ -227,7 +227,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteReaderWithBehaviorAttribute : Attribute
+        internal sealed class CommandExecuteReaderWithBehaviorAttribute : Attribute
         {
         }
 
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteDbDataReaderWithBehaviorAttribute : Attribute
+        internal sealed class CommandExecuteDbDataReaderWithBehaviorAttribute : Attribute
         {
         }
 
@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetIntegrationKind = CallTargetKind.Derived,
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteDbDataReaderWithBehaviorDerivedAttribute : Attribute
+        internal sealed class CommandExecuteDbDataReaderWithBehaviorDerivedAttribute : Attribute
         {
         }
 
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(CommandExecuteScalarAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteScalarAsyncAttribute : Attribute
+        internal sealed class CommandExecuteScalarAsyncAttribute : Attribute
         {
         }
 
@@ -267,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ReturnTypeName = ClrNames.Object,
             CallTargetType = typeof(CommandExecuteScalarIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteScalarAttribute : Attribute
+        internal sealed class CommandExecuteScalarAttribute : Attribute
         {
         }
 
@@ -277,7 +277,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetIntegrationKind = CallTargetKind.Derived,
             CallTargetType = typeof(CommandExecuteScalarIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteScalarDerivedAttribute : Attribute
+        internal sealed class CommandExecuteScalarDerivedAttribute : Attribute
         {
         }
 
@@ -287,7 +287,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteScalarWithBehaviorAttribute : Attribute
+        internal sealed class CommandExecuteScalarWithBehaviorAttribute : Attribute
         {
         }
 
@@ -297,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderReadIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class IastReaderReadAttribute : Attribute
+        internal sealed class IastReaderReadAttribute : Attribute
         {
         }
 
@@ -308,7 +308,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderReadAsyncIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class IastReaderReadAsyncAttribute : Attribute
+        internal sealed class IastReaderReadAsyncAttribute : Attribute
         {
         }
 
@@ -318,7 +318,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderCloseIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class IastReaderCloseAttribute : Attribute
+        internal sealed class IastReaderCloseAttribute : Attribute
         {
         }
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class IastReaderGetStringAttribute : Attribute
+        internal sealed class IastReaderGetStringAttribute : Attribute
         {
         }
 
@@ -340,7 +340,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class IastReaderGetValueAttribute : Attribute
+        internal sealed class IastReaderGetValueAttribute : Attribute
         {
         }
     }

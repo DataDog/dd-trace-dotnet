@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.Configurations
     /// 2. Insert prefix strings and match a full string on them (HasMatchingPrefix).
     /// 'prefixMode' indicates we have inserted prefixes inside the trie (usage 2.)
     /// </summary>
-    internal class Trie
+    internal sealed class Trie
     {
         private readonly TrieNode _root;
 
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Debugger.Configurations
             return new string(str.Reverse().ToArray());
         }
 
-        private class TrieNode
+        private sealed class TrieNode
         {
             public TrieNode(char c)
             {

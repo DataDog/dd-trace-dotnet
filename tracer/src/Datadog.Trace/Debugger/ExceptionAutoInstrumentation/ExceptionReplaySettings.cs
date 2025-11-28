@@ -1,4 +1,4 @@
-// <copyright file="ExceptionReplaySettings.cs" company="Datadog">
+﻿// <copyright file="ExceptionReplaySettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplaySettings
+    internal sealed class ExceptionReplaySettings
     {
         public const int DefaultMaxFramesToCapture = 4;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour

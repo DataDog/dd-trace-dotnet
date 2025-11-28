@@ -1,4 +1,4 @@
-// <copyright file="BoundedConcurrentQueue.cs" company="Datadog">
+﻿// <copyright file="BoundedConcurrentQueue.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,7 +26,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Util
 {
-    internal class BoundedConcurrentQueue<T>
+    internal sealed class BoundedConcurrentQueue<T>
     {
         private readonly ConcurrentQueue<T> _queue = new();
         private readonly int _queueLimit;

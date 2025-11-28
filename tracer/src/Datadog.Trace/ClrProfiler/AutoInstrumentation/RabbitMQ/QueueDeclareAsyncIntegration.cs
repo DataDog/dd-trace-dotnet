@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class QueueDeclareAsyncIntegration
+public static class QueueDeclareAsyncIntegration
 {
     private const string Command = "queue.declare";
 

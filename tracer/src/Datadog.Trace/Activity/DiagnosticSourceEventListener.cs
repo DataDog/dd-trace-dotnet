@@ -1,4 +1,4 @@
-// <copyright file="DiagnosticSourceEventListener.cs" company="Datadog">
+﻿// <copyright file="DiagnosticSourceEventListener.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
-    internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
+    internal sealed class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticSourceEventListener));
         private static readonly Action<string, KeyValuePair<string, object>, object?> OnNextActivityDelegate;

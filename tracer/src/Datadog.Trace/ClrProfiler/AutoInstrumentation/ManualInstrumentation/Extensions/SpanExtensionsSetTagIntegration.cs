@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ex
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanExtensionsSetTagIntegration
+public static class SpanExtensionsSetTagIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, ref string key, ref double? value)
     {

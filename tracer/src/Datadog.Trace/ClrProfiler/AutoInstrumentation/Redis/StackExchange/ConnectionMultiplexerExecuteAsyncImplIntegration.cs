@@ -1,4 +1,4 @@
-// <copyright file="ConnectionMultiplexerExecuteAsyncImplIntegration.cs" company="Datadog">
+﻿// <copyright file="ConnectionMultiplexerExecuteAsyncImplIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ConnectionMultiplexerExecuteAsyncImplIntegration
+    public static class ConnectionMultiplexerExecuteAsyncImplIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

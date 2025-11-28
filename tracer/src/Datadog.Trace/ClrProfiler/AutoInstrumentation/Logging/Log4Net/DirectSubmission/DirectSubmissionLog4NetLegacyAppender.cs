@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     /// <summary>
     /// Duck type for IAppender
     /// </summary>
-    internal class DirectSubmissionLog4NetLegacyAppender
+    internal sealed class DirectSubmissionLog4NetLegacyAppender
     {
         private static DirectSubmissionLog4NetLegacyAppender _instance = null!;
 

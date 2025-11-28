@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GetAutomaticTracerInstanceIntegration
+public static class GetAutomaticTracerInstanceIntegration
 {
     internal static CallTargetReturn<object> OnMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
     {

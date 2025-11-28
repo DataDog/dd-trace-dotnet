@@ -1,4 +1,4 @@
-// <copyright file="AppSecRequestContext.cs" company="Datadog">
+﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
 
-internal partial class AppSecRequestContext
+internal sealed partial class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";

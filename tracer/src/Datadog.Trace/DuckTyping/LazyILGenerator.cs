@@ -1,4 +1,4 @@
-// <copyright file="LazyILGenerator.cs" company="Datadog">
+﻿// <copyright file="LazyILGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using System.Reflection.Emit;
 namespace Datadog.Trace.DuckTyping
 {
     // ReSharper disable once InconsistentNaming
-    internal class LazyILGenerator
+    internal sealed class LazyILGenerator
     {
         private readonly ILGenerator? _generator;
         private readonly List<Action<ILGenerator>> _instructions;

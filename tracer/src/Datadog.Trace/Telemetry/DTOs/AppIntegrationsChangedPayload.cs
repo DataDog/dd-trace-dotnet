@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class AppIntegrationsChangedPayload : IPayload
+    internal sealed class AppIntegrationsChangedPayload : IPayload
     {
         public AppIntegrationsChangedPayload(ICollection<IntegrationTelemetryData> integrations)
         {

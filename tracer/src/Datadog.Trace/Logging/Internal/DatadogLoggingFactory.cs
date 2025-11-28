@@ -1,4 +1,4 @@
-// <copyright file="DatadogLoggingFactory.cs" company="Datadog">
+﻿// <copyright file="DatadogLoggingFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -300,7 +300,7 @@ internal static class DatadogLoggingFactory
         return null;
     }
 
-    private class RemovePropertyEnricher(LogEventLevel minLevel, string propertyName) : ILogEventEnricher
+    private sealed class RemovePropertyEnricher(LogEventLevel minLevel, string propertyName) : ILogEventEnricher
     {
         private readonly LogEventLevel _minLevel = minLevel;
         private readonly string _propertyName = propertyName;

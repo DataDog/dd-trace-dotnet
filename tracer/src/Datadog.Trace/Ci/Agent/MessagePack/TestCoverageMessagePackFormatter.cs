@@ -1,4 +1,4 @@
-// <copyright file="TestCoverageMessagePackFormatter.cs" company="Datadog">
+﻿// <copyright file="TestCoverageMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<TestCoverage>
+internal sealed class TestCoverageMessagePackFormatter : EventMessagePackFormatter<TestCoverage>
 {
     private readonly byte[] _testSessionIdBytes = StringEncoding.UTF8.GetBytes("test_session_id");
     private readonly byte[] _testSuiteIdBytes = StringEncoding.UTF8.GetBytes("test_suite_id");

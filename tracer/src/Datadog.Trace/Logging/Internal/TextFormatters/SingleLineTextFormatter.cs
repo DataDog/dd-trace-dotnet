@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Serilog.Formatting.Display;
 
 namespace Datadog.Trace.Logging.Internal.TextFormatters;
 
-internal class SingleLineTextFormatter : ITextFormatter
+internal sealed class SingleLineTextFormatter : ITextFormatter
 {
     public void Format(LogEvent logEvent, TextWriter output)
     {

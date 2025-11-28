@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.Logging;
 /// Based on https://github.com/dotnet/runtime/blob/793676e851989ac81291b194d5efbcd5e800b673/src/libraries/Microsoft.Extensions.Logging/src/ProviderAliasAttribute.cs
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-internal class ProviderAliasAttribute : Attribute
+internal sealed class ProviderAliasAttribute : Attribute
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ProviderAliasAttribute"/> class.

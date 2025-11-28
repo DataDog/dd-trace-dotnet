@@ -19,7 +19,7 @@ namespace Datadog.Trace.Agent;
 /// <summary>
 /// A managed version of <see cref="Api"/> that is rebuilt whenever the exporter settings change
 /// </summary>
-internal class ManagedApi : IApi
+internal sealed class ManagedApi : IApi
 {
     private Api _api;
 

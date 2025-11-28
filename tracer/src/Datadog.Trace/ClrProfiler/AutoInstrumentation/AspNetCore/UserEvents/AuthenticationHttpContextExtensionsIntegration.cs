@@ -1,4 +1,4 @@
-// <copyright file="AuthenticationHttpContextExtensionsIntegration.cs" company="Datadog">
+﻿// <copyright file="AuthenticationHttpContextExtensionsIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             return returnValue;
         }
 
-        private record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
+        private sealed record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
     }
 }
 #endif

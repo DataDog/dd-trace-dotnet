@@ -115,7 +115,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         return $"{base.ToString()} (Provenance: {Provenance})";
     }
 
-    internal class RuleConfigJsonModel
+    internal sealed class RuleConfigJsonModel
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]
@@ -136,7 +136,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         [JsonProperty(PropertyName = "tags")]
         public List<TagJsonModel>? Tags { get; set; }
 
-        internal class TagJsonModel
+        internal sealed class TagJsonModel
         {
             [JsonProperty(PropertyName = "key")]
             public string? Name { get; set; }

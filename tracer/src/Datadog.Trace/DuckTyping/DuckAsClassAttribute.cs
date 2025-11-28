@@ -12,6 +12,6 @@ namespace Datadog.Trace.DuckTyping;
 /// Applied to an interface to indicate that it should be duck typed as a class instead of as a struct.
 /// </summary>
 [AttributeUsage(AttributeTargets.Interface)]
-internal class DuckAsClassAttribute : Attribute
+internal sealed class DuckAsClassAttribute : Attribute
 {
 }

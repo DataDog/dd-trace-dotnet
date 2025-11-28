@@ -1,4 +1,4 @@
-// <copyright file="PublishAsyncIntegration.cs" company="Datadog">
+﻿// <copyright file="PublishAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         IntegrationName = AwsSnsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PublishAsyncIntegration
+    public static class PublishAsyncIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TPublishRequest>(TTarget instance, TPublishRequest request, CancellationToken cancellationToken)
         {

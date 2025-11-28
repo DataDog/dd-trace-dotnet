@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners;
 
-internal class AspNetCoreResourceNameHelper
+internal static class AspNetCoreResourceNameHelper
 {
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,

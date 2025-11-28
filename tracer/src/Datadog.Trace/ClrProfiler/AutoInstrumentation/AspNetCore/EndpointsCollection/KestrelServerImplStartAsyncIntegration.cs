@@ -1,4 +1,4 @@
-// <copyright file="KestrelServerImplStartAsyncIntegration.cs" company="Datadog">
+﻿// <copyright file="KestrelServerImplStartAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -41,9 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KestrelServerImplStartAsyncIntegration
+public static class KestrelServerImplStartAsyncIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<KestrelServerImplStartAsyncIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KestrelServerImplStartAsyncIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TApplication>(TTarget instance, ref TApplication? application, ref CancellationToken cancellationToken)
         where TTarget : IKestrelServer

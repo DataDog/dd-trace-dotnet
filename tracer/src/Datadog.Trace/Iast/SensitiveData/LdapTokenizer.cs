@@ -1,4 +1,4 @@
-// <copyright file="LdapTokenizer.cs" company="Datadog">
+﻿// <copyright file="LdapTokenizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// It locates all literals in a LDAP query, which may be multiple (las term after '=')
 /// ((objectCategory=group)(member=CN=Jon Brion,OU=Employees,DC=theitbros,DC=com)) -> ((objectCategory = group)(member = CN =?, OU =?, DC =?, DC =?))
 /// </summary>
-internal class LdapTokenizer : ITokenizer
+internal sealed class LdapTokenizer : ITokenizer
 {
     private const string _ldapPattern = @"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)";
     private Regex _ldapRegex;

@@ -1,4 +1,4 @@
-// <copyright file="AppenderCollectionIntegration.cs" company="Datadog">
+﻿// <copyright file="AppenderCollectionIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,9 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         IntegrationName = nameof(IntegrationId.Log4Net))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AppenderCollectionIntegration
+    public static class AppenderCollectionIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppenderCollectionIntegration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AppenderCollectionIntegration));
         private static bool _logWritten = false;
 
         /// <summary>

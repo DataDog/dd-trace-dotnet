@@ -1,4 +1,4 @@
-// <copyright file="ProfilerStatus.cs" company="Datadog">
+﻿// <copyright file="ProfilerStatus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
-    internal class ProfilerStatus : IProfilerStatus
+    internal sealed class ProfilerStatus : IProfilerStatus
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerStatus));
 

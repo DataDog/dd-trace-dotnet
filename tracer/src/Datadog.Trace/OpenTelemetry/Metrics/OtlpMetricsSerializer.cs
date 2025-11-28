@@ -1,4 +1,4 @@
-// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
+﻿// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     /// OTLP protobuf serializer that creates binary protobuf payloads
     /// compliant with the OpenTelemetry ExportMetricsServiceRequest schema.
     /// </summary>
-    internal class OtlpMetricsSerializer
+    internal sealed class OtlpMetricsSerializer
     {
         // Protobuf wire types
         private const int VarInt = 0;

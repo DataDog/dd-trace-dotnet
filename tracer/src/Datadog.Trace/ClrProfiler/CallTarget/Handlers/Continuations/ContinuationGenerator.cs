@@ -1,4 +1,4 @@
-// <copyright file="ContinuationGenerator.cs" company="Datadog">
+﻿// <copyright file="ContinuationGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,7 +47,7 @@ internal abstract class ContinuationGenerator<TTarget, TReturn>
         public abstract TReturn? ExecuteCallback(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state);
     }
 
-    internal class NoOpCallbackHandler : CallbackHandler
+    internal sealed class NoOpCallbackHandler : CallbackHandler
     {
         public override TReturn? ExecuteCallback(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {

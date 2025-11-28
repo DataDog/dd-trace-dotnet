@@ -1,4 +1,4 @@
-// <copyright file="ISessionAspect.cs" company="Datadog">
+﻿// <copyright file="ISessionAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.NHibernate;
 [AspectClass("NHibernate", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class ISessionAspect
+public static class ISessionAspect
 {
     /// <summary>
     ///     NHibernate aspect

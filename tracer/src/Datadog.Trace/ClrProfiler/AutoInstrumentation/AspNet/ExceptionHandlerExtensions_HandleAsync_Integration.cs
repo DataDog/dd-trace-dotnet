@@ -1,4 +1,4 @@
-// <copyright file="ExceptionHandlerExtensions_HandleAsync_Integration.cs" company="Datadog">
+﻿// <copyright file="ExceptionHandlerExtensions_HandleAsync_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExceptionHandlerExtensions_HandleAsync_Integration
+    public static class ExceptionHandlerExtensions_HandleAsync_Integration
     {
         private const string Major5Minor1 = "5.1";
         private const string Major5MinorX = "5";

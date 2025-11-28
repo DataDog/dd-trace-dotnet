@@ -1,4 +1,4 @@
-// <copyright file="DatadogMetadataReader.cs" company="Datadog">
+﻿// <copyright file="DatadogMetadataReader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,12 +25,12 @@ namespace Datadog.Trace.Pdb
     /// Reads metadata as well as both Windows and Portable PDBs.
     /// Note: reading Windows PDBs is only supported on Windows.
     /// </summary>
-    internal partial class DatadogMetadataReader : IDisposable
+    internal sealed partial class DatadogMetadataReader : IDisposable
     {
         private const int RidMask = 0x00FFFFFF;
         private const string Unknown = "UNKNOWN";
         private const string CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
-        protected const string AsyncStateMachineAttribute = "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
+        private const string AsyncStateMachineAttribute = "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
         private const int UnknownLocalLine = int.MaxValue;
         private static readonly Guid SourceLink = new("CC110556-A091-4D38-9FEC-25AB9A351A6A");
         private static readonly Guid EncLambdaAndClosureMap = new("A643004C-0240-496F-A783-30D64F4979DE");

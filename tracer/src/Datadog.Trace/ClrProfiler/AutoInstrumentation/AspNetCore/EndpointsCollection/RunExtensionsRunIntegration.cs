@@ -1,4 +1,4 @@
-// <copyright file="RunExtensionsRunIntegration.cs" company="Datadog">
+﻿// <copyright file="RunExtensionsRunIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class RunExtensionsRunIntegration
+public static class RunExtensionsRunIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TApp, THandler>(ref TApp? app, ref THandler? handler)
     {

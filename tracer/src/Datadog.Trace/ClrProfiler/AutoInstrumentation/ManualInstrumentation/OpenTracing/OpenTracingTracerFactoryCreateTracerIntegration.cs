@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class OpenTracingTracerFactoryCreateTracerIntegration
+public static class OpenTracingTracerFactoryCreateTracerIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(Uri agentEndpoint, string defaultServiceName, bool isDebugEnabled)
     {

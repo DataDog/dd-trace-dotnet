@@ -10,7 +10,7 @@ using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
-    internal class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
+    internal sealed class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
         private static string? _metadataHeaders = null;
 
