@@ -238,7 +238,7 @@ internal partial class Sources
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class {{GetCollectorName(type)}}
+            internal sealed partial class {{GetCollectorName(type)}}
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -569,7 +569,7 @@ internal partial class Sources
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
 

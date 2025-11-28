@@ -15,7 +15,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
-internal partial class MetricsTelemetryCollector
+internal sealed partial class MetricsTelemetryCollector
 {
     private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private MetricBuffer _buffer = new();
@@ -178,7 +178,7 @@ internal partial class MetricsTelemetryCollector
         }
     }
 
-    protected class MetricBuffer
+    private sealed class MetricBuffer
     {
         public readonly int[] PublicApiCounts;
         public readonly int[] Count;

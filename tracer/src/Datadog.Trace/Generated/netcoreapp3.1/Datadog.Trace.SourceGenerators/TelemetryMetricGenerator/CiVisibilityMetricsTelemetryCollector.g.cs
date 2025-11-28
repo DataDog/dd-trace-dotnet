@@ -15,7 +15,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
-internal partial class CiVisibilityMetricsTelemetryCollector
+internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
     private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private MetricBuffer _buffer = new();
@@ -178,7 +178,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         }
     }
 
-    protected class MetricBuffer
+    private sealed class MetricBuffer
     {
         public readonly int[] PublicApiCounts;
         public readonly int[] CountCIVisibility;
