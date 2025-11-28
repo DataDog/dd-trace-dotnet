@@ -36,7 +36,6 @@ public class SealedAnalyzer : DiagnosticAnalyzer
         var attributesToMatch = new[]
         {
             context.Compilation.GetOrCreateTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute"),
-            context.Compilation.GetOrCreateTypeByMetadataName("Datadog.Trace.DuckTyping.DuckTypeAttribute")
         };
 
         var candidateTypes = PooledConcurrentSet<INamedTypeSymbol>.GetInstance(SymbolEqualityComparer.Default);

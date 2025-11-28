@@ -215,30 +215,17 @@ public class SealedAnalyzerTests
 
     [Theory]
     [CombinatorialData]
-    public async Task DuckTypeAttributedType_NoDiagnostic(
-        [CombinatorialMemberData(nameof(NonPrivateModifiers))] string modifier,
-        [CombinatorialMemberData(nameof(ClassTypes))] string type)
+    public async Task AttributedType_NoDiagnostic(
+        [CombinatorialMemberData(nameof(NonPrivateModifiers))] string modifier)
     {
         var source =
             $$"""
               using System;
-              using Datadog.Trace.DuckTyping;
               
-              [Datadog.Trace.DuckTyping.DuckType("Sometype", "SomeAssembly")]
-              [DuckType("Sometype", "SomeAssembly")]
-              {{modifier}}{{type}} C 
+              [System.Runtime.InteropServices.ComImport]
+              [System.Runtime.InteropServices.Guid("E8D59775-E821-4D6C-B63D-BB0D969361DA")]
+              {{modifier}}class C 
               {
-              }
-              
-              namespace Datadog.Trace.DuckTyping
-              {
-                  [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
-                  internal sealed class DuckTypeAttribute(string targetType, string targetAssembly) : Attribute
-                  {
-                      public string? TargetType { get; set; } = targetType;
-                  
-                      public string? TargetAssembly { get; set; } = targetAssembly;
-                  }
               }
               """;
 
