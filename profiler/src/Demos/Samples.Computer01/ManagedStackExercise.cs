@@ -17,7 +17,6 @@ namespace Samples.Computer01
         {
             Console.WriteLine("ManagedStackExercise: Starting continuous execution...");
             _shouldStop = false;
-            
             // Run continuously until timeout
             var sw = Stopwatch.StartNew();
             long iterations = 0;
@@ -26,12 +25,6 @@ namespace Samples.Computer01
             {
                 Level1();
                 iterations++;
-                
-                // Print progress every 1000 iterations
-                if (iterations % 1000 == 0)
-                {
-                    Console.WriteLine($"ManagedStackExercise: {iterations} iterations in {sw.Elapsed.TotalSeconds:F1}s");
-                }
             }
             
             Console.WriteLine($"ManagedStackExercise: Completed {iterations} iterations in {sw.Elapsed}");

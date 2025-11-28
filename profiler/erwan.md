@@ -6,8 +6,8 @@
 
 ## What?
 
-The unwinding switches to manual when in managed code regions (detected via `LibrariesInfoCache`), and uses `libunwind` for native libraries.
-The aim is to push this logic to libunwind in time. However to iterate faster, we are adding unwinding logics within `dd-trace-dotnet`.
+The unwinding switches to manual when in managed code regions (detected via `LibrariesInfoCache` and `JitCodeCache`), and uses `libunwind` for native libraries.
+The long term aim is to push this logic to libunwind in time. However to iterate faster, we are adding unwinding logics within `dd-trace-dotnet`.
 
 ## Build & Test
 
@@ -35,11 +35,14 @@ docker run -it --rm \
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 \
     --env NUKE_TELEMETRY_OPTOUT=1 \
     --env DD_INTERNAL_USE_HYBRID_UNWINDING=1 \
+    --env DD_TRACE_AGENT_URL=http://host.docker.internal:8136 \
     --network=host \
     -v /var/log/datadog:/var/log/datadog/dotnet \
     dd-trace-dotnet/alpine-base \
     bash
 ```
+
+> **Note**: The Datadog trace agent is listening on port **8136** on MacOS (not the default 8126??). Using `host.docker.internal:8136` allows the profiler inside Docker to reach the agent running on the macOS host.
 
 if you touch the build, you need to update the build dll:
 
