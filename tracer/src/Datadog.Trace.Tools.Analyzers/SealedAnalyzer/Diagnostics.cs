@@ -23,7 +23,7 @@ public class Diagnostics
         title: "Seal types",
         messageFormat: "Types should be sealed where possible. Types used for duck-typing cannot be sealed. Sealing types can improve performance.",
         "Performance",
-        defaultSeverity: DiagnosticSeverity.Error,
+        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Seal types to improve performance.",
         customTags: "CompilationEnd");
