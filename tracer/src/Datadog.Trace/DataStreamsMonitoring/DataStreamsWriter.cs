@@ -37,10 +37,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
-    private int _flushRequested;
     private Task? _processTask;
     private Timer? _flushTimer;
-    private TaskCompletionSource<bool>? _currentFlushTcs;
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -86,6 +84,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private void Initialize()
     {
+        Log.Warning("ROBC Custom .NET tracer branch with flush logic changes");
         lock (_initLock)
         {
             if (_processTask != null)
@@ -93,10 +92,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Run(ProcessQueueLoopAsync);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
-                x => ((DataStreamsWriter)x!).RequestFlush(),
+                async x => await ((DataStreamsWriter)x!).FlushAsync().ConfigureAwait(false),
                 this,
                 dueTime: _bucketDurationMs,
                 period: _bucketDurationMs);
@@ -158,6 +157,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
+        Log.Debug("ROBC Flush and close...");
         if (!_processExit.TrySetResult(true))
         {
             return;
@@ -169,12 +169,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // request a final flush - as the _processExit flag is now set
-        // this ensures we will definitely flush all the stats
-        // (and sets the mutex if it isn't already set)
-        RequestFlush();
-
-        // wait for the processing loop to complete
         var completedTask = await Task.WhenAny(
                                            _processTask,
                                            Task.Delay(TimeSpan.FromSeconds(20)))
@@ -184,54 +178,43 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             Log.Error("Could not flush all data streams stats before process exit");
         }
+
+        await FlushAsync().ConfigureAwait(false);
     }
 
     public async Task FlushAsync()
     {
-        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
+        Log.Debug("ROB Flushing Async");
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        {
+            Log.Error("Data streams flush timeout");
+            return;
+        }
+
         try
         {
-            var timeout = TimeSpan.FromSeconds(5);
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-            {
-                return;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Interlocked.Exchange(ref _currentFlushTcs, tcs);
-
-            RequestFlush();
-
-            var completedTask = await Task.WhenAny(
-                tcs.Task,
-                _processExit.Task,
-                Task.Delay(timeout)).ConfigureAwait(false);
-
-            if (completedTask != tcs.Task)
-            {
-                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
-            }
+            Log.Debug("ROB Write API async");
+            await WriteToApiAsync().ConfigureAwait(false);
+            FlushComplete?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during flush");
         }
         finally
         {
-            _currentFlushTcs = null;
             _flushSemaphore.Release();
         }
     }
 
-    private void RequestFlush()
-    {
-        Interlocked.Exchange(ref _flushRequested, 1);
-    }
-
     private async Task WriteToApiAsync()
     {
+        Log.Debug("ROBC Writing to API Async");
         // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
@@ -268,13 +251,27 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private async Task ProcessQueueLoopAsync()
+    private void ProcessQueueLoopAsync()
     {
-        var isFinalFlush = false;
         while (true)
         {
+            Log.Debug("ROBC Processing Queue Loop - Sleep");
+            Thread.Sleep(_waitTimeSpan);
+
+            if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(10)))
+            {
+                Log.Warning("Queue Loop Semaphore timeout - continuing");
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                continue;
+            }
+
             try
             {
+                Log.Debug("ROBC Adding points to aggregator");
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
@@ -284,40 +281,19 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 {
                     _aggregator.AddBacklog(in backlogPoint);
                 }
-
-                var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1)
-                {
-                    await WriteToApiAsync().ConfigureAwait(false);
-                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
-                    currentFlushTcs?.TrySetResult(true);
-                    FlushComplete?.Invoke(this, EventArgs.Empty);
-                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "An error occured in the processing thread");
             }
+            finally
+            {
+                _flushSemaphore.Release();
+            }
 
             if (_processExit.Task.IsCompleted)
             {
-                if (isFinalFlush)
-                {
-                    return;
-                }
-
-                // do one more loop to make sure everything is flushed
-                RequestFlush();
-                isFinalFlush = true;
-                continue;
-            }
-
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            var tcs = new TaskCompletionSource<bool>();
-            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            {
-                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
+                return;
             }
         }
     }
