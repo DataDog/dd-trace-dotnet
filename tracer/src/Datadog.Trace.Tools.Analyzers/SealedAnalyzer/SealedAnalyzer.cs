@@ -75,7 +75,7 @@ public class SealedAnalyzer : DiagnosticAnalyzer
                         context.ReportDiagnostic(
                             Diagnostic.Create(
                                 Diagnostics.TypesShouldBeSealedRule,
-                                location: null,
+                                location: Location.None,
                                 type.Name));
                     }
                     else
