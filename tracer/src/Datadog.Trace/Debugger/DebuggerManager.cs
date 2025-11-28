@@ -342,7 +342,10 @@ namespace Datadog.Trace.Debugger
                     Log.Warning("Remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
                 }
 
-                return;
+                if (string.IsNullOrEmpty(debuggerSettings.ProbeFile))
+                {
+                    return;
+                }
             }
 
             var requestedDiState = debuggerSettings.DynamicInstrumentationEnabled || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
