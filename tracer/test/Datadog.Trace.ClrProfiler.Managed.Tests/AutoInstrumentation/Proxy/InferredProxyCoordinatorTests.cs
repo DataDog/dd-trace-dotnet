@@ -30,6 +30,11 @@ public class InferredProxyCoordinatorTests
         _coordinator = new InferredProxyCoordinator(_extractor.Object, _factory.Object);
     }
 
+    private delegate void TryExtractCallback(
+        NameValueHeadersCollection carrier,
+        HeadersCollectionAccesor<NameValueHeadersCollection> carrierGetter,
+        out InferredProxyData data);
+
     [Fact]
     public void ExtractAndCreateScope_WhenExtractorReturnsFalse_ShouldReturnNull()
     {
@@ -37,7 +42,6 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(false);
 
@@ -60,7 +64,6 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out proxyData))
                   .Returns(true); // we successfully extract headers
 
@@ -88,17 +91,15 @@ public class InferredProxyCoordinatorTests
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(true)
-                  .Callback((
+                  .Callback(new TryExtractCallback((
                       NameValueHeadersCollection _,
                       HeadersCollectionAccesor<NameValueHeadersCollection> _,
-                      Tracer _,
                       out InferredProxyData data) =>
                   {
                       data = proxyData;
-                  });
+                  }));
 
         // using an actual scope that the factor will return
         using var realScope = _tracer.StartActiveInternal("test.operation");
