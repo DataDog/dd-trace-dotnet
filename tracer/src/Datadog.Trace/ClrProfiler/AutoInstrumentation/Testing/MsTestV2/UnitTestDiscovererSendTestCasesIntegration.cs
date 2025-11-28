@@ -1,4 +1,4 @@
-﻿// <copyright file="UnitTestDiscovererSendTestCasesIntegration.cs" company="Datadog">
+// <copyright file="UnitTestDiscovererSendTestCasesIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class UnitTestDiscovererSendTestCasesIntegration
+public sealed class UnitTestDiscovererSendTestCasesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref string? source, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {
@@ -58,7 +58,7 @@ public static class UnitTestDiscovererSendTestCasesIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public static class UnitTestDiscovererSendTestCasesIntegrationV4
+public sealed class UnitTestDiscovererSendTestCasesIntegrationV4
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)

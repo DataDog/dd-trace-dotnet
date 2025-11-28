@@ -1,4 +1,4 @@
-﻿// <copyright file="PutIntegration.cs" company="Datadog">
+// <copyright file="PutIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         IntegrationName = IbmMqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class PutIntegration
+    public sealed class PutIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TOptions>(TTarget instance, TMessage msg, TOptions options)
         where TMessage : IMqMessage, IDuckType

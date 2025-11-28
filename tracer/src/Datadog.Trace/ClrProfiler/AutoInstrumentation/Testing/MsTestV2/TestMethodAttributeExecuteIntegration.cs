@@ -1,4 +1,4 @@
-﻿// <copyright file="TestMethodAttributeExecuteIntegration.cs" company="Datadog">
+// <copyright file="TestMethodAttributeExecuteIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestMethodAttributeExecuteIntegration
+public sealed class TestMethodAttributeExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         => TestMethodAttributeExecuteAsyncIntegration.OnMethodBegin(instance, testMethod);
@@ -99,7 +99,7 @@ public static class TestMethodAttributeExecuteIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public static class TestMethodAttributeExecuteAsyncIntegration
+public sealed class TestMethodAttributeExecuteAsyncIntegration
 #pragma warning restore SA1402
 {
     private static int _totalRetries = -1;
