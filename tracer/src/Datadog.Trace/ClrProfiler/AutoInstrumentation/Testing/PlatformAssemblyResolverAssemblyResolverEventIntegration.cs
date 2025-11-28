@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class PlatformAssemblyResolverAssemblyResolverEventIntegration
+public static class PlatformAssemblyResolverAssemblyResolverEventIntegration
 {
     private const string IntegrationName = "TestPlatformAssemblyResolver";
 

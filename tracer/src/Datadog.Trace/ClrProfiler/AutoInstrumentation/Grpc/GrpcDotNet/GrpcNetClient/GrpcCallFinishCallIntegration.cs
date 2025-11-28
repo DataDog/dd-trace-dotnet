@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class GrpcCallFinishCallIntegration
+    public static class GrpcCallFinishCallIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -5,7 +5,7 @@
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
-    internal class TemporaryHeaders
+    internal static class TemporaryHeaders
     {
         public const string Service = "x-datadog-temp-service";
         public const string MethodName = "x-datadog-temp-method";

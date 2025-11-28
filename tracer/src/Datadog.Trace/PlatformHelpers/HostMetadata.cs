@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
 {
-    internal class HostMetadata
+    internal sealed class HostMetadata
     {
         static HostMetadata()
         {

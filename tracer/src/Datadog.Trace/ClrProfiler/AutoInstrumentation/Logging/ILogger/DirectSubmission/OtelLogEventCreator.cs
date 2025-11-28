@@ -1,4 +1,4 @@
-// <copyright file="OtelLogEventCreator.cs" company="Datadog">
+﻿// <copyright file="OtelLogEventCreator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 /// <summary>
 /// Creates log events in OTLP format
 /// </summary>
-internal class OtelLogEventCreator : ILogEventCreator
+internal sealed class OtelLogEventCreator : ILogEventCreator
 {
     public LoggerDirectSubmissionLogEvent CreateLogEvent<TState>(
         int logLevel,
@@ -31,7 +31,7 @@ internal class OtelLogEventCreator : ILogEventCreator
         return NullDisposable.Instance;
     }
 
-    private class NullDisposable : IDisposable
+    private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
 

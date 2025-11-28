@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(browsable: false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanContextExtractorExtractIncludingDsmIntegration
+public static class SpanContextExtractorExtractIncludingDsmIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TCarrier, TAction>(TTarget instance, in TCarrier carrier, in TAction getter, string messageType, string source)
     {

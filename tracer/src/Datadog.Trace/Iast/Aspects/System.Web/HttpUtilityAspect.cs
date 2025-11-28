@@ -1,4 +1,4 @@
-// <copyright file="HttpUtilityAspect.cs" company="Datadog">
+﻿// <copyright file="HttpUtilityAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 [AspectClass("System.Web;System.Runtime.Extensions;System.Web.HttpUtility", AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpUtilityAspect
+public static class HttpUtilityAspect
 {
     /// <summary>
     /// Escapes the HTML string making it safe for XSS

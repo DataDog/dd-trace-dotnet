@@ -1,4 +1,4 @@
-// <copyright file="BitBucketSourceLinkUrlParser.cs" company="Datadog">
+﻿// <copyright file="BitBucketSourceLinkUrlParser.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
-    internal class BitBucketSourceLinkUrlParser : SourceLinkUrlParser
+    internal sealed class BitBucketSourceLinkUrlParser : SourceLinkUrlParser
     {
         /// <summary>
         /// Extract the git commit sha and repository url from a BitBucket SourceLink mapping string.

@@ -1,4 +1,4 @@
-// <copyright file="ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45.cs" company="Datadog">
+﻿// <copyright file="ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45
+    public static class ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint, TDefaultValue>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint, TDefaultValue defaultValue)
             where TTarget : IConnectionMultiplexer

@@ -1,4 +1,4 @@
-// <copyright file="TestCommand5ctorIntegration.cs" company="Datadog">
+﻿// <copyright file="TestCommand5ctorIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TestCommand5ctorIntegration
+public static class TestCommand5ctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable<string>? msbuildArgs, ref IEnumerable<string>? userDefinedArguments, ref IEnumerable<string>? trailingArguments, ref bool noRestore, ref string? msbuildPath)
     {

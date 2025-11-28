@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BasicDeliverAsyncAsyncIntegration
+public static class BasicDeliverAsyncAsyncIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProperties, TBody>(TTarget instance, ref string? consumerTag, ulong deliveryTag, bool redelivered, string? exchange, string? routingKey, TProperties properties, TBody body, in CancellationToken cancellationToken)
         where TProperties : IReadOnlyBasicProperties

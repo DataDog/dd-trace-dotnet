@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GetUpdatedImmutableTracerSettingsIntegration
+public static class GetUpdatedImmutableTracerSettingsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? automaticTracer, ref object? automaticSettings)
     {

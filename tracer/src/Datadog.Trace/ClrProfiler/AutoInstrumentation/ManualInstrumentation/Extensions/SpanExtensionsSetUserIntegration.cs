@@ -1,4 +1,4 @@
-// <copyright file="SpanExtensionsSetUserIntegration.cs" company="Datadog">
+﻿// <copyright file="SpanExtensionsSetUserIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ex
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanExtensionsSetUserIntegration
+public static class SpanExtensionsSetUserIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, string? email, string? name, string id, bool propagateId, string? sessionId, string? role, string? scope)
     {

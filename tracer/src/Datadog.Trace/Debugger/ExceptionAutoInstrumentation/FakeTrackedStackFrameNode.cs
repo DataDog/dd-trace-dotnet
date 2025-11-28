@@ -1,4 +1,4 @@
-// <copyright file="FakeTrackedStackFrameNode.cs" company="Datadog">
+﻿// <copyright file="FakeTrackedStackFrameNode.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class FakeTrackedStackFrameNode(TrackedStackFrameNode? parent, MethodBase method)
+    internal sealed class FakeTrackedStackFrameNode(TrackedStackFrameNode? parent, MethodBase method)
         : TrackedStackFrameNode(parent, method, isInvalidPath: false)
     {
         protected override int ComputeEnterSequenceHash()

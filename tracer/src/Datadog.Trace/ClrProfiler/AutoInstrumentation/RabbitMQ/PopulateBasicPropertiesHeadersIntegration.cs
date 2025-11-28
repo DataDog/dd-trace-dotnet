@@ -1,4 +1,4 @@
-// <copyright file="PopulateBasicPropertiesHeadersIntegration.cs" company="Datadog">
+﻿// <copyright file="PopulateBasicPropertiesHeadersIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class PopulateBasicPropertiesHeadersIntegration
+public static class PopulateBasicPropertiesHeadersIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PopulateBasicPropertiesHeadersIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PopulateBasicPropertiesHeadersIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TActivity>(TTarget instance, TBasicProperties basicProperties, TActivity sendActivity, ulong publishSequenceNumber)
     {

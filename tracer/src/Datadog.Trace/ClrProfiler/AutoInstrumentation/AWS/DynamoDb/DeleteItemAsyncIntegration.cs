@@ -1,4 +1,4 @@
-// <copyright file="DeleteItemAsyncIntegration.cs" company="Datadog">
+﻿// <copyright file="DeleteItemAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DeleteItemAsyncIntegration
+    public static class DeleteItemAsyncIntegration
     {
         private const string Operation = "DeleteItem";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemAsyncIntegration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DeleteItemAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget, TDeleteItemRequest>(TTarget instance, TDeleteItemRequest request, CancellationToken cancellationToken)
             where TDeleteItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType

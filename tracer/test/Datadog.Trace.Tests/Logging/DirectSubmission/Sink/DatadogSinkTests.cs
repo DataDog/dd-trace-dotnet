@@ -269,17 +269,21 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             public int NumberOfLogs { get; }
         }
 
-        internal class TestSink : DirectSubmissionLogSink
+        internal class TestSink
         {
+            private readonly DirectSubmissionLogSink _sink;
+
             public TestSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
-                : base(api, formatter, sinkOptions)
             {
+                _sink = new(api, formatter, sinkOptions);
             }
 
             public Task<bool> CallEmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
-                return EmitBatch(events);
+                return _sink.EmitBatchForTesting(events);
             }
+
+            public void Start() => _sink.Start();
         }
     }
 }

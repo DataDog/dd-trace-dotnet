@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(browsable: false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanContextInjectorInjectIncludingDsmIntegration
+public static class SpanContextInjectorInjectIncludingDsmIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TCarrier, TAction, TSpanContext>(TTarget instance, in TCarrier carrier, in TAction setter, TSpanContext context, string messageType, string target)
     {

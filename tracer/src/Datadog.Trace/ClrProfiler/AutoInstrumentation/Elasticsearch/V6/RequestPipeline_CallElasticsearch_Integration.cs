@@ -1,4 +1,4 @@
-// <copyright file="RequestPipeline_CallElasticsearch_Integration.cs" company="Datadog">
+﻿// <copyright file="RequestPipeline_CallElasticsearch_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RequestPipeline_CallElasticsearch_Integration
+    public static class RequestPipeline_CallElasticsearch_Integration
     {
         /// <summary>
         /// OnMethodBegin callback

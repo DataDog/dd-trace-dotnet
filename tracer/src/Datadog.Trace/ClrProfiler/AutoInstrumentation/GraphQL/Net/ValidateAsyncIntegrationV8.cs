@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net;
     IntegrationName = GraphQLCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ValidateAsyncIntegrationV8
+public static class ValidateAsyncIntegrationV8
 {
     internal static CallTargetState OnMethodBegin<TTarget, TValidationContext, TRules>(TTarget instance, TValidationContext validationContext, TRules rules)
         where TValidationContext : IValidationContext

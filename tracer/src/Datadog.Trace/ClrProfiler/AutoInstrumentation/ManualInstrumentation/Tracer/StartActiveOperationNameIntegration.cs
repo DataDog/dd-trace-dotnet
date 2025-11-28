@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class StartActiveOperationNameIntegration
+public static class StartActiveOperationNameIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

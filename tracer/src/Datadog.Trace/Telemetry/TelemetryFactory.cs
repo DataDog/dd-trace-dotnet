@@ -1,4 +1,4 @@
-// <copyright file="TelemetryFactory.cs" company="Datadog">
+﻿// <copyright file="TelemetryFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Telemetry.Transports;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetryFactory
+    internal sealed class TelemetryFactory
     {
         // need to start collecting these immediately
         private static readonly Lazy<RedactedErrorLogCollector> _logs = new();

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class CtorUseDefaultSourcesIntegration
+public static class CtorUseDefaultSourcesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, bool useDefaultSources)
     {

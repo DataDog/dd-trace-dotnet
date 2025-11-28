@@ -1,4 +1,4 @@
-// <copyright file="AwsSnsHandlerCommon.cs" company="Datadog">
+﻿// <copyright file="AwsSnsHandlerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -68,7 +68,7 @@ internal static class AwsSnsHandlerCommon
         return new CallTargetState(scope);
     }
 
-    public class SendType
+    public sealed class SendType
     {
         public static readonly SendType SingleMessage = new("Publish");
 
