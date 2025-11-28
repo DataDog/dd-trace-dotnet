@@ -63,9 +63,9 @@ internal abstract class LambdaCommon
         return CreatePlaceholderScope(tracer, headers);
     }
 
-    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, object state, bool isError, string data)
+    internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, CallTargetState stateObject, bool isError, string data)
     {
-        var request = requestBuilder.GetEndInvocationRequest(scope, state, isError);
+        var request = requestBuilder.GetEndInvocationRequest(stateObject, isError);
         WriteRequestPayload(request, data);
         using var response = (HttpWebResponse)request.GetResponse();
 
@@ -75,10 +75,9 @@ internal abstract class LambdaCommon
         }
     }
 
-    internal static async Task EndInvocationAsync(string returnValue, Exception exception, object stateObject, ILambdaExtensionRequest requestBuilder)
+    internal static async Task EndInvocationAsync(string returnValue, Exception exception, CallTargetState stateObject, ILambdaExtensionRequest requestBuilder)
     {
-        var state = (CallTargetState)stateObject!;
-        var scope = state.Scope;
+        var scope = stateObject.Scope;
         try
         {
             await Task.WhenAll(
@@ -100,7 +99,7 @@ internal abstract class LambdaCommon
                 span.SetException(exception);
             }
 
-            SendEndInvocation(requestBuilder, scope, state.State, exception != null, returnValue);
+            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
         }
         catch (Exception ex)
         {
