@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict;
     IntegrationName = nameof(IntegrationId.DatadogTraceVersionConflict))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ProcessHelpersStartWithDoNotTraceIntegration
+public static class ProcessHelpersStartWithDoNotTraceIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TStartInfo>(ref TStartInfo? startInfo, ref bool doNotTrace)
     {

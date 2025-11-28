@@ -10,7 +10,7 @@ using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
-internal class DictionaryConfigurationSource : StringConfigurationSource
+internal sealed class DictionaryConfigurationSource : StringConfigurationSource
 {
     private readonly IReadOnlyDictionary<string, string> _dictionary;
 

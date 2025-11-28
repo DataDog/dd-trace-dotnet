@@ -1,4 +1,4 @@
-// <copyright file="TypeCacheGetTestMethodInfoIntegration.cs" company="Datadog">
+﻿// <copyright file="TypeCacheGetTestMethodInfoIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TypeCacheGetTestMethodInfoIntegration
+public static class TypeCacheGetTestMethodInfoIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext, ref bool captureDebugTraces)
         => TypeCacheGetTestMethodInfoIntegrationV3_9.OnMethodBegin(instance, ref testMethod, ref testContext);
@@ -57,7 +57,7 @@ public class TypeCacheGetTestMethodInfoIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public class TypeCacheGetTestMethodInfoIntegrationV3_9
+public static class TypeCacheGetTestMethodInfoIntegrationV3_9
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext)

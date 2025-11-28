@@ -1,4 +1,4 @@
-// <copyright file="RuntimePipelineInvokeSyncIntegration.cs" company="Datadog">
+﻿// <copyright file="RuntimePipelineInvokeSyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         IntegrationName = AwsConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RuntimePipelineInvokeSyncIntegration
+    public static class RuntimePipelineInvokeSyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

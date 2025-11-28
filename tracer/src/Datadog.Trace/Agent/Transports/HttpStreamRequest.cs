@@ -1,4 +1,4 @@
-// <copyright file="HttpStreamRequest.cs" company="Datadog">
+﻿// <copyright file="HttpStreamRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class HttpStreamRequest : IApiRequest
+    internal sealed class HttpStreamRequest : IApiRequest
     {
         private readonly Uri _uri;
         private readonly DatadogHttpClient _client;

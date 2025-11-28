@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ForceFlushAsyncIntegration
+public static class ForceFlushAsyncIntegration
 {
     internal static CallTargetReturn<Task> OnMethodEnd<TTarget>(TTarget instance, Task returnValue, Exception exception, in CallTargetState state)
         where TTarget : ITracerProxy

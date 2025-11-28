@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ex
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanExtensionsSetTraceSamplingPriorityIntegration
+public static class SpanExtensionsSetTraceSamplingPriorityIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, SamplingPriority samplingPriority)
     {

@@ -17,7 +17,7 @@ namespace Datadog.Trace.Util.Streams;
 /// A stream that only buffers a portion of the initial stream in memory, so that it can be
 /// retrieved again later if needed (for example if deserialization fails)
 /// </summary>
-internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
+internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
 {
     internal const int MaxInitialBufferSize = 128;
 

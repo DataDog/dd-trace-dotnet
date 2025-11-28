@@ -28,9 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class StartActiveImplementationIntegration
+public static class StartActiveImplementationIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StartActiveImplementationIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StartActiveImplementationIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TSpanContext>(TTarget instance, string operationName, TSpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
         where TTarget : ITracerProxy

@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             return new CallTargetReturn<TResponse>(response);
         }
 
-        private class TemporaryGrpcHeaders
+        private sealed class TemporaryGrpcHeaders
         {
             public TemporaryGrpcHeaders(
                 IMetadata metadata,

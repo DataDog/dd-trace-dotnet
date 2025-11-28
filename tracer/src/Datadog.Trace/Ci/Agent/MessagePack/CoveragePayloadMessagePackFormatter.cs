@@ -10,7 +10,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<CICodeCoveragePayload.CoveragePayload>
+internal sealed class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<CICodeCoveragePayload.CoveragePayload>
 {
     private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
     private readonly byte[] _coveragesBytes = StringEncoding.UTF8.GetBytes("coverages");

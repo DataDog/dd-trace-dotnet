@@ -1,4 +1,4 @@
-// <copyright file="OtlpLogsSerializer.cs" company="Datadog">
+﻿// <copyright file="OtlpLogsSerializer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -280,7 +280,7 @@ internal static class OtlpLogsSerializer
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal class ResourceTags(string serviceName, string? environment, string? serviceVersion, ReadOnlyDictionary<string, string> globalTags)
+    internal sealed class ResourceTags(string serviceName, string? environment, string? serviceVersion, ReadOnlyDictionary<string, string> globalTags)
     {
         public string ServiceName { get; } = serviceName;
 

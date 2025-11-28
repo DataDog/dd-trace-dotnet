@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Configuration;
 
-internal class NullGitMetadataProvider : IGitMetadataTagsProvider
+internal sealed class NullGitMetadataProvider : IGitMetadataTagsProvider
 {
     public bool TryExtractGitMetadata([NotNullWhen(true)] out GitMetadata? gitMetadata)
     {

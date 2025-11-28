@@ -1,4 +1,4 @@
-// <copyright file="AsmFeaturesProduct.cs" company="Datadog">
+﻿// <copyright file="AsmFeaturesProduct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmFeaturesProduct : IAsmConfigUpdater
+internal sealed class AsmFeaturesProduct : IAsmConfigUpdater
 {
     public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {

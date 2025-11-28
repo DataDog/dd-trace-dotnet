@@ -1,4 +1,4 @@
-// <copyright file="CookieAnalyzer.cs" company="Datadog">
+﻿// <copyright file="CookieAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ using System.Web;
 
 namespace Datadog.Trace.Iast;
 
-internal class CookieAnalyzer
+internal sealed class CookieAnalyzer
 {
     private static readonly Lazy<CookieAnalyzer> Instance = new Lazy<CookieAnalyzer>();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));

@@ -8,7 +8,7 @@ using System;
 
 namespace Datadog.Trace.Telemetry;
 
-internal partial class CiVisibilityMetricsTelemetryCollector : MetricsTelemetryCollectorBase, IMetricsTelemetryCollector
+internal sealed partial class CiVisibilityMetricsTelemetryCollector : MetricsTelemetryCollectorBase, IMetricsTelemetryCollector
 {
     public CiVisibilityMetricsTelemetryCollector()
         : base()

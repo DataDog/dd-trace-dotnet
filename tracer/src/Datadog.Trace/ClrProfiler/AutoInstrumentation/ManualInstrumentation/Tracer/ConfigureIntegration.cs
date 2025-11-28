@@ -32,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ConfigureIntegration
+public static class ConfigureIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigureIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ConfigureIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values)
     {

@@ -1,4 +1,4 @@
-// <copyright file="ServiceRemotingTags.cs" company="Datadog">
+﻿// <copyright file="ServiceRemotingTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ServiceFabric
         public string? RemotingInvocationId { get; set; }
     }
 
-    internal partial class ServiceRemotingServerTags : ServiceRemotingTags
+    internal sealed partial class ServiceRemotingServerTags : ServiceRemotingTags
     {
         public ServiceRemotingServerTags()
             : base(SpanKinds.Server)
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ServiceFabric
         }
     }
 
-    internal partial class ServiceRemotingClientV1Tags : ServiceRemotingClientTags
+    internal sealed partial class ServiceRemotingClientV1Tags : ServiceRemotingClientTags
     {
         private string? _peerServiceOverride = null;
 

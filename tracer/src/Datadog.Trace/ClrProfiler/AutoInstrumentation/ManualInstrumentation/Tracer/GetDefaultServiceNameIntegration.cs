@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GetDefaultServiceNameIntegration
+public static class GetDefaultServiceNameIntegration
 {
     internal static CallTargetReturn<string> OnMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
         where TTarget : ITracerProxy

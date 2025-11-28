@@ -1,4 +1,4 @@
-// <copyright file="SpanEvent.cs" company="Datadog">
+﻿// <copyright file="SpanEvent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ namespace Datadog.Trace
     /// A SpanEvent represents an event that occurred during the execution of a Span.
     /// A Span may have multiple SpanEvents, each with a name, timestamp, and optional attributes.
     /// </summary>
-    internal class SpanEvent
+    internal sealed class SpanEvent
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanEvent"/> class.

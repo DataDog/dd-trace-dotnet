@@ -1,4 +1,4 @@
-// <copyright file="HttpModule_Integration.cs" company="Datadog">
+﻿// <copyright file="HttpModule_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IntegrationName = nameof(IntegrationId.AspNet))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class HttpModule_Integration
+    public static class HttpModule_Integration
     {
         // WARNING: Do not add a static reference to `IDatadogLogger` or reference
         // anything related to Tracer.Instance etc. This method is called at application

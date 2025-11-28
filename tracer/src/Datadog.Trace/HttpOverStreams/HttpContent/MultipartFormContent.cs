@@ -22,7 +22,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent;
 /// which can be written to directly. The ability to push data to the output stream differs from the
 /// StreamContent where data is pulled and not pushed.
 /// </summary>
-internal class MultipartFormContent : IHttpContent
+internal sealed class MultipartFormContent : IHttpContent
 {
     private const string Header = $"""--{Boundary}{CrLf}""";
     private const string Footer = $"""--{Boundary}--{CrLf}""";

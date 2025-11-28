@@ -11,7 +11,7 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class IntegrationTelemetryCollector
+    internal sealed class IntegrationTelemetryCollector
     {
         private readonly IntegrationDetail[] _integrationsById;
         private readonly IntegrationTelemetryData[] _previousValues;

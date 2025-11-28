@@ -1,4 +1,4 @@
-// <copyright file="ConfigurationState.cs" company="Datadog">
+﻿// <copyright file="ConfigurationState.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 /// - ASM is not activated, and _fileUpdates/_fileRemoves contain some pending non-deserialized changes to apply when ASM_FEATURES activate ASM. Every time an RC payload is received here, pending changes are reset to the last ones
 /// - ASM is activated, stored configs in _fileUpdates/_fileRemoves are applied every time.
 /// </summary>
-internal record ConfigurationState
+internal sealed record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
@@ -351,7 +351,7 @@ internal record ConfigurationState
         }
     }
 
-    internal record IncomingUpdateStatus : IDisposable
+    internal sealed record IncomingUpdateStatus : IDisposable
     {
         internal bool ShouldInitAppsec { get; set; } = false;
 
@@ -369,7 +369,7 @@ internal record ConfigurationState
         }
     }
 
-    internal record RemoteConfigWafFiles(Dictionary<string, object>? Updates, List<string>? Removes)
+    internal sealed record RemoteConfigWafFiles(Dictionary<string, object>? Updates, List<string>? Removes)
     {
         public bool HasData => Updates is not null || Removes is not null;
     }

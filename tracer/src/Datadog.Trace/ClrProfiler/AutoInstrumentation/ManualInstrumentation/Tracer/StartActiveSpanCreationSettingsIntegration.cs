@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class StartActiveSpanCreationSettingsIntegration
+public static class StartActiveSpanCreationSettingsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSettings>(TTarget instance, string operationName, in TSettings settings)
     {

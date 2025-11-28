@@ -1,4 +1,4 @@
-// <copyright file="ExecutedTelemetryHelper.cs" company="Datadog">
+﻿// <copyright file="ExecutedTelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 #nullable enable
 namespace Datadog.Trace.Iast.Telemetry;
 
-internal class ExecutedTelemetryHelper
+internal sealed class ExecutedTelemetryHelper
 {
     private const string BasicExecutedTag = "_dd.iast.telemetry";
     private const string PropagationExecutedTag = BasicExecutedTag + ".executed.propagation";

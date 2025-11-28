@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ServerCallHandlerBaseHandleCallAsyncIntegration
+    public static class ServerCallHandlerBaseHandleCallAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

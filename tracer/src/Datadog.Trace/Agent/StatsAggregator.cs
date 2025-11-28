@@ -1,4 +1,4 @@
-// <copyright file="StatsAggregator.cs" company="Datadog">
+﻿// <copyright file="StatsAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsAggregator : IStatsAggregator
+    internal sealed class StatsAggregator : IStatsAggregator
     {
         private const int BufferCount = 2;
 

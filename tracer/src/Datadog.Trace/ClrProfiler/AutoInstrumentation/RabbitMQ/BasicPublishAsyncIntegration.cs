@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BasicPublishAsyncIntegration
+public static class BasicPublishAsyncIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string? exchange, string? routingKey, bool mandatory, TBasicProperties basicProperties, TBody body, in CancellationToken cancellationToken)
         where TBasicProperties : IReadOnlyBasicProperties, IDuckType

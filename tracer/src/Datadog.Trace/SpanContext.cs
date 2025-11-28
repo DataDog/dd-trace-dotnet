@@ -1,4 +1,4 @@
-// <copyright file="SpanContext.cs" company="Datadog">
+﻿// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public sealed partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {

@@ -1,4 +1,4 @@
-// <copyright file="ReflectedHttpActionDescriptor_ExecuteAsync_Integration.cs" company="Datadog">
+﻿// <copyright file="ReflectedHttpActionDescriptor_ExecuteAsync_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ReflectedHttpActionDescriptor_ExecuteAsync_Integration
+    public static class ReflectedHttpActionDescriptor_ExecuteAsync_Integration
     {
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string IntegrationName = nameof(IntegrationId.AspNetWebApi2);
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReflectedHttpActionDescriptor_ExecuteAsync_Integration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReflectedHttpActionDescriptor_ExecuteAsync_Integration));
 
         /// <summary>
         /// OnMethodBegin callback

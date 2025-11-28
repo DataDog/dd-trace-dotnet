@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 // ReSharper disable once InconsistentNaming
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class IWireProtocol_3_5_Execute_Integration
+public static class IWireProtocol_3_5_Execute_Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TOperationContext, TConnection>(TTarget instance, TOperationContext? operationContext, TConnection connection)
         where TConnection : IConnection

@@ -1,4 +1,4 @@
-// <copyright file="ExceptionTrackManager.cs" company="Datadog">
+﻿// <copyright file="ExceptionTrackManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionTrackManager : IDisposable
+    internal sealed class ExceptionTrackManager : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionTrackManager>();
         private readonly ConcurrentDictionary<ExceptionIdentifier, TrackedExceptionCase> _trackedExceptionCases;

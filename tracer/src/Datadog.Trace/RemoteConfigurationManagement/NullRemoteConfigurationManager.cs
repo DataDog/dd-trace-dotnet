@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
-internal class NullRemoteConfigurationManager : IRemoteConfigurationManager
+internal sealed class NullRemoteConfigurationManager : IRemoteConfigurationManager
 {
     public void Dispose()
     {

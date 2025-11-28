@@ -1,4 +1,4 @@
-// <copyright file="LogRateLimiter.cs" company="Datadog">
+﻿// <copyright file="LogRateLimiter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging
 {
-    internal class LogRateLimiter : ILogRateLimiter
+    internal sealed class LogRateLimiter : ILogRateLimiter
     {
         private readonly int _secondsBetweenLogs;
         private readonly ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo> _buckets = new();

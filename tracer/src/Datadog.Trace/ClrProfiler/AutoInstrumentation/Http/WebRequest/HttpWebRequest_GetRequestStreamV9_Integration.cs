@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest;
     IntegrationName = WebRequestCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class HttpWebRequest_GetRequestStreamV9_Integration
+public static class HttpWebRequest_GetRequestStreamV9_Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {

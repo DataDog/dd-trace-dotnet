@@ -1,4 +1,4 @@
-// <copyright file="CIFormatterResolver.cs" company="Datadog">
+﻿// <copyright file="CIFormatterResolver.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.MessagePack.Resolvers;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class CIFormatterResolver : IFormatterResolver
+internal sealed class CIFormatterResolver : IFormatterResolver
 {
     public static readonly CIFormatterResolver Instance = new();
 

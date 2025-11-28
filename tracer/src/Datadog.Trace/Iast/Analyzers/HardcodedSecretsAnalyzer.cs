@@ -1,4 +1,4 @@
-// <copyright file="HardcodedSecretsAnalyzer.cs" company="Datadog">
+﻿// <copyright file="HardcodedSecretsAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
-internal class HardcodedSecretsAnalyzer : IDisposable
+internal sealed class HardcodedSecretsAnalyzer : IDisposable
 {
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();

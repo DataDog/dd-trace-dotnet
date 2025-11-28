@@ -1,4 +1,4 @@
-// <copyright file="ClientStatsPayload.cs" company="Datadog">
+﻿// <copyright file="ClientStatsPayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Agent
 {
-    internal class ClientStatsPayload(MutableSettings settings)
+    internal sealed class ClientStatsPayload(MutableSettings settings)
     {
         private AppSettings _settings = CreateSettings(settings);
         private long _sequence;
@@ -27,6 +27,6 @@ namespace Datadog.Trace.Agent
         private static AppSettings CreateSettings(MutableSettings settings)
             => new(settings.Environment, settings.ServiceVersion);
 
-        internal record AppSettings(string Environment, string Version);
+        internal sealed record AppSettings(string Environment, string Version);
     }
 }

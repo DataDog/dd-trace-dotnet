@@ -1,4 +1,4 @@
-// <copyright file="AwsSqsHandlerCommon.cs" company="Datadog">
+﻿// <copyright file="AwsSqsHandlerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -174,7 +174,7 @@ internal static class AwsSqsHandlerCommon
         return response;
     }
 
-    public class SendType
+    public sealed class SendType
     {
         public static readonly SendType SingleMessage = new("SendMessage");
 

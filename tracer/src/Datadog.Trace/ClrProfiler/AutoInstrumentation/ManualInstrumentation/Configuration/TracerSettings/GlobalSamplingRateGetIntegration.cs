@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GlobalSamplingRateGetIntegration
+public static class GlobalSamplingRateGetIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
