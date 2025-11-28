@@ -38,9 +38,11 @@
       http.status_code: 200,
       http.url: http://localhost:00000/my-bucket/,
       language: dotnet,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -68,9 +70,11 @@
       http.url: http://localhost:00000/my-bucket/sample.txt,
       language: dotnet,
       objectkey: sample.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -108,9 +112,11 @@
       http.url: http://localhost:00000/my-bucket/sample.txt,
       language: dotnet,
       objectkey: sample.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -138,9 +144,11 @@
       http.url: http://localhost:00000/my-bucket/copy.txt,
       language: dotnet,
       objectkey: copy.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -177,9 +185,11 @@
       http.status_code: 200,
       http.url: http://localhost:00000/my-bucket/,
       language: dotnet,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -207,9 +217,11 @@
       http.url: http://localhost:00000/my-bucket/copy.txt,
       language: dotnet,
       objectkey: copy.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -236,9 +248,11 @@
       http.status_code: 200,
       http.url: http://localhost:00000/my-bucket/,
       language: dotnet,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -266,9 +280,11 @@
       http.url: http://localhost:00000/my-bucket/multipart.txt,
       language: dotnet,
       objectkey: multipart.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -296,9 +312,11 @@
       http.url: http://localhost:00000/my-bucket/multipart.txt,
       language: dotnet,
       objectkey: multipart.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -326,9 +344,11 @@
       http.url: http://localhost:00000/my-bucket/multipart.txt,
       language: dotnet,
       objectkey: multipart.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -356,9 +376,11 @@
       http.url: http://localhost:00000/my-bucket/multipart.txt,
       language: dotnet,
       objectkey: multipart.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -396,7 +418,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -423,9 +446,11 @@
       http.status_code: 200,
       http.url: http://localhost:00000/my-bucket/,
       language: dotnet,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -453,9 +478,11 @@
       http.url: http://localhost:00000/my-bucket/multipart.txt,
       language: dotnet,
       objectkey: multipart.txt,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -482,9 +509,11 @@
       http.status_code: 204,
       http.url: http://localhost:00000/my-bucket/,
       language: dotnet,
+      peer.service: my-bucket,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.S3
+      _dd.base_service: Samples.AWS.S3,
+      _dd.peer.service.source: bucketname
     },
     Metrics: {
       _dd.top_level: 1.0
