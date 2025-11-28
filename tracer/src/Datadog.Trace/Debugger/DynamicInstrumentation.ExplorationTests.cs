@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger
         internal void WithProbesFromFile()
         {
             var probes = ReadProbesFromCsv(_settings.SnapshotExplorationTestProbesFilePath);
-            UpdateAddedProbeInstrumentations(probes.Skip(700).Take(30).ToList());
+            UpdateAddedProbeInstrumentations(probes.Skip(1000).Take(1000).ToList());
         }
 
         private List<ProbeDefinition> ReadProbesFromCsv(string filePath)
