@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
@@ -21,19 +22,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly bool _use128Bits;
         private readonly string _cachedFormat;
 
-        public DatadogLoggingScope()
-            : this(Tracer.Instance)
+        public DatadogLoggingScope(Tracer tracer, MutableSettings settings)
         {
-        }
-
-        internal DatadogLoggingScope(Tracer tracer)
-        {
+            Settings = settings;
             _tracer = tracer;
-            // TODO: Subscribe to changes in settings
-            var mutableSettings = tracer.CurrentTraceSettings.Settings;
-            _service = mutableSettings.DefaultServiceName;
-            _env = mutableSettings.Environment ?? string.Empty;
-            _version = mutableSettings.ServiceVersion ?? string.Empty;
+            _service = settings.DefaultServiceName;
+            _env = settings.Environment ?? string.Empty;
+            _version = settings.ServiceVersion ?? string.Empty;
             _use128Bits = _tracer.Settings.TraceId128BitLoggingEnabled;
 
             _cachedFormat = string.Format(
@@ -43,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                 _env,
                 _version);
         }
+
+        public MutableSettings Settings { get; }
 
         public int Count => 5;
 

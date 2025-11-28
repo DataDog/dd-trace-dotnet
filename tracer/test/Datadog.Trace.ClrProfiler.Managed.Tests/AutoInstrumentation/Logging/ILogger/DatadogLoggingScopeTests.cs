@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 
             await using var tracer = TracerHelper.Create(settings,  new Mock<IAgentWriter>().Object);
 
-            var scope = new DatadogLoggingScope(tracer);
+            var scope = new DatadogLoggingScope(tracer, tracer.CurrentTraceSettings.Settings);
 
             var actual = scope.ToString();
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 
             await using var tracer = TracerHelper.Create(settings,  new Mock<IAgentWriter>().Object);
             using var spanScope = tracer.StartActive("test");
-            var scope = new DatadogLoggingScope(tracer);
+            var scope = new DatadogLoggingScope(tracer, tracer.CurrentTraceSettings.Settings);
 
             var actual = scope.ToString();
 
