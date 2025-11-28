@@ -22,8 +22,7 @@ namespace Benchmarks.Trace
     /// Span benchmarks
     /// </summary>
     [MemoryDiagnoser]
-    [BenchmarkAgent6]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class SpanBenchmark
     {
         private Tracer _tracer;
