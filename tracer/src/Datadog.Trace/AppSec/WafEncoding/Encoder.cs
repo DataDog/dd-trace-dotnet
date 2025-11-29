@@ -47,6 +47,22 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
         }
 
+        internal static void Dispose()
+        {
+            try
+            {
+                if (_pool is { IsDisposed: false })
+                {
+                    _pool.Dispose();
+                    _pool = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "WafEncoder Crashed on shutdown.");
+            }
+        }
+
         /// <summary>
         /// For testing purposes
         /// </summary>
