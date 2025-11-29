@@ -162,7 +162,7 @@ partial class Build
         {
             DeleteDirectory(NativeLoaderProject.Directory / "bin");
 
-            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 

@@ -16,6 +16,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public const int DefaultMaxFramesToCapture = 4;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour
         public const int DefaultMaxExceptionAnalysisLimit = 100;
+        private const string DefaultSite = "datadoghq.com";
 
         public ExceptionReplaySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
@@ -47,6 +48,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                        .WithKeys(ConfigurationKeys.Debugger.MaxExceptionAnalysisLimit)
                                        .AsInt32(DefaultMaxExceptionAnalysisLimit, x => x > 0)
                                        .Value;
+
+            AgentlessEnabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled).AsBool(false);
+            AgentlessUrlOverride = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayAgentlessUrl).AsString();
+            AgentlessApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            AgentlessSite = config.WithKeys(ConfigurationKeys.Site).AsString(DefaultSite, site => !string.IsNullOrEmpty(site)) ?? DefaultSite;
         }
 
         public bool Enabled { get; }
@@ -60,6 +66,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public TimeSpan RateLimit { get; }
 
         public int MaxExceptionAnalysisLimit { get; }
+
+        public bool AgentlessEnabled { get; }
+
+        public string? AgentlessUrlOverride { get; }
+
+        public string? AgentlessApiKey { get; }
+
+        public string AgentlessSite { get; }
 
         public static ExceptionReplaySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

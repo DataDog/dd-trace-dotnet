@@ -269,6 +269,11 @@ internal static class CiUtils
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled] = "1";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.RateLimitSeconds] = "0";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.UploadFlushInterval] = "1000";
+
+            if (agentless)
+            {
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled] = "1";
+            }
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled

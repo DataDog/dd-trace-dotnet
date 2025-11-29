@@ -142,6 +142,11 @@ partial class Build : NukeBuild
         .Description("Cleans all build output")
         .Executes(() =>
         {
+            if (FastDevLoop)
+            {
+                return;
+            }
+
             if (IsWin)
             {
                 // These are created as part of the CreatePlatformlessSymlinks target and cause havok

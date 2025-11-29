@@ -430,6 +430,11 @@ partial class Build
                .Description("Regenerates the 'build' solutions based on the 'master' solution")
                .Executes(() =>
                 {
+                    if (FastDevLoop)
+                    {
+                        return;
+                    }
+                    
                     // Create a copy of the "full solution"
                     var sln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
