@@ -901,6 +901,12 @@ namespace Datadog.Trace.Configuration
             /// </ul>
             /// </summary>
             public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
+
+            /// <summary>
+            /// Enables Feature Flags Provider
+            /// </summary>
+            /// <see cref="TracerSettings.IsFlaggingProviderEnabled"/>
+            public const string FlaggingProviderEnabled = "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED";
         }
 
         internal static class Telemetry

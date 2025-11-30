@@ -101,6 +101,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger ApmTracingMulticonfig = Create(45);
 
+        public static readonly BigInteger FfeFlagConfigurationRules = Create(46);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }
