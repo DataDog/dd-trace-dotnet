@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
@@ -321,6 +322,16 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Error(ex, "Error initializing Security");
+            }
+
+            try
+            {
+                Log.Debug("Initializing Feature Flags singleton instance.");
+                _ = FeatureFlagsModule.Instance;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing Feature Flags Module");
             }
 
 #if !NETFRAMEWORK

@@ -610,6 +610,9 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
+                                                       .AsBool(false);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -1248,6 +1251,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether remote Feature Flags Provider is enabled
+        /// </summary>
+        internal bool IsFlaggingProviderEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled
