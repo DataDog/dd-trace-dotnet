@@ -9,17 +9,18 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
 
         private IAgentWriter _agentWriter;
+        private IAgentWriter _agentWriterNoOpFlush;
         private ArraySegment<Span> _enrichedSpans;
 
         [GlobalSetup]
@@ -32,19 +33,23 @@ namespace Benchmarks.Trace
 
             for (int i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
-                enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
+                var tags = new SqlTags()
+                {
+                    DbType = "sql-server",
+                    InstrumentationName = nameof(IntegrationId.SqlClient),
+                };
+                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now, tags);
+                enrichedSpans[i].SetTag("somekey", "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
             _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            var overrides = new NameValueConfigurationSource(new()
+            var sources = new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
                 { ConfigurationKeys.TraceEnabled, false.ToString() },
             });
-            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
             var settings = new TracerSettings(sources);
 
             var api = new Api(
@@ -54,16 +59,31 @@ namespace Benchmarks.Trace
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
+            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
+            var noopApi = new NullApi();
+            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
+            _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
         }
 
         /// <summary>
+        /// Write realistic traces, but don't flush, to isolate overhead from serialization only
+        /// </summary>
+        [Benchmark]
+        public Task WriteEnrichedTraces()
+        {
+            _agentWriterNoOpFlush.WriteTrace(_enrichedSpans);
+            // Flush os that we clear the buffer
+            return _agentWriterNoOpFlush.FlushTracesAsync();
+        }
+
+        /// <summary>
         /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
         /// </summary>
         [Benchmark]
+        [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
         public Task WriteAndFlushEnrichedTraces()
         {
             _agentWriter.WriteTrace(_enrichedSpans);
@@ -71,7 +91,7 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Try to mimick as much as possible the overhead of the ApiWebRequestFactory,
+        /// Try to mimic as much as possible the overhead of the ApiWebRequestFactory,
         /// without actually sending the requests
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
@@ -182,5 +202,18 @@ namespace Benchmarks.Trace
             {
             }
         }
+
+            private class NullApi : IApi
+            {
+                public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
+                {
+                    return Task.FromResult(true);
+                }
+
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                {
+                    return Task.FromResult(true);
+                }
+            }
     }
 }
