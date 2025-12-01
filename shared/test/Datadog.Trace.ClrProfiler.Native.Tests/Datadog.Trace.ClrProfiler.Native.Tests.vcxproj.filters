@@ -54,5 +54,8 @@
     <ClInclude Include="environment_variable_wrapper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="test_cor_profiler_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
