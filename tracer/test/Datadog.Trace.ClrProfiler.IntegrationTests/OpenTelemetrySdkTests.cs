@@ -225,11 +225,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var snapshotName = runtimeMajor switch
             {
-                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => otelMetricsEnabled.Equals("true") ? ".NET_6_OTEL" : ".NET_6_DD",
+                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => ".NET_6",
                 7 or 8 when parsedVersion >= new Version("1.5.1") && parsedVersion < new Version("1.10.0") => ".NET_7_8",
                 >= 9 when parsedVersion >= new Version("1.10.0") => string.Empty,
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
             };
+
+            snapshotName = otelMetricsEnabled.Equals("true") ? $"{snapshotName}_OTEL" : $"{snapshotName}_DD";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;

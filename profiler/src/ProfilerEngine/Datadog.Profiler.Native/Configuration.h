@@ -89,7 +89,7 @@ public:
     std::chrono::minutes GetHeapSnapshotInterval() const override;
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
-
+    uint32_t GetHeapHandleLimit() const override;
 
 private:
     static tags ExtractUserTags();
@@ -118,6 +118,8 @@ private:
     std::chrono::minutes ExtractHeapSnapshotInterval() const;
     std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
+    int32_t ExtractHeapHandleLimit() const;
+
 
 private:
     static std::string const DefaultProdSite;
@@ -168,6 +170,7 @@ private:
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
     int32_t _codeHotspotsThreadsThreshold;
+    uint32_t _heapHandleLimit;
     bool _useBacktrace2;
     bool _isAllocationRecorderEnabled;
     bool _isGcThreadsCpuTimeEnabled;

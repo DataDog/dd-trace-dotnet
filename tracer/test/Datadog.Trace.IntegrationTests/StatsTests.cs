@@ -58,7 +58,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -205,7 +205,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -366,7 +366,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
                     }));
 
-            var discovery = DiscoveryService.Create(settings.Exporter);
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings);
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -583,9 +583,9 @@ namespace Datadog.Trace.IntegrationTests
 
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
-                stats.Env.Should().Be(settings.MutableSettings.Environment);
+                stats.Env.Should().Be(settings.Manager.InitialMutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
-                stats.Version.Should().Be(settings.MutableSettings.ServiceVersion);
+                stats.Version.Should().Be(settings.Manager.InitialMutableSettings.ServiceVersion);
                 stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);

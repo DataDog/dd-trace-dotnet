@@ -22,8 +22,7 @@ namespace Benchmarks.Trace
     /// Span benchmarks
     /// </summary>
     [MemoryDiagnoser]
-    [BenchmarkAgent6]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class SpanBenchmark
     {
         private Tracer _tracer;
@@ -42,7 +41,7 @@ namespace Benchmarks.Trace
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();
-            CtorIntegration.PopulateSettings(manualSettings, _tracer.Settings);
+            CtorIntegration.PopulateSettings(manualSettings, _tracer);
 
             // Constructor is private, so create using reflection
             _manualTracer = (ManualTracer)typeof(ManualTracer)
@@ -92,6 +91,18 @@ namespace Benchmarks.Trace
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
+        }
+
+        /// <summary>
+        /// Starts and finishes two scopes in the same trace benchmark
+        /// </summary>
+        [Benchmark]
+        public void StartFinishTwoScopes()
+        {
+            using var scope1 = _tracer.StartActiveInternal("operation1");
+            scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+
+            using var scope2 = _tracer.StartActiveInternal("operation2");
         }
     }
 }

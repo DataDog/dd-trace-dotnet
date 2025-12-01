@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
         /// <inheritdoc />
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(ThreadAbortAnalyzer.DiagnosticId); }
+            get { return ImmutableArray.Create(Diagnostics.ThreadAbortDiagnosticId); }
         }
 
         /// <inheritdoc />

@@ -12,6 +12,10 @@ stages:
   - benchmarks
   - benchmarks-win
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-8
 
@@ -31,7 +35,9 @@ check_azure_pipeline:
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
 
 update-bp-infra:
   stage: infra-update
@@ -82,7 +88,9 @@ update-bp-infra:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
     - source build-id.txt
@@ -264,9 +272,10 @@ profiler_cpu_timer_create-x86:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   image: $MACROBENCHMARKS_CI_IMAGE
-
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
@@ -447,7 +456,6 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
-  interruptible: true
   timeout: 2h
   retry:
     max: 2
@@ -459,7 +467,9 @@ profiler_cpu_timer_create-arm64:
       - api_failure
       - script_failure
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
