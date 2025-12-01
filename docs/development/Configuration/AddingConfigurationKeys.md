@@ -22,8 +22,10 @@ This guide explains how to add new configuration keys to the .NET Tracer. Config
 
 Configuration keys in the .NET Tracer are defined in two source files:
 
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** - Defines the configuration keys, their environment variable names, and fallback chains
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** - Contains XML documentation for each key
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** - Defines the configuration keys, their 
+  environment variable names, and optional fallbacks.
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** - Contains XML documentation for 
+  each key. We're using yaml here as it makes it easier for some of the long documentation summaries and formatting.
 
 Two source generators read these files at build time:
 
@@ -38,7 +40,10 @@ Two source generators read these files at build time:
 
 ### 1. Add the Configuration Key Definition
 
-Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`.
+Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`, specifying 
+an arbitrary version string (e.g. `"A"`, as shown below). and specifying the product if required. Any product name 
+is allowed, but try to reuse the existing ones (see [Common products](#common-products)) if it makes sense, as they will create another partial class, ie 
+ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in the main class, ConfigurationKeys.cs.
 
 **Example:**
 ```json
@@ -77,13 +82,13 @@ OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: |
 - **Do NOT include `<summary>` tags** - the source generator automatically wraps your documentation in `<summary>` tags
 - You can include `<seealso>` and `<see>` tags directly in the content - the source generator will extract `<seealso>` tags and place them outside the `<summary>` section as needed
 
-### 3. (Optional) Add Fallback Keys (Aliases)
+### 3. (Optional) Add Aliases
 
-Configuration keys can have **fallback keys** (also called aliases) that are checked in order of appearance when the primary key is not found. Add them to the `fallbacks` section in `supported-configurations.json`:
+Configuration keys can have **aliases** that are checked in order of appearance when the primary key is not found. Add them to the `aliases` section in `supported-configurations.json`:
 
 ```json
 {
-  "fallbacks": {
+  "aliases": {
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
       "OTEL_EXPORTER_OTLP_TIMEOUT"
     ]
@@ -93,8 +98,10 @@ Configuration keys can have **fallback keys** (also called aliases) that are che
 
 **How it works:**
 1. The configuration system first looks for `OTEL_EXPORTER_OTLP_LOGS_TIMEOUT`
-2. If not found, it checks `OTEL_EXPORTER_OTLP_TIMEOUT` (the fallback)
+2. If not found, it automatically checks `OTEL_EXPORTER_OTLP_TIMEOUT` (the alias)
 3. If still not found, it uses the default value
+
+The `ConfigKeyAliasesSwitcherGenerator` source generator automatically generates the alias resolution logic from this section. No additional code is needed - just use the primary configuration key constant and the aliases are handled transparently.
 
 **Use cases:**
 - **Specific → General fallback:** A specific key (e.g., logs timeout) falls back to a general key (e.g., overall timeout)
@@ -119,7 +126,7 @@ If you need to explicitly control the constant name (e.g., for backward compatib
 
 ### 5. Build to Generate Code
 
-Build the `Datadog.Trace` project to run the source generator:
+Build the `Datadog.Trace` project to run the source generator, either using Nuke or by building the project directly from the command line or your IDE:
 
 ```bash
 # From repository root
@@ -146,6 +153,18 @@ var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTi
 ```
 
 **Note:** The generated constants are in the `Datadog.Trace.Configuration` namespace.
+
+#### Syntax Analyzers
+
+The codebase includes Roslyn analyzers that enforce the use of configuration keys from the `ConfigurationKeys` classes:
+
+- **`ConfigurationBuilderWithKeysAnalyzer`**  - Enforces that `ConfigurationBuilder.WithKeys()` method calls only accept string constants from `ConfigurationKeys` or `PlatformKeys` classes, not hardcoded strings or variables.
+
+**Diagnostic rules:**
+- **DD0007**: Triggers when hardcoded string literals are used instead of configuration key constants
+- **DD0008**: Triggers when variables or expressions are used instead of configuration key constants
+
+These analyzers help prevent typos and ensure consistency across the codebase by enforcing compile-time validation of configuration keys.
 
 ### 7. Add to Telemetry Normalization Rules
 
@@ -190,7 +209,8 @@ Use the `product` field to organize related keys into nested classes:
 
 Generates: `ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint`
 
-**Common products:**
+#### Common products
+
 - `OpenTelemetry` - OpenTelemetry-related keys
 - `CIVisibility` - CI Visibility keys
 - `Telemetry` - Telemetry configuration
@@ -230,7 +250,7 @@ DD_TRACE_SAMPLE_RATE: |
 var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 ```
 
-### Example 2: Configuration Key with Fallback
+### Example 2: Configuration Key with Aliases
 
 **supported-configurations.json:**
 ```json
@@ -245,7 +265,7 @@ var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
       "product": "OpenTelemetry"
     }
   },
-  "fallbacks": {
+  "aliases": {
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
       "OTEL_EXPORTER_OTLP_TIMEOUT"
     ]
@@ -257,22 +277,20 @@ var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 ```yaml
 OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: |
   Configuration key for the timeout in milliseconds for OTLP logs export.
-  Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/> if not set.
+  Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout"/> if not set.
   Default value is 10000ms.
   <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
 
 OTEL_EXPORTER_OTLP_TIMEOUT: |
   Configuration key for the general OTLP export timeout in milliseconds.
-  Used as fallback for specific timeout configurations.
+  Used as alias for specific timeout configurations.
   Default value is 10000ms.
 ```
 
 **Usage:**
 ```csharp
-// Reads OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, falls back to OTEL_EXPORTER_OTLP_TIMEOUT
-var timeout = source.GetInt32(
-    ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeout,
-    ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout);
+// Reads OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, automatically falls back to OTEL_EXPORTER_OTLP_TIMEOUT
+var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeout);
 ```
 
 ### Example 3: Feature Flag
@@ -336,17 +354,19 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 3. XML tags are properly closed
 4. Rebuild after YAML changes
 
-### Fallback not working
+### Aliases not working
 
 **Check:**
-1. Fallback key is defined in `configurations` section
-2. Fallback array is in correct order (first fallback is tried first)
-3. Using the correct overload of `GetXxx()` method that accepts fallback keys
+1. Alias key is defined in `supportedConfigurations` section
+2. Alias array is in correct order (first alias is tried first)
+3. Both `ConfigurationKeysGenerator` and `ConfigKeyAliasesSwitcherGenerator` ran successfully during build
 
 ## Related Files
 
-- **Source generator:** `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs`
+- **Source generators:** 
+  - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs` - Generates configuration key constants
+  - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigKeyAliasesSwitcherGenerator.cs` - Generates alias resolution logic
 - **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`
 - **Documentation source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`
 - **Telemetry rules:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
-- **Generated output:** `tracer/src/Datadog.Trace/Generated/<tfm>/Datadog.Trace.SourceGenerators/ConfigurationKeysGenerator/`
+- **Generated output:** `tracer/src/Datadog.Trace/Generated/<tfm>/Datadog.Trace.SourceGenerators/`
