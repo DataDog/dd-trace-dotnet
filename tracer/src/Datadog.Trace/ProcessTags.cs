@@ -62,7 +62,8 @@ internal static class ProcessTags
         return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
     }
 
-    private static string NormalizeTagValue(string tagValue)
+    [TestingAndPrivateOnly]
+    internal static string NormalizeTagValue(string tagValue)
     {
         // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':', which we don't want because we use it as a key/value separator.
         // We need to replace ':' before calling NormalizeTag because there is a logic to remove duplicate underscores.
