@@ -15,17 +15,41 @@ namespace Datadog.Trace.Tagging
     partial class AzureFunctionsTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // ShortNameBytes = MessagePack.Serialize("aas.function.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ShortNameBytes => new byte[] { 177, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] ShortNameBytes = new byte[] { 177, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // FullNameBytes = MessagePack.Serialize("aas.function.method");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> FullNameBytes => new byte[] { 179, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100 };
+#else
+        private static readonly byte[] FullNameBytes = new byte[] { 179, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100 };
+#endif
         // BindingSourceBytes = MessagePack.Serialize("aas.function.binding");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BindingSourceBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103 };
+#else
+        private static readonly byte[] BindingSourceBytes = new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103 };
+#endif
         // TriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TriggerTypeBytes => new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
+#else
+        private static readonly byte[] TriggerTypeBytes = new byte[] { 180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
+#endif
 
         public override string? GetTag(string key)
         {
