@@ -608,7 +608,7 @@ namespace Datadog.Trace
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
-                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
+                Console.WriteLine("Datadog Custom Tracer - Kafka Cluster ID");
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
                 instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
                 mutableSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
