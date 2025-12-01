@@ -15,19 +15,47 @@ namespace Datadog.Trace.Tagging
     partial class MsmqTags
     {
         // CommandBytes = MessagePack.Serialize("msmq.command");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CommandBytes => new byte[] { 172, 109, 115, 109, 113, 46, 99, 111, 109, 109, 97, 110, 100 };
+#else
+        private static readonly byte[] CommandBytes = new byte[] { 172, 109, 115, 109, 113, 46, 99, 111, 109, 109, 97, 110, 100 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // PathBytes = MessagePack.Serialize("msmq.queue.path");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PathBytes => new byte[] { 175, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 112, 97, 116, 104 };
+#else
+        private static readonly byte[] PathBytes = new byte[] { 175, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 112, 97, 116, 104 };
+#endif
         // MessageWithTransactionBytes = MessagePack.Serialize("msmq.message.transactional");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessageWithTransactionBytes => new byte[] { 186, 109, 115, 109, 113, 46, 109, 101, 115, 115, 97, 103, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+#else
+        private static readonly byte[] MessageWithTransactionBytes = new byte[] { 186, 109, 115, 109, 113, 46, 109, 101, 115, 115, 97, 103, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+#endif
         // IsTransactionalQueueBytes = MessagePack.Serialize("msmq.queue.transactional");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsTransactionalQueueBytes => new byte[] { 184, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+#else
+        private static readonly byte[] IsTransactionalQueueBytes = new byte[] { 184, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+#endif
 
         public override string? GetTag(string key)
         {

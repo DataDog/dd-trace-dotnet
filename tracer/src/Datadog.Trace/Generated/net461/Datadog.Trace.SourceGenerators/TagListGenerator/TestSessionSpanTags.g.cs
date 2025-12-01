@@ -15,95 +15,275 @@ namespace Datadog.Trace.Ci.Tagging
     partial class TestSessionSpanTags
     {
         // LogicalCpuCountBytes = MessagePack.Serialize("_dd.host.vcpu_count");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> LogicalCpuCountBytes => new byte[] { 179, 95, 100, 100, 46, 104, 111, 115, 116, 46, 118, 99, 112, 117, 95, 99, 111, 117, 110, 116 };
+#else
+        private static readonly byte[] LogicalCpuCountBytes = new byte[] { 179, 95, 100, 100, 46, 104, 111, 115, 116, 46, 118, 99, 112, 117, 95, 99, 111, 117, 110, 116 };
+#endif
         // CommandBytes = MessagePack.Serialize("test.command");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CommandBytes => new byte[] { 172, 116, 101, 115, 116, 46, 99, 111, 109, 109, 97, 110, 100 };
+#else
+        private static readonly byte[] CommandBytes = new byte[] { 172, 116, 101, 115, 116, 46, 99, 111, 109, 109, 97, 110, 100 };
+#endif
         // WorkingDirectoryBytes = MessagePack.Serialize("test.working_directory");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> WorkingDirectoryBytes => new byte[] { 182, 116, 101, 115, 116, 46, 119, 111, 114, 107, 105, 110, 103, 95, 100, 105, 114, 101, 99, 116, 111, 114, 121 };
+#else
+        private static readonly byte[] WorkingDirectoryBytes = new byte[] { 182, 116, 101, 115, 116, 46, 119, 111, 114, 107, 105, 110, 103, 95, 100, 105, 114, 101, 99, 116, 111, 114, 121 };
+#endif
         // CommandExitCodeBytes = MessagePack.Serialize("test.exit_code");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CommandExitCodeBytes => new byte[] { 174, 116, 101, 115, 116, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
+#else
+        private static readonly byte[] CommandExitCodeBytes = new byte[] { 174, 116, 101, 115, 116, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
+#endif
         // StatusBytes = MessagePack.Serialize("test.status");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> StatusBytes => new byte[] { 171, 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
+#else
+        private static readonly byte[] StatusBytes = new byte[] { 171, 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
+#endif
         // LibraryVersionBytes = MessagePack.Serialize("library_version");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> LibraryVersionBytes => new byte[] { 175, 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#else
+        private static readonly byte[] LibraryVersionBytes = new byte[] { 175, 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#endif
         // CIProviderBytes = MessagePack.Serialize("ci.provider.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIProviderBytes => new byte[] { 176, 99, 105, 46, 112, 114, 111, 118, 105, 100, 101, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] CIProviderBytes = new byte[] { 176, 99, 105, 46, 112, 114, 111, 118, 105, 100, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // CIPipelineIdBytes = MessagePack.Serialize("ci.pipeline.id");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIPipelineIdBytes => new byte[] { 174, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 105, 100 };
+#else
+        private static readonly byte[] CIPipelineIdBytes = new byte[] { 174, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 105, 100 };
+#endif
         // CIPipelineNameBytes = MessagePack.Serialize("ci.pipeline.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIPipelineNameBytes => new byte[] { 176, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] CIPipelineNameBytes = new byte[] { 176, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101 };
+#endif
         // CIPipelineNumberBytes = MessagePack.Serialize("ci.pipeline.number");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIPipelineNumberBytes => new byte[] { 178, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114 };
+#else
+        private static readonly byte[] CIPipelineNumberBytes = new byte[] { 178, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114 };
+#endif
         // CIPipelineUrlBytes = MessagePack.Serialize("ci.pipeline.url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIPipelineUrlBytes => new byte[] { 175, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] CIPipelineUrlBytes = new byte[] { 175, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 117, 114, 108 };
+#endif
         // CIJobUrlBytes = MessagePack.Serialize("ci.job.url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIJobUrlBytes => new byte[] { 170, 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] CIJobUrlBytes = new byte[] { 170, 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
+#endif
         // CIJobNameBytes = MessagePack.Serialize("ci.job.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIJobNameBytes => new byte[] { 171, 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] CIJobNameBytes = new byte[] { 171, 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+#endif
         // CIJobIdBytes = MessagePack.Serialize("ci.job.id");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIJobIdBytes => new byte[] { 169, 99, 105, 46, 106, 111, 98, 46, 105, 100 };
+#else
+        private static readonly byte[] CIJobIdBytes = new byte[] { 169, 99, 105, 46, 106, 111, 98, 46, 105, 100 };
+#endif
         // StageNameBytes = MessagePack.Serialize("ci.stage.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> StageNameBytes => new byte[] { 173, 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] StageNameBytes = new byte[] { 173, 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
+#endif
         // CIWorkspacePathBytes = MessagePack.Serialize("ci.workspace_path");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CIWorkspacePathBytes => new byte[] { 177, 99, 105, 46, 119, 111, 114, 107, 115, 112, 97, 99, 101, 95, 112, 97, 116, 104 };
+#else
+        private static readonly byte[] CIWorkspacePathBytes = new byte[] { 177, 99, 105, 46, 119, 111, 114, 107, 115, 112, 97, 99, 101, 95, 112, 97, 116, 104 };
+#endif
         // GitRepositoryBytes = MessagePack.Serialize("git.repository_url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitRepositoryBytes => new byte[] { 178, 103, 105, 116, 46, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 95, 117, 114, 108 };
+#else
+        private static readonly byte[] GitRepositoryBytes = new byte[] { 178, 103, 105, 116, 46, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 95, 117, 114, 108 };
+#endif
         // GitCommitBytes = MessagePack.Serialize("git.commit.sha");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitBytes => new byte[] { 174, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 115, 104, 97 };
+#else
+        private static readonly byte[] GitCommitBytes = new byte[] { 174, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 115, 104, 97 };
+#endif
         // GitBranchBytes = MessagePack.Serialize("git.branch");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitBranchBytes => new byte[] { 170, 103, 105, 116, 46, 98, 114, 97, 110, 99, 104 };
+#else
+        private static readonly byte[] GitBranchBytes = new byte[] { 170, 103, 105, 116, 46, 98, 114, 97, 110, 99, 104 };
+#endif
         // GitTagBytes = MessagePack.Serialize("git.tag");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitTagBytes => new byte[] { 167, 103, 105, 116, 46, 116, 97, 103 };
+#else
+        private static readonly byte[] GitTagBytes = new byte[] { 167, 103, 105, 116, 46, 116, 97, 103 };
+#endif
         // GitCommitAuthorNameBytes = MessagePack.Serialize("git.commit.author.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitAuthorNameBytes => new byte[] { 182, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] GitCommitAuthorNameBytes = new byte[] { 182, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitCommitAuthorEmailBytes = MessagePack.Serialize("git.commit.author.email");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitAuthorEmailBytes => new byte[] { 183, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#else
+        private static readonly byte[] GitCommitAuthorEmailBytes = new byte[] { 183, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitCommitCommitterNameBytes = MessagePack.Serialize("git.commit.committer.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitCommitterNameBytes => new byte[] { 185, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] GitCommitCommitterNameBytes = new byte[] { 185, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitCommitCommitterEmailBytes = MessagePack.Serialize("git.commit.committer.email");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitCommitterEmailBytes => new byte[] { 186, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#else
+        private static readonly byte[] GitCommitCommitterEmailBytes = new byte[] { 186, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitCommitMessageBytes = MessagePack.Serialize("git.commit.message");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitMessageBytes => new byte[] { 178, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101 };
+#else
+        private static readonly byte[] GitCommitMessageBytes = new byte[] { 178, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101 };
+#endif
         // BuildSourceRootBytes = MessagePack.Serialize("build.source_root");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BuildSourceRootBytes => new byte[] { 177, 98, 117, 105, 108, 100, 46, 115, 111, 117, 114, 99, 101, 95, 114, 111, 111, 116 };
+#else
+        private static readonly byte[] BuildSourceRootBytes = new byte[] { 177, 98, 117, 105, 108, 100, 46, 115, 111, 117, 114, 99, 101, 95, 114, 111, 111, 116 };
+#endif
         // GitCommitAuthorDateBytes = MessagePack.Serialize("git.commit.author.date");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitAuthorDateBytes => new byte[] { 182, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#else
+        private static readonly byte[] GitCommitAuthorDateBytes = new byte[] { 182, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#endif
         // GitCommitCommitterDateBytes = MessagePack.Serialize("git.commit.committer.date");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitCommitCommitterDateBytes => new byte[] { 185, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#else
+        private static readonly byte[] GitCommitCommitterDateBytes = new byte[] { 185, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#endif
         // CiEnvVarsBytes = MessagePack.Serialize("_dd.ci.env_vars");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CiEnvVarsBytes => new byte[] { 175, 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
+#else
+        private static readonly byte[] CiEnvVarsBytes = new byte[] { 175, 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
+#endif
         // TestsSkippedBytes = MessagePack.Serialize("_dd.ci.itr.tests_skipped");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestsSkippedBytes => new byte[] { 184, 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
+#else
+        private static readonly byte[] TestsSkippedBytes = new byte[] { 184, 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
+#endif
         // IntelligentTestRunnerSkippingTypeBytes = MessagePack.Serialize("test.itr.tests_skipping.type");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IntelligentTestRunnerSkippingTypeBytes => new byte[] { 188, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] IntelligentTestRunnerSkippingTypeBytes = new byte[] { 188, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 116, 121, 112, 101 };
+#endif
         // EarlyFlakeDetectionTestEnabledBytes = MessagePack.Serialize("test.early_flake.enabled");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestEnabledBytes => new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
+#else
+        private static readonly byte[] EarlyFlakeDetectionTestEnabledBytes = new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
+#endif
         // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
+#else
+        private static readonly byte[] EarlyFlakeDetectionTestAbortReasonBytes = new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
+#endif
         // GitPrBaseHeadCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_head_sha");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitPrBaseHeadCommitBytes => new byte[] { 217, 37, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 104, 101, 97, 100, 95, 115, 104, 97 };
+#else
+        private static readonly byte[] GitPrBaseHeadCommitBytes = new byte[] { 217, 37, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 104, 101, 97, 100, 95, 115, 104, 97 };
+#endif
         // GitPrBaseCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_sha");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitPrBaseCommitBytes => new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
+#else
+        private static readonly byte[] GitPrBaseCommitBytes = new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
+#endif
         // GitPrBaseBranchBytes = MessagePack.Serialize("git.pull_request.base_branch");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitPrBaseBranchBytes => new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
+#else
+        private static readonly byte[] GitPrBaseBranchBytes = new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
+#endif
         // PrNumberBytes = MessagePack.Serialize("pr.number");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PrNumberBytes => new byte[] { 169, 112, 114, 46, 110, 117, 109, 98, 101, 114 };
+#else
+        private static readonly byte[] PrNumberBytes = new byte[] { 169, 112, 114, 46, 110, 117, 109, 98, 101, 114 };
+#endif
         // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head.sha");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 115, 104, 97 };
+#else
+        private static readonly byte[] GitHeadCommitBytes = new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 115, 104, 97 };
+#endif
         // GitHeadCommitAuthorNameBytes = MessagePack.Serialize("git.commit.head.author.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitAuthorNameBytes => new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] GitHeadCommitAuthorNameBytes = new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitHeadCommitAuthorEmailBytes = MessagePack.Serialize("git.commit.head.author.email");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitAuthorEmailBytes => new byte[] { 188, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#else
+        private static readonly byte[] GitHeadCommitAuthorEmailBytes = new byte[] { 188, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitHeadCommitAuthorDateBytes = MessagePack.Serialize("git.commit.head.author.date");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitAuthorDateBytes => new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#else
+        private static readonly byte[] GitHeadCommitAuthorDateBytes = new byte[] { 187, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#endif
         // GitHeadCommitCommitterNameBytes = MessagePack.Serialize("git.commit.head.committer.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitCommitterNameBytes => new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] GitHeadCommitCommitterNameBytes = new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitHeadCommitCommitterEmailBytes = MessagePack.Serialize("git.commit.head.committer.email");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitCommitterEmailBytes => new byte[] { 191, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#else
+        private static readonly byte[] GitHeadCommitCommitterEmailBytes = new byte[] { 191, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitHeadCommitCommitterDateBytes = MessagePack.Serialize("git.commit.head.committer.date");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitCommitterDateBytes => new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#else
+        private static readonly byte[] GitHeadCommitCommitterDateBytes = new byte[] { 190, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#endif
         // GitHeadCommitMessageBytes = MessagePack.Serialize("git.commit.head.message");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> GitHeadCommitMessageBytes => new byte[] { 183, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 109, 101, 115, 115, 97, 103, 101 };
+#else
+        private static readonly byte[] GitHeadCommitMessageBytes = new byte[] { 183, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 46, 109, 101, 115, 115, 97, 103, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
