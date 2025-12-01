@@ -28,6 +28,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(2);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -184,27 +185,25 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task FlushAsync()
     {
-        Log.Debug("ROB Flushing Async");
         if (!Volatile.Read(ref _isInitialized) || _processTask == null)
         {
             return;
         }
 
-        if (!await _flushSemaphore.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false))
+        if (!await _flushSemaphore.WaitAsync(_flushSemaphoreWaitTime).ConfigureAwait(false))
         {
-            Log.Error("Data streams flush timeout");
+            Log.Warning("Data streams flush timeout");
             return;
         }
 
         try
         {
-            Log.Debug("ROB Write API async");
             await WriteToApiAsync().ConfigureAwait(false);
             FlushComplete?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error during flush");
+            Log.Error(ex, "An error occured while writing data streams");
         }
         finally
         {
@@ -214,7 +213,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task WriteToApiAsync()
     {
-        Log.Debug("ROBC Writing to API Async");
         // This method blocks ingestion of new stats points into the aggregator,
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
@@ -255,12 +253,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            Log.Debug("ROBC Processing Queue Loop - Sleep");
             Thread.Sleep(_waitTimeSpan);
 
-            if (!_flushSemaphore.Wait(TimeSpan.FromSeconds(10)))
+            if (!_flushSemaphore.Wait(_flushSemaphoreWaitTime))
             {
-                Log.Warning("Queue Loop Semaphore timeout - continuing");
                 if (_processExit.Task.IsCompleted)
                 {
                     return;
@@ -271,7 +267,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             try
             {
-                Log.Debug("ROBC Adding points to aggregator");
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
@@ -284,7 +279,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occured in the processing thread");
+                Log.Error(ex, "An error occured in the data streams processing thread");
             }
             finally
             {
