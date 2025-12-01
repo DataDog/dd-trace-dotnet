@@ -239,7 +239,7 @@ internal readonly struct TraceChunkModel
     }
 
     /// <summary>
-    /// Searches for the specified spanId by iteration the array of spans.
+    /// Searches for the specified spanId by iterating the array of spans.
     /// </summary>
     private int IndexOf(ulong spanId, int startIndex)
     {

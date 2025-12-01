@@ -47,7 +47,7 @@ namespace Datadog.Trace
 
             if (links is not null)
             {
-                // We know we're not finished and this allows optimizations vs using AddLink()
+                // We're in the constructor, so doing a direct replace allows optimizations vs using AddLink()
                 SpanLinks = [..links];
             }
 
