@@ -29,6 +29,7 @@
     <Owners>Datadog</Owners>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Features>strict</Features>
     <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
     <NugetAudit>false</NugetAudit>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
