@@ -827,6 +827,17 @@ namespace Datadog.Trace
             /// A two char hex string with the product being the trace source
             /// </summary>
             internal const string TraceSource = "_dd.p.ts";
+
+            /// <summary>
+            /// Tag used to propagate the Knuth sampling rate applied by the tracer.
+            /// This allows backend resampling to correctly compute effective sampling rates
+            /// by multiplying the tracer's rate with the backend's rate.
+            /// </summary>
+            /// <remarks>
+            /// This tag will eventually replace _dd.agent_psr and _dd.rule_psr.
+            /// Format: String with up to 6 significant digits (e.g., "0.5", "0.123456").
+            /// </remarks>
+            internal const string KnuthSamplingRate = "_dd.p.ksr";
         }
     }
 }

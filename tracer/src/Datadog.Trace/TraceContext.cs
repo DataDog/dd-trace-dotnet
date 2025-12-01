@@ -318,6 +318,18 @@ namespace Datadog.Trace
                 // report sampling mechanism as trace tag only if decision is to keep the trace.
                 // report only the original sampling mechanism, do not override.
                 Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
+
+                // Set Knuth sampling rate (_dd.p.ksr) for applicable mechanisms
+                // This tag is used for backend resampling to compute effective sampling rates
+                if (rate.HasValue &&
+                    mechanism is SamplingMechanism.AgentRate
+                                or SamplingMechanism.LocalTraceSamplingRule
+                                or SamplingMechanism.RemoteUserSamplingRule
+                                or SamplingMechanism.RemoteAdaptiveSamplingRule)
+                {
+                    // Format with up to 6 significant digits, no trailing zeros (e.g., "0.5" not "0.500000")
+                    Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, rate.Value.ToString("G6", System.Globalization.CultureInfo.InvariantCulture));
+                }
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
@@ -325,6 +337,7 @@ namespace Datadog.Trace
                 // do not set SamplingMechanism = null because that would allow changing the mechanism later,
                 // which is not allowed.
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
+                Tags.RemoveTag(Trace.Tags.Propagated.KnuthSamplingRate);
             }
 
             if (notifyDistributedTracer)

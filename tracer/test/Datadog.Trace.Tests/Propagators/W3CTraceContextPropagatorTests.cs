@@ -167,6 +167,8 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=s:1;p:0000000000000002;t.a:1;t.b:2")]
         [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=s:1;p:0000000000000002;t.a:1")]
         [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=s:1;p:0000000000000002;t.usr.id:MTIzNDU~")] // convert '=' to '~'
+        [InlineData(null, null, "_dd.p.ksr=0.5", null, "dd=s:1;p:0000000000000002;t.ksr:0.5")] // Knuth sampling rate
+        [InlineData(null, null, "_dd.p.dm=-1,_dd.p.ksr=0.123456", null, "dd=s:1;p:0000000000000002;t.dm:-1;t.ksr:0.123456")] // sampling mechanism + rate
         // additional state only
         [InlineData(null, null, null, "key1=value1,key2=value2", "dd=s:1;p:0000000000000002,key1=value1,key2=value2")]
         // combined

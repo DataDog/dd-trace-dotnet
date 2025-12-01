@@ -87,6 +87,26 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void Inject_IHeadersCollection_WithKnuthSamplingRate()
+        {
+            // Test that _dd.p.ksr is propagated in x-datadog-tags header
+            var tagsCollection = new TraceTagCollection(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.dm", "-1"),
+                    new("_dd.p.ksr", "0.5"),
+                },
+                cachedPropagationHeader: null);
+
+            var spanContext = new SpanContext(TraceId, SpanId, SamplingPriorityValues.AutoKeep, serviceName: null, Origin) { PropagatedTags = tagsCollection };
+            var headers = new Mock<IHeadersCollection>();
+
+            Propagator.Inject(new PropagationContext(spanContext, TestBaggage), headers.Object);
+
+            headers.Verify(h => h.Set("x-datadog-tags", "_dd.p.dm=-1,_dd.p.ksr=0.5"), Times.Once);
+        }
+
+        [Fact]
         public void Inject_IHeadersCollection_Tag_Propagation_Disabled()
         {
             KeyValuePair<string, string>[] expectedHeaders =

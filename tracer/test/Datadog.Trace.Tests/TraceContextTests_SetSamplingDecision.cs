@@ -70,4 +70,80 @@ public class TraceContextTests_SetSamplingDecision
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
             traceContext.Tags.GetTag("_dd.p.dm").Should().Be(SamplingMechanism.Asm);
         }
+
+        [Theory]
+        [InlineData(SamplingMechanism.AgentRate, 0.5f, "0.5")]
+        [InlineData(SamplingMechanism.AgentRate, 0.123456f, "0.123456")]
+        [InlineData(SamplingMechanism.AgentRate, 0.9999f, "0.9999")]
+        [InlineData(SamplingMechanism.AgentRate, 0.0001f, "0.0001")]
+        [InlineData(SamplingMechanism.AgentRate, 1.0f, "1")]
+        [InlineData(SamplingMechanism.AgentRate, 0.0f, "0")]
+        [InlineData(SamplingMechanism.LocalTraceSamplingRule, 0.5f, "0.5")]
+        [InlineData(SamplingMechanism.LocalTraceSamplingRule, 0.123456f, "0.123456")]
+        [InlineData(SamplingMechanism.RemoteUserSamplingRule, 0.75f, "0.75")]
+        [InlineData(SamplingMechanism.RemoteAdaptiveSamplingRule, 0.25f, "0.25")]
+        public void SetSamplingDecision_SetsKnuthSamplingRate_ForApplicableMechanisms(string mechanism, float rate, string expectedValue)
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism, rate);
+
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [InlineData(SamplingMechanism.Default)]
+        [InlineData(SamplingMechanism.Manual)]
+        [InlineData(SamplingMechanism.Asm)]
+        public void SetSamplingDecision_DoesNotSetKnuthSamplingRate_ForNonApplicableMechanisms(string mechanism)
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism, 0.5f);
+
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().BeNull();
+        }
+
+        [Fact]
+        public void SetSamplingDecision_RemovesKnuthSamplingRateOnDrop()
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+
+            // Set with AgentRate mechanism (should set _dd.p.ksr)
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, 0.5f);
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().Be("0.5");
+
+            // Drop the trace (should remove _dd.p.ksr)
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().BeNull();
+        }
+
+        [Fact]
+        public void SetSamplingDecision_KeepsFirstKnuthSamplingRate()
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+
+            // Set initial rate
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, 0.5f);
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().Be("0.5");
+
+            // Try to override (should keep original value)
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, 0.75f);
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().Be("0.5");
+        }
+
+        [Fact]
+        public void SetSamplingDecision_DoesNotSetKnuthSamplingRate_WhenRateIsNull()
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, rate: null);
+
+            traceContext.Tags.GetTag("_dd.p.ksr").Should().BeNull();
+        }
 }
