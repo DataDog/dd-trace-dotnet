@@ -54,7 +54,8 @@ namespace Benchmarks.Trace
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
+            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
+            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
