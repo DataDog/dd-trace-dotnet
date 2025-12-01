@@ -33,8 +33,13 @@ namespace Benchmarks.Trace
 
             for (int i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
-                enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
+                var tags = new SqlTags()
+                {
+                    DbType = "sql-server",
+                    InstrumentationName = nameof(IntegrationId.SqlClient),
+                };
+                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now, tags);
+                enrichedSpans[i].SetTag("somekey", "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
