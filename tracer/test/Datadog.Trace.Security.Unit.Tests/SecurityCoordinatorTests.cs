@@ -19,6 +19,7 @@ using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Routing;
 #endif
 using Moq;
 using Xunit;
@@ -144,9 +145,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void GivenSecurityCoordinatorInstanceWithNotDisposedContext_WheRunWaf_ThenResultIsNull()
         {
             var httpContextMock = new Mock<HttpContext>();
-            var httpTransportMock = new Mock<HttpTransport>(httpContextMock.Object);
-            httpTransportMock.Setup(x => x.StatusCode).Returns(200);
-            httpTransportMock.Setup(x => x.RouteData).Returns(new Dictionary<string, object>());
+            var httpResponseMock = new Mock<HttpResponse>();
+            httpResponseMock.Setup(x => x.StatusCode).Returns(200);
+            httpContextMock.Setup(x => x.Response).Returns(httpResponseMock.Object);
+            var mockRoutingData = new Mock<IRoutingFeature>();
+            mockRoutingData.Setup(x => x.RouteData).Returns(new RouteData());
+            httpContextMock.Setup(x => x.Features[typeof(IRoutingFeature)]).Returns(mockRoutingData.Object);
+            var httpTransport = new HttpTransport(httpContextMock.Object);
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
@@ -154,7 +159,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var waf = initResult.Waf;
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
-            var securityCoordinator = Get(security, span, httpTransportMock.Object);
+            var securityCoordinator = Get(security, span, httpTransport);
             var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
             result.Should().NotBeNull();
         }
