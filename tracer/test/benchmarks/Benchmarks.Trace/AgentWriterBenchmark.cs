@@ -45,12 +45,9 @@ namespace Benchmarks.Trace
 
             _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            var sources = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
-                { ConfigurationKeys.TraceEnabled, false.ToString() },
-            });
-            var settings = new TracerSettings(sources);
+            var config = TracerHelper.DefaultConfig;
+            config.Add(ConfigurationKeys.TraceEnabled, false);
+            var settings = TracerSettings.Create(config);
 
             var api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
@@ -66,6 +63,12 @@ namespace Benchmarks.Trace
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _agentWriter.FlushAndCloseAsync();
         }
 
         /// <summary>

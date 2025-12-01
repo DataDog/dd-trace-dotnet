@@ -21,16 +21,19 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
+            TracerHelper.SetGlobalTracer();
             _client = new RedisNativeClient();
             _fn = () => 42;
             _completePipelineFn = _ => { };
             _rawCommands = new[] {"Command", "arg1", "arg2"}
                 .Select(Encoding.UTF8.GetBytes)
                 .ToArray();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
