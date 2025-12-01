@@ -9,7 +9,7 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class CiVisibilityMetricsTelemetryCollector
+internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)

@@ -160,7 +160,7 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
         return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
     }
 
-    private class AggregatedMetrics
+    private sealed class AggregatedMetrics
     {
         public readonly AggregatedMetric[] PublicApiCounts;
         public readonly AggregatedMetric[] CountCIVisibility;
