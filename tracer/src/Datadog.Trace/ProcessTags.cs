@@ -11,7 +11,6 @@ using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -43,13 +42,14 @@ internal static class ProcessTags
     /// </summary>
     private static void AddNormalizedTag(this List<string> tags, string key, string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (StringUtil.IsNullOrWhiteSpace(value))
         {
             return;
         }
 
         var normalizedValue = NormalizeTagValue(value);
-        if (normalizedValue.Length > 0) // normalization can squish the string to nothing 
+        // check length because normalization can squish the string to nothing
+        if (normalizedValue.Length > 0)
         {
             tags.Add($"{key}:{normalizedValue}");
         }
