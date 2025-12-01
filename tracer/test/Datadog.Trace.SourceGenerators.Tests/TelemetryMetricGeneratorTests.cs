@@ -74,7 +74,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
                 private const int TestMetricLength = 0;
 
@@ -100,7 +100,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             }
             """;
@@ -115,7 +115,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
             }
             """;
@@ -130,7 +130,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -236,7 +236,7 @@ public class TelemetryMetricGeneratorTests
                     return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
                     public readonly AggregatedMetric[] TestMetric;
@@ -248,7 +248,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
                     public readonly int[] TestMetric;
@@ -285,7 +285,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -378,7 +378,7 @@ public class TelemetryMetricGeneratorTests
                     return data;
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
 
@@ -388,7 +388,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
 
@@ -431,7 +431,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers()}}
 
@@ -469,7 +469,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
@@ -514,7 +514,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
@@ -543,7 +543,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(int increment = 1)
@@ -564,7 +564,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers()}}
 
@@ -603,7 +603,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(int increment = 1)
@@ -624,7 +624,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
 
@@ -651,7 +651,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
 
@@ -690,7 +690,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestSharedMetricSharedZeroTagMetric(int increment = 1)
@@ -740,7 +740,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers()}}
 
@@ -778,7 +778,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(int value)
@@ -823,7 +823,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(int value)
@@ -853,7 +853,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(int value)
@@ -874,7 +874,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers()}}
 
@@ -913,7 +913,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(int value)
@@ -935,7 +935,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
 
@@ -962,7 +962,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
 
@@ -1001,7 +1001,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestSharedMetricSharedZeroTagMetric(int value)
@@ -1051,7 +1051,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers(isDistribution: true)}}
 
@@ -1089,7 +1089,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(double value)
@@ -1134,7 +1134,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestMetricZeroTagMetric(double value)
@@ -1164,7 +1164,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(double value)
@@ -1185,7 +1185,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers(isDistribution: true)}}
 
@@ -1224,7 +1224,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestCiMetricCiZeroTagMetric(double value)
@@ -1246,7 +1246,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers(isDistribution: true)}}
             
@@ -1273,7 +1273,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers(isDistribution: true)}}
 
@@ -1312,7 +1312,7 @@ public class TelemetryMetricGeneratorTests
             using System.Threading;
 
             namespace Datadog.Trace.Telemetry;
-            internal partial class NullMetricsTelemetryCollector
+            internal sealed partial class NullMetricsTelemetryCollector
             {
 
                 public void RecordTestSharedMetricSharedZeroTagMetric(double value)
@@ -1600,7 +1600,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -1719,7 +1719,7 @@ public class TelemetryMetricGeneratorTests
                     return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
                     public readonly AggregatedMetric[] TestMetric;
@@ -1733,7 +1733,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
                     public readonly int[] TestMetric;
@@ -1777,7 +1777,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -1896,7 +1896,7 @@ public class TelemetryMetricGeneratorTests
                     return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
                     public readonly AggregatedMetric[] TestCiMetric;
@@ -1910,7 +1910,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
                     public readonly int[] TestCiMetric;
@@ -1954,7 +1954,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class MetricsTelemetryCollector
+            internal sealed partial class MetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -2073,7 +2073,7 @@ public class TelemetryMetricGeneratorTests
                     return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
                     public readonly AggregatedDistribution[] TestMetric;
@@ -2087,7 +2087,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
                     public readonly BoundedConcurrentQueue<double>[] TestMetric;
@@ -2143,7 +2143,7 @@ public class TelemetryMetricGeneratorTests
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class CiVisibilityMetricsTelemetryCollector
+            internal sealed partial class CiVisibilityMetricsTelemetryCollector
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -2262,7 +2262,7 @@ public class TelemetryMetricGeneratorTests
                     return new MetricDetails(metric.GetName(), metric.GetNamespace(), metric.IsCommon());
                 }
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
                     public readonly AggregatedDistribution[] TestCiMetric;
@@ -2276,7 +2276,7 @@ public class TelemetryMetricGeneratorTests
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
                     public readonly BoundedConcurrentQueue<double>[] TestCiMetric;

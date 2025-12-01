@@ -519,7 +519,7 @@ internal partial class Sources
 
         sb.Append($$"""
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
 
@@ -672,7 +672,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);
@@ -747,7 +747,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);
@@ -821,7 +821,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);
