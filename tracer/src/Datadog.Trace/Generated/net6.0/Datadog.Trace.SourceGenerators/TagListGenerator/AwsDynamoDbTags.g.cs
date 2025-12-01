@@ -15,9 +15,17 @@ namespace Datadog.Trace.Tagging
     partial class AwsDynamoDbTags
     {
         // TableNameBytes = MessagePack.Serialize("tablename");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TableNameBytes => new byte[] { 169, 116, 97, 98, 108, 101, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] TableNameBytes = new byte[] { 169, 116, 97, 98, 108, 101, 110, 97, 109, 101 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {

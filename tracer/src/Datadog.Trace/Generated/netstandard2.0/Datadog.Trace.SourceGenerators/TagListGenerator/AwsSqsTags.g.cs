@@ -15,13 +15,29 @@ namespace Datadog.Trace.Tagging
     partial class AwsSqsTags
     {
         // AwsQueueNameBytes = MessagePack.Serialize("aws.queue.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AwsQueueNameBytes => new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] AwsQueueNameBytes = new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+#endif
         // QueueNameBytes = MessagePack.Serialize("queuename");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> QueueNameBytes => new byte[] { 169, 113, 117, 101, 117, 101, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] QueueNameBytes = new byte[] { 169, 113, 117, 101, 117, 101, 110, 97, 109, 101 };
+#endif
         // QueueUrlBytes = MessagePack.Serialize("aws.queue.url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> QueueUrlBytes => new byte[] { 173, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] QueueUrlBytes = new byte[] { 173, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {

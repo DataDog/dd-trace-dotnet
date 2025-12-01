@@ -15,9 +15,17 @@ namespace Datadog.Trace.Tagging
     partial class AwsStepFunctionsTags
     {
         // StateMachineNameBytes = MessagePack.Serialize("statemachinename");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> StateMachineNameBytes => new byte[] { 176, 115, 116, 97, 116, 101, 109, 97, 99, 104, 105, 110, 101, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] StateMachineNameBytes = new byte[] { 176, 115, 116, 97, 116, 101, 109, 97, 99, 104, 105, 110, 101, 110, 97, 109, 101 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
