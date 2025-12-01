@@ -45,12 +45,13 @@ internal class TelemetryController : ITelemetryController
     private readonly TagBuilder _logTagBuilder = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
+    private readonly IDisposable _settingsSubscription;
     private TelemetryTransportManager _transportManager;
-    private bool _sendTelemetry;
     private bool _isStarted;
     private string? _namingVersion;
 
     internal TelemetryController(
+        TracerSettings tracerSettings,
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
         IMetricsTelemetryCollector metrics,
@@ -85,29 +86,31 @@ internal class TelemetryController : ITelemetryController
             Log.Warning(ex, "Unable to register a callback to the AppDomain.AssemblyLoad event. Telemetry collection of loaded assemblies will be disabled.");
         }
 
+        RecordTracerSettings(tracerSettings);
+        _settingsSubscription = tracerSettings.Manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } updated)
+            {
+                _application.RecordMutableSettings(tracerSettings, updated);
+                _integrations.RecordTracerSettings(updated);
+            }
+        });
+
         _flushTask = Task.Run(PushTelemetryLoopAsync);
         _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in telemetry flush task"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
+    public void RecordTracerSettings(TracerSettings settings)
     {
         // Note that this _doesn't_ clear the configuration held by ImmutableTracerSettings
         // that's necessary because users could reconfigure the tracer to re-use an old
         // ImmutableTracerSettings, at which point that config would become "current", so we
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
-        // if the mutable settings have changed since the start, re-record them
-        // to ensure they have the correct values. This is a temporary measure before
-        // we fully extract mutable settings
-        if (!ReferenceEquals(settings.MutableSettings, settings.InitialMutableSettings))
-        {
-            settings.MutableSettings.Telemetry.CopyTo(_configuration);
-        }
-
-        _application.RecordTracerSettings(settings, defaultServiceName);
+        _application.RecordTracerSettings(settings);
+        _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _logTagBuilder.Update(settings);
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
     public void RecordGitMetadata(GitMetadata gitMetadata)
@@ -161,13 +164,9 @@ internal class TelemetryController : ITelemetryController
 
     public async Task DisposeAsync()
     {
+        _settingsSubscription.Dispose();
         TerminateLoop();
         await _flushTask.ConfigureAwait(false);
-    }
-
-    public void DisableSending()
-    {
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.DisableSending, null));
     }
 
     public void SetTransportManager(TelemetryTransportManager manager)
@@ -268,12 +267,6 @@ internal class TelemetryController : ITelemetryController
                     case WorkItem.ItemType.SetTracerStarted:
                         _isStarted = true;
                         break;
-                    case WorkItem.ItemType.EnableSending:
-                        _sendTelemetry = true;
-                        break;
-                    case WorkItem.ItemType.DisableSending:
-                        _sendTelemetry = false;
-                        break;
                     case WorkItem.ItemType.SetFlushInterval:
                         _scheduler.SetFlushInterval((TimeSpan)item.State!);
                         break;
@@ -287,7 +280,7 @@ internal class TelemetryController : ITelemetryController
                 await _metrics.DisposeAsync().ConfigureAwait(false);
             }
 
-            if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
+            if (_isStarted && _scheduler.ShouldFlushTelemetry)
             {
                 await PushTelemetry(includeLogs: _scheduler.ShouldFlushRedactedErrorLogs, sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
@@ -311,14 +304,6 @@ internal class TelemetryController : ITelemetryController
             // need to make sure we clear the buffers. If we don't we could get overflows.
             // We will lose these metrics if the endpoint errors, but better than growing too much.
             MetricResults? metrics = _metrics.GetMetrics();
-
-            if (!_sendTelemetry)
-            {
-                // sending is currently disabled, so don't fetch the other data or attempt to send
-                Log.Debug("Telemetry pushing currently disabled, skipping");
-                return;
-            }
-
             var application = _application.GetApplicationData();
             var host = _application.GetHostData();
             if (application is null || host is null)
@@ -370,8 +355,6 @@ internal class TelemetryController : ITelemetryController
         {
             SetTransportManager,
             SetFlushInterval,
-            EnableSending,
-            DisableSending,
             SetTracerStarted
         }
 

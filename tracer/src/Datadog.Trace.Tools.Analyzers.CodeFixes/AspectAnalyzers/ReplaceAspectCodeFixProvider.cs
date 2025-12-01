@@ -9,7 +9,6 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -20,7 +19,7 @@ using Microsoft.CodeAnalysis.Formatting;
 namespace Datadog.Trace.Tools.Analyzers.AspectAnalyzers;
 
 /// <summary>
-/// A CodeFixProvider for the <see cref="ThreadAbortAnalyzer"/>
+/// A CodeFixProvider for the ReplaceAspectCodeFixProvider
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ReplaceAspectCodeFixProvider))]
 [Shared]
@@ -29,7 +28,7 @@ public class ReplaceAspectCodeFixProvider : CodeFixProvider
     /// <inheritdoc />
     public sealed override ImmutableArray<string> FixableDiagnosticIds
     {
-        get => ImmutableArray.Create(ReplaceAspectAnalyzer.DiagnosticId);
+        get => ImmutableArray.Create(Diagnostics.ReplaceAspectDiagnosticId);
     }
 
     /// <inheritdoc />

@@ -21,46 +21,38 @@ internal static class ProcessTags
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
-    public static readonly string SerializedTags = GetSerializedTags();
+    // two views on the same data
+    public static readonly List<string> TagsList = GetTagsList();
+    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
 
-    /// <summary>
-    /// From the full path of a directory, get the name of the leaf directory.
-    /// </summary>
-    private static string GetLastPathSegment(string directoryPath)
-    {
-        // Path.GetFileName returns an empty string if the path ends with a '/'.
-        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
-        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
-    }
-
-    private static string GetSerializedTags()
+    private static List<string> GetTagsList()
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        List<KeyValuePair<string, string?>> tags =
-        [
-            new(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory)),
-            new(EntrypointName, GetEntryPointName()),
-            // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-            new(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory))
-        ];
+        var tags = new List<string>(3); // Update if you add more entries below
+        tags.AddNormalizedTag(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
+        tags.AddNormalizedTag(EntrypointName, GetEntryPointName());
+        // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
+        tags.AddNormalizedTag(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
 
-        // then normalize values and put all tags in a string
-        var serializedTags = StringBuilderCache.Acquire();
-        foreach (var kvp in tags)
-        {
-            if (!string.IsNullOrEmpty(kvp.Value))
-            {
-                serializedTags.Append($"{kvp.Key}:{NormalizeTagValue(kvp.Value!)},");
-            }
-        }
-
-        serializedTags.Remove(serializedTags.Length - 1, length: 1); // remove last comma
-        return StringBuilderCache.GetStringAndRelease(serializedTags);
+        return tags;
     }
 
-    private static string? GetEntryPointName()
+    /// <summary>
+    /// normalizes the tag value (keys are hardcoded so they don't need that)
+    /// and adds it to the list iff not null or empty
+    /// </summary>
+    private static void AddNormalizedTag(this List<string> tags, string key, string? value)
     {
-        return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        var normalizedValue = NormalizeTagValue(value);
+        if (normalizedValue.Length > 0) // normalization can squish the string to nothing 
+        {
+            tags.Add($"{key}:{normalizedValue}");
+        }
     }
 
     [TestingAndPrivateOnly]
@@ -77,5 +69,25 @@ internal static class ProcessTags
         }
 
         return normalized;
+    }
+
+    private static string GetSerializedTagsFromList(List<string> tags)
+    {
+        return string.Join(",", tags);
+    }
+
+    /// <summary>
+    /// From the full path of a directory, get the name of the leaf directory.
+    /// </summary>
+    private static string GetLastPathSegment(string directoryPath)
+    {
+        // Path.GetFileName returns an empty string if the path ends with a '/'.
+        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
+        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
+    }
+
+    private static string? GetEntryPointName()
+    {
+        return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
     }
 }

@@ -13,7 +13,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
@@ -68,79 +67,17 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        internal static void OnlyForTests_ApplyConfiguration(IConfigurationSource dynamicConfig)
+        internal static void OnlyForTests_ApplyConfiguration(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
         {
-            OnConfigurationChanged(dynamicConfig);
+            OnConfigurationChanged(dynamicConfig, tracerSettings);
         }
 
-        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig)
+        private static void OnConfigurationChanged(IConfigurationSource dynamicConfig, TracerSettings tracerSettings)
         {
-            var tracerSettings = Tracer.Instance.Settings;
-            var manualSource = GlobalConfigurationSource.ManualConfigurationSource;
-            var mutableSettings = manualSource.UseDefaultSources
-                                      ? tracerSettings.InitialMutableSettings
-                                      : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
-
-            // We save this immediately, even if there's no manifest changes in the final settings
-            GlobalConfigurationSource.UpdateDynamicConfigConfigurationSource(dynamicConfig);
-
-            OnConfigurationChanged(
-                dynamicConfig,
-                manualSource,
-                mutableSettings,
-                tracerSettings,
-                // TODO: In the future this will 'live' elsewhere
-                currentSettings: tracerSettings.MutableSettings,
-                new ConfigurationTelemetry(),
-                new OverrideErrorLog()); // TODO: We'll later report these
-        }
-
-        private static void OnConfigurationChanged(
-            IConfigurationSource dynamicConfig,
-            ManualInstrumentationConfigurationSourceBase manualConfig,
-            MutableSettings initialSettings,
-            TracerSettings tracerSettings,
-            MutableSettings currentSettings,
-            ConfigurationTelemetry telemetry,
-            OverrideErrorLog errorLog)
-        {
-            var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
-                dynamicConfig,
-                manualConfig,
-                initialSettings,
-                tracerSettings,
-                telemetry,
-                errorLog);
-
-            TracerSettings newSettings;
-            if (currentSettings.Equals(newMutableSettings))
+            var wasUpdated = tracerSettings.Manager.UpdateDynamicConfigurationSettings(dynamicConfig, TelemetryFactory.Config);
+            if (wasUpdated)
             {
-                Log.Debug("No changes detected in the new dynamic configuration");
-                // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
-                // need to be recorded (e.g. the customer set the value in code but it was already set via
-                // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
-                // which we'll resolve later anyway, so just have that gap for now (it's very niche).
-                // If there are changes, they're recorded automatically in Tracer.Configure()
-                telemetry.CopyTo(TelemetryFactory.Config);
-                newSettings = tracerSettings;
-            }
-            else
-            {
-                Log.Information("Applying new dynamic configuration");
-
-                newSettings = tracerSettings with { MutableSettings = newMutableSettings };
-
-                /*
-                if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
-                {
-                    GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
-                    Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
-
-                    NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
-                }
-                */
-
-                Tracer.Configure(newSettings);
+                Log.Information("Setting updates made via dynamic configuration were applied");
             }
 
             // TODO: This might not record the config in the correct order in future, but would require
@@ -173,7 +110,7 @@ namespace Datadog.Trace.Configuration
 
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
 
-            DebuggerManager.Instance.UpdateConfiguration(newSettings, newDebuggerSettings)
+            DebuggerManager.Instance.UpdateConfiguration(Tracer.Instance.Settings, newDebuggerSettings)
                            .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
@@ -247,7 +184,8 @@ namespace Datadog.Trace.Configuration
         private void ApplyMergedConfiguration(List<RemoteConfiguration> remoteConfigurations)
         {
             // Get current service/environment for filtering
-            var currentSettings = Tracer.Instance.CurrentTraceSettings.Settings;
+            var tracer = Tracer.Instance;
+            var currentSettings = tracer.CurrentTraceSettings.Settings;
 
             var mergedConfigJToken = ApmTracingConfigMerger.MergeConfigurations(
                 remoteConfigurations,
@@ -256,7 +194,7 @@ namespace Datadog.Trace.Configuration
 
             var configurationSource = new DynamicConfigConfigurationSource(mergedConfigJToken, ConfigurationOrigins.RemoteConfig);
 
-            OnConfigurationChanged(configurationSource);
+            OnConfigurationChanged(configurationSource, tracer.Settings);
         }
     }
 }

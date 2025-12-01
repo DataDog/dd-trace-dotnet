@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.32.0";
+    readonly string Version = "3.33.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -602,13 +602,22 @@ partial class Build : NukeBuild
                         false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                     };
 
+                    // We could choose to not run asm on non-ASM PRs (for example) but for now we just run all categories
+                    var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var _);
+                    var categories = (BenchmarkCategory, isPr) switch
+                    {
+                        ({ Length: > 0 }, _) => BenchmarkCategory,
+                        (_, true) => "prs",
+                        (_, false) => "master",
+                    };
+
                     DotNetRun(s => s
                         .SetProjectFile(benchmarksProject)
                         .SetConfiguration(BuildConfiguration)
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --allCategories {categories} --iterationTime 200")
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

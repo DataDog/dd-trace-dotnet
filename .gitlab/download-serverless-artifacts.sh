@@ -54,20 +54,30 @@ artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds
 TIMEOUT=2400
 STARTED=0
 until (( STARTED == TIMEOUT )) || [ ! -z "${downloadUrl}" ] ; do
-    echo "Checking for artifacts at '$artifactsUrl'..."
+    echo "Checking for artifacts at: ${artifactsUrl}"
     # If the artifact doesn't exist, .resource.downloadUrl will be null, so we filter that out
-    downloadUrl=$(curl -s $artifactsUrl | jq -r '.resource.downloadUrl | select( . != null )')
+    response=$(curl -s "${artifactsUrl}")
+    downloadUrl=$(echo "$response" | jq -r '.resource.downloadUrl | select( . != null )')
+
+    if [ -z "${downloadUrl}" ]; then
+        buildStatus=$(echo "$response" | jq -r '.message // "Artifact not yet available"')
+        echo " Status: ${buildStatus} (elapsed: ${STARTED}s / ${TIMEOUT}s)"
+    fi
+
     sleep 100
     (( STARTED += 100 ))
 done
 (( STARTED < TIMEOUT ))
 
 if [ -z "${downloadUrl}" ]; then
-  echo "No downloadUrl found after 30 minutes for commit '$CI_COMMIT_SHA' on branch '$branchName'"
+  echo "ERROR: No downloadUrl found after 40 minutes for commit '$CI_COMMIT_SHA' on branch '$branchName'"
+  echo "Last API response:"
+  echo "$response" | jq '.'
+  echo "Build URL: https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId"
   exit 1
 fi
 
-echo "Downloading artifacts from '$downloadUrl'..."
+echo "Downloading artifacts from: ${downloadUrl}"
 curl -o $target_dir/artifacts.zip "$downloadUrl"
 unzip $target_dir/artifacts.zip -d $target_dir
 mv $target_dir/$artifactName/* $target_dir

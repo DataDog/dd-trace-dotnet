@@ -16,15 +16,15 @@ using Logger = Serilog.Core.Logger;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent5]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class SerilogBenchmark
     {
-        private static readonly Logger Logger;
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly LogEvent LogEvent;
+        private Logger _logger;
+        private Tracer _logInjectionTracer;
+        private LogEvent _logEvent;
 
-        static SerilogBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var logInjectionSettings = TracerSettings.Create(new()
             {
@@ -34,36 +34,39 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.ServiceVersion, "version" },
             });
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
 
             var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
-            Logger = new LoggerConfiguration()
+            _logger = new LoggerConfiguration()
                 // Add Enrich.FromLogContext to emit Datadog properties
                 .Enrich.FromLogContext()
                 .WriteTo.Sink(new NullSink(formatter))
                 .CreateLogger();
 
-            LogEvent = new LogEvent(
+            _logEvent = new LogEvent(
                 DateTimeOffset.Now,
                 LogEventLevel.Information,
                 exception: null,
                 new MessageTemplate("Hello", Enumerable.Empty<MessageTemplateToken>()),
                 properties: Enumerable.Empty<LogEventProperty>());
+
+            // Warmup
+            EnrichedLog();
         }
 
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (_logInjectionTracer.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (_logInjectionTracer.StartActive("Child"))
                 {
                     // equivalent of auto-instrumentation
-                    LoggerDispatchInstrumentation.OnMethodBegin(Logger, LogEvent);
+                    LoggerDispatchInstrumentation.OnMethodBegin(_logger, _logEvent);
 
-                    Logger.Write(LogEvent);
+                    _logger.Write(_logEvent);
                 }
             }
         }

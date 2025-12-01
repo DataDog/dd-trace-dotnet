@@ -39,7 +39,7 @@ internal class DebuggerFactory
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion);
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
 
@@ -60,14 +60,19 @@ internal class DebuggerFactory
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-         && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
+         && tracerSettings.Manager.InitialExporterSettings.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
-            statsd = new NoOpStatsd();
+            statsd = NoOpStatsd.Instance;
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, prefix: DebuggerSettings.DebuggerMetricPrefix, telemtryFlushInterval: null);
+            // TODO: use StatsdManager to get automatic updating on exporter and other setting changes
+            statsd = StatsdFactory.CreateDogStatsdClient(
+                tracerSettings.Manager.InitialMutableSettings,
+                tracerSettings.Manager.InitialExporterSettings,
+                includeDefaultTags: false,
+                prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return statsd;
@@ -114,7 +119,7 @@ internal class DebuggerFactory
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            tracerSettings.Exporter,
+            tracerSettings.Manager.InitialExporterSettings,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,

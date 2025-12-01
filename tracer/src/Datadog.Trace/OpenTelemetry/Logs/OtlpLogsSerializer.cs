@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpCommonFieldNumberConstants;
@@ -28,7 +29,7 @@ internal static class OtlpLogsSerializer
     /// <summary>
     /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer
     /// </summary>
-    public static byte[] SerializeLogs(IReadOnlyList<LogPoint> logs, TracerSettings? settings, int startPosition = 0)
+    public static byte[] SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
     {
         if (logs.Count == 0)
         {
@@ -42,7 +43,7 @@ internal static class OtlpLogsSerializer
         int resourceLogsLengthPosition = writePosition;
         writePosition += ReserveSizeForLength;
 
-        writePosition = WriteResourceLogs(buffer, writePosition, logs, settings!);
+        writePosition = WriteResourceLogs(buffer, writePosition, logs, settings);
 
         ProtobufSerializer.WriteReservedLength(buffer, resourceLogsLengthPosition, writePosition - (resourceLogsLengthPosition + ReserveSizeForLength));
 
@@ -51,7 +52,7 @@ internal static class OtlpLogsSerializer
         return result;
     }
 
-    private static int WriteResourceLogs(byte[] buffer, int writePosition, IReadOnlyList<LogPoint> logs, TracerSettings settings)
+    private static int WriteResourceLogs(byte[] buffer, int writePosition, IReadOnlyList<LogPoint> logs, ResourceTags settings)
     {
         writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, ResourceLogs_Resource, ProtobufWireType.LEN);
         int resourceLengthPosition = writePosition;
@@ -90,19 +91,19 @@ internal static class OtlpLogsSerializer
         return writePosition;
     }
 
-    private static int WriteResource(byte[] buffer, int writePosition, TracerSettings settings)
+    private static int WriteResource(byte[] buffer, int writePosition, ResourceTags settings)
     {
         var serviceName = settings.ServiceName ?? "unknown_service:dotnet";
         writePosition = WriteResourceAttribute(buffer, writePosition, "service.name", serviceName);
 
         if (!StringUtil.IsNullOrEmpty(settings.ServiceVersion))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "service.version", settings.ServiceVersion!);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "service.version", settings.ServiceVersion);
         }
 
         if (!StringUtil.IsNullOrEmpty(settings.Environment))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment!);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment);
         }
 
         // Write telemetry SDK attributes
@@ -277,6 +278,17 @@ internal static class OtlpLogsSerializer
                tagKey.Equals("deployment.environment.name", StringComparison.OrdinalIgnoreCase) ||
                tagKey.Equals("deployment.environment", StringComparison.OrdinalIgnoreCase) ||
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal class ResourceTags(string serviceName, string? environment, string? serviceVersion, ReadOnlyDictionary<string, string> globalTags)
+    {
+        public string ServiceName { get; } = serviceName;
+
+        public string? Environment { get; } = environment;
+
+        public string? ServiceVersion { get; } = serviceVersion;
+
+        public ReadOnlyDictionary<string, string> GlobalTags { get; } = globalTags;
     }
 }
 #endif

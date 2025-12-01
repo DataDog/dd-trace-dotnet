@@ -8,27 +8,25 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]
-    [BenchmarkCategory(Constants.TracerCategory)]
-
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class DbCommandBenchmark
     {
-        private static readonly CustomDbCommand CustomCommand = new CustomDbCommand();
+        private CustomDbCommand _customCommand;
 
-        static DbCommandBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            var bench = new DbCommandBenchmark();
-            bench.ExecuteNonQuery();
+            _customCommand = new CustomDbCommand();
         }
 
         [Benchmark]
         public unsafe int ExecuteNonQuery()
         {
-            return CallTarget.Run<CommandExecuteNonQueryIntegration, CustomDbCommand, int>(CustomCommand, &InternalExecuteNonQuery);
+            return CallTarget.Run<CommandExecuteNonQueryIntegration, CustomDbCommand, int>(_customCommand, &InternalExecuteNonQuery);
 
             static int InternalExecuteNonQuery() => 1;
         }

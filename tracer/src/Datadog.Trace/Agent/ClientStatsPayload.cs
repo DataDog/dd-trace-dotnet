@@ -4,21 +4,29 @@
 // </copyright>
 
 using System.Threading;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Agent
 {
-    internal class ClientStatsPayload
+    internal class ClientStatsPayload(MutableSettings settings)
     {
+        private AppSettings _settings = CreateSettings(settings);
         private long _sequence;
 
-        public string HostName { get; set; }
+        public string HostName { get; init; }
 
-        public string Environment { get; set; }
+        public AppSettings Details => _settings;
 
-        public string Version { get; set; }
-
-        public string ProcessTags { get; set; }
+        public string ProcessTags { get; init; }
 
         public long GetSequenceNumber() => Interlocked.Increment(ref _sequence);
+
+        public void UpdateDetails(MutableSettings settings)
+            => Interlocked.Exchange(ref _settings, CreateSettings(settings));
+
+        private static AppSettings CreateSettings(MutableSettings settings)
+            => new(settings.Environment, settings.ServiceVersion);
+
+        internal record AppSettings(string Environment, string Version);
     }
 }

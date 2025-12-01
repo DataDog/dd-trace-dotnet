@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -16,7 +17,7 @@ internal class StubDatadogTracer : IDatadogTracer
         DefaultServiceName = "stub-service";
         Settings = new TracerSettings(NullConfigurationSource.Instance);
         var namingSchema = new NamingSchema(SchemaVersion.V0, false, false, DefaultServiceName, null, null);
-        PerTraceSettings = new PerTraceSettings(null, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings));
+        PerTraceSettings = new PerTraceSettings(null, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings, new ConfigurationTelemetry()));
     }
 
     public string DefaultServiceName { get; }

@@ -20,21 +20,20 @@ using Datadog.Trace.Configuration.Telemetry;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+[BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    private static readonly Waf Waf;
+    private Waf _waf;
+    private Dictionary<string, object> _stage1;
+    private Dictionary<string, object> _stage1Attack;
+    private Dictionary<string, object> _stage2;
+    private Dictionary<string, object> _stage3;
 
-    private static readonly Dictionary<string, object> stage1 = MakeRealisticNestedMapStage1(false);
-    private static readonly Dictionary<string, object> stage1Attack = MakeRealisticNestedMapStage1(true);
-    private static readonly Dictionary<string, object> stage2 = MakeRealisticNestedMapStage2();
-    private static readonly Dictionary<string, object> stage3 = MakeRealisticNestedMapStage3();
-
-    static AppSecWafBenchmark()
+    [GlobalSetup]
+    public void GlobalSetup()
     {
         AppSecBenchmarkUtils.SetupDummyAgent();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
@@ -52,7 +51,22 @@ public class AppSecWafBenchmark
         {
             throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
         }
-        Waf = initResult.Waf;
+        _waf = initResult.Waf;
+
+        _stage1 = MakeRealisticNestedMapStage1(false);
+        _stage1Attack = MakeRealisticNestedMapStage1(true);
+        _stage2 = MakeRealisticNestedMapStage2();
+        _stage3 = MakeRealisticNestedMapStage3();
+    }
+
+    [IterationSetup]
+    public void IterationSetup()
+    {
+        // Force GC to reduce variance from native memory interactions
+        // WAF library uses unmanaged memory with allocation patterns outside .NET GC control
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
 
     private static Dictionary<string, object> MakeRealisticNestedMapStage1(bool withAttack)
@@ -132,18 +146,18 @@ public class AppSecWafBenchmark
     [Benchmark]
     public void RunWafRealisticBenchmark()
     {
-        var context = Waf.CreateContext();
-        context!.Run(stage1, TimeoutMicroSeconds);
-        context!.Run(stage2, TimeoutMicroSeconds);
-        context!.Run(stage3, TimeoutMicroSeconds);
+        var context = _waf.CreateContext();
+        context!.Run(_stage1, TimeoutMicroSeconds);
+        context!.Run(_stage2, TimeoutMicroSeconds);
+        context!.Run(_stage3, TimeoutMicroSeconds);
         context.Dispose();
     }
 
     [Benchmark]
     public void RunWafRealisticBenchmarkWithAttack()
     {
-        var context = Waf.CreateContext();
-        context!.Run(stage1Attack, TimeoutMicroSeconds);
+        var context = _waf.CreateContext();
+        context!.Run(_stage1Attack, TimeoutMicroSeconds);
         context.Dispose();
     }
 }

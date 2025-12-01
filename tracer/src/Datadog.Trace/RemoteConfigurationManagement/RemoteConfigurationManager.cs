@@ -7,7 +7,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -24,86 +24,85 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
 
-        private readonly RcmClientTracer _rcmTracer;
         private readonly IDiscoveryService _discoveryService;
-        private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
-
+        private readonly IDisposable _settingSubscription;
         private readonly TaskCompletionSource<bool> _processExit = new();
 
+        private IRemoteConfigurationApi _remoteConfigurationApi;
+        private RcmClientTracer _rcmTracer;
         private int _isPollingStarted;
         private bool _isRcmEnabled;
-        private bool _gitMetadataAddedToRequestTags;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
-            IRemoteConfigurationApi remoteConfigurationApi,
-            RcmClientTracer rcmTracer,
+            TracerSettings settings,
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IRcmSubscriptionManager subscriptionManager)
+            IRcmSubscriptionManager subscriptionManager,
+            List<string>? processTags)
         {
             _discoveryService = discoveryService;
-            _remoteConfigurationApi = remoteConfigurationApi;
-            _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
             _subscriptionManager = subscriptionManager;
             discoveryService.SubscribeToChanges(SetRcmEnabled);
+            UpdateRcmApi(settings.Manager.InitialExporterSettings);
+            UpdateRcmClientTracer(settings.Manager.InitialMutableSettings);
+            _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } updated)
+                {
+                    UpdateRcmClientTracer(updated);
+                }
+
+                if (changes.UpdatedExporter is { } exporter)
+                {
+                    UpdateRcmApi(exporter);
+                }
+            });
+
+            [MemberNotNull(nameof(_rcmTracer))]
+            void UpdateRcmClientTracer(MutableSettings mutable)
+            {
+                var rcmTracer = RcmClientTracer.Create(
+                    runtimeId: Util.RuntimeId.Get(),
+                    tracerVersion: TracerConstants.ThreePartVersion,
+                    // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                    service: TraceUtil.NormalizeTag(mutable.DefaultServiceName),
+                    env: TraceUtil.NormalizeTag(mutable.Environment),
+                    appVersion: mutable.ServiceVersion,
+                    globalTags: mutable.GlobalTags,
+                    processTags: processTags);
+                Interlocked.Exchange(ref _rcmTracer!, rcmTracer);
+            }
+
+            [MemberNotNull(nameof(_remoteConfigurationApi))]
+            void UpdateRcmApi(ExporterSettings exporter)
+            {
+                var rcmApi = RemoteConfigurationApiFactory.Create(exporter, discoveryService);
+
+                Interlocked.Exchange(ref _remoteConfigurationApi!, rcmApi);
+            }
         }
 
         public static RemoteConfigurationManager Create(
             IDiscoveryService discoveryService,
-            IRemoteConfigurationApi remoteConfigurationApi,
             RemoteConfigurationSettings settings,
-            string serviceName,
             TracerSettings tracerSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
-            var tags = GetTags(settings, tracerSettings);
-
             return new RemoteConfigurationManager(
                     discoveryService,
-                    remoteConfigurationApi,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
+                    tracerSettings,
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
-                    subscriptionManager);
-        }
-
-        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, TracerSettings tracerSettings)
-        {
-            var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
-
-            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
-            if (!string.IsNullOrEmpty(environment))
-            {
-                tags.Add($"env:{environment}");
-            }
-
-            var serviceVersion = tracerSettings.ServiceVersion;
-            if (!string.IsNullOrEmpty(serviceVersion))
-            {
-                tags.Add($"version:{serviceVersion}");
-            }
-
-            var tracerVersion = rcmSettings.TracerVersion;
-            if (!string.IsNullOrEmpty(tracerVersion))
-            {
-                tags.Add($"tracer_version:{tracerVersion}");
-            }
-
-            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
-            if (!string.IsNullOrEmpty(hostName))
-            {
-                tags.Add($"host_name:{hostName}");
-            }
-
-            return tags;
+                    subscriptionManager,
+                    tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : null);
         }
 
         public void Start()
@@ -117,6 +116,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             if (_processExit.TrySetResult(true))
             {
                 _discoveryService.RemoveSubscription(SetRcmEnabled);
+                _settingSubscription.Dispose();
             }
             else
             {
@@ -164,18 +164,19 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private Task Poll()
         {
-            return _subscriptionManager.SendRequest(_rcmTracer, request =>
+            var rcm = Volatile.Read(ref _rcmTracer);
+            return _subscriptionManager.SendRequest(rcm, request =>
             {
-                EnrichTagsWithGitMetadata(request.Client.ClientTracer.Tags);
+                EnrichTagsWithGitMetadata(request.Client.ClientTracer);
                 request.Client.ClientTracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
 
-                return _remoteConfigurationApi.GetConfigs(request);
+                return Volatile.Read(ref _remoteConfigurationApi).GetConfigs(request);
             });
         }
 
-        private void EnrichTagsWithGitMetadata(List<string> tags)
+        private void EnrichTagsWithGitMetadata(RcmClientTracer details)
         {
-            if (_gitMetadataAddedToRequestTags)
+            if (details.IsGitMetadataAddedToRequestTags)
             {
                 return;
             }
@@ -188,11 +189,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             if (gitMetadata != GitMetadata.Empty)
             {
-                tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
-                tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
+                details.Tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
+                details.Tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
             }
 
-            _gitMetadataAddedToRequestTags = true;
+            details.IsGitMetadataAddedToRequestTags = true;
         }
 
         private void SetRcmEnabled(AgentConfiguration c)

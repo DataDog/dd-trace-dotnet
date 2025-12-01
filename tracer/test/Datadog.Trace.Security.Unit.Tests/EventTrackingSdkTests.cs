@@ -9,6 +9,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
 using Xunit;
@@ -23,7 +24,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -45,7 +46,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -79,7 +80,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -102,7 +103,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -136,7 +137,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -157,7 +158,7 @@ public class EventTrackingSdkTests
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");

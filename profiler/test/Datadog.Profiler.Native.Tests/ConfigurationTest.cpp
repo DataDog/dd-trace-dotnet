@@ -1418,3 +1418,54 @@ TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsWaitHandleProfilingEnabled(), false);
 }
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapHandleLimitIfNoValue)
+{
+    auto configuration = Configuration{};
+    auto threshold = configuration.GetHeapHandleLimit();
+    ASSERT_THAT(threshold, 4096);
+}
+
+TEST_F(ConfigurationTest, CheckHeapHandleLimitIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapHandleLimit, WStr("1"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.GetHeapHandleLimit();
+    ASSERT_THAT(threshold, 1024);
+}
+
+TEST_F(ConfigurationTest, CheckHeapHandleLimitIfTooLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapHandleLimit, WStr("100000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.GetHeapHandleLimit();
+    ASSERT_THAT(threshold, 16000);
+}
+
+TEST_F(ConfigurationTest, CheckHeapHandleLimitIfCorrectValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapHandleLimit, WStr("8000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.GetHeapHandleLimit();
+    ASSERT_THAT(threshold, 8000);
+}
