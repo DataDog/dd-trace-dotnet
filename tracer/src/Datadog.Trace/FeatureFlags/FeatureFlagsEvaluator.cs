@@ -496,7 +496,6 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return default!;
-            // return (T)(object)Value.ObjectToValue(value);
         }
 
         private static double ParseDouble(object value)
@@ -548,13 +547,16 @@ namespace Datadog.Trace.FeatureFlags
                                 stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i]));
                             }
                         }
-
-                        // else if (value.IsStructure()) // Not implemented yet
-                        // {
-                        // }
+                        else if (value is IDictionary dict)
+                        {
+                            foreach (var pairKey in dict.Keys)
+                            {
+                                stack.Push(new FlattenEntry($"{entry.Key}.{pairKey}", dict[pairKey!]));
+                            }
+                        }
                         else
                         {
-                            result[entry.Key] = context.ConvertValue(value);
+                            result[entry.Key] = context.ConvertValue(value) ?? value;
                         }
                     }
                 }

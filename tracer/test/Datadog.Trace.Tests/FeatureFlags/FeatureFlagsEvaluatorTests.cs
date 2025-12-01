@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Google.Protobuf.WellKnownTypes;
 using Moq;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.Rcm.Model.ValueType;
@@ -182,6 +183,57 @@ public class FeatureFlagsEvaluatorTests
     }
 
     // ---------------------------------------------------------------------
+    // FlattenContext tests
+    // ---------------------------------------------------------------------
+
+    public static IEnumerable<object[]> FlattenContextCases()
+    {
+        // empty
+        yield return new object[]
+        {
+                new Dictionary<string, object?>(),
+                new Dictionary<string, object?>()
+        };
+
+        // scalars
+        yield return new object[]
+        {
+            new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } },
+            new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } },
+        };
+
+        // list: [1,2,[4]]
+        yield return new object[]
+        {
+            new Dictionary<string, object?> { { "list", new List<object?> { 1, 2, new List<object?> { 4 } } } },
+            new Dictionary<string, object?> { { "list[0]", 1 }, { "list[1]", 2 }, { "list[2][0]", 4 } },
+        };
+
+        // nested map
+        yield return new object[]
+        {
+            new Dictionary<string, object?> { { "map", new Dictionary<string, object?> { { "key1", 1 }, { "key2", 2 }, { "key3", new Dictionary<string, object?> { { "key4", 4 } } } } } },
+            new Dictionary<string, object?> { { "map.key1", 1 }, { "map.key2", 2 }, { "map.key3.key4", 4 } },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(FlattenContextCases))]
+    public void FlattenContextFlattensListsAndDictionarys(Dictionary<string, object?> attrs, Dictionary<string, object?> expected)
+    {
+        var ctx = new EvaluationContext("structure", attrs);
+        var flattened = FeatureFlagsEvaluator.FlattenContext(ctx);
+
+        Assert.Equal(expected.Count, flattened.Count);
+
+        foreach (var pair in expected)
+        {
+            Assert.True(flattened.TryGetValue(pair.Key, out var actual));
+            Assert.Equal(pair.Value, actual);
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // Happy-path evaluation + rule-based + numeric + exposure
     //    These are example slices; you can easily add more tests in same style.
     // ---------------------------------------------------------------------
@@ -213,7 +265,7 @@ public class FeatureFlagsEvaluatorTests
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user-premium", new Dictionary<string, object> { { "email", "john@company.com" } });
+        var ctx = new EvaluationContext("user-premium", new Dictionary<string, object?> { { "email", "john@company.com" } });
 
         var result = evaluator.Evaluate("rule-based-flag", "default", ctx);
 
@@ -231,7 +283,7 @@ public class FeatureFlagsEvaluatorTests
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user-vip", new Dictionary<string, object> { { "score", 850 } });
+        var ctx = new EvaluationContext("user-vip", new Dictionary<string, object?> { { "score", 850 } });
 
         var result = evaluator.Evaluate("numeric-rule-flag", "default", ctx);
 
