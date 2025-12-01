@@ -40,6 +40,7 @@ public:
     inline static const shared::WSTRING GCProfilingEnabled              = WStr("DD_PROFILING_GC_ENABLED");
     inline static const shared::WSTRING HeapProfilingEnabled            = WStr("DD_PROFILING_HEAP_ENABLED");
 
+    inline static const shared::WSTRING HeapHandleLimit                 = WStr("DD_INTERNAL_PROFILING_HEAP_HANDLE_LIMIT");
     inline static const shared::WSTRING ExceptionSampleLimit            = WStr("DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING AllocationSampleLimit           = WStr("DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT");
     inline static const shared::WSTRING ContentionSampleLimit           = WStr("DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT");
@@ -73,6 +74,10 @@ public:
     inline static const shared::WSTRING HttpProfilingInternalEnabled    = WStr("DD_INTERNAL_PROFILING_HTTP_ENABLED");
     inline static const shared::WSTRING HttpProfilingEnabled            = WStr("DD_PROFILING_HTTP_ENABLED");
     inline static const shared::WSTRING HttpRequestDurationThreshold    = WStr("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");
+    inline static const shared::WSTRING HeapSnapshotEnabled             = WStr("DD_PROFILING_HEAPSNAPSHOT_ENABLED");
+    inline static const shared::WSTRING HeapSnapshotInterval            = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL");
+    inline static const shared::WSTRING HeapSnapshotCheckInterval       = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL");
+    inline static const shared::WSTRING HeapSnapshotMemoryPressureThreshold = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD");
 
     // used for tests only
     inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");

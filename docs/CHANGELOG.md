@@ -33,6 +33,117 @@
 
 
 
+
+
+## [Release 3.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.32.0)
+
+## Summary
+
+- [Tracer] Fix orphaned spans in WCF traces
+- [AWS Lambda] Add request-id as header to Lambda start/end invocation
+
+## Changes
+
+### Tracer
+* Add process tags to client-side stats (#7791)
+
+### CI Visibility
+* Avoid allocating and preparing CI Visibility stuff in startup hot path (#7821)
+
+### Debugger
+* Add process tags to dynamic instrumentation snapshots (#7839)
+
+### Serverless
+* Respect baggage in Azure messaging integrations (#7818)
+* [AWS Lambda] Add request-id as header to Lambda start/end invocation (#7835)
+* Add `#nullable enable` and fix `NullReferenceException` in DynamoDB (#7849)
+
+### Fixes
+* Fix orphaned spans in WCF traces (#7842)
+
+### Data Streams Monitoring
+* Add process tags to DSM (#7775)
+
+### Miscellaneous
+* Add process tags to telemetry (#7780)
+* [Docs] fix CLI commands to download logs from AAS apps (#7802)
+
+### Build / Test
+* Fix microbenchmark artifacts (#7816)
+* Add testing for latest Microsoft.Extensions.Telemetry version (#7817)
+* Fix broken CI when running tests against a specific sample (#7819)
+* Publish native symbols in all DCs (#7828)
+* Update .gitlab/one-pipeline.locked.yaml (#7836)
+* Add support for VS 2026 to Nuke detection (#7843)
+
+
+[Changes since 3.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.31.0...v3.32.0)
+
+## [Release 3.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.31.0)
+
+## Summary
+
+* Add support for .NET 10
+* Add support for `MongoDB.Driver` v3.5+
+
+## Changes
+
+### Tracer
+* Use RuntimeHelpers.GetHashCode in IndexObject (#7678)
+* Removing V1 tags class from AWS integrations (#7746)
+* Add support for `MongoDB.Driver` v3.5+ (#7808)
+* Compress telemetry payload (#7645)
+
+### Continuous Profiler
+* [Crashtracker] Add module path to frames (#7642)
+
+### Serverless
+* [Docs] Add Azure Functions architecture docs and PowerShell debugging tools (#7639)
+
+### Fixes
+* Fix null character termination in CString abstraction. (#7785)
+* Add fix for persistent `Process.Start` version-conflict issue (#7789)
+* Protect against null LoggingEvent and Properties in log4net (#7735)
+* Fix `InvalidOperationException` in Baggage handling in Azure Functions (#7810)
+
+### Build / Test
+* Add support for .NET 10 GA (#7804)
+* Improve execution benchmark comment post (#7570)
+* Split `create_draft_release` worfklow into hotfix / normal (#7601)
+* Limit Dependabot to 1 open PR for our integration bumps (#7675)
+* [Test Package Versions Bump] Updating package versions (#7740)
+* Bump the gh-actions-packages group across 3 directories with 5 updates (#7748)
+* [ASM] Fix Asm benchmark and stop-reinitializing tracer (#7750)
+* Improve aerospike sample to avoid timeouts (#7751)
+* [Test Package Versions Bump] Updating package versions (#7757)
+* Bump softprops/action-gh-release from 2.3.3 to 2.4.1 in the gh-actions-packages group across 1 directory (#7758)
+* Fix (more) EventHubs flaky batch tests (#7768)
+* Increase debugger serialize timeout for unit tests (#7769)
+* Use `ScopedTracer` in tests (#7770)
+* Fix RedirectInput test flakyness (#7771)
+* Replace macos-13 with macos-14 in CI (#7778)
+* Add partial trust/legacy CAS detection to dd-trace and dd-dotnet (#7779)
+* Avoid exceptions in ProcessBasicChecksTests (#7781)
+* Tweak CI variables (#7784)
+* [Test Package Versions Bump] Updating package versions (#7794)
+* Fix GRPC flaky tests. (#7800)
+* [Test Package Versions Bump] Updating package versions (#7812)
+* Cosmos DB partial integration testing (#7752)
+* Dispose `ManualResetEventSlim` instances in tests (#7797)
+
+### Miscellaneous
+* Add `DD_AGENT_FEATURE_POLLING_ENABLED` setting (#7616)
+* Add helper `DictionaryExtensions.SequenceEqual` (#7722)
+* Improve exception redaction to handle Aggregate Exceptions better (#7754)
+* [Docs] Small developer docs clean-up (#7799)
+* [Logs] Fix OTLP Logs timestamp during serialization (#7814)
+* Remove more `[PublicApi]` usages and unused code (#7786)
+* Remove unused `PublicApiUsage` members (#7787)
+* Skip sending unactionable performance counters log to telemetry (#7753)
+* Repurpose `PublicApiAnalyzer` as `InternalForTestingAnalyzer`  (#7788)
+
+[Changes since 3.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.30.0...v3.31.0)
+
 ## [Release 3.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.30.0)
 
 ## Summary

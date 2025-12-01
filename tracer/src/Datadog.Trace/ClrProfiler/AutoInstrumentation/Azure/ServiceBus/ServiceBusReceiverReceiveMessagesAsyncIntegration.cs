@@ -101,9 +101,9 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                     serviceBusMessage.ApplicationProperties != null)
                 {
                     var extractedContext = AzureMessagingCommon.ExtractContext(serviceBusMessage.ApplicationProperties);
-                    if (extractedContext != null)
+                    if (extractedContext.SpanContext != null)
                     {
-                        extractedContexts.Add(extractedContext);
+                        extractedContexts.Add(extractedContext.SpanContext);
                     }
                 }
             }

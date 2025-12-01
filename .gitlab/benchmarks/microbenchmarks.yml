@@ -16,6 +16,10 @@ stages:
   - build
   - benchmarks
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 build-dd-trace-dotnet-microbenchmarks-ami:
   stage: build
   tags: ["arch:amd64"]
@@ -79,7 +83,11 @@ run-benchmarks:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always

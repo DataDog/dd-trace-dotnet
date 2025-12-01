@@ -5,14 +5,27 @@ inputs:
   artifacts_path:
     description: "Path to the build artifacts"
     required: true
-  preprod_key:
-    description: "Preprod API key"
-    default: ""
-    required: false
-  public_symbols_key:
-    description: "Public symbols API key"
-    default: ""
-    required: false
+  preprod_api_key:
+    description: "Pre-production API key"
+    required: true
+  us1_api_key:
+    description: "US1 API key"
+    required: true
+  us3_api_key:
+    description: "US3 API key"
+    required: true
+  us5_api_key:
+    description: "US5 API key"
+    required: true
+  eu1_api_key:
+    description: "EU1 API key"
+    required: true
+  ap1_api_key:
+    description: "AP1 API key"
+    required: true
+  ap2_api_key:
+    description: "AP2 API key"
+    required: true
 
 runs:
   using: "composite"
@@ -84,17 +97,14 @@ runs:
 
     - name: Push debug symbols
       shell: bash
+      env:
+        BOLD_GREEN: "\e[1;32m"
+        RESET: "\e[0m"
       run: |
-        if [ -n "${{ inputs.public_symbols_key }}" ]; then
-          echo "Push symbols to prod env"
-          DATADOG_API_KEY="${{ inputs.public_symbols_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload "$DEBUG_SYMBOLS_DIR/linux"
-          DATADOG_API_KEY="${{ inputs.public_symbols_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload "$DEBUG_SYMBOLS_DIR/windows"
-        fi
-
-        if [ -n "${{ inputs.preprod_key }}" ]; then
-          echo "Push symbols to staging env"
-          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload "$DEBUG_SYMBOLS_DIR/linux"
-          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload "$DEBUG_SYMBOLS_DIR/windows"
-        fi
-
-    
+        for i in "datad0g.com ${{ inputs.preprod_api_key }}" "datadoghq.com ${{ inputs.us1_api_key }}" "us3.datadoghq.com ${{ inputs.us3_api_key }}" "us5.datadoghq.com ${{ inputs.us5_api_key }}" "datadoghq.eu ${{ inputs.eu1_api_key }}" "ap1.datadoghq.com ${{ inputs.ap1_api_key }}" "ap2.datadoghq.com ${{ inputs.ap2_api_key }}"; do
+          site=$(echo $i | cut -d' ' -f1)
+          api_key=$(echo $i | cut -d' ' -f2)
+          echo -e "${BOLD_GREEN}Pushing symbols to $site${RESET}"
+          DATADOG_API_KEY="$api_key" DATADOG_SITE="$site" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload "$DEBUG_SYMBOLS_DIR/linux"
+          DATADOG_API_KEY="$api_key" DATADOG_SITE="$site" DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload "$DEBUG_SYMBOLS_DIR/windows"
+        done

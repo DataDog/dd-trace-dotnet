@@ -31,15 +31,15 @@ internal static class SnapshotHelper
         DebuggerSnapshotSerializer.SetConfig(testSettings);
     }
 
-    internal static string GenerateSnapshot(object instance, bool prettify = true)
+    internal static string GenerateSnapshot(object instance, bool prettify = true, bool withProcessTags = false)
     {
-        return GenerateSnapshot(null, new object[] { }, new object[] { instance }, prettify);
+        return GenerateSnapshot(instance: null, new object[] { }, new object[] { instance }, prettify, withProcessTags);
     }
 
     /// <summary>
     /// Generate a debugger snapshot by simulating the same flow of method calls as our instrumentation produces for a method probe.
     /// </summary>
-    private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify)
+    private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify, bool withProcessTags)
     {
         var maxInfo = new CaptureLimitInfo(
             MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
@@ -47,7 +47,7 @@ internal static class SnapshotHelper
             MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
             MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo);
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, withProcessTags);
         {
             // method entry
             snapshotCreator.StartEntry();

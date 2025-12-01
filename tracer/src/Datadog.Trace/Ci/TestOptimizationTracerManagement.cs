@@ -159,7 +159,7 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
     public IApiRequestFactory GetRequestFactory(TracerSettings tracerSettings, TimeSpan timeout)
     {
         IApiRequestFactory? factory;
-        var exporterSettings = tracerSettings.Exporter;
+        var exporterSettings = tracerSettings.Manager.InitialExporterSettings;
         if (exporterSettings.TracesTransport != TracesTransportType.Default)
         {
             factory = AgentTransportStrategy.Get(
@@ -181,7 +181,7 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
                 timeout: timeout);
 #else
             Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new ApiWebRequestFactory(exporterSettings.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {

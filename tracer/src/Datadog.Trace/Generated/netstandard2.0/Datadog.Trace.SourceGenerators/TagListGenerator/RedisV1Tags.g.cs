@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

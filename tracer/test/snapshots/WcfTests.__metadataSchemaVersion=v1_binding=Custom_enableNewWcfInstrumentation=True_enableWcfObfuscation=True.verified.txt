@@ -2,18 +2,13 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: internal,
-    Resource: WebClient,
+    Name: Begin_ServerAsyncAdd_false_false,
+    Resource: Begin_ServerAsyncAdd_false_false,
     Service: Samples.Wcf,
-    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel.library.name: Samples.Wcf,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      runtime-id: Guid_2,
-      span.kind: internal,
+      runtime-id: Guid_1,
       version: 1.0.0
     },
     Metrics: {
@@ -21,6 +16,585 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_5,
+    Name: Begin_ServerAsyncAdd_false_true,
+    Resource: Begin_ServerAsyncAdd_false_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_6,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_5,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: Begin_ServerAsyncAdd_true_false,
+    Resource: Begin_ServerAsyncAdd_true_false,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_9,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_11,
+    Name: Begin_ServerAsyncAdd_true_true,
+    Resource: Begin_ServerAsyncAdd_true_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_12,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_11,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: BeginEnd_ServerSyncAdd,
+    Resource: BeginEnd_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_15,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_14,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_17,
+    Name: BeginEnd_ServerTaskAdd,
+    Resource: BeginEnd_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_18,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
+    Name: ServerEmptyActionAdd,
+    Resource: ServerEmptyActionAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_21,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_20,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_23,
+    Name: Sync_ServerAsyncAdd,
+    Resource: Sync_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_24,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_26,
+    Name: Sync_ServerSyncAdd,
+    Resource: Sync_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_27,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_26,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_29,
+    Name: Sync_ServerTaskAdd,
+    Resource: Sync_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_30,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_29,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_31,
+    SpanId: Id_32,
+    Name: Task_ServerAsyncAdd,
+    Resource: Task_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_31,
+    SpanId: Id_33,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_32,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_35,
+    Name: Task_ServerSyncAdd,
+    Resource: Task_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_36,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_35,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_38,
+    Name: Task_ServerTaskAdd,
+    Resource: Task_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_39,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_38,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   }
 ]
