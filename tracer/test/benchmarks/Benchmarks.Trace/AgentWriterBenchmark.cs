@@ -72,7 +72,6 @@ namespace Benchmarks.Trace
         /// Write realistic traces, but don't flush, to isolate overhead from serialization only
         /// </summary>
         [Benchmark]
-        [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
         public Task WriteEnrichedTraces()
         {
             _agentWriterNoOpFlush.WriteTrace(_enrichedSpans);
