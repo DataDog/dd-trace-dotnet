@@ -106,9 +106,9 @@ namespace Samples.Telemetry
             var logger = logField.GetValue(null);
 
             var loggerType = Type.GetType("Datadog.Trace.Logging.DatadogSerilogLogger, Datadog.Trace")!;
-            var errorMethod = loggerType.GetMethod("Error", [typeof(string), typeof(int), typeof(string)])!;
+            var errorMethod = loggerType.GetMethod("Error", [typeof(string)])!;
 
-            errorMethod.Invoke(logger, ["Sending an error log using hacky reflection", sourceLine, sourceFile]);
+            errorMethod.Invoke(logger, ["Sending an error log using hacky reflection"]);
         }
     }
 }

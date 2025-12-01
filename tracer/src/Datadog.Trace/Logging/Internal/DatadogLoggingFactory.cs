@@ -27,8 +27,6 @@ namespace Datadog.Trace.Logging;
 
 internal static class DatadogLoggingFactory
 {
-    // By default, we don't rate limit log messages;
-    private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
     internal const int DefaultConsoleQueueLimit = 1024;
@@ -50,12 +48,7 @@ internal static class DatadogLoggingFactory
 
         var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
 
-        var rateLimit = new ConfigurationBuilder(source, telemetry)
-                       .WithKeys(ConfigurationKeys.LogRateLimit)
-                       .AsInt32(DefaultRateLimit, x => x >= 0)
-                       .Value;
-
-        return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
+        return new DatadogLoggingConfiguration(redactedErrorLogsConfig, fileConfig, consoleConfig);
 
         static bool Contains(string[] items, string value)
         {
@@ -149,20 +142,7 @@ internal static class DatadogLoggingFactory
 
         var internalLogger = loggerConfiguration.CreateLogger();
 
-        ILogRateLimiter rateLimiter;
-
-        try
-        {
-            rateLimiter = config.RateLimit == 0
-                              ? new NullLogRateLimiter()
-                              : new LogRateLimiter(config.RateLimit);
-        }
-        catch
-        {
-            rateLimiter = new NullLogRateLimiter();
-        }
-
-        return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File);
+        return new DatadogSerilogLogger(internalLogger, config.File);
     }
 
     [TestingAndPrivateOnly]
