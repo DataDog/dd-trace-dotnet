@@ -21,7 +21,7 @@ internal readonly struct SamplingContext
     {
     }
 
-    private SamplingContext(SpanContext context, string? operationName, string? resourceName, ITags? tags)
+    public SamplingContext(SpanContext context, string? operationName, string? resourceName, ITags? tags)
     {
         Context = context;
         OperationName = operationName;
@@ -30,4 +30,7 @@ internal readonly struct SamplingContext
     }
 
     public static implicit operator SamplingContext(Span span) => new(span);
+
+    // This one shouldn't actually ever be needed, but it doesn't hurt
+    public static implicit operator SamplingContext(UnrecordedSpan span) => new(span.Context, span.OperationName, span.ResourceName, null);
 }
