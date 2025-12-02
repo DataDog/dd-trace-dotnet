@@ -130,6 +130,8 @@ internal static partial class ConfigurationKeys
     /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
     public const string MetricsUri = "DD_DOGSTATSD_URL";
 
+    public const string DotnetTracerHome = "DD_DOTNET_TRACER_HOME";
+
     /// <summary>
     /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
     /// </summary>
