@@ -59,6 +59,14 @@ public class AppSecWafBenchmark
         _stage3 = MakeRealisticNestedMapStage3();
     }
 
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+        AppSecBenchmarkUtils.CleanupDummyAgent();
+        AppSecBenchmarkUtils.CleanupWafLibraryInvoker();
+        _waf?.Dispose();
+    }
+
     [IterationSetup]
     public void IterationSetup()
     {

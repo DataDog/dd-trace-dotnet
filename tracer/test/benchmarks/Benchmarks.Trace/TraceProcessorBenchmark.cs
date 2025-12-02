@@ -10,23 +10,32 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class TraceProcessorBenchmark
     {
-        private readonly ITraceProcessor _normalizerTraceProcessor;
-        private readonly ITraceProcessor _trucantorTraceProcessor;
-        private readonly ITraceProcessor _obfuscatorTraceProcessor;
+        private ITraceProcessor _normalizerTraceProcessor;
+        private ITraceProcessor _trucantorTraceProcessor;
+        private ITraceProcessor _obfuscatorTraceProcessor;
         private ArraySegment<Span> _spans;
+        private Tracer _tracer;
 
-        public TraceProcessorBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             _normalizerTraceProcessor = new NormalizerTraceProcessor();
             _trucantorTraceProcessor = new TruncatorTraceProcessor();
             _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor(true);
-            
-            var traceContext = new TraceContext(Tracer.Instance, null);
+
+            _tracer = TracerHelper.CreateTracer();
+            var traceContext = new TraceContext(_tracer, null);
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
             span.ResourceName = "My Resource Name";
             span.Type = "sql";
             _spans = new ArraySegment<Span>(Enumerable.Repeat(span, 100).ToArray());
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
         }
 
         [Benchmark]
