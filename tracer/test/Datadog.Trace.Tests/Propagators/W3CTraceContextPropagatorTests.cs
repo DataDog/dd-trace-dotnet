@@ -1119,6 +1119,15 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void TryGetSingleRare_ShouldReturnFalse_ForNullEnumerator()
+        {
+            // Test case for IEnumerable that returns null from GetEnumerator()
+            var badEnumerable = new BadEnumerable();
+            W3CTraceContextPropagator.TryGetSingleRare(badEnumerable, out var value).Should().BeFalse();
+            value.Should().Be(string.Empty);
+        }
+
+        [Fact]
         public void TryGetSingle_ShouldReturnFalse_ForEmptyValeus()
         {
             W3CTraceContextPropagator.TryGetSingle(Array.Empty<string>(), out _).Should().BeFalse();
@@ -1163,6 +1172,13 @@ namespace Datadog.Trace.Tests.Propagators
             {
                 result.SpanContext.Should().BeNull();
             }
+        }
+
+        private class BadEnumerable : IEnumerable<string>
+        {
+            public IEnumerator<string> GetEnumerator() => null;
+
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => null;
         }
     }
 }

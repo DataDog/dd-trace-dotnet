@@ -696,6 +696,14 @@ namespace Datadog.Trace.Propagators
 
             using var enumerator = values.GetEnumerator();
 
+            if (enumerator is null)
+            {
+                // GetEnumerator() returned null, which violates the IEnumerable contract
+                // but we handle it gracefully
+                value = string.Empty;
+                return false;
+            }
+
             if (!enumerator.MoveNext())
             {
                 // there were no items
