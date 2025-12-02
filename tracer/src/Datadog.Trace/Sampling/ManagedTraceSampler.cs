@@ -81,7 +81,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
         }
     }
 
-    public SamplingDecision MakeSamplingDecision(Span span) => Volatile.Read(ref _current).MakeSamplingDecision(span);
+    public SamplingDecision MakeSamplingDecision(in SamplingContext context) => Volatile.Read(ref _current).MakeSamplingDecision(in context);
 
     // used for testing
     internal IReadOnlyList<ISamplingRule> GetRules() => Volatile.Read(ref _current).GetRules();

@@ -1,4 +1,4 @@
-// <copyright file="GlobalSamplingRateRule.cs" company="Datadog">
+﻿// <copyright file="GlobalSamplingRateRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,12 +21,9 @@ namespace Datadog.Trace.Sampling
         // Doesn't depend on span at all
         public bool IsResourceBasedSamplingRule => false;
 
-        public bool IsMatch(Span span) => true;
+        public bool IsMatch(in SamplingContext context) => true;
 
-        public float GetSamplingRate(Span span)
-        {
-            return _globalRate;
-        }
+        public float GetSamplingRate(in SamplingContext context) => _globalRate;
 
         public override string ToString()
         {

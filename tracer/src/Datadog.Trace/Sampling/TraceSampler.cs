@@ -1,4 +1,4 @@
-// <copyright file="TraceSampler.cs" company="Datadog">
+﻿// <copyright file="TraceSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -44,20 +44,20 @@ namespace Datadog.Trace.Sampling
             _agentSamplingRule?.SetDefaultSampleRates(sampleRates);
         }
 
-        public SamplingDecision MakeSamplingDecision(Span span)
+        public SamplingDecision MakeSamplingDecision(in SamplingContext context)
         {
             foreach (var rule in _rules)
             {
-                if (rule.IsMatch(span))
+                if (rule.IsMatch(in context))
                 {
-                    var sampleRate = rule.GetSamplingRate(span);
-                    return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
+                    var sampleRate = rule.GetSamplingRate(in context);
+                    return MakeSamplingDecision(in context, sampleRate, rule.SamplingMechanism);
                 }
             }
 
             // this code is normally unreachable because there should always be a AgentSamplingRule
             // (even before we receive rates from the agent)
-            Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", span.Context.RawTraceId);
+            Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", context.Context.RawTraceId);
             return SamplingDecision.Default;
         }
 
@@ -67,10 +67,10 @@ namespace Datadog.Trace.Sampling
             return _rules;
         }
 
-        private SamplingDecision MakeSamplingDecision(Span span, float rate, string mechanism)
+        private SamplingDecision MakeSamplingDecision(in SamplingContext context, float rate, string mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
-            var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);
+            var sample = SamplingHelpers.SampleByRate(context.Context.TraceId128, rate);
             int priority;
             float? limiterRate = null;
 
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Sampling
                 // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
                 if (sample)
                 {
-                    priority = _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
+                    priority = _limiter.Allowed(in context) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
 
                     // report the rate limiter's effective rate if the rate limiter is used
                     limiterRate = _limiter.GetEffectiveRate();

@@ -31,14 +31,14 @@ namespace Datadog.Trace.Sampling
         // Agent sampling rules do not depend on span resource names, only service and environment names.
         public bool IsResourceBasedSamplingRule => false;
 
-        public bool IsMatch(Span span) => true;
+        public bool IsMatch(in SamplingContext context) => true;
 
-        public float GetSamplingRate(Span span)
+        public float GetSamplingRate(in SamplingContext context)
         {
             if (_sampleRates.Count > 0)
             {
-                var service = span.ServiceName;
-                var env = span.Context.TraceContext.Environment ?? string.Empty;
+                var service = context.Context.ServiceName ?? string.Empty;
+                var env = context.Context.TraceContext.Environment ?? string.Empty;
                 var key = new SampleRateKey(service, env);
 
                 if (_sampleRates.TryGetValue(key, out var matchingRate))
