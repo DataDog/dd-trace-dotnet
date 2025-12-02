@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
-    internal class AerospikeCommon
+    internal sealed class AerospikeCommon
     {
         private const string DatabaseType = "aerospike";
         private const string OperationName = "aerospike.command";

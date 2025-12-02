@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class GenerateMetricsPayload : IPayload
+internal sealed class GenerateMetricsPayload : IPayload
 {
     public GenerateMetricsPayload(ICollection<MetricData> series)
     {

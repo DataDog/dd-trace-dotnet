@@ -1,4 +1,4 @@
-// <copyright file="AppStartedPayload.cs" company="Datadog">
+﻿// <copyright file="AppStartedPayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class AppStartedPayload : IPayload
+internal sealed class AppStartedPayload : IPayload
 {
     public ProductsData? Products { get; set; }
 
@@ -20,7 +20,7 @@ internal class AppStartedPayload : IPayload
 
     public ICollection<TelemetryValue>? AdditionalPayload { get; set; }
 
-    internal class InstallSignaturePayload
+    internal sealed class InstallSignaturePayload
     {
         public string? InstallId { get; set; }
 

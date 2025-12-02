@@ -17,7 +17,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryTransportManager : IDisposable
+internal sealed class TelemetryTransportManager : IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
 

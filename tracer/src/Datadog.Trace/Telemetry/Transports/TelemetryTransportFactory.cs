@@ -10,7 +10,7 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
-    internal class TelemetryTransportFactory
+    internal sealed class TelemetryTransportFactory
     {
         public TelemetryTransportFactory(TelemetrySettings telemetrySettings)
         {

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Runtime;
 [AspectClass("System.Runtime")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class DefaultInterpolatedStringHandlerAspect
+public sealed class DefaultInterpolatedStringHandlerAspect
 {
     /// <summary>
     /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(String) aspect

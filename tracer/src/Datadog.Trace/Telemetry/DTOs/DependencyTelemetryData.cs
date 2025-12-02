@@ -9,7 +9,7 @@ namespace Datadog.Trace.Telemetry
     /// <summary>
     /// Using a record as used as dictionary key so getting equality comparison for free
     /// </summary>
-    internal record DependencyTelemetryData
+    internal sealed record DependencyTelemetryData
     {
         public DependencyTelemetryData(string name)
         {

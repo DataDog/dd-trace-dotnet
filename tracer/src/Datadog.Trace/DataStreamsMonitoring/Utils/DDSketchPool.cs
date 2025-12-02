@@ -16,7 +16,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Utils;
 /// <summary>
 /// A simple pool for <see cref="DDSketch"/> to reduce the number of allocations
 /// </summary>
-internal class DDSketchPool
+internal sealed class DDSketchPool
 {
     private readonly BoundedConcurrentQueue<DDSketch> _pool;
 

@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 
-public class XPathExtensionAspect
+public sealed class XPathExtensionAspect
 {
     /// <summary>
     /// Launches a spath injection vulnerability if the input is tainted

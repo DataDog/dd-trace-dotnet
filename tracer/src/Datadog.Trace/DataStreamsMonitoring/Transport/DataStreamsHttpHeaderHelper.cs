@@ -10,7 +10,7 @@ using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 
-internal class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
+internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 {
     private static string? _metadataHeaders = null;
 

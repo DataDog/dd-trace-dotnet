@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class DeleteBucketIntegration
+public sealed class DeleteBucketIntegration
 {
     private const string Operation = "DeleteBucket";
 

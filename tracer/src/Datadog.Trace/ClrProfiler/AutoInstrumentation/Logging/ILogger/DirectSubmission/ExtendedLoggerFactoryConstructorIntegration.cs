@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     IntegrationName = LoggerIntegrationCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ExtendedLoggerFactoryConstructorIntegration
+public sealed class ExtendedLoggerFactoryConstructorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProviders, TEnrichers, TStaticEnrichers, TFilterOptions, TSampler, TFactoryOptions, TScopeProvider, TEnrichmentOptions, TRedactionOptions, TRedactorProvider, TLogBuffer>(TTarget instance, TProviders? providers, TEnrichers? enrichers, TStaticEnrichers? staticEnrichers, TFilterOptions? filterOptions, TSampler? sampler, TFactoryOptions? factoryOptions, TScopeProvider? scopeProvider, TEnrichmentOptions? enrichmentOptions, TRedactionOptions? redactionOptions, TRedactorProvider? redactorProviderref, TLogBuffer? logBuffer)
     {

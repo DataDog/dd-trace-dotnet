@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class IpcTcpProcessMessageIntegration
+    public sealed class IpcTcpProcessMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         IntegrationName = nameof(IntegrationId.AzureServiceBus))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ServiceBusSenderSendMessageBatchAsyncIntegration
+    public sealed class ServiceBusSenderSendMessageBatchAsyncIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TBatch>(TTarget instance, TBatch messageBatch, CancellationToken cancellationToken)
             where TTarget : IServiceBusSender, IDuckType

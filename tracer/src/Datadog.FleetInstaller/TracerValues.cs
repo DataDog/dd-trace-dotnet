@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Datadog.FleetInstaller;
 
-internal class TracerValues
+internal sealed class TracerValues
 {
     public TracerValues(string tracerHomeDirectory)
     {

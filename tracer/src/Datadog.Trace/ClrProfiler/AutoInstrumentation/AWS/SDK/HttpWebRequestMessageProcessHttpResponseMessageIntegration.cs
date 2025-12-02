@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
     IntegrationName = AwsConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class HttpWebRequestMessageProcessHttpResponseMessageIntegration
+public sealed class HttpWebRequestMessageProcessHttpResponseMessageIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TResponseMessage>(TTarget instance, TResponseMessage? responseMessage)
         where TTarget : IHttpWebRequestMessage, IDuckType

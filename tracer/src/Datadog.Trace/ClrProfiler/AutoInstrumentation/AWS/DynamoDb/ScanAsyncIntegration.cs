@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ScanAsyncIntegration
+    public sealed class ScanAsyncIntegration
     {
         private const string Operation = "Scan";
 

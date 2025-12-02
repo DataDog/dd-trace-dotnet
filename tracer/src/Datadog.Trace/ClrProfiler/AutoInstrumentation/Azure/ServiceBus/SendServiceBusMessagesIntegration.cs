@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         IntegrationName = nameof(IntegrationId.AzureServiceBus))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class SendServiceBusMessagesIntegration
+    public sealed class SendServiceBusMessagesIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// <summary>
     /// NLog Target that sends logs directly to Datadog for NLog &lt;4.5
     /// </summary>
-    internal class DirectSubmissionNLogLegacyTarget
+    internal sealed class DirectSubmissionNLogLegacyTarget
     {
         private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;

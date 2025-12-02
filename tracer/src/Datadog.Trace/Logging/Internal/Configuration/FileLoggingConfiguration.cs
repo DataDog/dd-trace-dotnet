@@ -6,7 +6,7 @@
 #nullable enable
 namespace Datadog.Trace.Logging.Internal.Configuration;
 
-internal class FileLoggingConfiguration(long maxLogFileSizeBytes, string logDirectory, int logFileRetentionDays)
+internal sealed class FileLoggingConfiguration(long maxLogFileSizeBytes, string logDirectory, int logFileRetentionDays)
 {
     public long MaxLogFileSizeBytes { get; } = maxLogFileSizeBytes;
 

@@ -1,4 +1,4 @@
-// <copyright file="ExceptionReplay.cs" company="Datadog">
+﻿// <copyright file="ExceptionReplay.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplay : IDisposable
+    internal sealed class ExceptionReplay : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
         private bool _isDisabled;

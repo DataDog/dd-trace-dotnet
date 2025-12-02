@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.NHibernate;
 [AspectClass("NHibernate", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class ISessionAspect
+public sealed class ISessionAspect
 {
     /// <summary>
     ///     NHibernate aspect

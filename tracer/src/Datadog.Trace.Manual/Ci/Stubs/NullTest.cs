@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTest : ITest
+internal sealed class NullTest : ITest
 {
     public static readonly NullTest Instance = new();
 

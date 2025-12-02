@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", [AspectFilter.StringOptimization])]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class StringAspects
+public sealed class StringAspects
 {
     /// <summary>
     /// String.Trim aspect

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TestCommand5ctorIntegration
+public sealed class TestCommand5ctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable<string>? msbuildArgs, ref IEnumerable<string>? userDefinedArguments, ref IEnumerable<string>? trailingArguments, ref bool noRestore, ref string? msbuildPath)
     {

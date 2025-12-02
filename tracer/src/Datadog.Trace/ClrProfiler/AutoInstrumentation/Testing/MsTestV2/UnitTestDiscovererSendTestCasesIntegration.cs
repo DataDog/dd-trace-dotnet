@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class UnitTestDiscovererSendTestCasesIntegration
+public sealed class UnitTestDiscovererSendTestCasesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref string? source, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {
@@ -58,7 +58,7 @@ public class UnitTestDiscovererSendTestCasesIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public class UnitTestDiscovererSendTestCasesIntegrationV4
+public sealed class UnitTestDiscovererSendTestCasesIntegrationV4
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)

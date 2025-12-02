@@ -14,7 +14,7 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Enables instrumentation of IIS for an already installed version of the .NET tracer
 /// </summary>
-internal class EnableIisInstrumentationCommand : CommandBase
+internal sealed class EnableIisInstrumentationCommand : CommandBase
 {
     private const string Command = "enable-iis-instrumentation";
     private const string CommandDescription = "Enables instrumentation with the .NET library on IIS, for an already installed version of the .NET library";

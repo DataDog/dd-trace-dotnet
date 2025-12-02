@@ -1,4 +1,4 @@
-// <copyright file="DataStreamsManager.cs" company="Datadog">
+﻿// <copyright file="DataStreamsManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// <summary>
 /// Manages all the data streams monitoring behaviour
 /// </summary>
-internal class DataStreamsManager
+internal sealed class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only

@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 namespace Datadog.Trace.Telemetry;
 
 [JsonConverter(typeof(MetricSeriesJsonConverter))]
-internal class MetricSeries : List<MetricDataPoint>
+internal sealed class MetricSeries : List<MetricDataPoint>
 {
     public MetricSeries()
     {
@@ -23,7 +23,7 @@ internal class MetricSeries : List<MetricDataPoint>
     {
     }
 
-    public class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
+    public sealed class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
     {
         /// <summary>
         /// Used to serialize the data in the payload

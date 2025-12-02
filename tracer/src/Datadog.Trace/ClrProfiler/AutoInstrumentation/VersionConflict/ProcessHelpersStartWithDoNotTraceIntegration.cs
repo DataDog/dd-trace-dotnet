@@ -1,4 +1,4 @@
-﻿// <copyright file="ProcessHelpersStartWithDoNotTraceIntegration.cs" company="Datadog">
+// <copyright file="ProcessHelpersStartWithDoNotTraceIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict;
     IntegrationName = nameof(IntegrationId.DatadogTraceVersionConflict))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ProcessHelpersStartWithDoNotTraceIntegration
+public sealed class ProcessHelpersStartWithDoNotTraceIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TStartInfo>(ref TStartInfo? startInfo, ref bool doNotTrace)
     {

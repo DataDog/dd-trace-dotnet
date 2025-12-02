@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class CIVisibilityEventMessagePackFormatter<T> : EventMessagePackFormatter<CIVisibilityEvent<T>>
+internal sealed class CIVisibilityEventMessagePackFormatter<T> : EventMessagePackFormatter<CIVisibilityEvent<T>>
 {
     public override int Serialize(ref byte[] bytes, int offset, CIVisibilityEvent<T> value, IFormatterResolver formatterResolver)
     {

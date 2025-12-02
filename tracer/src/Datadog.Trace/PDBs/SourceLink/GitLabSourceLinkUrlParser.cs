@@ -1,4 +1,4 @@
-// <copyright file="GitLabSourceLinkUrlParser.cs" company="Datadog">
+﻿// <copyright file="GitLabSourceLinkUrlParser.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
-internal class GitLabSourceLinkUrlParser : SourceLinkUrlParser
+internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
     /// Extract the git commit sha and repository url from a GitLab SourceLink mapping string.

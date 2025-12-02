@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestMethodAttributeExecuteIntegration
+public sealed class TestMethodAttributeExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         => TestMethodAttributeExecuteAsyncIntegration.OnMethodBegin(instance, testMethod);
@@ -99,7 +99,7 @@ public static class TestMethodAttributeExecuteIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public static class TestMethodAttributeExecuteAsyncIntegration
+public sealed class TestMethodAttributeExecuteAsyncIntegration
 #pragma warning restore SA1402
 {
     private static int _totalRetries = -1;
@@ -535,7 +535,7 @@ public static class TestMethodAttributeExecuteAsyncIntegration
         public TimeSpan Elapsed => _clock.UtcNow - StartTime;
     }
 
-    private class RetryState
+    private sealed class RetryState
     {
         public bool IsARetry { get; set; } = false;
 

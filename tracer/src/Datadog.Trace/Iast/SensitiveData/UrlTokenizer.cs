@@ -1,4 +1,4 @@
-// <copyright file="UrlTokenizer.cs" company="Datadog">
+﻿// <copyright file="UrlTokenizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// It locates in a Url the authority part (user:pwd) and the values of the query parameters
 /// https://user:password@datadoghq.com:443/api/v1/test/123/?param1=pone -> https://?@datadoghq.com:443/api/v1/test/123/?param1=?
 /// </summary>
-internal class UrlTokenizer : ITokenizer
+internal sealed class UrlTokenizer : ITokenizer
 {
     private const string AuthorityRegex = "^(?:[^:]+:)?//(?<AUTHORITY>[^@]+)@";
     private const string QueryFragmentGroup = "[?#&$]([^=&;]+)=(?<QUERY>[^?#&]+)";

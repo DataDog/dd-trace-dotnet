@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler;
 
-internal class Instrumentation
+internal sealed class Instrumentation
 {
     /// <summary>
     /// Gets whether automatic instrumentation is attached.

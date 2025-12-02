@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationSkippableFeature.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationSkippableFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
+internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
     private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
@@ -123,7 +123,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
         return skippableTestsBySuiteAndName.CorrelationId;
     }
 
-    internal class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
+    internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
     {
         public string? CorrelationId { get; set; }
     }

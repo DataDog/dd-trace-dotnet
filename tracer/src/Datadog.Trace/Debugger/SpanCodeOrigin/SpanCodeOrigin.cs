@@ -1,4 +1,4 @@
-// <copyright file="SpanCodeOrigin.cs" company="Datadog">
+﻿// <copyright file="SpanCodeOrigin.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOrigin
+    internal sealed class SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
@@ -300,7 +300,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         /// <summary>
         /// Avoid string concatenations and reduce GC pressure in hot path
         /// </summary>
-        internal class CodeOriginTags
+        internal sealed class CodeOriginTags
         {
             private const string CodeOriginTag = "_dd.code_origin";
             private const string FramesPrefix = "frames";

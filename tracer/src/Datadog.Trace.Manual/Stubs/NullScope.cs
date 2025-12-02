@@ -5,7 +5,7 @@
 
 namespace Datadog.Trace.Stubs;
 
-internal class NullScope : IScope
+internal sealed class NullScope : IScope
 {
     public static readonly NullScope Instance = new();
 

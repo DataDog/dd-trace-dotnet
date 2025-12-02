@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class OpenTracingTracerFactoryWrapTracerIntegration
+public sealed class OpenTracingTracerFactoryWrapTracerIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTracer>(ref TTracer tracer)
     {

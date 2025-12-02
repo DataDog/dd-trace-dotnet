@@ -1,4 +1,4 @@
-// <copyright file="ExceptionCaseScheduler.cs" company="Datadog">
+﻿// <copyright file="ExceptionCaseScheduler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionCaseScheduler
+    internal sealed class ExceptionCaseScheduler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionCaseScheduler>();
         private readonly List<ScheduledException> _scheduledExceptions = new();
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _timer?.Change((int)delay, Timeout.Infinite);
         }
 
-        private class ScheduledException : IComparable<ScheduledException>
+        private sealed class ScheduledException : IComparable<ScheduledException>
         {
             public TrackedExceptionCase? Case { get; set; }
 

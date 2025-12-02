@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class GrpcProtocolHelpersBuildHttpErrorResponseIntegration
+    public sealed class GrpcProtocolHelpersBuildHttpErrorResponseIntegration
     {
         internal enum GrpcStatusCode;
 

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class WinHttpHandlerIntegration
+    public sealed class WinHttpHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;

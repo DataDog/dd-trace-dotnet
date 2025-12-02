@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class ConnectionMultiplexerExecuteAsyncImplIntegration_2_6_45
+    public sealed class ConnectionMultiplexerExecuteAsyncImplIntegration_2_6_45
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint, TDefaultValue>(TTarget instance, TMessage message, TProcessor resultProcessor, object state, TServerEndPoint serverEndPoint, TDefaultValue defaultValue)
             where TTarget : IConnectionMultiplexer

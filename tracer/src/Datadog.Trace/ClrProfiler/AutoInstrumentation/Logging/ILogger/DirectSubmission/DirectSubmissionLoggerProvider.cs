@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// Duck type for ILoggerProvider
     /// </summary>
     [Microsoft.Extensions.Logging.ProviderAlias("Datadog")]
-    internal class DirectSubmissionLoggerProvider
+    internal sealed class DirectSubmissionLoggerProvider
     {
         private readonly Func<string, DirectSubmissionLogger> _createLoggerFunc;
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();

@@ -7,7 +7,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class AspNetCoreMvcTags : AspNetCoreTags
+    internal sealed partial class AspNetCoreMvcTags : AspNetCoreTags
     {
         [Tag(Trace.Tags.AspNetCoreController)]
         public string AspNetCoreController { get; set; }

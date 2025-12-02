@@ -10,7 +10,7 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal class NullConfigurationTelemetry : IConfigurationTelemetry
+internal sealed class NullConfigurationTelemetry : IConfigurationTelemetry
 {
     public static readonly NullConfigurationTelemetry Instance = new();
 

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Web;
 [AspectClass("System.Web")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpCookieAspect
+public sealed class HttpCookieAspect
 {
     /// <summary> HttpCookie get of property value </summary>
     /// <param name="cookie"> The cookie </param>

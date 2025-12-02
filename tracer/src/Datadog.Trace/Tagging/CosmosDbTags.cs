@@ -1,4 +1,4 @@
-// <copyright file="CosmosDbTags.cs" company="Datadog">
+﻿// <copyright file="CosmosDbTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tagging
         }
     }
 
-    internal partial class CosmosDbV1Tags : CosmosDbTags
+    internal sealed partial class CosmosDbV1Tags : CosmosDbTags
     {
         private string _peerServiceOverride = null;
 

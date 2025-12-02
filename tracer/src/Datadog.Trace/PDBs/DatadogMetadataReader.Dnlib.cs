@@ -20,7 +20,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 #nullable enable
 namespace Datadog.Trace.Pdb
 {
-    internal partial class DatadogMetadataReader : IDisposable
+    internal sealed partial class DatadogMetadataReader : IDisposable
     {
         private readonly ModuleDefMD? _dnlibModule;
 

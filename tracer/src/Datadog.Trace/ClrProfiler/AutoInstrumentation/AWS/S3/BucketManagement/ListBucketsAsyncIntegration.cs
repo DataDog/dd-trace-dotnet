@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ListBucketsAsyncIntegration
+public sealed class ListBucketsAsyncIntegration
 {
     private const string Operation = "ListBuckets";
 

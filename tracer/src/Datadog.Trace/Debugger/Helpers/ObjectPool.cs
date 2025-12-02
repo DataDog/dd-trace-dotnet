@@ -1,4 +1,4 @@
-// <copyright file="ObjectPool.cs" company="Datadog">
+﻿// <copyright file="ObjectPool.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
-    internal class ObjectPool<T, TSetParameters>
+    internal sealed class ObjectPool<T, TSetParameters>
         where T : class, IPoolable<TSetParameters>, new()
     {
         private readonly ConcurrentBag<T> _objects;

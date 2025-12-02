@@ -1,4 +1,4 @@
-// <copyright file="TruncatedVulnerabilities.cs" company="Datadog">
+﻿// <copyright file="TruncatedVulnerabilities.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,7 +31,7 @@ internal struct TruncatedVulnerabilities
 
     public List<Vulnerability> Vulnerabilities => vulnerabilities;
 
-    public class VulnerabilityConverter : JsonConverter<Vulnerability?>
+    public sealed class VulnerabilityConverter : JsonConverter<Vulnerability?>
     {
         public VulnerabilityConverter()
         {
@@ -63,7 +63,7 @@ internal struct TruncatedVulnerabilities
         }
     }
 
-    public class EvidenceConverter : JsonConverter<Evidence?>
+    public sealed class EvidenceConverter : JsonConverter<Evidence?>
     {
         public EvidenceConverter()
         {

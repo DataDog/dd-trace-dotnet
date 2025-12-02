@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class ProcessMessageIntegration
+    public sealed class ProcessMessageIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessMessageIntegration));
 

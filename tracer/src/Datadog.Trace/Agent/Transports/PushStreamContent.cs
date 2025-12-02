@@ -28,7 +28,7 @@ namespace Datadog.Trace.Agent.Transports;
 /// which can be written to directly. The ability to push data to the output stream differs from the
 /// <see cref="StreamContent"/> where data is pulled and not pushed.
 /// </summary>
-internal class PushStreamContent : HttpContent
+internal sealed class PushStreamContent : HttpContent
 {
     private readonly Func<Stream, Task> _onStreamAvailable;
 

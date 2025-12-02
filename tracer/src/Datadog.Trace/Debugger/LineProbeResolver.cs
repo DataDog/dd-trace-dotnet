@@ -1,4 +1,4 @@
-// <copyright file="LineProbeResolver.cs" company="Datadog">
+﻿// <copyright file="LineProbeResolver.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class LineProbeResolver : ILineProbeResolver
+    internal sealed class LineProbeResolver : ILineProbeResolver
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal class FilePathLookup
+        internal sealed class FilePathLookup
         {
             private static readonly string[] DirectorySeparatorsCrossPlatform = { @"\", @"/" };
             private readonly Trie _trie = new();
@@ -195,7 +195,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal class BoundLineProbeLocation(ProbeDefinition probeDefinition, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
+        internal sealed class BoundLineProbeLocation(ProbeDefinition probeDefinition, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
         {
             public ProbeDefinition ProbeDefinition { get; set; } = probeDefinition;
 

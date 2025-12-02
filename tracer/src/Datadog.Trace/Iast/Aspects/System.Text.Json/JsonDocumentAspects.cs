@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 [AspectClass("System.Text.Json", AspectType.Source)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class JsonDocumentAspects
+public sealed class JsonDocumentAspects
 {
     /// <summary>
     /// Parse method aspect

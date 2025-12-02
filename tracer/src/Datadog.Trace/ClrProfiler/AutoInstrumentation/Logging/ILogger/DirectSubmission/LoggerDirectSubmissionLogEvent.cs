@@ -14,7 +14,7 @@ using Datadog.Trace.OpenTelemetry.Logs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
-    internal class LoggerDirectSubmissionLogEvent : DirectSubmissionLogEvent
+    internal sealed class LoggerDirectSubmissionLogEvent : DirectSubmissionLogEvent
     {
         private readonly string? _serializedEvent;
 

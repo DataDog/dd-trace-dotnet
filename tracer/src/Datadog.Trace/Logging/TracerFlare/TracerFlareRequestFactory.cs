@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareRequestFactory
+internal static class TracerFlareRequestFactory
 {
     internal const string Boundary = "83CAD6AA-8A24-462C-8B3D-FF9CC683B51B";
     private const string Separator = "--" + Boundary;

@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class NullDependencyTelemetryCollector : IDependencyTelemetryCollector
+internal sealed class NullDependencyTelemetryCollector : IDependencyTelemetryCollector
 {
     public static NullDependencyTelemetryCollector Instance { get; } = new();
 

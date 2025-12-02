@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class DeleteObjectsAsyncIntegration
+public sealed class DeleteObjectsAsyncIntegration
 {
     private const string Operation = "DeleteObjects";
 

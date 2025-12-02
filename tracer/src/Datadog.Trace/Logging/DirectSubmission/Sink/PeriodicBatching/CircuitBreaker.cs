@@ -9,7 +9,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
     /// <summary>
     /// A simple circuit breaker for periodic batching, which, if never succeeds remains permanently broken
     /// </summary>
-    internal class CircuitBreaker
+    internal sealed class CircuitBreaker
     {
         private readonly int _failuresBeforeBroken;
         private bool _hasEverSucceeded = false;
