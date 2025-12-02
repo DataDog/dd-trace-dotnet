@@ -111,6 +111,32 @@ namespace Datadog.Trace.Tests.Debugger
             await Test(expressionTestFilePath);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_ObjectReturnType_AllowsValueTypeResults()
+        {
+            // Arrange
+            var scopeMembers = CreateScopeMembers();
+            const string json = """
+                                {
+                                  "ref": "@duration"
+                                }
+                                """;
+
+            // Act
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<TimeSpan>(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
