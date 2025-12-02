@@ -21,6 +21,6 @@ namespace Datadog.Trace.Sampling
 
         void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates);
 
-        SamplingDecision MakeSamplingDecision(Span span);
+        SamplingDecision MakeSamplingDecision(in SamplingContext context);
     }
 }

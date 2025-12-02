@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private class NoLimits : IRateLimiter
         {
-            public bool Allowed(Span span)
+            public bool Allowed(in SamplingContext context)
             {
                 return true;
             }
@@ -239,7 +239,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private class DenyAll : IRateLimiter
         {
-            public bool Allowed(Span span)
+            public bool Allowed(in SamplingContext context)
             {
                 return false;
             }
