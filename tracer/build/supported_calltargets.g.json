@@ -13774,6 +13774,152 @@
   {
     "IntegrationName": "OpenTelemetry",
     "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "ClearBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "get_Current",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "RemoveBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.String",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_RemoveBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "set_Current",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "SetBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "SetBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.String]]",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageItemsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
     "TargetTypeName": "OpenTelemetry.Trace.Tracer",
     "TargetMethodName": "StartRootSpan",
     "TargetReturnType": "OpenTelemetry.Trace.TelemetrySpan",
