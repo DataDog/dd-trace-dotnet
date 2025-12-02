@@ -26,4 +26,6 @@ internal record BlockingAction
     public string RedirectLocation { get; set; }
 
     public bool IsRedirect { get; set; }
+
+    public string SecurityResponseId { get; set; }
 }

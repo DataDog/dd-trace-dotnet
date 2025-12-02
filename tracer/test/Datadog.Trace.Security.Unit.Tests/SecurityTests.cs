@@ -14,11 +14,13 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class SecurityTests
     {
+        private const string SecurityResponseId = "00000000-0000-0000-0000-000000000000";
+
         [Fact]
         public void DefaultBehavior()
         {
             var target = new AppSec.Security();
-            var action = target.GetBlockingAction(new[] { "wrong" }, null, null);
+            var action = target.GetBlockingAction(["wrong"], null, null);
             action.StatusCode.Should().Be(403);
             action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate);
             action.ContentType.Should().Be("application/json");
@@ -35,11 +37,12 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void CustomActions(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
             var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
-            var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
+            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType, SecurityResponseId);
+            var action = target.GetBlockingAction(["application/json"], type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
-            action.ResponseContent.Should().Be(expectedContent);
+            action.ResponseContent.Should().Be(expectedContent?.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
             action.ContentType.Should().Be(expectedContentType);
+            action.SecurityResponseId.Should().Be(SecurityResponseId);
         }
 
         [Theory]
@@ -49,22 +52,70 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void CustomActionsWithBlockInfo(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
             var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
+            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType, SecurityResponseId);
 
-            var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
+            var action = target.GetBlockingAction(["application/json"], type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
-            action.ResponseContent.Should().Be(expectedContent);
+            action.ResponseContent.Should().Be(expectedContent?.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
             action.ContentType.Should().Be(expectedContentType);
+            action.SecurityResponseId.Should().Be(SecurityResponseId);
         }
 
-        private static Dictionary<string, object> CreateBlockParameters(string type, string location, int statusCode, string contentType)
+        [Fact]
+        public void JsonTemplateIncludesSecurityResponseId()
         {
-            return new Dictionary<string, object>
+            var target = new AppSec.Security();
+            var blockInfo = CreateBlockParameters(BlockingAction.BlockRequestType, null, 200, "json", SecurityResponseId);
+
+            var action = target.GetBlockingAction(["application/json"], blockInfo, null);
+            action.ResponseContent.Should().Contain(SecurityResponseId);
+            action.ResponseContent.Should().NotContain(SecurityConstants.SecurityResponseIdPlaceholder);
+            action.SecurityResponseId.Should().Be(SecurityResponseId);
+        }
+
+        [Fact]
+        public void HtmlTemplateIncludesSecurityResponseId()
+        {
+            var target = new AppSec.Security();
+            var blockInfo = CreateBlockParameters(BlockingAction.BlockRequestType, null, 200, "html", SecurityResponseId);
+
+            var action = target.GetBlockingAction([AspNet.MimeTypes.TextHtml], blockInfo, null);
+            action.ResponseContent.Should().Contain(SecurityResponseId);
+            action.ResponseContent.Should().NotContain(SecurityConstants.SecurityResponseIdPlaceholder);
+            action.SecurityResponseId.Should().Be(SecurityResponseId);
+        }
+
+        [Fact]
+        public void RedirectLocationIncludesSecurityResponseId()
+        {
+            var target = new AppSec.Security();
+            var redirectInfo = new Dictionary<string, object>
+            {
+                { "location", "/blocked?reason=asm&id=[security_response_id]" },
+                { "status_code", "302" },
+                { "security_response_id", SecurityResponseId },
+            };
+
+            var action = target.GetBlockingAction(new[] { "application/json" }, null, redirectInfo);
+            action.RedirectLocation.Should().Be("/blocked?reason=asm&id=" + SecurityResponseId);
+            action.SecurityResponseId.Should().Be(SecurityResponseId);
+        }
+
+        private static Dictionary<string, object> CreateBlockParameters(string type, string location, int statusCode, string contentType, string securityResponseId)
+        {
+            var parameters = new Dictionary<string, object>
             {
                 { "type", contentType },
                 { "status_code", statusCode.ToString() },
                 { "location", location },
             };
+
+            if (!string.IsNullOrEmpty(securityResponseId))
+            {
+                parameters["security_response_id"] = securityResponseId;
+            }
+
+            return parameters;
         }
     }
 }
