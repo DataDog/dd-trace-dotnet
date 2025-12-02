@@ -51,7 +51,7 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
 
     if (userStrings.size() > 0)
     {
-        CSGUARD(_cs);
+        std::lock_guard<std::recursive_mutex> guard(_cs);
         _userStrings.reserve(_userStrings.size() + userStrings.size());
         for (auto userString : userStrings)
         {
@@ -64,7 +64,7 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
 
 int HardcodedSecretsMethodAnalyzer::GetUserStrings(int arrSize, UserStringInterop* arr)
 {
-    CSGUARD(_cs);
+    std::lock_guard<std::recursive_mutex> guard(_cs);
     _deliveredUserStrings.clear();
     _deliveredUserStrings.reserve(fmin(arrSize, _userStrings.size()));
     int x = 0;

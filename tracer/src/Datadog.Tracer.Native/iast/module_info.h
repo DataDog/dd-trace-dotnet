@@ -55,7 +55,7 @@ namespace iast
 
 
     protected:
-        CS _cs;
+        std::recursive_mutex _cs;
         Dataflow* _dataflow = nullptr;
         IMetaDataImport2* _metadataImport = nullptr;
         IMetaDataEmit2* _metadataEmit = nullptr;

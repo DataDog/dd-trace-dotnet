@@ -270,37 +270,7 @@ namespace iast
             DEL(data);
         }
     };
-
-    class CS
-    {
-    private:
-#ifdef _WIN32
-        CRITICAL_SECTION cs;
-#else
-        std::mutex cs;
-#endif
-    public:
-        CS();
-        virtual ~CS();
-        bool Lock();
-        void Unlock();
-    };
-
-    class CSGuard
-    {
-        CS* cs;
-        std::atomic<int> refs;
-
-    public:
-        CSGuard(CS* cs);
-        virtual ~CSGuard();
-        void Enter();
-        void Leave();
-    };
-
-#define CSGUARD(x) CSGuard __csGuard_##x(&x);
-#define CSENTER(x) __csGuard_##x.Enter();
-#define CSLEAVE(x) __csGuard_##x.Leave();
+#define CSGUARD(x) std::lock_guard<std::recursive_mutex> __csGuard_##x(x);
 
     /////////////////////// Enum Utils /////////////////////////////
 #ifndef BEGIN_ENUM_PARSE

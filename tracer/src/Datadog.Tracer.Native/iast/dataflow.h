@@ -55,7 +55,7 @@ namespace iast
         Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
-        CS _cs;
+        std::recursive_mutex _cs;
         ICorProfilerInfo3* _profiler = nullptr;
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
