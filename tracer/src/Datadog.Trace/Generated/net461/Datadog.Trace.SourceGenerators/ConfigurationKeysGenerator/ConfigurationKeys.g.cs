@@ -131,6 +131,13 @@ internal static partial class ConfigurationKeys
     public const string MetricsUri = "DD_DOGSTATSD_URL";
 
     /// <summary>
+    /// It indicates the home directory of the Datadog tracer.
+    /// On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
+    /// On Linux/Docker, it is typically set to /opt/datadog.
+    /// </summary>
+    public const string DotnetTracerHome = "DD_DOTNET_TRACER_HOME";
+
+    /// <summary>
     /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
