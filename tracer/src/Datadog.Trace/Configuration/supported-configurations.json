@@ -427,6 +427,11 @@
         "A"
       ]
     },
+    "DD_DOTNET_TRACER_HOME": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL": {
       "version": [
         "A"

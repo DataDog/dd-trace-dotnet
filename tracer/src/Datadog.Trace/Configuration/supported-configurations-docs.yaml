@@ -267,6 +267,11 @@ DD_DOGSTATSD_URL: |
   Default value is "udp://127.0.0.1:8125".
   <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
 
+DD_DOTNET_TRACER_HOME: |
+  It indicates the home directory of the Datadog tracer.
+  On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
+  On Linux/Docker, it is typically set to /opt/datadog.
+
 DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL: |
   Configuration key for the interval (in seconds) between sending probe statuses.
   Default value is 3600.
