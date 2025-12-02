@@ -19,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         [JsonProperty("span_id", NullValueHandling = NullValueHandling.Ignore)]
         internal ulong? SpanId { get; set; }
 
-        [JsonProperty("security_response_id")]
+        [JsonProperty("security_response_id", NullValueHandling = NullValueHandling.Ignore)]
         internal string SecurityResponseId { get; set; }
     }
 }
