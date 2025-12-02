@@ -78,9 +78,7 @@ public class SealedAnalyzerTests
                        {
                            {{modifier}}interface TestInterface
                            {
-                               void TestMethod()
-                               {
-                               }
+                               void TestMethod();
                            }
                        }
                        """;
