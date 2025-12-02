@@ -4,11 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -333,6 +335,62 @@ public class DiscoveryServiceTests
         await ds.DisposeAsync();
         // add some leeway in case of slowness
         factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make between 3 and 6 retries in 13s");
+    }
+
+    // note: "pollutes" the value of the global static ContainerMetadata.ContainerTagsHash
+    [Fact]
+    public async Task ExtractsContainerTagsHashFromResponseHeader()
+    {
+        const string expectedTagsHash = "test-container-tags-hash-123";
+        using var mutex = new ManualResetEventSlim();
+
+        var factory = new TestRequestFactory(x => new TestApiRequest(
+            x,
+            responseContent: GetConfig(),
+            responseHeaders: new Dictionary<string, string> { { AgentHttpHeaderNames.ContainerTagsHash, expectedTagsHash } }));
+
+        var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        ds.SubscribeToChanges(x => mutex.Set());
+
+        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
+
+        // Verify the container tags hash was extracted and stored
+        ContainerMetadata.ContainerTagsHash.Should().Be(expectedTagsHash);
+
+        await ds.DisposeAsync();
+    }
+
+    [SkippableFact]
+    public async Task SendsContainerIdHeaderWhenAvailable()
+    {
+        // Skip this test if we're not running in a container
+        var containerId = ContainerMetadata.GetContainerId();
+        if (containerId == null)
+        {
+            throw new SkipException("Test requires running in a container environment");
+        }
+
+        using var mutex = new ManualResetEventSlim();
+        TestApiRequest capturedRequest = null;
+
+        var factory = new TestRequestFactory(x =>
+        {
+            var request = new TestApiRequest(x, responseContent: GetConfig());
+            capturedRequest = request;
+            return request;
+        });
+
+        var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        ds.SubscribeToChanges(x => mutex.Set());
+
+        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
+
+        // Verify the container ID header was sent
+        capturedRequest.Should().NotBeNull();
+        capturedRequest.ExtraHeaders.Should().ContainKey(AgentHttpHeaderNames.ContainerId);
+        capturedRequest.ExtraHeaders[AgentHttpHeaderNames.ContainerId].Should().Be(containerId);
+
+        await ds.DisposeAsync();
     }
 
     private string GetConfig(bool dropP0 = true, string version = null)

@@ -44,6 +44,11 @@ namespace Datadog.Trace
         public const string ContainerId = "Datadog-Container-ID";
 
         /// <summary>
+        /// The hash of the container tags received from the agent.
+        /// </summary>
+        public const string ContainerTagsHash = "Datadog-Container-Tags-Hash";
+
+        /// <summary>
         /// The unique identifier of the container where the traced application is running, either as the container id
         /// or the cgroup node controller's inode.
         /// This differs from <see cref="ContainerId"/> which is always the container id, which may not always be

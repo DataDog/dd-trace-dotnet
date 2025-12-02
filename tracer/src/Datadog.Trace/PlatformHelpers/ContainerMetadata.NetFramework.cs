@@ -15,6 +15,11 @@ namespace Datadog.Trace.PlatformHelpers;
 internal static class ContainerMetadata
 {
     /// <summary>
+    /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
+    /// </summary>
+    public static string? ContainerTagsHash { get; set; }
+
+    /// <summary>
     /// Gets the id of the container executing the code.
     /// Return <c>null</c> if code is not executing inside a supported container.
     /// </summary>
