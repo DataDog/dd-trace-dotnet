@@ -22,7 +22,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new AppSec.Security();
             var action = target.GetBlockingAction(["wrong"], null, null);
             action.StatusCode.Should().Be(403);
-            action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate);
+            action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate.Replace(SecurityConstants.SecurityResponseIdPlaceholder, string.Empty));
             action.ContentType.Should().Be("application/json");
         }
 
@@ -30,6 +30,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(BlockingAction.BlockRequestType, null, 200, "auto", 200, "application/json", SecurityConstants.BlockedJsonTemplate)]
         [InlineData(BlockingAction.BlockRequestType, null, 201, "html", 201, "text/html", SecurityConstants.BlockedHtmlTemplate)]
         [InlineData(BlockingAction.RedirectRequestType, "/toto", 302, null, 302, null, null)]
+        [InlineData(BlockingAction.RedirectRequestType, "/blocked?id=[security_response_id]", 302, null, 302, null, null)]
         // if the wrong redirect status code should default to 303
         [InlineData(BlockingAction.RedirectRequestType, "/toto", 404, null, 303, null, null)]
         // if no location default to block request with default template  / 403
@@ -37,83 +38,43 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void CustomActions(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
             var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType, SecurityResponseId);
-            var action = target.GetBlockingAction(["application/json"], type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
-            action.StatusCode.Should().Be(expectedStatusCode);
-            action.ResponseContent.Should().Be(expectedContent?.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
-            action.ContentType.Should().Be(expectedContentType);
-            action.SecurityResponseId.Should().Be(SecurityResponseId);
-        }
-
-        [Theory]
-        [InlineData(BlockingAction.BlockRequestType, null, 200, "auto", 200, "application/json", SecurityConstants.BlockedJsonTemplate)]
-        [InlineData(BlockingAction.BlockRequestType, null, 201, "html", 201, "text/html", SecurityConstants.BlockedHtmlTemplate)]
-        [InlineData(BlockingAction.RedirectRequestType, "/toto", 302, null, 302, null, null)]
-        public void CustomActionsWithBlockInfo(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
-        {
-            var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType, SecurityResponseId);
+            var blockInfo = CreateBlockParameters(location, statusCode, contentType, SecurityResponseId);
 
             var action = target.GetBlockingAction(["application/json"], type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
-            action.ResponseContent.Should().Be(expectedContent?.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
-            action.ContentType.Should().Be(expectedContentType);
-            action.SecurityResponseId.Should().Be(SecurityResponseId);
-        }
 
-        [Fact]
-        public void JsonTemplateIncludesSecurityResponseId()
-        {
-            var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(BlockingAction.BlockRequestType, null, 200, "json", SecurityResponseId);
-
-            var action = target.GetBlockingAction(["application/json"], blockInfo, null);
-            action.ResponseContent.Should().Contain(SecurityResponseId);
-            action.ResponseContent.Should().NotContain(SecurityConstants.SecurityResponseIdPlaceholder);
-            action.SecurityResponseId.Should().Be(SecurityResponseId);
-        }
-
-        [Fact]
-        public void HtmlTemplateIncludesSecurityResponseId()
-        {
-            var target = new AppSec.Security();
-            var blockInfo = CreateBlockParameters(BlockingAction.BlockRequestType, null, 200, "html", SecurityResponseId);
-
-            var action = target.GetBlockingAction([AspNet.MimeTypes.TextHtml], blockInfo, null);
-            action.ResponseContent.Should().Contain(SecurityResponseId);
-            action.ResponseContent.Should().NotContain(SecurityConstants.SecurityResponseIdPlaceholder);
-            action.SecurityResponseId.Should().Be(SecurityResponseId);
-        }
-
-        [Fact]
-        public void RedirectLocationIncludesSecurityResponseId()
-        {
-            var target = new AppSec.Security();
-            var redirectInfo = new Dictionary<string, object>
+            if (type == BlockingAction.BlockRequestType || string.IsNullOrEmpty(location))
             {
-                { "location", "/blocked?reason=asm&id=[security_response_id]" },
-                { "status_code", "302" },
-                { "security_response_id", SecurityResponseId },
-            };
+                action.ResponseContent.Should().Contain(SecurityResponseId);
+                action.ResponseContent.Should().NotContain(SecurityConstants.SecurityResponseIdPlaceholder);
+                action.ResponseContent.Should().Be(expectedContent?.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
+            }
+            else
+            {
+                if (location.Contains(SecurityConstants.SecurityResponseIdPlaceholder))
+                {
+                    action.RedirectLocation.Should().Contain(SecurityResponseId);
+                    action.RedirectLocation.Should().Be(location.Replace(SecurityConstants.SecurityResponseIdPlaceholder, SecurityResponseId));
+                }
+                else
+                {
+                    action.RedirectLocation.Should().Be(location);
+                }
+            }
 
-            var action = target.GetBlockingAction(new[] { "application/json" }, null, redirectInfo);
-            action.RedirectLocation.Should().Be("/blocked?reason=asm&id=" + SecurityResponseId);
+            action.ContentType.Should().Be(expectedContentType);
             action.SecurityResponseId.Should().Be(SecurityResponseId);
         }
 
-        private static Dictionary<string, object> CreateBlockParameters(string type, string location, int statusCode, string contentType, string securityResponseId)
+        private static Dictionary<string, object> CreateBlockParameters(string location, int statusCode, string contentType, string securityResponseId)
         {
             var parameters = new Dictionary<string, object>
             {
                 { "type", contentType },
                 { "status_code", statusCode.ToString() },
                 { "location", location },
+                { "security_response_id", securityResponseId }
             };
-
-            if (!string.IsNullOrEmpty(securityResponseId))
-            {
-                parameters["security_response_id"] = securityResponseId;
-            }
 
             return parameters;
         }
