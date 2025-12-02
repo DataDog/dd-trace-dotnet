@@ -19,7 +19,7 @@ public class SpanCollectionTests
         SpanCollection collection = default;
 
         collection.Count.Should().Be(0);
-        collection.RootSpan.Should().BeNull();
+        collection.FirstSpan.Should().BeNull();
         collection.ToArray().Array.Should().BeEmpty();
         foreach (var span in collection)
         {
@@ -36,7 +36,7 @@ public class SpanCollectionTests
         var collection = new SpanCollection(span);
 
         collection.Count.Should().Be(1);
-        collection.RootSpan.Should().BeSameAs(span);
+        collection.FirstSpan.Should().BeSameAs(span);
         collection.ToArray().Array.Should().ContainSingle().Which.Should().BeSameAs(span);
         var spans = new List<Span>();
         foreach (var x in collection)
@@ -56,7 +56,7 @@ public class SpanCollectionTests
         var collection = new SpanCollection(length);
 
         collection.Count.Should().Be(0);
-        collection.RootSpan.Should().BeNull();
+        collection.FirstSpan.Should().BeNull();
         var array = collection.ToArray();
         array.Count.Should().Be(0);
         array.Offset.Should().Be(0);
@@ -76,7 +76,7 @@ public class SpanCollectionTests
         var collection = new SpanCollection(spans, 2);
 
         collection.Count.Should().Be(2);
-        collection.RootSpan.Should().BeSameAs(spans[0]);
+        collection.FirstSpan.Should().BeSameAs(spans[0]);
         collection[0].Should().BeSameAs(spans[0]);
         collection[1].Should().BeSameAs(spans[1]);
         FluentActions.Invoking(() => collection[2]).Should().Throw<IndexOutOfRangeException>();
@@ -104,7 +104,7 @@ public class SpanCollectionTests
         var collection = new SpanCollection(spans);
 
         collection.Count.Should().Be(2);
-        collection.RootSpan.Should().BeSameAs(spans[0]);
+        collection.FirstSpan.Should().BeSameAs(spans[0]);
         collection[0].Should().BeSameAs(spans[0]);
         collection[1].Should().BeSameAs(spans[1]);
     }
@@ -118,7 +118,7 @@ public class SpanCollectionTests
         var result = SpanCollection.Append(in collection, span);
 
         result.Count.Should().Be(1);
-        result.RootSpan.Should().BeSameAs(span);
+        result.FirstSpan.Should().BeSameAs(span);
         result[0].Should().BeSameAs(span);
     }
 
@@ -132,7 +132,7 @@ public class SpanCollectionTests
         var result = SpanCollection.Append(in collection, span2);
 
         result.Count.Should().Be(2);
-        result.RootSpan.Should().BeSameAs(span1);
+        result.FirstSpan.Should().BeSameAs(span1);
         result[0].Should().BeSameAs(span1);
         result[1].Should().BeSameAs(span2);
 

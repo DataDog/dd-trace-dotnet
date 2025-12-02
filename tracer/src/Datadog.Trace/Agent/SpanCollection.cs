@@ -64,7 +64,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <summary>
     /// Gets the first span in the <see cref="SpanCollection" />, or returns null if the collection is empty
     /// </summary>
-    public Span? RootSpan
+    public Span? FirstSpan
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get

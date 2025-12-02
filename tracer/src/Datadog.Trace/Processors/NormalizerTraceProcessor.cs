@@ -1,4 +1,4 @@
-// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
+﻿// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Processors
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            var traceContext = trace.RootSpan?.Context.TraceContext;
+            var traceContext = trace.FirstSpan?.Context.TraceContext;
 
             if (!string.IsNullOrEmpty(traceContext?.Environment))
             {

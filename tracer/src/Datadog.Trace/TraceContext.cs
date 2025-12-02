@@ -1,4 +1,4 @@
-// <copyright file="TraceContext.cs" company="Datadog">
+﻿// <copyright file="TraceContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -127,7 +127,7 @@ namespace Datadog.Trace
         internal bool WafExecuted { get; set; }
 
         internal static TraceContext? GetTraceContext(in SpanCollection spans)
-            => spans.RootSpan?.Context.TraceContext;
+            => spans.FirstSpan?.Context.TraceContext;
 
         internal void EnableIastInRequest()
         {
