@@ -270,6 +270,8 @@ namespace iast
             DEL(data);
         }
     };
+
+#define CS std::recursive_mutex
 #define CSGUARD(x) std::lock_guard<std::recursive_mutex> __csGuard_##x(x);
 
     /////////////////////// Enum Utils /////////////////////////////

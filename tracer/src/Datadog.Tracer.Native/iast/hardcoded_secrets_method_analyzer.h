@@ -26,7 +26,7 @@ namespace iast
     class HardcodedSecretsMethodAnalyzer : public MethodAnalyzer
     {
     private:
-        std::recursive_mutex _cs;
+        CS _cs;
         std::vector<UserString> _userStrings;
         std::vector<UserString> _deliveredUserStrings;
     public:
