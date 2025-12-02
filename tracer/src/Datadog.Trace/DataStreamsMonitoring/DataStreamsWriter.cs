@@ -92,7 +92,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Factory.StartNew(ProcessQueueLoopAsync, TaskCreationOptions.LongRunning);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
             _flushTimer = new Timer(
                 async x => await ((DataStreamsWriter)x!).FlushAsync().ConfigureAwait(false),
@@ -247,7 +247,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private void ProcessQueueLoopAsync()
+    private void ProcessQueueLoop()
     {
         while (true)
         {
