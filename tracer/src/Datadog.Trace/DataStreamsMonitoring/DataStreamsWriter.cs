@@ -85,7 +85,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private void Initialize()
     {
-        Log.Warning("ROBC Custom .NET tracer branch with flush logic changes");
         lock (_initLock)
         {
             if (_processTask != null)
@@ -158,7 +157,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        Log.Debug("ROBC Flush and close...");
         if (!_processExit.TrySetResult(true))
         {
             return;
