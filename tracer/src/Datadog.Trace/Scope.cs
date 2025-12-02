@@ -1,4 +1,4 @@
-// <copyright file="Scope.cs" company="Datadog">
+﻿// <copyright file="Scope.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ namespace Datadog.Trace
         private readonly IScopeManager _scopeManager;
         private bool _finishOnClose;
 
-        internal Scope(Scope? parent, Span span, IScopeManager scopeManager, bool finishOnClose)
+        internal Scope(Scope? parent, SpanBase span, IScopeManager scopeManager, bool finishOnClose)
         {
             Parent = parent;
             Span = span;
@@ -29,7 +29,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span wrapped in this scope
         /// </summary>
-        internal Span Span { get; }
+        internal SpanBase Span { get; }
 
         internal Scope? Parent { get; }
 

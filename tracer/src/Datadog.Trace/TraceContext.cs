@@ -43,7 +43,7 @@ namespace Datadog.Trace
         // even though we need to override the nullable warnings in some places.
         // The reason _rootSpan was chosen is to avoid
         // allocating a separate object for the lock.
-        private Span? _rootSpan;
+        private SpanBase? _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
         {
@@ -62,10 +62,7 @@ namespace Datadog.Trace
             Clock = TraceClock.Instance;
         }
 
-        public Span? RootSpan
-        {
-            get => _rootSpan;
-        }
+        public SpanBase? RootSpan => _rootSpan;
 
         public TraceClock Clock { get; }
 
@@ -135,12 +132,13 @@ namespace Datadog.Trace
             }
         }
 
-        public void AddSpan(Span span)
+        public void AddSpan(SpanBase span)
         {
             // first span added is the local root span
-            if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
+            if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null
+             && span is Span recorded)
             {
-                span.MarkSpanForExceptionReplay();
+                recorded.MarkSpanForExceptionReplay();
             }
 
             lock (_rootSpan)
@@ -149,36 +147,36 @@ namespace Datadog.Trace
             }
         }
 
-        public void CloseSpan(Span span)
+        public void CloseSpan(SpanBase span)
         {
             bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
 
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span.IsRootSpan)
+            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
             {
-                if (span.Type == SpanTypes.Web)
-                {
-                    Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+                Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
+                if (span is Span recordedSpan)
+                {
                     var iastInstance = Iast.Iast.Instance;
                     if (iastInstance.Settings.Enabled)
                     {
                         if (_iastRequestContext is { } iastRequestContext)
                         {
-                            iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                            iastRequestContext.AddIastVulnerabilitiesToSpan(recordedSpan);
                             iastInstance.OverheadController.ReleaseRequest();
                         }
                         else
                         {
-                            IastRequestContext.AddIastDisabledFlagToSpan(span);
+                            IastRequestContext.AddIastDisabledFlagToSpan(recordedSpan);
                         }
                     }
 
                     if (_appSecRequestContext is not null)
                     {
-                        _appSecRequestContext.CloseWebSpan(span);
+                        _appSecRequestContext.CloseWebSpan(recordedSpan);
                         _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }
@@ -192,8 +190,11 @@ namespace Datadog.Trace
 
             lock (_rootSpan!)
             {
-                _spans.Add(span);
                 _openSpans--;
+                if (span is Span recordedSpan)
+                {
+                    _spans.Add(recordedSpan);
+                }
 
                 if (_openSpans == 0)
                 {
@@ -264,12 +265,7 @@ namespace Datadog.Trace
                 return samplingPriority;
             }
 
-            return GetOrMakeSamplingDecision(_rootSpan);
-        }
-
-        public int GetOrMakeSamplingDecision(Span? span)
-        {
-            if (span is null)
+            if (_rootSpan is not Span recordedSpan)
             {
                 // we can't make a sampling decision without a root span because:
                 // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
@@ -280,8 +276,13 @@ namespace Datadog.Trace
                 return SamplingPriorityValues.Default;
             }
 
-            var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
-                                       ? sampler.MakeSamplingDecision(span)
+            return GetOrMakeSamplingDecision(recordedSpan);
+        }
+
+        public int GetOrMakeSamplingDecision(in SamplingContext context)
+        {
+            var samplingDecision = CurrentTraceSettings.TraceSampler is { } sampler
+                                       ? sampler.MakeSamplingDecision(context)
                                        : SamplingDecision.Default;
 
             SetSamplingPriority(

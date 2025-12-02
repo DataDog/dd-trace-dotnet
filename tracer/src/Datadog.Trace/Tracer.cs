@@ -221,8 +221,13 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <returns>A scope wrapping the newly created span</returns>
+        [TestingOnly]
         public IScope StartActive(string operationName)
-            => StartActiveInternal(operationName);
+        {
+#pragma warning disable DD0002 // Fine because this is also a testing only API
+            return StartActive(operationName, default);
+#pragma warning restore DD0002
+        }
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
@@ -230,8 +235,22 @@ namespace Datadog.Trace
         /// <param name="operationName">The span's operation name</param>
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
+        [TestingOnly]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
-            => StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose ?? true);
+        {
+            var spanContext = CreateSpanContext(
+                operationName,
+                resourceName: operationName,
+                settings.Parent,
+                serviceName: null);
+
+            return spanContext switch
+            {
+                RecordedSpanContext recorded => StartActiveInternal(recorded, startTime: settings.StartTime, finishOnClose: settings.FinishOnClose ?? true),
+                UnrecordedSpanContext unrecorded => StartActiveInternal(unrecorded, finishOnClose: settings.FinishOnClose ?? true),
+                _ => null,
+            };
+        }
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -252,15 +271,18 @@ namespace Datadog.Trace
                 parent = SpanContext.None;
             }
 
-            var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime);
+            var spanContext = CreateSpanContext(
+                operationName,
+                resourceName: operationName,
+                parent,
+                serviceName: serviceName);
 
-            if (serviceName != null)
+            return spanContext switch
             {
-                // if specified, override the default service name
-                span.ServiceName = serviceName;
-            }
-
-            return span;
+                RecordedSpanContext recorded => StartSpan(recorded, startTime: startTime),
+                UnrecordedSpanContext unrecorded => null!,
+                _ => null!,
+            };
         }
 
         /// <summary>
@@ -293,7 +315,31 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        internal MaybeRecordedSpanContext CreateSpanContext(string operationName, string resourceName, ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        {
+            var spanContext = CreateInnerSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
+
+            // make a sampling decision, to decide if we're going to
+            // keep this span (and return a Span), or drop it (and return an UnrecordedSpan)
+            int samplingPriority;
+            if (spanContext.TraceContext.SamplingPriority is { } existingPriority)
+            {
+                // If we already have a sampling decision, honor it
+                samplingPriority = existingPriority;
+            }
+            else
+            {
+                // We don't have a decision, so make one
+                var samplingContext = new SamplingContext(spanContext, operationName, resourceName, tags: null);
+                samplingPriority = spanContext.TraceContext.GetOrMakeSamplingDecision(in samplingContext);
+            }
+
+            return SamplingPriorityValues.IsKeep(samplingPriority)
+                       ? new RecordedSpanContext(spanContext, operationName, resourceName)
+                       : new UnrecordedSpanContext(spanContext, operationName, resourceName);
+        }
+
+        private SpanContext CreateInnerSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
@@ -394,9 +440,22 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
+        internal Scope StartActiveInternal(RecordedSpanContext spanContext, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
         {
-            var span = StartSpan(operationName, tags, parent, serviceName, startTime, links: links);
+            var span = StartSpan(spanContext, tags, startTime, links: links);
+
+            return TracerManager.ScopeManager.Activate(span, finishOnClose);
+        }
+
+        /// <remarks>
+        /// When calling this method from an integration, ensure you call
+        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// and the span count metric is incremented. Alternatively, if this is not being called from an
+        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
+        /// </remarks>
+        internal Scope StartActiveInternal(UnrecordedSpanContext spanContext, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
+        {
+            var span = StartSpan(spanContext);
 
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
@@ -407,14 +466,9 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
+        internal Span StartSpan(RecordedSpanContext spanContext, ITags tags = null, DateTimeOffset? startTime = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
         {
-            var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
-
-            var span = new Span(spanContext, startTime, tags, links)
-            {
-                OperationName = operationName,
-            };
+            var span = new Span(spanContext, startTime, tags, links);
 
             // Apply any global tags
             if (CurrentTraceSettings.Settings.GlobalTags is { Count: > 0 } globalTags)
@@ -430,7 +484,7 @@ namespace Datadog.Trace
 
             if (addToTraceContext)
             {
-                spanContext.TraceContext.AddSpan(span);
+                spanContext.Context.TraceContext.AddSpan(span);
             }
 
             // Extract the Git metadata. This is done here because we may only be able to do it in the context of a request.
@@ -439,6 +493,24 @@ namespace Datadog.Trace
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
             DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
+
+            return span;
+        }
+
+        /// <remarks>
+        /// When calling this method from an integration, and _not_ discarding the span, ensure you call
+        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// and the span count metric is incremented. Alternatively, if this is not being called from an
+        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
+        /// </remarks>
+        internal UnrecordedSpan StartSpan(UnrecordedSpanContext spanContext, bool addToTraceContext = true)
+        {
+            var span = new UnrecordedSpan(spanContext);
+
+            if (addToTraceContext)
+            {
+                spanContext.Context.TraceContext.AddSpan(span);
+            }
 
             return span;
         }

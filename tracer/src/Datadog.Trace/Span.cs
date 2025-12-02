@@ -27,22 +27,25 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    internal partial class Span : ISpan
+    internal sealed partial class Span : SpanBase, ISpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private int _isFinished;
+        private string _resourceName;
 
-        internal Span(SpanContext context, DateTimeOffset? start)
+        internal Span(RecordedSpanContext context, DateTimeOffset? start)
             : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
+        internal Span(RecordedSpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new TagsList();
-            Context = context;
+            Context = context.Context;
+            _resourceName = context.ResourceName;
+            OperationName = context.OperationName;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
             if (links is not null)
@@ -60,68 +63,23 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets operation name
+        /// Gets the operation name
         /// </summary>
-        internal string OperationName { get; set; }
+        internal string OperationName { get; }
 
         /// <summary>
-        /// Gets or sets the resource name
+        /// Gets the resource name
         /// </summary>
-        internal string ResourceName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of request this span represents (ex: web, db).
-        /// Not to be confused with span kind.
-        /// </summary>
-        /// <seealso cref="SpanTypes"/>
-        internal string Type { get; set; }
+        internal override string ResourceName => _resourceName;
 
         /// <summary>
         /// Gets or sets a value indicating whether this span represents an error
         /// </summary>
         internal bool Error { get; set; }
 
-        /// <summary>
-        /// Gets or sets the service name.
-        /// </summary>
-        internal string ServiceName
-        {
-            get => Context.ServiceName;
-            set
-            {
-                Context.ServiceName = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets the trace's unique 128-bit identifier.
-        /// </summary>
-        internal TraceId TraceId128 => Context.TraceId128;
-
-        /// <summary>
-        /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
-        /// </summary>
-        internal ulong TraceId => Context.TraceId128.Lower;
-
-        /// <summary>
-        /// Gets the span's unique 64-bit identifier.
-        /// </summary>
-        internal ulong SpanId => Context.SpanId;
-
-        /// <summary>
-        /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
-        /// sub-operation of the distributed operation that is represented by the trace that contains this span.
-        /// </summary>
-        /// <remarks>
-        /// <para>If the trace has been propagated from a remote service, the <i>remote global root</i> is not relevant for this API.</para>
-        /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
-        /// In such cases, the local process may be concurrently executing multiple local root spans.
-        /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
-        internal ulong RootSpanId => Context.TraceContext?.RootSpan?.SpanId ?? SpanId;
-
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal override SpanContext Context { get; }
 
         internal List<SpanLink> SpanLinks { get; private set; }
 
@@ -136,8 +94,6 @@ namespace Datadog.Trace
             get => _isFinished == 1;
             private set => _isFinished = value ? 1 : 0;
         }
-
-        internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
         internal bool IsTopLevel => Context.Parent == null
                                  || Context.Parent.SpanId == 0
@@ -381,7 +337,7 @@ namespace Datadog.Trace
         /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
-        internal void Finish()
+        internal override void Finish()
         {
             Finish(Context.TraceContext.Clock.ElapsedSince(StartTime));
         }
@@ -391,7 +347,7 @@ namespace Datadog.Trace
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
         /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
-        internal void Finish(DateTimeOffset finishTimestamp)
+        internal override void Finish(DateTimeOffset finishTimestamp)
         {
             Finish(finishTimestamp - StartTime);
         }
@@ -463,9 +419,9 @@ namespace Datadog.Trace
             };
         }
 
-        internal void Finish(TimeSpan duration)
+        internal override void Finish(TimeSpan duration)
         {
-            ResourceName ??= OperationName;
+            _resourceName ??= OperationName;
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 if (IsRootSpan)
