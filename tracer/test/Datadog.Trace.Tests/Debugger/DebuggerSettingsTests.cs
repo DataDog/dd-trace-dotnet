@@ -157,6 +157,37 @@ namespace Datadog.Trace.Tests.Debugger
             settings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }
 
+        [Theory]
+        [InlineData("/path/to/probes.json")]
+        [InlineData("C:\\probes\\config.json")]
+        [InlineData("probes.json")]
+        public void ProbeFile_ParsesCorrectly(string probeFilePath)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, probeFilePath }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.ProbeFile.Should().Be(probeFilePath);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        public void ProbeFile_EmptyOrNull(string probeFilePath)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, probeFilePath }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.ProbeFile.Should().BeEmpty();
+        }
+
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]

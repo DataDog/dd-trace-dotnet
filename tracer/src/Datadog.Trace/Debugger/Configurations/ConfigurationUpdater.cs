@@ -43,7 +43,13 @@ namespace Datadog.Trace.Debugger.Configurations
         {
             var result = new List<UpdateResult>();
             var filteredConfiguration = ApplyConfigurationFilters(configuration);
-            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
+
+            // Merge the new filtered configuration with the existing one so that
+            // _currentConfiguration always represents the union of all accepted
+            // configurations from both file and RCM
+            var mergedConfiguration = MergeConfigurations(_currentConfiguration, filteredConfiguration);
+
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, mergedConfiguration);
 
             if (comparer.HasProbeRelatedChanges)
             {
@@ -55,7 +61,7 @@ namespace Datadog.Trace.Debugger.Configurations
                 HandleRateLimitChanged(comparer);
             }
 
-            _currentConfiguration = configuration;
+            _currentConfiguration = mergedConfiguration;
 
             return result;
         }
@@ -70,6 +76,30 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 Log.Error(ex, "Failed to remove configurations");
             }
+        }
+
+        private static ProbeConfiguration MergeConfigurations(ProbeConfiguration current, ProbeConfiguration incoming)
+        {
+            return new ProbeConfiguration
+            {
+                LogProbes = current.LogProbes
+                                   .Concat(incoming.LogProbes)
+                                   .Distinct()
+                                   .ToArray(),
+                MetricProbes = current.MetricProbes
+                                      .Concat(incoming.MetricProbes)
+                                      .Distinct()
+                                      .ToArray(),
+                SpanProbes = current.SpanProbes
+                                    .Concat(incoming.SpanProbes)
+                                    .Distinct()
+                                    .ToArray(),
+                SpanDecorationProbes = current.SpanDecorationProbes
+                                              .Concat(incoming.SpanDecorationProbes)
+                                              .Distinct()
+                                              .ToArray(),
+                ServiceConfiguration = incoming.ServiceConfiguration ?? current.ServiceConfiguration
+            };
         }
 
         private ProbeConfiguration ApplyConfigurationFilters(ProbeConfiguration configuration)
