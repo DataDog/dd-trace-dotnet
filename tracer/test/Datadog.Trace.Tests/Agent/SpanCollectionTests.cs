@@ -20,7 +20,7 @@ public class SpanCollectionTests
 
         collection.Count.Should().Be(0);
         collection.FirstSpan.Should().BeNull();
-        collection.ToArray().Array.Should().BeEmpty();
+        collection.TryGetArray().HasValue.Should().BeFalse();
         foreach (var span in collection)
         {
             Assert.Fail("We shouldn't have a span to enumerate: " + span);
@@ -37,7 +37,7 @@ public class SpanCollectionTests
 
         collection.Count.Should().Be(1);
         collection.FirstSpan.Should().BeSameAs(span);
-        collection.ToArray().Array.Should().ContainSingle().Which.Should().BeSameAs(span);
+        collection.TryGetArray().HasValue.Should().BeFalse();
         var spans = new List<Span>();
         foreach (var x in collection)
         {
@@ -57,10 +57,11 @@ public class SpanCollectionTests
 
         collection.Count.Should().Be(0);
         collection.FirstSpan.Should().BeNull();
-        var array = collection.ToArray();
-        array.Count.Should().Be(0);
-        array.Offset.Should().Be(0);
-        array.Array!.Length.Should().Be(length);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(0);
+        array.Value.Offset.Should().Be(0);
+        array.Value.Array!.Length.Should().Be(length);
         foreach (var span in collection)
         {
             Assert.Fail("We shouldn't have a span to enumerate: " + span);
@@ -81,10 +82,11 @@ public class SpanCollectionTests
         collection[1].Should().BeSameAs(spans[1]);
         FluentActions.Invoking(() => collection[2]).Should().Throw<IndexOutOfRangeException>();
 
-        var array = collection.ToArray();
-        array.Count.Should().Be(2);
-        array.Offset.Should().Be(0);
-        array.Array.Should().BeSameAs(spans);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(2);
+        array.Value.Offset.Should().Be(0);
+        array.Value.Array.Should().BeSameAs(spans);
 
         var enumerated = new List<Span>();
         foreach (var span in collection)
@@ -137,9 +139,10 @@ public class SpanCollectionTests
         result[1].Should().BeSameAs(span2);
 
         // Default array size is 4
-        var array = result.ToArray();
-        array.Count.Should().Be(2);
-        array.Array.Length.Should().Be(4);
+        var array = result.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(2);
+        array.Value.Array!.Length.Should().Be(4);
     }
 
     [Fact]
@@ -147,9 +150,10 @@ public class SpanCollectionTests
     {
         var spans = new[] { CreateSpan("span1"), CreateSpan("span2"), null, null };
         var collection = new SpanCollection(spans, 2);
-        var array = collection.ToArray();
-        array.Count.Should().Be(2);
-        array.Array.Should().BeSameAs(spans);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(2);
+        array.Value.Array.Should().BeSameAs(spans);
 
         var span3 = CreateSpan("span3");
         var result = SpanCollection.Append(in collection, span3);
@@ -159,7 +163,7 @@ public class SpanCollectionTests
         result[1].Should().BeSameAs(spans[1]);
         result[2].Should().BeSameAs(span3);
 
-        collection.ToArray().Array.Should().BeSameAs(spans);
+        collection.TryGetArray()!.Value.Array.Should().BeSameAs(spans);
     }
 
     [Fact]
@@ -168,9 +172,10 @@ public class SpanCollectionTests
         // Create a collection with an array at capacity
         var spans = new[] { CreateSpan("span1"), CreateSpan("span2") };
         var collection = new SpanCollection(spans);
-        var array = collection.ToArray();
-        array.Count.Should().Be(2);
-        array.Array.Should().BeSameAs(spans);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(2);
+        array.Value.Array.Should().BeSameAs(spans);
 
         var span3 = CreateSpan("span3");
         var result = SpanCollection.Append(in collection, span3);
@@ -181,8 +186,9 @@ public class SpanCollectionTests
         result[2].Should().BeSameAs(span3);
 
         // Array should have grown from 2 to 4
-        var array2 = result.ToArray();
-        array2.Array.Should().HaveCount(4).And.NotBeSameAs(spans);
+        var array2 = result.TryGetArray();
+        array2.HasValue.Should().BeTrue();
+        array2!.Value.Array.Should().HaveCount(4).And.NotBeSameAs(spans);
     }
 
     [Fact]
@@ -203,8 +209,9 @@ public class SpanCollectionTests
         }
 
         // Verify array grew: starts at 4, grows to 8, then needs to grow to 16
-        var array = collection.ToArray();
-        array.Array!.Length.Should().Be(16);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Array!.Length.Should().Be(16);
     }
 
     private static Span CreateSpan(string operationName = "test-span")

@@ -1,4 +1,4 @@
-// <copyright file="TestSuiteVisibilityProcessor.cs" company="Datadog">
+﻿// <copyright file="TestSuiteVisibilityProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,7 +46,12 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
         }
 
         // we know we have multiple spans, so get the underlying array
-        var segment = trace.ToArray();
+        if (trace.TryGetArray() is not { } segment)
+        {
+            // Shouldn't be possible, because we handle 0 and 1 spans above
+            return trace;
+        }
+
         Span[]? spans = null;
         var copiedCount = 0;
         var haveDrops = false;

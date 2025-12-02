@@ -260,7 +260,11 @@ internal readonly struct TraceChunkModel
             return _spans[0].SpanId == spanId ? 0 : -1;
         }
 
-        var array = _spans.ToArray();
+        if (_spans.TryGetArray() is not { } array)
+        {
+            // Shouldn't be possible, because we handle 0 and 1 spans above
+            return -1;
+        }
 
         // iterate over the span array starting at the specified index + 1
         for (var i = startIndex; i < count; i++)

@@ -151,15 +151,13 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     }
 
     /// <summary>
-    /// Creates a Span array from the current <see cref="SpanCollection"/> object.
-    /// Note that this allocates if the <see cref="SpanCollection"/> does not have a count greater than 1
+    /// Try to get the underlying Span array from the current <see cref="SpanCollection"/> object as an `ArraySegment`.
+    /// If the <see cref="SpanCollection"/> does _not_ contain an array (because it contains 0 or 1 spans) then returns
+    /// <c>null</c>.
     /// </summary>
-    /// <returns>A Span array represented by this instance.</returns>
-    /// <remarks>
-    /// <para>If the <see cref="SpanCollection"/> contains a single Span internally, it is copied to a new array.</para>
-    /// <para>If the <see cref="SpanCollection"/> contains an array internally it returns that array instance.</para>
-    /// </remarks>
-    public ArraySegment<Span> ToArray()
+    /// <returns>A wrapper around the Span array represented by this instance if this instance represents more than
+    /// one span, otherwise null.</returns>
+    public ArraySegment<Span>? TryGetArray()
     {
         // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
         object? value = _values;
@@ -167,15 +165,9 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         {
             return new ArraySegment<Span>(values, 0, Count);
         }
-        else if (value != null)
-        {
-            // value not array, can only be Span
-            return new ArraySegment<Span>([Unsafe.As<Span>(value)], 0, 1);
-        }
-        else
-        {
-            return new ArraySegment<Span>(Array.Empty<Span>(), 0, 0);
-        }
+
+        // zero or one spans, so return null
+        return null;
     }
 
     private static Span[] GrowIfNeeded(Span[] array, int currentCount)
