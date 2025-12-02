@@ -14,9 +14,9 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        protected override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
+        protected override void OnDisallowed(in SamplingContext context, int count, int intervalMs, int maxTracesPerInterval)
         {
-            span.SetMetric(Metrics.AppSecRateLimitDroppedTraces, count - maxTracesPerInterval);
+            context.Tags?.SetMetric(Metrics.AppSecRateLimitDroppedTraces, count - maxTracesPerInterval);
         }
     }
 }

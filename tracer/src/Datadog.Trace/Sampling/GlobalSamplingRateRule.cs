@@ -21,12 +21,9 @@ namespace Datadog.Trace.Sampling
         // Doesn't depend on span at all
         public bool IsResourceBasedSamplingRule => false;
 
-        public bool IsMatch(Span span) => true;
+        public bool IsMatch(in SamplingContext context) => true;
 
-        public float GetSamplingRate(Span span)
-        {
-            return _globalRate;
-        }
+        public float GetSamplingRate(in SamplingContext context) => _globalRate;
 
         public override string ToString()
         {

@@ -56,13 +56,8 @@ namespace Datadog.Trace.Sampling
 
         public abstract string SamplingMechanism { get; }
 
-        public bool IsMatch(Span span)
+        public bool IsMatch(in SamplingContext context)
         {
-            if (span == null!)
-            {
-                return false;
-            }
-
             if (_alwaysMatch)
             {
                 // the rule is a catch-all
@@ -76,7 +71,7 @@ namespace Datadog.Trace.Sampling
             }
 
             return SamplingRuleHelper.IsMatch(
-                span,
+                in context,
                 serviceNameRegex: _serviceNameRegex,
                 operationNameRegex: _operationNameRegex,
                 resourceNameRegex: _resourceNameRegex,
@@ -84,9 +79,6 @@ namespace Datadog.Trace.Sampling
                 out _regexTimedOut);
         }
 
-        public float GetSamplingRate(Span span)
-        {
-            return _samplingRate;
-        }
+        public float GetSamplingRate(in SamplingContext spanContext) => _samplingRate;
     }
 }

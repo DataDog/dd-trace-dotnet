@@ -36,54 +36,43 @@ namespace Datadog.Trace.Sampling
             _windowBegin = Clock.UtcNow;
         }
 
-        public bool Allowed(Span span)
+        public bool Allowed(in SamplingContext context)
         {
-            try
+            if (_maxTracesPerInterval == 0)
             {
-                if (_maxTracesPerInterval == 0)
-                {
-                    // Rate limit of 0 blocks everything
-                    return false;
-                }
+                // Rate limit of 0 blocks everything
+                return false;
+            }
 
-                if (_maxTracesPerInterval < 0)
-                {
-                    // Negative rate limit disables rate limiting
-                    return true;
-                }
-
-                WaitForRefresh();
-
-                // This must happen after the wait, because we check for window statistics, modifying this number
-                Interlocked.Increment(ref _windowChecks);
-
-                var count = _intervalQueue.Count;
-
-                if (count >= _maxTracesPerInterval)
-                {
-                    OnDisallowed(span, count, _intervalMilliseconds, _maxTracesPerInterval);
-
-                    return false;
-                }
-
-                _intervalQueue.Enqueue(Clock.UtcNow);
-                Interlocked.Increment(ref _windowAllowed);
-
+            if (_maxTracesPerInterval < 0)
+            {
+                // Negative rate limit disables rate limiting
                 return true;
             }
-            finally
+
+            WaitForRefresh();
+
+            // This must happen after the wait, because we check for window statistics, modifying this number
+            Interlocked.Increment(ref _windowChecks);
+
+            var count = _intervalQueue.Count;
+
+            if (count >= _maxTracesPerInterval)
             {
-                OnFinally(span);
+                OnDisallowed(in context, count, _intervalMilliseconds, _maxTracesPerInterval);
+
+                return false;
             }
+
+            _intervalQueue.Enqueue(Clock.UtcNow);
+            Interlocked.Increment(ref _windowAllowed);
+
+            return true;
         }
 
-        protected abstract void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval);
+        protected abstract void OnDisallowed(in SamplingContext context, int count, int intervalMs, int maxTracesPerInterval);
 
         protected virtual void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
-        {
-        }
-
-        protected virtual void OnFinally(Span span)
         {
         }
 
