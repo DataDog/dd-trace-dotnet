@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.TestHelpers;
 using Google.Protobuf.WellKnownTypes;
 using Moq;
 using Xunit;
@@ -243,7 +244,7 @@ public class FeatureFlagsEvaluatorTests
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.STRING, "test-value", "on")
+            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.STRING, "test-value", "on")
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
@@ -261,7 +262,7 @@ public class FeatureFlagsEvaluatorTests
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["rule-based-flag"] = CreateRuleBasedFlag()
+            ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
@@ -279,7 +280,7 @@ public class FeatureFlagsEvaluatorTests
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["numeric-rule-flag"] = CreateNumericRuleFlag()
+            ["numeric-rule-flag"] = FeatureFlagsHelpers.CreateNumericRuleFlag()
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
@@ -297,7 +298,7 @@ public class FeatureFlagsEvaluatorTests
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["time-based-flag"] = CreateTimeBasedFlag()
+            ["time-based-flag"] = FeatureFlagsHelpers.CreateTimeBasedFlag()
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
@@ -314,7 +315,7 @@ public class FeatureFlagsEvaluatorTests
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["exposure-flag"] = CreateExposureFlag()
+            ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag()
         };
 
         List<Trace.FeatureFlags.Exposure.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.ExposureEvent>();
@@ -329,102 +330,6 @@ public class FeatureFlagsEvaluatorTests
 
         // DoLog=true -> one exposure event
         Assert.Single(events);
-    }
-
-    // ---------------------------------------------------------------------
-    // Helpers to build flags (minimal subset)
-    // ---------------------------------------------------------------------
-
-    private static Flag CreateSimpleFlag(string key, ValueType type, object value, string variantKey)
-    {
-        var variants = new Dictionary<string, Variant>
-        {
-            [variantKey] = new Variant { Key = variantKey, Value = (string)value },
-        };
-
-        var splits = new List<Split>
-        {
-            new Split { Shards = new List<Shard>(), VariationKey = variantKey }
-        };
-
-        var allocations = new List<Allocation>
-        {
-            new Allocation { Key = "alloc1", Splits = splits, DoLog = false }
-        };
-
-        return new Flag { Key = key, Enabled = true, VariationType = type, Variations = variants, Allocations = allocations };
-    }
-
-    private static Flag CreateRuleBasedFlag()
-    {
-        var variants = new Dictionary<string, Variant>
-        {
-            ["premium"] = new Variant { Key = "premium", Value = "premium" },
-            ["basic"] = new Variant { Key = "basic", Value = "basic" },
-        };
-
-        var premiumConditions = new List<ConditionConfiguration>
-        {
-            new ConditionConfiguration { Operator = ConditionOperator.MATCHES, Attribute = "email", Value = "@company\\.com$" },
-        };
-
-        var premiumRules = new List<Rule> { new Rule(premiumConditions) };
-        var premiumSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "premium" } };
-        var premiumAlloc = new Allocation { Key = "premium-alloc", Rules = premiumRules, Splits = premiumSplits, DoLog = false };
-
-        var basicSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "basic" } };
-        var basicAlloc = new Allocation { Key = "basic-alloc", Splits = basicSplits, DoLog = false };
-
-        return new Flag { Key = "rule-based-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { premiumAlloc, basicAlloc } };
-    }
-
-    private static Flag CreateNumericRuleFlag()
-    {
-        var variants = new Dictionary<string, Variant>
-        {
-            ["vip"] = new Variant("vip", "vip"),
-            ["regular"] = new Variant("regular", "regular")
-        };
-
-        var vipConditions = new List<ConditionConfiguration>
-        {
-            new ConditionConfiguration { Operator = ConditionOperator.GTE, Attribute = "score", Value = 800 },
-        };
-
-        var vipRules = new List<Rule> { new Rule(vipConditions) };
-        var vipSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "vip" } };
-        var vipAlloc = new Allocation { Key = "vip-alloc", Rules = vipRules, Splits = vipSplits, DoLog = false };
-
-        var regularSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "regular" } };
-        var regularAlloc = new Allocation { Key = "regular-alloc", Splits = regularSplits, DoLog = false };
-
-        return new Flag { Key = "numeric-rule-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { vipAlloc, regularAlloc } };
-    }
-
-    private static Flag CreateTimeBasedFlag()
-    {
-        var variants = new Dictionary<string, Variant>
-        {
-            ["time-limited"] = new Variant("time-limited", "time-limited")
-        };
-
-        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "time-limited" } };
-        var alloc = new Allocation { Key = "time-alloc", StartAt = "2022-01-01T00:00:00Z", EndAt = "2022-12-31T23:59:59Z", Splits = splits, DoLog = false };
-
-        return new Flag { Key = "time-based-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { alloc } };
-    }
-
-    private static Flag CreateExposureFlag()
-    {
-        var variants = new Dictionary<string, Variant>
-        {
-            ["tracked"] = new Variant("tracked", "tracked-value")
-        };
-
-        var splits = new List<Split> { new Split { VariationKey = "tracked", Shards = new List<Shard>() } };
-        var alloc = new Allocation { Key = "exposure-alloc", Splits = splits, DoLog = true };
-
-        return new Flag { Key = "exposure-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { alloc } };
     }
 }
 #pragma warning restore SA1204 // Static elements should appear before instance elements

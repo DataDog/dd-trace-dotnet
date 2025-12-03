@@ -65,7 +65,7 @@ namespace Datadog.Trace.FeatureFlags
                 _ffeProduct = new FfeProduct(UpdateConfig);
                 _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
-                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.AsmActivation, true);
+                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
             }
         }
 
@@ -97,14 +97,17 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (!_enabled)
             {
+                Log.Debug("Evaluate: FeatureFlagsModule DISABLED");
                 return new Evaluation(null, EvaluationReason.ERROR, null, "FeatureFlagsSdk is disabled");
             }
 
             if (_evaluator is null)
             {
+                Log.Debug("Evaluate: Evaluator is null (no config received)");
                 return new Evaluation(null, EvaluationReason.ERROR, null, "No config loaded");
             }
 
+            Log.Debug("Evaluate: Returning Evaluation");
             return _evaluator.Evaluate(key, resultType, defaultValue, context);
         }
 
