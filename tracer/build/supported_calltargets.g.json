@@ -6685,6 +6685,55 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "Evaluate",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Type",
+      "System.Object",
+      "Datadog.Trace.FeatureFlags.IEvaluationContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "IsAvailable",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.SpanContextExtractor",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",

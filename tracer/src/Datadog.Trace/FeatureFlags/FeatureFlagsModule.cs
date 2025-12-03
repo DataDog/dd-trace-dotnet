@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -29,8 +30,8 @@ namespace Datadog.Trace.FeatureFlags
         private static FeatureFlagsModule? _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
+        private static bool _enabled = false;
 
-        private readonly TracerSettings _settings;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription = null;
         private FfeProduct? _ffeProduct = null;
@@ -51,11 +52,11 @@ namespace Datadog.Trace.FeatureFlags
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
-            _settings = settings;
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
 
             if (settings.IsFlaggingProviderEnabled)
             {
+                _enabled = true;
                 _ffeProduct = new FfeProduct(UpdateConfig);
                 _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
@@ -82,8 +83,14 @@ namespace Datadog.Trace.FeatureFlags
 
         public long Timeout { get; set; } = 1000;
 
-        private void ApplyServerConfigs()
+        internal Evaluation? Evaluate(string key, Type resultType, object? defaultValue, EvaluationContext context)
         {
+            if (!_enabled)
+            {
+                return new Evaluation(null, EvaluationReason.ERROR, null, "FeatureFlagsSdk is disabled");
+            }
+
+            return _evaluator?.Evaluate(key, resultType, defaultValue, context);
         }
 
         private void UpdateConfig(List<KeyValuePair<string, ServerConfiguration>> list)
