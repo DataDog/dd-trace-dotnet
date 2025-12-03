@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.Manager.InitialExporterSettings.AgentUri.ToString());
         }
 
         [Theory]
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void Constructor_HandlesEmptyource()
+        public void Constructor_HandlesEmptySource()
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
             tracerSettings.Should().NotBeNull();
@@ -582,7 +582,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, false)]
         public void IsRunningInAzureAppService(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, value));
             var settings = new TracerSettings(source);
 
             settings.IsRunningInAzureAppService.Should().Be(expected);
@@ -595,9 +595,9 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRunningInAzureFunctions(string value, bool expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.SiteNameKey, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
+                (PlatformKeys.AzureAppService.SiteNameKey, value),
+                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, value),
+                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, value));
 
             var settings = new TracerSettings(source);
 
@@ -667,7 +667,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (isRunningInAas)
             {
-                configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+                configPairs.Add((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             }
 
             var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
@@ -681,9 +681,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void RecordsTelemetryAboutTfm()
         {
             var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData();
+            var data = tracerSettings.Telemetry.GetData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()
@@ -1068,6 +1066,30 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.OtlpLogsTimeoutMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void ProcessTagsEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, value));
+            var settings = new TracerSettings(source);
+
+            settings.PropagateProcessTags.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("none", false)]
+        [InlineData("all", true)]
+        [InlineData(ConfigurationKeys.PropagateProcessTags, true)]
+        public void ProcessTagsEnabledIfExperimentalEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ExperimentalFeaturesEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.PropagateProcessTags.Should().Be(expected);
         }
     }
 }

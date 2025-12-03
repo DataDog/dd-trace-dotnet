@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,11 +17,11 @@ namespace Datadog.Trace.Tagging
     internal class TagsList : ITags
     {
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
-        private List<KeyValuePair<string, string>> _tags;
-        private List<KeyValuePair<string, double>> _metrics;
-        private List<KeyValuePair<string, byte[]>> _metaStruct;
+        private List<KeyValuePair<string, string>>? _tags;
+        private List<KeyValuePair<string, double>>? _metrics;
+        private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
-        public virtual string GetTag(string key)
+        public virtual string? GetTag(string key)
         {
             var tags = Volatile.Read(ref _tags);
             if (tags is not null)
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Tagging
             return null;
         }
 
-        public virtual void SetTag(string key, string value)
+        public virtual void SetTag(string key, string? value)
         {
             var tags = Volatile.Read(ref _tags);
 
@@ -86,7 +88,7 @@ namespace Datadog.Trace.Tagging
                 {
                     for (int i = 0; i < tags.Count; i++)
                     {
-                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, null));
+                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, default));
                     }
                 }
             }
@@ -163,7 +165,7 @@ namespace Datadog.Trace.Tagging
                 for (var i = 0; i < metrics.Count; i++)
                 {
                     var item = metrics[i];
-                    processor.Process(new TagItem<double>(item.Key, item.Value, null));
+                    processor.Process(new TagItem<double>(item.Key, item.Value, default));
                 }
             }
         }
@@ -182,7 +184,7 @@ namespace Datadog.Trace.Tagging
             return false;
         }
 
-        public virtual void SetMetaStruct(string key, byte[] value)
+        public virtual void SetMetaStruct(string key, byte[]? value)
         {
             if (!string.IsNullOrEmpty(key))
             {
@@ -223,7 +225,7 @@ namespace Datadog.Trace.Tagging
         }
 
         public virtual void EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
-    where TProcessor : struct, IItemProcessor<byte[]>
+            where TProcessor : struct, IItemProcessor<byte[]>
         {
             var metastruct = Volatile.Read(ref _metaStruct);
             if (metastruct is null)
@@ -236,7 +238,7 @@ namespace Datadog.Trace.Tagging
                 for (var i = 0; i < metastruct.Count; i++)
                 {
                     var item = metastruct[i];
-                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, null));
+                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, default));
                 }
             }
         }

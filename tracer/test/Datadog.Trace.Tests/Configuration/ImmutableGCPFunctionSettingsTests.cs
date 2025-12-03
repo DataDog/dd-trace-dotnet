@@ -19,8 +19,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetIsGCPFunctionTrueWhenDeprecatedFunctionsEnvVarsExist()
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "value"),
-                (ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "value"));
+                (PlatformKeys.GcpFunction.DeprecatedFunctionNameKey, "value"),
+                (PlatformKeys.GcpFunction.DeprecatedProjectKey, "value"));
 
             var settings = new ImmutableGCPFunctionSettings(source, NullConfigurationTelemetry.Instance);
             settings.IsDeprecatedFunction.Should().BeTrue();
@@ -32,8 +32,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetIsGCPFunctionTrueWhenNonDeprecatedFunctionsEnvVarsExist()
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.GCPFunction.FunctionNameKey, "value"),
-                (ConfigurationKeys.GCPFunction.FunctionTargetKey, "value"));
+                (PlatformKeys.GcpFunction.FunctionNameKey, "value"),
+                (PlatformKeys.GcpFunction.FunctionTargetKey, "value"));
 
             var settings = new ImmutableGCPFunctionSettings(source, NullConfigurationTelemetry.Instance);
             settings.IsNewerFunction.Should().BeTrue();

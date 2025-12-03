@@ -46,7 +46,7 @@ namespace Datadog.Trace.Configuration
             // Check the parameters in order of precedence
             // For some cases, we allow falling back on another configuration (eg invalid url as the application will need to be restarted to fix it anyway).
             // For other cases (eg a configured unix domain socket path not found), we don't fallback as the problem could be fixed outside the application.
-            if (!string.IsNullOrWhiteSpace(agentUri))
+            if (!string.IsNullOrEmpty(agentUri))
             {
                 if (TryGetAgentUriAndTransport(agentUri!, origin, out var settings))
                 {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(tracesPipeName))
+            if (!string.IsNullOrEmpty(tracesPipeName))
             {
                 RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Configuration
 
             // This property shouldn't have been introduced. We need to remove it as part of 3.0
             // But while it's here, we need to handle it properly
-            if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
+            if (!string.IsNullOrEmpty(tracesUnixDomainSocketPath))
             {
 #if NETCOREAPP3_1_OR_GREATER
                 if (TryGetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin, out var settings))

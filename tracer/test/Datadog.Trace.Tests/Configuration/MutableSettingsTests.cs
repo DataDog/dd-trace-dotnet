@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
@@ -522,7 +522,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 

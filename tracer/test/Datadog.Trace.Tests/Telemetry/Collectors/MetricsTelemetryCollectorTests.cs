@@ -98,7 +98,7 @@ public class MetricsTelemetryCollectorTests
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
-        collector.Record(PublicApiUsage.Tracer_Ctor);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
         collector.RecordCountSpanFinished(15);
         collector.RecordCountSharedIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
@@ -132,9 +132,9 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        collector.Record(PublicApiUsage.Tracer_Ctor);
-        collector.Record(PublicApiUsage.Tracer_Ctor);
-        collector.Record(PublicApiUsage.TracerSettings_Build);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
+        collector.Record(PublicApiUsage.TracerSettings_Ctor);
         collector.RecordCountSpanFinished(3);
         collector.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.New, 2);
         collector.RecordGaugeStatsBuckets(15);
@@ -180,7 +180,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = "public_api",
                 Points = new[] { new { Value = 1 }, new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { PublicApiUsage.Tracer_Ctor.ToStringFast() },
+                Tags = new[] { PublicApiUsage.Tracer_StartActive.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },
@@ -189,7 +189,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = "public_api",
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { PublicApiUsage.TracerSettings_Build.ToStringFast() },
+                Tags = new[] { PublicApiUsage.TracerSettings_Ctor.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },
@@ -513,7 +513,7 @@ public class MetricsTelemetryCollectorTests
         var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
-        collector.Record(PublicApiUsage.Tracer_Ctor);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
         collector.RecordCountSharedIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
 
         // These aren't recorded for ci visibility
@@ -535,9 +535,9 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        collector.Record(PublicApiUsage.Tracer_Ctor);
-        collector.Record(PublicApiUsage.Tracer_Ctor);
-        collector.Record(PublicApiUsage.TracerSettings_Build);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
+        collector.Record(PublicApiUsage.Tracer_StartActive);
+        collector.Record(PublicApiUsage.TracerSettings_Ctor);
 
         // These aren't recorded for ci visibility
         collector.RecordCountSpanFinished(3);
@@ -583,7 +583,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = "public_api",
                 Points = new[] { new { Value = 1 }, new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { PublicApiUsage.Tracer_Ctor.ToStringFast() },
+                Tags = new[] { PublicApiUsage.Tracer_StartActive.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },
@@ -592,7 +592,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = "public_api",
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { PublicApiUsage.TracerSettings_Build.ToStringFast() },
+                Tags = new[] { PublicApiUsage.TracerSettings_Ctor.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },
@@ -676,7 +676,7 @@ public class MetricsTelemetryCollectorTests
     public async Task ShouldAggregateMetricsAutomatically()
     {
         var aggregationPeriod = TimeSpan.FromMilliseconds(500);
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
 
         var collector = new MetricsTelemetryCollector(
             aggregationPeriod,

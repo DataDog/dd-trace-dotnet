@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 
@@ -32,6 +33,16 @@ public class AerospikeFixture : ContainerFixture
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(AerospikePort, true)
+                       .WithCreateParameterModifier(p =>
+                        {
+                            p.HostConfig ??= new HostConfig();
+                            p.HostConfig.Ulimits = new List<Ulimit>
+                            {
+                                // Aerospike requires a minimum of 15000 file descriptors, otherwise it'll fail to start
+                                // Some versions of dockerengine set a lower limit (1024)
+                                new Ulimit { Name = "nofile", Soft = 15000, Hard = 15000 }
+                            };
+                        })
                        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(AerospikePort))
                        .Build();
 

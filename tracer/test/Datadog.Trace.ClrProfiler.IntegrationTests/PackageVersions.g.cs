@@ -104,6 +104,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDb : PackageVersionsLatestSpecific.CosmosDb;
 
+        public static IEnumerable<object[]> CosmosDbVnext => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDbVnext : PackageVersionsLatestSpecific.CosmosDbVnext;
+
         public static IEnumerable<object[]> Serilog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Serilog : PackageVersionsLatestSpecific.Serilog;
 
         public static IEnumerable<object[]> NLog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NLog : PackageVersionsLatestSpecific.NLog;
@@ -129,6 +131,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> AzureServiceBus => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBus : PackageVersionsLatestSpecific.AzureServiceBus;
 
         public static IEnumerable<object[]> AzureServiceBusAPM => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBusAPM : PackageVersionsLatestSpecific.AzureServiceBusAPM;
+
+        public static IEnumerable<object[]> AzureEventHubs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventHubs : PackageVersionsLatestSpecific.AzureEventHubs;
 
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
     }

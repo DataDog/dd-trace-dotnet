@@ -8,36 +8,39 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ContinuousProfiler;
 
 internal class ProfilerSettings
 {
+    private readonly bool _isManagedActivationEnabled = false;
+
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
         : this(config, new EnvironmentConfigurationSource(), telemetry)
     {
     }
 
-    // Internal for testing only
+    [TestingAndPrivateOnly]
     internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)
         {
             ProfilerState = ProfilerState.Disabled;
-            telemetry.Record(ConfigurationKeys.ProfilingEnabled, false, ConfigurationOrigins.Calculated);
+            telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, false, ConfigurationOrigins.Calculated);
             return;
         }
 
         // If managed activation is enabled, we need to _just_ read from the environment variables,
         // as that's all that applies
         var envConfigBuilder = new ConfigurationBuilder(envConfig, telemetry);
-        var managedActivationEnabled = envConfigBuilder
-                                      .WithKeys(ConfigurationKeys.ProfilerManagedActivationEnabled)
+        _isManagedActivationEnabled = envConfigBuilder
+                                      .WithKeys(ConfigurationKeys.Profiler.ProfilerManagedActivationEnabled)
                                       .AsBool(true);
 
         // If we're using managed activation, we use the "full" config source set.
         // Otherwise we only read from the environment variables, to "match" the behavior of the profiler
-        var profilingConfig = managedActivationEnabled
+        var profilingConfig = _isManagedActivationEnabled
                                   ? new ConfigurationBuilder(config, telemetry)
                                   : envConfigBuilder;
 
@@ -45,7 +48,7 @@ internal class ProfilerSettings
         // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed. If it is non-empty, then the
         // profiler is "active", though won't begin profiling until 30 seconds have passed + at least 1 span has been generated.
         var profilingEnabled = profilingConfig
-                              .WithKeys(ConfigurationKeys.ProfilingEnabled)
+                              .WithKeys(ConfigurationKeys.Profiler.ProfilingEnabled)
                                // We stick with strings here instead of using the `GetAs` method,
                                // so that telemetry continues to store true/false/auto, instead of the enum values.
                               .AsString(
@@ -66,7 +69,7 @@ internal class ProfilerSettings
         };
     }
 
-    // Internal for testing only
+    [TestingOnly]
     internal ProfilerSettings(ProfilerState state)
     {
         ProfilerState = state;
@@ -90,4 +93,6 @@ internal class ProfilerSettings
     public ProfilerState ProfilerState { get; }
 
     public bool IsProfilerEnabled => ProfilerState != ProfilerState.Disabled;
+
+    public bool IsManagedActivationEnabled => _isManagedActivationEnabled;
 }

@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class MongoDbTests : TracingIntegrationTest
     {

@@ -30,39 +30,24 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains Tracer settings.
     /// </summary>
-    public record TracerSettings
+    public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
 
         private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
-        /// </summary>
-        [PublicApi]
-        public TracerSettings()
+        [TestingOnly]
+        internal TracerSettings()
             : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <remarks>
-        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
-        /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(TracerSettings)"/>
-        /// </remarks>
-        [PublicApi]
-        public TracerSettings(IConfigurationSource? source)
+        [TestingOnly]
+        internal TracerSettings(IConfigurationSource? source)
         : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
         /// <summary>
@@ -102,6 +87,10 @@ namespace Datadog.Trace.Configuration
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
 
+            PropagateProcessTags = config
+                                       .WithKeys(ConfigurationKeys.PropagateProcessTags)
+                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
+
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
@@ -135,8 +124,6 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
-
-            Exporter = new ExporterSettings(source, _telemetry);
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -346,62 +333,6 @@ namespace Datadog.Trace.Configuration
 
             OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
 
-            DataPipelineEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
-
-            if (DataPipelineEnabled)
-            {
-                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-                // as it may lead to different stats results than the managed one.
-                if (StatsComputationEnabled)
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
-                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
-                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                if (!isLibDatadogAvailable.IsAvailable)
-                {
-                    DataPipelineEnabled = false;
-                    if (isLibDatadogAvailable.Exception is not null)
-                    {
-                        Log.Warning(
-                            isLibDatadogAvailable.Exception,
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // SSI already utilizes libdatadog. To prevent unexpected behavior,
-                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
-                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-            }
-
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
@@ -456,6 +387,14 @@ namespace Datadog.Trace.Configuration
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
+
+            AzureEventHubsBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
+            AgentFeaturePollingEnabled = config
+                                        .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
+                                        .AsBool(defaultValue: true);
 
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
@@ -730,38 +669,83 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, telemetry, errorLog, this);
-            MutableSettings = InitialMutableSettings;
+            // There's a circular dependency here because DataPipeline depends on ExporterSettings,
+            // but the settings manager depends on TracerSettings. Basically this is all fine as long
+            // as nothing in the MutableSettings or ExporterSettings depends on the value of DataPipelineEnabled!
+            Manager = new(source, this, telemetry, errorLog);
+
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
+
+            if (DataPipelineEnabled)
+            {
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
+                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
+                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
+                // this scenario in the public API.
+                if (Manager.InitialExporterSettings.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                if (!isLibDatadogAvailable.IsAvailable)
+                {
+                    DataPipelineEnabled = false;
+                    if (isLibDatadogAvailable.Exception is not null)
+                    {
+                        Log.Warning(
+                            isLibDatadogAvailable.Exception,
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+                    else
+                    {
+                        Log.Warning(
+                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
+                    }
+
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // SSI already utilizes libdatadog. To prevent unexpected behavior,
+                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
+                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
         }
 
         internal bool IsRunningInCiVisibility { get; }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 
+        internal bool PropagateProcessTags { get; }
+
         internal OverrideErrorLog ErrorLog { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
-        internal MutableSettings InitialMutableSettings { get; }
-
-        internal MutableSettings MutableSettings { get; init; }
-
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
-
-        /// <inheritdoc cref="MutableSettings.Environment"/>
-        public string? Environment => MutableSettings.Environment;
-
-        /// <inheritdoc cref="MutableSettings.ServiceName"/>
-        public string? ServiceName => MutableSettings.ServiceName;
-
-        /// <inheritdoc cref="MutableSettings.ServiceVersion"/>
-        public string? ServiceVersion => MutableSettings.ServiceVersion;
-
-        /// <inheritdoc cref="MutableSettings.GitRepositoryUrl"/>
-        internal string? GitRepositoryUrl => MutableSettings.GitRepositoryUrl;
-
-        /// <inheritdoc cref="MutableSettings.GitCommitSha"/>
-        internal string? GitCommitSha => MutableSettings.GitCommitSha;
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
@@ -770,18 +754,12 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
         internal bool GitMetadataEnabled { get; }
 
-        /// <inheritdoc cref="MutableSettings.TraceEnabled"/>
-        public bool TraceEnabled => MutableSettings.TraceEnabled;
-
         /// <summary>
         /// Gets a value indicating whether APM traces are enabled.
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabled { get; }
-
-        /// <inheritdoc cref="MutableSettings.DisabledIntegrationNames"/>
-        public HashSet<string> DisabledIntegrationNames => MutableSettings.DisabledIntegrationNames;
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry Metrics are enabled.
@@ -915,26 +893,6 @@ namespace Datadog.Trace.Configuration
         internal string[] DisabledActivitySources { get; }
 
         /// <summary>
-        /// Gets the transport settings that dictate how the tracer connects to the agent.
-        /// </summary>
-        public ExporterSettings Exporter { get; init; }
-
-        /// <inheritdoc cref="MutableSettings.AnalyticsEnabled"/>
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        public bool AnalyticsEnabled => MutableSettings.AnalyticsEnabled;
-
-        /// <inheritdoc cref="MutableSettings.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled => MutableSettings.LogsInjectionEnabled;
-
-        /// <inheritdoc cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
-        public int MaxTracesSubmittedPerSecond => MutableSettings.MaxTracesSubmittedPerSecond;
-
-        /// <inheritdoc cref="MutableSettings.CustomSamplingRules"/>
-        public string? CustomSamplingRules => MutableSettings.CustomSamplingRules;
-
-        internal bool CustomSamplingRulesIsRemote => MutableSettings.CustomSamplingRulesIsRemote;
-
-        /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
         /// If the value is not recognized, trace sampling rules are disabled.
         /// </summary>
@@ -947,18 +905,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
         internal string? SpanSamplingRules { get; }
 
-        /// <inheritdoc cref="MutableSettings.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate => MutableSettings.GlobalSamplingRate;
-
-        /// <inheritdoc cref="MutableSettings.Integrations"/>
-        public IntegrationSettingsCollection Integrations => MutableSettings.Integrations;
-
-        /// <inheritdoc cref="MutableSettings.GlobalTags"/>
-        public IReadOnlyDictionary<string, string> GlobalTags => MutableSettings.GlobalTags;
-
-        /// <inheritdoc cref="MutableSettings.HeaderTags"/>
-        public IReadOnlyDictionary<string, string> HeaderTags => MutableSettings.HeaderTags;
-
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
@@ -969,19 +915,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool IpHeaderEnabled { get; }
 
-        /// <inheritdoc cref="MutableSettings.GrpcTags"/>
-        public IReadOnlyDictionary<string, string> GrpcTags => MutableSettings.GrpcTags;
-
-        /// <inheritdoc cref="MutableSettings.TracerMetricsEnabled"/>
-        public bool TracerMetricsEnabled => MutableSettings.TracerMetricsEnabled;
-
         /// <summary>
         /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
         public bool StatsComputationEnabled { get; }
-
-        /// <inheritdoc cref="MutableSettings.KafkaCreateConsumerScopeEnabled"/>
-        public bool KafkaCreateConsumerScopeEnabled => MutableSettings.KafkaCreateConsumerScopeEnabled;
 
         /// <summary>
         /// Gets a value indicating whether to enable span linking for individual messages
@@ -989,6 +926,23 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureServiceBusBatchLinksEnabled"/>
         public bool AzureServiceBusBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure EventHubs batch operations.
+        /// When enabled, TryAdd spans are created and linked to the send span.
+        /// When disabled, TryAdd spans are not created.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
+        public bool AzureEventHubsBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the agent discovery service is enabled.
+        /// When disabled, the tracer will not query the agent for available endpoints.
+        /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
+        /// Default value is true (discovery service enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AgentFeaturePollingEnabled"/>
+        public bool AgentFeaturePollingEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
@@ -1037,11 +991,6 @@ namespace Datadog.Trace.Configuration
         /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the diagnostic log at startup is enabled
-        /// </summary>
-        public bool StartupDiagnosticLogEnabled => MutableSettings.StartupDiagnosticLogEnabled;
 
         /// <summary>
         /// Gets the time interval (in seconds) for sending stats
@@ -1119,15 +1068,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
         internal string[] HttpClientExcludedUrlSubstrings { get; }
-
-        /// <inheritdoc cref="MutableSettings.HttpServerErrorStatusCodes"/>
-        internal bool[] HttpServerErrorStatusCodes => MutableSettings.HttpServerErrorStatusCodes;
-
-        /// <inheritdoc cref="MutableSettings.HttpClientErrorStatusCodes"/>
-        internal bool[] HttpClientErrorStatusCodes => MutableSettings.HttpClientErrorStatusCodes;
-
-        /// <inheritdoc cref="MutableSettings.ServiceNameMappings"/>
-        internal IReadOnlyDictionary<string, string> ServiceNameMappings => MutableSettings.ServiceNameMappings;
 
         /// <summary>
         /// Gets configuration values for changing peer service names based on configuration
@@ -1304,6 +1244,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public int PartialFlushMinSpans { get; }
 
+        internal SettingsManager Manager { get; }
+
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
@@ -1411,19 +1353,5 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
-
-        internal void CollectTelemetry(IConfigurationTelemetry destination)
-        {
-            // copy the current settings into telemetry
-            _telemetry.CopyTo(destination);
-
-            // If ExporterSettings has been replaced, it will have its own telemetry collector
-            // so we need to record those values too.
-            if (Exporter.Telemetry is { } exporterTelemetry
-             && exporterTelemetry != _telemetry)
-            {
-                exporterTelemetry.CopyTo(destination);
-            }
-        }
     }
 }

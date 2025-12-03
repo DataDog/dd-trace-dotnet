@@ -12,14 +12,14 @@ using IExternalScopeProvider = Microsoft.Extensions.Logging.IExternalScopeProvid
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent4]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ILoggerBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly ILogger Logger;
+        private Tracer _logInjectionTracer;
+        private ILogger _logger;
 
-        static ILoggerBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var logInjectionSettings = TracerSettings.Create(new()
             {
@@ -29,8 +29,8 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.ServiceVersion, "version" },
             });
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
 
             var services = new ServiceCollection();
             services.AddLogging();
@@ -39,17 +39,20 @@ namespace Benchmarks.Trace
 
             var serviceProvider = services.BuildServiceProvider();
 
-            Logger = serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
+            _logger = serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
+
+            // Warmup
+            EnrichedLog();
         }
 
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (_logInjectionTracer.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (_logInjectionTracer.StartActive("Child"))
                 {
-                    Logger.LogInformation("Hello");
+                    _logger.LogInformation("Hello");
                 }
             }
         }

@@ -161,7 +161,7 @@ internal static class RequestDataHelper
     /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
     internal static Uri? GetUrl(HttpRequest request)
     {
-        // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value
+        // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value.
         try
         {
             return request.Url;

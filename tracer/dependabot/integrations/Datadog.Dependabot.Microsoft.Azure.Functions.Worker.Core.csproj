@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
     <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Core/2.1.0 -->
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="2.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Core/2.50.0 -->
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="2.50.0" />
   </ItemGroup>
 
 </Project>

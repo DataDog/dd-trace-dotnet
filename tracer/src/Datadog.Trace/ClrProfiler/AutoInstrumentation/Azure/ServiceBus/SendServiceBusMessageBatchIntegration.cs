@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -61,8 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             // Create TryAdd message spans for batch with links when enabled
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false) &&
-                tracer.Settings.AzureServiceBusBatchLinksEnabled)
+            if (tracer.Settings.AzureServiceBusBatchLinksEnabled)
             {
                 messageScope = CreateAddMessageSpan(instance, message);
             }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 if (returnValue && instance != null)
                 {
-                    ServiceBusBatchSpanContext.AddMessageSpanContext(instance, state.Scope.Span.Context);
+                    BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
                 }
 
                 state.Scope.DisposeWithException(exception);

@@ -89,7 +89,7 @@ public partial class ExporterSettings
     {
         foreach (var key in keys)
         {
-            var value = configuration?.GetString(key);
+            var value = configuration?.GetString(key)?.Trim();
 
             if (value != null)
             {

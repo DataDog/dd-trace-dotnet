@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     public class RabbitMQTests : TracingIntegrationTest
     {
         public RabbitMQTests(ITestOutputHelper output)

@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tests.Telemetry;
 [TelemetryRestorer]
 public class TelemetryFactoryTests
 {
+    private const string GzipCompression = "gzip";
+
     [Fact]
     public void TelemetryFactory_DisabledIfTelemetryIsDisabled()
     {
@@ -37,7 +39,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -57,7 +60,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -81,7 +85,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -106,7 +111,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: false,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -131,7 +137,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
@@ -156,7 +163,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true);
 
@@ -185,7 +193,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: dependencyCollectionEnabled,
             metricsEnabled: true,
-            debugEnabled: false);
+            debugEnabled: false,
+            compressionMethod: GzipCompression);
 
         // First controller
         var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);

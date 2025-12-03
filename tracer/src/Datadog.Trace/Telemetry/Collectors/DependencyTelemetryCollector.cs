@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal void AssemblyLoaded(AssemblyName assembly, string moduleVersionId)
         {
             // exclude dlls we're not interested in which have a "random" component

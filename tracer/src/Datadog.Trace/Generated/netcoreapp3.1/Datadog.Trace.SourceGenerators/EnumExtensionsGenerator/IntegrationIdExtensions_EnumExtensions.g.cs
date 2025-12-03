@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 75;
+    public const int Length = 77;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -105,6 +105,8 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection => nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
             Datadog.Trace.Configuration.IntegrationId.Protobuf => nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs => nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
+            Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
             _ => value.ToString(),
         };
 
@@ -193,6 +195,8 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection,
             Datadog.Trace.Configuration.IntegrationId.Protobuf,
+            Datadog.Trace.Configuration.IntegrationId.AzureEventHubs,
+            Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
         };
 
     /// <summary>
@@ -281,5 +285,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
             nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
+            nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
         };
 }

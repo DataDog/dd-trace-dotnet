@@ -71,6 +71,8 @@ namespace Datadog.Trace.TestHelpers
 
         protected ITestOutputHelper Output { get; }
 
+        public ITestOutputHelper GetOutput() => Output;
+
         public virtual void Dispose()
         {
         }
@@ -209,12 +211,13 @@ namespace Datadog.Trace.TestHelpers
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
 
-            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
+            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode, standardError);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
+        public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
+            MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -262,6 +265,20 @@ namespace Datadog.Trace.TestHelpers
                                 .Replace("[DOTNET]", EnvironmentHelper.GetDotnetExe())
                                 .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
                                 .Replace("[HOSTING_MODEL]", hostingModel);
+            }
+
+            if (usePartialTrust || useLegacyCasModel)
+            {
+                const string defaultTrust = "<trust />";
+                var trust = (usePartialTrust, useLegacyCasModel) switch
+                {
+                    (true, true) => """<trust level="High" legacyCasModel="true" />""",
+                    (true, false) => """<trust level="High" />""",
+                    (false, true) => """<trust level="Full" legacyCasModel="true" />""",
+                    _ => defaultTrust,
+                };
+
+                configTemplate = configTemplate.Replace(defaultTrust, trust);
             }
 
             File.WriteAllText(newConfig, configTemplate);

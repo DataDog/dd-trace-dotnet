@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [UsesVerify]
     public class ServiceStackRedisTests : TracingIntegrationTest
     {

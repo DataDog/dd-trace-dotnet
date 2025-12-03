@@ -55,7 +55,6 @@ namespace Datadog.Trace.Configuration
         IEnumerator<IConfigurationSource> IEnumerable<IConfigurationSource>.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />
-        [PublicApi]
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />

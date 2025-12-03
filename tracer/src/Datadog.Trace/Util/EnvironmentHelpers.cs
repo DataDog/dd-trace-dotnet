@@ -104,7 +104,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAzureAppServices()
         {
-            return EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteNameKey);
+            return EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
         }
 
         /// <summary>
@@ -116,8 +116,8 @@ namespace Datadog.Trace.Util
         public static bool IsAzureFunctions()
         {
             return IsAzureAppServices() &&
-                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime) &&
-                   EnvironmentVariableExists(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
+                   EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
+                   EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Util
                               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) >= 0;
 
             return IsAzureFunctions()
-                   && string.Equals(GetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
+                   && string.Equals(GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty), "dotnet-isolated", StringComparison.Ordinal)
                    && !hasWorkerId;
         }
 
@@ -174,10 +174,10 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsGoogleCloudFunctions()
         {
-            return (EnvironmentVariableExists(ConfigurationKeys.GCPFunction.FunctionNameKey) &&
-                    EnvironmentVariableExists(ConfigurationKeys.GCPFunction.FunctionTargetKey)) ||
-                   (EnvironmentVariableExists(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) &&
-                    EnvironmentVariableExists(ConfigurationKeys.GCPFunction.DeprecatedProjectKey));
+            return (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
+                    EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
+                   (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
+                    EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey));
         }
 
         /// <summary>

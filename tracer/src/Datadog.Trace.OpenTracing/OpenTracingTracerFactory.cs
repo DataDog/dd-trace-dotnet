@@ -23,7 +23,6 @@ namespace Datadog.Trace.OpenTracing
         /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
-        [PublicApi]
         [Obsolete(DeprecationMessage)]
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -54,7 +53,6 @@ namespace Datadog.Trace.OpenTracing
         /// </summary>
         /// <param name="tracer">Existing Datadog Tracer instance</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
-        [PublicApi]
         [Obsolete(DeprecationMessage)]
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]

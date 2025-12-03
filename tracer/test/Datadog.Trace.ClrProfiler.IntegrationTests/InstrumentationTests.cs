@@ -472,7 +472,7 @@ namespace Foo
         // This condition should always point to the "next" version of .NET
         // e.g. if .NET 10 is in preview, use NET10_0_OR_GREATER.
         // Once .NET 10 goes GA, update this to NET11_0_OR_GREATER
-#if NET10_0_OR_GREATER
+#if NET11_0_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [Flaky("The creation of the app is flaky due to the .NET SDK: https://github.com/NuGet/Home/issues/14343")]

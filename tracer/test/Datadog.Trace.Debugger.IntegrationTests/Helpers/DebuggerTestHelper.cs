@@ -68,7 +68,7 @@ internal static class DebuggerTestHelper
         var listenUrl = $"{localHost}:{listenPort}/";
 
         var process = await helper.StartSample(agent, $"--test-name {testName} --listen-url {listenUrl}", string.Empty, aspNetCorePort: 5000);
-        var processHelper = new DebuggerSampleProcessHelper(listenUrl, process);
+        var processHelper = new DebuggerSampleProcessHelper(listenUrl, process, helper.GetOutput());
 
         return processHelper;
     }

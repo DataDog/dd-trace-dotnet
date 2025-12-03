@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -46,6 +47,23 @@ public class ConfigureIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
 
+        // There's an edge case in our APIs where if a user changes the agent URI to UDS on Windows
+        // then we can no longer use the trace exporter, but this is something that we assume is
+        // immutable today. To work around this edge case, we block updating the exporter settings to
+        // point to UDS when you're running on Windows. Note that it's fine to set to UDS _initially_,
+        // it's only _updating_ it to UDS on Windows that we block
+        if (FrameworkDescription.Instance.IsWindows()
+         && values.TryGetValue(TracerSettingKeyConstants.AgentUriKey, out var raw)
+         && raw is Uri uri
+         && uri.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            InvalidConfigurationException.Throw(
+                $"Error changing AgentUri. " +
+                "AgentUri can not be set to a UDS endpoint in code when running on Windows. " +
+                "If you need to use UDS on Windows, set the environment variable DD_TRACE_AGENT_URL instead to " +
+                "ensure the app starts with the correct configuration");
+        }
+
         // Is this from calling new TracerSettings() or TracerSettings.Global?
         var isFromDefaults = values.TryGetValue(TracerSettingKeyConstants.IsFromDefaultSourcesKey, out var value) && value is true;
 
@@ -55,69 +73,10 @@ public class ConfigureIntegration
                 ? new ManualInstrumentationLegacyConfigurationSource(values, isFromDefaults)
                 : new ManualInstrumentationConfigurationSource(values, isFromDefaults);
 
-        // We need to save this immediately, even if there's no manifest changes in the final settings
-        GlobalConfigurationSource.UpdateManualConfigurationSource(manualConfig);
-
-        var tracerSettings = Datadog.Trace.Tracer.Instance.Settings;
-        var dynamicConfig = GlobalConfigurationSource.DynamicConfigurationSource;
-        var initialSettings = isFromDefaults
-                                  ? tracerSettings.InitialMutableSettings
-                                  : MutableSettings.CreateWithoutDefaultSources(tracerSettings);
-
-        // TODO: these will eventually live elsewhere
-        var currentSettings = tracerSettings.MutableSettings;
-
-        var manualTelemetry = new ConfigurationTelemetry();
-        var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
-            dynamicConfig,
-            manualConfig,
-            initialSettings,
-            tracerSettings,
-            manualTelemetry,
-            new OverrideErrorLog()); // TODO: We'll later report these
-
-        var isSameMutableSettings = currentSettings.Equals(newMutableSettings);
-
-        // The only exporter setting we currently _allow_ to change is the AgentUri, but if that does change,
-        // it can mean that _everything_ about the exporter settings changes. To minimize the work to do, and
-        // to simplify comparisons, we try to read the agent url from the manual setting. If it's missing, not
-        // set, or unchanged, there's no need to update the exporter settings. In the future, ExporterSettings
-        // will live separate from TracerSettings entirely.
-        var exporterTelemetry = new ConfigurationTelemetry();
-        var newRawExporterSettings = ExporterSettings.Raw.CreateUpdatedFromManualConfig(
-            tracerSettings.Exporter.RawSettings,
-            manualConfig,
-            exporterTelemetry,
-            isFromDefaults);
-        var isSameExporterSettings = tracerSettings.Exporter.RawSettings.Equals(newRawExporterSettings);
-
-        if (isSameMutableSettings && isSameExporterSettings)
+        var wasUpdated = Datadog.Trace.Tracer.Instance.Settings.Manager.UpdateManualConfigurationSettings(manualConfig, TelemetryFactory.Config);
+        if (wasUpdated)
         {
-            Log.Debug("No changes detected in the new configuration in code");
-            // Even though there were no "real" changes, there may be _effective_ changes in telemetry that
-            // need to be recorded (e.g. the customer set the value in code but it was already set via
-            // env vars). We _should_ record exporter settings too, but that introduces a bunch of complexity
-            // which we'll resolve later anyway, so just have that gap for now (it's very niche).
-            // If there are changes, they're recorded automatically in ConfigureInternal
-            manualTelemetry.CopyTo(TelemetryFactory.Config);
-            return;
+            Log.Information("Setting updates made via configuration in code were applied");
         }
-
-        Log.Information("Applying new configuration in code");
-        TracerSettings newSettings;
-        if (isSameExporterSettings)
-        {
-            newSettings = tracerSettings with { MutableSettings = newMutableSettings };
-        }
-        else
-        {
-            var exporterSettings = new ExporterSettings(newRawExporterSettings, exporterTelemetry);
-            newSettings = isSameMutableSettings
-                              ? tracerSettings with { Exporter = exporterSettings }
-                              : tracerSettings with { MutableSettings = newMutableSettings, Exporter = exporterSettings };
-        }
-
-        // Update the global instance
-        Trace.Tracer.Configure(newSettings);
     }
 }

@@ -307,6 +307,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet472.LoaderOpt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CosmosDb", "tracer\test\test-applications\integrations\Samples.CosmosDb\Samples.CosmosDb.csproj", "{95613224-C1D7-4D4A-8926-F70DA26371CA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CosmosDb.Vnext", "tracer\test\test-applications\integrations\Samples.CosmosDb.Vnext\Samples.CosmosDb.Vnext.csproj", "{A1234567-C1D7-4D4A-8926-F70DA26371CA}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "tracer\build\_build\_build.csproj", "{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Owin.WebApi2", "tracer\test\test-applications\integrations\Samples.Owin.WebApi2\Samples.Owin.WebApi2.csproj", "{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}"
@@ -531,6 +533,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus.APM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.DataStreams.AzureServiceBus\Samples.DataStreams.AzureServiceBus.csproj", "{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureEventHubs", "tracer\test\test-applications\integrations\Samples.AzureEventHubs\Samples.AzureEventHubs.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D7}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet", "tracer\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj", "{B28A33A4-C694-4514-BC30-2680605B0B3D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.ArtifactTests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.ArtifactTests\Datadog.Trace.Tools.dd_dotnet.ArtifactTests.csproj", "{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}"
@@ -618,6 +622,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Quartz", "tracer\test\test-applications\integrations\Samples.Quartz\Samples.Quartz.csproj", "{CF69BC17-1527-425A-9B02-8E223BC31DB8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.HostLogsDisabled", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.HostLogsDisabled\Samples.AzureFunctions.V4Isolated.HostLogsDisabled.csproj", "{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1495,6 +1501,10 @@ Global
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1588,6 +1598,7 @@ Global
 		{94B50277-FB50-4B42-BA79-770ADB24CB80} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BBB60B0F-BF01-4499-936A-4A299A9ACFD4} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{95613224-C1D7-4D4A-8926-F70DA26371CA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{A1234567-C1D7-4D4A-8926-F70DA26371CA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{5450EA0B-56D3-4E29-932E-094AD037B345} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
@@ -1697,6 +1708,7 @@ Global
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BC44A41F-1BED-4438-9F66-0EA5607906D6} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{BC44A41F-1BED-4438-9F66-0EA5607906D7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B28A33A4-C694-4514-BC30-2680605B0B3D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{A9632530-0FB8-4156-BD3C-DD432527768E} = {8CEC2042-F11C-49F5-A674-2355793B600A}
@@ -1738,6 +1750,7 @@ Global
 		{BB073E40-F46D-E52B-662E-395EED834111} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{CF69BC17-1527-425A-9B02-8E223BC31DB8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

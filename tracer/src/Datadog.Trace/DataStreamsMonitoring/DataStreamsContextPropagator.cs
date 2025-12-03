@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
@@ -28,12 +29,8 @@ internal class DataStreamsContextPropagator
     /// </summary>
     /// <param name="context">A <see cref="PathwayContext"/> value that will be propagated into <paramref name="headers"/>.</param>
     /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
+    /// <param name="isDataStreamsLegacyHeadersEnabled">Are legacy DSM headers enabled</param>
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
-    public void Inject<TCarrier>(PathwayContext context, TCarrier headers)
-        where TCarrier : IBinaryHeadersCollection
-        => Inject(context, headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
-
-    // Internal for testing
     internal void Inject<TCarrier>(PathwayContext context, TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
         where TCarrier : IBinaryHeadersCollection
     {
@@ -79,7 +76,7 @@ internal class DataStreamsContextPropagator
         where TCarrier : IBinaryHeadersCollection
         => Extract(headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
 
-    // internal for testing
+    [TestingAndPrivateOnly]
     internal PathwayContext? Extract<TCarrier>(TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
         where TCarrier : IBinaryHeadersCollection
     {

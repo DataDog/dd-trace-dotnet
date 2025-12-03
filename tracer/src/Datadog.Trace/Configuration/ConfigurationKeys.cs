@@ -14,6 +14,14 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal static partial class ConfigurationKeys
     {
+        // temporary so that ConfigurationKeys2 can resolve reference, all this is removed later
+        public const string TraceLogPath = "DD_TRACE_LOG_PATH";
+
+        /// <summary>
+        /// Configuration key to enable or disable the ActivityListener.
+        /// </summary>
+        public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
         /// <summary>
         /// Configuration key to enable experimental features.
         /// </summary>
@@ -29,7 +37,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.Environment"/>
+        /// <seealso cref="MutableSettings.Environment"/>
         public const string Environment = "DD_ENV";
 
         /// <summary>
@@ -37,25 +45,25 @@ namespace Datadog.Trace.Configuration
         /// Used as the service name for top-level spans,
         /// and used to determine service name of some child spans.
         /// </summary>
-        /// <seealso cref="TracerSettings.ServiceName"/>
+        /// <seealso cref="MutableSettings.ServiceName"/>
         public const string ServiceName = "DD_SERVICE";
 
         /// <summary>
         /// Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.ServiceVersion"/>
+        /// <seealso cref="MutableSettings.ServiceVersion"/>
         public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
         /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.GitRepositoryUrl"/>
+        /// <seealso cref="MutableSettings.GitRepositoryUrl"/>
         public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
 
         /// <summary>
         /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.GitCommitSha"/>
+        /// <seealso cref="MutableSettings.GitCommitSha"/>
         public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
 
         /// <summary>
@@ -69,7 +77,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling or disabling the Tracer.
         /// Default is value is true (enabled).
         /// </summary>
-        /// <seealso cref="TracerSettings.TraceEnabled"/>
+        /// <seealso cref="MutableSettings.TraceEnabled"/>
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
@@ -101,7 +109,7 @@ namespace Datadog.Trace.Configuration
         /// Default is empty (all integrations are enabled).
         /// Supports multiple values separated with semi-colons.
         /// </summary>
-        /// <seealso cref="TracerSettings.DisabledIntegrationNames"/>
+        /// <seealso cref="MutableSettings.DisabledIntegrationNames"/>
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
@@ -142,7 +150,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
-        /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
+        /// <seealso cref="MutableSettings.AnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
@@ -151,27 +159,32 @@ namespace Datadog.Trace.Configuration
         /// Supports multiple key key-value pairs which are comma-separated, and for which the key and
         /// value are colon-separated. For example Key1:Value1, Key2:Value2
         /// </summary>
-        /// <seealso cref="TracerSettings.GlobalTags"/>
+        /// <seealso cref="MutableSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";
 
         /// <summary>
         /// Configuration key for a map of header keys to tag names.
         /// Automatically apply header values as tags on traces.
         /// </summary>
-        /// <seealso cref="TracerSettings.HeaderTags"/>
+        /// <seealso cref="MutableSettings.HeaderTags"/>
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
         /// Configuration key for a map of metadata keys to tag names.
         /// Automatically apply GRPC metadata values as tags on traces.
         /// </summary>
-        /// <seealso cref="TracerSettings.HeaderTags"/>
+        /// <seealso cref="MutableSettings.HeaderTags"/>
         public const string GrpcTags = "DD_TRACE_GRPC_TAGS";
+
+        /// <summary>
+        /// Propagate the process tags in every supported payload
+        /// </summary>
+        public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
         /// <summary>
         /// Configuration key for a map of services to rename.
         /// </summary>
-        /// <seealso cref="TracerSettings.ServiceNameMappings"/>
+        /// <seealso cref="MutableSettings.ServiceNameMappings"/>
         public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
 
         /// <summary>
@@ -189,14 +202,14 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling or disabling the automatic injection
         /// of correlation identifiers into the logging context.
         /// </summary>
-        /// <seealso cref="TracerSettings.LogsInjectionEnabled"/>
+        /// <seealso cref="MutableSettings.LogsInjectionEnabled"/>
         public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
 
         /// <summary>
         /// Configuration key for setting the number of traces allowed
         /// to be submitted per second.
         /// </summary>
-        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
         [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`")]
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
@@ -204,7 +217,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for setting the number of traces allowed
         /// to be submitted per second.
         /// </summary>
-        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="MutableSettings.MaxTracesSubmittedPerSecond"/>
         public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
         /// <summary>
@@ -234,7 +247,7 @@ namespace Datadog.Trace.Configuration
         ///
         /// If no rules are specified, or none match, default internal sampling logic will be used.
         /// </summary>
-        /// <seealso cref="TracerSettings.CustomSamplingRules"/>
+        /// <seealso cref="MutableSettings.CustomSamplingRules"/>
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
@@ -346,27 +359,27 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
-        /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
+        /// <seealso cref="MutableSettings.HttpServerErrorStatusCodes"/>
         [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_SERVER_ERROR_STATUSES`")]
         public const string DeprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
-        /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
+        /// <seealso cref="MutableSettings.HttpServerErrorStatusCodes"/>
         public const string HttpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
-        /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
+        /// <seealso cref="MutableSettings.HttpClientErrorStatusCodes"/>
         [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_CLIENT_ERROR_STATUSES`")]
         public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
-        /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
+        /// <seealso cref="MutableSettings.HttpClientErrorStatusCodes"/>
         public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
@@ -388,7 +401,7 @@ namespace Datadog.Trace.Configuration
         /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
         /// Default value is <c>true</c> (enabled).
         /// </summary>
-        /// <seealso cref="TracerSettings.KafkaCreateConsumerScopeEnabled"/>
+        /// <seealso cref="MutableSettings.KafkaCreateConsumerScopeEnabled"/>
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
@@ -406,6 +419,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
         public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling span links creation for Azure EventHubs batch operations.
+        /// When enabled, TryAdd spans are created and linked to the send span.
+        /// When disabled, TryAdd spans are not created, and therefore they are never linked to the send span.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.AzureEventHubsBatchLinksEnabled"/>
+        public const string AzureEventHubsBatchLinksEnabled = "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED";
 
         /// <summary>
         /// Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
@@ -586,6 +608,13 @@ namespace Datadog.Trace.Configuration
         public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
         /// <summary>
+        /// Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+        /// Default value is true (polling enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+        public const string AgentFeaturePollingEnabled = "DD_AGENT_FEATURE_POLLING_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -751,29 +780,6 @@ namespace Datadog.Trace.Configuration
             /// The list is space-separated.
             /// </summary>
             public const string ProxyNoProxy = "DD_PROXY_NO_PROXY";
-        }
-
-        /// <summary>
-        /// String format patterns used to match integration-specific configuration keys.
-        /// </summary>
-        public static class Integrations
-        {
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling an integration.
-            /// </summary>
-            public const string Enabled = "DD_TRACE_{0}_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for enabling or disabling Analytics in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
-
-            /// <summary>
-            /// Configuration key pattern for setting Analytics sampling rate in an integration.
-            /// </summary>
-            [Obsolete(DeprecationMessages.AppAnalytics)]
-            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
         }
 
         /// <summary>
@@ -961,6 +967,12 @@ namespace Datadog.Trace.Configuration
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
 
             /// <summary>
+            /// Configuration key to allow telemetry compression.
+            /// <see cref="TelemetrySettings.CompressionMethod"/>
+            /// </summary>
+            public const string TelemetryCompressionMethod = "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD";
+
+            /// <summary>
             /// Configuration key for whether to enable redacted error log collection.
             /// </summary>
             public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
@@ -990,7 +1002,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
             /// false by default if DSM is in default state, true otherwise
             /// </summary>
-             /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+            /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
             public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
         }
     }

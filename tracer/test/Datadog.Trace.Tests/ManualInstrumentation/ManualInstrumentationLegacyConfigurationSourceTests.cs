@@ -31,7 +31,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(ConfigurationKeys.Integrations.Enabled, name);
+        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabled, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationEnabled(enabledKey);
 
@@ -44,7 +44,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, name);
+        var enabledKey = string.Format(IntegrationSettings.AnalyticsEnabledKey, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationAnalyticsEnabled(enabledKey);
 
@@ -57,7 +57,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(ConfigurationKeys.Integrations.Enabled, name);
+        var enabledKey = string.Format(IntegrationSettings.IntegrationEnabled, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationEnabled(enabledKey);
 
@@ -70,7 +70,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, name);
+        var enabledKey = string.Format(IntegrationSettings.AnalyticsEnabledKey, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationAnalyticsEnabled(enabledKey);
 
@@ -83,7 +83,7 @@ public class ManualInstrumentationLegacyConfigurationSourceTests
     {
         var integrationId = (IntegrationId)id;
         var name = IntegrationRegistry.GetName(integrationId).ToUpperInvariant();
-        var enabledKey = string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, name);
+        var enabledKey = string.Format(IntegrationSettings.AnalyticsSampleRateKey, name);
 
         var actual = ManualInstrumentationLegacyConfigurationSource.GetIntegrationAnalyticsSampleRate(enabledKey);
 

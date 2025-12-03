@@ -19,6 +19,7 @@
 #include "IAllocationsListener.h"
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
+#include "IGCDumpListener.h"
 
 #include "../../../../shared/src/native-src/string.h"
 #include "assert.h"
@@ -50,6 +51,9 @@ const int EVENT_GC_PINOBJECTATGCTIME = 33;
 
 const int EVENT_SW_STACK = 82;
 
+// events sent during heap dumps
+const int EVENT_GC_BULK_NODE = 18;
+const int EVENT_GC_BULK_EDGE = 19;
 
 
 #define LONG_LENGTH 1024
@@ -233,6 +237,9 @@ struct GCGlobalHeapPayload
     uint32_t Gen0ReductionCount;
     uint32_t Reason;
     uint32_t GlobalMechanisms;
+    uint16_t ClrInstanceID;
+    uint32_t PauseMode;
+    uint32_t MemPressure;
 };
 
 struct WaitHandleWaitStartPayload // for .NET 9+
@@ -246,7 +253,9 @@ struct WaitHandleWaitStopPayload // for .NET 9+
 {
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
 };
+
 #pragma pack()
+
 
 class IContentionListener;
 
@@ -264,6 +273,7 @@ struct GCDetails
     uint64_t gen2Size;
     uint64_t lohSize;
     uint64_t pohSize;
+    uint32_t memPressure;
 
     // GlobalHeapHistory and HeapStats events are not received in the same order
     // between Framework and CoreCLR. So we need to keep track of what has been received
@@ -276,6 +286,7 @@ class ClrEventsParser
 public:
     static const int64_t KEYWORD_GC =                             0x1;
     static const int64_t KEYWORD_CONTENTION =                  0x4000;
+    static const int64_t KEYWORD_GCHEAPDUMP =                0x100000; // for gcdump
     static const int64_t KEYWORD_WAITHANDLE =           0x40000000000; // .NET 9+ only
     static const int64_t KEYWORD_ALLOCATION_SAMPLING =  0x80000000000; // .NET 10+ only
 
@@ -283,9 +294,9 @@ public:
     ClrEventsParser(
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
-        IGCSuspensionsListener* pGCSuspensionsListener
+        IGCSuspensionsListener* pGCSuspensionsListener,
+        IGCDumpListener* pGCDumpListener
         );
-
 
     // the parser is used both for synchronous (ICorProfilerCallback) and
     // asynchronous (.NET Framework via the Agent) cases. The timestamp parameter
@@ -335,7 +346,8 @@ private:
         std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
-        uint64_t pohSize
+        uint64_t pohSize,
+        uint32_t memPressure
         );
     GCDetails& GetCurrentGC();
     void InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload);
@@ -346,6 +358,7 @@ private:
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
+    IGCDumpListener* _pGCDumpListener = nullptr;
 
     template <typename... Args>
     void LogGcEvent(Args const&... args);

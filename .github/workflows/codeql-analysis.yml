@@ -14,6 +14,8 @@ jobs:
   profiler:
     name: Analyze Profiler
     runs-on: ubuntu-latest
+    # Temporarily disabled
+    if: false
     permissions:
       actions: read
       contents: read
@@ -33,7 +35,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+      uses: github/codeql-action/init@0499de31b99561a6d14a36a5f662c2a54f91beee # v4.31.2
       with:
         languages: csharp, cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -54,7 +56,7 @@ jobs:
         ./tracer/build.sh BuildProfilerHome BuildNativeLoader
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+      uses: github/codeql-action/analyze@0499de31b99561a6d14a36a5f662c2a54f91beee # v4.31.2
 
     - name: filter-sarif cpp
       uses: advanced-security/filter-sarif@f3b8118a9349d88f7b1c0c488476411145b6270d # v1.0.1
@@ -90,6 +92,8 @@ jobs:
   tracer:
     name: Analyze Tracer
     runs-on: ubuntu-latest
+    # Temporarily disabled
+    if: false
     permissions:
       actions: read
       contents: read
@@ -109,7 +113,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+      uses: github/codeql-action/init@0499de31b99561a6d14a36a5f662c2a54f91beee # v4.31.2
       with:
         languages: csharp, cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -130,7 +134,7 @@ jobs:
         ./tracer/build.sh BuildTracerHome
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+      uses: github/codeql-action/analyze@0499de31b99561a6d14a36a5f662c2a54f91beee # v4.31.2
 
     - name: filter-sarif cpp
       uses: advanced-security/filter-sarif@f3b8118a9349d88f7b1c0c488476411145b6270d # v1.0.1

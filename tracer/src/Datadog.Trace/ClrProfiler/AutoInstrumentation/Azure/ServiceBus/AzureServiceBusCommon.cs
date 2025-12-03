@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         {
             var tracer = Tracer.Instance;
             var perTraceSettings = tracer.CurrentTraceSettings;
-            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 return new CallTargetState(null);
             }
@@ -171,6 +171,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 tags.NetworkDestinationPort = networkDestinationPort;
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
 
             return new CallTargetState(scope);
         }

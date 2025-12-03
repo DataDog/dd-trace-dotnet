@@ -24,12 +24,12 @@ internal static class EnvironmentHelpersNoLogging
         Exception? firstException = null;
 
         var isServerless = CheckEnvVar(LambdaMetadata.FunctionNameEnvVar, ref firstException)
-                        || (CheckEnvVar(ConfigurationKeys.AzureAppService.SiteNameKey, ref firstException)
+                        || (CheckEnvVar(PlatformKeys.AzureAppService.SiteNameKey, ref firstException)
                          && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
-                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionNameKey, ref firstException)
-                         && CheckEnvVar(ConfigurationKeys.GCPFunction.FunctionTargetKey, ref firstException))
-                        || (CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, ref firstException)
-                         && CheckEnvVar(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, ref firstException));
+                        || (CheckEnvVar(PlatformKeys.GcpFunction.FunctionNameKey, ref firstException)
+                         && CheckEnvVar(PlatformKeys.GcpFunction.FunctionTargetKey, ref firstException))
+                        || (CheckEnvVar(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey, ref firstException)
+                         && CheckEnvVar(PlatformKeys.GcpFunction.DeprecatedProjectKey, ref firstException));
 
         exceptionInReading = firstException;
         return isServerless;

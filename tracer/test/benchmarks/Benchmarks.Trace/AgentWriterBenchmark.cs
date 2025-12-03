@@ -8,62 +8,90 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]
-    [BenchmarkCategory(Constants.TracerCategory)]
-
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
 
-        private static readonly IAgentWriter AgentWriter;
-        private static readonly ArraySegment<Span> EnrichedSpans;
-        static AgentWriterBenchmark()
+        private IAgentWriter _agentWriter;
+        private IAgentWriter _agentWriterNoOpFlush;
+        private ArraySegment<Span> _enrichedSpans;
+
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            var overrides = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
-                { ConfigurationKeys.TraceEnabled, false.ToString() },
-            });
-            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
-            var settings = new TracerSettings(sources);
-
-            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
-
-            AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
-
+            // Create spans in GlobalSetup, not static constructor
+            // This ensures BenchmarkDotNet excludes allocation overhead from measurements
             var enrichedSpans = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
             for (int i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
-                enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
+                var tags = new SqlTags()
+                {
+                    DbType = "sql-server",
+                    InstrumentationName = nameof(IntegrationId.SqlClient),
+                };
+                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now, tags);
+                enrichedSpans[i].SetTag("somekey", "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            EnrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
 
-            // Run benchmarks once to reduce noise
-            new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+            var sources = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
+                { ConfigurationKeys.TraceEnabled, false.ToString() },
+            });
+            var settings = new TracerSettings(sources);
+
+            var api = new Api(
+                new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
+                statsd: new StatsdManager(settings, (_, _) => null!),
+                updateSampleRates: null,
+                partialFlushEnabled: false,
+                healthMetricsEnabled: false);
+
+            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
+            var noopApi = new NullApi();
+            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
+            _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
+
+            // Warmup to reduce noise
+            WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Write realistic traces, but don't flush, to isolate overhead from serialization only
+        /// </summary>
+        [Benchmark]
+        public Task WriteEnrichedTraces()
+        {
+            _agentWriterNoOpFlush.WriteTrace(_enrichedSpans);
+            // Flush os that we clear the buffer
+            return _agentWriterNoOpFlush.FlushTracesAsync();
         }
 
         /// <summary>
         /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
         /// </summary>
         [Benchmark]
+        [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
         public Task WriteAndFlushEnrichedTraces()
         {
-            AgentWriter.WriteTrace(EnrichedSpans);
-            return AgentWriter.FlushTracesAsync();
+            _agentWriter.WriteTrace(_enrichedSpans);
+            return _agentWriter.FlushTracesAsync();
         }
 
         /// <summary>
-        /// Try to mimick as much as possible the overhead of the ApiWebRequestFactory,
+        /// Try to mimic as much as possible the overhead of the ApiWebRequestFactory,
         /// without actually sending the requests
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
@@ -174,5 +202,18 @@ namespace Benchmarks.Trace
             {
             }
         }
+
+            private class NullApi : IApi
+            {
+                public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
+                {
+                    return Task.FromResult(true);
+                }
+
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                {
+                    return Task.FromResult(true);
+                }
+            }
     }
 }

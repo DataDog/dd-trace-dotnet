@@ -17,13 +17,25 @@ namespace Benchmarks.Trace.Asm
 {
     public class EmptyDatadogTracer : IDatadogTracer
     {
+        public static readonly EmptyDatadogTracer Instance = new();
+
+        private readonly IGitMetadataTagsProvider _gitMetadata;
+        private readonly PerTraceSettings _perTraceSettings;
+
+        public EmptyDatadogTracer()
+        {
+            Settings = new(new NullConfigurationSource());
+            _gitMetadata = new NullGitMetadataProvider();
+            _perTraceSettings = new PerTraceSettings(null, null, null, Settings.Manager.InitialMutableSettings);
+        }
+
         public string DefaultServiceName => "My Service Name";
 
-        public TracerSettings Settings => new(new NullConfigurationSource());
+        public TracerSettings Settings { get; }
 
-        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => new NullGitMetadataProvider();
+        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => _gitMetadata;
 
-        PerTraceSettings IDatadogTracer.PerTraceSettings => null;
+        PerTraceSettings IDatadogTracer.PerTraceSettings => _perTraceSettings;
 
         void IDatadogTracer.Write(ArraySegment<Span> span)
         {

@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -30,19 +32,25 @@ internal class OtlpExporter : IOtlpExporter
     private readonly HttpClient _httpClient;
     private readonly OtlpGrpcExportClient? _grpcClient;
     private readonly OtlpHttpExportClient? _httpExportClient;
-    private readonly Uri _endpoint;
     private readonly IReadOnlyDictionary<string, string> _headers;
     private readonly int _timeoutMs;
     private readonly OtlpProtocol _protocol;
-    private readonly TracerSettings _settings;
+    private OtlpLogsSerializer.ResourceTags _resourceTags;
 
     public OtlpExporter(TracerSettings settings)
     {
-        _settings = settings;
-        _endpoint = settings.OtlpLogsEndpoint;
+        var endpoint = settings.OtlpLogsEndpoint;
         _headers = settings.OtlpLogsHeaders;
         _timeoutMs = settings.OtlpLogsTimeoutMs;
         _protocol = settings.OtlpLogsProtocol;
+        UpdateResourceTags(settings.Manager.InitialMutableSettings);
+        settings.Manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } mutable)
+            {
+                UpdateResourceTags(mutable);
+            }
+        });
 
         _httpClient = CreateHttpClient();
 
@@ -50,7 +58,7 @@ internal class OtlpExporter : IOtlpExporter
         {
             var opt = new OtlpExporterOptions
             {
-                Endpoint = _endpoint,
+                Endpoint = endpoint,
                 TimeoutMilliseconds = _timeoutMs,
                 Protocol = (OtlpExportProtocol)_protocol,
                 AppendSignalPathToEndpoint = true
@@ -68,7 +76,7 @@ internal class OtlpExporter : IOtlpExporter
         {
             var opt = new OtlpExporterOptions
             {
-                Endpoint = _endpoint,
+                Endpoint = endpoint,
                 TimeoutMilliseconds = _timeoutMs,
                 Protocol = (OtlpExportProtocol)_protocol,
                 AppendSignalPathToEndpoint = false // HTTP endpoint already includes /v1/logs
@@ -81,6 +89,17 @@ internal class OtlpExporter : IOtlpExporter
 
             const string logsHttpPath = "v1/logs";
             _httpExportClient = new OtlpHttpExportClient(opt, _httpClient, logsHttpPath);
+        }
+
+        [MemberNotNull(nameof(_resourceTags))]
+        void UpdateResourceTags(MutableSettings mutable)
+        {
+            var newTags = new OtlpLogsSerializer.ResourceTags(
+                serviceName: mutable.DefaultServiceName,
+                environment: mutable.Environment,
+                serviceVersion: mutable.ServiceVersion,
+                globalTags: mutable.GlobalTags);
+            Interlocked.Exchange(ref _resourceTags, newTags);
         }
     }
 
@@ -166,7 +185,7 @@ internal class OtlpExporter : IOtlpExporter
             // For gRPC, reserve 5 bytes at the start for the frame header (added later)
             // For HTTP, start at position 0
             var startPosition = _protocol == OtlpProtocol.Grpc ? 5 : 0;
-            var otlpPayload = OtlpLogsSerializer.SerializeLogs(logs, _settings, startPosition);
+            var otlpPayload = OtlpLogsSerializer.SerializeLogs(logs, _resourceTags, startPosition);
 
             return _protocol switch
             {
@@ -187,12 +206,12 @@ internal class OtlpExporter : IOtlpExporter
         try
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
-            var resp = _httpExportClient!.SendExportRequest(
+            var resp = _httpExportClient?.SendExportRequest(
                 otlpPayload,
                 otlpPayload.Length,
                 deadline);
 
-            return Task.FromResult(resp.Success);
+            return Task.FromResult(resp is { Success: true });
         }
         catch (Exception ex)
         {
@@ -218,11 +237,11 @@ internal class OtlpExporter : IOtlpExporter
                 (uint)dataLength);
 
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
-            var resp = _grpcClient!.SendExportRequest(
+            var resp = _grpcClient?.SendExportRequest(
                 otlpPayload,
                 otlpPayload.Length,
                 deadline);
-            return Task.FromResult(resp.Success);
+            return Task.FromResult(resp is { Success: true });
         }
         catch (Exception ex)
         {

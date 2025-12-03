@@ -23,7 +23,7 @@ internal class LogPoint
 
     public int LogLevel { get; set; }
 
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     public string? LoggerName { get; set; }
 
