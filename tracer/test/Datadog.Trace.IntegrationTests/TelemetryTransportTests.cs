@@ -86,12 +86,12 @@ namespace Datadog.Trace.IntegrationTests
                 { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
             };
 
-            if (ContainerMetadata.GetContainerId() is { } containerId)
+            if (ContainerMetadata.Instance.ContainerId is { } containerId)
             {
                 allExpected.Add("Datadog-Container-ID", containerId);
             }
 
-            if (ContainerMetadata.GetEntityId() is { } entityId)
+            if (ContainerMetadata.Instance.EntityId is { } entityId)
             {
                 allExpected.Add("Datadog-Entity-ID", entityId);
             }

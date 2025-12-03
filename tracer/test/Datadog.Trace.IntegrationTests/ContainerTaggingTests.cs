@@ -51,7 +51,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
 
-                var expectedContainedId = ContainerMetadata.GetContainerId();
+                var expectedContainedId = ContainerMetadata.Instance.ContainerId;
                 if (expectedContainedId == null)
                 {
                     // we don't extract the containerId in some cases, such as when running on Windows.
@@ -63,7 +63,7 @@ namespace Datadog.Trace.IntegrationTests
                     headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
                 }
 
-                var expectedEntitydId = ContainerMetadata.GetEntityId();
+                var expectedEntitydId = ContainerMetadata.Instance.EntityId;
                 if (expectedEntitydId == null)
                 {
                     // we don't extract the entityId in some cases, such as when running on Windows.
