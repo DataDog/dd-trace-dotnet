@@ -16,27 +16,20 @@ using Logger = Serilog.Core.Logger;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent5]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class SerilogBenchmark
     {
         private Logger _logger;
-        private Tracer _logInjectionTracer;
         private LogEvent _logEvent;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
+            var settings = TracerHelper.DefaultConfig;
+            settings[ConfigurationKeys.LogsInjectionEnabled] = true;
+            settings[ConfigurationKeys.Environment] = "env";
+            settings[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(settings);
 
             var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
@@ -57,12 +50,19 @@ namespace Benchmarks.Trace
             EnrichedLog();
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _logger.Dispose();
+            TracerHelper.CleanupGlobalTracer();
+        }
+
         [Benchmark]
         public void EnrichedLog()
         {
-            using (_logInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (_logInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
                     // equivalent of auto-instrumentation
                     LoggerDispatchInstrumentation.OnMethodBegin(_logger, _logEvent);

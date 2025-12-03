@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+extern alias AnalyzerCodeFixes;
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -10,7 +12,7 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.LogAnalyzer.LogAnalyzer,
-    Datadog.Trace.Tools.Analyzers.LogAnalyzer.PascalCaseCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.LogAnalyzer.PascalCaseCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;

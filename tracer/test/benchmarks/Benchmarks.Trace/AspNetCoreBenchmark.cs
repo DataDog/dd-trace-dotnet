@@ -1,13 +1,23 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
+using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Security.Unit.Tests.Iast;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -17,29 +27,50 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent2]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class AspNetCoreBenchmark
     {
         private HttpClient _client;
+        private Tracer _tracer;
+        private Security _security;
+        private Datadog.Trace.Iast.Iast _iast;
+        private SpanCodeOrigin _spanCodeOrigin;
+        private DiagnosticManager _diagnosticManager;
+        private TestServer _testServer;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
+            var config = new CustomSettingsForTests(TracerHelper.DefaultConfig);
+            var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+            _tracer = TracerHelper.CreateTracer(settings);
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
             var builder = new WebHostBuilder()
                 .UseStartup<Startup>();
 
-            var testServer = new TestServer(builder);
-            _client = testServer.CreateClient();
+            _testServer = new TestServer(builder);
+            _client = _testServer.CreateClient();
 
-            Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
+            var observers = new List<DiagnosticObserver>();
+            _spanCodeOrigin = new SpanCodeOrigin(new DebuggerSettings(config, NullConfigurationTelemetry.Instance));
+            observers.Add(new AspNetCoreDiagnosticObserver(_tracer, _security, _iast, _spanCodeOrigin));
+            _diagnosticManager = new DiagnosticManager(observers);
+            _diagnosticManager.Start();
 
             // Warmup to initialize middleware pipeline
             SendRequest();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _diagnosticManager.Dispose();
+            _testServer.Dispose();
+            _security.Dispose();
+            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
         }
 
         [Benchmark]
@@ -99,6 +130,11 @@ namespace Benchmarks.Trace
     {
         [GlobalSetup]
         public void GlobalSetup()
+        {
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
         {
         }
 

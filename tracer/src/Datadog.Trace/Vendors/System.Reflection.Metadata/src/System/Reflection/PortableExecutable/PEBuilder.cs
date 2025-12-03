@@ -110,7 +110,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutab
 
 
     #nullable enable
+// CUSTOMIZATION TO AVOID unsafe allocation with every access in .NET Framework
+#if NETCOREAPP
       private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
+#else
+      private static readonly byte[] DosHeader = new byte[DosHeaderSize]
+#endif
       {
           0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00,
           0x04, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,

@@ -15,23 +15,59 @@ namespace Datadog.Trace.Tagging
     partial class AzureServiceBusTags
     {
         // AnalyticsSampleRateBytes = MessagePack.Serialize("_dd1.sr.eausr");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
+#else
+        private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
+#endif
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#else
+        private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MessagingSourceNameBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
+#endif
         // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MessagingDestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // LegacyMessageBusDestinationBytes = MessagePack.Serialize("message_bus.destination");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> LegacyMessageBusDestinationBytes => new byte[] { 183, 109, 101, 115, 115, 97, 103, 101, 95, 98, 117, 115, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] LegacyMessageBusDestinationBytes = new byte[] { 183, 109, 101, 115, 115, 97, 103, 101, 95, 98, 117, 115, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+#endif
         // NetworkDestinationNameBytes = MessagePack.Serialize("network.destination.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NetworkDestinationNameBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] NetworkDestinationNameBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] NetworkDestinationPortBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+#endif
         // ServerAddressBytes = MessagePack.Serialize("server.address");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ServerAddressBytes => new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#else
+        private static readonly byte[] ServerAddressBytes = new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#endif
 
         public override string? GetTag(string key)
         {

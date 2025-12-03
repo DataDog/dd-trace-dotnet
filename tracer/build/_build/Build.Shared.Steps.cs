@@ -310,7 +310,7 @@ partial class Build
             // See also the ValidateNativeProfilerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
             var expectedGlibcVersion = IsArm64
-                ? new Version(2, 18)
+                ? new Version(2, 17)
                 : new Version(2, 17);
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);

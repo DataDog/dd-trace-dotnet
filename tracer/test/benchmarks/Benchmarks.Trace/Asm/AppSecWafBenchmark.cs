@@ -20,8 +20,7 @@ using Datadog.Trace.Configuration.Telemetry;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+[BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class AppSecWafBenchmark
 {
@@ -58,6 +57,14 @@ public class AppSecWafBenchmark
         _stage1Attack = MakeRealisticNestedMapStage1(true);
         _stage2 = MakeRealisticNestedMapStage2();
         _stage3 = MakeRealisticNestedMapStage3();
+    }
+
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+        AppSecBenchmarkUtils.CleanupDummyAgent();
+        AppSecBenchmarkUtils.CleanupWafLibraryInvoker();
+        _waf?.Dispose();
     }
 
     [IterationSetup]
