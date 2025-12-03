@@ -88,12 +88,12 @@ namespace Datadog.Trace.IntegrationTests
 
             if (ContainerMetadata.Instance.ContainerId is { } containerId)
             {
-                allExpected.Add("Datadog-Container-ID", containerId);
+                allExpected.Add(AgentHttpHeaderNames.ContainerId, containerId);
             }
 
             if (ContainerMetadata.Instance.EntityId is { } entityId)
             {
-                allExpected.Add("Datadog-Entity-ID", entityId);
+                allExpected.Add(AgentHttpHeaderNames.EntityId, entityId);
             }
 
             if (agentless)
