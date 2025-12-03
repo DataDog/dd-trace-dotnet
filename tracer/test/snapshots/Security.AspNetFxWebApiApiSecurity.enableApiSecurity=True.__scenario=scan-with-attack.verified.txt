@@ -41,7 +41,7 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded-for: 86.242.244.246,
-      http.response.headers.content-length: 167,
+      http.response.headers.content-length: 231,
       http.response.headers.content-type: application/json; charset=utf-8,
       http.route: api/home/api-security/{id},
       http.status_code: 403,
