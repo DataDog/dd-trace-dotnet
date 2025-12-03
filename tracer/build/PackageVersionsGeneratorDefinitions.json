@@ -431,6 +431,9 @@
       "10.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "10.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    },{
       "MaxVersionExclusive": "5.0.0",
       "IncludeOnlyTargetFrameworks": ["net48"]
     },{
