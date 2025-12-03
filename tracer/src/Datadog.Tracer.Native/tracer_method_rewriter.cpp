@@ -210,11 +210,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         if (caller->type.valueType)
         {
-            // Static methods in a ValueType are supported by:
-            // - adding a local for the valuetype, and
-            // - initializing it to the default value.
-            Logger::Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType can now be instrumented. Load instance for begin. ");
-            Logger::Warn("*** CallTarget_RewriterCallback(): staticValueTypeIndex: ", staticValueTypeIndex);
             reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
             if (caller->type.type_spec != mdTypeSpecNil)
             {
@@ -234,6 +229,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                 // We can't emit LoadObj or Box because that would result in an invalid IL.
                 // This problem doesn't occur on a class type because we can always relay in the
                 // object type.
+                Logger::Warn("*** CallTarget_RewriterCallback(): Generic struct (struct TypeName<T>) instrumentation is not supported.");
                 return S_FALSE;
             }
 
@@ -530,11 +526,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         if (caller->type.valueType)
         {
-            // Static methods in a ValueType are supported by:
-            // - adding a local for the valuetype, and
-            // - initializing it to the default value.
-            Logger::Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType can now be instrumented. Load instance for return. ");
-            Logger::Warn("*** CallTarget_RewriterCallback(): staticValueTypeIndex: ", staticValueTypeIndex);
             endMethodTryStartInstr = reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
             if (caller->type.type_spec != mdTypeSpecNil)
             {
@@ -554,6 +545,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                 // We can't emit LoadObj or Box because that would result in an invalid IL.
                 // This problem doesn't occur on a class type because we can always relay in the
                 // object type.
+                Logger::Warn("*** CallTarget_RewriterCallback(): Generic struct (struct TypeName<T>) instrumentation is not supported.");
                 return S_FALSE;
             }
 
