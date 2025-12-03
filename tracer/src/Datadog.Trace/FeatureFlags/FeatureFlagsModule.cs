@@ -63,9 +63,11 @@ namespace Datadog.Trace.FeatureFlags
                 Log.Debug("FeatureFlagsModule ENABLED");
                 _enabled = true;
                 _ffeProduct = new FfeProduct(UpdateConfig);
-                _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
-                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
-                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
+                if (Interlocked.Exchange(ref _rcmSubscription, new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags)) == null)
+                {
+                    _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
+                    _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+                }
             }
         }
 
