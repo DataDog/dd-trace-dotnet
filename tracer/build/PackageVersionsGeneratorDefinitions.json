@@ -423,12 +423,12 @@
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "11.0.0",
     "SpecificVersions": [
       "4.*.*",
-      "5.*.*",
       "6.*.*",
-      "8.*.*"
+      "8.*.*",
+      "10.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
