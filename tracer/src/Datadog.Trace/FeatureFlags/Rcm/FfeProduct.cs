@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class FfeProduct
 {
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FfeProduct));
+
     private readonly Action<List<KeyValuePair<string, ServerConfiguration>>> _onNewConfig;
     private List<KeyValuePair<string, ServerConfiguration>> _serverConfigurations = new List<KeyValuePair<string, ServerConfiguration>>();
 
@@ -27,6 +30,7 @@ internal class FfeProduct
 
     public ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
+        Log.Debug("FfeProduct::UpdateFromRcm -> Processing new config...");
         List<ApplyDetails> res = new List<ApplyDetails>();
         bool apply = false;
 

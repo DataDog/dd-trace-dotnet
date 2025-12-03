@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -31,9 +32,6 @@ public class FeatureFlagsTests : TestHelper
     public FeatureFlagsTests(ITestOutputHelper output)
         : base("FeatureFlags", output)
     {
-        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
-
 #pragma warning disable CS0618 // Type or member is obsolete
         EnableDebugMode();
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -53,7 +51,7 @@ public class FeatureFlagsTests : TestHelper
                 {
                     Flags = FeatureFlagsHelpers.CreateAllFlags(),
                 },
-                "FFE_FLAGS",
+                RcmProducts.FfeFlags,
                 nameof(FeatureFlagsTests))
             ],
             timeoutInMilliseconds: 5000);
@@ -82,6 +80,7 @@ public class FeatureFlagsTests : TestHelper
 
     private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
     {
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "1");
         SetEnvironmentVariable("DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED", enabled ? "1" : "0");
         using var telemetry = this.ConfigureTelemetry();
         using var assert = new AssertionScope();
