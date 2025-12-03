@@ -1,4 +1,6 @@
-﻿# To build this file locally, starting from the root directory:
+﻿# To update and deploy this image, see UPDATING_IMAGE.md
+#
+# To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
 # docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
 # docker push datadog/dd-trace-dotnet-docker-build:dotnet10
