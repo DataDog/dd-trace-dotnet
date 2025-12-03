@@ -35,8 +35,12 @@ public class FeatureFlagsTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task EnabledNoConfig()
     {
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         var output = await RunTest();
         Assert.NotNull(output);
+        Assert.Contains("<INSTRUMENTED>", output);
     }
 
     /*

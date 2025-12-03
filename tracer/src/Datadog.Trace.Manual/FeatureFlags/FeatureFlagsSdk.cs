@@ -21,6 +21,14 @@ public static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
 
+    /// <summary> Installs an event handler to be fired when a new config has been received </summary>
+    /// <param name="onNewConfig"> Action to be called when the event is fired </param>
+    [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
+    {
+    }
+
     /// <summary>
     /// Sets the details of a successful login on the local root span
     /// </summary>
