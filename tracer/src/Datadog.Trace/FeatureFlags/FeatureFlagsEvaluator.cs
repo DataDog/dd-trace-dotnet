@@ -52,14 +52,19 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
-        public Evaluation<T> Evaluate<T>(string key, T defaultValue, EvaluationContext context)
+        public Evaluation Evaluate<T>(string key, T defaultValue, EvaluationContext context)
+        {
+            return Evaluate(key, typeof(T), defaultValue, context);
+        }
+
+        public Evaluation Evaluate(string key, Type resultType, object? defaultValue, EvaluationContext context)
         {
             try
             {
                 var config = _config;
                 if (config == null)
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.ERROR,
                         error: "PROVIDER_NOT_READY",
@@ -71,7 +76,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (context == null)
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.ERROR,
                         error: "INVALID_CONTEXT",
@@ -83,7 +88,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (string.IsNullOrEmpty(context.TargetingKey))
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.ERROR,
                         error: "TARGETING_KEY_MISSING",
@@ -95,7 +100,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (config.Flags is null || !config.Flags.TryGetValue(key, out var flag) || flag is null)
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.ERROR,
                         error: "FLAG_NOT_FOUND",
@@ -107,14 +112,14 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (!flag.Enabled is true)
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.DISABLED);
                 }
 
                 if (flag.Allocations is { Count: 0 })
                 {
-                    return new Evaluation<T>(
+                    return new Evaluation(
                         defaultValue,
                         EvaluationReason.ERROR,
                         error: "Missing allocations",
@@ -149,7 +154,7 @@ namespace Datadog.Trace.FeatureFlags
                         {
                             if (split.Shards is { Count: 0 })
                             {
-                                return ResolveVariant(key, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
+                                return ResolveVariant(key, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
                             }
 
                             var allShardsMatch = true;
@@ -164,21 +169,21 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(key, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
+                                return ResolveVariant(key, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
                             }
                         }
                     }
                 }
 
                 // No allocation / split matched – use default
-                return new Evaluation<T>(
+                return new Evaluation(
                     defaultValue,
                     EvaluationReason.DEFAULT);
             }
             catch (FormatException ex)
             {
                 Log.Debug(ex, "Evaluation failed for key {Key}", key);
-                return new Evaluation<T>(
+                return new Evaluation(
                     defaultValue,
                     EvaluationReason.ERROR,
                     error: "TYPE_MISMATCH",
@@ -190,7 +195,7 @@ namespace Datadog.Trace.FeatureFlags
             catch (Exception ex)
             {
                 Log.Debug(ex, "Evaluation failed for key {Key}", key);
-                return new Evaluation<T>(
+                return new Evaluation(
                     defaultValue,
                     EvaluationReason.ERROR,
                     error: ex.Message,
@@ -444,14 +449,17 @@ namespace Datadog.Trace.FeatureFlags
             return context.ConvertValue(resolved) ?? resolved;
         }
 
-        internal static T MapValue<T>(object? value)
+        internal static object? MapValue<T>(object? value)
+        {
+            return MapValue(typeof(T), value);
+        }
+
+        internal static object? MapValue(Type target, object? value)
         {
             if (value is null)
             {
                 return default!;
             }
-
-            var target = typeof(T);
 
             if (!SupportedResolutionTypes.Contains(target))
             {
@@ -460,12 +468,12 @@ namespace Datadog.Trace.FeatureFlags
 
             if (target.IsInstanceOfType(value))
             {
-                return (T)value;
+                return Convert.ChangeType(value, target);
             }
 
             if (target == typeof(string))
             {
-                return (T)(object)Convert.ToString(value, CultureInfo.InvariantCulture)!;
+                return Convert.ToString(value, CultureInfo.InvariantCulture);
             }
 
             if (target == typeof(bool))
@@ -474,25 +482,25 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     if (value is IFormattable && value is not bool)
                     {
-                        return (T)(object)(ParseDouble(value) != 0);
+                        return (ParseDouble(value) != 0);
                     }
 
-                    return (T)(object)Convert.ToBoolean(value);
+                    return Convert.ToBoolean(value);
                 }
 
-                return (T)(object)bool.Parse(value.ToString()!);
+                return bool.Parse(value.ToString()!);
             }
 
             if (target == typeof(int))
             {
                 var number = ParseDouble(value);
-                return (T)(object)(int)number;
+                return (int)number;
             }
 
             if (target == typeof(double))
             {
                 var number = ParseDouble(value);
-                return (T)(object)number;
+                return (double)number;
             }
 
             return default!;
@@ -508,7 +516,7 @@ namespace Datadog.Trace.FeatureFlags
             return double.Parse(Convert.ToString(value)!);
         }
 
-        private static string? AllocationKey<T>(Evaluation<T> evaluation)
+        private static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.Metadata == null)
             {
@@ -565,9 +573,10 @@ namespace Datadog.Trace.FeatureFlags
             return result;
         }
 
-        private Evaluation<T> ResolveVariant<T>(
+        private Evaluation ResolveVariant(
             string key,
-            T defaultValue,
+            Type resultType,
+            object? defaultValue,
             Flag flag,
             string variationKey,
             Allocation allocation,
@@ -575,7 +584,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
             {
-                return new Evaluation<T>(
+                return new Evaluation(
                     defaultValue,
                     EvaluationReason.ERROR,
                     error: $"Variant not found for: {variationKey}",
@@ -586,7 +595,7 @@ namespace Datadog.Trace.FeatureFlags
                     });
             }
 
-            var mappedValue = MapValue<T>(variant.Value);
+            var mappedValue = MapValue(resultType, variant.Value);
 
             var metadata = new Dictionary<string, string>
             {
@@ -595,7 +604,7 @@ namespace Datadog.Trace.FeatureFlags
                 ["allocationKey"] = allocation.Key ?? string.Empty
             };
 
-            var evaluation = new Evaluation<T>(
+            var evaluation = new Evaluation(
                 mappedValue,
                 EvaluationReason.TARGETING_MATCH,
                 variant: variant.Key,
@@ -610,9 +619,9 @@ namespace Datadog.Trace.FeatureFlags
             return evaluation;
         }
 
-        private void DispatchExposure<T>(
+        private void DispatchExposure(
             string flag,
-            Evaluation<T> evaluation,
+            Evaluation evaluation,
             EvaluationContext context)
         {
             var allocationKey = AllocationKey(evaluation);

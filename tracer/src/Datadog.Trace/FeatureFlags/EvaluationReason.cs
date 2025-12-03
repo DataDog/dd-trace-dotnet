@@ -5,24 +5,32 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
+namespace Datadog.Trace.FeatureFlags;
 
-namespace Datadog.Trace.FeatureFlags
+/// <summary> Evaluation result reason </summary>
+public enum EvaluationReason
 {
-    internal enum EvaluationReason
-    {
-        DEFAULT,
-        STATIC,
-        TARGETING_MATCH,
-        SPLIT,
-        DISABLED,
-        CACHED,
-        UNKNOWN,
-        ERROR
-    }
+    /// <summary> Default value </summary>
+    DEFAULT,
+
+    /// <summary> Static value </summary>
+    STATIC,
+
+    /// <summary> Targeting match </summary>
+    TARGETING_MATCH,
+
+    /// <summary> Split match </summary>
+    SPLIT,
+
+    /// <summary> Target disabled </summary>
+    DISABLED,
+
+    /// <summary> Cached result </summary>
+    CACHED,
+
+    /// <summary> Unknown reason </summary>
+    UNKNOWN,
+
+    /// <summary> Error </summary>
+    ERROR
 }
