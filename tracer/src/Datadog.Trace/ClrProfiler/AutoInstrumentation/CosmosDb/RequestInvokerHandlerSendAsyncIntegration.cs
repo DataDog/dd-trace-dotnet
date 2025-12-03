@@ -64,15 +64,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
             if (cosmosContainerCore?.Instance != null)
             {
                 containerId = cosmosContainerCore.Id;
-
-                if (cosmosContainerCore.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
-                {
-                    databaseId = databaseNew.Id;
-                }
-                else if (cosmosContainerCore.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
-                {
-                    databaseId = databaseOld.Id;
-                }
+                databaseId = cosmosContainerCore.Database.Id;
             }
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName("cosmosdb");
