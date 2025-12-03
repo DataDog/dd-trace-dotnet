@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.FeatureFlags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
@@ -39,7 +40,7 @@ public class FeatureFlagsSdkEvaluateIntegration
     {
         var parameters = (State)state.State!;
         var res = FeatureFlagsModule.Instance.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, (EvaluationContext)parameters.Context!);
-        return new CallTargetReturn<TReturn?>(returnValue);
+        return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
     private record struct State(string? Key, Type TargetType, object? DefaultValue, object? Context)
