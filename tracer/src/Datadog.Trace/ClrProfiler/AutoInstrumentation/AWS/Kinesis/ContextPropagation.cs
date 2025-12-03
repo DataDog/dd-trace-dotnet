@@ -55,14 +55,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var propagatedContext = new Dictionary<string, object>();
-            if (scope.Span.Context != null && !string.IsNullOrEmpty(streamName))
+            if (scope.Span is Span span && !string.IsNullOrEmpty(streamName))
             {
                 var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
                     var payloadSize = jsonData?.Count > 0 && record.Data != null ? record.Data.Length : 0;
                     var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
-                    scope.Span.SetDataStreamsCheckpoint(
+                    span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
                         CheckpointKind.Produce,
                         edgeTags,

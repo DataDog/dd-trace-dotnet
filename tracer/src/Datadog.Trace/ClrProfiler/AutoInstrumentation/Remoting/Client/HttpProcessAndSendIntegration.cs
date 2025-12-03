@@ -79,11 +79,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                     httpTags.HttpUrl = UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false);
 
                     string resourceUrl = UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true);
-                    span.ResourceName = $"{requestMethod} {resourceUrl}";
+                    // span.ResourceName = $"{requestMethod} {resourceUrl}";
                 }
                 else
                 {
-                    span.ResourceName = requestMethod;
+                    // span.ResourceName = requestMethod;
                 }
 
                 httpTags.HttpMethod = requestMethod;

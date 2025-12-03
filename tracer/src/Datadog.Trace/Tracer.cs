@@ -453,7 +453,7 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(UnrecordedSpanContext spanContext, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
+        internal Scope StartActiveInternal(UnrecordedSpanContext spanContext, bool finishOnClose = true)
         {
             var span = StartSpan(spanContext);
 

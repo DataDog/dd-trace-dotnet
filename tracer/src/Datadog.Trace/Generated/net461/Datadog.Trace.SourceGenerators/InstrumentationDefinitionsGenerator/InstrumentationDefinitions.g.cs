@@ -83,12 +83,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetMvc,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetWebApi2,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemAsyncIntegration"

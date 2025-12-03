@@ -40,43 +40,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             string serviceName = perTraceSettings.Schema.Database.GetServiceName(ServiceName);
             Scope? scope = null;
 
-            try
-            {
-                var tags = perTraceSettings.Schema.Database.CreateRedisTags();
-                tags.InstrumentationName = integrationName;
-
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
-                int separatorIndex = rawCommand.IndexOf(' ');
-                string command;
-
-                if (separatorIndex >= 0)
-                {
-                    command = rawCommand.Substring(0, separatorIndex);
-                }
-                else
-                {
-                    command = rawCommand;
-                }
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Redis;
-                span.ResourceName = command;
-                tags.RawCommand = rawCommand;
-                tags.Host = host;
-                tags.Port = port;
-                if (databaseIndex.HasValue)
-                {
-                    tags.DatabaseIndex = databaseIndex.Value;
-                }
-
-                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var tags = perTraceSettings.Schema.Database.CreateRedisTags();
+            //     tags.InstrumentationName = integrationName;
+            //
+            //     scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+            //     int separatorIndex = rawCommand.IndexOf(' ');
+            //     string command;
+            //
+            //     if (separatorIndex >= 0)
+            //     {
+            //         command = rawCommand.Substring(0, separatorIndex);
+            //     }
+            //     else
+            //     {
+            //         command = rawCommand;
+            //     }
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Redis;
+            //     span.ResourceName = command;
+            //     tags.RawCommand = rawCommand;
+            //     tags.Host = host;
+            //     tags.Port = port;
+            //     if (databaseIndex.HasValue)
+            //     {
+            //         tags.DatabaseIndex = databaseIndex.Value;
+            //     }
+            //
+            //     tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     perTraceSettings.Schema.RemapPeerService(tags);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

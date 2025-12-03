@@ -22,22 +22,12 @@ namespace Datadog.Trace.ClrProfiler
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
-            if (tracer.InternalActiveScope is { Span: { Type: SpanTypes.Http } parent } scope && HasInstrumentationNameTag(parent))
+            if (tracer.InternalActiveScope is { Span: { Type: SpanTypes.Http } parent } scope)
             {
                 return scope;
             }
 
             return null;
-
-            static bool HasInstrumentationNameTag(Span span)
-            {
-                if (span.Tags is HttpTags httpTags)
-                {
-                    return httpTags.InstrumentationName != null;
-                }
-
-                return span.GetTag(Tags.InstrumentationName) != null;
-            }
         }
 
         /// <summary>
@@ -98,43 +88,43 @@ namespace Datadog.Trace.ClrProfiler
 
             Span span = null;
 
-            try
-            {
-                if (GetActiveHttpScope(tracer) != null)
-                {
-                    // we are already instrumenting this,
-                    // don't instrument nested methods that belong to the same stacktrace
-                    // e.g. HttpClientHandler.SendAsync() -> SocketsHttpHandler.SendAsync()
-                    return null;
-                }
-
-                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
-
-                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
-                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
-                tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
-
-                span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{httpMethod} {resourceUrl}";
-
-                tags.HttpMethod = httpMethod?.ToUpperInvariant();
-                if (requestUri is not null)
-                {
-                    tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
-                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
-                }
-
-                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-
-                tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating span.");
-            }
+            // try
+            // {
+            //     if (GetActiveHttpScope(tracer) != null)
+            //     {
+            //         // we are already instrumenting this,
+            //         // don't instrument nested methods that belong to the same stacktrace
+            //         // e.g. HttpClientHandler.SendAsync() -> SocketsHttpHandler.SendAsync()
+            //         return null;
+            //     }
+            //
+            //     string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
+            //
+            //     var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+            //     var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+            //     tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
+            //
+            //     span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{httpMethod} {resourceUrl}";
+            //
+            //     tags.HttpMethod = httpMethod?.ToUpperInvariant();
+            //     if (requestUri is not null)
+            //     {
+            //         tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
+            //         tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+            //     }
+            //
+            //     tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+            //
+            //     tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating span.");
+            // }
 
             // always returns the span, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)

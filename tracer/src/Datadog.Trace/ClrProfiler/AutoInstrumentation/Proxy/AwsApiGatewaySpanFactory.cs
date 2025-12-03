@@ -1,4 +1,4 @@
-// <copyright file="AwsApiGatewaySpanFactory.cs" company="Datadog">
+﻿// <copyright file="AwsApiGatewaySpanFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,30 +22,31 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
 
     public Scope? CreateSpan(Tracer tracer, InferredProxyData data, ISpanContext? parent = null)
     {
-        try
-        {
-            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
-
-            var tags = new InferredProxyTags
-            {
-                HttpMethod = data.HttpMethod,
-                InstrumentationName = data.ProxyName,
-                HttpUrl = $"{data.DomainName}{data.Path}",
-                HttpRoute = resourceUrl,
-                Stage = data.Stage,
-                InferredSpan = 1,
-            };
-
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
-            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
-            scope.Span.Type = SpanTypes.Web;
-
-            return scope;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating AWS API Gateway span");
-            return null;
-        }
+        // try
+        // {
+        //     var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+        //
+        //     var tags = new InferredProxyTags
+        //     {
+        //         HttpMethod = data.HttpMethod,
+        //         InstrumentationName = data.ProxyName,
+        //         HttpUrl = $"{data.DomainName}{data.Path}",
+        //         HttpRoute = resourceUrl,
+        //         Stage = data.Stage,
+        //         InferredSpan = 1,
+        //     };
+        //
+        //     var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
+        //     scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
+        //     scope.Span.Type = SpanTypes.Web;
+        //
+        //     return scope;
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating AWS API Gateway span");
+        //     return null;
+        // }
+        return null;
     }
 }

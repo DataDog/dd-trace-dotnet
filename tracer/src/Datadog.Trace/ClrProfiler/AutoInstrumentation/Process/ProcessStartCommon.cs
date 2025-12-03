@@ -67,21 +67,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             Scope? scope = null;
 
-            try
-            {
-                var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
-
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
-                scope.Span.ResourceName = filename;
-                scope.Span.Type = SpanTypes.System;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating execute command scope.");
-            }
+            // try
+            // {
+            //     var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
+            //
+            //     var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+            //     scope.Span.ResourceName = filename;
+            //     scope.Span.Type = SpanTypes.System;
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating execute command scope.");
+            // }
 
             return scope;
         }

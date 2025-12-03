@@ -16,7 +16,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span wrapped in this scope
         /// </summary>
-        ISpan IScope.Span => Span;
+        ISpan IScope.Span => Span as Span;
 
         /// <summary>
         /// Closes the current scope and makes its parent scope active

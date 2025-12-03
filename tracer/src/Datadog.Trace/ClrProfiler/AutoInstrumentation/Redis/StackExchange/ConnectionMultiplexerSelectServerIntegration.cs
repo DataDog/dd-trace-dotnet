@@ -32,7 +32,7 @@ public class ConnectionMultiplexerSelectServerIntegration
         var span = Tracer.Instance.InternalActiveScope?.Span;
 
         if (result is not null
-            && span is { Type: SpanTypes.Redis, Tags: RedisTags { InstrumentationName: StackExchangeRedisHelper.IntegrationName } tags })
+            && span is Span { Type: SpanTypes.Redis, Tags: RedisTags { InstrumentationName: StackExchangeRedisHelper.IntegrationName } tags })
         {
             var hostAndPort = result.ToString()!.Split(':');
 

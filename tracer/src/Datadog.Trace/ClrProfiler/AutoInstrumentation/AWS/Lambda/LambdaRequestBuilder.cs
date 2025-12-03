@@ -1,4 +1,4 @@
-// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
+﻿// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,44 +46,44 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
             request.Headers.Set("lambda-runtime-aws-request-id", (string)state);
         }
 
-        if (scope is { Span: var span })
-        {
-            // TODO: add support for 128-bit trace ids in serverless
-            request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
-            request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
-
-            if (span.Context.TraceContext is { } traceContext)
-            {
-                var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
-                request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
-            }
-
-            var errorMessage = span.GetTag("error.msg");
-            if (errorMessage != null)
-            {
-                var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
-            }
-
-            var errorType = span.GetTag("error.type");
-            if (errorType != null)
-            {
-                var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
-            }
-
-            var errorStack = span.GetTag("error.stack");
-            if (errorStack != null)
-            {
-                var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
-            }
-        }
-
-        if (isError)
-        {
-            request.Headers.Set(HttpHeaderNames.InvocationError, "true");
-        }
+        // if (scope is { Span: var span })
+        // {
+        //     // TODO: add support for 128-bit trace ids in serverless
+        //     request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
+        //     request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
+        //
+        //     if (span.Context.TraceContext is { } traceContext)
+        //     {
+        //         var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
+        //         request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
+        //     }
+        //
+        //     var errorMessage = span.GetTag("error.msg");
+        //     if (errorMessage != null)
+        //     {
+        //         var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
+        //     }
+        //
+        //     var errorType = span.GetTag("error.type");
+        //     if (errorType != null)
+        //     {
+        //         var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
+        //     }
+        //
+        //     var errorStack = span.GetTag("error.stack");
+        //     if (errorStack != null)
+        //     {
+        //         var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
+        //     }
+        // }
+        //
+        // if (isError)
+        // {
+        //     request.Headers.Set(HttpHeaderNames.InvocationError, "true");
+        // }
 
         return request;
     }

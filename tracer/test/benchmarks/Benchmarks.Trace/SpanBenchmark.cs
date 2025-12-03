@@ -76,9 +76,19 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishSpan()
         {
-            var span = _tracer.StartSpan("operation");
-            span.SetTraceSamplingPriority(SamplingPriority.UserReject);
-            span.Finish();
+            var spanContext = _tracer.CreateSpanContext(
+                "operation",
+                resourceName: "operation",
+                serviceName: null);
+
+            SpanBase span = spanContext switch
+            {
+                RecordedSpanContext recorded => _tracer.StartSpan(recorded),
+                UnrecordedSpanContext unrecorded => _tracer.StartSpan(unrecorded),
+                _ => null,
+            };
+
+            span!.Finish();
         }
 
         /// <summary>
@@ -87,10 +97,17 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishScope()
         {
-            using (Scope scope = _tracer.StartActiveInternal("operation"))
+            var spanContext = _tracer.CreateSpanContext(
+                "operation",
+                resourceName: "operation",
+                serviceName: null);
+
+            using var scope = spanContext switch
             {
-                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
-            }
+                RecordedSpanContext recorded => _tracer.StartActiveInternal(recorded),
+                UnrecordedSpanContext unrecorded => _tracer.StartActiveInternal(unrecorded),
+                _ => null,
+            };
         }
 
         /// <summary>
@@ -99,10 +116,29 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishTwoScopes()
         {
-            using var scope1 = _tracer.StartActiveInternal("operation1");
-            scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+            var spanContext1 = _tracer.CreateSpanContext(
+                "operation1",
+                resourceName: "operation1",
+                serviceName: null);
 
-            using var scope2 = _tracer.StartActiveInternal("operation2");
+            using var scope1 = spanContext1 switch
+            {
+                RecordedSpanContext recorded => _tracer.StartActiveInternal(recorded),
+                UnrecordedSpanContext unrecorded => _tracer.StartActiveInternal(unrecorded),
+                _ => null,
+            };
+
+            var spanContext2 = _tracer.CreateSpanContext(
+                "operation2",
+                resourceName: "operation2",
+                serviceName: null);
+
+            using var scope2 = spanContext2 switch
+            {
+                RecordedSpanContext recorded => _tracer.StartActiveInternal(recorded),
+                UnrecordedSpanContext unrecorded => _tracer.StartActiveInternal(unrecorded),
+                _ => null,
+            };
         }
     }
 }

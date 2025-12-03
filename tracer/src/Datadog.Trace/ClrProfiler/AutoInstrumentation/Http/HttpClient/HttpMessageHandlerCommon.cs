@@ -62,15 +62,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             try
             {
-                if (responseMessage.Instance is not null)
-                {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
-                }
-
-                if (exception != null)
-                {
-                    scope.Span.SetException(exception);
-                }
+                // if (responseMessage.Instance is not null)
+                // {
+                //     scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                // }
+                //
+                // if (exception != null)
+                // {
+                //     scope.Span.SetException(exception);
+                // }
             }
             finally
             {

@@ -1,4 +1,4 @@
-// <copyright file="SpanSamplingRule.cs" company="Datadog">
+﻿// <copyright file="SpanSamplingRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Sampling
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class.
         /// </summary>
-        /// <param name="serviceNameGlob">The glob pattern for the <see cref="Span.ServiceName"/>.</param>
+        /// <param name="serviceNameGlob">The glob pattern for the <see cref="SpanBase.ServiceName"/>.</param>
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
         /// <param name="resourceNameGlob">The glob pattern for the <see cref="Span.ResourceName"/>.</param>
         /// <param name="tagGlobs">The glob pattern for the <see cref="Span.Tags"/>.</param>

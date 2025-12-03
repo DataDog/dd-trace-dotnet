@@ -35,68 +35,77 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
             try
             {
                 var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
-
-                scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
-                var span = scope.Span;
-
-                if (target.TryDuckCast<HasKey>(out var hasKey))
+                var resourceName = ExtractResourceName(target.GetType());
+                var spanContext = tracer.CreateSpanContext(OperationName, resourceName: resourceName, serviceName: serviceName);
+                if (spanContext is UnrecordedSpanContext unrecorded)
                 {
-                    var key = hasKey.Key;
-
-                    tags.Key = FormatKey(key);
-                    tags.Namespace = key.Ns;
-                    tags.SetName = key.SetName;
-                    tags.UserKey = key.UserKey.ToString();
+                    scope = tracer.StartActiveInternal(unrecorded);
+                    scope.Span.Type = SpanTypes.Aerospike;
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 }
-                else if (target.TryDuckCast<HasKeyV8>(out var hasKeyV8))
+                else if (spanContext is RecordedSpanContext recorded)
                 {
-                    var key = hasKeyV8.Key;
+                    var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
 
-                    tags.Key = FormatKey(key);
-                    tags.Namespace = key.Ns;
-                    tags.SetName = key.SetName;
-                    tags.UserKey = key.UserKey.ToString();
-                }
-                else if (target.TryDuckCast<HasKeys>(out var hasKeys))
-                {
-                    bool isFirstKey = true;
-                    var sb = StringBuilderCache.Acquire();
+                    scope = tracer.StartActiveInternal(recorded, tags: tags);
+                    var span = scope.Span;
 
-                    foreach (var obj in hasKeys.Keys)
+                    if (target.TryDuckCast<HasKey>(out var hasKey))
                     {
-                        var key = obj.DuckCast<Key>();
+                        var key = hasKey.Key;
 
-                        // All keys will be in the same namespace (namespace > set > record > key), so we can apply the namespace from the first key we see
-                        if (isFirstKey)
+                        tags.Key = FormatKey(key);
+                        tags.Namespace = key.Ns;
+                        tags.SetName = key.SetName;
+                        tags.UserKey = key.UserKey.ToString();
+                    }
+                    else if (target.TryDuckCast<HasKeyV8>(out var hasKeyV8))
+                    {
+                        var key = hasKeyV8.Key;
+
+                        tags.Key = FormatKey(key);
+                        tags.Namespace = key.Ns;
+                        tags.SetName = key.SetName;
+                        tags.UserKey = key.UserKey.ToString();
+                    }
+                    else if (target.TryDuckCast<HasKeys>(out var hasKeys))
+                    {
+                        bool isFirstKey = true;
+                        var sb = StringBuilderCache.Acquire();
+
+                        foreach (var obj in hasKeys.Keys)
                         {
-                            tags.Namespace = key.Ns;
-                            isFirstKey = false;
+                            var key = obj.DuckCast<Key>();
+
+                            // All keys will be in the same namespace (namespace > set > record > key), so we can apply the namespace from the first key we see
+                            if (isFirstKey)
+                            {
+                                tags.Namespace = key.Ns;
+                                isFirstKey = false;
+                            }
+
+                            if (sb.Length != 0)
+                            {
+                                sb.Append(';');
+                            }
+
+                            sb.Append(FormatKey(key));
                         }
 
-                        if (sb.Length != 0)
-                        {
-                            sb.Append(';');
-                        }
-
-                        sb.Append(FormatKey(key));
+                        tags.Key = StringBuilderCache.GetStringAndRelease(sb);
+                    }
+                    else if (target.TryDuckCast<HasStatement>(out var hasStatement))
+                    {
+                        tags.Key = hasStatement.Statement.Ns + ":" + hasStatement.Statement.SetName;
+                        tags.Namespace = hasStatement.Statement.Ns;
+                        tags.SetName = hasStatement.Statement.SetName;
                     }
 
-                    tags.Key = StringBuilderCache.GetStringAndRelease(sb);
+                    span.Type = SpanTypes.Aerospike;
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                    perTraceSettings.Schema.RemapPeerService(tags);
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 }
-                else if (target.TryDuckCast<HasStatement>(out var hasStatement))
-                {
-                    tags.Key = hasStatement.Statement.Ns + ":" + hasStatement.Statement.SetName;
-                    tags.Namespace = hasStatement.Statement.Ns;
-                    tags.SetName = hasStatement.Statement.SetName;
-                }
-
-                span.Type = SpanTypes.Aerospike;
-                span.ResourceName = ExtractResourceName(target.GetType());
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

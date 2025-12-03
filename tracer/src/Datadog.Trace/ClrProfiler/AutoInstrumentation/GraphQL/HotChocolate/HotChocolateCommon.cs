@@ -1,4 +1,4 @@
-// <copyright file="HotChocolateCommon.cs" company="Datadog">
+﻿// <copyright file="HotChocolateCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -81,31 +81,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             var scope = tracer.InternalActiveScope;
             var span = scope?.Span;
-            if (span == null || span.OperationName != ExecuteOperationName)
-            {
-                // not in a Hotchocolate execution span
-                return;
-            }
-
-            try
-            {
-                if (span.Tags is GraphQLTags tags)
-                {
-                    tags.OperationName = operationName;
-                    span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
-                    tags.OperationType = operationType;
-                }
-                else
-                {
-                    var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
-                    span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
-                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error updating HotChocolate scope.");
-            }
+            // if (span == null || span.OperationName != ExecuteOperationName)
+            // {
+            //     // not in a Hotchocolate execution span
+            //     return;
+            // }
+            //
+            // try
+            // {
+            //     if (span.Tags is GraphQLTags tags)
+            //     {
+            //         tags.OperationName = operationName;
+            //         span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
+            //         tags.OperationType = operationType;
+            //     }
+            //     else
+            //     {
+            //         var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
+            //         span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
+            //         span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+            //     }
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error updating HotChocolate scope.");
+            // }
         }
 
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, System.Collections.IEnumerable errors)

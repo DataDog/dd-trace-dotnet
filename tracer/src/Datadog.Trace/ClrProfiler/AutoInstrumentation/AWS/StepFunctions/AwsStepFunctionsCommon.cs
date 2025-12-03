@@ -36,26 +36,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
-                var serviceName = perTraceSettings.GetServiceName(DatadogAwsStepFunctionsServiceName);
-                var operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{StepFunctionsServiceName}.{operation}";
-
-                tags.Service = StepFunctionsServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
+            //     var serviceName = perTraceSettings.GetServiceName(DatadogAwsStepFunctionsServiceName);
+            //     var operationName = GetOperationName(tracer, spanKind);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{StepFunctionsServiceName}.{operation}";
+            //
+            //     tags.Service = StepFunctionsServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

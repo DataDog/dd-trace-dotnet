@@ -54,7 +54,7 @@ namespace Datadog.Trace.ExtensionMethods
             WebTags tags)
         {
             span.Type = SpanTypes.Web;
-            span.ResourceName = resourceName?.Trim();
+            // span.ResourceName = resourceName?.Trim();
 
             if (tags is not null)
             {

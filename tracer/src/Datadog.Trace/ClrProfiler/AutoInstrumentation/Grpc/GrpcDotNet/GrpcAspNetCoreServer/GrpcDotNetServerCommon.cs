@@ -29,30 +29,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             }
 
             Scope? scope = null;
-            var method = instance.DuckCast<ServerCallHandlerBaseStruct>().MethodInvoker.Method;
-            try
-            {
-                var tags = new GrpcServerTags();
-                GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
-
-                var extractedContext = ExtractPropagatedContext(tracer, requestMessage).MergeBaggageInto(Baggage.Current);
-
-                // If we have a local span (e.g. from aspnetcore) then use that as the parent
-                // Otherwise, use the distributed context as the parent
-                var spanContext = tracer.ActiveScope?.Span.Context ?? extractedContext.SpanContext;
-                var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
-                scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Grpc;
-                span.ResourceName = method.FullName;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating server span for GRPC call");
-            }
+            // var method = instance.DuckCast<ServerCallHandlerBaseStruct>().MethodInvoker.Method;
+            // try
+            // {
+            //     var tags = new GrpcServerTags();
+            //     GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
+            //
+            //     var extractedContext = ExtractPropagatedContext(tracer, requestMessage).MergeBaggageInto(Baggage.Current);
+            //
+            //     // If we have a local span (e.g. from aspnetcore) then use that as the parent
+            //     // Otherwise, use the distributed context as the parent
+            //     var spanContext = tracer.ActiveScope?.Span.Context ?? extractedContext.SpanContext;
+            //     var serviceName = tracer.DefaultServiceName ?? "grpc-server";
+            //     string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+            //     scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Grpc;
+            //     span.ResourceName = method.FullName;
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating server span for GRPC call");
+            // }
 
             return scope;
         }

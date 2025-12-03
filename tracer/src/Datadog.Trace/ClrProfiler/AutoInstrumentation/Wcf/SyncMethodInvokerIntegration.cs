@@ -60,11 +60,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
-            if (state.Scope is not null && exception is not null)
+            if (state.Scope is { Span: Span span } && exception is not null)
             {
                 // Add the exception but do not dispose the scope.
                 // BeforeSendReplyIntegration is responsible for closing the span.
-                state.Scope.Span.SetException(exception);
+                // span.Span.SetException(exception);
             }
 
             WcfCommon.RestorePreviousScope(in state);

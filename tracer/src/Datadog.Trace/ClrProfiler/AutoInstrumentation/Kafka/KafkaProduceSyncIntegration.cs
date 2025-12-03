@@ -59,10 +59,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 isTombstone: message.Value is null,
                 finishOnClose: deliveryHandler is null);
 
-            if (scope is not null)
+            if (scope is { Span: Span span })
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
-                    scope.Span,
+                    span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message);

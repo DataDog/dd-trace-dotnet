@@ -28,17 +28,18 @@ internal abstract class LambdaCommon
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
-        var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
-
-        var span = tracer.StartSpan(
-            PlaceholderOperationName,
-            tags: null,
-            parent: context.SpanContext,
-            serviceName: PlaceholderServiceName,
-            addToTraceContext: false);
-
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-        return tracer.TracerManager.ScopeManager.Activate(span, false);
+        // var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+        //
+        // var span = tracer.StartSpan(
+        //     PlaceholderOperationName,
+        //     tags: null,
+        //     parent: context.SpanContext,
+        //     serviceName: PlaceholderServiceName,
+        //     addToTraceContext: false);
+        //
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+        // return tracer.TracerManager.ScopeManager.Activate(span, false);
+        return null!;
     }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
@@ -97,7 +98,7 @@ internal abstract class LambdaCommon
         {
             if (exception != null && scope is { Span: var span })
             {
-                span.SetException(exception);
+                // span.SetException(exception);
             }
 
             SendEndInvocation(requestBuilder, scope, state.State, exception != null, returnValue);

@@ -1,4 +1,4 @@
-// <copyright file="GraphQLCommon.cs" company="Datadog">
+﻿// <copyright file="GraphQLCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -52,23 +52,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             Scope scope = null;
 
-            try
-            {
-                var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
-                scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.GraphQL;
-                tags.Source = documentSource;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
+            //     string serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
+            //     scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.GraphQL;
+            //     tags.Source = documentSource;
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

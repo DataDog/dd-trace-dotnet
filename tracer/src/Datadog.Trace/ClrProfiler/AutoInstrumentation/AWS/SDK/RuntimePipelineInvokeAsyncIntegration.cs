@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             }
 
             var scope = Tracer.Instance.InternalActiveScope;
-            if (scope?.Span.Tags is AwsSdkTags tags)
+            if (scope.Span is Span { Tags: AwsSdkTags tags })
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
             }
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IAmazonWebServiceResponse
         {
-            if (state.Scope?.Span.Tags is AwsSdkTags tags)
+            if (state.Scope?.Span is Span { Tags: AwsSdkTags tags })
             {
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (response.Instance is not null)
                 {
                     tags.RequestId = response.ResponseMetadata?.RequestId;
-                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    // state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
             }
 

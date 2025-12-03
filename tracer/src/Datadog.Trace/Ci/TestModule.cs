@@ -177,20 +177,20 @@ public sealed class TestModule
         // Check if Intelligent Test Runner has skippable tests and set the flag according to that
         tags.TestsSkipped = _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
 
-        var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
-            tags: tags,
-            startTime: startDate);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        // var span = Tracer.Instance.StartSpan(
+        //     string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
+        //     tags: tags,
+        //     startTime: startDate);
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        //
+        // span.Type = SpanTypes.TestModule;
+        // span.ResourceName = name;
+        // span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        // span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        //
+        // tags.ModuleId = span.SpanId;
 
-        span.Type = SpanTypes.TestModule;
-        span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-        span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
-
-        tags.ModuleId = span.SpanId;
-
-        _span = span;
+        _span = null!;
         Current = this;
         lock (OpenedTestModules)
         {
@@ -202,7 +202,7 @@ public sealed class TestModule
         if (startDate is null)
         {
             // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
+            // span.ResetStartTime();
         }
 
         // Record EventCreate telemetry metric

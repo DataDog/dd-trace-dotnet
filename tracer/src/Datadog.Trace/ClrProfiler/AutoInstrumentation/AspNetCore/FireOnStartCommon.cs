@@ -66,9 +66,8 @@ public static class FireOnStartCommon
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
             var requestHeaders = instance.DuckCast<HttpProtocolStruct>().RequestHeaders;
-            var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-            if (responseHeaders is not null)
+            if (responseHeaders is not null && Tracer.Instance.InternalActiveScope?.Root?.Span is Span span)
             {
                 if (security.AppsecEnabled)
                 {
@@ -85,7 +84,7 @@ public static class FireOnStartCommon
                         var statusCode = instance.DuckCast<HttpProtocolStruct>().StatusCode;
                         var scheme = instance.DuckCast<HttpProtocolStruct>().Scheme;
 
-                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName, statusCode, scheme);
+                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName!, statusCode, scheme);
                         InsecureAuthAnalyzer.AnalyzeInsecureAuth(requestHeaders, IntegrationId.AspNetCore, statusCode);
                     }
 

@@ -88,35 +88,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, context: extractedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
-            {
-                if (scope != null)
-                {
-                    string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWith("amq.gen-") ? queue : "<generated>";
-                    scope.Span.ResourceName = $"{Command} {queueDisplayName}";
-
-                    if (tags != null && messageSize != null)
-                    {
-                        tags.MessageSize = messageSize;
-                    }
-
-                    if (exception != null)
-                    {
-                        scope.Span.SetException(exception);
-                    }
-
-                    if (basicProperties != null && tags is not null)
-                    {
-                        RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                            Tracer.Instance,
-                            scope.Span,
-                            tags,
-                            basicProperties.Headers,
-                            basicGetResult.Body?.Length ?? 0,
-                            basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0);
-                    }
-                }
-            }
+            // using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, context: extractedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            // {
+            //     if (scope != null)
+            //     {
+            //         string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWith("amq.gen-") ? queue : "<generated>";
+            //         scope.Span.ResourceName = $"{Command} {queueDisplayName}";
+            //
+            //         if (tags != null && messageSize != null)
+            //         {
+            //             tags.MessageSize = messageSize;
+            //         }
+            //
+            //         if (exception != null)
+            //         {
+            //             scope.Span.SetException(exception);
+            //         }
+            //
+            //         if (basicProperties != null && tags is not null)
+            //         {
+            //             RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
+            //                 Tracer.Instance,
+            //                 scope.Span,
+            //                 tags,
+            //                 basicProperties.Headers,
+            //                 basicGetResult.Body?.Length ?? 0,
+            //                 basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0);
+            //         }
+            //     }
+            // }
 
             return new CallTargetReturn<TResult>(basicGetResult);
         }

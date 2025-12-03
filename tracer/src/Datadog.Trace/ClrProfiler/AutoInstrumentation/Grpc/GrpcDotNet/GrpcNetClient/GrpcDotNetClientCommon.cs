@@ -34,44 +34,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             Scope? scope = null;
 
             // Can't use constraints for this one, as we're in a generic class
-            var grpcCall = instance.DuckCast<IGrpcCall>();
-
-            try
-            {
-                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
-                var tags = clientSchema.CreateGrpcClientTags();
-                var method = grpcCall.Method;
-                tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
-                GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
-
-                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
-                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Grpc;
-                span.ResourceName = method.FullName;
-
-                // add distributed tracing headers to the HTTP request
-                // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
-                var context = new PropagationContext(span.Context, Baggage.Current);
-                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
-
-                // Add the request metadata as tags
-                if (grpcCall.Options.Headers is { Count: > 0 })
-                {
-                    var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
-                    span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
-                }
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating client span for GRPC call");
-            }
+            // var grpcCall = instance.DuckCast<IGrpcCall>();
+            //
+            // try
+            // {
+            //     var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+            //     var tags = clientSchema.CreateGrpcClientTags();
+            //     var method = grpcCall.Method;
+            //     tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
+            //     GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
+            //
+            //     var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+            //     var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+            //     tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            //
+            //     scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Grpc;
+            //     span.ResourceName = method.FullName;
+            //
+            //     // add distributed tracing headers to the HTTP request
+            //     // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
+            //     var context = new PropagationContext(span.Context, Baggage.Current);
+            //     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
+            //
+            //     // Add the request metadata as tags
+            //     if (grpcCall.Options.Headers is { Count: > 0 })
+            //     {
+            //         var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
+            //         span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+            //     }
+            //
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating client span for GRPC call");
+            // }
 
             return scope;
         }

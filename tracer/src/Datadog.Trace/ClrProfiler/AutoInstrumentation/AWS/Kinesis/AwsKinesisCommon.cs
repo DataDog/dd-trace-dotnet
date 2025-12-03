@@ -57,26 +57,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
-                string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
-                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{KinesisServiceName}.{operation}";
-
-                tags.Service = KinesisServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
+            //     string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
+            //     string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{KinesisServiceName}.{operation}";
+            //
+            //     tags.Service = KinesisServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // Always returns the scope. Even if it's `null` because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags).

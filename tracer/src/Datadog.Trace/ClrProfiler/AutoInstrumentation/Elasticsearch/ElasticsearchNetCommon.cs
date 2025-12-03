@@ -60,24 +60,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             Scope? scope = null;
 
-            try
-            {
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
-                var span = scope.Span;
-                span.ResourceName = requestName ?? operationName;
-                span.Type = DatabaseType;
-                tags.Action = requestName;
-                tags.Method = method;
-
-                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+            //     var span = scope.Span;
+            //     span.ResourceName = requestName ?? operationName;
+            //     span.Type = DatabaseType;
+            //     tags.Action = requestName;
+            //     tags.Method = method;
+            //
+            //     tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     perTraceSettings.Schema.RemapPeerService(tags);
+            //
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

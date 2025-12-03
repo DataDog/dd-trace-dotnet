@@ -78,65 +78,66 @@ internal static class EventHubsCommon
             return CallTargetState.GetDefault();
         }
 
-        Scope? scope = null;
+        // Scope? scope = null;
 
-        try
-        {
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
-            tags.MessagingDestinationName = eventHubName;
-            tags.MessagingOperation = operationName;
-
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
-            scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
-            var span = scope.Span;
-
-            span.Type = SpanTypes.Queue;
-            span.ResourceName = eventHubName;
-
-            if (!string.IsNullOrEmpty(networkDestinationName))
-            {
-                tags.NetworkDestinationName = networkDestinationName;
-            }
-
-            if (!string.IsNullOrEmpty(networkDestinationPort))
-            {
-                tags.NetworkDestinationPort = networkDestinationPort;
-            }
-
-            var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
-            string? singleMessageId = null;
-
-            if (actualMessageCount > 1)
-            {
-                tags.MessagingBatchMessageCount = actualMessageCount.ToString();
-            }
-
-            if (actualMessageCount == 1 && messages != null)
-            {
-                foreach (var message in messages)
-                {
-                    if (message?.TryDuckCast<IEventData>(out var eventData) == true)
-                    {
-                        singleMessageId = eventData.MessageId;
-                        break;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(singleMessageId))
-                {
-                    tags.MessagingMessageId = singleMessageId;
-                }
-            }
-
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
-
-            return new CallTargetState(scope);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating producer span");
-            scope?.Dispose();
-            return CallTargetState.GetDefault();
-        }
+        // try
+        // {
+        //     var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Producer);
+        //     tags.MessagingDestinationName = eventHubName;
+        //     tags.MessagingOperation = operationName;
+        //
+        //     string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+        //     scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
+        //     var span = scope.Span;
+        //
+        //     span.Type = SpanTypes.Queue;
+        //     span.ResourceName = eventHubName;
+        //
+        //     if (!string.IsNullOrEmpty(networkDestinationName))
+        //     {
+        //         tags.NetworkDestinationName = networkDestinationName;
+        //     }
+        //
+        //     if (!string.IsNullOrEmpty(networkDestinationPort))
+        //     {
+        //         tags.NetworkDestinationPort = networkDestinationPort;
+        //     }
+        //
+        //     var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+        //     string? singleMessageId = null;
+        //
+        //     if (actualMessageCount > 1)
+        //     {
+        //         tags.MessagingBatchMessageCount = actualMessageCount.ToString();
+        //     }
+        //
+        //     if (actualMessageCount == 1 && messages != null)
+        //     {
+        //         foreach (var message in messages)
+        //         {
+        //             if (message?.TryDuckCast<IEventData>(out var eventData) == true)
+        //             {
+        //                 singleMessageId = eventData.MessageId;
+        //                 break;
+        //             }
+        //         }
+        //
+        //         if (!string.IsNullOrEmpty(singleMessageId))
+        //         {
+        //             tags.MessagingMessageId = singleMessageId;
+        //         }
+        //     }
+        //
+        //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
+        //
+        //     return new CallTargetState(scope);
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating producer span");
+        //     scope?.Dispose();
+        //     return CallTargetState.GetDefault();
+        // }
+        return default;
     }
 }

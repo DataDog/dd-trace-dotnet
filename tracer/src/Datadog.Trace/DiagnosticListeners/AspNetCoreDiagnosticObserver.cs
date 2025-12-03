@@ -303,120 +303,142 @@ namespace Datadog.Trace.DiagnosticListeners
             return $"{httpMethod} {routeTemplate}";
         }
 
-        private static Span StartMvcCoreSpan(
+        private static SpanBase StartMvcCoreSpan(
             Tracer tracer,
             AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
             BeforeActionStruct typedArg,
             HttpContext httpContext,
             HttpRequest request)
         {
-            // Create a child span for the MVC action
-            var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            var span = mvcScope.Span;
+            // We aren't using the "correct" resource name here, but as this is never a root span, it
+            // _shouldn't_ be an issue (hopefully)
+            var spanContext = tracer.CreateSpanContext(MvcOperationName, trackingFeature.ResourceName);
+            var scope = spanContext switch
+            {
+                UnrecordedSpanContext unrecorded => tracer.StartActiveInternal(unrecorded),
+                RecordedSpanContext recorded => CreateMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request, recorded),
+                _ => null, // can't happen
+            };
+            var span = scope!.Span;
             span.Type = SpanTypes.Web;
-
-            // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var rootSpan = trackingFeature.RootScope.Span;
-            var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
-
-            var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
-
-            var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-            if (isFirstExecution)
-            {
-                trackingFeature.IsFirstPipelineExecution = false;
-                if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
-                {
-                    // URL has changed from original, so treat this execution as a "subsequent" request
-                    // Typically occurs for 404s for example
-                    isFirstExecution = false;
-                }
-            }
-
-            ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
-            IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
-
-            string controllerName = routeValues.TryGetValue("controller", out controllerName)
-                                        ? controllerName?.ToLowerInvariant()
-                                        : null;
-            string actionName = routeValues.TryGetValue("action", out actionName)
-                                    ? actionName?.ToLowerInvariant()
-                                    : null;
-            string areaName = routeValues.TryGetValue("area", out areaName)
-                                  ? areaName?.ToLowerInvariant()
-                                  : null;
-            string pagePath = routeValues.TryGetValue("page", out pagePath)
-                                  ? pagePath?.ToLowerInvariant()
-                                  : null;
-            string aspNetRoute = trackingFeature.Route;
-            string resourceName = trackingFeature.ResourceName;
-
-            if (aspNetRoute is null || resourceName is null)
-            {
-                // Not using endpoint routing
-                string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
-                RouteTemplate routeTemplate = null;
-                if (rawRouteTemplate is not null)
-                {
-                    try
-                    {
-                        routeTemplate = TemplateParser.Parse(rawRouteTemplate);
-                    }
-                    catch { }
-                }
-
-                if (routeTemplate is null)
-                {
-                    var routeData = httpContext.Features.Get<IRoutingFeature>()?.RouteData;
-                    if (routeData is not null)
-                    {
-                        var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
-                        routeTemplate = route?.ParsedTemplate;
-                    }
-                }
-
-                if (routeTemplate is not null)
-                {
-                    // If we have a route, overwrite the existing resource name
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
-                        routeTemplate,
-                        typedArg.RouteData.Values,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName,
-                        expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
-
-                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
-
-                    aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
-                }
-            }
-
-            // mirror the parent if we couldn't extract a route for some reason
-            // (and the parent is not using the placeholder resource name)
-            span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
-                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : rootSpan.ResourceName);
-
-            mvcSpanTags.AspNetCoreAction = actionName;
-            mvcSpanTags.AspNetCoreController = controllerName;
-            mvcSpanTags.AspNetCoreArea = areaName;
-            mvcSpanTags.AspNetCorePage = pagePath;
-            mvcSpanTags.AspNetCoreRoute = aspNetRoute;
-
-            if (!isUsingEndpointRouting && isFirstExecution)
-            {
-                // If we're using endpoint routing or this is a pipeline re-execution,
-                // these will already be set correctly
-                rootSpanTags.AspNetCoreRoute = aspNetRoute;
-                rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
-            }
-
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return span;
+
+            Scope CreateMvcCoreSpan(
+                Tracer tracer,
+                AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
+                BeforeActionStruct typedArg,
+                HttpContext httpContext,
+                HttpRequest request,
+                RecordedSpanContext spanContext)
+            {
+                // Create a child span for the MVC action
+                var mvcSpanTags = new AspNetCoreMvcTags();
+                var mvcScope = tracer.StartActiveInternal(spanContext, tags: mvcSpanTags);
+                var span = (Span)mvcScope.Span;
+
+                // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+                var rootSpan = (Span)trackingFeature.RootScope.Span;
+                var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
+
+                var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
+
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                if (isFirstExecution)
+                {
+                    trackingFeature.IsFirstPipelineExecution = false;
+                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
+                }
+
+                ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+                IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
+
+                string controllerName = routeValues.TryGetValue("controller", out controllerName)
+                                            ? controllerName?.ToLowerInvariant()
+                                            : null;
+                string actionName = routeValues.TryGetValue("action", out actionName)
+                                        ? actionName?.ToLowerInvariant()
+                                        : null;
+                string areaName = routeValues.TryGetValue("area", out areaName)
+                                      ? areaName?.ToLowerInvariant()
+                                      : null;
+                string pagePath = routeValues.TryGetValue("page", out pagePath)
+                                      ? pagePath?.ToLowerInvariant()
+                                      : null;
+                string aspNetRoute = trackingFeature.Route;
+                string resourceName = trackingFeature.ResourceName;
+
+                if (aspNetRoute is null || resourceName is null)
+                {
+                    // Not using endpoint routing
+                    string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+                    RouteTemplate routeTemplate = null;
+                    if (rawRouteTemplate is not null)
+                    {
+                        try
+                        {
+                            routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+                        }
+                        catch { }
+                    }
+
+                    if (routeTemplate is null)
+                    {
+                        var routeData = httpContext.Features.Get<IRoutingFeature>()?.RouteData;
+                        if (routeData is not null)
+                        {
+                            var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
+                            routeTemplate = route?.ParsedTemplate;
+                        }
+                    }
+
+                    if (routeTemplate is not null)
+                    {
+                        // If we have a route, overwrite the existing resource name
+                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+                            routeTemplate,
+                            typedArg.RouteData.Values,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName,
+                            expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
+
+                        resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+
+                        aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                    }
+                }
+
+                // mirror the parent if we couldn't extract a route for some reason
+                // (and the parent is not using the placeholder resource name)
+                span.SetResourceName(
+                    resourceName
+                 ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
+                         ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
+                         : rootSpan.ResourceName));
+
+                mvcSpanTags.AspNetCoreAction = actionName;
+                mvcSpanTags.AspNetCoreController = controllerName;
+                mvcSpanTags.AspNetCoreArea = areaName;
+                mvcSpanTags.AspNetCorePage = pagePath;
+                mvcSpanTags.AspNetCoreRoute = aspNetRoute;
+
+                if (!isUsingEndpointRouting && isFirstExecution)
+                {
+                    // If we're using endpoint routing or this is a pipeline re-execution,
+                    // these will already be set correctly
+                    rootSpanTags.AspNetCoreRoute = aspNetRoute;
+                    rootSpan.SetResourceName(span.ResourceName); // This one is technically a problem, as it changes sampling
+                    rootSpanTags.HttpRoute = aspNetRoute;
+                }
+
+                return mvcScope;
+            }
         }
 
         private void OnHostingHttpRequestInStart(object arg)
@@ -442,10 +464,10 @@ namespace Datadog.Trace.DiagnosticListeners
                     // away, so force that by using null.
                     var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName);
-                    if (shouldSecure)
+                    if (shouldSecure && scope.Span is Span span)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
-                        var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
+                        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(httpContext));
                         securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
                     }
                 }
@@ -464,7 +486,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: Span { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
@@ -586,7 +608,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
-                    rootSpan.ResourceName = resourceName;
+                    rootSpan.SetResourceName(resourceName);
                     tags.AspNetCoreRoute = normalizedRoute;
                     tags.HttpRoute = normalizedRoute;
                 }
@@ -616,27 +638,27 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: Span { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                Span span = null;
+                SpanBase spanBase = null;
                 if (shouldTrace)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
                         // override the parent's resource name with the simplified MVC route template
-                        rootSpan.ResourceName = GetLegacyResourceName(typedArg);
+                        rootSpan.SetResourceName(GetLegacyResourceName(typedArg));
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
+                        spanBase = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
-                if (span is not null)
+                if (spanBase is Span span)
                 {
                     if (isCodeOriginEnabled)
                     {
@@ -715,7 +737,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = tracer.InternalActiveScope;
 
-            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
+            if (scope is { Span: Span span } && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
                 try
                 {
@@ -726,12 +748,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     {
                         foreach (var activityTag in activity.Tags)
                         {
-                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
+                            span.SetTag(activityTag.Key, activityTag.Value);
                         }
 
                         foreach (var activityBag in activity.Baggage)
                         {
-                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
+                            span.SetTag(activityBag.Key, activityBag.Value);
                         }
                     }
 #pragma warning restore DDDUCK001 // Checking IDuckType for null

@@ -65,7 +65,7 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.IsTrackUserEventsEnabled && state.Scope is { Span: { } span })
+        if (security.IsTrackUserEventsEnabled && state.Scope is { Span: Span span })
         {
             if (returnValue.Succeeded)
             {

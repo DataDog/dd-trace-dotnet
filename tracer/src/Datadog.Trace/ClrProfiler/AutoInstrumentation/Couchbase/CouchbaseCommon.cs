@@ -88,15 +88,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             try
             {
-                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                // string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+                // string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
 
-                var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
-                scope.Span.Type = SpanTypes.Db;
-                scope.Span.ResourceName = tags.OperationCode;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-                return new CallTargetState(scope);
+                // var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+                // scope.Span.Type = SpanTypes.Db;
+                // scope.Span.ResourceName = tags.OperationCode;
+                // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                // tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                return CallTargetState.GetDefault();
             }
             catch (Exception ex)
             {
@@ -112,14 +112,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static TOperationResult CommonOnMethodEnd<TOperationResult>(TOperationResult tResult, Exception exception, in CallTargetState state)
         {
-            if (state.Scope == null || tResult == null)
+            if (state.Scope == null || tResult == null || state.Scope.Span is not Span span)
             {
                 state.Scope?.DisposeWithException(exception);
                 return tResult;
             }
 
             var result = tResult.DuckCast<ResultStruct>();
-            var span = state.Scope.Span;
 
             if (!result.Success)
             {

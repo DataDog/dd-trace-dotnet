@@ -60,9 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 {
                     if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
                     {
-                        var span = (state.Scope ?? state.PreviousScope)?.Span;
-
-                        if (span is null)
+                        if ((state.Scope ?? state.PreviousScope)?.Span is not Span span)
                         {
                             return CallTargetReturn.GetDefault();
                         }

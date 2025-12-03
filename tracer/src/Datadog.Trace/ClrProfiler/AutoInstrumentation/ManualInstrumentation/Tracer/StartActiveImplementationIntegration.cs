@@ -44,12 +44,18 @@ public class StartActiveImplementationIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = tracer.StartActiveInternal(
+        var spanContext = tracer.CreateSpanContext(
             operationName,
-            parent: parentContext,
-            serviceName: serviceName,
-            startTime: startTime,
-            finishOnClose: finishOnClose ?? true);
+            resourceName: operationName,
+            parentContext,
+            serviceName: null);
+
+        var scope = spanContext switch
+        {
+            RecordedSpanContext recorded => tracer.StartActiveInternal(recorded, startTime: startTime, finishOnClose: finishOnClose ?? true),
+            UnrecordedSpanContext unrecorded => tracer.StartActiveInternal(unrecorded, finishOnClose: finishOnClose ?? true),
+            _ => null, // can't be hit
+        };
 
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
         return new CallTargetState(scope);

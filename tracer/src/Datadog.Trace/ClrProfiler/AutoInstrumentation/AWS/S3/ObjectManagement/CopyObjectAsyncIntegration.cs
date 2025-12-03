@@ -52,7 +52,7 @@ public class CopyObjectAsyncIntegration
             var bucketName = request.DestinationBucketName;
             var key = request.DestinationObjectKey;
             var eTag = returnValue.ETag;
-            SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
+            // SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
         }
 
         state.Scope.DisposeWithException(exception);

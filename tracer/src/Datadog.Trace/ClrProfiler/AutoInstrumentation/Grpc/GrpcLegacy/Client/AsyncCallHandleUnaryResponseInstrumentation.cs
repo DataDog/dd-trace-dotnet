@@ -50,21 +50,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 var status = receivedStatus.Status;
                 var asyncCall = instance.DuckCast<AsyncCallStruct>();
                 var scope = GrpcLegacyClientCommon.CreateClientSpan(tracer, in asyncCall.Details, in status);
-                if (scope?.Span is { } span)
-                {
-                    if (receivedStatus.Trailers is { Count: > 0 })
-                    {
-                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
-                    }
-                    else if (responseHeaders is not null)
-                    {
-                        var responseMetadata = responseHeaders.DuckCast<IMetadata>();
-                        if (responseMetadata.Count > 0)
-                        {
-                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
-                        }
-                    }
-                }
+                // if (scope?.Span is { } span)
+                // {
+                //     if (receivedStatus.Trailers is { Count: > 0 })
+                //     {
+                //         span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                //     }
+                //     else if (responseHeaders is not null)
+                //     {
+                //         var responseMetadata = responseHeaders.DuckCast<IMetadata>();
+                //         if (responseMetadata.Count > 0)
+                //         {
+                //             span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                //         }
+                //     }
+                // }
 
                 // need to pass the finish time so that you don't get traces
                 // where the child span closes after the parent
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         {
-            if (state.Scope is { Span.Tags: GrpcClientTags tags } scope)
+            if (state.Scope is { Span: Span { Tags: GrpcClientTags tags } span } scope)
             {
                 // The status code will only change during this method if the response
                 // was originally "success" (due to serialization errors)
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     var asyncCall = instance.DuckCast<AsyncCallStruct>();
 
                     var status = asyncCall.FinishedStatus.Value.Status;
-                    GrpcCommon.RecordFinalStatus(scope.Span, status.StatusCode, status.Detail, status.DebugException ?? exception);
+                    GrpcCommon.RecordFinalStatus(span, status.StatusCode, status.Detail, status.DebugException ?? exception);
                 }
 
                 // Explicitly close so we use the time at the start of the method

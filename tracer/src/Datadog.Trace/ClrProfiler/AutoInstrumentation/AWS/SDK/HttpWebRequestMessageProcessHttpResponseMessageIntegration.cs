@@ -35,7 +35,7 @@ public class HttpWebRequestMessageProcessHttpResponseMessageIntegration
         // so this is now the source of truth for the request data
         if (instance.Instance is not null
             && instance.RequestUri is not null
-            && Tracer.Instance.InternalActiveScope?.Span.Tags is AwsSdkTags tags)
+            && Tracer.Instance.InternalActiveScope?.Span is Span { Tags: AwsSdkTags tags })
         {
             tags.HttpUrl = instance.RequestUri.GetLeftPart(UriPartial.Path);
         }

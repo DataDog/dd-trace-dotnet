@@ -52,13 +52,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             if (exception is not null
-             && state.Scope is { Span.Tags : GrpcServerTags } scope)
+             && state.Scope is { Span: Span { Tags: GrpcServerTags } span } scope)
             {
                 // The only way I've seen for an exception to be thrown here is when the deadline is exceeded.
                 // In that situation AsyncCallServer.HandleFinishedServerside() is called with cancelled=false, but
                 // that's called on a completely different thread, and there's no way to tie it back to this request.
                 // So instead, we  explicitly set it as cancelled here.
-                GrpcCommon.RecordFinalStatus(scope.Span, grpcStatusCode: 4, errorMessage: "DeadlineExceeded", exception);
+                GrpcCommon.RecordFinalStatus(span, grpcStatusCode: 4, errorMessage: "DeadlineExceeded", exception);
                 state.Scope.Dispose();
             }
             else

@@ -32,7 +32,7 @@ internal sealed class UnrecordedSpan : SpanBase
     /// <summary>
     /// Gets the operation name
     /// </summary>
-    internal string? OperationName => _context.OperationName;
+    internal override string? OperationName => _context.OperationName;
 
     internal override void Finish() => Finish(TimeSpan.Zero);
 

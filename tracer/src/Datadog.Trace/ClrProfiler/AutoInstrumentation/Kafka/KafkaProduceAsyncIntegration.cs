@@ -50,10 +50,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 isTombstone: message.Value is null,
                 finishOnClose: true);
 
-            if (scope is not null)
+            if (scope is { Span: Span span })
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
-                    scope.Span,
+                    span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message);
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IDeliveryResult
         {
-            if (state.Scope?.Span?.Tags is KafkaTags tags)
+            if (state.Scope?.Span is Span { Tags: KafkaTags tags })
             {
                 IDeliveryResult deliveryResult = null;
                 if (exception is not null)

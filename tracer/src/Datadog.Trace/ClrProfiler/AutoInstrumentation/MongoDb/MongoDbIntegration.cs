@@ -68,26 +68,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             Scope? scope = null;
 
-            try
-            {
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
-                var span = scope.Span;
-                span.Type = SpanTypes.MongoDb;
-                span.ResourceName = resourceName;
-                tags.DbName = databaseName;
-                tags.Query = query;
-                tags.Collection = collectionName;
-                tags.Host = host;
-                tags.Port = port;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.MongoDb;
+            //     span.ResourceName = resourceName;
+            //     tags.DbName = databaseName;
+            //     tags.Query = query;
+            //     tags.Collection = collectionName;
+            //     tags.Host = host;
+            //     tags.Port = port;
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
 
@@ -166,8 +166,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             var parent = scope?.Span;
 
             if (parent != null &&
-                parent.Type == SpanTypes.MongoDb &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+                parent.Type == SpanTypes.MongoDb)
             {
                 return scope;
             }

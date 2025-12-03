@@ -63,25 +63,25 @@ public sealed class TestSession
 
         tags.SetCIEnvironmentValues(ciValues);
 
-        var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
-            tags: tags,
-            startTime: startDate);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        // var span = Tracer.Instance.StartSpan(
+        //     string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
+        //     tags: tags,
+        //     startTime: startDate);
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        //
+        // span.Type = SpanTypes.TestSession;
+        // span.ResourceName = $"{span.OperationName}.{command}";
+        // span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        // span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        //
+        // tags.SessionId = span.SpanId;
 
-        span.Type = SpanTypes.TestSession;
-        span.ResourceName = $"{span.OperationName}.{command}";
-        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-        span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
-
-        tags.SessionId = span.SpanId;
-
-        _span = span;
+        _span = null!;
 
         // Check if the Test Management feature is enabled and set the flag accordingly
         if (_testOptimization.TestManagementFeature?.Enabled == true)
         {
-            span.SetTag(TestTags.TestManagementEnabled, "true");
+            // span.SetTag(TestTags.TestManagementEnabled, "true");
         }
 
         // Inject context to environment variables
@@ -124,7 +124,7 @@ public sealed class TestSession
         if (startDate is null)
         {
             // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
+            // span.ResetStartTime();
         }
     }
 

@@ -66,9 +66,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         {
             if (state.State is ClaimsAndHttpContext stateTuple
              && Security.Instance is { IsTrackUserEventsEnabled: true } security
-             && state.Scope is { } scope)
+             && state.Scope is { Span: Span span })
             {
-                var span = scope.Span;
                 string? userId = null;
                 string? userLogin = null;
                 Func<string, string>? processPii = null;

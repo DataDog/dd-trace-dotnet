@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             // and for errors is non zero
             if (returnValue is not null
              && exception is null
-             && state.Scope?.Span is { } span)
+             && state.Scope?.Span is Span span)
             {
                 // Success has value 0 - there are _many_ other values
                 if ((int)(object)returnValue != 0)

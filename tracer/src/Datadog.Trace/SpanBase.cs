@@ -21,6 +21,11 @@ internal abstract class SpanBase
     internal abstract string? ResourceName { get; }
 
     /// <summary>
+    /// Gets the operation name
+    /// </summary>
+    internal abstract string? OperationName { get; }
+
+    /// <summary>
     /// Gets the service name
     /// </summary>
     internal string? ServiceName => Context.ServiceName;

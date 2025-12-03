@@ -43,13 +43,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
             resourceName ??= "unknown-resource";
             operationName ??= "dd.dynamic.span";
 
-            var tags = new TagsList();
-            tags.SetTag("debugger.probeid", probeId);
-            tags.SetTag("component", "trace");
-            var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
-            scope.Span.ResourceName = resourceName;
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.DebuggerSpanProbe);
-            return new SpanDebuggerState(scope);
+            // var tags = new TagsList();
+            // tags.SetTag("debugger.probeid", probeId);
+            // tags.SetTag("component", "trace");
+            // var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
+            // scope.Span.ResourceName = resourceName;
+            // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.DebuggerSpanProbe);
+            return new SpanDebuggerState(null);
         }
 
         /// <summary>

@@ -46,21 +46,21 @@ public sealed class Test
 
         var tags = new TestSpanTags(Suite.Tags, name);
         var tracer = Tracer.Instance;
-        var span = tracer.StartSpan(
-            string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
-            tags: tags,
-            startTime: startDate,
-            traceId: traceId,
-            spanId: spanId);
-        var scope = tracer.TracerManager.ScopeManager.Activate(span, true);
+        // var span = tracer.StartSpan(
+        //     string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
+        //     tags: tags,
+        //     startTime: startDate,
+        //     traceId: traceId,
+        //     spanId: spanId);
+        // var scope = tracer.TracerManager.ScopeManager.Activate(span, true);
+        //
+        // scope.Span.Type = SpanTypes.Test;
+        // scope.Span.ResourceName = $"{suite.Name}.{name}";
+        // scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
+        // scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
-        scope.Span.Type = SpanTypes.Test;
-        scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
-        scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
-
-        _scope = scope;
+        _scope = null!;
         _testOptimization = TestOptimization.Instance;
 
         if (_testOptimization.Settings.CodeCoverageEnabled == true)
@@ -87,7 +87,7 @@ public sealed class Test
         if (startDate is null)
         {
             // If a test doesn't have a fixed start time we reset it before running the test code
-            scope.Span.ResetStartTime();
+            // scope.Span.ResetStartTime();
         }
 
         // Record EventCreate telemetry metric
@@ -104,12 +104,12 @@ public sealed class Test
     /// <summary>
     /// Gets the test name
     /// </summary>
-    public string? Name => ((TestSpanTags)_scope.Span.Tags).Name;
+    public string? Name => ((TestSpanTags?)(_scope?.Span as Span)?.Tags)?.Name;
 
     /// <summary>
     /// Gets the test start date
     /// </summary>
-    public DateTimeOffset StartTime => _scope.Span.StartTime;
+    public DateTimeOffset StartTime => (_scope?.Span as Span)?.StartTime ?? default;
 
     /// <summary>
     /// Gets the test suite for this test
@@ -146,7 +146,7 @@ public sealed class Test
     /// <param name="value">Value of the tag</param>
     public void SetTag(string key, string? value)
     {
-        _scope.Span.SetTag(key, value);
+        // _scope.Span.SetTag(key, value);
     }
 
     /// <summary>
@@ -156,7 +156,7 @@ public sealed class Test
     /// <param name="value">Value of the tag</param>
     public void SetTag(string key, double? value)
     {
-        _scope.Span.SetMetric(key, value);
+        // _scope.Span.SetMetric(key, value);
     }
 
     /// <summary>
@@ -167,14 +167,14 @@ public sealed class Test
     /// <param name="callStack">Error callstack</param>
     public void SetErrorInfo(string type, string message, string? callStack)
     {
-        var span = _scope.Span;
-        span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
-        if (callStack is not null)
-        {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
-        }
+        // var span = _scope.Span;
+        // span.Error = true;
+        // span.SetTag(Trace.Tags.ErrorType, type);
+        // span.SetTag(Trace.Tags.ErrorMsg, message);
+        // if (callStack is not null)
+        // {
+        //     span.SetTag(Trace.Tags.ErrorStack, callStack);
+        // }
     }
 
     /// <summary>
@@ -183,7 +183,7 @@ public sealed class Test
     /// <param name="exception">Exception instance</param>
     public void SetErrorInfo(Exception exception)
     {
-        _scope.Span.SetException(exception);
+        // _scope.Span.SetException(exception);
     }
 
     /// <summary>
@@ -207,24 +207,24 @@ public sealed class Test
 
             var ciValues = TestOptimization.Instance.CIValues;
 
-            var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
-            tags.SourceStart = startLine;
-            tags.SourceEnd = methodSymbol.EndLine;
-            _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
-
-            SetStringOrArray(
-                tags,
-                Suite.Tags,
-                static testTags => testTags.SourceFile,
-                static suiteTags => suiteTags.SourceFile,
-                static (suiteTags, value) => suiteTags.SourceFile = value);
-
-            if (ciValues.CodeOwners is { } codeOwners &&
-                codeOwners.Match("/" + tags.SourceFile) is { } match)
-            {
-                SetCodeOwnersOnTags(tags, Suite.Tags, match);
-            }
+            // var tags = (TestSpanTags)_scope.Span.Tags;
+            // tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
+            // tags.SourceStart = startLine;
+            // tags.SourceEnd = methodSymbol.EndLine;
+            // _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
+            //
+            // SetStringOrArray(
+            //     tags,
+            //     Suite.Tags,
+            //     static testTags => testTags.SourceFile,
+            //     static suiteTags => suiteTags.SourceFile,
+            //     static (suiteTags, value) => suiteTags.SourceFile = value);
+            //
+            // if (ciValues.CodeOwners is { } codeOwners &&
+            //     codeOwners.Match("/" + tags.SourceFile) is { } match)
+            // {
+            //     SetCodeOwnersOnTags(tags, Suite.Tags, match);
+            // }
         }
     }
 
@@ -317,8 +317,8 @@ public sealed class Test
     {
         if (traits?.Count > 0)
         {
-            var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.Traits = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits);
+            // var tags = (TestSpanTags)_scope.Span.Tags;
+            // tags.Traits = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits);
         }
     }
 
@@ -330,8 +330,8 @@ public sealed class Test
     {
         if (parameters is not null)
         {
-            var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.Parameters = parameters.ToJSON();
+            // var tags = (TestSpanTags)_scope.Span.Tags;
+            // tags.Parameters = parameters.ToJSON();
         }
     }
 
@@ -342,7 +342,7 @@ public sealed class Test
     /// <param name="jobInfo">Job info</param>
     public void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
     {
-        ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
+        // ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
 
         // Host info
         SetTagIfNotNull(BenchmarkTestTags.HostProcessorName, hostInfo.ProcessorName);
@@ -461,66 +461,66 @@ public sealed class Test
         }
 
         var scope = _scope;
-        var tags = (TestSpanTags)scope.Span.Tags;
+        // var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
-        duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
+        // duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (_testOptimization.Settings.CodeCoverageEnabled == true)
-        {
-            if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
-            {
-                testCoverage.SessionId = tags.SessionId;
-                testCoverage.SuiteId = tags.SuiteId;
-                testCoverage.SpanId = _scope.Span.SpanId;
-
-                _testOptimization.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
-                _testOptimization.TracerManagement?.Manager?.WriteEvent(testCoverage);
-            }
-            else if (status != TestStatus.Skip)
-            {
-                var testName = scope.Span.ResourceName;
-                _testOptimization.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
-            }
-        }
+        // if (_testOptimization.Settings.CodeCoverageEnabled == true)
+        // {
+        //     if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
+        //     {
+        //         testCoverage.SessionId = tags.SessionId;
+        //         testCoverage.SuiteId = tags.SuiteId;
+        //         testCoverage.SpanId = _scope.Span.SpanId;
+        //
+        //         _testOptimization.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+        //         _testOptimization.TracerManagement?.Manager?.WriteEvent(testCoverage);
+        //     }
+        //     else if (status != TestStatus.Skip)
+        //     {
+        //         var testName = scope.Span.ResourceName;
+        //         _testOptimization.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+        //     }
+        // }
 
         // Set status
-        switch (status)
-        {
-            case TestStatus.Pass:
-                tags.Status = TestTags.StatusPass;
-                break;
-            case TestStatus.Fail:
-                tags.Status = TestTags.StatusFail;
-                Suite.Tags.Status = TestTags.StatusFail;
-                break;
-            case TestStatus.Skip:
-                tags.Status = TestTags.StatusSkip;
-                tags.SkipReason = skipReason;
-                if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
-                {
-                    tags.SkippedByIntelligentTestRunner = "true";
-                    Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
-                }
-                else
-                {
-                    tags.SkippedByIntelligentTestRunner = "false";
-                }
-
-                break;
-        }
-
-        if (tags.Unskippable is not null && string.Equals(tags.Unskippable, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
-        }
-
-        if (tags.ForcedRun is not null && string.Equals(tags.ForcedRun, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
-        }
+        // switch (status)
+        // {
+        //     case TestStatus.Pass:
+        //         tags.Status = TestTags.StatusPass;
+        //         break;
+        //     case TestStatus.Fail:
+        //         tags.Status = TestTags.StatusFail;
+        //         Suite.Tags.Status = TestTags.StatusFail;
+        //         break;
+        //     case TestStatus.Skip:
+        //         tags.Status = TestTags.StatusSkip;
+        //         tags.SkipReason = skipReason;
+        //         if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
+        //         {
+        //             tags.SkippedByIntelligentTestRunner = "true";
+        //             Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
+        //             TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
+        //         }
+        //         else
+        //         {
+        //             tags.SkippedByIntelligentTestRunner = "false";
+        //         }
+        //
+        //         break;
+        // }
+        //
+        // if (tags.Unskippable is not null && string.Equals(tags.Unskippable, "true", StringComparison.OrdinalIgnoreCase))
+        // {
+        //     TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
+        // }
+        //
+        // if (tags.ForcedRun is not null && string.Equals(tags.ForcedRun, "true", StringComparison.OrdinalIgnoreCase))
+        // {
+        //     TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
+        // }
 
         // Call close actions
         if (_onCloseActions is not null)
@@ -534,65 +534,66 @@ public sealed class Test
         }
 
         // Finish
-        scope.Span.Finish(duration.Value);
+        // scope.Span.Finish(duration.Value);
         scope.Dispose();
 
         // Record EventFinished telemetry metric
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
-                MetricTags.CIVisibilityTestingEventType.Test,
-                tags.Type == TestTags.TypeBenchmark,
-                tags.TestIsNew == "true",
-                tags.EarlyFlakeDetectionTestAbortReason == "slow",
-                !string.IsNullOrEmpty(tags.BrowserDriver),
-                tags.IsRumActive == "true") is { } eventTypeWithMetadata)
-        {
-            var retryReasonTag = tags.TestRetryReason switch
-            {
-                "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
-                "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
-                _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
-            };
+        // if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
+        //         MetricTags.CIVisibilityTestingEventType.Test,
+        //         tags.Type == TestTags.TypeBenchmark,
+        //         tags.TestIsNew == "true",
+        //         tags.EarlyFlakeDetectionTestAbortReason == "slow",
+        //         !string.IsNullOrEmpty(tags.BrowserDriver),
+        //         tags.IsRumActive == "true") is { } eventTypeWithMetadata)
+        // {
+        //     var retryReasonTag = tags.TestRetryReason switch
+        //     {
+        //         "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+        //         "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+        //         _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+        //     };
+        //
+        //     var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
+        //                                 tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
+        //                                                             MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
+        //     var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
+        //
+        //     TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+        //         TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
+        //         eventTypeWithMetadata,
+        //         retryReasonTag,
+        //         quarantinedOrDisabled,
+        //         attemptToFix);
+        // }
+        //
+        // Current = null;
+        // lock (OpenedTests)
+        // {
+        //     OpenedTests.Remove(this);
+        // }
 
-            var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
-                                        tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
-                                                                    MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
-            var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
-
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
-                TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
-                eventTypeWithMetadata,
-                retryReasonTag,
-                quarantinedOrDisabled,
-                attemptToFix);
-        }
-
-        Current = null;
-        lock (OpenedTests)
-        {
-            OpenedTests.Remove(this);
-        }
-
-        _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+        // _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()
     {
-        _scope.Span.ResetStartTime();
+        // _scope.Span.ResetStartTime();
     }
 
     internal Span GetInternalSpan()
     {
-        return _scope.Span;
+        // return _scope.Span;
+        return null!;
     }
 
     internal TestSpanTags GetTags()
     {
-        return (TestSpanTags)_scope.Span.Tags;
+        return null!; // (TestSpanTags)_scope.Span.Tags;
     }
 
     internal void SetName(string name)
     {
-        ((TestSpanTags)_scope.Span.Tags).Name = name;
+        // ((TestSpanTags)_scope.Span.Tags).Name = name;
     }
 
     internal void AddOnCloseAction(Action<Test> action)

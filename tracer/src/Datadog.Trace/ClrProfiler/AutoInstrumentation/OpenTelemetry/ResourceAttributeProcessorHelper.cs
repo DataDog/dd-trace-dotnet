@@ -48,7 +48,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                     var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
                     if (resourceObject.TryDuckCast<IResource>(out var resource))
                     {
-                        var span = activityMapping.Scope.Span;
+                        var rawSpan = activityMapping.Scope.Span;
+                        if (rawSpan is not Span span)
+                        {
+                            return;
+                        }
+
                         foreach (var attribute in resource.Attributes)
                         {
                             span.SetTag(attribute.Key, attribute.Value?.ToString());
@@ -71,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                                         span.SetTag(attribute.Key, resourceServiceName);
                                     }
 
-                                    span.ServiceName = resourceServiceName;
+                                    // span.ServiceName = resourceServiceName;
                                 }
                                 else if (attribute.Key == "service.version")
                                 {

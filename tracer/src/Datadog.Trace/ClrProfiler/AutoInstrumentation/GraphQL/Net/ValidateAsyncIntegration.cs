@@ -70,14 +70,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                if (exception != null)
-                {
-                    scope.Span?.SetException(exception);
-                }
-                else
-                {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Errors);
-                }
+                // if (exception != null)
+                // {
+                //     scope.Span?.SetException(exception);
+                // }
+                // else
+                // {
+                //     GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Errors);
+                // }
             }
             finally
             {

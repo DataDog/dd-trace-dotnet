@@ -94,55 +94,55 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 return CallTargetState.GetDefault();
             }
 
-            try
-            {
-                string query;
-                if (queryDefinition is string queryDefinitionString)
-                {
-                    query = queryDefinitionString;
-                }
-                else
-                {
-                    var success = queryDefinition.TryDuckCast<QueryDefinitionStruct>(out var queryDefinitionObj);
-                    query = queryDefinitionObj.QueryText;
-                }
-
-                var parent = tracer.ActiveScope?.Span;
-
-                if (parent != null &&
-                    parent.Type == SpanTypes.Sql &&
-                    parent.GetTag(Tags.DbType) == "cosmosdb" &&
-                    parent.ResourceName == query)
-                {
-                    // we are already instrumenting this,
-                    // don't instrument nested methods that belong to the same stacktrace
-                    return new CallTargetState(null);
-                }
-
-                var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
-                tags.ContainerId = containerId;
-                tags.DatabaseId = databaseId;
-                tags.SetEndpoint(endpoint);
-
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
-
-                var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-
-                var span = scope.Span;
-
-                span.ResourceName = query;
-                span.Type = SpanTypes.Sql;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-
-                return new CallTargetState(scope);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     string query;
+            //     if (queryDefinition is string queryDefinitionString)
+            //     {
+            //         query = queryDefinitionString;
+            //     }
+            //     else
+            //     {
+            //         var success = queryDefinition.TryDuckCast<QueryDefinitionStruct>(out var queryDefinitionObj);
+            //         query = queryDefinitionObj.QueryText;
+            //     }
+            //
+            //     var parent = tracer.ActiveScope?.Span;
+            //
+            //     if (parent != null &&
+            //         parent.Type == SpanTypes.Sql &&
+            //         parent.GetTag(Tags.DbType) == "cosmosdb" &&
+            //         parent.ResourceName == query)
+            //     {
+            //         // we are already instrumenting this,
+            //         // don't instrument nested methods that belong to the same stacktrace
+            //         return new CallTargetState(null);
+            //     }
+            //
+            //     var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            //     var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            //     var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
+            //     tags.ContainerId = containerId;
+            //     tags.DatabaseId = databaseId;
+            //     tags.SetEndpoint(endpoint);
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     perTraceSettings.Schema.RemapPeerService(tags);
+            //
+            //     var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
+            //
+            //     var span = scope.Span;
+            //
+            //     span.ResourceName = query;
+            //     span.Type = SpanTypes.Sql;
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            //
+            //     return new CallTargetState(scope);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return new CallTargetState(null);
         }

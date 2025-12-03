@@ -58,39 +58,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
-                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-                var operation = GetOperationName(tracer, spanKind);
-
-                scope = tracer.StartActiveInternal(
-                    operation,
-                    parent: context.SpanContext,
-                    tags: tags,
-                    serviceName: serviceName,
-                    startTime: startTime);
-
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Queue;
-                span.ResourceName = command;
-                tags.Command = command;
-
-                tags.Queue = queue;
-                tags.Exchange = exchange;
-                tags.RoutingKey = routingKey;
-
-                tags.OutHost = host;
-
-                tags.InstrumentationName = IntegrationName;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
+            //     var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+            //     var operation = GetOperationName(tracer, spanKind);
+            //
+            //     scope = tracer.StartActiveInternal(
+            //         operation,
+            //         parent: context.SpanContext,
+            //         tags: tags,
+            //         serviceName: serviceName,
+            //         startTime: startTime);
+            //
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Queue;
+            //     span.ResourceName = command;
+            //     tags.Command = command;
+            //
+            //     tags.Queue = queue;
+            //     tags.Exchange = exchange;
+            //     tags.RoutingKey = routingKey;
+            //
+            //     tags.OutHost = host;
+            //
+            //     tags.InstrumentationName = IntegrationName;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
@@ -228,40 +228,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            var scope = CreateScope(
-                tracer,
-                out var tags,
-                "basic.deliver",
-                context: extractedContext,
-                spanKind: SpanKinds.Consumer,
-                queue: queue,
-                exchange: exchange,
-                routingKey: routingKey);
+            // var scope = CreateScope(
+            //     tracer,
+            //     out var tags,
+            //     "basic.deliver",
+            //     context: extractedContext,
+            //     spanKind: SpanKinds.Consumer,
+            //     queue: queue,
+            //     exchange: exchange,
+            //     routingKey: routingKey);
+            //
+            // if (scope is not null && tags != null)
+            // {
+            //     if (body.Instance is not null)
+            //     {
+            //         tags.MessageSize = body.Length.ToString() ?? "0";
+            //     }
+            //
+            //     var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
+            //     SetDataStreamsCheckpointOnConsume(
+            //         Tracer.Instance,
+            //         scope.Span,
+            //         tags,
+            //         basicProperties?.Headers,
+            //         body?.Length ?? 0,
+            //         timeInQueue);
+            // }
 
-            if (scope is not null && tags != null)
-            {
-                if (body.Instance is not null)
-                {
-                    tags.MessageSize = body.Length.ToString() ?? "0";
-                }
-
-                var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
-                SetDataStreamsCheckpointOnConsume(
-                    Tracer.Instance,
-                    scope.Span,
-                    tags,
-                    basicProperties?.Headers,
-                    body?.Length ?? 0,
-                    timeInQueue);
-            }
-
-            return new CallTargetState(scope);
+            return new CallTargetState(null);
         }
 
         internal static bool IsRabbitMqSpan(Tracer tracer, [NotNullWhen(true)] ISpan? span, string spanKind)
             => span != null && span.OperationName == GetOperationName(tracer, spanKind);
 
         private static bool IsActiveScopeRabbitMqConsume(Tracer tracer)
-            => IsRabbitMqSpan(tracer, tracer.InternalActiveScope?.Span, SpanKinds.Consumer);
+            => IsRabbitMqSpan(tracer, tracer.InternalActiveScope?.Span as Span, SpanKinds.Consumer);
     }
 }

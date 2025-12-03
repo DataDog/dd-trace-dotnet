@@ -30,39 +30,39 @@ internal static class IbmMqHelper
     {
         Scope? scope = null;
 
-        try
-        {
-            var settings = tracer.CurrentTraceSettings;
-            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
-            {
-                return null;
-            }
-
-            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
-            tags.TopicName = queue.Name;
-
-            scope = tracer.StartActiveInternal(
-                operationName,
-                serviceName: serviceName,
-                finishOnClose: true);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
-
-            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
-
-            var span = scope.Span;
-            span.Type = SpanTypes.Queue;
-            span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
-
-            var context = new PropagationContext(span.Context, Baggage.Current);
-            tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating or populating scope.");
-        }
+        // try
+        // {
+        //     var settings = tracer.CurrentTraceSettings;
+        //     if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+        //     {
+        //         return null;
+        //     }
+        //
+        //     var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
+        //     var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+        //     var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+        //     tags.TopicName = queue.Name;
+        //
+        //     scope = tracer.StartActiveInternal(
+        //         operationName,
+        //         serviceName: serviceName,
+        //         finishOnClose: true);
+        //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
+        //
+        //     var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+        //
+        //     var span = scope.Span;
+        //     span.Type = SpanTypes.Queue;
+        //     span.ResourceName = resourceName;
+        //     span.SetTag(Tags.SpanKind, SpanKinds.Producer);
+        //
+        //     var context = new PropagationContext(span.Context, Baggage.Current);
+        //     tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating or populating scope.");
+        // }
 
         return scope;
     }
@@ -75,57 +75,57 @@ internal static class IbmMqHelper
     {
         Scope? scope = null;
 
-        try
-        {
-            var settings = tracer.CurrentTraceSettings;
-            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
-            {
-                return null;
-            }
-
-            var parent = tracer.ActiveScope?.Span;
-            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingType);
-            if (parent is not null &&
-                parent.OperationName == operationName &&
-                parent.GetTag(Tags.InstrumentationName) != null)
-            {
-                return null;
-            }
-
-            PropagationContext extractedContext = default;
-
-            try
-            {
-                var headers = GetHeadersAdapter(message);
-                extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error extracting propagated headers from IbmMq message");
-            }
-
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
-            tags.TopicName = queue.Name;
-            scope = tracer.StartActiveInternal(
-                operationName,
-                tags: tags,
-                parent: extractedContext.SpanContext,
-                serviceName: serviceName,
-                finishOnClose: true,
-                startTime: spanStartTime);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
-            var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
-
-            var span = scope.Span;
-            span.Type = SpanTypes.Queue;
-            span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating or populating scope.");
-        }
+        // try
+        // {
+        //     var settings = tracer.CurrentTraceSettings;
+        //     if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+        //     {
+        //         return null;
+        //     }
+        //
+        //     var parent = tracer.ActiveScope?.Span;
+        //     var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingType);
+        //     if (parent is not null &&
+        //         parent.OperationName == operationName &&
+        //         parent.GetTag(Tags.InstrumentationName) != null)
+        //     {
+        //         return null;
+        //     }
+        //
+        //     PropagationContext extractedContext = default;
+        //
+        //     try
+        //     {
+        //         var headers = GetHeadersAdapter(message);
+        //         extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Error(ex, "Error extracting propagated headers from IbmMq message");
+        //     }
+        //
+        //     var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+        //     var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+        //     tags.TopicName = queue.Name;
+        //     scope = tracer.StartActiveInternal(
+        //         operationName,
+        //         tags: tags,
+        //         parent: extractedContext.SpanContext,
+        //         serviceName: serviceName,
+        //         finishOnClose: true,
+        //         startTime: spanStartTime);
+        //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
+        //     var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+        //
+        //     var span = scope.Span;
+        //     span.Type = SpanTypes.Queue;
+        //     span.ResourceName = resourceName;
+        //     span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating or populating scope.");
+        // }
 
         return scope;
     }

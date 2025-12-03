@@ -1,4 +1,4 @@
-// <copyright file="WcfCommon.cs" company="Datadog">
+﻿// <copyright file="WcfCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -55,139 +55,139 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             Scope? scope = null;
 
-            try
-            {
-                PropagationContext extractedContext = default;
-                string? host = null;
-                string? userAgent = null;
-                string? httpMethod = null;
-                WebHeadersCollection? headers = null;
-
-                IDictionary<string, object?>? requestProperties = requestMessage.Properties;
-                if (requestProperties is not null
-                 && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
-                 && httpRequestProperty?.GetType().FullName != null
-                 && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
-                {
-                    var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
-                    var webHeaderCollection = httpRequestPropertyProxy.Headers;
-
-                    // we're using an http transport
-                    host = webHeaderCollection[HttpRequestHeader.Host];
-                    userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
-                    httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
-
-                    // try to extract propagated context values from http headers
-                    if (tracer.ActiveScope is { } activeScope)
-                    {
-                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            headers = webHeaderCollection.Wrap();
-
-                            extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                    .Extract(headers.Value)
-                                                                    .MergeBaggageInto(Baggage.Current);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error extracting propagated HTTP headers.");
-                        }
-                    }
-                }
-
-                if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
-                {
-                    Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
-                    try
-                    {
-                        extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                .Extract(messageHeaders, GetHeaderValues)
-                                                                .MergeBaggageInto(Baggage.Current);
-
-                        static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
-                        {
-                            try
-                            {
-                                const string ns = "datadog";
-                                var index = headers.FindHeader(name, ns);
-                                if (index >= 0)
-                                {
-                                    return [headers.GetHeader<string>(name, ns)];
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Error extracting propagated WCF headers.");
-                            }
-
-                            return [];
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting propagated WCF headers.");
-                    }
-                }
-
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
-                var tags = new WcfTags();
-
-                string? resourceName = null;
-                if (useWebHttpResourceNames
-                 && requestProperties?.TryGetValue("UriMatched", out var uriMatched) is true
-                 && uriMatched is true
-                 && requestProperties.TryGetValue("UriTemplateMatchResults", out var matchResults)
-                 && matchResults is not null
-                 && matchResults.DuckCast<UriTemplateMatchStruct>().Template is { } template
-                 && template.ToString() is { } templateValue
-                 && !string.IsNullOrEmpty(templateValue))
-                {
-                    if (templateValue[0] == '/')
-                    {
-                        resourceName = string.IsNullOrEmpty(httpMethod)
-                                           ? templateValue
-                                           : $"{httpMethod} {templateValue}";
-                    }
-                    else
-                    {
-                        resourceName = string.IsNullOrEmpty(httpMethod)
-                                           ? $"/{templateValue}"
-                                           : $"{httpMethod} /{templateValue}";
-                    }
-                }
-
-                scope = tracer.StartActiveInternal(operationName, extractedContext.SpanContext, tags: tags);
-                var span = scope.Span;
-
-                var requestHeaders = requestMessage.Headers;
-                Uri? requestHeadersTo = requestHeaders?.To;
-
-                resourceName ??= GetResourceName(requestHeaders);
-                span.DecorateWebServerSpan(
-                    resourceName: resourceName,
-                    httpMethod,
-                    host,
-                    httpUrl: requestHeadersTo?.AbsoluteUri,
-                    userAgent,
-                    tags);
-
-                if (headers is not null)
-                {
-                    var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
-                    tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                }
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     PropagationContext extractedContext = default;
+            //     string? host = null;
+            //     string? userAgent = null;
+            //     string? httpMethod = null;
+            //     WebHeadersCollection? headers = null;
+            //
+            //     IDictionary<string, object?>? requestProperties = requestMessage.Properties;
+            //     if (requestProperties is not null
+            //      && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
+            //      && httpRequestProperty?.GetType().FullName != null
+            //      && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+            //     {
+            //         var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
+            //         var webHeaderCollection = httpRequestPropertyProxy.Headers;
+            //
+            //         // we're using an http transport
+            //         host = webHeaderCollection[HttpRequestHeader.Host];
+            //         userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
+            //         httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
+            //
+            //         // try to extract propagated context values from http headers
+            //         if (tracer.ActiveScope is { } activeScope)
+            //         {
+            //             Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
+            //         }
+            //         else
+            //         {
+            //             try
+            //             {
+            //                 headers = webHeaderCollection.Wrap();
+            //
+            //                 extractedContext = tracer.TracerManager.SpanContextPropagator
+            //                                                         .Extract(headers.Value)
+            //                                                         .MergeBaggageInto(Baggage.Current);
+            //             }
+            //             catch (Exception ex)
+            //             {
+            //                 Log.Error(ex, "Error extracting propagated HTTP headers.");
+            //             }
+            //         }
+            //     }
+            //
+            //     if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
+            //     {
+            //         Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
+            //         try
+            //         {
+            //             extractedContext = tracer.TracerManager.SpanContextPropagator
+            //                                                     .Extract(messageHeaders, GetHeaderValues)
+            //                                                     .MergeBaggageInto(Baggage.Current);
+            //
+            //             static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
+            //             {
+            //                 try
+            //                 {
+            //                     const string ns = "datadog";
+            //                     var index = headers.FindHeader(name, ns);
+            //                     if (index >= 0)
+            //                     {
+            //                         return [headers.GetHeader<string>(name, ns)];
+            //                     }
+            //                 }
+            //                 catch (Exception ex)
+            //                 {
+            //                     Log.Error(ex, "Error extracting propagated WCF headers.");
+            //                 }
+            //
+            //                 return [];
+            //             }
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             Log.Error(ex, "Error extracting propagated WCF headers.");
+            //         }
+            //     }
+            //
+            //     string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
+            //     var tags = new WcfTags();
+            //
+            //     string? resourceName = null;
+            //     if (useWebHttpResourceNames
+            //      && requestProperties?.TryGetValue("UriMatched", out var uriMatched) is true
+            //      && uriMatched is true
+            //      && requestProperties.TryGetValue("UriTemplateMatchResults", out var matchResults)
+            //      && matchResults is not null
+            //      && matchResults.DuckCast<UriTemplateMatchStruct>().Template is { } template
+            //      && template.ToString() is { } templateValue
+            //      && !string.IsNullOrEmpty(templateValue))
+            //     {
+            //         if (templateValue[0] == '/')
+            //         {
+            //             resourceName = string.IsNullOrEmpty(httpMethod)
+            //                                ? templateValue
+            //                                : $"{httpMethod} {templateValue}";
+            //         }
+            //         else
+            //         {
+            //             resourceName = string.IsNullOrEmpty(httpMethod)
+            //                                ? $"/{templateValue}"
+            //                                : $"{httpMethod} /{templateValue}";
+            //         }
+            //     }
+            //
+            //     scope = tracer.StartActiveInternal(operationName, extractedContext.SpanContext, tags: tags);
+            //     var span = scope.Span;
+            //
+            //     var requestHeaders = requestMessage.Headers;
+            //     Uri? requestHeadersTo = requestHeaders?.To;
+            //
+            //     resourceName ??= GetResourceName(requestHeaders);
+            //     span.DecorateWebServerSpan(
+            //         resourceName: resourceName,
+            //         httpMethod,
+            //         host,
+            //         httpUrl: requestHeadersTo?.AbsoluteUri,
+            //         userAgent,
+            //         tags);
+            //
+            //     if (headers is not null)
+            //     {
+            //         var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
+            //         tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            //     }
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null
             return scope;
@@ -243,7 +243,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span.Context;
                     Log.Debug("Activating scope from operation context {ActivatedSpan}", scope.Span);
 
-                    tracer.ActivateSpan(scope.Span);
+                    // tracer.ActivateSpan(scope.Span);
                     // Add the exception but do not dispose the span.
                     // BeforeSendReplyIntegration is responsible for closing the span.
                     return new CallTargetState(scope, activeScope, spanContextRaw);

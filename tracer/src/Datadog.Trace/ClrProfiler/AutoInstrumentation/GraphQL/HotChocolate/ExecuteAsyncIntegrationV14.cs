@@ -50,17 +50,17 @@ public class ExecuteAsyncIntegrationV14
 
         try
         {
-            if (exception != null)
-            {
-                scope.Span?.SetException(exception);
-            }
-            else if (executionResult.TryDuckCast<IQueryResult>(out var result))
-            {
-                if (result.Errors != null)
-                {
-                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, result.Errors);
-                }
-            }
+            // if (exception != null)
+            // {
+            //     scope.Span?.SetException(exception);
+            // }
+            // else if (executionResult.TryDuckCast<IQueryResult>(out var result))
+            // {
+            //     if (result.Errors != null)
+            //     {
+            //         HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, result.Errors);
+            //     }
+            // }
         }
         finally
         {

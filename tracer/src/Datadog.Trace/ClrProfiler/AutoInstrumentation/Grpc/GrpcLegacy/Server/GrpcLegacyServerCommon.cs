@@ -23,41 +23,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             var serverHandler = target.DuckCast<ServerCallHandlerStruct>();
             var method = serverHandler.Method;
             Scope? scope = null;
-            try
-            {
-                var tags = new GrpcServerTags();
-                // Grpc.Core server tags are typically the root span, so use enabledWithGlobalSetting=true
-                GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName, analyticsEnabledWithGlobalSetting: true);
-
-                // If we have a local span (e.g. from aspnetcore) then use that as the parent
-                // Otherwise, use the distributed context as the parent
-                var spanContext = tracer.ActiveScope?.Span.Context;
-
-                if (spanContext is null)
-                {
-                    var extractedContext = ExtractPropagatedContext(tracer, metadata).MergeBaggageInto(Baggage.Current);
-                    spanContext = extractedContext.SpanContext;
-                }
-
-                var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
-                scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Grpc;
-                span.ResourceName = method.FullName;
-
-                if (metadata?.Count > 0)
-                {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
-                }
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating server span for GRPC call");
-            }
+            // try
+            // {
+            //     var tags = new GrpcServerTags();
+            //     // Grpc.Core server tags are typically the root span, so use enabledWithGlobalSetting=true
+            //     GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName, analyticsEnabledWithGlobalSetting: true);
+            //
+            //     // If we have a local span (e.g. from aspnetcore) then use that as the parent
+            //     // Otherwise, use the distributed context as the parent
+            //     var spanContext = tracer.ActiveScope?.Span.Context;
+            //
+            //     if (spanContext is null)
+            //     {
+            //         var extractedContext = ExtractPropagatedContext(tracer, metadata).MergeBaggageInto(Baggage.Current);
+            //         spanContext = extractedContext.SpanContext;
+            //     }
+            //
+            //     var serviceName = tracer.DefaultServiceName ?? "grpc-server";
+            //     string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+            //     scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Grpc;
+            //     span.ResourceName = method.FullName;
+            //
+            //     if (metadata?.Count > 0)
+            //     {
+            //         span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+            //     }
+            //
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating server span for GRPC call");
+            // }
 
             return scope;
         }

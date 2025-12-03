@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         {
             if (Tracer.Instance.InternalActiveScope is var scope)
             {
-                scope.Span?.SetException(webException);
+                // scope.Span?.SetException(webException);
             }
 
             return CallTargetState.GetDefault();

@@ -41,24 +41,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
             Scope? scope = null;
 
-            try
-            {
-                var tags = new RemotingServerTags();
-                scope = tracer.StartActiveInternal(ServerOperationName, parent: context.SpanContext, tags: tags);
-                var span = scope.Span;
-
-                var methodMessage = msg as IMethodMessage;
-                tags.MethodName = methodMessage?.MethodName;
-                // tags.MethodService = methodMessage?.MethodMes
-                span.ResourceName = methodMessage?.MethodName;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var tags = new RemotingServerTags();
+            //     scope = tracer.StartActiveInternal(ServerOperationName, parent: context.SpanContext, tags: tags);
+            //     var span = scope.Span;
+            //
+            //     var methodMessage = msg as IMethodMessage;
+            //     tags.MethodName = methodMessage?.MethodName;
+            //     // tags.MethodService = methodMessage?.MethodMes
+            //     span.ResourceName = methodMessage?.MethodName;
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }
@@ -77,25 +77,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
             Scope? scope = null;
 
-            try
-            {
-                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
-                var tags = clientSchema.CreateRemotingClientTags();
-                scope = tracer.StartActiveInternal(ClientOperationName, serviceName: serviceName, tags: tags);
-                var span = scope.Span;
-
-                var methodMessage = msg as IMethodMessage;
-                tags.MethodName = methodMessage?.MethodName;
-                // tags.MethodService = methodMessage?.MethodMes
-                span.ResourceName = methodMessage?.MethodName;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+            //     var tags = clientSchema.CreateRemotingClientTags();
+            //     scope = tracer.StartActiveInternal(ClientOperationName, serviceName: serviceName, tags: tags);
+            //     var span = scope.Span;
+            //
+            //     var methodMessage = msg as IMethodMessage;
+            //     tags.MethodName = methodMessage?.MethodName;
+            //     // tags.MethodService = methodMessage?.MethodMes
+            //     span.ResourceName = methodMessage?.MethodName;
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

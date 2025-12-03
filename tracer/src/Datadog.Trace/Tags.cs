@@ -46,7 +46,7 @@ namespace Datadog.Trace
         public const string InstrumentedMethod = "instrumented.method";
 
         /// <summary>
-        /// The kind of span (e.g. client, server). Not to be confused with <see cref="Span.Type"/>.
+        /// The kind of span (e.g. client, server). Not to be confused with <see cref="SpanBase.Type"/>.
         /// </summary>
         /// <seealso cref="SpanKinds"/>
         public const string SpanKind = "span.kind";

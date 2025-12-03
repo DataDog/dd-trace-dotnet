@@ -1,4 +1,4 @@
-// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
+﻿// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -71,16 +71,16 @@ namespace Datadog.Trace.Processors
         public Span Process(Span span)
         {
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L51-L63
-            span.ServiceName = NormalizeService(span.ServiceName);
+            // span.ServiceName = NormalizeService(span.ServiceName);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L76-L87
-            span.OperationName = NormalizeName(span.OperationName);
+            // span.OperationName = NormalizeName(span.OperationName);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L89-L93
             if (string.IsNullOrEmpty(span.ResourceName))
             {
                 Log.Debug("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={Name}: {Span}", span.OperationName, span);
-                span.ResourceName = span.OperationName;
+                // span.ResourceName = span.OperationName;
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L95-L99

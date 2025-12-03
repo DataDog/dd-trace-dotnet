@@ -67,7 +67,7 @@ internal static class AwsSqsHandlerCommon
         if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
         {
             var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
-            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+            // scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
 
         ContextPropagation.InjectHeadersIntoMessage(tracer, requestProxy, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
@@ -89,7 +89,7 @@ internal static class AwsSqsHandlerCommon
             {
                 // this has no effect if DSM is disabled
                 var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                // scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 // this needs to be done for context propagation even when DSM is disabled
                 // (when DSM is enabled, it injects the pathway context on top of the trace context)
                 ContextPropagation.InjectHeadersIntoMessage(tracer, entry, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
@@ -165,7 +165,7 @@ internal static class AwsSqsHandlerCommon
 
                     var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
                     var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                    // span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                 }
             }
         }
