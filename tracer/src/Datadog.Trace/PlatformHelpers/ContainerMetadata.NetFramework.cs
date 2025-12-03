@@ -12,14 +12,16 @@ namespace Datadog.Trace.PlatformHelpers;
 /// <summary>
 /// Utility class with methods to interact with container hosts.
 /// </summary>
-internal static class ContainerMetadata
+internal class ContainerMetadata
 {
+    public static readonly ContainerMetadata Instance = new();
+
     /// <summary>
     /// Gets the id of the container executing the code.
     /// Return <c>null</c> if code is not executing inside a supported container.
     /// </summary>
     /// <returns>The container id or <c>null</c>.</returns>
-    public static string? GetContainerId() => null;
+    public string? ContainerId => null;
 
     /// <summary>
     /// Gets the unique identifier of the container executing the code.
@@ -32,6 +34,6 @@ internal static class ContainerMetadata
     /// </list>
     /// </summary>
     /// <returns>The entity id or <c>null</c>.</returns>
-    public static string? GetEntityId() => null;
+    public string? EntityId => null;
 }
 #endif
