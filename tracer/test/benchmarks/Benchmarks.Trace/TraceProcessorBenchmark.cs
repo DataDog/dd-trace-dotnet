@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Processors;
 
 namespace Benchmarks.Trace
@@ -13,7 +14,7 @@ namespace Benchmarks.Trace
         private ITraceProcessor _normalizerTraceProcessor;
         private ITraceProcessor _trucantorTraceProcessor;
         private ITraceProcessor _obfuscatorTraceProcessor;
-        private ArraySegment<Span> _spans;
+        private SpanCollection _spans;
         private Tracer _tracer;
 
         [GlobalSetup]
@@ -22,14 +23,13 @@ namespace Benchmarks.Trace
             _normalizerTraceProcessor = new NormalizerTraceProcessor();
             _trucantorTraceProcessor = new TruncatorTraceProcessor();
             _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor(true);
-
-            _tracer = TracerHelper.CreateTracer();
+_tracer = TracerHelper.CreateTracer();
             var traceContext = new TraceContext(_tracer, null);
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
             span.ResourceName = "My Resource Name";
             span.Type = "sql";
-            _spans = new ArraySegment<Span>(Enumerable.Repeat(span, 100).ToArray());
+            _spans = new SpanCollection(Enumerable.Repeat(span, 100).ToArray(), 100);
         }
 
         [GlobalCleanup]
@@ -41,19 +41,19 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void NormalizerProcessor()
         {
-            _normalizerTraceProcessor.Process(_spans);
+            _normalizerTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]
         public void TruncatorProcessor()
         {
-            _trucantorTraceProcessor.Process(_spans);
+            _trucantorTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]
         public void ObfuscatorProcessor()
         {
-            _obfuscatorTraceProcessor.Process(_spans);
+            _obfuscatorTraceProcessor.Process(in _spans);
         }
         
         [Benchmark]

@@ -21,7 +21,7 @@ namespace Benchmarks.Trace
 
         private IAgentWriter _agentWriter;
         private IAgentWriter _agentWriterNoOpFlush;
-        private ArraySegment<Span> _enrichedSpans;
+        private SpanCollection _enrichedSpans;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -43,7 +43,7 @@ namespace Benchmarks.Trace
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            _enrichedSpans = new SpanCollection(enrichedSpans, SpanCount);
 
             var config = TracerHelper.DefaultConfig;
             config.Add(ConfigurationKeys.TraceEnabled, false);

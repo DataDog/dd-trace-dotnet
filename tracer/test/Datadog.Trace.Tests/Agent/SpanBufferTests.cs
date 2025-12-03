@@ -151,7 +151,7 @@ namespace Datadog.Trace.Tests.Agent
             interceptedChunks[1].IsFirstChunkInPayload.Should().BeFalse();
         }
 
-        private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)
+        private static SpanCollection CreateTraceChunk(int spanCount, ulong startingId = 1)
         {
             var spans = new Span[spanCount];
 
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tests.Agent
                 spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
             }
 
-            return new ArraySegment<Span>(spans);
+            return new SpanCollection(spans);
         }
 
         /// <summary>
