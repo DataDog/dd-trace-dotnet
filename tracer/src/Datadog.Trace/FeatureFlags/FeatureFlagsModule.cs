@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -27,6 +28,8 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal class FeatureFlagsModule
     {
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+
         private static FeatureFlagsModule? _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
@@ -35,6 +38,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription = null;
         private FfeProduct? _ffeProduct = null;
+        private Action? _onNewConfigEventHander = null;
 
         private FeatureFlagsEvaluator? _evaluator = null;
 
@@ -45,8 +49,8 @@ namespace Datadog.Trace.FeatureFlags
         /// <summary>
         /// Initializes a new instance of the <see cref="FeatureFlagsModule"/> class with default settings.
         /// </summary>
-        public FeatureFlagsModule(IRcmSubscriptionManager? rcmSubscriptionManager = null)
-            : this(TracerSettings.FromDefaultSourcesInternal(), rcmSubscriptionManager)
+        public FeatureFlagsModule()
+            : this(TracerSettings.FromDefaultSourcesInternal(), null)
         {
         }
 
@@ -56,6 +60,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (settings.IsFlaggingProviderEnabled)
             {
+                Log.Debug("FeatureFlagsModule ENABLED");
                 _enabled = true;
                 _ffeProduct = new FfeProduct(UpdateConfig);
                 _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
@@ -83,14 +88,24 @@ namespace Datadog.Trace.FeatureFlags
 
         public long Timeout { get; set; } = 1000;
 
-        internal Evaluation? Evaluate(string key, Type resultType, object? defaultValue, EvaluationContext context)
+        internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
+        {
+            _onNewConfigEventHander = onNewConfig;
+        }
+
+        internal Evaluation Evaluate(string key, Type resultType, object? defaultValue, EvaluationContext context)
         {
             if (!_enabled)
             {
                 return new Evaluation(null, EvaluationReason.ERROR, null, "FeatureFlagsSdk is disabled");
             }
 
-            return _evaluator?.Evaluate(key, resultType, defaultValue, context);
+            if (_evaluator is null)
+            {
+                return new Evaluation(null, EvaluationReason.ERROR, null, "No config loaded");
+            }
+
+            return _evaluator.Evaluate(key, resultType, defaultValue, context);
         }
 
         private void UpdateConfig(List<KeyValuePair<string, ServerConfiguration>> list)
@@ -99,6 +114,7 @@ namespace Datadog.Trace.FeatureFlags
             if (list.Count > 0)
             {
                 _evaluator = new FeatureFlagsEvaluator(ReportExposure, list[0].Value, Timeout);
+                _onNewConfigEventHander?.Invoke();
             }
         }
 
