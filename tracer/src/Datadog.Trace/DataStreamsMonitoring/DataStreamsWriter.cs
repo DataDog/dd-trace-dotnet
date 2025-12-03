@@ -21,6 +21,8 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 
 internal class DataStreamsWriter : IDataStreamsWriter
 {
+    private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
     private readonly object _initLock = new();
@@ -34,12 +36,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly IDataStreamsApi _api;
     private readonly bool _isInDefaultState;
 
-    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskOptions);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private Task? _processTask;
+    private Task? _flushTask;
     private Timer? _flushTimer;
+    private TaskCompletionSource<bool> _forceFlush = new(TaskOptions);
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -94,8 +98,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
+            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in data streams flush task"), TaskContinuationOptions.OnlyOnFaulted);
+
             _flushTimer = new Timer(
-                async x => await ((DataStreamsWriter)x!).FlushAsync().ConfigureAwait(false),
+                x => ((DataStreamsWriter)x!).RequestFlush(),
                 this,
                 dueTime: _bucketDurationMs,
                 period: _bucketDurationMs);
@@ -179,6 +187,36 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
 
         await FlushAsync().ConfigureAwait(false);
+    }
+
+    private void RequestFlush()
+    {
+        _forceFlush.TrySetResult(true);
+    }
+
+    private async Task FlushBuffersTaskLoopAsync()
+    {
+        Task[] tasks = new Task[2];
+        tasks[0] = _processTask!;
+        tasks[1] = _forceFlush.Task;
+
+        while (true)
+        {
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+
+            if (_forceFlush.Task.IsCompleted)
+            {
+                _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                tasks[1] = _forceFlush.Task;
+            }
+
+            await FlushAsync().ConfigureAwait(false);
+
+            if (_processTask!.IsCompleted)
+            {
+                return;
+            }
+        }
     }
 
     public async Task FlushAsync()

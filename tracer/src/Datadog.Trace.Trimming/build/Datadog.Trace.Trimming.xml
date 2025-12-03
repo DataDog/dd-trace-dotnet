@@ -1068,7 +1068,6 @@
       <type fullname="System.OperationCanceledException" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
-      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredAsyncDisposable" />
       <type fullname="System.Threading.CancellationTokenSource" />
       <type fullname="System.Threading.Tasks.TaskAsyncEnumerableExtensions" />
