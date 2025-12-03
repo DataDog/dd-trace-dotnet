@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.Manager.InitialExporterSettings.AgentUri.ToString());
         }
 
         [Theory]
@@ -681,9 +681,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void RecordsTelemetryAboutTfm()
         {
             var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData();
+            var data = tracerSettings.Telemetry.GetData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()

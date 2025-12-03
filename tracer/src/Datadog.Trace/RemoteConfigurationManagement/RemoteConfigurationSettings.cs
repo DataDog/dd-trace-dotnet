@@ -20,9 +20,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             configurationSource ??= NullConfigurationSource.Instance;
 
-            RuntimeId = Util.RuntimeId.Get();
-            TracerVersion = TracerConstants.ThreePartVersion;
-
             var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
 #pragma warning disable CS0618
                               .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
@@ -31,10 +28,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
         }
-
-        public string RuntimeId { get; }
-
-        public string TracerVersion { get; }
 
         public TimeSpan PollInterval { get; }
 

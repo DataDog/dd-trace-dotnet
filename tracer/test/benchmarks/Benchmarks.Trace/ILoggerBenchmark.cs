@@ -12,44 +12,54 @@ using IExternalScopeProvider = Microsoft.Extensions.Logging.IExternalScopeProvid
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent4]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ILoggerBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly ILogger Logger;
+        private ILogger _logger;
+        private ServiceProvider _serviceProvider;
 
-        static ILoggerBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            var config = TracerHelper.DefaultConfig;
+            config[ConfigurationKeys.LogsInjectionEnabled] = true;
+            config[ConfigurationKeys.Environment] = "env";
+            config[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(config);
 
             var services = new ServiceCollection();
             services.AddLogging();
 
             services.AddSingleton<ILoggerProvider, TestProvider>();
 
-            var serviceProvider = services.BuildServiceProvider();
+            _serviceProvider = services.BuildServiceProvider();
 
-            Logger = serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
+            _logger = _serviceProvider.GetRequiredService<ILogger<ILoggerBenchmark>>();
+
+            // Warmup
+            EnrichedLog();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            if (_logger is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            _serviceProvider.Dispose();
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
-                    Logger.LogInformation("Hello");
+                    _logger.LogInformation("Hello");
                 }
             }
         }

@@ -1,4 +1,4 @@
-// <copyright file="TestSuiteVisibilityProcessor.cs" company="Datadog">
+﻿// <copyright file="TestSuiteVisibilityProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 
@@ -21,31 +22,78 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
         Log.Information("TestSuiteVisibilityProcessor initialized.");
     }
 
-    public ArraySegment<Span> Process(ArraySegment<Span> trace)
+    public SpanCollection Process(in SpanCollection trace)
     {
-        // Check if the trace has any span or Agentless is enabled
-        if (trace.Count == 0)
+        var originalCount = trace.Count;
+        if (originalCount == 0)
         {
             return trace;
         }
 
-        Span[]? spans = null;
-        var spIdx = 0;
-        for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
+        // Check if the trace has any span or Agentless is enabled
+
+        // special case single span case
+        if (originalCount == 1)
         {
-            var span = trace.Array![i];
+            var span = trace[0];
+            if (Process(span) is null)
+            {
+                Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={Type}]", span.Type);
+                return default;
+            }
+
+            return trace;
+        }
+
+        // we know we have multiple spans, so get the underlying array
+        if (trace.TryGetArray() is not { } segment)
+        {
+            // Shouldn't be possible, because we handle 0 and 1 spans above
+            return trace;
+        }
+
+        Span[]? spans = null;
+        var copiedCount = 0;
+        var haveDrops = false;
+        var haveKeeps = false;
+        // TODO: we could reuse the same underlying array rather than re-allocating when we need to recreate, but that can be a separate optimization
+        for (var i = segment.Offset; i < segment.Count + segment.Offset; i++)
+        {
+            var span = segment.Array![i];
             if (Process(span) is { } processedSpan)
             {
-                spans ??= new Span[trace.Count];
-                spans[spIdx++] = processedSpan;
+                haveKeeps = true;
+                if (haveDrops)
+                {
+                    // if we have _any_ drops, we know we need to start copying the spans across
+                    if (spans is null)
+                    {
+                        // This is the first kept span after all previous were dropped
+                        // At most we will keep all the remaining spans
+                        spans = new Span[segment.Count - (i - segment.Offset)];
+                    }
+
+                    spans[copiedCount++] = processedSpan;
+                }
             }
             else
             {
+                haveDrops = true;
+                if (haveKeeps && spans is null)
+                {
+                    // all previous were keep, so we need to copy all those previous kept spans across
+                    spans = new Span[segment.Count];
+                    Array.Copy(segment.Array!, segment.Offset, spans, destinationIndex: 0, length: i - segment.Offset);
+                    copiedCount = i - segment.Offset;
+                }
+
                 Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={Type}]", span.Type);
             }
         }
 
-        return spans is null ? new ArraySegment<Span>([]) : new ArraySegment<Span>(spans, 0, spIdx);
+        return haveDrops
+                   ? spans is null ? default : new SpanCollection(spans, copiedCount)
+                   : trace;
     }
 
     public Span? Process(Span? span)

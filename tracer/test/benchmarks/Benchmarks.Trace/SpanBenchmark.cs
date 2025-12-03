@@ -3,6 +3,7 @@ extern alias DatadogTraceManual;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
@@ -10,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using BindingFlags = System.Reflection.BindingFlags;
 using Tracer = Datadog.Trace.Tracer;
 using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
@@ -22,31 +24,42 @@ namespace Benchmarks.Trace
     /// Span benchmarks
     /// </summary>
     [MemoryDiagnoser]
-    [BenchmarkAgent6]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class SpanBenchmark
     {
-        private static readonly Tracer Tracer;
-        private static readonly ManualTracer ManualTracer;
+        private Tracer _tracer;
+        private ManualTracer _manualTracer;
 
-        static SpanBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
             var settings = TracerSettings.Create(new()
             {
                 { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
                 { ConfigurationKeys.TraceEnabled, false },
+                { ConfigurationKeys.AgentFeaturePollingEnabled, false },
+                { ConfigurationKeys.Telemetry.Enabled, false },
             });
 
-            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
+            _tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null, telemetry: NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();
-            CtorIntegration.PopulateSettings(manualSettings, Tracer.Settings);
+            CtorIntegration.PopulateSettings(manualSettings, _tracer);
 
             // Constructor is private, so create using reflection
-            ManualTracer = (ManualTracer)typeof(ManualTracer)
+            _manualTracer = (ManualTracer)typeof(ManualTracer)
                                         .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0]
-                                        .Invoke(new object[] { Tracer, manualSettings });
+                                        .Invoke(new object[] { _tracer, manualSettings });
+
+            // Warmup
+            StartFinishSpan();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
         }
 
         // /// <summary>
@@ -55,9 +68,9 @@ namespace Benchmarks.Trace
         // [Benchmark]
         public void ManualStartFinishScope()
         {
-            var manualTracer = ManualTracer.DuckCast<ITracerProxy>();
+            var manualTracer = _manualTracer.DuckCast<ITracerProxy>();
             var state = StartActiveImplementationIntegration.OnMethodBegin(manualTracer, "operation", (ManualSpanContext)null, null, null, null);
-            var nullScope = ManualTracer.StartActive(null!);
+            var nullScope = _manualTracer.StartActive(null!);
             var result = StartActiveImplementationIntegration.OnMethodEnd(manualTracer, nullScope, exception: null, in state);
             using (var scope = result.GetReturnValue())
             {
@@ -73,7 +86,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishSpan()
         {
-            var span = Tracer.StartSpan("operation");
+            var span = _tracer.StartSpan("operation");
             span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             span.Finish();
         }
@@ -84,10 +97,22 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishScope()
         {
-            using (Scope scope = Tracer.StartActiveInternal("operation"))
+            using (Scope scope = _tracer.StartActiveInternal("operation"))
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
+        }
+
+        /// <summary>
+        /// Starts and finishes two scopes in the same trace benchmark
+        /// </summary>
+        [Benchmark]
+        public void StartFinishTwoScopes()
+        {
+            using var scope1 = _tracer.StartActiveInternal("operation1");
+            scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+
+            using var scope2 = _tracer.StartActiveInternal("operation2");
         }
     }
 }

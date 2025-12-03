@@ -19,7 +19,13 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
     internal static class Utilities
     {
 
+// CUSTOMIZATION TO AVOID unsafe allocation with every access in .NET Framework
+#if NETCOREAPP
         private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
+#else
+        private static ReadOnlySpan<byte> Log2DeBruijn => _log2DeBruijn.AsSpan();
+        private static readonly byte[] _log2DeBruijn = new byte[32]
+#endif
         {
             00, 09, 01, 10, 13, 21, 02, 29,
             11, 14, 16, 18, 22, 25, 03, 30,

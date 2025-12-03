@@ -15,23 +15,59 @@ namespace Datadog.Trace.Tagging
     partial class KafkaTags
     {
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#else
+        private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // BootstrapServersBytes = MessagePack.Serialize("messaging.kafka.bootstrap.servers");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BootstrapServersBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 98, 111, 111, 116, 115, 116, 114, 97, 112, 46, 115, 101, 114, 118, 101, 114, 115 };
+#else
+        private static readonly byte[] BootstrapServersBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 98, 111, 111, 116, 115, 116, 114, 97, 112, 46, 115, 101, 114, 118, 101, 114, 115 };
+#endif
         // TopicBytes = MessagePack.Serialize("messaging.destination.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TopicBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] TopicBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // PartitionBytes = MessagePack.Serialize("kafka.partition");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PartitionBytes => new byte[] { 175, 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] PartitionBytes = new byte[] { 175, 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
+#endif
         // OffsetBytes = MessagePack.Serialize("kafka.offset");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> OffsetBytes => new byte[] { 172, 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
+#else
+        private static readonly byte[] OffsetBytes = new byte[] { 172, 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
+#endif
         // TombstoneBytes = MessagePack.Serialize("kafka.tombstone");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TombstoneBytes => new byte[] { 175, 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+#else
+        private static readonly byte[] TombstoneBytes = new byte[] { 175, 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+#endif
         // ConsumerGroupBytes = MessagePack.Serialize("kafka.group");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ConsumerGroupBytes => new byte[] { 171, 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
+#else
+        private static readonly byte[] ConsumerGroupBytes = new byte[] { 171, 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -49,7 +85,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
