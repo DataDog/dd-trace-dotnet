@@ -155,7 +155,7 @@ public class FeatureFlagsEvaluatorTests
 
         var result = evaluator.Evaluate("disabled-flag", true, ctx);
 
-        Assert.True(result.Value);
+        Assert.Equal(true, result.Value);
         Assert.Equal(EvaluationReason.DISABLED, result.Reason);
         Assert.Null(result.Error);
     }
@@ -186,7 +186,7 @@ public class FeatureFlagsEvaluatorTests
     // FlattenContext tests
     // ---------------------------------------------------------------------
 
-    public static IEnumerable<object[]> FlattenContextCases()
+    public static IEnumerable<object?[]> FlattenContextCases()
     {
         // empty
         yield return new object[]

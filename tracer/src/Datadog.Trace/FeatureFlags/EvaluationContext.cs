@@ -10,13 +10,14 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags
 {
-    internal class EvaluationContext(string key, Dictionary<string, object>? values = null, Func<object?, object?>? convertValue = null)
+    internal class EvaluationContext(string key, IDictionary<string, object?>? values = null, Func<object?, object?>? convertValue = null)
+        : IEvaluationContext
     {
         private readonly Func<object?, object?>? _convertValue = convertValue;
 
         public string TargetingKey { get; } = key;
 
-        public Dictionary<string, object> Values { get; } = values ?? new Dictionary<string, object>();
+        public IDictionary<string, object?> Values { get; } = values ?? new Dictionary<string, object?>();
 
         public object? GetValue(string key)
         {

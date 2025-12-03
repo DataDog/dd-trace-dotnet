@@ -29,6 +29,9 @@
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" 
              Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\DuckTyping\DuckAsClassAttribute.cs" Link="DuckTyping\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="FeatureFlags\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="FeatureFlags\IEvaluation.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluationContext.cs" Link="FeatureFlags\IEvaluationContext.cs" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
     <Compile Include="..\Datadog.Trace\IScope.cs" />
