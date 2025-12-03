@@ -18,11 +18,10 @@ namespace Datadog.Trace.Util
         /// Sets peer.service tag for AwsSdk spans based on the service, environment, and region
         /// </summary>
         /// <param name="tags">AwsSdkTags for the current span</param>
-        public static AwsSdkTags DerivePeerService(AwsSdkTags tags)
+        public static AwsSdkTags DerivePeerService(AwsSdkTags tags, bool isAwsLambda)
         {
             var service = tags.AwsService;
             var region = tags.Region;
-            var isAwsLambda = EnvironmentHelpers.IsAwsLambda();
             if (isAwsLambda && tags.Region != null)
             {
                 switch (service)
