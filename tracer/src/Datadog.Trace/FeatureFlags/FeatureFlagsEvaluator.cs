@@ -48,6 +48,14 @@ namespace Datadog.Trace.FeatureFlags
             _onExposureEvent = onExposureEvent;
             _config = config;
             _timeoutMs = timeoutMs;
+            if (_config is null)
+            {
+                Log.Debug("Creating Evaluator without config");
+            }
+            else
+            {
+                Log.Debug<int>("Creating Evaluator with {Flags} flags", _config.Flags?.Count ?? 0);
+            }
         }
 
         private delegate bool NumberEquality(double a, double b);
@@ -57,7 +65,7 @@ namespace Datadog.Trace.FeatureFlags
             return Evaluate(key, typeof(T), defaultValue, context);
         }
 
-        public Evaluation Evaluate(string key, Type resultType, object? defaultValue, EvaluationContext context)
+        public Evaluation Evaluate(string key, Type resultType, object? defaultValue, IEvaluationContext context)
         {
             try
             {
@@ -226,7 +234,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(IEnumerable<Rule> rules, EvaluationContext context)
+        private static bool EvaluateRules(IEnumerable<Rule> rules, IEvaluationContext context)
         {
             foreach (var rule in rules)
             {
@@ -254,7 +262,7 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext context)
+        private static bool EvaluateCondition(ConditionConfiguration condition, IEvaluationContext context)
         {
             if (condition.Operator is null)
             {
@@ -432,7 +440,7 @@ namespace Datadog.Trace.FeatureFlags
             return null;
         }
 
-        private static object? ResolveAttribute(string? name, EvaluationContext context)
+        private static object? ResolveAttribute(string? name, IEvaluationContext context)
         {
             if (name == null)
             {
@@ -526,7 +534,7 @@ namespace Datadog.Trace.FeatureFlags
             return evaluation.Metadata.TryGetValue("allocationKey", out var key) ? key : null;
         }
 
-        internal static IDictionary<string, object?> FlattenContext(EvaluationContext context)
+        internal static IDictionary<string, object?> FlattenContext(IEvaluationContext context)
         {
             var keys = context.Values.Keys;
             var result = new Dictionary<string, object?>();
@@ -580,7 +588,7 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
-            EvaluationContext context)
+            IEvaluationContext context)
         {
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
             {
@@ -622,7 +630,7 @@ namespace Datadog.Trace.FeatureFlags
         private void DispatchExposure(
             string flag,
             Evaluation evaluation,
-            EvaluationContext context)
+            IEvaluationContext context)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;

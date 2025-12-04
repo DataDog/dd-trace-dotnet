@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
@@ -42,9 +43,7 @@ public class FeatureFlagsTests : TestHelper
     public async Task FfeEnabled()
     {
         using var agent = EnvironmentHelper.GetMockAgent();
-        var output = await RunTest(agent, enabled: true);
-
-        var request1 = await agent.SetupRcmAndWait(
+        var request1 = agent.SetupRcm(
             Output,
             [
                 ((object)new ServerConfiguration
@@ -53,9 +52,9 @@ public class FeatureFlagsTests : TestHelper
                 },
                 RcmProducts.FfeFlags,
                 nameof(FeatureFlagsTests))
-            ],
-            timeoutInMilliseconds: 5000);
-        request1.Should().NotBeNull();
+            ]);
+
+        var output = await RunTest(agent, enabled: true);
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
