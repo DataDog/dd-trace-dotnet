@@ -584,6 +584,12 @@ DD_METRICS_OTEL_ENABLED: |
 DD_METRICS_OTEL_METER_NAMES: |
   List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
 
+DD_ACTION_EXECUTION_ID: |
+  AWS CodePipeline action execution ID for CI correlation.
+
+DD_PIPELINE_EXECUTION_ID: |
+  AWS CodePipeline pipeline execution ID for CI correlation.
+
 DD_PROXY_HTTPS: |
   Configuration key to set a proxy server for https requests.
 
