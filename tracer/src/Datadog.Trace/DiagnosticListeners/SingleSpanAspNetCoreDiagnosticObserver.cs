@@ -44,9 +44,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SingleSpanAspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
-        private readonly Tracer? _tracer;
-        private readonly Security? _security;
-        private readonly Iast.Iast? _iast;
+        private readonly Tracer _tracer;
+        private readonly Security _security;
+        private readonly Iast.Iast _iast;
         private readonly SpanCodeOrigin? _spanCodeOrigin;
         private string? _hostingHttpRequestInStartEventKey;
         private string? _mvcBeforeActionEventKey;
@@ -56,15 +56,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private string? _hostingHttpRequestInStopEventKey;
         private string? _routingEndpointMatchedKey;
 
-        public SingleSpanAspNetCoreDiagnosticObserver()
-            : this(null, null, null, null)
+        public SingleSpanAspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin? spanCodeOrigin)
         {
-        }
-
-        public SingleSpanAspNetCoreDiagnosticObserver(Tracer? tracer, Security? security, Iast.Iast? iast, SpanCodeOrigin? spanCodeOrigin)
-        {
-            // TODO: Once SpanCodeOrigin initialization is synchronous
-            // just set these on startup instead of having the properties
             _tracer = tracer;
             _security = security;
             _iast = iast;
@@ -73,12 +66,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
-
-        private Security CurrentSecurity => _security ?? Security.Instance;
-
-        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
-
+        // TODO: Once SpanCodeOrigin initialization is synchronous
+        // just set this on startup instead of having the properties
         private SpanCodeOrigin? CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
         protected override void OnNext(string eventName, object arg)
@@ -176,10 +165,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-            var shouldTrace = tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.AppsecEnabled;
+            var shouldTrace = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldSecure = _security.AppsecEnabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -195,13 +182,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
-                    var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, CurrentIast, httpContext, resourceName, new AspNetCoreSingleSpanTags());
+                    var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(_tracer, _security, _iast, httpContext, resourceName, new AspNetCoreSingleSpanTags());
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
-                        securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
+                        securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
                     }
                 }
             }
@@ -209,9 +196,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -271,17 +256,17 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true } codeOrigin)
                 {
                     var method = routeEndpoint.Value.RequestDelegate?.Method;
                     if (method != null)
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
                     else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
                         Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
                     }
                     else
                     {
@@ -316,7 +301,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     areaName: areaName,
                     controllerName: controllerName,
                     actionName: actionName,
-                    tracer.Settings.ExpandRouteTemplatesEnabled);
+                    _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
@@ -331,13 +316,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
-                var security = CurrentSecurity;
+                var security = _security;
                 if (security.AppsecEnabled)
                 {
                     security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
                 }
 
-                if (CurrentIast.Settings.Enabled)
+                if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
@@ -346,9 +331,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var security = CurrentSecurity;
-            var shouldSecure = security.AppsecEnabled;
-            var shouldUseIast = CurrentIast.Settings.Enabled;
+            var shouldSecure = _security.AppsecEnabled;
+            var shouldUseIast = _iast.Settings.Enabled;
             var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
@@ -372,7 +356,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                CurrentSecurity.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
 
                 if (shouldUseIast)
                 {
@@ -383,7 +367,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction()
         {
-            var tracer = CurrentTracer;
+            var tracer = _tracer;
 
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -430,7 +414,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = CurrentTracer;
+            var tracer = _tracer;
 
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -440,7 +424,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
              && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope: { } rootScope, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext, proxyScope);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, _security, rootScope, httpContext, proxyScope);
             }
 
             CoreHttpContextStore.Instance.Remove();
@@ -449,7 +433,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = CurrentTracer;
+            var tracer = _tracer;
 
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -460,7 +444,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && unhandledStruct.HttpContext is { } httpContext
              && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
 
             // If we don't have a span, no need to call Handle exception
