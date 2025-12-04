@@ -146,18 +146,6 @@ internal static partial class ConfigurationKeys
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
     /// <summary>
-    /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
-    public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
-
-    /// <summary>
-    /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
-    public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
-
-    /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
