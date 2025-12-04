@@ -172,6 +172,12 @@ internal static partial class ConfigurationKeys
     public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
 
     /// <summary>
+    /// SSI variable that allows unsupported runtimes to be instrumented.
+    /// Used for correlation purposes in telemetry.
+    /// </summary>
+    public const string InjectForce = "DD_INJECT_FORCE";
+
+    /// <summary>
     /// Configuration key for enabling or disabling the injection of products via single step instrumentation.
     /// </summary>
     public const string SsiDeployed = "DD_INJECTION_ENABLED";

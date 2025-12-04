@@ -475,6 +475,22 @@ DD_IAST_WEAK_HASH_ALGORITHMS: |
 DD_INJECTION_ENABLED: |
   Configuration key for enabling or disabling the injection of products via single step instrumentation.
 
+DD_INJECT_FORCE: |
+  SSI variable that allows unsupported runtimes to be instrumented.
+  Used for correlation purposes in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_ID: |
+  SSI variable that provides a unique identifier for the instrumentation installation.
+  Used for tracking and correlation purposes in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_TIME: |
+  SSI variable that indicates when the instrumentation was installed.
+  Used for tracking installation timeline in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_TYPE: |
+  SSI variable that indicates the installation type (e.g., dd_dotnet_launcher, dd_trace_tool, dotnet_msi, windows_fleet_installer).
+  Used to determine the instrumentation source for telemetry.
+
 DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED: |
   Configuration key for sending telemetry direct to telemetry intake. If enabled, and
   <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not

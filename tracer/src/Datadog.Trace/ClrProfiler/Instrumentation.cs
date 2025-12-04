@@ -246,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler
                 try
                 {
                     // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                    return !string.IsNullOrEmpty(EnvironmentHelpersNoLogging.InjectionEnabled());
                 }
                 catch
                 {
