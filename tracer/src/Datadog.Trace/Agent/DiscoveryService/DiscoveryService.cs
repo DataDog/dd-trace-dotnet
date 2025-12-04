@@ -49,18 +49,19 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
+            ContainerMetadata containerMetadata,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
-            : this(CreateApiRequestFactory(settings.InitialExporterSettings, tcpTimeout), initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
         {
             // Create as a "managed" service that can update the request factory
             _settingSubscription = settings.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedExporter is { } exporter)
                 {
-                    var newFactory = CreateApiRequestFactory(exporter, tcpTimeout);
+                    var newFactory = CreateApiRequestFactory(exporter, containerMetadata.ContainerId, tcpTimeout);
                     Interlocked.Exchange(ref _apiRequestFactory!, newFactory);
                 }
             });
@@ -106,9 +107,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateManaged(TracerSettings settings)
+        public static DiscoveryService CreateManaged(TracerSettings settings, ContainerMetadata containerMetadata)
             => new(
                 settings.Manager,
+                containerMetadata,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -117,9 +119,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that does _not_ respond to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings)
+        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings, ContainerMetadata containerMetadata)
             => CreateUnmanaged(
                 exporterSettings,
+                containerMetadata,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -130,12 +133,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         public static DiscoveryService CreateUnmanaged(
             ExporterSettings exporterSettings,
+            ContainerMetadata containerMetadata,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
             => new(
-                CreateApiRequestFactory(exporterSettings, tcpTimeout),
+                CreateApiRequestFactory(exporterSettings, containerMetadata.ContainerId, tcpTimeout),
                 initialRetryDelayMs,
                 maxRetryDelayMs,
                 recheckIntervalMs);
@@ -219,13 +223,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     }
 
                     var api = requestFactory.Create(uri);
-
-                    // Add container ID header if available
-                    var containerId = ContainerMetadata.GetContainerId();
-                    if (containerId != null)
-                    {
-                        api.AddHeader(AgentHttpHeaderNames.ContainerId, containerId);
-                    }
 
                     using var response = await api.GetAsync().ConfigureAwait(false);
                     if (response.StatusCode is >= 200 and < 300)
@@ -388,13 +385,35 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return _discoveryTask;
         }
 
-        private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, TimeSpan tcpTimeout)
-            => AgentTransportStrategy.Get(
+        /// <summary>
+        /// Builds the headers array for the discovery service, including the container ID if available.
+        /// Internal for testing purposes.
+        /// </summary>
+        internal static KeyValuePair<string, string>[] BuildHeaders(string? containerId)
+        {
+            if (containerId != null)
+            {
+                // if container ID is available, add it to headers
+                var headers = new KeyValuePair<string, string>[AgentHttpHeaderNames.MinimalHeaders.Length + 1];
+                Array.Copy(AgentHttpHeaderNames.MinimalHeaders, headers, AgentHttpHeaderNames.MinimalHeaders.Length);
+                headers[AgentHttpHeaderNames.MinimalHeaders.Length] = new KeyValuePair<string, string>(AgentHttpHeaderNames.ContainerId, containerId);
+                return headers;
+            }
+
+            return AgentHttpHeaderNames.MinimalHeaders;
+        }
+
+        private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, string? containerId, TimeSpan tcpTimeout)
+        {
+            var headers = BuildHeaders(containerId);
+
+            return AgentTransportStrategy.Get(
                 exporterSettings,
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
-                AgentHttpHeaderNames.MinimalHeaders,
+                headers,
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
+        }
     }
 }

@@ -360,37 +360,25 @@ public class DiscoveryServiceTests
         await ds.DisposeAsync();
     }
 
-    [SkippableFact]
-    public async Task SendsContainerIdHeaderWhenAvailable()
+    [Fact]
+    public void BuildHeaders_WithContainerId_IncludesContainerIdHeader()
     {
-        // Skip this test if we're not running in a container
-        var containerId = ContainerMetadata.GetContainerId();
-        if (containerId == null)
-        {
-            throw new SkipException("Test requires running in a container environment");
-        }
+        const string containerId = "test-container-id-12345";
 
-        using var mutex = new ManualResetEventSlim();
-        TestApiRequest capturedRequest = null;
+        var headers = DiscoveryService.BuildHeaders(containerId);
 
-        var factory = new TestRequestFactory(x =>
-        {
-            var request = new TestApiRequest(x, responseContent: GetConfig());
-            capturedRequest = request;
-            return request;
-        });
+        headers.Should().HaveCount(AgentHttpHeaderNames.MinimalHeaders.Length + 1);
+        headers.Should().Contain(AgentHttpHeaderNames.MinimalHeaders);
+        headers.Should().Contain(kvp => kvp.Value == containerId);
+    }
 
-        var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
-        ds.SubscribeToChanges(x => mutex.Set());
+    [Fact]
+    public void BuildHeaders_WithoutContainerId_ReturnsMinimalHeaders()
+    {
+        var headers = DiscoveryService.BuildHeaders(null);
 
-        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
-
-        // Verify the container ID header was sent
-        capturedRequest.Should().NotBeNull();
-        capturedRequest.ExtraHeaders.Should().ContainKey(AgentHttpHeaderNames.ContainerId);
-        capturedRequest.ExtraHeaders[AgentHttpHeaderNames.ContainerId].Should().Be(containerId);
-
-        await ds.DisposeAsync();
+        // Should return exactly the minimal headers
+        headers.Should().BeEquivalentTo(AgentHttpHeaderNames.MinimalHeaders);
     }
 
     private string GetConfig(bool dropP0 = true, string version = null)

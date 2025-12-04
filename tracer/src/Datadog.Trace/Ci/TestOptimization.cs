@@ -14,6 +14,7 @@ using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
@@ -248,6 +249,7 @@ internal class TestOptimization : ITestOptimization
             settings: Settings,
             getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
                 s.TracerSettings.Manager.InitialExporterSettings,
+                ContainerMetadata.Instance,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,

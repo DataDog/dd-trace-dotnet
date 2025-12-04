@@ -19,6 +19,7 @@ using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
@@ -285,8 +286,8 @@ namespace Datadog.Trace
         }
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => settings.AgentFeaturePollingEnabled ?
-                   DiscoveryService.CreateManaged(settings) :
+            => settings.AgentFeaturePollingEnabled ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance)
+                   :
                    NullDiscoveryService.Instance;
     }
 }
