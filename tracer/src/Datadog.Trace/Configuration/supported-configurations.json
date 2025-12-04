@@ -717,6 +717,12 @@
       ],
       "product": "Rcm"
     },
+    "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH": {
+      "version": [
+        "A"
+      ],
+      "product": "ContinuousProfiler"
+    },
     "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED": {
       "version": [
         "A"
