@@ -51,5 +51,20 @@ internal static partial class PlatformKeys
         /// or will have a value of "dynamic".
         /// </summary>
         public const string WebsiteSku = "WEBSITE_SKU";
+
+        /// <summary>
+        /// The name of the Azure Container App instance.
+        /// </summary>
+        internal const string ContainerAppName = "CONTAINER_APP_NAME";
+
+        /// <summary>
+        /// Used to detect if running in Azure App Service (presence of this variable).
+        /// </summary>
+        internal const string RunFromZipKey = "APPSVC_RUN_ZIP";
+
+        /// <summary>
+        /// Used to detect if running in Azure App Service (presence of this variable).
+        /// </summary>
+        internal const string AppServiceApplogsTraceEnabledKey = "WEBSITE_APPSERVICEAPPLOGS_TRACE_ENABLED";
     }
 }
