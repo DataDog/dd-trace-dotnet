@@ -34,6 +34,12 @@ internal static partial class ConfigurationKeys
         public const string AgentlessUrl = "DD_CIVISIBILITY_AGENTLESS_URL";
 
         /// <summary>
+        /// Configuration key for identifying the auto instrumentation provider for CI Visibility.
+        /// This is used to track which instrumentation method was used (e.g., single-step, manual, etc.).
+        /// </summary>
+        public const string CivisibilityAutoInstrumentationProvider = "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER";
+
+        /// <summary>
         /// Configuration key for setting the code coverage collector path
         /// </summary>
         public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
@@ -161,5 +167,17 @@ internal static partial class ConfigurationKeys
         /// Configuration key for set the test session name
         /// </summary>
         public const string TestSessionName = "DD_TEST_SESSION_NAME";
+
+        /// <summary>
+        /// Configuration key for the test session command that was executed.
+        /// This is used to track the command line that initiated the test session.
+        /// </summary>
+        public const string TestSessionCommand = "DD_TESTSESSION_COMMAND";
+
+        /// <summary>
+        /// Configuration key for the test session working directory.
+        /// This is used to track the working directory where the test session was executed.
+        /// </summary>
+        public const string TestSessionWorkingDirectory = "DD_TESTSESSION_WORKINGDIRECTORY";
     }
 }
