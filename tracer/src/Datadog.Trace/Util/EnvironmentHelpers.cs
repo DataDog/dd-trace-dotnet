@@ -163,7 +163,7 @@ namespace Datadog.Trace.Util
         /// </summary>
         public static bool IsAwsLambda()
         {
-            return EnvironmentVariableExists(LambdaMetadata.FunctionNameEnvVar);
+            return EnvironmentVariableExists(PlatformKeys.Aws.FunctionName);
         }
 
         /// <summary>

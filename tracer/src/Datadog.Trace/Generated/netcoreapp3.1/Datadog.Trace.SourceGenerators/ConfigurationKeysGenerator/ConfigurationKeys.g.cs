@@ -188,6 +188,8 @@ internal static partial class ConfigurationKeys
     /// </summary>
     public const string SsiDeployed = "DD_INJECTION_ENABLED";
 
+    public const string InternalTraceNativeEnginePath = "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH";
+
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debugger mode.
     /// Default value is false (disabled).
