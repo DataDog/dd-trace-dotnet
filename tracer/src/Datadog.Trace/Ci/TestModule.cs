@@ -20,7 +20,7 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
@@ -140,12 +140,12 @@ public sealed class TestModule
             if (context.SpanContext is { } sessionContext)
             {
                 tags.SessionId = sessionContext.SpanId;
-                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+                if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestsessionCommand, out var testSessionCommand))
                 {
                     tags.Command = testSessionCommand;
                 }
 
-                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, out var testSessionWorkingDirectory))
+                if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestsessionWorkingdirectory, out var testSessionWorkingDirectory))
                 {
                     tags.WorkingDirectory = testSessionWorkingDirectory;
                 }

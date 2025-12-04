@@ -115,13 +115,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (agentless || isEvpProxy)
             {
                 // Try to load the command line propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestsessionCommand) is not { Length: > 0 } commandLine)
                 {
                     commandLine = Environment.CommandLine;
                 }
 
                 // Try to load the working directory propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestsessionWorkingdirectory) is not { Length: > 0 } workingDirectory)
                 {
                     workingDirectory = Environment.CurrentDirectory;
                 }

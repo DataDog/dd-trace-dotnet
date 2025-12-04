@@ -11,12 +11,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -110,7 +110,7 @@ public sealed class TestSession
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
         }
 
-        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
+        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CivisibilityAutoInstrumentationProvider)?.ToBoolean() is true ?
                                  MetricTags.CIVisibilityTestSessionType.AutoInjected :
                                  MetricTags.CIVisibilityTestSessionType.NotAutoInjected;
 
@@ -456,8 +456,8 @@ public sealed class TestSession
 
         var environmentVariables = new Dictionary<string, string?>
         {
-            [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
-            [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
+            [ConfigurationKeys.CIVisibility.TestsessionCommand] = tags.Command,
+            [ConfigurationKeys.CIVisibility.TestsessionWorkingdirectory] = tags.WorkingDirectory,
         };
 
         Tracer.Instance.TracerManager.SpanContextPropagator.Inject(

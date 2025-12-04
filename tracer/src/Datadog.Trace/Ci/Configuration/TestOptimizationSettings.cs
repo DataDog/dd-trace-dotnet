@@ -90,7 +90,7 @@ namespace Datadog.Trace.Ci.Configuration
                     {
                         // If there's no active test session or test module we try to get the command from the environment (sent by dd-trace session)
                         var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
-                        if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand) && !string.IsNullOrEmpty(testSessionCommand))
+                        if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestsessionCommand, out var testSessionCommand) && !string.IsNullOrEmpty(testSessionCommand))
                         {
                             command = testSessionCommand;
                         }
