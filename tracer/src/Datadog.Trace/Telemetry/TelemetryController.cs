@@ -117,8 +117,8 @@ internal class TelemetryController : ITelemetryController
     {
         _application.RecordGitMetadata(gitMetadata);
 
-        _configuration.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
-        _configuration.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.CIVisibility.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.CIVisibility.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
