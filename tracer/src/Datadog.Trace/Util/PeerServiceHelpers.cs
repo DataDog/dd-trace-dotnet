@@ -29,37 +29,40 @@ namespace Datadog.Trace.Util
                 switch (service)
                 {
                     case "DynamoDB":
-                        tags.PeerService = "dynamodb." + region + ".amazonaws.com";
+                        tags.PeerService = $"dynamodb.{region}.amazonaws.com";
                         break;
                     case "EventBridge":
-                        tags.PeerService = "events." + region + ".amazonaws.com";
+                        tags.PeerService = $"events.{region}.amazonaws.com";
                         break;
                     case "Kinesis":
-                        tags.PeerService = "kinesis." + region + ".amazonaws.com";
+                        tags.PeerService = $"kinesis.{region}.amazonaws.com";
                         break;
                     case "S3":
                         if (tags is AwsS3Tags s3Tags)
                         {
                             if (s3Tags.BucketName != null)
                             {
-                                tags.PeerService = s3Tags.BucketName + ".s3." + region + ".amazonaws.com";
+                                tags.PeerService = $"{s3Tags.BucketName}.s3.{region}.amazonaws.com";
                             }
                             else
                             {
-                                tags.PeerService = "s3." + region + ".amazonaws.com";
+                                tags.PeerService = $"s3.{region}.amazonaws.com";
                             }
                         }
 
                         break;
                     case "SNS":
-                        tags.PeerService = "sns." + region + ".amazonaws.com";
+                        tags.PeerService = $"sns.{region}.amazonaws.com";
                         break;
                     case "SQS":
-                        tags.PeerService = "sqs." + region + ".amazonaws.com";
+                        tags.PeerService = $"sqs.{region}.amazonaws.com";
                         break;
                 }
 
-                tags.PeerServiceSource = "peer.service";
+                if (tags.PeerService != null)
+                {
+                    tags.PeerServiceSource = "peer.service";
+                }
             }
             else if (!isAwsLambda)
             {
