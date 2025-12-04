@@ -660,7 +660,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
         {
             try
             {
