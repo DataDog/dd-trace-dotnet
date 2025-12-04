@@ -87,6 +87,39 @@ public class HexStringTests
     }
 
     [Theory]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* lowerCase */ true, "00000000000000000000000000000000")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ true, "1234567890abcdef1122334455667788")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ false, "1234567890ABCDEF1122334455667788")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ true, "ffffffffffffffffffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
+    public void ToHexString_TraceId128_WithBuffer(ulong upper, ulong lower, bool lowerCase, string expected)
+    {
+        var traceId = new TraceId(upper, lower);
+        var buffer = new char[32];
+        var writtenChars = HexString.ToHexString(traceId, buffer, pad16To32: true, lowerCase);
+        writtenChars.Should().Be(32);
+        System.MemoryExtensions.AsSpan(buffer).ToString().Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* pad16To32 */ true,  "00000000000000000000000000000000")]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* pad16To32 */ false, "0000000000000000")]
+    [InlineData(0x0000000000000000, 0x1234567890abcdef, /* pad16To32 */ true,  "00000000000000001234567890abcdef")]
+    [InlineData(0x0000000000000000, 0x1234567890abcdef, /* pad16To32 */ false, "1234567890abcdef")]
+    [InlineData(0x0000000000000000, 0xffffffffffffffff, /* pad16To32 */ true,  "0000000000000000ffffffffffffffff")]
+    [InlineData(0x0000000000000000, 0xffffffffffffffff, /* pad16To32 */ false, "ffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, 0x0000000000000000, /* pad16To32 */ true,  "ffffffffffffffff0000000000000000")]
+    [InlineData(0xffffffffffffffff, 0x0000000000000000, /* pad16To32 */ false, "ffffffffffffffff0000000000000000")]
+    public void ToHexString_TraceId64_WithBuffer(ulong upper, ulong lower, bool pad16To32, string expected)
+    {
+        var traceId = new TraceId(upper, lower);
+        var buffer = new char[32];
+        var writtenChars = HexString.ToHexString(traceId, buffer, pad16To32);
+        writtenChars.Should().Be(expected.Length);
+        System.MemoryExtensions.AsSpan(buffer).Slice(0, writtenChars).ToString().Should().Be(expected);
+    }
+
+    [Theory]
     [MemberData(nameof(BytesToString))]
     public void TryParseBytes_ValidString(byte[] expected, bool lowerCase, string hex)
     {

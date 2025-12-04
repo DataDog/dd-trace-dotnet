@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
@@ -78,6 +79,19 @@ internal static class HexString
     }
 
     /// <summary>
+    /// Converts the specified bytes into a hexadecimal string.
+    /// </summary>
+    public static void ToHexString(ReadOnlySpan<byte> bytes, Span<char> buffer, bool lowerCase = true)
+    {
+        var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
+#if NETFRAMEWORK || NETSTANDARD2_0
+        HexConverter.ToCharsBuffer(bytes, buffer, casing);
+#else
+        HexConverter.EncodeToUtf16(bytes, buffer, casing);
+#endif
+    }
+
+    /// <summary>
     /// Converts the specified <see cref="ulong"/> value into a hexadecimal string.
     /// </summary>
     [Pure]
@@ -95,6 +109,26 @@ internal static class HexString
         MemoryMarshal.Write(bytes, ref value);
 
         return ToHexString(bytes, lowerCase);
+    }
+
+    /// <summary>
+    /// Converts the specified <see cref="ulong"/> value into a hexadecimal string.
+    /// </summary>
+    public static unsafe void ToHexString(ulong value, Span<char> buffer, bool lowerCase = true)
+    {
+        if (value == 0)
+        {
+            buffer.Slice(0, 16).Fill('0');
+            return;
+        }
+
+        value = ReverseIfLittleEndian(value);
+
+        var bytesPtr = stackalloc byte[8];
+        var bytes = new Span<byte>(bytesPtr, 8);
+        MemoryMarshal.Write(bytes, ref value);
+
+        ToHexString(bytes, buffer, lowerCase);
     }
 
     /// <summary>
@@ -128,6 +162,46 @@ internal static class HexString
         MemoryMarshal.Write(bytes.Slice(sizeof(ulong)), ref lower);
 
         return ToHexString(bytes, lowerCase);
+    }
+
+    /// <summary>
+    /// Writes the specified <see cref="TraceId"/> value into the <paramref name="buffer"/> using network byte order
+    /// (aka big endian), with the most significant byte first.
+    /// </summary>
+    /// <returns>The number of characters written in the buffer</returns>
+    public static unsafe int ToHexString(TraceId value, Span<char> buffer, bool pad16To32 = true, bool lowerCase = true)
+    {
+        if (!pad16To32 && value.Upper == 0)
+        {
+            Debug.Assert(buffer.Length >= 16, "buffer.Length >= 16");
+
+            // this trace id fits in 16 hex characters and padding to 32 characters was not requested
+            ToHexString(value.Lower, buffer, lowerCase);
+            return 16;
+        }
+
+        Debug.Assert(buffer.Length >= 32, "buffer.Length >= 32");
+
+        if (value == TraceId.Zero)
+        {
+            buffer.Slice(0, 32).Fill('0');
+            return 32;
+        }
+
+        var (upper, lower) = ReverseIfLittleEndian(value);
+
+        // NOTE: don't use MemoryMarshal.Write() with the entire TraceId because .NET will
+        // flip upper/lower around on little-endian architectures. Instead, call MemoryMarshal.Write()
+        // for each field so we can control the order ourselves. Trace id hex strings should
+        // always use network byte order, aka big endian.
+        var bytesPtr = stackalloc byte[TraceId.Size];
+        var bytes = new Span<byte>(bytesPtr, TraceId.Size);
+
+        MemoryMarshal.Write(bytes, ref upper);
+        MemoryMarshal.Write(bytes.Slice(sizeof(ulong)), ref lower);
+
+        ToHexString(bytes, buffer, lowerCase);
+        return 32;
     }
 
     /// <summary>

@@ -119,6 +119,18 @@ internal static class HexConverter
         buffer[startingIndex] = (char)(packedResult >> 8);
     }
 
+    public static void ToCharsBuffer(ReadOnlySpan<byte> bytes, Span<char> buffer, Casing casing = Casing.Upper)
+    {
+        Debug.Assert(buffer.Length >= bytes.Length * 2, "chars.Length >= bytes.Length * 2");
+
+        int pos = 0;
+        foreach (byte b in bytes)
+        {
+            ToCharsBuffer(b, buffer, pos, casing);
+            pos += 2;
+        }
+    }
+
     public static void EncodeToUtf16(ReadOnlySpan<byte> bytes, Span<char> chars, Casing casing = Casing.Upper)
     {
         Debug.Assert(chars.Length >= bytes.Length * 2, "chars.Length >= bytes.Length * 2");
@@ -145,12 +157,7 @@ internal static class HexConverter
             result = new Span<char>(resultPtr, bytes.Length * 2);
         }
 
-        int pos = 0;
-        foreach (byte b in bytes)
-        {
-            ToCharsBuffer(b, result, pos, casing);
-            pos += 2;
-        }
+        ToCharsBuffer(bytes, result, casing);
 
         return result.ToString();
 #else

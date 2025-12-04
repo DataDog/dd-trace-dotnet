@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using BindingFlags = System.Reflection.BindingFlags;
 using Tracer = Datadog.Trace.Tracer;
@@ -29,6 +30,7 @@ namespace Benchmarks.Trace
     {
         private Tracer _tracer;
         private ManualTracer _manualTracer;
+        private SpanContext _spanContext;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -54,6 +56,8 @@ namespace Benchmarks.Trace
 
             // Warmup
             StartFinishSpan();
+            _spanContext = _tracer.CreateSpanContext();
+            _spanContext.GetOrMakeSamplingDecision();
         }
 
         [GlobalCleanup]
@@ -113,6 +117,22 @@ namespace Benchmarks.Trace
             scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
 
             using var scope2 = _tracer.StartActiveInternal("operation2");
+        }
+
+        [Benchmark]
+        public string CreateTraceParentHeader_WithSpanContext()
+        {
+            var spanContext = _tracer.CreateSpanContext();
+            spanContext.GetOrMakeSamplingDecision();
+            return W3CTraceContextPropagator.CreateTraceParentHeader(spanContext);
+        }
+
+        [Benchmark(Baseline = true)]
+        public SpanContext CreateTraceParentHeader_SpanContextOnly()
+        {
+            var spanContext = _tracer.CreateSpanContext();
+            spanContext.GetOrMakeSamplingDecision();
+            return spanContext;
         }
     }
 }
