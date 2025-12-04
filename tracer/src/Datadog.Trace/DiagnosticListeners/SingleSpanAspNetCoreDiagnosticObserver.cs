@@ -35,7 +35,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
-        private const string MvcOperationName = "aspnet_core_mvc.request";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
@@ -44,7 +43,7 @@ namespace Datadog.Trace.DiagnosticListeners
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SingleSpanAspNetCoreDiagnosticObserver>();
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer? _tracer;
         private readonly Security? _security;
         private readonly Iast.Iast? _iast;
@@ -64,6 +63,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public SingleSpanAspNetCoreDiagnosticObserver(Tracer? tracer, Security? security, Iast.Iast? iast, SpanCodeOrigin? spanCodeOrigin)
         {
+            // TODO: Once SpanCodeOrigin initialization is synchronous
+            // just set these on startup instead of having the properties
             _tracer = tracer;
             _security = security;
             _iast = iast;
@@ -274,12 +275,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
                 {
-                    var method = routeEndpoint?.RequestDelegate?.Method;
+                    var method = routeEndpoint.Value.RequestDelegate?.Method;
                     if (method != null)
                     {
                         CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
-                    else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
+                    else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
                         Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
                         CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
@@ -360,7 +361,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
             {
                 if (isCodeOriginEnabled)
                 {
