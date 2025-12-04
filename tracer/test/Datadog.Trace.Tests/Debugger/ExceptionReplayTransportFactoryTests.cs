@@ -5,13 +5,11 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Specialized;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
-using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -72,19 +70,6 @@ namespace Datadog.Trace.Tests.Debugger
             transport.Value.ApiRequestFactory.GetEndpoint("/api/v2/debugger")
                      .ToString()
                      .Should().Be("https://custom-host.example.com/api/v2/debugger");
-        }
-
-        [Fact]
-        public void HeaderInjectingFactory_AddsDebuggerHeaders()
-        {
-            var recordingFactory = new TestRequestFactory(new Uri("https://placeholder"));
-            var wrapper = new ExceptionReplayTransportFactory.HeaderInjectingApiRequestFactory(recordingFactory, "secret-key");
-            var request = (TestApiRequest)wrapper.Create(new Uri("https://debugger-intake.example.com/api/v2/debugger"));
-
-            request.ExtraHeaders.Should().ContainKey("DD-API-KEY").WhoseValue.Should().Be("secret-key");
-            request.ExtraHeaders.Should().ContainKey("DD-EVP-ORIGIN").WhoseValue.Should().Be("dd-trace-dotnet");
-            request.ExtraHeaders.Should().ContainKey("DD-REQUEST-ID");
-            Guid.TryParse(request.ExtraHeaders["DD-REQUEST-ID"], out _).Should().BeTrue();
         }
     }
 }

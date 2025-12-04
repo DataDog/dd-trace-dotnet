@@ -8,10 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 
@@ -29,7 +27,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return CreateAgentTransport(tracerSettings, discoveryService);
             }
 
-            if (string.IsNullOrWhiteSpace(settings.AgentlessApiKey))
+            if (StringUtil.IsNullOrWhiteSpace(settings.AgentlessApiKey))
             {
                 Log.ErrorSkipTelemetry("Exception Replay agentless uploads enabled but DD_API_KEY is not set. Disabling Exception Replay.");
                 return null;
@@ -41,8 +39,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return null;
             }
 
-            var apiFactory = DebuggerTransportStrategy.Get(baseUri);
-            apiFactory = new HeaderInjectingApiRequestFactory(apiFactory, settings.AgentlessApiKey!);
+            var apiFactory = DebuggerTransportStrategy.Get(
+                baseUri,
+                AgentHttpHeaderNames.DefaultHeaders.Concat(
+                    new KeyValuePair<string, string>("DD-API-KEY", settings.AgentlessApiKey),
+                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"),
+                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"),
+                    new KeyValuePair<string, string>("DD-REQUEST-ID", Guid.NewGuid().ToString())));
             return new ExceptionReplayTransportInfo(apiFactory, null, relativePath, isAgentless: true);
         }
 
@@ -85,38 +88,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static string EnsureLeadingSlash(string value)
         {
             return value.StartsWith("/", StringComparison.Ordinal) ? value : "/" + value;
-        }
-
-        internal sealed class HeaderInjectingApiRequestFactory : IApiRequestFactory
-        {
-            private const string ApiKeyHeader = "DD-API-KEY";
-            private const string RequestIdHeader = "DD-REQUEST-ID";
-            private const string EvpOriginHeader = "DD-EVP-ORIGIN";
-            private const string OriginValue = "dd-trace-dotnet";
-
-            private readonly IApiRequestFactory _inner;
-            private readonly string _apiKey;
-
-            public HeaderInjectingApiRequestFactory(IApiRequestFactory inner, string apiKey)
-            {
-                _inner = inner;
-                _apiKey = apiKey;
-            }
-
-            public string Info(Uri endpoint) => _inner.Info(endpoint);
-
-            public Uri GetEndpoint(string relativePath) => _inner.GetEndpoint(relativePath);
-
-            public IApiRequest Create(Uri endpoint)
-            {
-                var request = _inner.Create(endpoint);
-                request.AddHeader(ApiKeyHeader, _apiKey);
-                request.AddHeader(EvpOriginHeader, OriginValue);
-                request.AddHeader(RequestIdHeader, Guid.NewGuid().ToString());
-                return request;
-            }
-
-            public void SetProxy(System.Net.WebProxy proxy, System.Net.NetworkCredential credential) => _inner.SetProxy(proxy, credential);
         }
     }
 }
