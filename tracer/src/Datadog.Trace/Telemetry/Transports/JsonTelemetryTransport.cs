@@ -30,7 +30,7 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
-        private readonly ContainerMetadata _containerMetadata;
+        private readonly IContainerMetadata _containerMetadata;
         private readonly bool _enableDebug;
         private readonly bool _telemetryGzipCompressionEnabled;
         private readonly string _telemetryCompressionMethod;

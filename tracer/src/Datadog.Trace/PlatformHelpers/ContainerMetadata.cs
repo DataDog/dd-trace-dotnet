@@ -21,7 +21,7 @@ namespace Datadog.Trace.PlatformHelpers
     /// <summary>
     /// Utility class with methods to interact with container hosts.
     /// </summary>
-    internal class ContainerMetadata
+    internal sealed class ContainerMetadata : IContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
         private const string ControlGroupsNamespacesFilePath = "/proc/self/ns/cgroup";
@@ -44,29 +44,15 @@ namespace Datadog.Trace.PlatformHelpers
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
-        public static readonly ContainerMetadata Instance = new();
+        public static readonly IContainerMetadata Instance = new ContainerMetadata();
 
-        /// <summary>
-        /// Gets the id of the container executing the code.
-        /// Return <c>null</c> if code is not executing inside a supported container.
-        /// </summary>
-        /// <value>The container id or <c>null</c>.</value>
+        /// <inheritdoc/>
         public string ContainerId
         {
             get => LazyContainerId.Value;
         }
 
-        /// <summary>
-        /// Gets the unique identifier of the container executing the code.
-        /// Return values may be:
-        /// <list type="bullet">
-        /// <item>"ci-&lt;containerID&gt;" if the container id is available.</item>
-        /// <item>"in-&lt;inode&gt;" if the cgroup node controller's inode is available.
-        ///        We use the memory controller on cgroupv1 and the root cgroup on cgroupv2.</item>
-        /// <item><c>null</c> if neither are available.</item>
-        /// </list>
-        /// </summary>
-        /// <value>The entity id or <c>null</c>.</value>
+        /// <inheritdoc/>
         public string EntityId
         {
             get => LazyEntityId.Value;
