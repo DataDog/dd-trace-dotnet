@@ -48,10 +48,11 @@ public class RequestInvokerHandlerSendAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
+        var operationTypeString = operationType?.ToString() ?? string.Empty;
+
         try
         {
             // Skip what's already being traced by query tracing
-            var operationTypeString = operationType?.ToString() ?? string.Empty;
             if (operationTypeString.Equals("Query", StringComparison.Ordinal) ||
                 operationTypeString.Equals("QueryPlan", StringComparison.Ordinal))
             {
@@ -75,8 +76,8 @@ public class RequestInvokerHandlerSendAsyncIntegration
             tags.DatabaseId = databaseId;
             tags.SetEndpoint(instance?.Client.Endpoint);
 
-            if (instance?.Client.ClientContext != null &&
-                instance.Client.ClientContext.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+            var clientContextObject = instance?.Client.ClientContext;
+            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
             {
                 tags.UserAgent = clientContext.UserAgent;
 
@@ -98,7 +99,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating or populating scope for CosmosDb.");
+            Log.Error(ex, "Error creating CosmosDb span for operation {OperationType} on resource {ResourceUri}", operationTypeString, resourceUriString);
         }
 
         return CallTargetState.GetDefault();
@@ -128,7 +129,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error handling CosmosDb response.");
+                Log.Error(ex, "Error extracting response metadata from CosmosDb operation {ResourceName}", scope.Span.ResourceName);
             }
         }
 
