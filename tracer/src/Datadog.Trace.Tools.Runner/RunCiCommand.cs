@@ -54,8 +54,8 @@ namespace Datadog.Trace.Tools.Runner
             // Propagate original test command and working directory
             if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
             {
-                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = Environment.CommandLine;
-                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = Environment.CurrentDirectory;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionCommand] = Environment.CommandLine;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = Environment.CurrentDirectory;
             }
 
             // Run child process

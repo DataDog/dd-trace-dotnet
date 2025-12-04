@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
@@ -156,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 new DictionaryValuesProvider(
                     new Dictionary<string, string>
                     {
-                        [CIEnvironmentValues.Constants.GitHubEventPath] = jsonFile,
+                        [PlatformKeys.Ci.GitHub.EventPath] = jsonFile,
                     }));
 
             reloadEnvironmentData?.Invoke(githubEnvVars, null);
@@ -170,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 new DictionaryValuesProvider(
                     new Dictionary<string, string>
                     {
-                        [CIEnvironmentValues.Constants.GitHubBaseRef] = "my-custom-branch",
+                        [PlatformKeys.Ci.GitHub.BaseRef] = "my-custom-branch",
                     }));
 
             reloadEnvironmentData?.Invoke(githubEnvVars, null);
