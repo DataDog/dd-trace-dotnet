@@ -27,7 +27,7 @@
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
-    <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+    
     <Compile Update="AppSec\Coordinator\SecurityCoordinator.Core.cs">
       <DependentUpon>SecurityCoordinator.cs</DependentUpon>
     </Compile>
@@ -39,6 +39,24 @@
     </Compile>
     <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
       <DependentUpon>SecurityReporter.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.Aws.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureAppService.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureFunctions.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.DotNet.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.GcpFunction.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.ServiceFabric.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
     </Compile>
   </ItemGroup>
 
