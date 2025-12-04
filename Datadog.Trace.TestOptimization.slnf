@@ -12,6 +12,7 @@
       "tracer\\src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Analyzers.CodeFixes\\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Shared\\Datadog.Trace.Tools.Shared.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
@@ -37,7 +38,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTestsRetries\\Samples.XUnitTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTestsV3\\Samples.XUnitTestsV3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTests\\Samples.XUnitTests.csproj",
-      "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj",
+      "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj"
     ]
   }
 }

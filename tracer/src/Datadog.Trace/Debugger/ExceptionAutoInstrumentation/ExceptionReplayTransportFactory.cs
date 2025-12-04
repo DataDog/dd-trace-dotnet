@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return value.StartsWith("/", StringComparison.Ordinal) ? value : "/" + value;
         }
 
-        private sealed class HeaderInjectingApiRequestFactory : IApiRequestFactory
+        internal sealed class HeaderInjectingApiRequestFactory : IApiRequestFactory
         {
             private const string ApiKeyHeader = "DD-API-KEY";
             private const string RequestIdHeader = "DD-REQUEST-ID";

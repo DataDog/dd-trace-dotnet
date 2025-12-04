@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.Upload
             string? staticEndpoint)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            if (!string.IsNullOrEmpty(staticEndpoint))
+            if (!StringUtil.IsNullOrEmpty(staticEndpoint))
             {
                 Endpoint = staticEndpoint;
             }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Debugger.Upload
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
             var uri = BuildUri();
-            if (string.IsNullOrEmpty(uri))
+            if (StringUtil.IsNullOrEmpty(uri))
             {
                 Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
                 return false;

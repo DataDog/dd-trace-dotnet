@@ -6,18 +6,12 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -30,13 +24,13 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
             var erSettings = new ExceptionReplaySettings(new NameValueConfigurationSource(new NameValueCollection()), NullConfigurationTelemetry.Instance);
-            var discovery = new TestDiscoveryService();
 
-            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, discovery);
+            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, NullDiscoveryService.Instance);
+            transport.Should().NotBeNull();
 
-            transport.IsAgentless.Should().BeFalse();
-            transport.DiscoveryService.Should().Be(discovery);
-            transport.StaticEndpoint.Should().BeNull();
+            transport!.Value.IsAgentless.Should().BeFalse();
+            transport.Value.DiscoveryService.Should().Be(NullDiscoveryService.Instance);
+            transport.Value.StaticEndpoint.Should().BeNull();
         }
 
         [Fact]
@@ -49,13 +43,13 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.ApiKey, "test-key" }
             };
             var erSettings = new ExceptionReplaySettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance);
-            var discovery = new TestDiscoveryService();
 
-            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, discovery);
+            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, NullDiscoveryService.Instance);
+            transport.Should().NotBeNull();
 
-            transport.IsAgentless.Should().BeTrue();
-            transport.DiscoveryService.Should().BeNull();
-            transport.StaticEndpoint.Should().Be("/api/v2/debugger");
+            transport!.Value.IsAgentless.Should().BeTrue();
+            transport.Value.DiscoveryService.Should().BeNull();
+            transport.Value.StaticEndpoint.Should().Be("/api/v2/debugger");
         }
 
         [Fact]
@@ -69,13 +63,13 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.ExceptionReplayAgentlessUrl, "https://custom-host.example.com/custom/path" }
             };
             var erSettings = new ExceptionReplaySettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance);
-            var discovery = new TestDiscoveryService();
 
-            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, discovery);
+            var transport = ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, NullDiscoveryService.Instance);
+            transport.Should().NotBeNull();
 
-            transport.IsAgentless.Should().BeTrue();
-            transport.StaticEndpoint.Should().Be("/custom/path");
-            transport.ApiRequestFactory.GetEndpoint("/api/v2/debugger")
+            transport!.Value.IsAgentless.Should().BeTrue();
+            transport.Value.StaticEndpoint.Should().Be("/custom/path");
+            transport.Value.ApiRequestFactory.GetEndpoint("/api/v2/debugger")
                      .ToString()
                      .Should().Be("https://custom-host.example.com/api/v2/debugger");
         }
@@ -83,83 +77,14 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void HeaderInjectingFactory_AddsDebuggerHeaders()
         {
-            var nestedType = typeof(ExceptionReplayTransportFactory)
-                            .GetNestedType("HeaderInjectingApiRequestFactory", BindingFlags.NonPublic);
-            nestedType.Should().NotBeNull();
-            var ctor = nestedType!.GetConstructor(
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-                binder: null,
-                new[] { typeof(IApiRequestFactory), typeof(string) },
-                modifiers: null);
-            ctor.Should().NotBeNull();
+            var recordingFactory = new TestRequestFactory(new Uri("https://placeholder"));
+            var wrapper = new ExceptionReplayTransportFactory.HeaderInjectingApiRequestFactory(recordingFactory, "secret-key");
+            var request = (TestApiRequest)wrapper.Create(new Uri("https://debugger-intake.example.com/api/v2/debugger"));
 
-            var recordingFactory = new RecordingApiRequestFactory();
-            var wrapper = (IApiRequestFactory)ctor!.Invoke(new object[] { recordingFactory, "secret-key" });
-
-            wrapper.Create(new Uri("https://debugger-intake.example.com/api/v2/debugger"));
-
-            var recordedRequest = recordingFactory.Requests.Single();
-            recordedRequest.Headers.Should().ContainKey("DD-API-KEY").WhoseValue.Should().Be("secret-key");
-            recordedRequest.Headers.Should().ContainKey("DD-EVP-ORIGIN").WhoseValue.Should().Be("dd-trace-dotnet");
-            recordedRequest.Headers.Should().ContainKey("DD-REQUEST-ID");
-            Guid.TryParse(recordedRequest.Headers["DD-REQUEST-ID"], out _).Should().BeTrue();
-        }
-
-        private sealed class TestDiscoveryService : IDiscoveryService
-        {
-            public void SubscribeToChanges(System.Action<AgentConfiguration> callback)
-            {
-            }
-
-            public void RemoveSubscription(System.Action<AgentConfiguration> callback)
-            {
-            }
-
-            public Task DisposeAsync() => Task.CompletedTask;
-        }
-
-        private sealed class RecordingApiRequestFactory : IApiRequestFactory
-        {
-            public List<RecordingApiRequest> Requests { get; } = new();
-
-            public string Info(Uri endpoint) => endpoint.ToString();
-
-            public Uri GetEndpoint(string relativePath) => new($"https://placeholder{relativePath}");
-
-            public IApiRequest Create(Uri endpoint)
-            {
-                var request = new RecordingApiRequest(endpoint);
-                Requests.Add(request);
-                return request;
-            }
-
-            public void SetProxy(System.Net.WebProxy proxy, System.Net.NetworkCredential credential)
-            {
-            }
-        }
-
-        private sealed class RecordingApiRequest : IApiRequest
-        {
-            public RecordingApiRequest(Uri endpoint)
-            {
-                Endpoint = endpoint;
-            }
-
-            public Uri Endpoint { get; }
-
-            public Dictionary<string, string> Headers { get; } = new();
-
-            public void AddHeader(string name, string value) => Headers[name] = value;
-
-            public Task<IApiResponse> GetAsync() => throw new NotSupportedException();
-
-            public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => throw new NotSupportedException();
-
-            public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding) => throw new NotSupportedException();
-
-            public Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary) => throw new NotSupportedException();
-
-            public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None) => throw new NotSupportedException();
+            request.ExtraHeaders.Should().ContainKey("DD-API-KEY").WhoseValue.Should().Be("secret-key");
+            request.ExtraHeaders.Should().ContainKey("DD-EVP-ORIGIN").WhoseValue.Should().Be("dd-trace-dotnet");
+            request.ExtraHeaders.Should().ContainKey("DD-REQUEST-ID");
+            Guid.TryParse(request.ExtraHeaders["DD-REQUEST-ID"], out _).Should().BeTrue();
         }
     }
 }
