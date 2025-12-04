@@ -38,16 +38,17 @@ internal class AzureApiManagementExtractor : IInferredProxyExtractor
             }
 
             // the remaining headers aren't necessarily required
+            var domainName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Domain);
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(ProxyName, startTime, null, httpMethod, path, null);
+            data = new InferredProxyData(ProxyName, startTime, domainName, httpMethod, path, null);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
                     "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
-                    [startTimeHeaderValue, httpMethod, path, region]);
+                    [startTimeHeaderValue, domainName, httpMethod, path, region]);
             }
 
             return true;
@@ -69,21 +70,14 @@ internal class AzureApiManagementExtractor : IInferredProxyExtractor
             return false;
         }
 
-        if (!long.TryParse(startTime, out var startTimeMs))
+        // Parse as ISO 8601 timestamp (e.g., "2025-12-03T14:21:01.1900116Z")
+        if (!DateTimeOffset.TryParse(startTime, out var parsedTime))
         {
             Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
             return false;
         }
 
-        try
-        {
-            start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
-            return false;
-        }
+        start = parsedTime;
+        return true;
     }
 }

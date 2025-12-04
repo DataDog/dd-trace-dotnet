@@ -26,13 +26,17 @@ internal class AzureApiManagementSpanFactory : IInferredSpanFactory
         {
             var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
+            if (data.DomainName is null)
+            {
+                Log.Debug("DomainName is Null");
+            }
+
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
                 HttpUrl = $"{data.DomainName}{data.Path}",
                 HttpRoute = resourceUrl,
-                Stage = data.Stage,
                 InferredSpan = 1,
             };
 

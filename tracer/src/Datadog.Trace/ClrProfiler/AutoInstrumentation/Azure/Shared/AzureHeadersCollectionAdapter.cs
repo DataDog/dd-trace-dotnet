@@ -1,4 +1,4 @@
-// <copyright file="ServiceBusHeadersCollectionAdapter.cs" company="Datadog">
+// <copyright file="AzureHeadersCollectionAdapter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,17 +7,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 
-internal readonly struct ServiceBusHeadersCollectionAdapter : IHeadersCollection
+internal readonly struct AzureHeadersCollectionAdapter : IHeadersCollection
 {
     private readonly IDictionary<string, object> _properties;
 
-    public ServiceBusHeadersCollectionAdapter(IDictionary<string, object> properties)
+    public AzureHeadersCollectionAdapter(IDictionary<string, object> properties)
     {
         _properties = properties;
     }

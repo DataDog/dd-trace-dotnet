@@ -21,6 +21,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.PlatformHelpers
