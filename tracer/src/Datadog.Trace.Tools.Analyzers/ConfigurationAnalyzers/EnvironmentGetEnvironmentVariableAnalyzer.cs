@@ -17,13 +17,20 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
     ///
     /// Currently checks:
     /// - EnvironmentHelpers.GetEnvironmentVariable
+    /// - EnvironmentHelpers.EnvironmentVariableExists
+    /// - EnvironmentHelpersNoLogging.GetEnvironmentVariable
+    /// - EnvironmentHelpersNoLogging.TryCheckEnvVar
+    /// - EnvironmentVariablesProvider.GetValue
+    /// - Any type implementing IValueProvider.GetValue (including through generics)
     ///
     /// To add more methods, add them to the TargetMethods list.
     ///
     /// Valid:   EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ApiKey)
     /// Valid:   EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.SomeKey)
+    /// Valid:   valueProvider.GetValue(ConfigurationKeys.ApiKey) // where valueProvider implements IValueProvider
     /// Invalid: EnvironmentHelpers.GetEnvironmentVariable("DD_API_KEY")
     /// Invalid: EnvironmentHelpers.GetEnvironmentVariable(someVariable)
+    /// Invalid: valueProvider.GetValue("DD_API_KEY")
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class EnvironmentGetEnvironmentVariableAnalyzer : DiagnosticAnalyzer
@@ -62,6 +69,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             ("Datadog.Trace.Util.EnvironmentHelpers", "EnvironmentVariableExists"),
             ("Datadog.Trace.Util.EnvironmentHelpersNoLogging", "GetEnvironmentVariable"),
             ("Datadog.Trace.Util.EnvironmentHelpersNoLogging", "TryCheckEnvVar"),
+            ("Datadog.Trace.Ci.CiEnvironment.IValueProvider", "GetValue"),
         };
 
         /// <summary>
@@ -112,12 +120,40 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// </summary>
         private static bool IsTargetMethod(IMethodSymbol method)
         {
-            var containingType = method.ContainingType?.ToDisplayString();
             var methodName = method.Name;
 
             foreach (var (targetType, targetMethod) in TargetMethods)
             {
-                if (containingType == targetType && methodName == targetMethod)
+                if (methodName != targetMethod)
+                {
+                    continue;
+                }
+
+                // Check if the containing type matches directly
+                var containingType = method.ContainingType?.ToDisplayString();
+                if (containingType == targetType)
+                {
+                    return true;
+                }
+
+                // Check if the containing type implements the target interface
+                if (method.ContainingType != null && ImplementsInterface(method.ContainingType, targetType))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a type implements a specific interface.
+        /// </summary>
+        private static bool ImplementsInterface(ITypeSymbol type, string interfaceName)
+        {
+            foreach (var iface in type.AllInterfaces)
+            {
+                if (iface.ToDisplayString() == interfaceName)
                 {
                     return true;
                 }
