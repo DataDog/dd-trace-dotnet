@@ -39,6 +39,8 @@
 #ifdef LINUX
 #include "RingBuffer.h"
 #include "TimerCreateCpuProfiler.h"
+// TODO only ARM64
+#include "JitCodeCache.h"	
 #endif
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
@@ -264,6 +266,8 @@ private :
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
     std::unique_ptr<RingBuffer> _pCpuProfilerRb = nullptr;
+    // TODO only ARM64
+    JitCodeCache* _pJitCodeCache = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;

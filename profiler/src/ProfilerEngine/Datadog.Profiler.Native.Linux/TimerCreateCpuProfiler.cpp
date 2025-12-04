@@ -262,7 +262,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     // Use hybrid unwinding if enabled
     if (_pConfiguration->UseHybridUnwinding())
     {
-        count = LinuxStackFramesCollector::CollectStackHybridStatic(ctx, (uintptr_t*)buffer.data(), buffer.size());
+        count = LinuxStackFramesCollector::CollectStackHybridStatic(ctx, _pJitCodeCache, (uintptr_t*)buffer.data(), buffer.size());
     }
     else
     {

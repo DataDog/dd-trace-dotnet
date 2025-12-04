@@ -26,6 +26,7 @@ class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
+class JitCodeCache;
 class CallstackProvider;
 class DiscardMetrics;
 
@@ -39,7 +40,8 @@ public:
         ProfilerSignalManager* signalManager,
         IConfiguration const* configuration,
         CallstackProvider* callstackProvider,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        JitCodeCache* jitCodeCache);
     ~LinuxStackFramesCollector() override;
 
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
@@ -177,4 +179,5 @@ private:
     static const char* HybridTraceEventName(HybridTraceEvent event);
 
     HybridTraceBuffer _hybridTrace;
+    JitCodeCache* _pJitCodeCache;
 };

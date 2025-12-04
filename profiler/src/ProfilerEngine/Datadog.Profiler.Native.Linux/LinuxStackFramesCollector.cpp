@@ -202,7 +202,8 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
     CallstackProvider* callstackProvider,
-    MetricsRegistry& metricsRegistry) :
+    MetricsRegistry& metricsRegistry,
+    JitCodeCache* jitCodeCache) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
@@ -210,7 +211,8 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _signalManager{signalManager},
     _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()},
-    _useHybridUnwinding{configuration->UseHybridUnwinding()}
+    _useHybridUnwinding{configuration->UseHybridUnwinding()},
+    _pJitCodeCache{jitCodeCache}
 {
     if (_signalManager != nullptr)
     {
@@ -705,7 +707,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybrid(void* ctx)
 bool LinuxStackFramesCollector::IsManagedCode(uintptr_t instructionPointer)
 {
 #ifdef LINUX
-    if (const auto* methodInfo = JitCodeCache::Instance().FindMethod(instructionPointer))
+    if (const auto* methodInfo = _pJitCodeCache->FindMethod(instructionPointer))
     {
         RecordHybridEvent(
             HybridTraceEvent::ManagedViaJitCache,
@@ -748,6 +750,7 @@ std::int32_t LinuxStackFramesCollector::WalkManagedStackChain(uintptr_t initial_
     uintptr_t current_fp = initial_fp;
     uintptr_t current_sp = initial_sp;
     
+    // 100 is reallty to short for managed frames.
     constexpr size_t MaxManagedFrames = 100;  // Safety limit
     constexpr size_t MaxFrameDistanceBytes = 1 << 20;
     
@@ -761,7 +764,7 @@ std::int32_t LinuxStackFramesCollector::WalkManagedStackChain(uintptr_t initial_
         }
         
         // Try to get JIT metadata
-        const auto* methodInfo = JitCodeCache::Instance().FindMethod(current_ip);
+        const auto* methodInfo = _pJitCodeCache->FindMethod(current_ip);
         const bool hasCachedOffsets = (methodInfo != nullptr) && 
                                        (methodInfo->SavedFpOffset >= 0) && 
                                        (methodInfo->SavedLrOffset >= 0);
@@ -792,6 +795,7 @@ std::int32_t LinuxStackFramesCollector::WalkManagedStackChain(uintptr_t initial_
         }
         
         // Compute new SP
+        // Shouldn't we bail out if methodInfo is null or FrameSize is 0?
         const uint32_t frameSize = (methodInfo != nullptr && methodInfo->FrameSize > 0) 
                                     ? methodInfo->FrameSize 
                                     : 128;  // Default estimate
@@ -824,7 +828,7 @@ std::int32_t LinuxStackFramesCollector::UnwindManagedFrameManually(unw_cursor_t*
     int sp_result = unw_get_reg(cursor, UNW_REG_SP, &sp);
     int lr_result = unw_get_reg(cursor, UNW_AARCH64_X30, &lr);
 
-    const auto* methodInfo = JitCodeCache::Instance().FindMethod(ip);
+    const auto* methodInfo = _pJitCodeCache->FindMethod(ip);
     constexpr size_t DefaultMaxFrameDistanceBytes = 1ULL << 20;
     const size_t maxFrameDistanceBytes =
         (methodInfo != nullptr && methodInfo->FrameSize > 0)
@@ -1105,7 +1109,7 @@ bool LinuxStackFramesCollector::IsValidReturnAddress(uintptr_t address)
     }
 
     // Check JIT cache first - most specific
-    const auto* methodInfo = JitCodeCache::Instance().FindMethod(address);
+    const auto* methodInfo = _pJitCodeCache->FindMethod(address);
     if (methodInfo != nullptr)
     {
         return true;
@@ -1190,7 +1194,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybridStatic(void* ctx, uint
         bool isManaged = false;
         
         #ifdef LINUX
-        if (const auto* methodInfo = JitCodeCache::Instance().FindMethod(static_cast<uintptr_t>(ip)))
+        if (const auto* methodInfo = _pJitCodeCache->FindMethod(static_cast<uintptr_t>(ip)))
         {
             isManaged = true;
         }
@@ -1224,7 +1228,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybridStatic(void* ctx, uint
                 
                 for (size_t i = 0; i < MaxManagedFrames && frameCount < bufferSize; i++)
                 {
-                    const auto* methodInfo = JitCodeCache::Instance().FindMethod(static_cast<uintptr_t>(ip));
+                    const auto* methodInfo = _pJitCodeCache->FindMethod(static_cast<uintptr_t>(ip));
                     const int32_t cachedFpOffset = (methodInfo != nullptr && methodInfo->SavedFpOffset >= 0) ? methodInfo->SavedFpOffset : 0;
                     const int32_t cachedLrOffset = (methodInfo != nullptr && methodInfo->SavedLrOffset >= 0) ? methodInfo->SavedLrOffset : static_cast<int32_t>(sizeof(uintptr_t));
                     
@@ -1243,7 +1247,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackHybridStatic(void* ctx, uint
                     
                     // Check if return address is still managed
                     bool stillManaged = false;
-                    if (const auto* nextMethod = JitCodeCache::Instance().FindMethod(static_cast<uintptr_t>(return_addr)))
+                    if (const auto* nextMethod = _pJitCodeCache->FindMethod(static_cast<uintptr_t>(return_addr)))
                     {
                         stillManaged = true;
                     }
