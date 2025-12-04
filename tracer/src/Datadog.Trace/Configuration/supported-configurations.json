@@ -1581,6 +1581,18 @@
       ],
       "product": "OpenTelemetry"
     },
+    "_DD_EXTENSION_PATH": {
+      "version": [
+        "A"
+      ],
+      "product": "Aws"
+    },
+    "_DD_EXTENSION_ENDPOINT": {
+      "version": [
+        "A"
+      ],
+      "product": "Aws"
+    },
     "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY": {
       "version": [
         "A"

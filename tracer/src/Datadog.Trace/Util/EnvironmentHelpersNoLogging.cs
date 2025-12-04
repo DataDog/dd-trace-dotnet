@@ -23,7 +23,7 @@ internal static class EnvironmentHelpersNoLogging
         // Track the first exception encountered while reading env vars
         Exception? firstException = null;
 
-        var isServerless = CheckEnvVar(LambdaMetadata.FunctionNameEnvVar, ref firstException)
+        var isServerless = CheckEnvVar(PlatformKeys.Aws.FunctionName, ref firstException)
                         || (CheckEnvVar(PlatformKeys.AzureAppService.SiteNameKey, ref firstException)
                          && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
                         || (CheckEnvVar(PlatformKeys.GcpFunction.FunctionNameKey, ref firstException)

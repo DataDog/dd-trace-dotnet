@@ -22,5 +22,4 @@ internal static partial class PlatformKeys
     public const string DotNetClrProfiler = "COR_PROFILER_PATH";
     public const string DotNetClrProfiler64 = "COR_PROFILER_PATH_64";
     public const string DotNetClrProfiler32 = "COR_PROFILER_PATH_32";
-
 }
