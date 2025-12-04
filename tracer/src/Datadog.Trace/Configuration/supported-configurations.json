@@ -226,6 +226,12 @@
       ],
       "product": "CIVisibility"
     },
+    "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
     "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH": {
       "version": [
         "A"
@@ -977,6 +983,18 @@
       "product": "CIVisibility"
     },
     "DD_TEST_SESSION_NAME": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_TESTSESSION_COMMAND": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_TESTSESSION_WORKINGDIRECTORY": {
       "version": [
         "A"
       ],
