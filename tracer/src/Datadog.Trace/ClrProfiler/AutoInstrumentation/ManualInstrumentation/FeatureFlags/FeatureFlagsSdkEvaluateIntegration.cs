@@ -39,7 +39,7 @@ public class FeatureFlagsSdkEvaluateIntegration
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var parameters = (State)state.State!;
-        var res = FeatureFlagsModule.Instance.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, (EvaluationContext)parameters.Context!);
+        var res = FeatureFlagsModule.Instance.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>()!);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
