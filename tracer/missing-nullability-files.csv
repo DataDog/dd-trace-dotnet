@@ -77,14 +77,6 @@ src/Datadog.Trace/ClrProfiler/ManualTracer.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs
 src/Datadog.Trace/ClrProfiler/NativeMethods.cs
 src/Datadog.Trace/ClrProfiler/ScopeFactory.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.AppSec.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.AzureAppService.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.DirectLogSubmission.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Exporter.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Iast.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Logging.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Rcm.cs
 src/Datadog.Trace/Configuration/DbmPropagationLevel.cs
 src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
