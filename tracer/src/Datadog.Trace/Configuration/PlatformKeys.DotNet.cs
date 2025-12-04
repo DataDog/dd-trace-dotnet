@@ -13,9 +13,14 @@ internal static partial class PlatformKeys
     /// Platform key indicating the path to the .NET Core CLR profiler path
     /// </summary>
     public const string DotNetCoreClrProfiler = "CORECLR_PROFILER_PATH";
+    public const string DotNetCoreClrProfiler64 = "CORECLR_PROFILER_PATH_64";
+    public const string DotNetCoreClrProfiler32 = "CORECLR_PROFILER_PATH_32";
 
     /// <summary>
     /// Platform key indicating the path to the .NET Framework CLR profiler path
     /// </summary>
     public const string DotNetClrProfiler = "COR_PROFILER_PATH";
+    public const string DotNetClrProfiler64 = "COR_PROFILER_PATH_64";
+    public const string DotNetClrProfiler32 = "COR_PROFILER_PATH_32";
+
 }
