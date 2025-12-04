@@ -38,7 +38,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
 
     static WafLibraryRequiredTest()
     {
-        var result = WafLibraryInvoker.Initialize();
+        var result = WafLibraryInvoker.Initialize(Environment.GetEnvironmentVariable(ConfigurationKeys.DotnetTracerHome), Environment.GetEnvironmentVariable(ConfigurationKeys.InternalTraceNativeEnginePath));
         WafLibraryInvoker = result.WafLibraryInvoker;
     }
 
