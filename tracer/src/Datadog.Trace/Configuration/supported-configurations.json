@@ -809,6 +809,12 @@
         "A"
       ]
     },
+    "DD_LOG_LEVEL": {
+      "version": [
+        "A"
+      ],
+      "product": "Agent"
+    },
     "DD_MAX_LOGFILE_SIZE": {
       "version": [
         "A"
