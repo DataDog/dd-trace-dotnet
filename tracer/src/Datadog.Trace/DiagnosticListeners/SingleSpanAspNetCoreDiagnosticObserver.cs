@@ -31,7 +31,7 @@ namespace Datadog.Trace.DiagnosticListeners
     /// </summary>
     internal sealed class SingleSpanAspNetCoreDiagnosticObserver : DiagnosticObserver
     {
-        public const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
@@ -91,7 +91,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStart(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Start")
                 {
                     _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
@@ -109,7 +109,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
                 else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
                 {
-                    OnMvcAfterAction(arg);
+                    OnMvcAfterAction();
                     return;
                 }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
@@ -121,22 +121,22 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var suffix = eventName.AsSpan().Slice(PrefixLength);
 
-                if (suffix.SequenceEqual("Mvc.BeforeAction"))
+                if (suffix is "Mvc.BeforeAction")
                 {
                     _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
                 }
-                else if (suffix.SequenceEqual("Mvc.AfterAction"))
+                else if (suffix is "Mvc.AfterAction")
                 {
                     _mvcAfterActionEventKey = eventName;
-                    OnMvcAfterAction(arg);
+                    OnMvcAfterAction();
                 }
-                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
+                else if (suffix is "Hosting.UnhandledException")
                 {
                     _hostingUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
                 }
-                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                else if (suffix is "Diagnostics.UnhandledException")
                 {
                     _diagnosticsUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
@@ -151,7 +151,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStop(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Stop")
                 {
                     _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
@@ -166,13 +166,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnRoutingEndpointMatched(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Routing.EndpointMatched")
                 {
                     _routingEndpointMatchedKey = eventName;
                     OnRoutingEndpointMatched(arg);
                 }
-
-                return;
             }
         }
 
@@ -278,7 +276,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var method = routeEndpoint.Value.RequestDelegate?.Method;
                     if (method != null)
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
                     }
                     else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
@@ -293,19 +291,18 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (isFirstExecution)
                 {
-                    tags.AspNetCoreEndpoint = routeEndpoint!.Value.DisplayName;
+                    tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                var routePattern = routeEndpoint!.Value.RoutePattern.DuckCast<RoutePattern>();
+                var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
                 var request = httpContext.Request.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestStruct>();
-                RouteValueDictionary routeValues = request.RouteValues;
+                var routeValues = request.RouteValues;
                 // No need to ToLowerInvariant() these strings, as we lower case
                 // the whole route later
-                object? raw;
-                var controllerName = routeValues.TryGetValue("controller", out raw)
-                                            ? raw as string
-                                            : null;
+                var controllerName = routeValues.TryGetValue("controller", out var raw)
+                                         ? raw as string
+                                         : null;
                 var actionName = routeValues.TryGetValue("action", out raw)
                                      ? raw as string
                                      : null;
@@ -384,7 +381,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void OnMvcAfterAction(object arg)
+        private void OnMvcAfterAction()
         {
             var tracer = CurrentTracer;
 
