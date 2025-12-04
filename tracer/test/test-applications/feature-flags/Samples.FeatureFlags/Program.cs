@@ -49,7 +49,8 @@ class Program
 
         IEvaluation? Evaluate(string key)
         {
-            var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, typeof(string), "Not found", null);
+            var context = new EvaluationContext(key);
+            var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, typeof(string), "Not found", context);
 
             if (evaluation is null)
             {

@@ -18,6 +18,11 @@ public partial interface IEvaluationContext
     /// <summary> Gets context values.</summary>
     public IDictionary<string, object?> Values { get; }
 
+    /// <summary> Get the Context value if existent </summary>
+    /// <param name="key"> Value key </param>
+    /// <returns> Returns Context Value or null </returns>
+    object? GetValue(string key);
+
     /// <summary> Custom value converter.</summary>
     object? ConvertValue(object? value);
 }

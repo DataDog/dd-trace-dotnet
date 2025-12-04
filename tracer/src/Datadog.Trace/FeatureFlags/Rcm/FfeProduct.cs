@@ -49,8 +49,8 @@ internal class FfeProduct
                 var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
                 if (serverConfigFile.TypedFile is not null)
                 {
-                    _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Id, serverConfigFile.TypedFile));
-                    res.Add(ApplyDetails.FromOk(ffeConfig.Path.Id));
+                    _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
+                    res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
                     apply = true;
                 }
             }

@@ -115,12 +115,19 @@ namespace Datadog.Trace.FeatureFlags
 
         private void UpdateConfig(List<KeyValuePair<string, ServerConfiguration>> list)
         {
-            Log.Debug("FeatureFlagsModule::UpdateConfig -> New config received.");
-            // Feed configs to the rules evaluator
-            if (list.Count > 0)
+            Log.Debug<int>("FeatureFlagsModule::UpdateConfig -> New config received. {Count}", list.Count);
+            try
             {
-                _evaluator = new FeatureFlagsEvaluator(ReportExposure, list[0].Value, Timeout);
-                _onNewConfigEventHander?.Invoke();
+                // Feed configs to the rules evaluator
+                if (list.Count > 0)
+                {
+                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, list[0].Value, Timeout));
+                    _onNewConfigEventHander?.Invoke();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "FeatureFlagsModule::UpdateConfig -> Error processing new config");
             }
         }
 
