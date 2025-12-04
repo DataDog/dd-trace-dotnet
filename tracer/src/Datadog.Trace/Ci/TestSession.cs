@@ -91,7 +91,10 @@ public sealed class TestSession
             var environmentVariables = GetPropagateEnvironmentVariables();
             foreach (var envVar in environmentVariables)
             {
+// TODO temporary, this needs to be addressed
+#pragma warning disable DD0012
                 _environmentVariablesToRestore[envVar.Key] = EnvironmentHelpers.GetEnvironmentVariable(envVar.Key);
+#pragma warning restore DD0012
                 EnvironmentHelpers.SetEnvironmentVariable(envVar.Key, envVar.Value);
             }
         }
