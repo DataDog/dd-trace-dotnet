@@ -23,6 +23,11 @@ internal static partial class ConfigurationKeys
         public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
 
         /// <summary>
+        /// AWS CodePipeline action execution ID for CI correlation.
+        /// </summary>
+        public const string ActionExecutionId = "DD_ACTION_EXECUTION_ID";
+
+        /// <summary>
         /// Configuration key for enabling or disabling Agentless in CI Visibility.
         /// Default value is false (disabled).
         /// </summary>
@@ -152,6 +157,83 @@ internal static partial class ConfigurationKeys
         /// Configuration key for the maximum number of retry attempts for the entire session.
         /// </summary>
         public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
+
+        /// <summary>
+        /// Jenkins CI environment variable for custom trace ID correlation.
+        /// </summary>
+        public const string CustomTraceId = "DD_CUSTOM_TRACE_ID";
+
+        /// <summary>
+        /// CI Visibility environment variable for git branch name.
+        /// </summary>
+        public const string GitBranch = "DD_GIT_BRANCH";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit author date.
+        /// </summary>
+        public const string GitCommitAuthorDate = "DD_GIT_COMMIT_AUTHOR_DATE";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit author email.
+        /// </summary>
+        public const string GitCommitAuthorEmail = "DD_GIT_COMMIT_AUTHOR_EMAIL";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit author name.
+        /// </summary>
+        public const string GitCommitAuthorName = "DD_GIT_COMMIT_AUTHOR_NAME";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit committer date.
+        /// </summary>
+        public const string GitCommitCommitterDate = "DD_GIT_COMMIT_COMMITTER_DATE";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit committer email.
+        /// </summary>
+        public const string GitCommitCommitterEmail = "DD_GIT_COMMIT_COMMITTER_EMAIL";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit committer name.
+        /// </summary>
+        public const string GitCommitCommitterName = "DD_GIT_COMMIT_COMMITTER_NAME";
+
+        /// <summary>
+        /// CI Visibility environment variable for git commit message.
+        /// </summary>
+        public const string GitCommitMessage = "DD_GIT_COMMIT_MESSAGE";
+
+        /// <summary>
+        /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
+        public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
+
+        /// <summary>
+        /// CI Visibility environment variable for pull request base branch.
+        /// </summary>
+        public const string GitPullRequestBaseBranch = "DD_GIT_PULL_REQUEST_BASE_BRANCH";
+
+        /// <summary>
+        /// CI Visibility environment variable for pull request base branch SHA.
+        /// </summary>
+        public const string GitPullRequestBaseBranchSha = "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA";
+
+        /// <summary>
+        /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
+        public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
+
+        /// <summary>
+        /// CI Visibility environment variable for git tag.
+        /// </summary>
+        public const string GitTag = "DD_GIT_TAG";
+
+        /// <summary>
+        /// AWS CodePipeline pipeline execution ID for CI correlation.
+        /// </summary>
+        public const string PipelineExecutionId = "DD_PIPELINE_EXECUTION_ID";
 
         /// <summary>
         /// Configuration key for the number of retries to fix a flaky test.

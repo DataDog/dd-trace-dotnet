@@ -27,12 +27,6 @@ namespace Datadog.Trace.Telemetry
         public const string CloudResourceTypeHeader = "DD-Cloud-Resource-Type";
         public const string CloudResourceIdentifierHeader = "DD-Cloud-Resource-Identifier";
 
-        public const string GcpServiceVariable = "K_SERVICE";
-        public const string AzureContainerAppVariable = "CONTAINER_APP_NAME";
-        public const string AzureAppServiceVariable1 = "APPSVC_RUN_ZIP";
-        public const string AzureAppServiceVariable2 = "WEBSITE_APPSERVICEAPPLOGS_TRACE_ENABLED";
-        public const string AzureAppServiceIdentifierVariable = "WEBSITE_SITE_NAME";
-
         public static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromMinutes(1);
     }
 }
