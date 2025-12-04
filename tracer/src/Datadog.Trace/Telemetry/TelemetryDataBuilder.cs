@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Util;
@@ -175,9 +176,9 @@ internal sealed class TelemetryDataBuilder
 
     private static AppStartedPayload.InstallSignaturePayload? GetInstallSignature()
     {
-        var installId = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_ID");
-        var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
-        var installTime = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TIME");
+        var installId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallId);
+        var installType = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallType);
+        var installTime = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallTime);
 
         if (string.IsNullOrEmpty(installId) && string.IsNullOrEmpty(installType) && string.IsNullOrEmpty(installTime))
         {
