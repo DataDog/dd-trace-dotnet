@@ -458,6 +458,11 @@ DD_INSTRUMENTATION_TELEMETRY_URL: |
   telemetry is in use (otherwise telemetry is sent to the agent using
   <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
 
+DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH: |
+  This variable is set by the native loader after trying to load the profiler.
+  It means the profiler is _there_ though it may not be _loaded_. This only works
+  on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+
 DD_INTERNAL_TELEMETRY_DEBUG_ENABLED: |
   Configuration key for whether to enable debug mode of telemetry.
   <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DebugEnabled"/>
