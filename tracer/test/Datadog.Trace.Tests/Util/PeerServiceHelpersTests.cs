@@ -50,18 +50,14 @@ public class PeerServiceHelpersTests
                 tags.Service = "DynamoDB";
                 tags.Region = "us-east-1";
                 tags.TableName = "example-table";
-                output.WriteLine(tags.ToString());
                 PeerServiceHelpers.DerivePeerService(tags, isAwsLambda);
-                output.WriteLine(tags.ToString());
                 if (isAwsLambda)
                 {
-                    output.WriteLine(tags.PeerService);
                     tags.PeerService.Should().Be("dynamodb.us-east-1.amazonaws.com");
                     tags.PeerServiceSource.Should().Be("peer.service");
                 }
                 else
                 {
-                    output.WriteLine(tags.PeerService);
                     tags.PeerService.Should().Be("example-table");
                     tags.PeerServiceSource.Should().Be("tablename");
                 }
