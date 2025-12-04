@@ -39,23 +39,29 @@ namespace Datadog.Trace.PlatformHelpers
         // if we're running in host namespace or not (does not work when running in DinD)
         private const long HostCgroupNamespaceInode = 0xEFFFFFFB;
 
-        private static readonly Lazy<string> LazyContainerId = new(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-        private static readonly Lazy<string> LazyEntityId = new(GetEntityIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
         public static readonly IContainerMetadata Instance = new ContainerMetadata();
 
+        private readonly Lazy<string> _containerId;
+        private readonly Lazy<string> _entityId;
+
+        public ContainerMetadata()
+        {
+            _containerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+            _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
+        }
+
         /// <inheritdoc/>
         public string ContainerId
         {
-            get => LazyContainerId.Value;
+            get => _containerId.Value;
         }
 
         /// <inheritdoc/>
         public string EntityId
         {
-            get => LazyEntityId.Value;
+            get => _entityId.Value;
         }
 
         /// <summary>
@@ -209,9 +215,9 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private static string GetEntityIdInternal()
+        private static string GetEntityIdInternal(Lazy<string> lazyContainerId)
         {
-            if (LazyContainerId.Value is string containerId)
+            if (lazyContainerId.Value is string containerId)
             {
                 return $"ci-{containerId}";
             }
