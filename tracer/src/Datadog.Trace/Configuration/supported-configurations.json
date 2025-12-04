@@ -729,6 +729,11 @@
       ],
       "product": "Telemetry"
     },
+    "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH": {
       "version": [
         "A"

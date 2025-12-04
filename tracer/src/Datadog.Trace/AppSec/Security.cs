@@ -543,7 +543,7 @@ namespace Datadog.Trace.AppSec
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
             {
-                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                _libraryInitializationResult = WafLibraryInvoker.Initialize(ddDotnetTracerHome: _settings.DdDotnetTracerHome, traceNativeEnginePath: _settings.InternalTraceNativeEnginePath);
                 if (!_libraryInitializationResult.Success)
                 {
                     _configurationState.AppsecEnabled = false;
