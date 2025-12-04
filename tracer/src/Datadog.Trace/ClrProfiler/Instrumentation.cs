@@ -486,7 +486,11 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+#if NET6_0_OR_GREATER
+                observers.Add(new SingleSpanAspNetCoreDiagnosticObserver());
+#else
                 observers.Add(new AspNetCoreDiagnosticObserver());
+#endif
                 observers.Add(new QuartzDiagnosticObserver());
             }
 
