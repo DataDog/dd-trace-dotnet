@@ -24,6 +24,7 @@ namespace Datadog.Trace.Configuration
         {
             try
             {
+                // one of the few places where it's legit to use Environment.GetEnvironmentVariable but key must come from ConfigurationKeys or PlatformKeys
                 return Environment.GetEnvironmentVariable(key);
             }
             catch
