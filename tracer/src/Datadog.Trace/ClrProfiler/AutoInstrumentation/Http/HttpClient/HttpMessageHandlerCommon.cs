@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -36,7 +37,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
                 if (scope is not null)
                 {
-                    tags.HttpClientHandlerType = instance.GetType().FullName;
+                    if (tags is DatadogHttpTags datadogHttptags)
+                    {
+                        datadogHttptags.HttpClientHandlerType = instance.GetType().FullName;
+                    }
 
                     // add propagation headers to the HTTP request
                     var context = new PropagationContext(scope.Span.Context, Baggage.Current);

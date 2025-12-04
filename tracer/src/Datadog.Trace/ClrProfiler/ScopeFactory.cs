@@ -124,6 +124,11 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
                     tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+
+                    if (tags is OpenTelemetryHttpTags openTelemetryTags)
+                    {
+                        openTelemetryTags.Port = requestUri.Port.ToString();
+                    }
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);

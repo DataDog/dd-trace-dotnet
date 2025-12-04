@@ -205,6 +205,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsHttpMessageHandler(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsHttpMessageHandlerOTel(),
                 "v1" => span.IsHttpMessageHandlerV1(),
                 _ => span.IsHttpMessageHandlerV0(),
             };

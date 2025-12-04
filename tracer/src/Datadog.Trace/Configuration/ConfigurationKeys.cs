@@ -553,7 +553,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the schema version for service naming and span attributes
-        /// Accepted values are: "v1", "v0"
+        /// Accepted values are: "otel", "v1", "v0"
         /// Default value is "v0"
         /// </summary>
         public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";

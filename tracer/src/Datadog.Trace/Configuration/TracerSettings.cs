@@ -141,10 +141,11 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
                                         defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
-                                        converter: x => x switch
+                                        converter: x => x.ToLowerInvariant() switch
                                         {
-                                            "v1" or "V1" => SchemaVersion.V1,
-                                            "v0" or "V0" => SchemaVersion.V0,
+                                            "otel" => SchemaVersion.OTel,
+                                            "v1" => SchemaVersion.V1,
+                                            "v0" => SchemaVersion.V0,
                                             _ => ParsingResult<SchemaVersion>.Failure(),
                                         },
                                         validator: null);

@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             /// </summary>
             /// <param name="values">The values to pass to this parameter.</param>
             public MetadataSchemaVersionDataAttribute()
-                : base(["v0", "v1"])
+                : base(["v0", "v1", "otel"])
             {
             }
         }

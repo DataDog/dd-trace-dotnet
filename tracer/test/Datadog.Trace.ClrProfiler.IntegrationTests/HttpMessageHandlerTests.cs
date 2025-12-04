@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SemanticConventions;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -106,12 +107,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    if (span.Tags[Tags.HttpStatusCode] == "502")
+                    string value;
+                    if ((span.Tags.TryGetValue(Tags.HttpStatusCode, out value) || span.Tags.TryGetValue(OpenTelemetrySemanticConventions.HttpStatusCode, out value))
+                        && value  == "502")
                     {
                         span.Error.Should().Be(1);
                     }
 
-                    if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
+                    string url;
+                    if (span.Tags.TryGetValue(Tags.HttpUrl, out url) || span.Tags.TryGetValue(OpenTelemetrySemanticConventions.HttpUrl, out url))
                     {
                         if (queryStringCaptureEnabled)
                         {

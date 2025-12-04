@@ -172,6 +172,7 @@ src/Datadog.Trace/Sampling/SamplingMechanism.cs
 src/Datadog.Trace/Sampling/SpanRateLimiter.cs
 src/Datadog.Trace/Sampling/SpanSamplingRule.cs
 src/Datadog.Trace/Sampling/TracerRateLimiter.cs
+src/Datadog.Trace/SemanticConventions/OpenTelemetrySemanticConventions.cs
 src/Datadog.Trace/ServiceFabric/ServiceRemotingConstants.cs
 src/Datadog.Trace/Tagging/AerospikeTags.cs
 src/Datadog.Trace/Tagging/AspNetCoreEndpointTags.cs
@@ -182,6 +183,7 @@ src/Datadog.Trace/Tagging/AzureFunctionsTags.cs
 src/Datadog.Trace/Tagging/AzureServiceBusTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs
 src/Datadog.Trace/Tagging/CouchbaseTags.cs
+src/Datadog.Trace/Tagging/DatadogHttpTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
 src/Datadog.Trace/Tagging/HttpTags.cs
 src/Datadog.Trace/Tagging/IHasStatusCode.cs
@@ -190,6 +192,7 @@ src/Datadog.Trace/Tagging/InstrumentationTags.cs
 src/Datadog.Trace/Tagging/ITags.cs
 src/Datadog.Trace/Tagging/KafkaTags.cs
 src/Datadog.Trace/Tagging/MsmqTags.cs
+src/Datadog.Trace/Tagging/OpenTelemetryHttpTags.cs
 src/Datadog.Trace/Tagging/OpenTelemetryTags.cs
 src/Datadog.Trace/Tagging/RabbitMQTags.cs
 src/Datadog.Trace/Tagging/RemotingTags.cs

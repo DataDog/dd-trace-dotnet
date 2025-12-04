@@ -11,5 +11,6 @@ namespace Datadog.Trace.Configuration
     {
         V0 = 0,
         V1 = 1,
+        OTel = 2,
     }
 }

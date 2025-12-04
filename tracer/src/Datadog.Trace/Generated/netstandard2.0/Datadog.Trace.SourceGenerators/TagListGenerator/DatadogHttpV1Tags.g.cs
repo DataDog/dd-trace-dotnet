@@ -12,7 +12,7 @@ using System;
 
 namespace Datadog.Trace.Tagging
 {
-    partial class HttpV1Tags
+    partial class DatadogHttpV1Tags
     {
         // PeerServiceBytes = MessagePack.Serialize("peer.service");
 #if NETCOREAPP
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tagging
                     PeerService = value;
                     break;
                 case "_dd.peer.service.source": 
-                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(HttpV1Tags));
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(DatadogHttpV1Tags));
                     break;
                 default: 
                     base.SetTag(key, value);

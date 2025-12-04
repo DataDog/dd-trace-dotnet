@@ -59,8 +59,9 @@ namespace Datadog.Trace.Configuration.Schema
         public HttpTags CreateHttpTags()
             => _version switch
             {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
-                _ => new HttpV1Tags(),
+                SchemaVersion.OTel => new OpenTelemetryHttpTags(),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new DatadogHttpTags(),
+                _ => new DatadogHttpV1Tags(),
             };
 
         public GrpcClientTags CreateGrpcClientTags()
