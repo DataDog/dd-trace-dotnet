@@ -98,14 +98,14 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-            return StartAspNetCorePipelineScope(tracer, security, httpContext, resourceName, tags);
+            return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags);
         }
 
-        public Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, HttpContext httpContext, string resourceName, T tags)
+        public Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags)
             where T : WebTags
         {
             var request = httpContext.Request;
@@ -149,8 +149,7 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            var iastInstance = Iast.Iast.Instance;
-            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();
