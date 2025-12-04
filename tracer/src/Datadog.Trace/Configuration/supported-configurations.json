@@ -376,6 +376,12 @@
       ],
       "product": "Debugger"
     },
+    "DD_CUSTOM_TRACE_ID": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
     "DD_DATA_STREAMS_ENABLED": {
       "version": [
         "A"
@@ -556,15 +562,83 @@
         "A"
       ]
     },
+    "DD_GIT_BRANCH": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_AUTHOR_DATE": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_AUTHOR_EMAIL": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_AUTHOR_NAME": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_COMMITTER_DATE": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_COMMITTER_EMAIL": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_COMMITTER_NAME": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_COMMIT_MESSAGE": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
     "DD_GIT_COMMIT_SHA": {
       "version": [
         "A"
-      ]
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_PULL_REQUEST_BASE_BRANCH": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
     },
     "DD_GIT_REPOSITORY_URL": {
       "version": [
         "A"
-      ]
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_GIT_TAG": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
     },
     "DD_HTTP_CLIENT_ERROR_STATUSES": {
       "version": [
@@ -686,6 +760,24 @@
       "version": [
         "A"
       ]
+    },
+    "DD_INSTRUMENTATION_INSTALL_ID": {
+      "version": [
+        "A"
+      ],
+      "product": "Telemetry"
+    },
+    "DD_INSTRUMENTATION_INSTALL_TIME": {
+      "version": [
+        "A"
+      ],
+      "product": "Telemetry"
+    },
+    "DD_INSTRUMENTATION_INSTALL_TYPE": {
+      "version": [
+        "A"
+      ],
+      "product": "Telemetry"
     },
     "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED": {
       "version": [
@@ -842,6 +934,18 @@
         "A"
       ],
       "product": "FeatureFlags"
+    },
+    "DD_ACTION_EXECUTION_ID": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
+    "DD_PIPELINE_EXECUTION_ID": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
     },
     "DD_PROXY_HTTPS": {
       "version": [
@@ -1565,6 +1669,12 @@
         "A"
       ],
       "product": "OpenTelemetry"
+    },
+    "_DD_EXTENSION_ENDPOINT": {
+      "version": [
+        "A"
+      ],
+      "product": "Aws"
     },
     "_DD_EXTENSION_PATH": {
       "version": [

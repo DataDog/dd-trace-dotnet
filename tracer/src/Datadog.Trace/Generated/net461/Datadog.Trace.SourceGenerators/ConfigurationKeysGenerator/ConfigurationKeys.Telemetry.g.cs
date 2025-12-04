@@ -18,6 +18,24 @@ internal static partial class ConfigurationKeys
     internal static class Telemetry
     {
         /// <summary>
+        /// SSI variable that provides a unique identifier for the instrumentation installation.
+        /// Used for tracking and correlation purposes in telemetry.
+        /// </summary>
+        public const string InstrumentationInstallId = "DD_INSTRUMENTATION_INSTALL_ID";
+
+        /// <summary>
+        /// SSI variable that indicates when the instrumentation was installed.
+        /// Used for tracking installation timeline in telemetry.
+        /// </summary>
+        public const string InstrumentationInstallTime = "DD_INSTRUMENTATION_INSTALL_TIME";
+
+        /// <summary>
+        /// SSI variable that indicates the installation type (e.g., dd_dotnet_launcher, dd_trace_tool, dotnet_msi, windows_fleet_installer).
+        /// Used to determine the instrumentation source for telemetry.
+        /// </summary>
+        public const string InstrumentationInstallType = "DD_INSTRUMENTATION_INSTALL_TYPE";
+
+        /// <summary>
         /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
         /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
         /// is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
