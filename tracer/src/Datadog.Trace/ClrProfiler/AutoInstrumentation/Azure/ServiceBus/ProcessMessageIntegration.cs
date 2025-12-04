@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -61,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 if (message.ApplicationProperties is not null)
                 {
-                    var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
+                    var headers = new AzureHeadersCollectionAdapter(message.ApplicationProperties);
 
                     try
                     {

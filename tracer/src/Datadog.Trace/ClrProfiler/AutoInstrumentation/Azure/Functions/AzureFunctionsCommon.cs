@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -18,6 +19,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog;
 
 #nullable enable
 
@@ -231,29 +233,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
                         _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
                     };
-
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                       var headersAndContext = ExtractHeadersAndPropagatedContextFromHttp(context, entry.Key as string);
-                       var extractedHeaders = headersAndContext.Headers;
-                       extractedContext = headersAndContext.Context;
-                       InferredProxyScopePropagationContext? proxyContext = null;
+                        var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(context, entry.Key as string);
+                        extractedContext = httpContext;
+                        Log.Debug("These are the extracted headers {Headers}", extractedHeaders);
+                        InferredProxyScopePropagationContext? proxyContext = null;
 
-                       // Check if there's an active AspNetCore span
-                       var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
+                        // Check if there's an active AspNetCore span
+                        var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
                                                 activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
 
-                       if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
-                       {
-                           proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, extractedHeaders, extractedContext);
+                        if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
+                        {
+                           proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new AzureHeadersCollectionAdapter(headers), extractedContext);
                            if (proxyContext != null)
                            {
                                extractedContext = proxyContext.Value.Context;
                            }
-                       }
+                        }
                     }
                     else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
@@ -310,7 +311,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static (HttpHeadersCollection Headers, PropagationContext Context) ExtractHeadersAndPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static (PropagationContext Context, Dictionary<string, object>? Headers) ExtractPropagatedContextandHeadersFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -325,23 +326,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                object? feature = null;
-                foreach (var keyValuePair in context.Features)
-                {
-                    if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        feature = keyValuePair.Value;
-                        break;
-                    }
-                }
+                var bindingFeature = GetFeatureFromContext<T, GrpcBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
 
-                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
-                {
-                    return default;
-                }
-
-                if (bindingFeature.InputData is null
-                 || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
+                if (bindingFeature?.InputData is null
+                 || !bindingFeature.Value.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
                     return default;
@@ -352,9 +340,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                var headers = new HttpHeadersCollection(httpRequest.Headers);
+                var triggerMetadata = bindingFeature.Value.TriggerMetadata;
 
-                return (headers, Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headers));
+                // Extract headers from trigger metadata
+                Dictionary<string, object>? headers = null;
+                if (triggerMetadata?.TryGetValue("Headers", out var headersObj) == true &&
+                    TryParseJson<Dictionary<string, object>>(headersObj, out var parsedHeaders) && parsedHeaders != null)
+                {
+                    headers = parsedHeaders;
+                }
+
+                // Extract propagation context from httpRequest headers
+                var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
+
+                return (propagationContext, headers);
             }
             catch (Exception ex)
             {
@@ -368,21 +367,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                if (context.Features == null)
-                {
-                    return default;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
+                var bindingsFeature = GetFeatureFromContext<T, GrpcBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
                 if (bindingsFeature == null)
                 {
                     return default;
@@ -472,6 +457,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
+            where T : IFunctionContext
+            where TFeature : struct
+        {
+            if (context.Features == null)
+            {
+                return null;
+            }
+
+            foreach (var kvp in context.Features)
+            {
+                if (kvp.Key.FullName?.Equals(featureTypeName) == true)
+                {
+                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
+                }
+            }
+
+            return null;
         }
     }
 }
