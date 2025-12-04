@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Util
@@ -18,11 +19,12 @@ namespace Datadog.Trace.Util
         /// Sets peer.service tag for AwsSdk spans based on the service, environment, and region
         /// </summary>
         /// <param name="tags">AwsSdkTags for the current span</param>
-        public static AwsSdkTags DerivePeerService(AwsSdkTags tags, bool isAwsLambda)
+        /// <param name="isAwsLambda">Indicates whether the span is coming from a serverless (Lambda) environment</param>
+        public static void DerivePeerService(AwsSdkTags tags, bool isAwsLambda)
         {
             var service = tags.AwsService;
             var region = tags.Region;
-            if (isAwsLambda && tags.Region != null)
+            if (isAwsLambda && region != null)
             {
                 switch (service)
                 {
@@ -36,14 +38,16 @@ namespace Datadog.Trace.Util
                         tags.PeerService = "kinesis." + region + ".amazonaws.com";
                         break;
                     case "S3":
-                        var s3Tags = (AwsS3Tags)tags;
-                        if (s3Tags.BucketName != null)
+                        if (tags is AwsS3Tags s3Tags)
                         {
-                            tags.PeerService = s3Tags.BucketName + ".s3." + region + ".amazonaws.com";
-                        }
-                        else
-                        {
-                            tags.PeerService = "s3." + region + ".amazonaws.com";
+                            if (s3Tags.BucketName != null)
+                            {
+                                tags.PeerService = s3Tags.BucketName + ".s3." + region + ".amazonaws.com";
+                            }
+                            else
+                            {
+                                tags.PeerService = "s3." + region + ".amazonaws.com";
+                            }
                         }
 
                         break;
@@ -62,63 +66,56 @@ namespace Datadog.Trace.Util
                 switch (service)
                 {
                     case "DynamoDB":
-                        if (tags is AwsDynamoDbTags)
+                        if (tags is AwsDynamoDbTags dbTags)
                         {
-                            var dbTags = (AwsDynamoDbTags)tags;
                             tags.PeerService = dbTags.TableName;
                             tags.PeerServiceSource = Trace.Tags.TableName;
                         }
 
                         break;
                     case "EventBridge":
-                        if (tags is AwsEventBridgeTags)
+                        if (tags is AwsEventBridgeTags eventTags)
                         {
-                            var eventTags = (AwsEventBridgeTags)tags;
                             tags.PeerService = eventTags.RuleName;
                             tags.PeerServiceSource = Trace.Tags.RuleName;
                         }
 
                         break;
                     case "Kinesis":
-                        if (tags is AwsKinesisTags)
+                        if (tags is AwsKinesisTags kinesisTags)
                         {
-                            var kinesisTags = (AwsKinesisTags)tags;
                             tags.PeerService = kinesisTags.StreamName;
                             tags.PeerServiceSource = Trace.Tags.StreamName;
                         }
 
                         break;
                     case "S3":
-                        if (tags is AwsS3Tags)
+                        if (tags is AwsS3Tags s3Tags)
                         {
-                            var s3Tags = (AwsS3Tags)tags;
                             tags.PeerService = s3Tags.BucketName;
                             tags.PeerServiceSource = Trace.Tags.BucketName;
                         }
 
                         break;
                     case "SNS":
-                        if (tags is AwsSnsTags)
+                        if (tags is AwsSnsTags snsTags)
                         {
-                            var snsTags = (AwsSnsTags)tags;
                             tags.PeerService = snsTags.TopicName;
                             tags.PeerServiceSource = Trace.Tags.TopicName;
                         }
 
                         break;
                     case "SQS":
-                        if (tags is AwsSqsTags)
+                        if (tags is AwsSqsTags sqsTags)
                         {
-                            var sqsTags = (AwsSqsTags)tags;
                             tags.PeerService = sqsTags.QueueName;
                             tags.PeerServiceSource = Trace.Tags.QueueName;
                         }
 
                         break;
                     case "StepFunctions":
-                        if (tags is AwsStepFunctionsTags)
+                        if (tags is AwsStepFunctionsTags stepTags)
                         {
-                            var stepTags = (AwsStepFunctionsTags)tags;
                             tags.PeerService = stepTags.StateMachineName;
                             tags.PeerServiceSource = Trace.Tags.StateMachineName;
                         }
@@ -126,8 +123,6 @@ namespace Datadog.Trace.Util
                         break;
                 }
             }
-
-            return tags;
         }
     }
 }
