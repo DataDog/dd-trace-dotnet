@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private const string DefaultRelativePath = "/api/v2/debugger";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplayTransportFactory));
 
-        internal static ExceptionReplayTransportInfo Create(TracerSettings tracerSettings, ExceptionReplaySettings settings, IDiscoveryService discoveryService)
+        internal static ExceptionReplayTransportInfo? Create(TracerSettings tracerSettings, ExceptionReplaySettings settings, IDiscoveryService discoveryService)
         {
             if (!settings.AgentlessEnabled)
             {
@@ -30,14 +31,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (string.IsNullOrWhiteSpace(settings.AgentlessApiKey))
             {
-                Log.Error("Exception Replay agentless uploads enabled but DD_API_KEY is not set. Disabling Exception Replay.");
-                throw new InvalidOperationException("Exception Replay agentless mode requires DD_API_KEY.");
+                Log.ErrorSkipTelemetry("Exception Replay agentless uploads enabled but DD_API_KEY is not set. Disabling Exception Replay.");
+                return null;
             }
 
             if (!TryResolveAgentlessEndpoint(settings, out var baseUri, out var relativePath))
             {
-                Log.Error("Exception Replay agentless uploads enabled but a valid intake URL could not be determined. Disabling Exception Replay.");
-                throw new InvalidOperationException("Exception Replay agentless mode requires a valid intake URL.");
+                Log.ErrorSkipTelemetry("Exception Replay agentless uploads enabled but a valid intake URL could not be determined. Disabling Exception Replay.");
+                return null;
             }
 
             var apiFactory = DebuggerTransportStrategy.Get(baseUri);
@@ -58,24 +59,24 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionReplayTransportInfo(apiFactory, discoveryService, staticEndpoint: null, isAgentless: false);
         }
 
-        private static bool TryResolveAgentlessEndpoint(ExceptionReplaySettings settings, out Uri baseUri, out string relativePath)
+        private static bool TryResolveAgentlessEndpoint(ExceptionReplaySettings settings, [NotNullWhen(true)] out Uri? baseUri, [NotNullWhen(true)] out string relativePath)
         {
             var overrideUrl = settings.AgentlessUrlOverride;
             if (string.IsNullOrWhiteSpace(overrideUrl))
             {
-                baseUri = new Uri($"https://debugger-intake.{settings.AgentlessSite}/");
+                baseUri = new Uri($"https://debugger-intake.{settings.AgentlessSite}");
                 relativePath = DefaultRelativePath;
                 return true;
             }
 
             if (!Uri.TryCreate(overrideUrl, UriKind.Absolute, out var uri))
             {
-                baseUri = null!;
+                baseUri = null;
                 relativePath = string.Empty;
                 return false;
             }
 
-            baseUri = new Uri($"{uri.Scheme}://{uri.Authority}/");
+            baseUri = new Uri($"{uri.Scheme}://{uri.Authority}");
             var path = uri.PathAndQuery;
             relativePath = string.IsNullOrEmpty(path) ? DefaultRelativePath : EnsureLeadingSlash(path);
             return true;

@@ -63,17 +63,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
             _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            // TODO: respond to changes in exporter settings
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
-            ExceptionReplayTransportInfo transportInfo;
 
-            try
+            if (ExceptionReplayTransportFactory.Create(tracer.Settings, Settings, discoveryService) is not { } transportInfo)
             {
-                transportInfo = ExceptionReplayTransportFactory.Create(tracer.Settings, Settings, discoveryService);
-            }
-            catch (InvalidOperationException ex)
-            {
-                Log.Error(ex, "Exception Replay transport could not be initialized in agentless mode. Disabling Exception Replay.");
                 _isDisabled = true;
                 return;
             }
