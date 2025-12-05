@@ -43,9 +43,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 baseUri,
                 AgentHttpHeaderNames.DefaultHeaders.Concat(
                     new KeyValuePair<string, string>("DD-API-KEY", settings.AgentlessApiKey),
-                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"),
-                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"),
-                    new KeyValuePair<string, string>("DD-REQUEST-ID", Guid.NewGuid().ToString())));
+                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet")));
             return new ExceptionReplayTransportInfo(apiFactory, null, relativePath, isAgentless: true);
         }
 
