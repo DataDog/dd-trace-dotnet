@@ -312,7 +312,7 @@ namespace Datadog.Trace.AppSec
                 return template.Replace(SecurityConstants.SecurityResponseIdPlaceholder, securityResponseId);
             }
 
-            void SetAutomaticResponseContent(string securityResponseId)
+            void SetAutomaticResponseContent()
             {
                 if (requestAcceptHeaders != null)
                 {
@@ -320,33 +320,33 @@ namespace Datadog.Trace.AppSec
                     {
                         if (value?.Contains(AspNet.MimeTypes.Json) ?? false)
                         {
-                            SetJsonResponseContent(securityResponseId);
+                            SetJsonResponseContent();
                             break;
                         }
 
                         if (value?.Contains(AspNet.MimeTypes.TextHtml) ?? false)
                         {
-                            SetHtmlResponseContent(securityResponseId);
+                            SetHtmlResponseContent();
                         }
                     }
                 }
 
                 if (blockingAction.ContentType == null)
                 {
-                    SetJsonResponseContent(securityResponseId);
+                    SetJsonResponseContent();
                 }
             }
 
-            void SetJsonResponseContent(string securityResponseId)
+            void SetJsonResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.Json;
-                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetJsonResponse(), securityResponseId);
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetJsonResponse(), blockingAction.SecurityResponseId);
             }
 
-            void SetHtmlResponseContent(string securityResponseId)
+            void SetHtmlResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
-                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetHtmlResponse(), securityResponseId);
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetHtmlResponse(), blockingAction.SecurityResponseId);
             }
 
             int GetStatusCode(Dictionary<string, object?> information, int defaultValue)
@@ -372,7 +372,7 @@ namespace Datadog.Trace.AppSec
             if (blockInfo is null && redirectInfo is null)
             {
                 Log.Warning("No blockInfo or RedirectInfo found");
-                SetAutomaticResponseContent(string.Empty);
+                SetAutomaticResponseContent();
                 blockingAction.StatusCode = 403;
             }
             else
@@ -380,26 +380,28 @@ namespace Datadog.Trace.AppSec
                 if (blockInfo is not null)
                 {
                     blockInfo.TryGetValue("type", out var type);
-                    blockInfo.TryGetValue("security_response_id", out string securityResponseId);
-                    blockingAction.SecurityResponseId = securityResponseId;
+                    if (blockInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
                     switch (type)
                     {
                         case "auto":
-                            SetAutomaticResponseContent(securityResponseId);
+                            SetAutomaticResponseContent();
                             break;
 
                         case "json":
-                            SetJsonResponseContent(securityResponseId);
+                            SetJsonResponseContent();
                             break;
 
                         case "html":
-                            SetHtmlResponseContent(securityResponseId);
+                            SetHtmlResponseContent();
                             break;
 
                         default:
                             Log.Warning("Received a custom block action of invalid type {Type}, an automatic response will be set", type?.ToString());
-                            SetAutomaticResponseContent(securityResponseId);
+                            SetAutomaticResponseContent();
                             break;
                     }
 
@@ -408,20 +410,22 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     redirectInfo!.TryGetValue("location", out var location);
-                    redirectInfo!.TryGetValue("security_response_id", out string securityResponseId);
-                    blockingAction.SecurityResponseId = securityResponseId;
+                    if (redirectInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
                     if (location is string locationString && locationString != string.Empty)
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
-                        blockingAction.RedirectLocation = ReplaceSecurityResponseIdPlaceholder(locationString, securityResponseId);
+                        blockingAction.RedirectLocation = ReplaceSecurityResponseIdPlaceholder(locationString, blockingAction.SecurityResponseId);
                         blockingAction.IsRedirect = true;
                     }
                     else
                     {
                         Log.Warning("Received a custom block action of type redirect with null or empty location, an automatic response will be set");
-                        SetAutomaticResponseContent(securityResponseId);
+                        SetAutomaticResponseContent();
                         blockingAction.StatusCode = 403;
                     }
                 }
