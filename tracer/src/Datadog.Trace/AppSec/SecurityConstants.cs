@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec
 
         internal const string SecurityResponseIdPlaceholder = "[security_response_id]";
 
-        internal const string BlockedJsonTemplate = @"{""errors"": [{""title"": ""You've been blocked"", ""detail"": ""Sorry, you cannot access this page. Please contact the customer service team. Security provided by Datadog.""}], ""security_response_id"": ""[security_response_id]""}";
+        internal const string BlockedJsonTemplate = """{"errors":[{"title":"You've been blocked","detail":"Sorry, you cannot access this page. Please contact the customer service team. Security provided by Datadog."}],"security_response_id":"[security_response_id]"}""";
         internal const string BlockedHtmlTemplate = @"<!-- Sorry, you've been blocked -->
 <!DOCTYPE html>
 <html lang='en'>
