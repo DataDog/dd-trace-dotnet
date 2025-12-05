@@ -250,6 +250,36 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public async Task WhenEnabled_AsyncConsumeThenProduceKeepsPathway()
+    {
+        var dsm = GetDataStreamManager(enabled: true, out var writer);
+
+        async Task Receive()
+        {
+            await Task.Delay(millisecondsDelay: 15);
+            dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "in" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+        }
+
+        async Task Send()
+        {
+            dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new[] { "out" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+            await Task.Delay(millisecondsDelay: 15);
+        }
+
+        // simulate an async consume followed by an async produce
+        await Receive();
+        await Send();
+
+        await dsm.DisposeAsync();
+
+        writer.Points.Should().HaveCount(expected: 2);
+        var points = writer.Points.ToArray();
+        points[0].EdgeTags.Should().Contain("in");
+        points[1].EdgeTags.Should().Contain("out");
+        points[1].ParentHash.Should().BeEquivalentTo(points[0].Hash); // pathway from consume should be used in produce
+    }
+
+    [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
         var dsm = GetDataStreamManager(true, out _);
