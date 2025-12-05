@@ -100,7 +100,7 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded-for: 90.91.8.235,
-      http.response.headers.content-length: 231,
+      http.response.headers.content-length: 225,
       http.response.headers.content-type: application/json; charset=utf-8,
       http.route: api/{controller}/{id},
       http.status_code: 403,
