@@ -35,7 +35,6 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
         private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
 
-        private readonly IConfigurationTelemetry _telemetry;
         private readonly Lazy<string> _fallbackApplicationName;
 
         [TestingOnly]
@@ -45,8 +44,8 @@ namespace Datadog.Trace.Configuration
         }
 
         [TestingOnly]
-        internal TracerSettings(IConfigurationSource? source)
-        : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
+        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry? telemetry = null)
+        : this(source, telemetry ?? new ConfigurationTelemetry(), new OverrideErrorLog())
         {
         }
 
@@ -74,9 +73,8 @@ namespace Datadog.Trace.Configuration
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
-            _telemetry = telemetry;
             ErrorLog = errorLog;
-            var config = new ConfigurationBuilder(source, _telemetry);
+            var config = new ConfigurationBuilder(source, telemetry);
 
             ExperimentalFeaturesEnabled = config
                     .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
@@ -91,7 +89,7 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
                                        .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
 
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
             // We don't want/need to record this value, so explicitly use null telemetry
@@ -103,7 +101,7 @@ namespace Datadog.Trace.Configuration
 
             if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, telemetry);
             }
 
             GitMetadataEnabled = config
@@ -356,7 +354,7 @@ namespace Datadog.Trace.Configuration
                                                    validator: null);
 
             // record final value of CustomSamplingRulesFormat in telemetry
-            _telemetry.Record(
+            telemetry.Record(
                     key: ConfigurationKeys.CustomSamplingRulesFormat,
                     value: CustomSamplingRulesFormat,
                     recordValue: true,
@@ -493,7 +491,7 @@ namespace Datadog.Trace.Configuration
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry, OpenTelemetryLogsEnabled);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, telemetry, OpenTelemetryLogsEnabled);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
@@ -687,7 +685,7 @@ namespace Datadog.Trace.Configuration
                     DataPipelineEnabled = false;
                     Log.Warning(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
                 // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
@@ -701,7 +699,7 @@ namespace Datadog.Trace.Configuration
                     DataPipelineEnabled = false;
                     Log.Warning(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
                 if (!isLibDatadogAvailable.IsAvailable)
@@ -719,7 +717,7 @@ namespace Datadog.Trace.Configuration
                             $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
                     }
 
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
 
                 // SSI already utilizes libdatadog. To prevent unexpected behavior,
@@ -730,7 +728,7 @@ namespace Datadog.Trace.Configuration
                     DataPipelineEnabled = false;
                     Log.Warning(
                         $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
-                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
                 }
             }
         }
@@ -742,8 +740,6 @@ namespace Datadog.Trace.Configuration
         internal bool PropagateProcessTags { get; }
 
         internal OverrideErrorLog ErrorLog { get; }
-
-        internal IConfigurationTelemetry Telemetry => _telemetry;
 
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
