@@ -5,6 +5,7 @@
 #if NET6_0_OR_GREATER
 
 using System.Net;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
@@ -20,7 +21,7 @@ internal interface ILambdaExtensionRequest
     /// Get the end invocation request
     /// </summary>
     /// <returns>The end invocation request</returns>
-    WebRequest GetEndInvocationRequest(Scope scope, object state, bool isError);
+    WebRequest GetEndInvocationRequest(CallTargetState stateObject, bool isError);
 }
 
 #endif
