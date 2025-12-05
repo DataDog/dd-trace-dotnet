@@ -112,6 +112,10 @@ namespace Datadog.Trace.Agent.MessagePack
         private byte[] _aasRuntimeTagNameBytes;
         private byte[] _aasExtensionVersionTagNameBytes;
 
+        // Azure Functions tag names and values
+        private byte[] _azureFunctionProcessTagNameBytes;
+        private byte[] _azureFunctionProcessTagValueBytes;
+
         private SpanMessagePackFormatter()
         {
         }
@@ -737,7 +741,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteName, azureAppServiceSettings.SiteName);
-                // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
+                // the front-end identifies AAS spans using aas.site.name and aas.site.type, so we need them on all spans
                 if (tagBytes is not null)
                 {
                     count++;
@@ -751,6 +755,16 @@ namespace Datadog.Trace.Agent.MessagePack
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                }
+
+                // Add function process tag ("host" or "worker") for isolated Azure Functions
+                if (azureAppServiceSettings.IsIsolatedFunctionsApp &&
+                    _azureFunctionProcessTagNameBytes is not null &&
+                    _azureFunctionProcessTagValueBytes is not null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _azureFunctionProcessTagNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _azureFunctionProcessTagValueBytes);
                 }
             }
 
@@ -977,6 +991,15 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasOperatingSystemTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem);
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
+
+                if (EnvironmentHelpers.IsAzureFunctionsIsolated())
+                {
+                    _azureFunctionProcessTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureFunctionProcess);
+
+                    _azureFunctionProcessTagValueBytes = EnvironmentHelpers.IsRunningInAzureFunctionsHost() ?
+                                                             StringEncoding.UTF8.GetBytes("host") :
+                                                             StringEncoding.UTF8.GetBytes("worker");
+                }
             }
         }
 
