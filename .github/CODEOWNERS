@@ -33,7 +33,8 @@
 
 ## DBM and DSM
 /tracer/src/Datadog.Trace/DatabaseMonitoring/                                                           @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/DataStreamsMonitoring/                                                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/DataStreamsMonitoring/                                                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/                                                 @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 ## auto instrumentations
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/                                              @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
@@ -47,6 +48,9 @@
 
 ## integration tests for auto-instrumentations
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/                                                @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoring*                          @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/DataStreamsMonitoring*                      @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Azure/DataStreamsMonitoring*                    @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 ### co-owned integrations tests
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AspNet/                                         @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/asm-dotnet
@@ -60,6 +64,10 @@
 /tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.netstandard/         @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/dependency-libs/Samples.SqlServer.Vb/                       @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/dependency-libs/Samples.WebRequestHelper.NetFramework20/    @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.DataStreams.AzureServiceBus/                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/test-applications/integrations/Samples.DataStreams.Kafka/                                  @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/test-applications/integrations/Samples.DataStreams.ManualAPI/                              @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/test-applications/integrations/Samples.DataStreams.RabbitMQ/                               @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 
 ## NON-IDM
