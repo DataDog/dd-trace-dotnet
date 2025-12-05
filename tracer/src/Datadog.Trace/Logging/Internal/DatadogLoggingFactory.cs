@@ -171,13 +171,15 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
+        // try reading from DD_TRACE_LOG_DIRECTORY
         var configurationBuilder = new ConfigurationBuilder(source, telemetry);
         var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
 
         if (string.IsNullOrEmpty(logDirectory))
         {
+            // fallback #1: try getting the directory from DD_TRACE_LOG_PATH
             // todo, handle in phase 2 with deprecations
-// TraceLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later (config registry v2) we want to pull deprecations differently as part of centralized file
+            // TraceLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later (config registry v2) we want to pull deprecations differently as part of centralized file
 #pragma warning disable DD0008, 618
             var nativeLogFile = configurationBuilder.WithKeys(ConfigurationKeys.TraceLogPath).AsString();
 #pragma warning restore DD0008, 618
@@ -190,9 +192,11 @@ internal static class DatadogLoggingFactory
 
         if (string.IsNullOrEmpty(logDirectory))
         {
+            // fallback #2: use the default log directory
             logDirectory = GetDefaultLogDirectory(source, telemetry);
         }
 
+        // try creating the directory if it doesn't exist
         if (logDirectory != null && (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory)))
         {
             return logDirectory;
@@ -210,48 +214,35 @@ internal static class DatadogLoggingFactory
         //   - Directory.CreateDirectory
         //   - Environment.GetFolderPath
         //   - Path.GetTempPath
-        string logDirectory;
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
         if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
         {
-            var isWindows = FrameworkDescription.Instance.IsWindows();
-
-            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
-                ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
-            {
-                return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
-            }
-
-            if (isWindows)
-            {
-                // On Nano Server, this returns "", so we fallback to reading from the env var set in the base image instead
-                // - https://github.com/dotnet/runtime/issues/22690
-                // - https://github.com/dotnet/runtime/issues/21430
-                // - https://github.com/dotnet/runtime/pull/109673
-                // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
-                var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                if (string.IsNullOrEmpty(programData))
-                {
-                    programData = Environment.GetEnvironmentVariable("ProgramData");
-                    if (string.IsNullOrEmpty(programData))
-                    {
-                        programData = @"C:\ProgramData";
-                    }
-                }
-
-                logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
-            }
-            else
-            {
-                logDirectory = "/var/log/datadog/dotnet";
-            }
+            return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
         }
+
+        string logDirectory;
 
         if (isWindows)
         {
-            var commonApplicationDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            logDirectory = Path.Combine(commonApplicationDataFolder, "Datadog .NET Tracer", "logs");
+            // On Nano Server, this returns "", so we fall back to reading from the env var set in the base image instead
+            // - https://github.com/dotnet/runtime/issues/22690
+            // - https://github.com/dotnet/runtime/issues/21430
+            // - https://github.com/dotnet/runtime/pull/109673
+            // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (string.IsNullOrEmpty(programData))
+            {
+                // fallback #1: try reading from the env var
+                programData = Environment.GetEnvironmentVariable("ProgramData");
+                if (string.IsNullOrEmpty(programData))
+                {
+                    // fallback #2: hard-coded
+                    programData = @"C:\ProgramData";
+                }
+            }
+
+            logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
         }
         else
         {
