@@ -99,7 +99,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
             _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
+            _flushTask = Task.Run(FlushTaskLoopAsync);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in data streams flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTimer = new Timer(
@@ -194,7 +194,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _forceFlush.TrySetResult(true);
     }
 
-    private async Task FlushBuffersTaskLoopAsync()
+    private async Task FlushTaskLoopAsync()
     {
         Task[] tasks = new Task[2];
         tasks[0] = _processTask!;
@@ -210,7 +210,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 tasks[1] = _forceFlush.Task;
             }
 
-            await FlushAsync().ConfigureAwait(false);
+            await FlushAggregatorAsync().ConfigureAwait(false);
 
             if (_processTask!.IsCompleted)
             {
@@ -226,6 +226,37 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
+        if (!_flushSemaphore.Wait(TimeSpan.FromMilliseconds(100)))
+        {
+            return;
+        }
+
+        try
+        {
+            while (_buffer.TryDequeue(out var statsPoint))
+            {
+                _aggregator.Add(in statsPoint);
+            }
+
+            while (_backlogBuffer.TryDequeue(out var backlogPoint))
+            {
+                _aggregator.AddBacklog(in backlogPoint);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occured while processing data streams buffers");
+        }
+        finally
+        {
+            _flushSemaphore.Release();
+        }
+
+        await FlushAggregatorAsync().ConfigureAwait(false);
+    }
+
+    private async Task FlushAggregatorAsync()
+    {
         if (!await _flushSemaphore.WaitAsync(_flushSemaphoreWaitTime).ConfigureAwait(false))
         {
             Log.Warning("Data streams flush timeout");
