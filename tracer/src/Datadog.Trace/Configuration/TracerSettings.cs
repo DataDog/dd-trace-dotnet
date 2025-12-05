@@ -1264,7 +1264,7 @@ namespace Datadog.Trace.Configuration
             !LambdaMetadata.IsRunningInLambda;
 
         internal static TracerSettings FromDefaultSourcesInternal()
-            => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
+            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, new());
 
         internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
