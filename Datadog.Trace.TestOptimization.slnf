@@ -38,7 +38,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTestsRetries\\Samples.XUnitTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTestsV3\\Samples.XUnitTestsV3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTests\\Samples.XUnitTests.csproj",
-      "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj",
+      "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj"
     ]
   }
 }
