@@ -27,6 +27,6 @@ namespace Datadog.Trace.Tagging
         public string HttpRoute { get; set; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; } = ComponentName;
+        public string InstrumentationName => ComponentName;
     }
 }

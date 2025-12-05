@@ -90,9 +90,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "component": 
-                    InstrumentationName = value;
-                    break;
                 case "amqp.command": 
                     Command = value;
                     break;
@@ -115,6 +112,7 @@ namespace Datadog.Trace.Tagging
                     OutHost = value;
                     break;
                 case "span.kind": 
+                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RabbitMQTags));
                     break;
                 default: 

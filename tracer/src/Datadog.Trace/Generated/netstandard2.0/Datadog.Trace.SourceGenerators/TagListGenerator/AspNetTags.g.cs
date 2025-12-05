@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tagging
                     HttpRoute = value;
                     break;
                 case "component": 
-                    InstrumentationName = value;
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetTags));
                     break;
                 default: 
                     base.SetTag(key, value);
