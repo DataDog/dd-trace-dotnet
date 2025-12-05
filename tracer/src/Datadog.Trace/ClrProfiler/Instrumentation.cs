@@ -486,7 +486,8 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                observers.Add(new AspNetCoreDiagnosticObserver());
+                // observers.Add(new AspNetCoreDiagnosticObserver());
+                observers.Add(new NullDiagnosticObserver());
                 observers.Add(new QuartzDiagnosticObserver());
             }
 
@@ -586,5 +587,16 @@ namespace Datadog.Trace.ClrProfiler
         {
             NativeMethods.DisableCallTargetDefinitions((uint)categories);
         }
+
+#if !NETFRAMEWORK
+        internal class NullDiagnosticObserver : DiagnosticObserver
+        {
+            protected override string ListenerName => "Microsoft.AspNetCore";
+
+            protected override void OnNext(string eventName, object arg)
+            {
+            }
+        }
+#endif
     }
 }
