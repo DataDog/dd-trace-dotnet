@@ -5,8 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -17,7 +19,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal static class InferredProxySpanHelper
 {
-    private static readonly InferredProxyCoordinator Coordinator = new(new AwsApiGatewayExtractor(), new AwsApiGatewaySpanFactory());
+    private const string AzureProxyHeaderValue = "azure-apim";
+    private const string AwsProxyHeaderValue = "aws-apigateway";
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InferredProxySpanHelper));
+    private static InferredProxyCoordinator? _awsCoordinator;
+    private static InferredProxyCoordinator? _azureCoordinator;
 
     /// <summary>
     /// Creates an inferred proxy span from request headers.
@@ -32,6 +38,28 @@ internal static class InferredProxySpanHelper
         PropagationContext propagationContext)
         where THeadersCollection : struct, IHeadersCollection
     {
-        return Coordinator.ExtractAndCreateScope(tracer, carrier, carrier.GetAccessor(), propagationContext);
+        var accessor = carrier.GetAccessor();
+        var proxyName = ParseUtility.ParseString(carrier, accessor, InferredProxyHeaders.Name);
+
+        if (string.IsNullOrEmpty(proxyName))
+        {
+            Log.Debug("Missing {HeaderName} header", InferredProxyHeaders.Name);
+            return null;
+        }
+
+        if (string.Equals(proxyName, AzureProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            _azureCoordinator ??= new(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
+            return _azureCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+        }
+
+        if (string.Equals(proxyName, AwsProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            _awsCoordinator ??= new(new AwsApiGatewayExtractor(), new AwsApiGatewaySpanFactory());
+            return _awsCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+        }
+
+        Log.Debug("Invalid {HeaderName} header with value {Value}", InferredProxyHeaders.Name, proxyName);
+        return null;
     }
 }
