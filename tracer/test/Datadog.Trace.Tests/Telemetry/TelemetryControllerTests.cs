@@ -136,37 +136,6 @@ public class TelemetryControllerTests
     }
 
     [Fact]
-    public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
-    {
-        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
-
-        var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings();
-        var controller = new TelemetryController(
-            settings,
-            collector,
-            new DependencyTelemetryCollector(),
-            new NullMetricsTelemetryCollector(),
-            new RedactedErrorLogCollector(),
-            transportManager,
-            _flushInterval);
-
-        // Just basic check that we have the same number of config values
-        var configCount = settings.Telemetry.Should()
-                                  .BeOfType<ConfigurationTelemetry>()
-                                  .Which
-                                  .GetQueueForTesting()
-                                  .Count
-                                  .Should()
-                                  .NotBe(0)
-                                  .And.Subject;
-
-        collector.GetQueueForTesting().Count.Should().Be(configCount);
-        await controller.DisposeAsync();
-    }
-
-    [Fact]
     public async Task TelemetryControllerCanBeDisposedTwice()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);

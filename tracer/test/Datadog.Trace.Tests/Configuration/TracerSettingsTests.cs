@@ -680,8 +680,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void RecordsTelemetryAboutTfm()
         {
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-            var data = tracerSettings.Telemetry.GetData();
+            var telemetry = new ConfigurationTelemetry();
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, telemetry);
+            var data = telemetry.GetData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()
@@ -786,10 +787,9 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
             var telemetry = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(source, telemetry, new());
+            _ = new TracerSettings(source, telemetry, new());
 
-            var config = tracerSettings
-                        .Telemetry
+            var config = telemetry
                         .Should()
                         .BeOfType<ConfigurationTelemetry>()
                         .Subject;
