@@ -6401,8 +6401,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |
@@ -6455,8 +6461,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |
