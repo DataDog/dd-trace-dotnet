@@ -226,22 +226,7 @@ internal static class DatadogLoggingFactory
 
         if (isWindows)
         {
-            // On Nano Server, this returns "", so we fall back to reading from the env var set in the base image instead
-            // - https://github.com/dotnet/runtime/issues/22690
-            // - https://github.com/dotnet/runtime/issues/21430
-            // - https://github.com/dotnet/runtime/pull/109673
-            // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
-            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            if (string.IsNullOrEmpty(programData))
-            {
-                // fallback #1: try reading from the env var
-                programData = EnvironmentHelpersNoLogging.ProgramData();
-                if (string.IsNullOrEmpty(programData))
-                {
-                    // fallback #2: hard-coded
-                    programData = @"C:\ProgramData";
-                }
-            }
+            var programData = GetProgramDataDirectory();
 
             logDirectory = Path.Combine(programData, "Datadog .NET Tracer", "logs");
         }
@@ -251,6 +236,30 @@ internal static class DatadogLoggingFactory
         }
 
         return logDirectory;
+    }
+
+    private static string GetProgramDataDirectory()
+    {
+        // On Nano Server, this returns "", so we fall back to reading from the env var set in the base image instead
+        // - https://github.com/dotnet/runtime/issues/22690
+        // - https://github.com/dotnet/runtime/issues/21430
+        // - https://github.com/dotnet/runtime/pull/109673
+        // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
+        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+        if (StringUtil.IsNullOrEmpty(programData))
+        {
+            // fallback #1: try reading from the env var
+            programData = EnvironmentHelpersNoLogging.ProgramData();
+
+            if (StringUtil.IsNullOrEmpty(programData))
+            {
+                // fallback #2: hard-coded
+                programData = @"C:\ProgramData";
+            }
+        }
+
+        return programData;
     }
 
     private static bool TryCreateLogDirectory(string logDirectory)
