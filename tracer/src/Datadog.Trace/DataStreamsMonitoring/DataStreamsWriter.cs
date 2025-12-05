@@ -30,7 +30,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
-    private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(2);
+    private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
@@ -178,7 +178,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
         var completedTask = await Task.WhenAny(
                                            _processTask,
-                                           Task.Delay(TimeSpan.FromSeconds(20)))
+                                           Task.Delay(TimeSpan.FromSeconds(1)))
                                       .ConfigureAwait(false);
 
         if (completedTask != _processTask)
