@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Configuration;
 [EnvironmentRestorer(LambdaMetadata.FunctionNameEnvVar, LambdaMetadata.HandlerEnvVar, LambdaMetadata.ExtensionPathEnvVar)]
 public class TracerSettingsServerlessTests : SettingsTestsBase
 {
-    // These tests rely on Lambda.Create() which uses environment variables
+    // These tests rely on LambdaMetadata.Create() which uses environment variables
     // See TracerSettingsTests for tests which don't rely on any environment variables
     [Theory]
     [InlineData("test1,, ,test2", false, new[] { "TEST1", "TEST2" })]
@@ -31,9 +31,9 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
     {
         if (isRunningInLambda)
         {
-            Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
+            Datadog.Trace.Util.EnvironmentHelpers.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
         }
 
         var source = CreateConfigurationSource((ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));
