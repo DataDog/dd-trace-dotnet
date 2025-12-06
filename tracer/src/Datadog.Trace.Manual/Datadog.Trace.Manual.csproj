@@ -26,7 +26,8 @@
     <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" 
+             Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\DuckTyping\DuckAsClassAttribute.cs" Link="DuckTyping\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
