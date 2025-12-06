@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId))
             {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, httpContext, resourceName: null);
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, Iast.Iast.Instance, httpContext, resourceName: null);
 
                 if (scope != null)
                 {

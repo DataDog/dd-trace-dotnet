@@ -98,7 +98,15 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
+        {
+            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
+            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags);
+        }
+
+        public Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags)
+            where T : WebTags
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -118,9 +126,6 @@ namespace Datadog.Trace.PlatformHelpers
                     extractedContext = proxyContext.Value.Context;
                 }
             }
-
-            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
@@ -144,8 +149,7 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            var iastInstance = Iast.Iast.Instance;
-            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();
@@ -158,11 +162,12 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
+            => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: httpContext.Features.Get<RequestTrackingFeature>()?.ProxyScope);
+
+        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext, Scope proxyScope)
         {
             if (rootScope != null)
             {
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
-                var proxyScope = requestFeature?.ProxyScope;
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
@@ -210,6 +215,9 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
+            => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, httpContext.Features.Get<RequestTrackingFeature>()?.ProxyScope);
+
+        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
         {
             // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
             // root span. In "normal" operation, this will be the same span returned by
@@ -227,8 +235,6 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
 
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
-                var proxyScope = requestFeature?.ProxyScope;
                 if (proxyScope?.Span != null)
                 {
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
@@ -277,6 +283,52 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
             /// </summary>
             public string ResourceName { get; set; }
+
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public PathString OriginalPath { get; }
+
+            /// <summary>
+            /// Gets the root ASP.NET Core Scope
+            /// </summary>
+            public Scope RootScope { get; }
+
+            /// <summary>
+            /// Gets or sets the inferred ASP.NET Core Scope created from headers.
+            /// </summary>
+            public Scope ProxyScope { get; set; }
+
+            public bool MatchesOriginalPath(HttpRequest request)
+            {
+                if (!request.PathBase.HasValue)
+                {
+                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return OriginalPath.StartsWithSegments(
+                           request.PathBase,
+                           StringComparison.OrdinalIgnoreCase,
+                           out var remaining)
+                    && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// Holds state that we want to pass between diagnostic source events
+        /// </summary>
+        internal class SingleSpanRequestTrackingFeature
+        {
+            public SingleSpanRequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
+            {
+                OriginalPath = originalPath;
+                RootScope = rootAspNetCoreScope;
+            }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether this is the first pipeline execution
+            /// </summary>
+            public bool IsFirstPipelineExecution { get; set; } = true;
 
             /// <summary>
             /// Gets a value indicating the original combined Path and PathBase
