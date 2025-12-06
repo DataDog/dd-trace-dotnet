@@ -42,7 +42,7 @@ namespace Datadog.Trace.Coverage.Collector
                         fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                         shared: true);
 
-                _datadogLogger = new DatadogSerilogLogger(loggerConfiguration.CreateLogger(), new NullLogRateLimiter(), fileConfig);
+                _datadogLogger = new DatadogSerilogLogger(loggerConfiguration.CreateLogger(), fileConfig);
             }
         }
 
