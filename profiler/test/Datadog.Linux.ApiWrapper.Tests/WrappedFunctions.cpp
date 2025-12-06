@@ -24,7 +24,14 @@ TEST_P(WrappedFunctionsParametersTests, CheckIfFirstResolvedByDynamicLoader)
     Dl_info info;
     ASSERT_NE(0, dladdr(fn, &info));
     auto filePath = fs::path(info.dli_fname);
-    ASSERT_STREQ("Datadog.Linux.ApiWrapper.x64.so", filePath.filename().c_str());
+#if defined(__aarch64__)
+    constexpr auto expectedName = "Datadog.Linux.ApiWrapper.arm64.so";
+#elif defined(__x86_64__)
+    constexpr auto expectedName = "Datadog.Linux.ApiWrapper.x64.so";
+#else
+    constexpr auto expectedName = "Datadog.Linux.ApiWrapper.x64.so";
+#endif
+    ASSERT_STREQ(expectedName, filePath.filename().c_str());
 }
 
 INSTANTIATE_TEST_SUITE_P(

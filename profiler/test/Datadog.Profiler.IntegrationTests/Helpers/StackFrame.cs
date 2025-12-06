@@ -20,6 +20,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public readonly string Filename;
         public readonly long Line;
 
+        public string FunctionName => Function;
+
         public StackFrame(string rawStackFrame)
             : this(rawStackFrame, string.Empty, 0)
         {

@@ -6,6 +6,7 @@
 #include "CpuSampleProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
+#include "LinuxStackFramesCollector.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
@@ -24,11 +25,14 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
+    LinuxStackFramesCollector* pStackFramesCollector,
     MetricsRegistry& metricsRegistry) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
+    _pStackFramesCollector{pStackFramesCollector},
+    _pConfiguration{pConfiguration},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0}
 {
@@ -253,8 +257,19 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     }
 
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
-    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
+    std::int32_t count = 0;
+
+    // Use hybrid unwinding if enabled
+    if (_pConfiguration->UseHybridUnwinding())
+    {
+        count = LinuxStackFramesCollector::CollectStackHybridStatic(ctx, (uintptr_t*)buffer.data(), buffer.size());
+    }
+    else
+    {
+        auto* context = reinterpret_cast<unw_context_t*>(ctx);
+        count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
+    }
+
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)

@@ -80,7 +80,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
-            return Environment.Is64BitProcess ? "x64" : "x86";
+            if (!Environment.Is64BitProcess)
+            {
+                return "x86";
+            }
+
+            return System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture switch
+            {
+                System.Runtime.InteropServices.Architecture.X64 => "x64",
+                System.Runtime.InteropServices.Architecture.Arm64 => "ARM64",
+                _ => "x64" // Fallback to x64 for unknown architectures
+            };
         }
 
         public static bool IsRunningInCi() =>
@@ -341,9 +351,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("win", "x86", _) => "win-x86",
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", false) => "linux-arm64",
-                ("linux", "Arm64", true) => "linux-musl-arm64",
-                ("osx", _, _) => "osx-x64",
+                ("linux", "ARM64", false) => "linux-arm64",
+                ("linux", "ARM64", true) => "linux-musl-arm64",
+                ("osx", "x64", _) => "osx-x64",
+                ("osx", "ARM64", _) => "osx-arm64",
                 _ => throw new PlatformNotSupportedException()
             };
 
@@ -367,9 +378,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private string GetLinuxApiWrapperPath()
         {
-            var filename = "Datadog.Linux.ApiWrapper.x64.so";
+            var archSubfolder = GetArchitectureSubfolder();
+            var filename = archSubfolder.Contains("arm64", StringComparison.OrdinalIgnoreCase)
+                ? "Datadog.Linux.ApiWrapper.arm64.so"
+                : "Datadog.Linux.ApiWrapper.x64.so";
             var deployDir = IsRunningInCi() ? GetMonitoringHome() : GetDeployDir();
-            return Path.Combine(deployDir, GetArchitectureSubfolder(), filename);
+            return Path.Combine(deployDir, archSubfolder, filename);
         }
 
         private string GetNativeDllExtension()
