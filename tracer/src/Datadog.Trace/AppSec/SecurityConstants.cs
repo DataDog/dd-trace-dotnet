@@ -10,7 +10,9 @@ namespace Datadog.Trace.AppSec
         internal const string ObfuscationParameterKeyRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization";
         internal const string ObfuscationParameterValueRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\.net(?:[_-]|-)sessionid|sid|jwt)(?:\s*=([^;&]+)|""\s*:\s*(""[^""]+""|\d+))|bearer\s+([a-z0-9\._\-]+)|token\s*:\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\w=-]+\.(ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?)|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}([^\-]+)[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*([a-z0-9\/\.+]{100,})";
 
-        internal const string BlockedJsonTemplate = @"{""errors"": [{""title"": ""You've been blocked"", ""detail"": ""Sorry, you cannot access this page. Please contact the customer service team. Security provided by Datadog.""}]}";
+        internal const string SecurityResponseIdPlaceholder = "[security_response_id]";
+
+        internal const string BlockedJsonTemplate = """{"errors":[{"title":"You've been blocked","detail":"Sorry, you cannot access this page. Please contact the customer service team. Security provided by Datadog."}],"security_response_id":"[security_response_id]"}""";
         internal const string BlockedHtmlTemplate = @"<!-- Sorry, you've been blocked -->
 <!DOCTYPE html>
 <html lang='en'>
@@ -94,12 +96,20 @@ namespace Datadog.Trace.AppSec
         footer p {
             font-size: 16px
         }
+
+        .security-response-id {
+            font-size:14px;
+            color:#999;
+            margin-top:20px;
+            font-family:monospace
+        }
     </style>
 </head>
 
 <body>
     <main>
         <p>Sorry, you cannot access this page. Please contact the customer service team.</p>
+        <p class='security-response-id'>Security Response ID: [security_response_id]</p>
     </main>
     <footer>
         <p>Security provided by <a

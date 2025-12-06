@@ -28,7 +28,7 @@
       _dd.appsec.fp.http.endpoint: http-get-7f4bf8ee-b25f03de-,
       _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule-custom-block","name":"Dummy rule to test blocking with a custom action","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.query","highlight":["dummy_custom_action"],"key_path":["arg","0"],"value":"dummy_custom_action"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule-custom-block","name":"Dummy rule to test blocking with a custom action","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.query","highlight":["dummy_custom_action"],"key_path":["arg","0"],"value":"dummy_custom_action"}]}],"security_response_id":"Guid_2"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -74,7 +74,7 @@
       _dd.appsec.fp.http.endpoint: http-get-7f4bf8ee-b25f03de-,
       _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule-custom-block","name":"Dummy rule to test blocking with a custom action","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.query","highlight":["dummy_custom_action"],"key_path":["arg","0"],"value":"dummy_custom_action"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule-custom-block","name":"Dummy rule to test blocking with a custom action","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.query","highlight":["dummy_custom_action"],"key_path":["arg","0"],"value":"dummy_custom_action"}]}],"security_response_id":"Guid_3"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
