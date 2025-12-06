@@ -611,7 +611,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/ILoggerFactory.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerExternalScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerFactoryScopeProviderForEachScopeIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerIntegrationCommon.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventDuckBase.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventLegacyDuck.cs
