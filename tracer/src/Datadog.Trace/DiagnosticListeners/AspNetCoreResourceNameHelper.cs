@@ -19,6 +19,129 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 internal static class AspNetCoreResourceNameHelper
 {
+#if NET6_0_OR_GREATER
+    internal static string SimplifyRoutePattern(
+        RoutePattern routePattern,
+        RouteValueDictionary routeValueDictionary,
+        bool expandRouteParameters)
+    {
+        var sb = StringBuilderCache.Acquire();
+
+        foreach (var pathSegment in routePattern.PathSegments)
+        {
+            // I'm not sure if this is actually a good idea, but I _think_ it's basically what we will always do
+            // TODO: add a bunch of edge case tests to confirm it
+            sb.Append('/');
+            foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
+            {
+                if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
+                {
+                    sb.Append(contentPart.Content);
+                }
+                else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
+                {
+                    var parameterName = parameter.Name;
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (routeValueDictionary.TryGetValue("area", out var value)
+                            && value is string name)
+                        {
+                            sb.Append(name);
+                        }
+                        else
+                        {
+                            sb.Append("area");
+                        }
+                    }
+                    else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (routeValueDictionary.TryGetValue("controller", out var value)
+                         && value is string name)
+                        {
+                            sb.Append(name);
+                        }
+                        else
+                        {
+                            sb.Append("controller");
+                        }
+                    }
+                    else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (routeValueDictionary.TryGetValue("action", out var value)
+                         && value is string name)
+                        {
+                            sb.Append(name);
+                        }
+                        else
+                        {
+                            sb.Append("action");
+                        }
+                    }
+                    else
+                    {
+                        var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                        if (!parameter.IsOptional || haveParameter)
+                        {
+                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                            {
+                                // write the expanded parameter value
+                                sb.Append(valueAsString);
+                            }
+                            else
+                            {
+                                // write the route template value
+                                sb.Append('{');
+                                if (parameter.IsCatchAll)
+                                {
+                                    if (parameter.EncodeSlashes)
+                                    {
+                                        sb.Append("**");
+                                    }
+                                    else
+                                    {
+                                        sb.Append('*');
+                                    }
+                                }
+
+                                sb.Append(parameterName);
+                                if (parameter.IsOptional)
+                                {
+                                    sb.Append('?');
+                                }
+
+                                sb.Append('}');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // We need a lower invariant version of the string
+        if (sb.Length == 1)
+        {
+            StringBuilderCache.Release(sb);
+            return "/";
+        }
+
+        if (sb.Length > 1024)
+        {
+            // just do the ToString and accept the allocations for simplicity
+            return sb.ToString().ToLowerInvariant();
+        }
+
+        Span<char> dest = stackalloc char[1024];
+        var length = 0;
+        foreach (var chunk in sb.GetChunks())
+        {
+            length += chunk.Span.ToLowerInvariant(dest.Slice(0));
+        }
+
+        StringBuilderCache.Release(sb);
+        return dest.Slice(0, length).ToString();
+    }
+#endif
+
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         IReadOnlyDictionary<string, object?> routeValueDictionary,
