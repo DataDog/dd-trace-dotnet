@@ -7,26 +7,8 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class WebTags : InstrumentationTags, IHasStatusCode
+    internal partial class WebTags : WebTagsWithoutIpTracking
     {
-        [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Server;
-
-        [Tag(Trace.Tags.HttpUserAgent)]
-        public string HttpUserAgent { get; set; }
-
-        [Tag(Trace.Tags.HttpMethod)]
-        public string HttpMethod { get; set; }
-
-        [Tag(Trace.Tags.HttpRequestHeadersHost)]
-        public string HttpRequestHeadersHost { get; set; }
-
-        [Tag(Trace.Tags.HttpUrl)]
-        public string HttpUrl { get; set; }
-
-        [Tag(Trace.Tags.HttpStatusCode)]
-        public string HttpStatusCode { get; set; }
-
         [Tag(Trace.Tags.NetworkClientIp)]
         public string NetworkClientIp { get; set; }
 
