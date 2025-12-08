@@ -82,3 +82,16 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Rider
 csharp_keep_existing_initializer_arrangement=true
 csharp_keep_existing_arrangement=true
+
+# Banned API Analyzer (RS0030) - Set to warning instead of error
+dotnet_diagnostic.RS0030.severity = warning
+
+# Exclude vendored code from banned API checks
+[**/Vendors/**]
+dotnet_diagnostic.RS0030.severity = none
+
+# Exclude source generators from banned API checks - assuming that most will be perf checks may / may not be beneficial to change this
+[**/SourceGenerators/**]
+dotnet_diagnostic.RS0030.severity = none
+[**/*SourceGenerator*]
+dotnet_diagnostic.RS0030.severity = none

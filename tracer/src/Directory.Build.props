@@ -8,6 +8,8 @@
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Don't treat RS0030 (banned symbols) as error, keep as warning for now -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);RS0030</WarningsNotAsErrors>
 
     <!-- NuGet packages -->
     <IsPackable>true</IsPackable>
@@ -40,11 +42,18 @@
 
     <!-- StyleCop -->
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
+
+    <!-- Banned Symbols -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
