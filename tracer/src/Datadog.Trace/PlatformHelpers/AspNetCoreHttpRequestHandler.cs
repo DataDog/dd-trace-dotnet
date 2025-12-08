@@ -22,7 +22,6 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.ObjectPool;
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -189,8 +188,10 @@ namespace Datadog.Trace.PlatformHelpers
             AddHeaderTagsToSpan(scope.Span, request, tracer);
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-            var requestTrackingFeature = SingleSpanRequestTrackingFeature.Get();
-            requestTrackingFeature.RootScope = scope;
+            var requestTrackingFeature = new SingleSpanRequestTrackingFeature
+            {
+                RootScope = scope,
+            };
 
             if (proxyContext?.Scope is { } proxyScope)
             {
@@ -376,13 +377,6 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal class SingleSpanRequestTrackingFeature
         {
-            private static readonly ObjectPool<SingleSpanRequestTrackingFeature> Pool
-                = new DefaultObjectPool<SingleSpanRequestTrackingFeature>(new PoolingPolicy(), maximumRetained: Environment.ProcessorCount * 2);
-
-            private SingleSpanRequestTrackingFeature()
-            {
-            }
-
             /// <summary>
             /// Gets or sets the root ASP.NET Core Scope
             /// </summary>
@@ -392,22 +386,6 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets or sets the inferred ASP.NET Core Scope created from headers.
             /// </summary>
             public Scope ProxyScope { get; set; }
-
-            public static SingleSpanRequestTrackingFeature Get() => Pool.Get();
-
-            public void Return() => Pool.Return(this);
-
-            private class PoolingPolicy : IPooledObjectPolicy<SingleSpanRequestTrackingFeature>
-            {
-                public SingleSpanRequestTrackingFeature Create() => new();
-
-                public bool Return(SingleSpanRequestTrackingFeature feature)
-                {
-                    feature.RootScope = null;
-                    feature.ProxyScope = null;
-                    return true;
-                }
-            }
         }
     }
 }
