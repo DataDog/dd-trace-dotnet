@@ -198,7 +198,7 @@ namespace Datadog.Trace.PlatformHelpers
                 requestTrackingFeature.ProxyScope = proxyScope;
             }
 
-            httpContext.Features.Set(requestTrackingFeature);
+            httpContext.Items[SingleSpanAspNetCoreDiagnosticObserver.HttpContextItemsKey] = requestTrackingFeature;
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
