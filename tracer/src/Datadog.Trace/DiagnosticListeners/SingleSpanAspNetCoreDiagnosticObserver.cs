@@ -274,24 +274,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var request = httpContext.Request.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestStruct>();
                 var routeValues = request.RouteValues;
-                // No need to ToLowerInvariant() these strings, as we lower case
-                // the whole route later
-                var controllerName = routeValues.TryGetValue("controller", out var raw)
-                                         ? raw as string
-                                         : null;
-                var actionName = routeValues.TryGetValue("action", out raw)
-                                     ? raw as string
-                                     : null;
-                var areaName = routeValues.TryGetValue("area", out raw)
-                                   ? raw as string
-                                   : null;
 
                 var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                     routePattern,
                     routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
                     _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 // Overwrite/Update the route in the parent span
