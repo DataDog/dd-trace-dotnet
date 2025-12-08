@@ -1,4 +1,4 @@
-// <copyright file="AgentWriter.cs" company="Datadog">
+﻿// <copyright file="AgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(in SpanCollection trace)
         {
             if (trace.Count == 0)
             {
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Agent
             }
             else
             {
-                _pendingTraces.Enqueue(new WorkItem(trace));
+                _pendingTraces.Enqueue(new WorkItem(in trace));
 
                 if (!_serializationMutex.IsSet)
                 {
@@ -395,7 +395,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> spans)
+        private void SerializeTrace(in SpanCollection spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer? SwapBuffers()
@@ -427,26 +427,26 @@ namespace Datadog.Trace.Agent
             }
 
             int? chunkSamplingPriority = null;
+            var chunk = spans;
             if (CanComputeStats)
             {
-                spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
-                _statsAggregator?.AddRange(spans);
+                chunk = _statsAggregator?.ProcessTrace(in chunk) ?? chunk;
+                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(in chunk) ?? true;
+                _statsAggregator?.AddRange(in chunk);
                 var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
 
-                for (var i = 0; i < spans.Count; i++)
+                foreach (var span in chunk)
                 {
-                    var index = i + spans.Offset;
-                    if (spans.Array?[index].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                    if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
                     {
-                        singleSpanSamplingSpans.Add(spans.Array[index]);
+                        singleSpanSamplingSpans.Add(span);
                     }
                 }
 
                 if (shouldSendTrace)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
-                    TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, spans.Count);
+                    TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, chunk.Count);
                 }
                 else
                 {
@@ -456,8 +456,8 @@ namespace Datadog.Trace.Agent
                     if (singleSpanSamplingSpans.Count == 0)
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
-                        Interlocked.Add(ref _droppedP0Spans, spans.Count);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spans.Count);
+                        Interlocked.Add(ref _droppedP0Spans, chunk.Count);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, chunk.Count);
                         return;
                     }
                     else
@@ -466,11 +466,11 @@ namespace Datadog.Trace.Agent
                         // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
                         chunkSamplingPriority = SamplingPriorityValues.UserKeep;
                         Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
-                        var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
+                        var spansDropped = chunk.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
-                        spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                        chunk = new SpanCollection(singleSpanSamplingSpans.ToArray(), singleSpanSamplingSpans.Count);
                         TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spansDropped);
-                        TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.SingleSpanSampling, spans.Count);
+                        TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.SingleSpanSampling, chunk.Count);
                         TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.SingleSpanIngestion);
                     }
                 }
@@ -479,11 +479,11 @@ namespace Datadog.Trace.Agent
             {
                 // not using stats, so trace always kept
                 TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.Default);
-                TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.Default, spans.Count);
+                TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.Default, chunk.Count);
             }
 
             // Add the current keep rate to trace
-            if (spans.Array?[spans.Offset].Context.TraceContext is { } trace)
+            if (chunk.FirstSpan?.Context.TraceContext is { } trace)
             {
                 trace.TracesKeepRate = _traceKeepRateCalculator.GetKeepRate();
             }
@@ -492,7 +492,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            var writeStatus = buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority);
+            var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -503,7 +503,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(spans);
+                DropTrace(chunk.Count);
                 return;
             }
 
@@ -515,7 +515,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
+                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
@@ -523,14 +523,14 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
-            DropTrace(spans);
+            DropTrace(chunk.Count);
         }
 
-        private void DropTrace(ArraySegment<Span> spans)
+        private void DropTrace(int count)
         {
             Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, spans.Count);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, count);
             TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);
 
             if (Volatile.Read(ref _traceMetricsEnabled))
@@ -539,7 +539,7 @@ namespace Datadog.Trace.Agent
                 if (lease.Client is { } statsd)
                 {
                     statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                    statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
+                    statsd.Increment(TracerMetricNames.Queue.DroppedSpans, count);
                 }
             }
         }
@@ -602,10 +602,10 @@ namespace Datadog.Trace.Agent
 
         private readonly struct WorkItem
         {
-            public readonly ArraySegment<Span> Trace;
+            public readonly SpanCollection Trace;
             public readonly Action? Callback;
 
-            public WorkItem(ArraySegment<Span> trace)
+            public WorkItem(in SpanCollection trace)
             {
                 Trace = trace;
                 Callback = null;

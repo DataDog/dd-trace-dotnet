@@ -72,9 +72,6 @@ public class DatadogDiagnoser : IDiagnoser
     public RunMode GetRunMode(BenchmarkCase benchmarkCase) => _enableProfiler && !ShouldIgnoreProfiler(benchmarkCase) ? RunMode.ExtraRun : RunMode.NoOverhead;
 
     /// <inheritdoc />
-    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase) => false;
-
-    /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
         var utcNow = DateTime.UtcNow;
