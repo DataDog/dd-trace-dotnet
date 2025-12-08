@@ -6,8 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
