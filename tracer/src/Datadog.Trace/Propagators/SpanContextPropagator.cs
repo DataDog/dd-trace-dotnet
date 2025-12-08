@@ -313,7 +313,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal void AddBaggageToSpanAsTags(ISpan span, Baggage? baggage, HashSet<string> baggageTagKeys)
+        internal void AddBaggageToSpanAsTags(Span span, Baggage? baggage, HashSet<string> baggageTagKeys)
         {
             if (baggage is null or { Count: 0 })
             {
@@ -326,21 +326,26 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            try
-            {
-                var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
+            AddTags(span, baggage, baggageTagKeys);
 
-                foreach (var item in baggage)
+            static void AddTags(Span span, Baggage baggage, HashSet<string> baggageTagKeys)
+            {
+                try
                 {
-                    if (addAllItems || baggageTagKeys.Contains(item.Key))
+                    var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
+
+                    foreach (var item in baggage)
                     {
-                        span.SetTag("baggage." + item.Key, item.Value);
+                        if (addAllItems || baggageTagKeys.Contains(item.Key))
+                        {
+                            span.SetTag("baggage." + item.Key, item.Value);
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error adding baggage tags to span.");
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error adding baggage tags to span.");
+                }
             }
         }
 
