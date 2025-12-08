@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.AppSec;
@@ -74,28 +75,23 @@ namespace Datadog.Trace.PlatformHelpers
             return default;
         }
 
-        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer, ReadOnlyDictionary<string, string> headerTagsInternal)
         {
-            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
-
-            if (!headerTagsInternal.IsNullOrEmpty())
+            try
             {
-                try
+                // extract propagation details from http headers
+                if (request.Headers is { } requestHeaders)
                 {
-                    // extract propagation details from http headers
-                    if (request.Headers is { } requestHeaders)
-                    {
-                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
-                            span,
-                            new HeadersCollectionAdapter(requestHeaders),
-                            headerTagsInternal,
-                            defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                    }
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
+                        span,
+                        new HeadersCollectionAdapter(requestHeaders),
+                        headerTagsInternal,
+                        defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error extracting propagated HTTP headers.");
             }
         }
 
@@ -130,7 +126,13 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
-            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
+            if (!headerTagsInternal.IsNullOrEmpty())
+            {
+                AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
+            }
+
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
@@ -186,7 +188,13 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
-            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
+            if (!headerTagsInternal.IsNullOrEmpty())
+            {
+                AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
+            }
+
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var requestTrackingFeature = new SingleSpanRequestTrackingFeature(scope, proxyContext?.Scope);
