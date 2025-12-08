@@ -19,6 +19,118 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 internal static class AspNetCoreResourceNameHelper
 {
+#if NET6_0_OR_GREATER
+    internal static string SimplifyRoutePattern(
+        RoutePattern routePattern,
+        RouteValueDictionary routeValueDictionary,
+        bool expandRouteParameters)
+    {
+        var sb = routePattern.RawText?.Length < 512
+                     ? new ValueStringBuilder(stackalloc char[512])
+                     : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
+
+        foreach (var pathSegment in routePattern.PathSegments)
+        {
+            var addedPart = false;
+            foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
+            {
+                if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
+                {
+                    if (!addedPart)
+                    {
+                        sb.Append('/');
+                        addedPart = true;
+                    }
+
+                    sb.AppendAsLowerInvariant(contentPart.Content);
+                }
+                else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
+                {
+                    var parameterName = parameter.Name;
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+                        || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+                        || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!addedPart)
+                        {
+                            sb.Append('/');
+                            addedPart = true;
+                        }
+
+                        if (routeValueDictionary.TryGetValue(parameterName, out var value)
+                            && value is string name)
+                        {
+                            sb.AppendAsLowerInvariant(name);
+                        }
+                        else
+                        {
+                            sb.Append(parameterName);
+                        }
+                    }
+                    else
+                    {
+                        var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                        if (!parameter.IsOptional || haveParameter)
+                        {
+                            if (!addedPart)
+                            {
+                                sb.Append('/');
+                                addedPart = true;
+                            }
+
+                            // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+                            // so never expand them. This avoids an allocating ToString() call, but means that
+                            // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+                            if (expandRouteParameters
+                             && haveParameter
+                             && (value is null ||
+                                 (value is string valueAsString
+                               && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
+                            {
+                                // write the expanded parameter value
+                                sb.AppendAsLowerInvariant(value as string);
+                            }
+                            else
+                            {
+                                // write the route template value
+                                sb.Append('{');
+                                if (parameter.IsCatchAll)
+                                {
+                                    if (parameter.EncodeSlashes)
+                                    {
+                                        sb.Append("**");
+                                    }
+                                    else
+                                    {
+                                        sb.Append('*');
+                                    }
+                                }
+
+                                sb.AppendAsLowerInvariant(parameterName);
+                                if (parameter.IsOptional)
+                                {
+                                    sb.Append('?');
+                                }
+
+                                sb.Append('}');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+        if (sb.Length <= 1)
+        {
+            sb.Dispose();
+            return "/";
+        }
+
+        return sb.ToString();
+    }
+#endif
+
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         IReadOnlyDictionary<string, object?> routeValueDictionary,
