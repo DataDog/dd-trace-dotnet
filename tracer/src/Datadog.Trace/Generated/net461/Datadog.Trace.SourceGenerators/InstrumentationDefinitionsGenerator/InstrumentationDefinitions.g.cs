@@ -370,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionctorIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionCtorIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Hangfire,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"

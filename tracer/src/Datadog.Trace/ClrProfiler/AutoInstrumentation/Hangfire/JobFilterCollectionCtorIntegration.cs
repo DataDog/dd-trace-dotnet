@@ -1,4 +1,4 @@
-// <copyright file="JobFilterCollectionctorIntegration.cs" company="Datadog">
+// <copyright file="JobFilterCollectionCtorIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
     IntegrationName = nameof(IntegrationId.Hangfire))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class JobFilterCollectionctorIntegration
+public class JobFilterCollectionCtorIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionctorIntegration));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionCtorIntegration));
     private static int _filtersRegistered = 1;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
