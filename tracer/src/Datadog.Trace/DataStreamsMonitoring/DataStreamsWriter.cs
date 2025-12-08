@@ -226,30 +226,28 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        if (!_flushSemaphore.Wait(TimeSpan.FromMilliseconds(100)))
+        if (await _flushSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false))
         {
-            return;
-        }
-
-        try
-        {
-            while (_buffer.TryDequeue(out var statsPoint))
+            try
             {
-                _aggregator.Add(in statsPoint);
-            }
+                while (_buffer.TryDequeue(out var statsPoint))
+                {
+                    _aggregator.Add(in statsPoint);
+                }
 
-            while (_backlogBuffer.TryDequeue(out var backlogPoint))
-            {
-                _aggregator.AddBacklog(in backlogPoint);
+                while (_backlogBuffer.TryDequeue(out var backlogPoint))
+                {
+                    _aggregator.AddBacklog(in backlogPoint);
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "An error occured while processing data streams buffers");
-        }
-        finally
-        {
-            _flushSemaphore.Release();
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occured while processing data streams buffers");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
+            }
         }
 
         await FlushAggregatorAsync().ConfigureAwait(false);
