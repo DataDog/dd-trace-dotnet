@@ -25,7 +25,7 @@ internal static class HangfireCommon
 
     public static Scope? CreateScope(Tracer tracer, HangfireTags tags, IPerformingContextProxy performingContext, ISpanContext? parentContext = null, bool finishOnClose = true)
     {
-        if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
         {
             // integration disabled, don't create a scope, skip this trace
             return null;

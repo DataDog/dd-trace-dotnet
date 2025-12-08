@@ -15,13 +15,29 @@ namespace Datadog.Trace.Tagging
     partial class HangfireTags
     {
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // CreatedAtBytes = MessagePack.Serialize("job.CreatedAt");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CreatedAtBytes => new byte[] { 173, 106, 111, 98, 46, 67, 114, 101, 97, 116, 101, 100, 65, 116 };
+#else
+        private static readonly byte[] CreatedAtBytes = new byte[] { 173, 106, 111, 98, 46, 67, 114, 101, 97, 116, 101, 100, 65, 116 };
+#endif
         // JobIdBytes = MessagePack.Serialize("job.ID");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> JobIdBytes => new byte[] { 166, 106, 111, 98, 46, 73, 68 };
+#else
+        private static readonly byte[] JobIdBytes = new byte[] { 166, 106, 111, 98, 46, 73, 68 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -35,7 +51,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

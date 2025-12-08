@@ -41,7 +41,7 @@ public class JobFilterCollectionctorIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IJobFilterCollectionProxy
     {
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(HangfireCommon.IntegrationId))
+        if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(HangfireCommon.IntegrationId))
         {
             // integration disabled, skip injection of datadog job filter
             return CallTargetReturn.GetDefault();
