@@ -6,6 +6,7 @@
 #include "CpuSampleProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
+#include "IUnwinder.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
@@ -24,13 +25,15 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
-    MetricsRegistry& metricsRegistry) noexcept
+    MetricsRegistry& metricsRegistry,
+    IUnwinder* pUnwinder) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
-    _nbThreadsInSignalHandler{0}
+    _nbThreadsInSignalHandler{0},
+    _pUnwinder{pUnwinder}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");

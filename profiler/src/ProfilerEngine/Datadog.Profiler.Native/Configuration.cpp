@@ -72,7 +72,6 @@ Configuration::Configuration()
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, true);
-    _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled,
@@ -313,11 +312,6 @@ std::string const& Configuration::GetApiKey() const
 std::string const& Configuration::GetServiceName() const
 {
     return _serviceName;
-}
-
-bool Configuration::UseBacktrace2() const
-{
-    return _useBacktrace2;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const
