@@ -400,9 +400,10 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope: { } rootScope, ProxyScope: var proxyScope })
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope: { } rootScope, ProxyScope: var proxyScope } trackingFeature)
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext, proxyScope);
+                trackingFeature.Return();
             }
         }
 
