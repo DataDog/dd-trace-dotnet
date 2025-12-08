@@ -188,8 +188,10 @@ namespace Datadog.Trace.PlatformHelpers
             AddHeaderTagsToSpan(scope.Span, request, tracer);
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-            var requestTrackingFeature = new SingleSpanRequestTrackingFeature(originalPath, scope);
+            var requestTrackingFeature = new SingleSpanRequestTrackingFeature
+            {
+                RootScope = scope,
+            };
 
             if (proxyContext?.Scope is { } proxyScope)
             {
@@ -375,45 +377,15 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal class SingleSpanRequestTrackingFeature
         {
-            public SingleSpanRequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
-            {
-                OriginalPath = originalPath;
-                RootScope = rootAspNetCoreScope;
-            }
-
             /// <summary>
-            /// Gets or sets a value indicating whether this is the first pipeline execution
+            /// Gets or sets the root ASP.NET Core Scope
             /// </summary>
-            public bool IsFirstPipelineExecution { get; set; } = true;
-
-            /// <summary>
-            /// Gets a value indicating the original combined Path and PathBase
-            /// </summary>
-            public PathString OriginalPath { get; }
-
-            /// <summary>
-            /// Gets the root ASP.NET Core Scope
-            /// </summary>
-            public Scope RootScope { get; }
+            public Scope RootScope { get; set;  }
 
             /// <summary>
             /// Gets or sets the inferred ASP.NET Core Scope created from headers.
             /// </summary>
             public Scope ProxyScope { get; set; }
-
-            public bool MatchesOriginalPath(HttpRequest request)
-            {
-                if (!request.PathBase.HasValue)
-                {
-                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
-                }
-
-                return OriginalPath.StartsWithSegments(
-                           request.PathBase,
-                           StringComparison.OrdinalIgnoreCase,
-                           out var remaining)
-                    && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
-            }
         }
     }
 }
