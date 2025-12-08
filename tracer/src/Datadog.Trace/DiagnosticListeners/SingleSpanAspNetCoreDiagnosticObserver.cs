@@ -203,20 +203,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan } trackingFeature)
+             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan })
             {
-                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-                if (isFirstExecution)
+                if (tags.AspNetCoreEndpoint is not null)
                 {
-                    // Update this for the next call
-                    trackingFeature.IsFirstPipelineExecution = false;
-
-                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
-                    {
-                        // URL has changed from original, so treat this execution as a "subsequent" request
-                        // Typically occurs for 404s for example
-                        isFirstExecution = false;
-                    }
+                    // We've already recorded this invocation.
+                    // TODO: record other details for subsequent invocations?
+                    return;
                 }
 
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
@@ -274,10 +267,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                if (isFirstExecution)
-                {
-                    tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
-                }
+                tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
 
                 var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
@@ -303,23 +293,15 @@ namespace Datadog.Trace.DiagnosticListeners
                     actionName: actionName,
                     _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                // NOTE: We could set the controller/action/area tags on the parent span
-                // But instead we re-extract them in the MVC endpoint as these are MVC
-                // constructs. This is likely marginally less efficient, but simplifies the
-                // already complex logic in the MVC handler
                 // Overwrite/Update the route in the parent span
-                if (isFirstExecution)
-                {
-                    // TODO optimize this allocation?
-                    rootSpan.ResourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
-                    tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
-                }
+                // TODO optimize this allocation?
+                rootSpan.ResourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
-                var security = _security;
-                if (security.AppsecEnabled)
+                if (_security.AppsecEnabled)
                 {
-                    security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                    _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
                 }
 
                 if (_iast.Settings.Enabled)
@@ -367,19 +349,17 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction()
         {
-            var tracer = _tracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
+            var scope = _tracer.InternalActiveScope;
 
             if (scope is { Span: { } span }
              && ReferenceEquals(span.OperationName, HttpRequestInOperationName)
                 // To avoid the expensive reading of activity tags etc if they don't have "otel compatibility enabled"
-             && tracer.Settings.IsActivityListenerEnabled)
+             && _tracer.Settings.IsActivityListenerEnabled)
             {
                 AddActivityTags(span);
             }
@@ -414,9 +394,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = _tracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -424,18 +402,13 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
              && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope: { } rootScope, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, _security, rootScope, httpContext, proxyScope);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext, proxyScope);
             }
-
-            CoreHttpContextStore.Instance.Remove();
-            // If we don't have a scope, no need to call Stop pipeline
         }
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = _tracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -444,10 +417,8 @@ namespace Datadog.Trace.DiagnosticListeners
              && unhandledStruct.HttpContext is { } httpContext
              && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
-
-            // If we don't have a span, no need to call Handle exception
         }
     }
 }
