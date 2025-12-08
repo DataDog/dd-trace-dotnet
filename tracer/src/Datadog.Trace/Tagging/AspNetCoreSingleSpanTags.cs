@@ -9,7 +9,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging;
 
-internal partial class AspNetCoreSingleSpanTags : WebTagsWithoutIpTracking
+internal partial class AspNetCoreSingleSpanTags : WebTags
 {
     private const string ComponentName = "aspnet_core";
 

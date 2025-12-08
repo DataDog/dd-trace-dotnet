@@ -161,9 +161,8 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
-#if NET6_0_OR_GREATER
         public Scope StartAspNetCoreSingleSpanPipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags)
-            where T : WebTagsWithoutIpTracking
+            where T : WebTags
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -219,7 +218,6 @@ namespace Datadog.Trace.PlatformHelpers
 
             return scope;
         }
-#endif
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
             => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: httpContext.Features.Get<RequestTrackingFeature>()?.ProxyScope);

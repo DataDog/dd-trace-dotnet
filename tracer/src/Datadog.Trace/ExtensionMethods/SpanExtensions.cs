@@ -51,7 +51,7 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTagsWithoutIpTracking tags)
+            WebTags tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
