@@ -35,6 +35,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
+        internal const string HttpContextItemsKey = "__Datadog.SingleSpanAspNetCoreDiagnosticObserver";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
@@ -203,7 +204,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan })
+             && httpContext.Items[HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan })
             {
                 if (tags.AspNetCoreEndpoint is not null)
                 {
@@ -324,7 +325,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
+             && httpContext.Items[HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
                 if (isCodeOriginEnabled)
                 {
@@ -400,7 +401,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope: { } rootScope, ProxyScope: var proxyScope })
+             && httpContext.Items[HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope: { } rootScope, ProxyScope: var proxyScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext, proxyScope);
             }
@@ -415,7 +416,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature>() is { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
+             && httpContext.Items[HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
