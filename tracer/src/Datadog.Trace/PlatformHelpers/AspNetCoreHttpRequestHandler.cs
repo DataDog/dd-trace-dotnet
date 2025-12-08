@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -188,15 +189,7 @@ namespace Datadog.Trace.PlatformHelpers
             AddHeaderTagsToSpan(scope.Span, request, tracer);
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-            var requestTrackingFeature = new SingleSpanRequestTrackingFeature
-            {
-                RootScope = scope,
-            };
-
-            if (proxyContext?.Scope is { } proxyScope)
-            {
-                requestTrackingFeature.ProxyScope = proxyScope;
-            }
+            var requestTrackingFeature = new SingleSpanRequestTrackingFeature(scope, proxyContext?.Scope);
 
             httpContext.Items[SingleSpanAspNetCoreDiagnosticObserver.HttpContextItemsKey] = requestTrackingFeature;
 
@@ -375,17 +368,19 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        internal class SingleSpanRequestTrackingFeature
+        internal class SingleSpanRequestTrackingFeature(Scope rootScope, [MaybeNull] Scope proxyScope)
         {
             /// <summary>
-            /// Gets or sets the root ASP.NET Core Scope
+            /// Gets the root ASP.NET Core Scope
             /// </summary>
-            public Scope RootScope { get; set;  }
+            [NotNull]
+            public Scope RootScope { get; } = rootScope;
 
             /// <summary>
-            /// Gets or sets the inferred ASP.NET Core Scope created from headers.
+            /// Gets the inferred ASP.NET Core Scope created from headers.
             /// </summary>
-            public Scope ProxyScope { get; set; }
+            [MaybeNull]
+            public Scope ProxyScope { get; } = proxyScope;
         }
     }
 }
