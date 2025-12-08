@@ -107,7 +107,7 @@ namespace Datadog.Trace.Headers.Ip
             return peerIpFallback;
         }
 
-        internal static void AddIpToTags(string? peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTagsWithoutIpTracking tags)
+        internal static void AddIpToTags(string? peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
             IpInfo? peerIp = null;
             if (!string.IsNullOrEmpty(peerIpAddress))
@@ -118,33 +118,18 @@ namespace Datadog.Trace.Headers.Ip
             AddIpToTags(peerIp, isSecureConnection, getRequestHeaderFromKey, customIpHeader, tags);
         }
 
-        internal static void AddIpToTags(IpInfo? peerIp, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTagsWithoutIpTracking tags)
+        internal static void AddIpToTags(IpInfo? peerIp, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
             var ipInfo = ExtractIpAndPort(getRequestHeaderFromKey, customIpHeader, isSecureConnection, peerIp);
 
-            if (tags is WebTags withIpTracking)
+            if (peerIp is not null)
             {
-                if (peerIp is not null)
-                {
-                    withIpTracking.NetworkClientIp = peerIp.IpAddress;
-                }
-
-                if (ipInfo != null)
-                {
-                    withIpTracking.HttpClientIp = ipInfo.IpAddress;
-                }
+                tags.NetworkClientIp = peerIp.IpAddress;
             }
-            else
-            {
-                if (peerIp is not null)
-                {
-                    tags.SetTag(Tags.NetworkClientIp, peerIp.IpAddress);
-                }
 
-                if (ipInfo != null)
-                {
-                    tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
-                }
+            if (ipInfo != null)
+            {
+                tags.HttpClientIp = ipInfo.IpAddress;
             }
         }
 
