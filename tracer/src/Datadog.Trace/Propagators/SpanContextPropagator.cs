@@ -326,26 +326,21 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            AddTags(span, baggage, baggageTagKeys);
-
-            static void AddTags(Span span, Baggage baggage, HashSet<string> baggageTagKeys)
+            try
             {
-                try
-                {
-                    var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
+                var addAllItems = baggageTagKeys.Count == 1 && baggageTagKeys.Contains("*");
 
-                    foreach (var item in baggage)
+                foreach (var item in baggage)
+                {
+                    if (addAllItems || baggageTagKeys.Contains(item.Key))
                     {
-                        if (addAllItems || baggageTagKeys.Contains(item.Key))
-                        {
-                            span.SetTag("baggage." + item.Key, item.Value);
-                        }
+                        span.SetTag("baggage." + item.Key, item.Value);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error adding baggage tags to span.");
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding baggage tags to span.");
             }
         }
 
