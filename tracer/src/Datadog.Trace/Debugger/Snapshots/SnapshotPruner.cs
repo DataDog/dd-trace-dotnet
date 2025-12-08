@@ -99,10 +99,13 @@ namespace DatadogDebugger.Util
                 }
             }
 
-            var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
+            // Use Array.Sort instead of OrderBy to avoid allocations
+            var prunedNodes = nodes.Values.ToArray();
+            Array.Sort(prunedNodes, (a, b) => a.Start.CompareTo(b.Start));
+
             var sb = StringBuilderCache.Acquire();
             sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
-            for (var i = 1; i < prunedNodes.Count; i++)
+            for (var i = 1; i < prunedNodes.Length; i++)
             {
                 sb.Append(Pruned);
                 var nextSegmentStart = prunedNodes[i - 1].End + 1;
@@ -111,7 +114,7 @@ namespace DatadogDebugger.Util
             }
 
             sb.Append(Pruned);
-            var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
+            var lastSegmentStart = prunedNodes[prunedNodes.Length - 1].End + 1;
             if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
             {
                 sb.Append(snapshot.Substring(lastSegmentStart));

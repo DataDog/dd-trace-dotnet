@@ -59,7 +59,16 @@ internal class EvidenceConverterHelper
             this.Source = range.Source;
 
             // shift ranges to the start of the tainted range and sort them
-            this.SensitiveRanges = new LinkedList<Range>(intersections.Select(r => r.Shift(-range.Start)).OrderBy(r => r.Start));
+            // Use Array.Sort instead of OrderBy to avoid allocations
+            var shiftedRanges = new Range[intersections.Count];
+            var i = 0;
+            foreach (var r in intersections)
+            {
+                shiftedRanges[i++] = r.Shift(-range.Start);
+            }
+
+            Array.Sort(shiftedRanges, (a, b) => a.Start.CompareTo(b.Start));
+            this.SensitiveRanges = new LinkedList<Range>(shiftedRanges);
             this.IsRedacted = false;
         }
 

@@ -65,7 +65,10 @@ internal static class SpanPointers
             return;
         }
 
-        var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
+        // Use Array.Sort instead of LINQ OrderBy to avoid allocations
+        var sortedKeys = keys.KeyNames.ToArray();
+        Array.Sort(sortedKeys, StringComparer.Ordinal);
+
         var key1 = sortedKeys[0];
         var value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
         var key2 = string.Empty;
