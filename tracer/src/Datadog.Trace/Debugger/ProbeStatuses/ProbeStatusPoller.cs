@@ -23,9 +23,10 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
         private readonly HashSet<FetchProbeStatus> _probes = new();
         private readonly object _locker = new object();
-        private Timer _pollerTimer;
-        private bool _isPolling;
-        private bool _isRecentlyForcedSchedule;
+        private volatile Timer _pollerTimer;
+        private volatile bool _isDisposed;
+        private volatile bool _isPolling;
+        private volatile bool _isRecentlyForcedSchedule;
 
         private ProbeStatusPoller(DiagnosticsSink diagnosticsSink)
         {
@@ -39,8 +40,18 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private void PollerCallback(object state)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             if (TryAcquireLock())
             {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
                 try
                 {
                     PausePollerTimer();
@@ -82,7 +93,11 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             try
             {
-                _pollerTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                var timer = _pollerTimer;
+                if (timer != null && !_isDisposed)
+                {
+                    timer.Change(Timeout.Infinite, Timeout.Infinite);
+                }
             }
             catch (Exception ex)
             {
@@ -94,9 +109,13 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             try
             {
-                var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
-                _pollerTimer?.Change(waitPeriod, waitPeriod);
-                _isRecentlyForcedSchedule = false;
+                var timer = _pollerTimer;
+                if (timer != null && !_isDisposed)
+                {
+                    var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
+                    timer.Change(waitPeriod, waitPeriod);
+                    _isRecentlyForcedSchedule = false;
+                }
             }
             catch (Exception ex)
             {
@@ -106,7 +125,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private void OnProbeStatusesPoll()
         {
-            if (!_probes.Any())
+            if (!_probes.Any() || _isDisposed)
             {
                 return;
             }
@@ -142,14 +161,14 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         public void StartPolling()
         {
-            if (_isPolling)
+            if (_isPolling || _isDisposed)
             {
                 return;
             }
 
             lock (_locker)
             {
-                if (_isPolling)
+                if (_isPolling || _isDisposed)
                 {
                     return;
                 }
@@ -161,8 +180,18 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         public void AddProbes(FetchProbeStatus[] newProbes)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             lock (_locker)
             {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
                 _probes.UnionWith(newProbes);
                 ScheduleNextPollInOneSecond();
             }
@@ -172,18 +201,32 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             lock (_locker)
             {
-                if (_isPolling)
+                if (_isPolling && !_isDisposed)
                 {
-                    _pollerTimer?.Change(TimeSpan.FromSeconds(1), _shortPeriod);
-                    _isRecentlyForcedSchedule = true;
+                    var timer = _pollerTimer;
+                    if (timer != null)
+                    {
+                        timer.Change(TimeSpan.FromSeconds(1), _shortPeriod);
+                        _isRecentlyForcedSchedule = true;
+                    }
                 }
             }
         }
 
         public void RemoveProbes(string[] removedProbes)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             lock (_locker)
             {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
                 _probes.RemoveWhere(p => removedProbes.Contains(p.ProbeId));
 
                 foreach (var rmProbe in removedProbes)
@@ -195,6 +238,11 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             lock (_locker)
             {
                 RemoveProbes(probeIds);
@@ -208,19 +256,27 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         }
 
         /// <summary>
-        /// Returns a subset of probeIds from <paramref name="candidateProbeIds" /> that have native representation (e.g either requested rejit or rejitted).
+        /// Returns a subset of probeIds that have native representation (e.g either requested rejit or rejitted).
         /// Note that <see cref="Status.EMITTING"/> is taken into account, since EMITTING probes are those that not only have native representation,
         /// but their instrumentation is actively executing.
         /// </summary>
-        /// <param name="candidateProbeIds">The set of probes that needs to be checked</param>
         /// <returns>An array of ProbeIds that have native representation.</returns>
-        public string[] GetBoundedProbes(string[] candidateProbeIds)
+        public string[] GetBoundedProbes()
         {
+            if (_isDisposed)
+            {
+                return Array.Empty<string>();
+            }
+
             lock (_locker)
             {
+                if (_isDisposed)
+                {
+                    return Array.Empty<string>();
+                }
+
                 return _probes
-                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING) && candidateProbeIds
-                                .Contains(p.ProbeId))
+                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING))
                       .Select(p => p.ProbeId)
                       .ToArray();
             }
@@ -228,7 +284,25 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         public void Dispose()
         {
-            _pollerTimer?.Dispose();
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            lock (_locker)
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                _isDisposed = true;
+                _isPolling = false;
+
+                var timer = _pollerTimer;
+                _pollerTimer = null;
+                timer?.Dispose();
+            }
         }
     }
 }

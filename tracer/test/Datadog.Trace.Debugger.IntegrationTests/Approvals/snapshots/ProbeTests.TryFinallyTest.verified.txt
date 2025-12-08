@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -14,8 +14,7 @@
                   "value": "TryFinallyTest"
                 },
                 "this": {
-                  "type": "TryFinallyTest",
-                  "value": "TryFinallyTest"
+                  "type": "TryFinallyTest"
                 }
               },
               "locals": {
@@ -44,6 +43,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyTest",

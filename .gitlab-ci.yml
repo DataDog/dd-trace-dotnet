@@ -37,7 +37,7 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
-        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:dotnet10-rc1 `
+        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:dotnet10 `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
@@ -92,6 +92,10 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+      # If we got here, all retries failed – fail the job:
+      Write-Error "Failed to upload artifacts to S3 after $i attempts."
+      exit 1
+
 
 download-single-step-artifacts:
   stage: package
@@ -226,3 +230,18 @@ dsm_throughput:
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
+
+
+validate_supported_configurations_local_file:
+  stage: build
+  rules:
+    - when: on_success
+  extends: .validate_supported_configurations_local_file
+  variables:
+    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"

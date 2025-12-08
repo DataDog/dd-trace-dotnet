@@ -30,7 +30,6 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
-using OpenTelemetry.Proto.Metrics.V1; // used to deserialize otlp data using proto folder
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -91,11 +90,6 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
-
-        /// <summary>
-        /// Gets the OTLP requests received by the agent
-        /// </summary>
-        public ConcurrentQueue<MockOtlpRequest> OtlpRequests { get; } = new();
 
         /// <summary>
         /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
@@ -526,6 +520,11 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDebuggerData(request);
                 responseType = MockTracerResponseType.Debugger;
             }
+            else if (request.PathAndQuery.StartsWith("/debugger/v2/input"))
+            {
+                HandlePotentialDiagnosticsData(request);
+                responseType = MockTracerResponseType.Debugger;
+            }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/diagnostics"))
             {
                 HandlePotentialDiagnosticsData(request);
@@ -559,11 +558,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
-            }
-            else if (request.PathAndQuery.StartsWith("/v1/traces") || request.PathAndQuery.StartsWith("/v1/metrics") || request.PathAndQuery.StartsWith("/v1/logs"))
-            {
-                HandlePotentialOtlpData(request);
-                responseType = MockTracerResponseType.Otlp;
             }
             else
             {
@@ -633,9 +627,10 @@ namespace Datadog.Trace.TestHelpers
                     request.Headers.TryGetValue(TelemetryConstants.ApiVersionHeader, out var apiVersion);
                     request.Headers.TryGetValue(TelemetryConstants.RequestTypeHeader, out var requestType);
 
+                    // request.ReadStreamBody() already decompress the data if content-encoding is gzip
                     using var stream = new MemoryStream(request.ReadStreamBody());
 
-                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
+                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType, false);
                     Telemetry.Push(telemetry);
 
                     lock (this)
@@ -697,17 +692,17 @@ namespace Datadog.Trace.TestHelpers
 
                 throw;
             }
+        }
 
-            void ReceiveDebuggerBatch(string batch)
-            {
-                var snapshots =
-                    JArray
-                       .Parse(batch)
-                       .Select(token => token.ToString())
-                       .ToList();
+        private void ReceiveDebuggerBatch(string batch)
+        {
+            var snapshots =
+                JArray
+                   .Parse(batch)
+                   .Select(token => token.ToString())
+                   .ToList();
 
-                Snapshots = Snapshots.AddRange(snapshots);
-            }
+            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         private void HandlePotentialDiagnosticsData(MockHttpRequest request)
@@ -724,7 +719,24 @@ namespace Datadog.Trace.TestHelpers
                 using var streamReader = new StreamReader(stream);
                 var batch = streamReader.ReadToEnd();
 
-                ReceiveDiagnosticsBatch(batch);
+                if (batch.StartsWith("[{\"debugger\":{\"snapshot\":", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReceiveDebuggerBatch(batch);
+                    return;
+                }
+
+                var startIndex = batch.IndexOf('[');
+                var endIndex = batch.LastIndexOf(']') + 1;
+                var jsonString = batch.Substring(startIndex, endIndex - startIndex + 1);
+                if (jsonString.StartsWith("[{\"debugger\":{\"snapshot\":", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReceiveDebuggerBatch(jsonString);
+                    return;
+                }
+                else
+                {
+                    ReceiveDiagnosticsBatch(jsonString);
+                }
             }
             catch (Exception ex)
             {
@@ -742,11 +754,7 @@ namespace Datadog.Trace.TestHelpers
 
             void ReceiveDiagnosticsBatch(string batch)
             {
-                var startIndex = batch.IndexOf('[');
-                var endIndex = batch.LastIndexOf(']') + 1;
-                var jsonString = batch.Substring(startIndex, endIndex - startIndex + 1);
-
-                var arr = JArray.Parse(jsonString);
+                var arr = JArray.Parse(batch);
 
                 var probeStatuses = new Dictionary<string, string>();
 
@@ -956,48 +964,6 @@ namespace Datadog.Trace.TestHelpers
 
                     throw;
                 }
-            }
-        }
-
-        private void HandlePotentialOtlpData(MockHttpRequest request)
-        {
-            var body = request.ReadStreamBody();
-            if (body == null || body.Length == 0)
-            {
-                return;
-            }
-
-            var contentType = request.Headers.TryGetValue("Content-Type", out var ct) && !string.IsNullOrEmpty(ct)
-                ? ct
-                : "application/x-protobuf";
-
-            var headersDict = request.Headers.ToDictionary(
-                h => h.Key,
-                h => h.Value.ToList(),
-                StringComparer.OrdinalIgnoreCase);
-
-            MetricsData metricsData = null;
-
-            if (request.PathAndQuery.StartsWith("/v1/metrics") && contentType.Contains("protobuf"))
-            {
-                try
-                {
-                    metricsData = MetricsData.Parser.ParseFrom(body);
-                }
-                catch (Exception ex)
-                {
-                    Output?.WriteLine($"[OTLP] Failed to deserialize metrics data: {ex.Message}");
-                }
-            }
-
-            if (metricsData is not null)
-            {
-                OtlpRequests.Enqueue(new MockOtlpRequest(
-                                         request.PathAndQuery,
-                                         headersDict,
-                                         body,
-                                         contentType,
-                                         metricsData));
             }
         }
 
@@ -1701,30 +1667,5 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 #endif
-
-        public class MockOtlpRequest
-        {
-            public MockOtlpRequest(string pathAndQuery, Dictionary<string, List<string>> headers, byte[] body, string contentType, MetricsData metricsData)
-            {
-                PathAndQuery = pathAndQuery;
-                Headers = headers;
-                Body = body;
-                ContentType = contentType;
-                MetricsData = metricsData;
-            }
-
-            public string PathAndQuery { get; }
-
-            public Dictionary<string, List<string>> Headers { get; }
-
-            public byte[] Body { get; }
-
-            public string ContentType { get; }
-
-            /// <summary>
-            /// Gets the deserialized protobuf data (if available)
-            /// </summary>
-            public MetricsData MetricsData { get; }
-        }
     }
 }

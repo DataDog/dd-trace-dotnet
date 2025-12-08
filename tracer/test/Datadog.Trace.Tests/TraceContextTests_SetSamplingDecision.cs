@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -20,8 +21,8 @@ public class TraceContextTests_SetSamplingDecision
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm)]
         public void SetSamplingDecision(int samplingPriority, string samplingMechanism)
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
 
             traceContext.SamplingPriority.Should().Be(samplingPriority);
@@ -39,8 +40,8 @@ public class TraceContextTests_SetSamplingDecision
         [Fact]
         public void SetSamplingDecision_KeepsFirstMechanism()
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
@@ -54,8 +55,8 @@ public class TraceContextTests_SetSamplingDecision
         [Fact]
         public void SetSamplingDecision_RemovesMechanismOnDrop()
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
             traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);

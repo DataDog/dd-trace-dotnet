@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
 using MessagePack; // use nuget MessagePack to deserialize
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -126,7 +129,29 @@ namespace Datadog.Trace.Tests.Agent
             temporaryBuffer.Length.Should().BeLessThanOrEqualTo(512, because: "the size of the temporary buffer shouldn't exceed twice the limit");
         }
 
-        private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)
+        [Fact]
+        public void IsFirstChunkInBuffer_FirstChunkIsTrue_SubsequentChunksAreFalse()
+        {
+            var interceptedChunks = new List<TraceChunkModel>();
+            var interceptingFormatter = new InterceptingTraceChunkFormatter(interceptedChunks);
+            var mockResolver = new Mock<Vendors.MessagePack.IFormatterResolver>();
+            mockResolver.Setup(r => r.GetFormatter<TraceChunkModel>()).Returns(interceptingFormatter);
+
+            var buffer = new SpanBuffer(maxBufferSize: 256, mockResolver.Object);
+            var temporaryBuffer = new byte[256];
+
+            var firstSpanArray = CreateTraceChunk(2);
+            var secondSpanArray = CreateTraceChunk(spanCount: 2, startingId: 10);
+
+            buffer.TryWrite(firstSpanArray, ref temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TryWrite(secondSpanArray, ref temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+
+            interceptedChunks.Should().HaveCount(2);
+            interceptedChunks[0].IsFirstChunkInPayload.Should().BeTrue();
+            interceptedChunks[1].IsFirstChunkInPayload.Should().BeFalse();
+        }
+
+        private static SpanCollection CreateTraceChunk(int spanCount, ulong startingId = 1)
         {
             var spans = new Span[spanCount];
 
@@ -136,7 +161,24 @@ namespace Datadog.Trace.Tests.Agent
                 spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
             }
 
-            return new ArraySegment<Span>(spans);
+            return new SpanCollection(spans);
+        }
+
+        /// <summary>
+        /// practical mock, because the presence of the ref modifier on bytes makes it not work well with Moq.
+        /// </summary>
+        private class InterceptingTraceChunkFormatter(List<TraceChunkModel> interceptedChunks) : IMessagePackFormatter<TraceChunkModel>
+        {
+            public int Serialize(ref byte[] bytes, int offset, TraceChunkModel value, Vendors.MessagePack.IFormatterResolver formatterResolver)
+            {
+                interceptedChunks.Add(value);
+                return 50; // Return a reasonable serialized size
+            }
+
+            public TraceChunkModel Deserialize(byte[] bytes, int offset, Vendors.MessagePack.IFormatterResolver formatterResolver, out int readSize)
+            {
+                throw new NotImplementedException("Deserialization not needed for this test");
+            }
         }
     }
 }

@@ -102,9 +102,8 @@ namespace Samples.Telemetry
 
             // grab the log field from TracerSettings, as it's an easy way to get an instance
             var settingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace")!;
-            var settings = Activator.CreateInstance(settingsType);
             var logField = settingsType.GetField("Log", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
-            var logger = logField.GetValue(settings);
+            var logger = logField.GetValue(null);
 
             var loggerType = Type.GetType("Datadog.Trace.Logging.DatadogSerilogLogger, Datadog.Trace")!;
             var errorMethod = loggerType.GetMethod("Error", [typeof(string), typeof(int), typeof(string)])!;

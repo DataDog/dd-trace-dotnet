@@ -51,6 +51,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
+                bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
+                if (isOutbound)
+                {
+                    PeerServiceHelpers.DerivePeerService(tags, EnvironmentHelpers.IsAwsLambda());
+                }
+
+                Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
             }
 
             return new CallTargetState(scope, state: executionContext);
@@ -94,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (responseContext.Instance is not null && responseContext.Response is { } response)
                 {
                     tags.RequestId = response.ResponseMetadata?.RequestId;
-                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
             }
 

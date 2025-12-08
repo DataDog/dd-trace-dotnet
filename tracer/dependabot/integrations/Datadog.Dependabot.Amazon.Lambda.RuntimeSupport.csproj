@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Amazon.Lambda.RuntimeSupport -->
     <!--    Assembly: Amazon.Lambda.RuntimeSupport -->
-    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.13.4 -->
-    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.13.4" />
+    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.14.1 -->
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.14.1" />
   </ItemGroup>
 
 </Project>

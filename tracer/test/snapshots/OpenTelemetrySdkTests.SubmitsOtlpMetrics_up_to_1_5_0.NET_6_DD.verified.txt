@@ -1,208 +1,165 @@
 ﻿[
   {
-    Resource: {
-      Attributes: [
-        {
-          Key: telemetry.sdk.name,
-          Value: {
-            StringValue: sdk-name,
-            HasStringValue: true,
-            BytesValue: [],
-            ValueCase: StringValue
-          }
-        },
-        {
-          Key: telemetry.sdk.language,
-          Value: {
-            StringValue: dotnet,
-            HasStringValue: true,
-            BytesValue: [],
-            ValueCase: StringValue
-          }
-        },
-        {
-          Key: telemetry.sdk.version,
-          Value: {
-            StringValue: sdk-version,
-            HasStringValue: true,
-            BytesValue: [],
-            ValueCase: StringValue
-          }
-        },
-        {
-          Key: service.name,
-          Value: {
-            StringValue: unknown_service:dotnet,
-            HasStringValue: true,
-            BytesValue: [],
-            ValueCase: StringValue
-          }
-        }
-      ]
-    },
-    ScopeMetrics: [
+    "resource_metrics": [
       {
-        Scope: {
-          Name: OpenTelemetryMetricsMeter,
-          Version: 1.0
+        "resource": {
+          "attributes": [
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "string_value": "sdk-name"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "string_value": "dotnet"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "string_value": "sdk-version"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "string_value": "Samples.OpenTelemetrySdk"
+              }
+            }
+          ]
         },
-        Metrics: [
+        "scope_metrics": [
           {
-            Name: example.async.counter,
-            Description: ,
-            Unit: ,
-            Sum: {
-              DataPoints: [
-                {
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsInt: 22,
-                  HasAsInt: true,
-                  ValueCase: AsInt
-                }
-              ],
-              AggregationTemporality: Cumulative,
-              IsMonotonic: true
+            "scope": {
+              "name": "OpenTelemetryMetricsMeter",
+              "version": "1.0"
             },
-            DataCase: Sum
-          },
-          {
-            Name: example.async.gauge,
-            Description: ,
-            Unit: ,
-            Gauge: {
-              DataPoints: [
-                {
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsDouble: 88.0,
-                  HasAsDouble: true,
-                  ValueCase: AsDouble
-                }
-              ]
-            },
-            DataCase: Gauge
-          },
-          {
-            Name: example.counter,
-            Description: ,
-            Unit: ,
-            Sum: {
-              DataPoints: [
-                {
-                  Attributes: [
+            "metrics": [
+              {
+                "name": "example.async.counter",
+                "sum": {
+                  "data_points": [
                     {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
-                    {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "22"
                     }
                   ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsInt: 11,
-                  HasAsInt: true,
-                  ValueCase: AsInt
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
                 }
-              ],
-              AggregationTemporality: Cumulative,
-              IsMonotonic: true
-            },
-            DataCase: Sum
-          },
-          {
-            Name: example.histogram,
-            Description: ,
-            Unit: ,
-            Histogram: {
-              DataPoints: [
-                {
-                  Attributes: [
+              },
+              {
+                "name": "example.async.gauge",
+                "gauge": {
+                  "data_points": [
                     {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_double": 88.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "example.counter",
+                "sum": {
+                  "data_points": [
                     {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "11",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
                     }
                   ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  Count: 1,
-                  Sum: 33.0,
-                  HasSum: true,
-                  BucketCounts: [
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  ExplicitBounds: [
-                    0.0,
-                    5.0,
-                    10.0,
-                    25.0,
-                    50.0,
-                    75.0,
-                    100.0,
-                    250.0,
-                    500.0,
-                    750.0,
-                    1000.0,
-                    2500.0,
-                    5000.0,
-                    7500.0,
-                    10000.0
-                  ],
-                  Min: 33.0,
-                  HasMin: true,
-                  Max: 33.0,
-                  HasMax: true
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
                 }
-              ],
-              AggregationTemporality: Cumulative
-            },
-            DataCase: Histogram
+              },
+              {
+                "name": "example.histogram",
+                "histogram": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "count": "1",
+                      "sum": 33.0,
+                      "bucket_counts": [
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "1",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                      ],
+                      "explicit_bounds": [
+                        0.0,
+                        5.0,
+                        10.0,
+                        25.0,
+                        50.0,
+                        75.0,
+                        100.0,
+                        250.0,
+                        500.0,
+                        750.0,
+                        1000.0,
+                        2500.0,
+                        5000.0,
+                        7500.0,
+                        10000.0
+                      ],
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ],
+                      "min": 33.0,
+                      "max": 33.0
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              }
+            ]
           }
-        ],
-        SchemaUrl: 
+        ]
       }
-    ],
-    SchemaUrl: 
+    ]
   }
 ]

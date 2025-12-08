@@ -133,9 +133,9 @@ public class ConfigurationTelemetryCollectorTests
         var config = new NameValueCollection
         {
             { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
-            { ConfigurationKeys.AzureAppService.SiteNameKey, "site-name" },
-            { ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "~4" },
-            { ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated" },
+            { PlatformKeys.AzureAppService.SiteNameKey, "site-name" },
+            { PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4" },
+            { PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated" },
             { ConfigurationKeys.ServiceName, serviceName },
             { ConfigurationKeys.Environment, env },
             { ConfigurationKeys.ServiceVersion, serviceVersion },
@@ -152,9 +152,9 @@ public class ConfigurationTelemetryCollectorTests
 
         using var scope = new AssertionScope();
         GetLatestValueFromConfig(data, ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).Should().Be("1.5.0");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureAppService.SiteNameKey).Should().Be("site-name");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).Should().Be("~4");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).Should().Be("dotnet-isolated");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureAppService.SiteNameKey).Should().Be("site-name");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureFunctions.FunctionsExtensionVersion).Should().Be("~4");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).Should().Be("dotnet-isolated");
         GetLatestValueFromConfig(data, ConfigTelemetryData.AasConfigurationError).Should().BeOfType<bool>().Subject.Should().Be(!isSafeToTrace);
         GetLatestValueFromConfig(data, ConfigTelemetryData.CloudHosting).Should().Be("Azure");
         GetLatestValueFromConfig(data, ConfigTelemetryData.AasAppType).Should().Be("function");
@@ -243,7 +243,7 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "DD_APPSEC_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
         GetLatestValueFromConfig(data, "DD_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
-        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(null);
+        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be("[]");
         GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(true);
         GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
         GetLatestValueFromConfig(data, "instrumentation_source").Should().Be("manual");

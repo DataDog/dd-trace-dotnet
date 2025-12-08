@@ -6,7 +6,6 @@
         value: False
       }
     },
-    type: Lazy`1,
-    value: Lazy`1
+    type: Lazy`1
   }
 }

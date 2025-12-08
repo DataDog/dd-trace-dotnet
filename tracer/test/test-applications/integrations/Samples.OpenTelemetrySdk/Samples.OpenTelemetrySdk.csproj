@@ -3,11 +3,18 @@
     <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
     <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">1.12.0</ApiVersion>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">1.13.1</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.9.0'">$(DefineConstants);OTEL_1_9</DefineConstants>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     </PropertyGroup>
 
+  <!-- Required to fix package pruning errors introduced in rc2. Should be removed in NET 10 GA -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
+  </PropertyGroup>  
+  
   <ItemGroup>
     <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />

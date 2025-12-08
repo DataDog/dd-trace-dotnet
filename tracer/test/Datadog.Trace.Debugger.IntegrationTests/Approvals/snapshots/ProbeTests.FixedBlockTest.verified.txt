@@ -13,8 +13,7 @@
                 "value": "5"
               },
               "this": {
-                "type": "FixedBlockTest",
-                "value": "FixedBlockTest"
+                "type": "FixedBlockTest"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "5"
               },
               "this": {
-                "type": "FixedBlockTest",
-                "value": "FixedBlockTest"
+                "type": "FixedBlockTest"
               }
             },
             "locals": {
@@ -56,6 +54,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.FixedBlockTest",

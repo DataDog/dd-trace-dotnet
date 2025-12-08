@@ -1,10 +1,14 @@
 variables:
   DSM_THROUGHPUT_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dd-trace-dotnet-dsm
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-6
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-7
 
 stages:
   - check-azure-pipeline
   - benchmarks
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -22,14 +26,15 @@ check_azure_pipeline:
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
 
 dsm_throughput:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
   image: $DSM_THROUGHPUT_CI_IMAGE
-  interruptible: true
   timeout: 1h
   script:
     - source build-id.txt
@@ -45,4 +50,6 @@ dsm_throughput:
       - artifacts/
     expire_in: 3 months
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true

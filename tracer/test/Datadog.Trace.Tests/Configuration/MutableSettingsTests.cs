@@ -65,6 +65,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             // TODO: test that changing this changes the settings. Currently this is always false, so can't test it
             properties.Remove(nameof(MutableSettings.CustomSamplingRulesIsRemote));
+
+            // This property depends directly on ServiceName, and so isn't required to be part of the equality tests
+            // We _could_ add it though if that's preferable
+            properties.Remove(nameof(MutableSettings.DefaultServiceName));
             properties.Should().BeEmpty("should compare all properties as part of MutableSettings, but some properties were not used");
         }
 
@@ -168,7 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
@@ -179,7 +183,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-            _writerMock.Verify(w => w.WriteTrace(It.IsAny<ArraySegment<Span>>()), assertion);
+            _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
         }
 
         [Theory]
@@ -518,7 +522,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -670,7 +674,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static MutableSettings GetSettings(string key, object value)
         {
             var source = new DictionaryConfigurationSource(new Dictionary<string, string> { { key, value?.ToString() } });
-            return MutableSettings.Create(
+            return MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),
@@ -678,7 +682,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         private static MutableSettings GetMutableSettings(IConfigurationSource source, TracerSettings tracerSettings)
-            => MutableSettings.Create(
+            => MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),

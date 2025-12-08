@@ -1,4 +1,4 @@
-// <copyright file="TraceContext.cs" company="Datadog">
+﻿// <copyright file="TraceContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
@@ -18,6 +19,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -29,7 +31,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private ArrayBuilder<Span> _spans;
+        private SpanCollection _spans;
         private int _openSpans;
 
         private IastRequestContext? _iastRequestContext;
@@ -52,12 +54,10 @@ namespace Datadog.Trace
             // TODO: Environment and ServiceVersion are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
-            if (tracer.Settings is { } settings)
-            {
-                // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
-            }
+            var settings = CurrentTraceSettings.Settings;
+            // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
+            Environment = settings.Environment;
+            ServiceVersion = settings.ServiceVersion;
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
@@ -126,8 +126,8 @@ namespace Datadog.Trace
 
         internal bool WafExecuted { get; set; }
 
-        internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
-            spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
+        internal static TraceContext? GetTraceContext(in SpanCollection spans)
+            => spans.FirstSpan?.Context.TraceContext;
 
         internal void EnableIastInRequest()
         {
@@ -155,7 +155,7 @@ namespace Datadog.Trace
         {
             bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
 
-            ArraySegment<Span> spansToWrite = default;
+            SpanCollection spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan)
@@ -194,12 +194,12 @@ namespace Datadog.Trace
 
             lock (_rootSpan!)
             {
-                _spans.Add(span);
+                _spans = SpanCollection.Append(in _spans, span);
                 _openSpans--;
 
                 if (_openSpans == 0)
                 {
-                    spansToWrite = _spans.GetArray();
+                    spansToWrite = _spans;
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
@@ -209,7 +209,7 @@ namespace Datadog.Trace
                     // all of them are known to be Root spans, so we can flush them as soon as they are closed
                     // even if their children have not been closed yet.
                     // An unclosed/unfinished child span should never block the report of a test.
-                    spansToWrite = _spans.GetArray();
+                    spansToWrite = _spans;
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
@@ -221,12 +221,12 @@ namespace Datadog.Trace
                         span.Context.RawTraceId,
                         _spans.Count);
 
-                    spansToWrite = _spans.GetArray();
+                    spansToWrite = _spans;
 
                     // Making the assumption that, if the number of closed spans was big enough to trigger partial flush,
                     // the number of remaining spans is probably big as well.
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
-                    _spans = new ArrayBuilder<Span>(spansToWrite.Count);
+                    _spans = new SpanCollection(spansToWrite.Count);
                     TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
                 }
             }
@@ -234,27 +234,27 @@ namespace Datadog.Trace
             if (spansToWrite.Count > 0)
             {
                 GetOrMakeSamplingDecision();
-                RunSpanSampler(spansToWrite);
-                Tracer.Write(spansToWrite);
+                RunSpanSampler(in spansToWrite);
+                Tracer.Write(in spansToWrite);
             }
         }
 
-        // called from tests to force partial flush
+        [TestingOnly]
         internal void WriteClosedSpans()
         {
-            ArraySegment<Span> spansToWrite;
+            SpanCollection spansToWrite;
 
             lock (_rootSpan!)
             {
-                spansToWrite = _spans.GetArray();
+                spansToWrite = _spans;
                 _spans = default;
             }
 
             if (spansToWrite.Count > 0)
             {
                 GetOrMakeSamplingDecision();
-                RunSpanSampler(spansToWrite);
-                Tracer.Write(spansToWrite);
+                RunSpanSampler(in spansToWrite);
+                Tracer.Write(in spansToWrite);
             }
         }
 
@@ -335,7 +335,7 @@ namespace Datadog.Trace
             }
         }
 
-        private void RunSpanSampler(ArraySegment<Span> spans)
+        private void RunSpanSampler(in SpanCollection spans)
         {
             if (CurrentTraceSettings?.SpanSampler is null)
             {
@@ -344,9 +344,8 @@ namespace Datadog.Trace
 
             if (SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsDrop(samplingPriority))
             {
-                for (int i = 0; i < spans.Count; i++)
+                foreach (var span in spans)
                 {
-                    var span = spans.Array![i + spans.Offset];
                     CurrentTraceSettings.SpanSampler.MakeSamplingDecision(span);
                 }
             }

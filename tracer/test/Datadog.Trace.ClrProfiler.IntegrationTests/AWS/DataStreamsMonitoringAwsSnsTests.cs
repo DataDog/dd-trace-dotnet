@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS;
 
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "2")]
 [UsesVerify]
 public class DataStreamsMonitoringAwsSnsTests : TestHelper
 {

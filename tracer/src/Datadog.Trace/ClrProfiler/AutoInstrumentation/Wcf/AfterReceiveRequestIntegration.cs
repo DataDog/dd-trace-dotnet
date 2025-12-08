@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         {
             // Add an exception and close the span only if there was an uncaught exception,
             // which should only happen if one of the IClientMessageInspector's has thrown an exception.
@@ -80,17 +80,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 state.Scope.DisposeWithException(exception);
             }
 
-            if (state.Scope != null)
-            {
-                // OnMethodBegin started an active span that can be accessed by IDispatchMessageInspector's and the actual WCF endpoint
-                // Before returning, we must reset the scope to the previous active scope, so that callers of this method do not see this scope
-                // Don't worry, this will be accessed and closed by the BeforeSendReplyIntegration
-                if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
-                {
-                    rawAccess.Active = state.PreviousScope;
-                    DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
-                }
-            }
+            // OnMethodBegin started an active span that can be accessed by IDispatchMessageInspector's and the actual WCF endpoint
+            // Before returning, we must reset the scope to the previous active scope, so that callers of this method do not see this scope
+            // Don't worry, this will be accessed and closed by the BeforeSendReplyIntegration
+            WcfCommon.RestorePreviousScope(in state);
 
             return CallTargetReturn.GetDefault();
         }

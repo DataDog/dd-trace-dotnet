@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.Configuration;
 
 #nullable enable
@@ -27,12 +29,24 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private const int LengthDelimited = 2;
 
         private readonly TracerSettings _settings;
-        private readonly byte[] _cachedResourceData;
+        private byte[] _cachedResourceData;
 
         public OtlpMetricsSerializer(TracerSettings settings)
         {
             _settings = settings;
-            _cachedResourceData = SerializeResource(settings);
+            UpdateCachedResourceData(settings.Manager.InitialMutableSettings);
+            settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdateCachedResourceData(mutable);
+                }
+            });
+            [MemberNotNull(nameof(_cachedResourceData))]
+            void UpdateCachedResourceData(MutableSettings mutable)
+            {
+                Interlocked.Exchange(ref _cachedResourceData, SerializeResource(mutable));
+            }
         }
 
         /// <summary>
@@ -74,8 +88,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteTag(writer, FieldNumbers.Resource, LengthDelimited);
-            WriteVarInt(writer, _cachedResourceData.Length);
-            writer.Write(_cachedResourceData);
+            var data = Volatile.Read(ref _cachedResourceData);
+            WriteVarInt(writer, data.Length);
+            writer.Write(data);
 
             // Group metrics by meter identity (name + version + tags)
             var meterGroups = new Dictionary<string, List<MetricPoint>>();
@@ -104,7 +119,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeResource(TracerSettings settings)
+        private byte[] SerializeResource(MutableSettings settings)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -124,8 +139,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             WriteVarInt(writer, sdkVersionAttr.Length);
             writer.Write(sdkVersionAttr);
 
-            var serviceName = settings.ServiceName ?? "unknown_service:dotnet";
-            var serviceNameAttr = SerializeKeyValue("service.name", serviceName);
+            var serviceNameAttr = SerializeKeyValue("service.name", settings.DefaultServiceName);
             WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
             WriteVarInt(writer, serviceNameAttr.Length);
             writer.Write(serviceNameAttr);
@@ -583,10 +597,18 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         /// <summary>
         /// Serializes metrics to OTLP MetricsData binary format
         /// </summary>
-        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics)
+        /// <param name="metrics">The metrics to serialize</param>
+        /// <param name="startPosition">Optional start position to leave empty bytes at the beginning (e.g., for gRPC 5-byte frame header)</param>
+        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics, int startPosition = 0)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
+
+            // Reserve space at the beginning if requested (e.g., for gRPC frame header)
+            if (startPosition > 0)
+            {
+                writer.Write(new byte[startPosition]);
+            }
 
             var resourceMetricsData = SerializeResourceMetrics(metrics);
             WriteTag(writer, FieldNumbers.ResourceMetrics, LengthDelimited);

@@ -25,7 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
         public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (!settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
             {
                 return null;
             }
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 if (grpcCall.Options.Headers is { Count: > 0 })
                 {
                     var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
-                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -77,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
         public static void RecordResponseMetadataAndStatus<TGrpcCall>(Tracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (!settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || instance is null
              || tracer.ActiveScope?.Span is not Span { Tags: GrpcClientTags } span)
             {
@@ -90,20 +92,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             if (grpcCall.HttpResponse is { Headers: { } responseHeaders })
             {
                 var metadata = new HttpResponseHeadersCollection(responseHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             // Note that this will be null if they haven't read the response body yet, but we can't force that on users
             if (grpcCall.TryGetTrailers(out var trailers) && trailers is { Count: > 0 })
             {
                 var metadata = new MetadataHeadersCollection(trailers);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
             else if (grpcCall.HttpResponse is { } httpResponse
                   && httpResponse.DuckCast<HttpResponseStruct>().TrailingHeaders is { } trailingHeaders)
             {
                 var metadata = new HttpResponseHeadersCollection(trailingHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);

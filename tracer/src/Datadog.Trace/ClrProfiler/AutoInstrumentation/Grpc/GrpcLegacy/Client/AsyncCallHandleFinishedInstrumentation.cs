@@ -34,7 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         internal static CallTargetState OnMethodBegin<TTarget, TStatus>(TTarget instance, bool success, in TStatus clientSideStatus)
         {
             var tracer = Tracer.Instance;
-            if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (GrpcCoreApiVersionHelper.IsSupported && settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 var asyncCall = instance.DuckCast<AsyncCallStruct>();
 
@@ -46,14 +47,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 {
                     if (receivedStatus.Trailers is { Count: > 0 })
                     {
-                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                     }
                     else if (asyncCall.ResponseHeadersAsync is { IsCompleted: true } task)
                     {
                         var metadata = task.DuckCast<TaskOfMetadataStruct>().Result;
                         if (metadata?.Count > 0)
                         {
-                            span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                            span.SetHeaderTags(new MetadataHeadersCollection(metadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                         }
                     }
                 }

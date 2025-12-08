@@ -50,12 +50,12 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var values = new List<(string, string)>();
         if (profilingValue is not null)
         {
-            values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, profilingValue));
+            values.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, profilingValue));
         }
 
         if (ssiValue is not null)
         {
-            values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.SsiDeployed, ssiValue));
+            values.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.SsiDeployed, ssiValue));
         }
 
         var source = CreateConfigurationSource(values.ToArray());
@@ -78,13 +78,13 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var envValues = new List<(string, string)>();
         if (envProfilingEnabled is not null)
         {
-            envValues.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, envProfilingEnabled));
+            envValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, envProfilingEnabled));
         }
 
         var otherValues = new List<(string, string)>();
         if (configProfilingEnabled is not null)
         {
-            otherValues.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, configProfilingEnabled));
+            otherValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, configProfilingEnabled));
         }
 
         var envConfig = CreateConfigurationSource(envValues.ToArray());
@@ -109,18 +109,18 @@ public class ProfilerSettingsTests : SettingsTestsBase
     {
         var envValues = new List<(string, string)>
         {
-            (Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilerManagedActivationEnabled, "0")
+            (Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilerManagedActivationEnabled, "0")
         };
 
         if (envProfilingEnabled is not null)
         {
-            envValues.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, envProfilingEnabled));
+            envValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, envProfilingEnabled));
         }
 
         var otherValues = new List<(string, string)>();
         if (configProfilingEnabled is not null)
         {
-            otherValues.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, configProfilingEnabled));
+            otherValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, configProfilingEnabled));
         }
 
         var envConfig = CreateConfigurationSource(envValues.ToArray());

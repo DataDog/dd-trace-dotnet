@@ -33,7 +33,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
     {
         _apiRequestFactory = apiRequestFactory;
-        _isDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+        _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
         Log.Information("CIWriterHttpSender Initialized.");
     }
 

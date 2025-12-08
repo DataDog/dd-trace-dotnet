@@ -61,17 +61,17 @@ namespace Datadog.Trace.Configuration
             }
 
             SubscriptionId = GetSubscriptionId(source, telemetry);
-            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
-            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
+            ResourceGroup = config.WithKeys(PlatformKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = config.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
-            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
-            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
-            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            InstanceId = config.WithKeys(PlatformKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = config.WithKeys(PlatformKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = config.WithKeys(PlatformKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
             SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
-            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+            WebsiteSku = config.WithKeys(PlatformKeys.AzureAppService.WebsiteSku).AsString();
 
-            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
-            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
+            FunctionsWorkerRuntime = config.WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).AsString();
+            FunctionsExtensionVersion = config.WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion).AsString();
 
             if (FunctionsWorkerRuntime is not null && FunctionsExtensionVersion is not null)
             {
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Configuration
 
         public bool IsFunctionsApp { get; }
 
-        public string? WebsiteSKU { get; }
+        public string? WebsiteSku { get; }
 
         public string? FunctionsExtensionVersion { get; }
 
@@ -142,19 +142,19 @@ namespace Datadog.Trace.Configuration
         {
             if (subscriptionId == null)
             {
-                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", PlatformKeys.AzureAppService.WebsiteOwnerNameKey);
                 return null;
             }
 
             if (siteName == null)
             {
-                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
+                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", PlatformKeys.AzureAppService.SiteNameKey);
                 return null;
             }
 
             if (resourceGroup == null)
             {
-                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
+                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", PlatformKeys.AzureAppService.ResourceGroupKey);
                 return null;
             }
 
@@ -164,7 +164,7 @@ namespace Datadog.Trace.Configuration
         private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
-                              .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
+                              .WithKeys(PlatformKeys.AzureAppService.WebsiteOwnerNameKey)
                               .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
 
             if (!string.IsNullOrWhiteSpace(websiteOwner))
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Configuration
         public static bool IsRunningInAzureAppServices(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
             return !string.IsNullOrEmpty(siteName);
@@ -200,17 +200,17 @@ namespace Datadog.Trace.Configuration
         public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var siteName = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey)
+                           .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
             // "dotnet", "dotnet-isolated"
             var workerRuntime = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime)
+                           .WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime)
                            .AsString();
 
             // "~4", "~1"
             var extensionVersion = new ConfigurationBuilder(source, telemetry)
-                           .WithKeys(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion)
+                           .WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion)
                            .AsString();
 
             return !string.IsNullOrEmpty(siteName) &&

@@ -29,6 +29,10 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseGac { get; set; } = true;
 
+        public bool UsePartialTrust { get; set; } = false;
+
+        public bool UseLegacyCasModel { get; set; } = false;
+
         public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true, string url = "")
         {
             if (IisExpress.Process == null)
@@ -42,7 +46,7 @@ namespace Datadog.Trace.TestHelpers
                 Agent = MockTracerAgent.Create(null, initialAgentPort);
 
                 HttpPort = TcpPortProvider.GetOpenPort();
-                IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
+                IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
 
                 await EnsureServerStarted(sendHealthCheck, url);
             }

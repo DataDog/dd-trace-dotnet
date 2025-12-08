@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisAssemblyConflictSdkProjectSmokeTest : SmokeTestBase
     {

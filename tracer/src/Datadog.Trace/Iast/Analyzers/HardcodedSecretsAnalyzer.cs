@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
@@ -27,7 +28,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     private readonly TimeSpan _regexTimeout;
     private List<SecretRegex>? _secretRules = null;
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal HardcodedSecretsAnalyzer(TimeSpan regexTimeout)
     {
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
@@ -44,7 +45,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
             var userStrings = new UserStringInterop[UserStringsArraySize];
             while (!_processExit.Task.IsCompleted)
             {
-                if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
+                if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
                     int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
                     Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());

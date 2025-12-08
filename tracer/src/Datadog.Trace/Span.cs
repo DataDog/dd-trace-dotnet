@@ -47,10 +47,8 @@ namespace Datadog.Trace
 
             if (links is not null)
             {
-                foreach (var link in links)
-                {
-                    AddLink(link);
-                }
+                // We're in the constructor, so doing a direct replace allows optimizations vs using AddLink()
+                SpanLinks = [..links];
             }
 
             if (IsLogLevelDebugEnabled)

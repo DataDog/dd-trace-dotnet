@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -19,8 +19,7 @@
                     "value": "T Value"
                   }
                 },
-                "type": "Class`1",
-                "value": "Class`1"
+                "type": "Class`1"
               },
               "parameter2": {
                 "fields": {
@@ -37,12 +36,10 @@
                     "value": "Show Me!"
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               },
               "this": {
-                "type": "InterfaceProperties",
-                "value": "InterfaceProperties"
+                "type": "InterfaceProperties"
               }
             }
           },
@@ -59,8 +56,7 @@
                     "value": "T Value"
                   }
                 },
-                "type": "Class`1",
-                "value": "Class`1"
+                "type": "Class`1"
               },
               "parameter2": {
                 "fields": {
@@ -77,12 +73,10 @@
                     "value": "Show Me!"
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               },
               "this": {
-                "type": "InterfaceProperties",
-                "value": "InterfaceProperties"
+                "type": "InterfaceProperties"
               }
             },
             "locals": {
@@ -101,8 +95,7 @@
                     "value": "Value"
                   }
                 },
-                "type": "Class`1",
-                "value": "Class`1"
+                "type": "Class`1"
               },
               "iInterface": {
                 "fields": {
@@ -119,8 +112,7 @@
                     "value": ""
                   }
                 },
-                "type": "Class",
-                "value": "Class"
+                "type": "Class"
               }
             }
           }
@@ -140,6 +132,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InterfaceProperties",
@@ -171,8 +165,7 @@
                       "value": "T Value"
                     }
                   },
-                  "type": "Class`1",
-                  "value": "Class`1"
+                  "type": "Class`1"
                 },
                 "parameter2": {
                   "fields": {
@@ -189,12 +182,10 @@
                       "value": "Show Me!"
                     }
                   },
-                  "type": "Class",
-                  "value": "Class"
+                  "type": "Class"
                 },
                 "this": {
-                  "type": "InterfaceProperties",
-                  "value": "InterfaceProperties"
+                  "type": "InterfaceProperties"
                 }
               },
               "locals": {
@@ -209,8 +200,7 @@
                       "value": "Value"
                     }
                   },
-                  "type": "Class`1",
-                  "value": "Class`1"
+                  "type": "Class`1"
                 },
                 "iInterface": {
                   "fields": {
@@ -227,8 +217,7 @@
                       "value": ""
                     }
                   },
-                  "type": "Class",
-                  "value": "Class"
+                  "type": "Class"
                 }
               }
             }
@@ -251,6 +240,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InterfaceProperties",

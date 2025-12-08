@@ -19,19 +19,15 @@
               },
               soInfinite: {
                 notCapturedReason: depth,
-                type: InfiniteRecursion,
-                value: InfiniteRecursion
+                type: InfiniteRecursion
               }
             },
-            type: InfiniteRecursion,
-            value: InfiniteRecursion
+            type: InfiniteRecursion
           }
         },
-        type: InfiniteRecursion,
-        value: InfiniteRecursion
+        type: InfiniteRecursion
       }
     },
-    type: InfiniteRecursion,
-    value: InfiniteRecursion
+    type: InfiniteRecursion
   }
 }

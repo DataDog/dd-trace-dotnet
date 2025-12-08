@@ -1,167 +1,135 @@
 ﻿[
   {
-    Resource: {
-      Attributes: [
-        {
-          Key: service.name,
-          Value: {
-            StringValue: unknown_service:dotnet,
-            HasStringValue: true,
-            BytesValue: [],
-            ValueCase: StringValue
-          }
-        }
-      ]
-    },
-    ScopeMetrics: [
+    "resource_metrics": [
       {
-        Scope: {
-          Name: OpenTelemetryMetricsMeter,
-          Version: 1.0
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "string_value": "unknown_service:dotnet"
+              }
+            }
+          ]
         },
-        Metrics: [
+        "scope_metrics": [
           {
-            Name: example.async.counter,
-            Description: ,
-            Unit: ,
-            Sum: {
-              DataPoints: [
-                {
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsInt: 22,
-                  HasAsInt: true,
-                  ValueCase: AsInt
-                }
-              ],
-              AggregationTemporality: Cumulative,
-              IsMonotonic: true
+            "scope": {
+              "name": "OpenTelemetryMetricsMeter",
+              "version": "1.0"
             },
-            DataCase: Sum
-          },
-          {
-            Name: example.async.gauge,
-            Description: ,
-            Unit: ,
-            Gauge: {
-              DataPoints: [
-                {
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsDouble: 88.0,
-                  HasAsDouble: true,
-                  ValueCase: AsDouble
-                }
-              ]
-            },
-            DataCase: Gauge
-          },
-          {
-            Name: example.counter,
-            Description: ,
-            Unit: ,
-            Sum: {
-              DataPoints: [
-                {
-                  Attributes: [
+            "metrics": [
+              {
+                "name": "example.async.counter",
+                "sum": {
+                  "data_points": [
                     {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
-                    {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "22"
                     }
                   ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  AsInt: 11,
-                  HasAsInt: true,
-                  ValueCase: AsInt
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
                 }
-              ],
-              AggregationTemporality: Cumulative,
-              IsMonotonic: true
-            },
-            DataCase: Sum
-          },
-          {
-            Name: example.histogram,
-            Description: ,
-            Unit: ,
-            Histogram: {
-              DataPoints: [
-                {
-                  Attributes: [
+              },
+              {
+                "name": "example.async.gauge",
+                "gauge": {
+                  "data_points": [
                     {
-                      Key: http.method,
-                      Value: {
-                        StringValue: GET,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
-                    },
-                    {
-                      Key: rid,
-                      Value: {
-                        StringValue: 1234567890,
-                        HasStringValue: true,
-                        BytesValue: [],
-                        ValueCase: StringValue
-                      }
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_double": 88.0
                     }
-                  ],
-                  StartTimeUnixNano": <DateTimeOffset.Now>,
-                  TimeUnixNano": <DateTimeOffset.Now>,
-                  Count: 1,
-                  Sum: 33.0,
-                  HasSum: true,
-                  BucketCounts: [
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  ExplicitBounds: [
-                    0.0,
-                    5.0,
-                    10.0,
-                    25.0,
-                    50.0,
-                    75.0,
-                    100.0,
-                    250.0,
-                    500.0,
-                    1000.0
                   ]
                 }
-              ],
-              AggregationTemporality: Cumulative
-            },
-            DataCase: Histogram
+              },
+              {
+                "name": "example.counter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "11",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "example.histogram",
+                "histogram": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "count": "1",
+                      "sum": 33.0,
+                      "bucket_counts": [
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "1",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                      ],
+                      "explicit_bounds": [
+                        0.0,
+                        5.0,
+                        10.0,
+                        25.0,
+                        50.0,
+                        75.0,
+                        100.0,
+                        250.0,
+                        500.0,
+                        1000.0
+                      ],
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              }
+            ]
           }
-        ],
-        SchemaUrl: 
+        ]
       }
-    ],
-    SchemaUrl: 
+    ]
   }
 ]

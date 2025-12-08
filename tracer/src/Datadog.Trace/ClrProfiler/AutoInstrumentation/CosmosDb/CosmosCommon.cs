@@ -86,7 +86,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, Uri endpoint)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            var tracer = Tracer.Instance;
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -105,8 +107,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     query = queryDefinitionObj.QueryText;
                 }
 
-                var tracer = Tracer.Instance;
-
                 var parent = tracer.ActiveScope?.Span;
 
                 if (parent != null &&
@@ -119,15 +119,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     return new CallTargetState(null);
                 }
 
-                var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
+                var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
                 tags.ContainerId = containerId;
                 tags.DatabaseId = databaseId;
                 tags.SetEndpoint(endpoint);
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
 
                 var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
 

@@ -32,6 +32,7 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot/integrations"
     registries: "*"
+    open-pull-requests-limit: 1
     schedule:
       interval: "daily"
     labels:
@@ -55,6 +56,10 @@ updates:
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace"
+    # These cause dependabot to blow up for some unknown reason
+    exclude-paths:
+      - "../Datadog.Trace.Tools.Analyzers/**"
+      - "../Datadog.Trace.Tools.Analyzers.CodeFixes/**"
     registries: "*"
     schedule:
       interval: "daily"
@@ -81,6 +86,10 @@ updates:
 
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.OpenTracing"
+    # These cause dependabot to blow up for some unknown reason
+    exclude-paths:
+      - "../Datadog.Trace.Tools.Analyzers/**"
+      - "../Datadog.Trace.Tools.Analyzers.CodeFixes/**"
     registries: "*"
     schedule:
       interval: "daily"
@@ -104,6 +113,10 @@ updates:
 
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
+    # These cause dependabot to blow up for some unknown reason
+    exclude-paths:
+      - "../Datadog.Trace.Tools.Analyzers/**"
+      - "../Datadog.Trace.Tools.Analyzers.CodeFixes/**"
     registries: "*"
     schedule:
       interval: "daily"

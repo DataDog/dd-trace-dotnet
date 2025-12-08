@@ -1,14 +1,15 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <link.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdatomic.h>
-#include <pthread.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -58,13 +59,28 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
+// This variable is used to indicate to the profiler that the application is crashing
+// and it should not collect samples while the app is crashing.
+// At crash time, the .NET runtime calls fork() to create a child process which will
+// be in charge of collecting a crash dump (by calling execve()) while the parent is waiting
+// for the child to finish.
+// By calling fork(), the child process and the parent process will have their own address space,
+// which means that the child process won't be able to modify the parent process's variables.
+// We need a way to enable communication between the child and parent processes.
+// This is done by creating a shared memory region and use it as a flag to indicate that
+// the application is crashing.
+// This variable will be a pointer to that shared memory region.
 __attribute__((visibility("hidden")))
-atomic_int is_app_crashing = 0;
+int* is_app_crashing = NULL;
 
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
-    return functions_entered_counter + is_app_crashing;
+    int app_is_crashing = 0;
+    if (is_app_crashing != NULL) {
+        app_is_crashing = *is_app_crashing;
+    }
+    return functions_entered_counter + app_is_crashing;
 }
 
 #if defined(__aarch64__)
@@ -467,7 +483,9 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
         return __real_execve(pathname, argv, envp);
     }
 
-    is_app_crashing = 1;
+    if (is_app_crashing != NULL) {
+        *is_app_crashing = 1;
+    }
     // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
     // Count the number of arguments (the list ends with a null pointer)
@@ -671,6 +689,13 @@ static void init()
     __real_pthread_setattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_setattr_default_np");
     //__real_fork = __dd_dlsym(RTLD_NEXT, "fork");
 #endif
+    // if we failed at allocating memory for the shared variable
+    // the parent process won't be notified that the app is crashing.
+    is_app_crashing = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+                           MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (is_app_crashing != MAP_FAILED) {
+        *is_app_crashing = 0; // Initialize flag
+    }
 }
 
 static void check_init()

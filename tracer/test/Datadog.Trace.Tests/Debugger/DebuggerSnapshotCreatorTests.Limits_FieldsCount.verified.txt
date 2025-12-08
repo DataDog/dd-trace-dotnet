@@ -83,7 +83,6 @@
       }
     },
     notCapturedReason: fieldCount,
-    type: ClassWithLotsOFields,
-    value: ClassWithLotsOFields
+    type: ClassWithLotsOFields
   }
 }

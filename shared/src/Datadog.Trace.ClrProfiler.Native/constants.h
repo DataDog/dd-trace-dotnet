@@ -42,6 +42,7 @@ const shared::WSTRING default_exclude_processes[]{
     WStr("sqlagent.exe"),
     WStr("sqlbrowser.exe"),
     WStr("sqlservr.exe"),
+    WStr("VBCSCompiler"),
     WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),

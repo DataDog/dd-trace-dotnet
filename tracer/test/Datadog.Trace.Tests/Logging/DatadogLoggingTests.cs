@@ -29,6 +29,8 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class DatadogLoggingTests : IDisposable
     {
+        // Record this for restoring later
+        private readonly bool _originalIsDebugEnabled;
         private readonly ITestOutputHelper _output;
         private readonly ILogger _logger = null;
         private readonly CollectionSink _logEventSink;
@@ -37,10 +39,8 @@ namespace Datadog.Trace.Tests.Logging
         public DatadogLoggingTests(ITestOutputHelper output)
         {
             _output = output;
-            Environment.SetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays, "36");
-
-            GlobalSettings.Reload();
-
+            _originalIsDebugEnabled = GlobalSettings.Instance.DebugEnabled;
+            GlobalSettings.SetDebugEnabled(false);
             _logEventSink = new CollectionSink();
             _logger = new LoggerConfiguration()
                 .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch)
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Logging
         public void Dispose()
         {
             // On test cleanup, reload the GlobalSettings
-            GlobalSettings.Reload();
+            GlobalSettings.SetDebugEnabled(_originalIsDebugEnabled);
             _clockDisposable?.Dispose();
         }
 

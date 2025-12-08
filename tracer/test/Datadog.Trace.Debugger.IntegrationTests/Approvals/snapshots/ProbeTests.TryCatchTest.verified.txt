@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -14,8 +14,7 @@
                   "value": "TryCatchTest"
                 },
                 "this": {
-                  "type": "TryCatchTest",
-                  "value": "TryCatchTest"
+                  "type": "TryCatchTest"
                 }
               },
               "locals": {
@@ -48,6 +47,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -73,8 +74,7 @@
                   "value": "TryCatchTest"
                 },
                 "this": {
-                  "type": "TryCatchTest",
-                  "value": "TryCatchTest"
+                  "type": "TryCatchTest"
                 }
               },
               "locals": {
@@ -107,6 +107,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -132,8 +134,7 @@
                   "value": "TryCatchTest"
                 },
                 "this": {
-                  "type": "TryCatchTest",
-                  "value": "TryCatchTest"
+                  "type": "TryCatchTest"
                 }
               },
               "locals": {
@@ -166,6 +167,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
@@ -191,8 +194,7 @@
                   "value": "TryCatchTest"
                 },
                 "this": {
-                  "type": "TryCatchTest",
-                  "value": "TryCatchTest"
+                  "type": "TryCatchTest"
                 }
               },
               "locals": {
@@ -225,6 +227,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Test",
       "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",

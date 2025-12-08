@@ -35,7 +35,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && dataStreamsManager.IsEnabled
                 && activity.Instance is not null
                 && activity.OperationName == "Message"

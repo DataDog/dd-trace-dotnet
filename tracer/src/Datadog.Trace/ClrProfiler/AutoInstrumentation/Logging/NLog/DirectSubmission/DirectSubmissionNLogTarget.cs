@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         {
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal DirectSubmissionNLogTarget(
             IDirectSubmissionLogSink sink,
             DirectSubmissionLogLevel minimumLevel,

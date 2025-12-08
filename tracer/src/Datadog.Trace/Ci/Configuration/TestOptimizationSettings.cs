@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -25,20 +26,8 @@ namespace Datadog.Trace.Ci.Configuration
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
             Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
             Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
-
-            if (Enabled == false)
-            {
-                // If the CI Visibility is disabled we don't need to load the rest of the configuration
-                // and we can return early.
-                // This is useful to avoid loading the CIEnvironmentValues instance when calculating the test session name
-                // and avoid the overhead of loading the configuration on normal no CI Visibility mode.
-                TestSessionName = string.Empty;
-                return;
-            }
-
             Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
             AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
@@ -137,11 +126,6 @@ namespace Datadog.Trace.Ci.Configuration
             TestManagementEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementEnabled).AsBool();
             TestManagementAttemptToFixRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementAttemptToFixRetries).AsInt32();
         }
-
-        /// <summary>
-        /// Gets a value indicating whether the CI Visibility mode was explicitly enabled by configuration
-        /// </summary>
-        public bool? Enabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Agentless writer is going to be used.
@@ -361,7 +345,7 @@ namespace Datadog.Trace.Ci.Configuration
         private TracerSettings InitializeTracerSettings()
             => InitializeTracerSettings(GlobalConfigurationSource.Instance);
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal TracerSettings InitializeTracerSettings(IConfigurationSource source)
         {
             // This is a somewhat hacky way to "tell" TracerSettings that we're running in CI Visibility

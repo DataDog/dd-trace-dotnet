@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -19,8 +19,7 @@
                     "type": "String"
                   }
                 },
-                "type": "HasArgumentsAndLocals",
-                "value": "HasArgumentsAndLocals"
+                "type": "HasArgumentsAndLocals"
               }
             }
           },
@@ -37,8 +36,7 @@
                     "value": "First"
                   }
                 },
-                "type": "HasArgumentsAndLocals",
-                "value": "HasArgumentsAndLocals"
+                "type": "HasArgumentsAndLocals"
               }
             },
             "locals": {
@@ -64,6 +62,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasArgumentsAndLocals",

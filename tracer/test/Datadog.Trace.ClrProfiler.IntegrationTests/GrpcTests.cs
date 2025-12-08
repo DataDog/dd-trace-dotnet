@@ -413,16 +413,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Grpc);
             }
-            catch (ExitCodeException)
+            catch (ExitCodeException ex)
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
                 if (!string.IsNullOrEmpty(packageVersion)
                  && new Version(packageVersion) < new Version("2.43.0")
-                 && processResult is not null
-                 && processResult.StandardError.Contains("ObjectDisposedException"))
+                 && ex.Message.Contains("ObjectDisposedException"))
                 {
-                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                    throw new SkipException($"Hit race condition in GRPC deadline exceeded {ex.Message}");
                 }
 
                 throw;
@@ -457,16 +456,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Grpc);
                 }
             }
-            catch (ExitCodeException)
+            catch (ExitCodeException ex)
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
                 if ((!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) < new Version("2.43.0"))
-                    && processResult is not null
-                    && processResult.StandardError.Contains("ObjectDisposedException"))
+                    && ex.Message.Contains("ObjectDisposedException"))
                 {
-                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                    throw new SkipException($"Hit race condition in GRPC deadline exceeded {ex.Message}");
                 }
+
+                throw;
             }
         }
 

@@ -16,6 +16,10 @@ stages:
   - build
   - benchmarks
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 build-dd-trace-dotnet-microbenchmarks-ami:
   stage: build
   tags: ["arch:amd64"]
@@ -34,10 +38,8 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
     AWS_REGION: "us-east-1"
 
-    # TODO: Point to dd-trace-dotnet/micro after the branch below is merged
-    # to it
     # Branch containing a provision for building the AMI
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
     PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
 
@@ -81,7 +83,11 @@ run-benchmarks:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
@@ -95,12 +101,10 @@ run-benchmarks:
 
     AWS_REGION: "us-east-1"
 
-    # TODO: Point to dd-trace-dotnet/micro after the branch below is merged
-    # to it
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet-micro-bp-ui"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
     # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"

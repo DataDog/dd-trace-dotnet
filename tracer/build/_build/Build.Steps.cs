@@ -188,14 +188,14 @@ partial class Build
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
         (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
         // Everything else e.g. MaxOS, linux-x64 etc
         // Same as Windows just without the .NET FX
         (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -353,7 +353,7 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
-            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
@@ -1366,6 +1366,7 @@ partial class Build
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
@@ -1834,7 +1835,7 @@ partial class Build
 
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"({Filter}){dockerFilter}{armFilter}",
+                    (false, _) => $"({Filter})&(SkipInCI!=True){dockerFilter}{armFilter}",
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True

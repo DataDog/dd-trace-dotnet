@@ -69,14 +69,7 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         if (_continuationGenerator != null)
         {
             returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, in state);
-
-            // Restore previous scope and the previous DistributedTrace if there is a continuation
-            // This is used to mimic the ExecutionContext copy from the StateMachine
-            if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
-            {
-                rawAccess.Active = state.PreviousScope;
-                DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
-            }
+            IntegrationOptions.RestoreScopeFromAsyncExecution(in state);
         }
 
         if (_invokeDelegate != null)

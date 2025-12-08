@@ -13,7 +13,7 @@ namespace Benchmarks.OpenTelemetry.Api.Trace;
 /// Span benchmarks
 /// </summary>
 [MemoryDiagnoser]
-[BenchmarkCategory(Constants.TracerCategory)]
+[BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 public class ActivityBenchmark
 {
     private readonly ActivitySource activityBenchmarkSource = new("ActivityBenchmark");

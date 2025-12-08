@@ -8,7 +8,6 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -18,39 +17,51 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SnapshotUploadApi>();
 
-        private readonly IApiRequestFactory _apiRequestFactory;
-
         private SnapshotUploadApi(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            _apiRequestFactory = apiRequestFactory;
-            discoveryService.SubscribeToChanges(c => Endpoint = c.DebuggerEndpoint);
+            if (!StringUtil.IsNullOrEmpty(staticEndpoint))
+            {
+                Endpoint = staticEndpoint;
+            }
+            else if (discoveryService is not null)
+            {
+                discoveryService.SubscribeToChanges(c =>
+                {
+                    Endpoint = c.DebuggerV2Endpoint ?? c.DiagnosticsEndpoint;
+                    Log.Debug("SnapshotUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+                });
+            }
+            else
+            {
+                Log.Warning("SnapshotUploadApi: No discovery service or static endpoint available. Snapshots will not be uploaded until an endpoint is configured.");
+            }
         }
 
         public static SnapshotUploadApi Create(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint)
         {
-            return new SnapshotUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return new SnapshotUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
             var uri = BuildUri();
-            if (string.IsNullOrEmpty(uri))
+            if (StringUtil.IsNullOrEmpty(uri))
             {
                 Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            var request = _apiRequestFactory.Create(new Uri(uri));
-
             Log.Debug("SnapshotUploadApi: Sending snapshots to {Uri}", uri);
-            using var response = await request.PostAsync(data, MimeTypes.Json).ConfigureAwait(false);
+            using var response = await PostAsync(uri!, data).ConfigureAwait(false);
 
             if (response.StatusCode is >= 200 and <= 299)
             {

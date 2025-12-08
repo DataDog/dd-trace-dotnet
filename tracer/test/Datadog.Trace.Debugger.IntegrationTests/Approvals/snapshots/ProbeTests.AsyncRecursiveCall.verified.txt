@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "0"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             },
             "locals": {
@@ -52,6 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall",
@@ -76,8 +76,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             }
           },
@@ -88,8 +87,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             },
             "locals": {
@@ -115,6 +113,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall",
@@ -139,8 +139,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             }
           },
@@ -151,8 +150,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCall",
-                "value": "AsyncRecursiveCall"
+                "type": "AsyncRecursiveCall"
               }
             },
             "locals": {
@@ -178,6 +176,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall",

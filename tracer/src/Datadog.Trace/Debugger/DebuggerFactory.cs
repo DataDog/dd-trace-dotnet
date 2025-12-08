@@ -30,14 +30,16 @@ internal class DebuggerFactory
     internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-        var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceName, debuggerSettings);
 
-        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
+        var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
+        var logUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion);
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
 
@@ -46,7 +48,8 @@ internal class DebuggerFactory
             discoveryService: discoveryService,
             remoteConfigurationManager: remoteConfigurationManager,
             lineProbeResolver: lineProbeResolver,
-            snapshotUploader: debuggerUploader,
+            snapshotUploader: snapshotUploader,
+            logUploader: logUploader,
             diagnosticsUploader: diagnosticsUploader,
             probeStatusPoller: probeStatusPoller,
             configurationUpdater: configurationUpdater,
@@ -57,25 +60,40 @@ internal class DebuggerFactory
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-         && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
+         && tracerSettings.Manager.InitialExporterSettings.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
-            statsd = new NoOpStatsd();
+            statsd = NoOpStatsd.Instance;
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, prefix: DebuggerSettings.DebuggerMetricPrefix, telemtryFlushInterval: null);
+            // TODO: use StatsdManager to get automatic updating on exporter and other setting changes
+            statsd = StatsdFactory.CreateDogStatsdClient(
+                tracerSettings.Manager.InitialMutableSettings,
+                tracerSettings.Manager.InitialExporterSettings,
+                includeDefaultTags: false,
+                prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
+    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
     {
         var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
 
-        var debuggerSink = SnapshotUploader.Create(snapshotStatusSink, snapshotBatchUploader, debuggerSettings);
+        var debuggerSink = SnapshotUploader.Create(snapshotSink, snapshotBatchUploader, debuggerSettings);
+
+        return debuggerSink;
+    }
+
+    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    {
+        var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+        var logBatchUploader = BatchUploader.Create(logUploaderApi);
+
+        var debuggerSink = SnapshotUploader.Create(snapshotSink, logBatchUploader, debuggerSettings);
 
         return debuggerSink;
     }
@@ -101,7 +119,7 @@ internal class DebuggerFactory
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            tracerSettings.Exporter,
+            tracerSettings.Manager.InitialExporterSettings,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,

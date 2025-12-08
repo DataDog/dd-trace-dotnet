@@ -133,7 +133,7 @@ internal class CheckIisCommand : Command
 
             try
             {
-                appSettings = application.GetAppSettings();
+                appSettings = application.GetAppSettings(siteName);
             }
             catch (Exception ex)
             {
@@ -231,6 +231,11 @@ internal class CheckIisCommand : Command
             }
         }
 
+        if (!CheckApplicationConfiguration(application, siteName))
+        {
+            return 1;
+        }
+
         if (!GacCheck.Run())
         {
             return 1;
@@ -239,6 +244,38 @@ internal class CheckIisCommand : Command
         Utils.WriteSuccess(IisNoIssue);
 
         return 0;
+    }
+
+    internal static bool CheckApplicationConfiguration(Application application, string siteName)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine(SetupChecks);
+        try
+        {
+            // When we're in partial trust, all our _current_ checks can sometimes succeed, even though
+            // we never actually manage to load, so pre-check the web.config for potential issues.
+            var partialTrustDetails = application.GetPartialTrustDetails(siteName);
+            if (!string.Equals(partialTrustDetails.TrustLevel, "Full", StringComparison.OrdinalIgnoreCase))
+            {
+                Utils.WriteError(PartialTrustEnvironment(partialTrustDetails.TrustLevel));
+
+                return false;
+            }
+
+            if (partialTrustDetails.IslegacyCasModel)
+            {
+                Utils.WriteError(LegacyCasEnabled());
+                return false;
+            }
+
+            Utils.WriteInfo(IisFullTrust);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Utils.WriteError(ErrorReadingIisAppConfiguration(ex.Message));
+            return false;
+        }
     }
 
     internal static void CheckAppPoolsEnvVars(ApplicationPool? pool, IisManager? serverManager)

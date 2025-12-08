@@ -78,41 +78,17 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new MsmqV1Tags(spanKind),
             };
 
-        public AwsS3Tags CreateAwsS3Tags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsS3Tags(),
-            _ => new AwsS3V1Tags(spanKind),
-        };
+        public AwsS3Tags CreateAwsS3Tags(string spanKind) => new AwsS3Tags(spanKind);
 
-        public AwsSqsTags CreateAwsSqsTags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSqsTags(),
-            _ => new AwsSqsV1Tags(spanKind),
-        };
+        public AwsSqsTags CreateAwsSqsTags(string spanKind) => new AwsSqsTags(spanKind);
 
-        public AwsSnsTags CreateAwsSnsTags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSnsTags(),
-            _ => new AwsSnsV1Tags(spanKind),
-        };
+        public AwsSnsTags CreateAwsSnsTags(string spanKind) => new AwsSnsTags(spanKind);
 
-        public AwsEventBridgeTags CreateAwsEventBridgeTags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsEventBridgeTags(),
-            _ => new AwsEventBridgeV1Tags(spanKind),
-        };
+        public AwsEventBridgeTags CreateAwsEventBridgeTags(string spanKind) => new AwsEventBridgeTags(spanKind);
 
-        public AwsKinesisTags CreateAwsKinesisTags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),
-            _ => new AwsKinesisV1Tags(spanKind),
-        };
+        public AwsKinesisTags CreateAwsKinesisTags(string spanKind) => new AwsKinesisTags(spanKind);
 
-        public AwsStepFunctionsTags CreateAwsStepFunctionsTags(string spanKind) => _version switch
-        {
-            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsStepFunctionsTags(spanKind),
-            _ => new AwsStepFunctionsV1Tags(spanKind)
-        };
+        public AwsStepFunctionsTags CreateAwsStepFunctionsTags(string spanKind) => new AwsStepFunctionsTags(spanKind);
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)
             => _version switch
@@ -129,6 +105,16 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new AzureServiceBusV1Tags(),
             };
             tags.SpanKind = spanKind;
+            return tags;
+        }
+
+        public AzureEventHubsTags CreateAzureEventHubsTags(string spanKind)
+        {
+            var tags = _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureEventHubsTags(spanKind),
+                _ => new AzureEventHubsV1Tags(spanKind),
+            };
             return tags;
         }
     }

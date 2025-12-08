@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Tests.Agent
             const int bucketDurationSeconds = 1;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             int invocationCount = 0;
 
@@ -201,15 +202,15 @@ namespace Datadog.Trace.Tests.Agent
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 measuredChildSpan1.OperationName = "child.op1";
                 measuredChildSpan1.SetTag(Tags.Measured, "1");
                 measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 measuredChildSpan2.OperationName = "child.op2";
                 measuredChildSpan2.SetTag(Tags.Measured, "1");
                 measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -271,7 +272,7 @@ namespace Datadog.Trace.Tests.Agent
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
-                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
+                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service-http-client"), start);
                 httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
                 aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);
@@ -447,6 +448,7 @@ namespace Datadog.Trace.Tests.Agent
                 callback(new AgentConfiguration(
                              configurationEndpoint: "configurationEndpoint",
                              debuggerEndpoint: "debuggerEndpoint",
+                             debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
                              agentVersion: "agentVersion",

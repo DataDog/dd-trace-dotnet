@@ -29,18 +29,6 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
         private readonly JToken? _configuration;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonConfigurationSource"/>
-        /// class with the specified JSON string.
-        /// </summary>
-        /// <param name="json">A JSON string that contains configuration values.</param>
-        [PublicApi]
-        public JsonConfigurationSource(string json)
-            : this(json, ConfigurationOrigins.Code)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_Ctor_Json);
-        }
-
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
             : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
         {

@@ -88,12 +88,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                return TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? TracerManager.Instance.DefaultServiceName);
+                return TraceUtil.NormalizeTag(tracerSettings.Manager.InitialMutableSettings.DefaultServiceName);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                return TracerManager.Instance.DefaultServiceName;
+                return tracerSettings.Manager.InitialMutableSettings.DefaultServiceName;
             }
         }
 
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            if (tracerSettings.StartupDiagnosticLogEnabled)
+            if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }
@@ -197,6 +197,12 @@ namespace Datadog.Trace.Debugger
             {
                 if (_processExit.Task.IsCompleted)
                 {
+                    return;
+                }
+
+                if (ExceptionReplaySettings.AgentlessEnabled)
+                {
+                    Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
                     return;
                 }
 

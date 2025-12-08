@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "6"
               },
               "this": {
-                "type": "MultiProbeWithSpanTest",
-                "value": "MultiProbeWithSpanTest"
+                "type": "MultiProbeWithSpanTest"
               }
             },
             "staticFields": {
@@ -39,8 +38,7 @@
                 "value": "6"
               },
               "this": {
-                "type": "MultiProbeWithSpanTest",
-                "value": "MultiProbeWithSpanTest"
+                "type": "MultiProbeWithSpanTest"
               }
             },
             "locals": {
@@ -84,6 +82,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
@@ -109,8 +109,7 @@
                   "value": "6"
                 },
                 "this": {
-                  "type": "MultiProbeWithSpanTest",
-                  "value": "MultiProbeWithSpanTest"
+                  "type": "MultiProbeWithSpanTest"
                 }
               },
               "locals": {
@@ -153,6 +152,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
@@ -177,8 +178,7 @@
                 "value": "6"
               },
               "this": {
-                "type": "MultiProbeWithSpanTest",
-                "value": "MultiProbeWithSpanTest"
+                "type": "MultiProbeWithSpanTest"
               }
             },
             "locals": {
@@ -222,6 +222,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
@@ -252,6 +254,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",

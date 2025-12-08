@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 }
             }
 
-            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, analyticsEnabledWithGlobalSetting);
+            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.CurrentTraceSettings.Settings, analyticsEnabledWithGlobalSetting);
         }
 
         public static string GetGrpcMethodKind(int value)
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
 
         public static void RecordFinalClientSpanStatus(Tracer tracer, int grpcStatusCode, string errorMessage, Exception? ex)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || tracer.ActiveScope?.Span is not Span { Tags: GrpcClientTags } span)
             {
                 return;

@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -32,13 +33,12 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -56,7 +56,6 @@ namespace Datadog.Trace.Ci
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,
@@ -150,13 +149,12 @@ namespace Datadog.Trace.Ci
                 TracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
-                IDogStatsd statsd,
+                IStatsdManager statsd,
                 RuntimeMetricsWriter runtimeMetricsWriter,
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,
                 IDiscoveryService discoveryService,
                 DataStreamsManager dataStreamsManager,
-                string defaultServiceName,
                 IGitMetadataTagsProvider gitMetadataTagsProvider,
                 ITraceSampler traceSampler,
                 ISpanSampler spanSampler,
@@ -174,7 +172,6 @@ namespace Datadog.Trace.Ci
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,

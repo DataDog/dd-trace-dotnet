@@ -28,7 +28,7 @@ public class DiscoveryServiceTests
     [Fact]
     public async Task HandlesFlakyConfiguration()
     {
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x => new FaultyApiRequest(x),
             x => new TestApiRequest(x));
@@ -48,7 +48,7 @@ public class DiscoveryServiceTests
         var clientDropP0s = true;
         var version = "1.26.3";
         var evpProxyEndpoint = "evp_proxy/v4";
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x => new TestApiRequest(x, responseContent: GetConfig(clientDropP0s, version)));
 
@@ -78,7 +78,7 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireInitialCallbackIfInitialConfigNotFetched()
     {
         var notificationFired = false;
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x =>
             {
@@ -100,7 +100,7 @@ public class DiscoveryServiceTests
     public async Task FiresInitialCallbackIfInitialConfigAlreadyFetched()
     {
         int notificationCount = 0;
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x =>
             {
@@ -123,8 +123,8 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireCallbackOnRecheckIfNoChangesToConfig()
     {
         int notificationCount = 0;
-        var mutex1 = new ManualResetEventSlim();
-        var mutex3 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
+        using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
@@ -155,8 +155,8 @@ public class DiscoveryServiceTests
     public async Task FiresCallbackOnRecheckIfHasChangesToConfig()
     {
         var notificationCount = 0;
-        var mutex1 = new ManualResetEventSlim();
-        var mutex3 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
+        using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
@@ -187,8 +187,8 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireAfterUnsubscribing()
     {
         var notificationCount = 0;
-        var mutex1 = new ManualResetEventSlim();
-        var mutex3 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
+        using var mutex3 = new ManualResetEventSlim();
 
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
@@ -227,7 +227,7 @@ public class DiscoveryServiceTests
     [Fact]
     public async Task DisposesInATimelyManner()
     {
-        var mutex = new ManualResetEventSlim();
+        using var mutex = new ManualResetEventSlim();
 
         var factory = new TestRequestFactory(
             x =>
@@ -255,6 +255,7 @@ public class DiscoveryServiceTests
         var config1 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            debuggerV2Endpoint: "debuggerV2Endpoint",
             diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
@@ -271,6 +272,7 @@ public class DiscoveryServiceTests
         var config2 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            debuggerV2Endpoint: "debuggerV2Endpoint",
             diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
@@ -287,6 +289,7 @@ public class DiscoveryServiceTests
         var config3 = new AgentConfiguration(
             configurationEndpoint: "DIFFERENT",
             debuggerEndpoint: "DebuggerEndpoint",
+            debuggerV2Endpoint: "debuggerV2Endpoint",
             diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
@@ -307,7 +310,7 @@ public class DiscoveryServiceTests
     [Flaky("This is an inherently flaky test as it relies on time periods")]
     public async Task HandlesFailuresInApiWithBackoff()
     {
-        var mutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
+        using var mutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
         var factory = new TestRequestFactory(
             _ => new ThrowingRequest(),
             _ => new ThrowingRequest(),

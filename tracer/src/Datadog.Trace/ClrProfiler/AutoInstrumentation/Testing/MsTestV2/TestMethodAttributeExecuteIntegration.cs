@@ -10,8 +10,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -42,26 +44,96 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
 {
+    internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
+        => TestMethodAttributeExecuteAsyncIntegration.OnMethodBegin(instance, testMethod);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        returnValue = TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(instance, returnValue, exception, state).SafeGetResult();
+        IntegrationOptions.RestoreScopeFromAsyncExecution(in state);
+        return new CallTargetReturn<TReturn?>(returnValue);
+    }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName,
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTest.TestFramework"],
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTest.TestFramework"],
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "ExecuteAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName,
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestMethodAttributeExecuteAsyncIntegration
+#pragma warning restore SA1402
+{
     private static int _totalRetries = -1;
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
-        where TTestMethod : ITestMethod
     {
         if (!MsTestIntegration.IsEnabled || instance is SkipTestMethodExecutor)
         {
             return CallTargetState.GetDefault();
         }
 
-        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test })
+        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test } scope)
         {
             // Avoid a test inside another test
+            Common.Log.Warning("Avoid a test inside another test: {Span}.", scope.Span.ResourceName);
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false)));
+        var testMethodProxy = (ITestMethod?)testMethod.DuckAs<ITestMethodV4>() ?? testMethod.DuckAs<ITestMethodV3>();
+        if (testMethodProxy is null)
+        {
+            DuckTypeException.Throw("Failed to duck type the test method instance to ITestMethodV3 or ITestMethodV4.");
+        }
+
+        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: false));
+        return new CallTargetState(Tracer.Instance.InternalActiveScope, testRunnerState);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        return new CallTargetReturn<TReturn?>(returnValue);
+    }
+
+    internal static async Task<TReturn?> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
     {
         var testOptimization = TestOptimization.Instance;
         if (state.State is TestRunnerState { Test: not null } testMethodState)
@@ -77,7 +149,7 @@ public static class TestMethodAttributeExecuteIntegration
             {
                 Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to extract TestResult from return value");
                 testMethodState.Test.Close(TestStatus.Fail);
-                return new CallTargetReturn<TReturn?>(returnValue);
+                return returnValue;
             }
 
             MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
@@ -103,7 +175,7 @@ public static class TestMethodAttributeExecuteIntegration
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
                         var retryState = new RetryState();
-                        resultStatus = HandleTestResult(test, testMethod, testResult, exception, ref retryState);
+                        resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
                     }
                     else
@@ -146,7 +218,7 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         retryState.IsLastRetry = i == remainingRetries - 1;
                         Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
-                        RunRetry(testMethod, testMethodState, ref retryState, results, out _);
+                        await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
                     }
 
                     // Calculate final results
@@ -185,7 +257,7 @@ public static class TestMethodAttributeExecuteIntegration
                         }
 
                         Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
-                        RunRetry(testMethod, testMethodState, ref retryState, results, out var failedResult);
+                        var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
 
                         // If the retried test passed, we can stop the retries
                         if (!failedResult)
@@ -201,17 +273,28 @@ public static class TestMethodAttributeExecuteIntegration
             }
         }
 
-        return new CallTargetReturn<TReturn?>(returnValue);
+        return returnValue;
 
-        static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, ref RetryState retryState, List<IList> resultsCollection, out bool hasFailed)
+        static async Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
         {
             var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
             object? retryTestResult = null;
             Exception? retryException = null;
-            hasFailed = false;
+            var hasFailed = false;
             try
             {
-                retryTestResult = testMethodState.TestMethod.Invoke(null);
+                if (testMethodState.TestMethod is ITestMethodV4 testMethodV4)
+                {
+                    retryTestResult = await testMethodV4.InvokeAsync(null);
+                }
+                else if (testMethodState.TestMethod is ITestMethodV3 testMethodV3)
+                {
+                    retryTestResult = testMethodV3.Invoke(null);
+                }
+                else
+                {
+                    Common.Log.Warning("TestMethodAttributeExecuteIntegration: Unknown ITestMethod type {TestMethodType} for retry execution", testMethodState.TestMethod.GetType().FullName);
+                }
             }
             catch (Exception ex)
             {
@@ -229,7 +312,7 @@ public static class TestMethodAttributeExecuteIntegration
                             continue;
                         }
 
-                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException, ref retryState) == TestStatus.Fail)
+                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException, retryState) == TestStatus.Fail)
                         {
                             hasFailed = true;
                         }
@@ -239,7 +322,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
                 else
                 {
-                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException, ref retryState) == TestStatus.Fail)
+                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException, retryState) == TestStatus.Fail)
                     {
                         hasFailed = true;
                     }
@@ -247,11 +330,12 @@ public static class TestMethodAttributeExecuteIntegration
                     resultsCollection.Add(new List<object?> { retryTestResult });
                 }
             }
+
+            return hasFailed;
         }
     }
 
-    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, ref RetryState retryState)
-        where TTestMethod : ITestMethod
+    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, RetryState retryState)
         where TTestResult : ITestResult
     {
         var testException = testResult.TestFailureException?.InnerException ??
@@ -274,7 +358,13 @@ public static class TestMethodAttributeExecuteIntegration
         if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
         {
             test.SetName(testResult.DisplayName!);
-            MsTestIntegration.UpdateTestParameters(test, testMethod, testResult.DisplayName);
+            var testMethodProxy = (ITestMethod?)testMethod.DuckAs<ITestMethodV4>() ?? testMethod.DuckAs<ITestMethodV3>();
+            if (testMethodProxy is null)
+            {
+                DuckTypeException.Throw("Failed to duck type the test method instance to ITestMethodV3 or ITestMethodV4.");
+            }
+
+            MsTestIntegration.UpdateTestParameters(test, testMethodProxy, testResult.DisplayName);
         }
 
         try
@@ -445,57 +535,16 @@ public static class TestMethodAttributeExecuteIntegration
         public TimeSpan Elapsed => _clock.UtcNow - StartTime;
     }
 
-    private ref struct RetryState
+    private class RetryState
     {
-        public bool IsARetry;
-        public bool IsLastRetry;
-        public bool AllAttemptsPassed;
-        public bool AllRetriesFailed;
-        public bool IsAttemptToFix;
+        public bool IsARetry { get; set; } = false;
 
-        public RetryState()
-        {
-            IsARetry = false;
-            IsLastRetry = false;
-            AllAttemptsPassed = true;
-            AllRetriesFailed = true;
-            IsAttemptToFix = false;
-        }
+        public bool IsLastRetry { get; set; } = false;
+
+        public bool AllAttemptsPassed { get; set; } = true;
+
+        public bool AllRetriesFailed { get; set; } = true;
+
+        public bool IsAttemptToFix { get; set; } = false;
     }
-}
-
-/// <summary>
-/// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
-/// </summary>
-[InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
-    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
-    MethodName = "ExecuteAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
-    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
-    MinimumVersion = "14.0.0",
-    MaximumVersion = "14.*.*",
-    IntegrationName = MsTestIntegration.IntegrationName)]
-[InstrumentMethod(
-    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
-    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
-    MethodName = "ExecuteAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
-    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
-    MinimumVersion = "14.0.0",
-    MaximumVersion = "14.*.*",
-    IntegrationName = MsTestIntegration.IntegrationName,
-    CallTargetIntegrationKind = CallTargetKind.Derived)]
-[Browsable(false)]
-[EditorBrowsable(EditorBrowsableState.Never)]
-#pragma warning disable SA1402
-public static class TestMethodAttributeExecuteAsyncIntegration
-#pragma warning restore SA1402
-{
-    internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
-        where TTestMethod : ITestMethod
-        => TestMethodAttributeExecuteIntegration.OnMethodBegin(instance, testMethod);
-
-    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        => TestMethodAttributeExecuteIntegration.OnMethodEnd(instance, returnValue, exception, in state).GetReturnValue();
 }

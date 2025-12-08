@@ -8,6 +8,10 @@ using System.Text;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.OpenTelemetry.Logs;
+#endif
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
     internal class LoggerDirectSubmissionLogEvent : DirectSubmissionLogEvent
@@ -18,6 +22,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         {
             _serializedEvent = serializedEvent;
         }
+
+#if NETCOREAPP3_1_OR_GREATER
+        public LogPoint? OtlpLog { get; set; }
+#endif
 
         public override void Format(StringBuilder sb, LogFormatter formatter)
         {

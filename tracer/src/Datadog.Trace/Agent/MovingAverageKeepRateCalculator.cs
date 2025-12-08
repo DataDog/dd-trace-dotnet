@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -106,6 +107,7 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Update the current rate. Internal for testing only. Should not be called in normal usage.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal void UpdateBucket()
         {
             var index = _index;

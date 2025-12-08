@@ -12,9 +12,14 @@ namespace Datadog.Trace.Debugger.Upload
 {
     internal static class DebuggerUploadApiFactory
     {
-        internal static IBatchUploadApi CreateSnapshotUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        internal static IBatchUploadApi CreateSnapshotUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService? discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string? staticEndpoint = null)
         {
-            return SnapshotUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return SnapshotUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
+        }
+
+        internal static IBatchUploadApi CreateLogUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        {
+            return LogUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
         internal static IBatchUploadApi CreateDiagnosticsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)

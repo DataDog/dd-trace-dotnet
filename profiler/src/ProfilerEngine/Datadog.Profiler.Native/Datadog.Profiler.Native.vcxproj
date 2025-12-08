@@ -254,11 +254,16 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="HeapSnapshotManager.h" />
+    <ClInclude Include="IGCDumpListener.h" />
+    <ClInclude Include="IHeapSnapshotManager.h" />
+    <ClInclude Include="INativeThreadList.h" />
     <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="NativeThreadList.h" />
     <ClInclude Include="NetworkActivity.h" />
     <ClInclude Include="NetworkProvider.h" />
     <ClInclude Include="NetworkRequestInfo.h" />
@@ -408,7 +413,9 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="HeapSnapshotManager.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NativeThreadList.cpp" />
     <ClCompile Include="NetworkActivity.cpp" />
     <ClCompile Include="NetworkProvider.cpp" />
     <ClCompile Include="NetworkRequestInfo.cpp" />

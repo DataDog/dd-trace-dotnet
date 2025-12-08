@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -46,29 +48,11 @@ public class TraceChunkModelTests
     }
 
     [Fact]
-    public void EmptyArray()
-    {
-        // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
-        // so we're testing both to be sure
-        var spans = new ArraySegment<Span>(Array.Empty<Span>());
-        var traceChunk = new TraceChunkModel(spans);
-
-        traceChunk.SpanCount.Should().Be(0);
-        traceChunk.HashSetInitialized.Should().BeFalse();
-        traceChunk.LocalRootSpanId.Should().BeNull();
-        traceChunk.ContainsLocalRootSpan.Should().BeFalse();
-
-        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
-
-        traceChunk.HashSetInitialized.Should().BeFalse();
-    }
-
-    [Fact]
     public void NewArraySegment()
     {
         // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
         // so we're testing both to be sure
-        var spans = new ArraySegment<Span>();
+        var spans = new SpanCollection();
         var traceChunk = new TraceChunkModel(spans);
 
         traceChunk.SpanCount.Should().Be(0);
@@ -84,7 +68,7 @@ public class TraceChunkModelTests
     [Fact]
     public void DefaultArraySegment()
     {
-        ArraySegment<Span> spans = default;
+        SpanCollection spans = default;
         var traceChunk = new TraceChunkModel(spans);
 
         traceChunk.SpanCount.Should().Be(0);
@@ -478,21 +462,21 @@ public class TraceChunkModelTests
                         CreateSpan(traceId: 1, spanId: 10, parentId: 5),
                     };
 
-        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), samplingPriority);
+        var traceChunk = new TraceChunkModel(new SpanCollection(spans), samplingPriority);
 
         traceChunk.SamplingPriority.Should().Be(samplingPriority);
     }
 
     private static TraceChunkModel CreateTraceChunk(IEnumerable<Span> spans, Span root)
     {
-        var spansArray = new ArraySegment<Span>(spans.ToArray());
+        var spansArray = new SpanCollection(spans.ToArray());
         return new TraceChunkModel(spansArray, root);
     }
 
     private Span CreateSpan(ulong traceId, ulong spanId, ulong parentId)
     {
         var parentContent = new SpanContext(traceId, parentId);
-        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+        var traceContext = new TraceContext(new StubDatadogTracer());
         var spanContext = new SpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
         return new Span(spanContext, DateTimeOffset.UtcNow);
     }

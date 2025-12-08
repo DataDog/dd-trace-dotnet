@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -39,10 +39,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -70,10 +72,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -226,10 +230,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -259,7 +265,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -288,10 +294,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -319,10 +327,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -352,7 +362,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -381,10 +391,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -412,10 +424,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -445,7 +459,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -474,10 +488,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -505,10 +521,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -538,7 +556,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -567,10 +585,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -598,10 +618,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -631,7 +653,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -660,10 +682,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -691,10 +715,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -724,7 +750,7 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
@@ -753,10 +779,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -784,10 +812,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -815,10 +845,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.peer.service.source: queuename
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Vendors.Datadog.Sketches;
@@ -18,12 +20,10 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
     internal class DataStreamsMessagePackFormatter
     {
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
-        private readonly byte[] _environmentValueBytes;
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
         private readonly long _productMask;
         private readonly bool _isInDefaultState;
-
-        private readonly byte[] _serviceValueBytes;
+        private readonly bool _writeProcessTags;
 
         // private readonly byte[] _primaryTagBytes = StringEncoding.UTF8.GetBytes("PrimaryTag");
         // private readonly byte[] _primaryTagValueBytes;
@@ -50,19 +50,40 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _backlogTagsBytes = StringEncoding.UTF8.GetBytes("Tags");
         private readonly byte[] _backlogValueBytes = StringEncoding.UTF8.GetBytes("Value");
         private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
+        private readonly byte[] _processTagsBytes = StringEncoding.UTF8.GetBytes("ProcessTags");
         private readonly byte[] _isInDefaultStateBytes = StringEncoding.UTF8.GetBytes("IsInDefaultState");
 
-        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings, string defaultServiceName)
+        private byte[] _environmentValueBytes;
+        private byte[] _serviceValueBytes;
+
+        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
-            var env = tracerSettings.Environment;
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
-            _environmentValueBytes = string.IsNullOrEmpty(env)
-                                         ? []
-                                         : StringEncoding.UTF8.GetBytes(env);
-            _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
+            UpdateSettings(tracerSettings.Manager.InitialMutableSettings);
+            // Not disposing the subscription on the basis this is never cleaned up
+            tracerSettings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdateSettings(mutable);
+                }
+            });
+
             _productMask = GetProductsMask(tracerSettings, profilerSettings);
             _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+            _writeProcessTags = tracerSettings.PropagateProcessTags;
+
+            [MemberNotNull(nameof(_environmentValueBytes))]
+            [MemberNotNull(nameof(_serviceValueBytes))]
+            void UpdateSettings(MutableSettings settings)
+            {
+                var env = StringUtil.IsNullOrEmpty(settings.Environment) ? [] : StringEncoding.UTF8.GetBytes(settings.Environment);
+                Interlocked.Exchange(ref _environmentValueBytes!, env);
+
+                var service = StringUtil.IsNullOrEmpty(settings.DefaultServiceName) ? [] : StringEncoding.UTF8.GetBytes(settings.DefaultServiceName);
+                Interlocked.Exchange(ref _serviceValueBytes!, service);
+            }
         }
 
         // should be the same across all languages
@@ -94,13 +115,14 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
         {
+            var withProcessTags = _writeProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags);
             var bytesWritten = 0;
 
             // Should be in sync with Java
-            // https://github.com/DataDog/dd-trace-java/blob/a4b7a7b177709e6bdfd9261904cb9a777e4febbe/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java#L35
+            // https://github.com/DataDog/dd-trace-java/blob/master/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java
             // -1 because we don't have a primary tag
             // -1 because service name override is not supported
-            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 7);
+            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 7 + (withProcessTags ? 1 : 0));
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentValueBytes);
@@ -193,6 +215,12 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, _productMask);
+
+            if (withProcessTags)
+            {
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _processTagsBytes);
+                bytesWritten += MessagePackBinary.WriteString(stream, ProcessTags.SerializedTags);
+            }
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _isInDefaultStateBytes);
             bytesWritten += MessagePackBinary.WriteBoolean(stream, _isInDefaultState);

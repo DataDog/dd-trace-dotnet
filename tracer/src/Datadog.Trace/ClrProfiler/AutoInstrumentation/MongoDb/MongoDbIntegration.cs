@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         internal const string Major2 = "2";
         internal const string Major3 = "3";
+        internal const string Major3Minor5 = "3.5"; // Refactor of internal methods + dropped support for v4 of mongodb
         internal const string Major2Minor1 = "2.1";
         internal const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
         internal const string MongoDbClientV2Assembly = "MongoDB.Driver.Core";
@@ -39,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             var tracer = Tracer.Instance;
 
-            if (wireProtocol is null || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (wireProtocol is null || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -79,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 tags.Host = host;
                 tags.Port = port;
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }

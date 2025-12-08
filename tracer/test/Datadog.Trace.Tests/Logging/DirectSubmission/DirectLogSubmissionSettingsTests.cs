@@ -155,11 +155,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Theory]
-        [InlineData("", DirectLogSubmissionSettings.DefaultBatchSizeLimit)]
-        [InlineData(null, DirectLogSubmissionSettings.DefaultBatchSizeLimit)]
-        [InlineData("invalid", DirectLogSubmissionSettings.DefaultBatchSizeLimit)]
-        [InlineData("0", DirectLogSubmissionSettings.DefaultBatchSizeLimit)]
-        [InlineData("-1", DirectLogSubmissionSettings.DefaultBatchSizeLimit)]
+        [InlineData("", DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit)]
+        [InlineData(null, DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit)]
+        [InlineData("invalid", DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit)]
+        [InlineData("0", DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit)]
+        [InlineData("-1", DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit)]
         [InlineData("256", 256)]
         public void DirectLogSubmissionBatchSizeLimit(string value, int expected)
         {
@@ -170,11 +170,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Theory]
-        [InlineData("", DirectLogSubmissionSettings.DefaultQueueSizeLimit)]
-        [InlineData(null, DirectLogSubmissionSettings.DefaultQueueSizeLimit)]
-        [InlineData("invalid", DirectLogSubmissionSettings.DefaultQueueSizeLimit)]
-        [InlineData("0", DirectLogSubmissionSettings.DefaultQueueSizeLimit)]
-        [InlineData("-1", DirectLogSubmissionSettings.DefaultQueueSizeLimit)]
+        [InlineData("", DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit)]
+        [InlineData(null, DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit)]
+        [InlineData("invalid", DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit)]
+        [InlineData("0", DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit)]
+        [InlineData("-1", DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit)]
         [InlineData("256", 256)]
         public void DirectLogSubmissionQueueSizeLimit(string value, int expected)
         {
@@ -185,11 +185,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Theory]
-        [InlineData("", DirectLogSubmissionSettings.DefaultBatchPeriodSeconds)]
-        [InlineData(null, DirectLogSubmissionSettings.DefaultBatchPeriodSeconds)]
-        [InlineData("invalid", DirectLogSubmissionSettings.DefaultBatchPeriodSeconds)]
-        [InlineData("0", DirectLogSubmissionSettings.DefaultBatchPeriodSeconds)]
-        [InlineData("-1", DirectLogSubmissionSettings.DefaultBatchPeriodSeconds)]
+        [InlineData("", DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds)]
+        [InlineData(null, DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds)]
+        [InlineData("invalid", DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds)]
+        [InlineData("0", DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds)]
+        [InlineData("-1", DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds)]
         [InlineData("256", 256)]
         public void DirectLogSubmissionBatchPeriod(string value, int expected)
         {
@@ -212,7 +212,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Fact]
         public void ValidSettingsAreValid()
         {
-            var settings = LogSettingsHelper.GetValidSettings();
+            var settings = LogSettingsHelper.GetValidSettings().LogSubmissionSettings;
             settings.IsEnabled.Should().BeTrue();
         }
 
@@ -376,7 +376,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
 
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+            tracerSettings.Manager.InitialMutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
     }
 }

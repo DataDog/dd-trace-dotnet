@@ -41,6 +41,7 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
+#include "NativeThreadList.h"
 #include "NetworkProvider.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -199,6 +200,7 @@ void CorProfilerCallback::InitializeServices()
         return _pCodeHotspotsThreadList->Count();
     });
 
+    _pNativeThreadList = RegisterService<NativeThreadList>();
     _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
@@ -218,7 +220,9 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+        // PERF: use a synchronized pool to avoid race conditions when adding samples to the profile.
+        auto pool = _memoryResourceManager.GetSynchronizedPool(1000, sizeof(RawWallTimeSample));
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool);
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
@@ -342,7 +346,20 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        if (_pConfiguration->IsHeapSnapshotEnabled())
+        {
+            _pHeapSnapshotManager = RegisterService<HeapSnapshotManager>(
+                _pConfiguration.get(),
+                _pCorProfilerInfoEvents,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _metricsRegistry,
+                _pNativeThreadList
+                );
+        }
+
+        // GC profiling is needed for both GC provider and heap snapshots
+        if ((_pHeapSnapshotManager != nullptr) || _pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
@@ -390,7 +407,8 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pNetworkProvider
+            _pNetworkProvider,
+            _pHeapSnapshotManager
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -400,6 +418,10 @@ void CorProfilerCallback::InitializeServices()
         if (_pLiveObjectsProvider != nullptr)
         {
             _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
+        }
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pEventPipeEventsManager->Register(_pHeapSnapshotManager);
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
@@ -566,7 +588,8 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pMetadataProvider.get(),
         _pSsiManager.get(),
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pHeapSnapshotManager
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -732,6 +755,14 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
     {
         _IsManagedConfigurationSet = true;
 
+        // nothing to do when managed configuration is disabled
+        // i.e. the tracer is not even supposed to send Stable Configuration
+        if (!_pConfiguration->IsManagedActivationEnabled())
+        {
+            Log::Info("Managed layer provides Stable Configuration even when managed activation is disabled.");
+            return false;
+        }
+
         // Take into account the enablement computed by the managed layer:
         Log::Info("Managed layer provides Stable Configuration.");
         EnablementStatus enablementStatus =
@@ -860,6 +891,7 @@ bool CorProfilerCallback::DisposeServices()
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
+    _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
     _pApplicationStore = nullptr;
 
@@ -1380,7 +1412,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
         _pConfiguration->IsHttpProfilingEnabled() ||
-        _pConfiguration->IsWaitHandleProfilingEnabled()
+        _pConfiguration->IsWaitHandleProfilingEnabled() ||
+        _pConfiguration->IsHeapSnapshotEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1477,6 +1510,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
         //  - WaitHandle events for .NET 9+
         //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //  - HTTP events via System.Net.Http provider
+        //  - Bulkxxx events for heap snapshots
         //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1523,7 +1558,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-
             providerCount = 6;
             providers =
             {
@@ -1588,6 +1622,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             _session = 0;
             Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, ".");
             return hr;
+        }
+
+        // keep track of the keywords and verbosity so that we will be able to reset what is stored
+        // by the GC and the CLR after a heap snapshot - see https://github.com/dotnet/runtime/issues/121462
+        // for more details
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pHeapSnapshotManager->SetRuntimeSessionParameters(activatedKeywords, verbosity);
         }
     }
     else
@@ -2012,6 +2054,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #else
     dupOsThreadHandle = origOsThreadHandle;
 #endif
+
+    // due to reverse p/invoke done by the EventPipe stack, it is possible that some of our native
+    // threads such as the HeapSnapshotManager one could be seen as "managed" by the CLR.
+    if (_pNativeThreadList->Contains(osThreadId))
+    {
+        return S_OK;
+    }
 
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed

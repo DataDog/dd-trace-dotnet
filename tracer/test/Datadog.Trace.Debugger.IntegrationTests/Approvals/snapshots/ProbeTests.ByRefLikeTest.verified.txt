@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,8 +10,7 @@
             "10": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }
@@ -34,6 +33,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.ByRefLikeTest",
@@ -55,8 +56,7 @@
             "11": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }
@@ -79,6 +79,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.ByRefLikeTest",
@@ -100,8 +102,7 @@
             "12": {
               "arguments": {
                 "this": {
-                  "type": "ByRefLikeTest",
-                  "value": "ByRefLikeTest"
+                  "type": "ByRefLikeTest"
                 }
               }
             }
@@ -124,6 +125,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.ByRefLikeTest",

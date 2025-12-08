@@ -352,7 +352,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-            AssertLogsForProfilingEnablement(runner.Environment.LogDir, "Profiler is disabled via Stable Configuration");
+            AssertProfilingLogsContains(runner.Environment.LogDir, "Profiler is disabled via Stable Configuration");
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -374,7 +374,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().NotBe(0);
-            AssertLogsForProfilingEnablement(runner.Environment.LogDir, "Profiler manually enabled");
+            AssertProfilingLogsContains(runner.Environment.LogDir, "Profiler manually enabled");
             // "Profiling delayed" start should follow
         }
 
@@ -396,23 +396,60 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
-            AssertLogsForProfilingEnablement(runner.Environment.LogDir, "Profiler enabled by SSI");
+            AssertProfilingLogsContains(runner.Environment.LogDir, "Profiler enabled by SSI");
         }
 
-        private void AssertLogsForProfilingEnablement(string logDir, string expectedEnablement)
+        [TestAppFact("Samples.Computer01")]
+        public void StableConfigWhenKillSwitchReadsEnvVars(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            List<Serie> series = [];
+            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
+            {
+                var s = GetRequestText(ctx.Value.Request);
+                series = GetSeries(s);
+            };
+
+            runner.Run(agent);
+            series.Should().BeEmpty();
+            agent.NbCallsOnProfilingEndpoint.Should().NotBe(0);
+
+            AssertProfilingLogsDoNotContain(runner.Environment.LogDir, "SetConfiguration called by Managed code");
+        }
+
+        private void AssertProfilingLogsDoNotContain(string logDir, string unexpectedContent)
         {
             var logFile = Directory.GetFiles(logDir)
                                    .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
             var found = false;
             foreach (var line in File.ReadLines(logFile))
             {
-                if (line.Contains(expectedEnablement))
+                if (line.Contains(unexpectedContent))
                 {
                     found = true;
                 }
             }
 
-            Assert.True(found, $"No log line found for profiler enablement: {expectedEnablement}");
+            Assert.False(found, $"Log should not contain: {unexpectedContent}");
+        }
+
+        private void AssertProfilingLogsContains(string logDir, string expectedContent)
+        {
+            var logFile = Directory.GetFiles(logDir)
+                                   .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+            var found = false;
+            foreach (var line in File.ReadLines(logFile))
+            {
+                if (line.Contains(expectedContent))
+                {
+                    found = true;
+                }
+            }
+
+            Assert.True(found, $"No log line contains: {expectedContent}");
         }
 
         private static string GetStableConfigFilePath(TestApplicationRunner runner, string profilingEnabledValue)

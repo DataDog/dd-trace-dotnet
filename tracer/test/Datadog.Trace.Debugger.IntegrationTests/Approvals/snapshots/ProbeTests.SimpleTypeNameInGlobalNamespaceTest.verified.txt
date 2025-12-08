@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "Run"
               },
               "this": {
-                "type": "SimpleTypeNameInGlobalNamespaceTest",
-                "value": "SimpleTypeNameInGlobalNamespaceTest"
+                "type": "SimpleTypeNameInGlobalNamespaceTest"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "Run"
               },
               "this": {
-                "type": "SimpleTypeNameInGlobalNamespaceTest",
-                "value": "SimpleTypeNameInGlobalNamespaceTest"
+                "type": "SimpleTypeNameInGlobalNamespaceTest"
               }
             },
             "locals": {
@@ -54,8 +52,7 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "IntentionalDebuggerException",
-                "value": "IntentionalDebuggerException"
+                "type": "IntentionalDebuggerException"
               },
               "arr": {
                 "elements": [
@@ -103,6 +100,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodToInstrument",
       "name": "Samples.Probes.TestRuns.SmokeTests.SimpleTypeNameInGlobalNamespaceTest",

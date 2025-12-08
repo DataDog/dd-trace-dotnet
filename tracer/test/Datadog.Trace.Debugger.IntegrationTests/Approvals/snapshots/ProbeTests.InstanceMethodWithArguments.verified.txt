@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "Last"
               },
               "this": {
-                "type": "InstanceMethodWithArguments",
-                "value": "InstanceMethodWithArguments"
+                "type": "InstanceMethodWithArguments"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "Last"
               },
               "this": {
-                "type": "InstanceMethodWithArguments",
-                "value": "InstanceMethodWithArguments"
+                "type": "InstanceMethodWithArguments"
               }
             },
             "locals": {
@@ -52,6 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InstanceMethodWithArguments",
@@ -77,8 +77,7 @@
                   "value": "Last"
                 },
                 "this": {
-                  "type": "InstanceMethodWithArguments",
-                  "value": "InstanceMethodWithArguments"
+                  "type": "InstanceMethodWithArguments"
                 }
               }
             }
@@ -101,6 +100,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.InstanceMethodWithArguments",

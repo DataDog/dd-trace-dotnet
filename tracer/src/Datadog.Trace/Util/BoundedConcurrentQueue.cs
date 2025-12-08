@@ -22,6 +22,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Util
 {
@@ -42,7 +43,7 @@ namespace Datadog.Trace.Util
             _queueLimit = queueLimit;
         }
 
-        // Internal for testing
+        [TestingOnly]
         internal ConcurrentQueue<T> InnerQueue => _queue;
 
         public int Count => _counter;

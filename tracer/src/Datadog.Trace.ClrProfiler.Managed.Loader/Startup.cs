@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -16,8 +17,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string AssemblyName = "Datadog.Trace, Version=3.33.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
+        private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
         private static int _startupCtorInitialized;
 
@@ -50,19 +52,29 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // we require dynamic code so we should just bail out ASAP.
                     // This doesn't tell us for sure (the switch is only available on .NET 8+) but it's a minimum requirement
-                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Automatic instrumentation will be disabled");
+                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Datadog SDK will be disabled.");
                     return;
                 }
 #endif
 
-                ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
-                if (ManagedProfilerDirectory is null)
+                var envVars = new EnvironmentVariableProvider(logErrors: true);
+                var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+
+                if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                    StartupLogger.Log("{0} not set. Datadog SDK will be disabled.", TracerHomePathKey);
                     return;
                 }
 
-                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+                ManagedProfilerDirectory = ComputeTfmDirectory(tracerHomeDirectory);
+
+                if (!Directory.Exists(ManagedProfilerDirectory))
+                {
+                    StartupLogger.Log("Datadog.Trace.dll TFM directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
+                    return;
+                }
+
+                StartupLogger.Debug("Resolved Datadog.Trace.dll TFM directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {
@@ -84,18 +96,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 #endif
 
-                var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
-                if (runInAas)
+                const string methodName = "Initialize";
+                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey) ?? false;
+
+                if (usingAasSiteExtension)
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                    StartupLogger.Log("Invoking managed method to start external processes.");
-                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                    const string processManagerTypeName = "Datadog.Trace.AgentProcessManager";
+                    StartupLogger.Log("Invoking {0}.{1}() to start external processes.", processManagerTypeName, methodName);
+                    TryInvokeManagedMethod(processManagerTypeName, methodName, "Datadog.Trace.AgentProcessManagerLoader");
                 }
 
-                // We need to invoke the managed tracer regardless of whether tracing is enabled
+                // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
-                StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                const string instrumentationTypeName = "Datadog.Trace.ClrProfiler.Instrumentation";
+                StartupLogger.Log("Invoking {0}.{1}() to initialize instrumentation.", instrumentationTypeName, methodName);
+                TryInvokeManagedMethod(instrumentationTypeName, methodName, "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
             {
@@ -173,32 +189,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 return assembly;
             }
-        }
-
-        private static string? ReadEnvironmentVariable(string key)
-        {
-            try
-            {
-                return Environment.GetEnvironmentVariable(key);
-            }
-            catch (Exception ex)
-            {
-                StartupLogger.Log(ex, "Error while loading environment variable " + key);
-            }
-
-            return null;
-        }
-
-        private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
-        {
-            var value = ReadEnvironmentVariable(key);
-
-            return value switch
-            {
-                "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
-                "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
-                _ => defaultValue
-            };
         }
     }
 }

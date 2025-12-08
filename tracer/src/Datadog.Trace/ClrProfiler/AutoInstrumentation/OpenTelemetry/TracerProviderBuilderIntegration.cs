@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TTracerProviderBuilder>(TTarget instance, TTracerProviderBuilder tracerProviderBuilder)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 if (_cachedAddProcessorDelegate is not null
                     && _cachedProcessorType is not null)

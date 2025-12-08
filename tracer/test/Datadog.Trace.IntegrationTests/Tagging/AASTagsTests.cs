@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -32,7 +33,7 @@ public class AASTagsTests
     {
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -49,7 +50,7 @@ public class AASTagsTests
     public async Task NoAasTagsIfNotInAASContext()
     {
         var settings = new TracerSettings(null);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -73,7 +74,7 @@ public class AASTagsTests
 
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         ISpan span1;
@@ -202,12 +203,12 @@ public class AASTagsTests
             // This is a needed configuration for the AAS extension
             { ConfigurationKeys.ApiKey, "1" },
             { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
-            { ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace" },
-            { ConfigurationKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup" },
-            { ConfigurationKeys.AzureAppService.SiteNameKey, "SiteName" },
-            { ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows" },
-            { ConfigurationKeys.AzureAppService.InstanceIdKey, "InstanceId" },
-            { ConfigurationKeys.AzureAppService.InstanceNameKey, "InstanceName" },
+            { PlatformKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace" },
+            { PlatformKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup" },
+            { PlatformKeys.AzureAppService.SiteNameKey, "SiteName" },
+            { PlatformKeys.AzureAppService.OperatingSystemKey, "windows" },
+            { PlatformKeys.AzureAppService.InstanceIdKey, "InstanceId" },
+            { PlatformKeys.AzureAppService.InstanceNameKey, "InstanceName" },
         };
 
         return new NameValueConfigurationSource(collection);

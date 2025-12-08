@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class AwsEventBridgeTests : TracingIntegrationTest
     {
@@ -27,25 +28,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.AwsEventBridge
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               select new[] { packageVersionArray[0] };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsEventBridgeInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsEventBridgeOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsEventBridgeRequest(metadataSchemaVersion),
+            SpanKinds.Consumer => span.IsAwsEventBridgeInbound(),
+            SpanKinds.Producer => span.IsAwsEventBridgeOutbound(),
+            SpanKinds.Client => span.IsAwsEventBridgeRequest(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS EventBridge integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-eventbridge" : EnvironmentHelper.FullSampleName;
+            const string metadataSchemaVersion = "v0";
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-aws-eventbridge";
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -62,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var eventBridgeSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 eventBridgeSpans.Should().NotBeEmpty();
-                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(eventBridgeSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 

@@ -48,7 +48,7 @@ internal static partial class IastModule
             }
 
             var tracer = Tracer.Instance;
-            if (integrations is { Length: > 0 } && !integrations.Any((i) => tracer.Settings.IsIntegrationEnabled(i)))
+            if (integrations is { Length: > 0 } && !integrations.Any((i) => tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(i)))
             {
                 return encodedObj;
             }

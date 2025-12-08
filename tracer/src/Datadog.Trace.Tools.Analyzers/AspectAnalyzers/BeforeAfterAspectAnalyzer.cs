@@ -22,18 +22,13 @@ namespace Datadog.Trace.Tools.Analyzers.AspectAnalyzers;
 public class BeforeAfterAspectAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>
-    /// The diagnostic ID displayed in error messages
-    /// </summary>
-    public const string DiagnosticId = "DD0004";
-
-    /// <summary>
     /// The severity of the diagnostic
     /// </summary>
     public const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(
-        DiagnosticId,
+        Diagnostics.BeforeAfterAspectDiagnosticId,
         title: "Aspect is missing try-catch block",
         messageFormat: "Aspect method bodies should contain a try-catch block at the top level",
         category: "Reliability",

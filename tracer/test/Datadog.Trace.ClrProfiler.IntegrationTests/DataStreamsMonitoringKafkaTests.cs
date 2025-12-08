@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Collection(nameof(KafkaTests.KafkaTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "1")]
 public class DataStreamsMonitoringKafkaTests : TestHelper
 {
     public DataStreamsMonitoringKafkaTests(ITestOutputHelper output)

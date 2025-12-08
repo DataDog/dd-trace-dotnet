@@ -50,10 +50,10 @@ public static class AzureAppServiceHelper
     {
         var vars = Environment.GetEnvironmentVariables();
 
-        if (vars.Contains(ConfigurationKeys.AzureAppService.InstanceNameKey))
+        if (vars.Contains(PlatformKeys.AzureAppService.InstanceNameKey))
         {
             // This is the COMPUTERNAME key which we'll remove for consistent testing
-            vars.Remove(ConfigurationKeys.AzureAppService.InstanceNameKey);
+            vars.Remove(PlatformKeys.AzureAppService.InstanceNameKey);
         }
 
         if (vars.Contains(ConfigurationKeys.DebugEnabled))
@@ -73,22 +73,22 @@ public static class AzureAppServiceHelper
             vars.Add(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "3.0.0");
         }
 
-        vars.Add(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
-        vars.Add(ConfigurationKeys.AzureAppService.ResourceGroupKey, siteResourceGroup);
-        vars.Add(ConfigurationKeys.AzureAppService.SiteNameKey, deploymentId);
-        vars.Add(ConfigurationKeys.AzureAppService.OperatingSystemKey, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux");
-        vars.Add(ConfigurationKeys.AzureAppService.InstanceIdKey, "instance_id");
-        vars.Add(ConfigurationKeys.AzureAppService.InstanceNameKey, "instance_name");
+        vars.Add(PlatformKeys.AzureAppService.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
+        vars.Add(PlatformKeys.AzureAppService.ResourceGroupKey, siteResourceGroup);
+        vars.Add(PlatformKeys.AzureAppService.SiteNameKey, deploymentId);
+        vars.Add(PlatformKeys.AzureAppService.OperatingSystemKey, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux");
+        vars.Add(PlatformKeys.AzureAppService.InstanceIdKey, "instance_id");
+        vars.Add(PlatformKeys.AzureAppService.InstanceNameKey, "instance_name");
         vars.Add(ConfigurationKeys.DebugEnabled, ddTraceDebug);
 
         if (functionsVersion != null)
         {
-            vars.Add(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, functionsVersion);
+            vars.Add(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, functionsVersion);
         }
 
         if (functionsRuntime != null)
         {
-            vars.Add(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, functionsRuntime);
+            vars.Add(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, functionsRuntime);
         }
 
         vars.Add(ConfigurationKeys.AzureAppService.AasEnableCustomTracing, enableCustomTracing ?? "false");

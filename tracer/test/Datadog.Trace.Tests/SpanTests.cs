@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(key, value);
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(key).Should().Be(value);
         }
 
@@ -64,7 +65,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(Tags.PeerService, "a-peer-service");
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
             span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
         }
@@ -120,7 +121,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Once);
+            _writerMock.Verify(x => x.WriteTrace(in It.Ref<SpanCollection>.IsAny), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 
@@ -362,7 +363,7 @@ namespace Datadog.Trace.Tests
         public void GetTag_TraceId(ulong upper, ulong lower, string expected)
         {
             var traceId = new TraceId(upper, lower);
-            var trace = new TraceContext(Mock.Of<IDatadogTracer>());
+            var trace = new TraceContext(new StubDatadogTracer());
             var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
             var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
             var span = new Span(childContext, start: null);

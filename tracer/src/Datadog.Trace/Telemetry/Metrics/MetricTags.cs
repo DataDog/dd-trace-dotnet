@@ -190,6 +190,7 @@ internal static class MetricTags
         // manual integration
         [Description("integration_name:datadog")]Manual,
         [Description("integration_name:opentracing")]OpenTracing,
+        [Description("integration_name:version_conflict")]VersionConflict,
 
         // automatic "custom" integration
         [Description("integration_name:ciapp")]CiAppManual,
@@ -253,6 +254,7 @@ internal static class MetricTags
         [Description("integration_name:hardcodedsecret")]HardcodedSecret,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
+        [Description("integration_name:azureeventhubs")]AzureEventHubs,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,

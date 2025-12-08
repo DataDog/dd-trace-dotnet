@@ -6,7 +6,6 @@
 
 using System.Collections;
 using System.ComponentModel;
-using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -29,8 +28,49 @@ public class UnitTestDiscovererSendTestCasesIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref string? source, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
     {
-        if (testElements?.Cast<object>().Count() is { } count)
+        if (testElements is not null)
         {
+            var count = 0;
+            foreach (var ele in testElements)
+            {
+                count++;
+            }
+
+            MsTestIntegration.AddTotalTestCases(count);
+        }
+
+        return CallTargetState.GetDefault();
+    }
+}
+
+/// <summary>
+/// System.Void Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer::SendTestCases(System.String,System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement],Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink,Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext,Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger) calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer",
+    MethodName = "SendTestCases",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public class UnitTestDiscovererSendTestCasesIntegrationV4
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TDiscoverySink, TDiscoveryContext, TLogger>(TTarget instance, ref IEnumerable? testElements, ref TDiscoverySink? discoverySink, ref TDiscoveryContext? discoveryContext, ref TLogger? logger)
+    {
+        if (testElements is not null)
+        {
+            var count = 0;
+            foreach (var ele in testElements)
+            {
+                count++;
+            }
+
             MsTestIntegration.AddTotalTestCases(count);
         }
 

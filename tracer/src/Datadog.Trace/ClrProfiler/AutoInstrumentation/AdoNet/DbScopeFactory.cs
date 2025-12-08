@@ -26,7 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -53,15 +54,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // We might block the SQL call from RASP depending on the query
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
-                tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
+                tags = perTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
                 tags.DbName = tagsFromConnectionString.DbName;
                 tags.DbUser = tagsFromConnectionString.DbUser;
                 tags.OutHost = tagsFromConnectionString.OutHost;
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
@@ -137,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
+            HashSet<string> disabledAdoNetCommandTypes,
             string? commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
             [NotNullWhen(true)] out string? dbType)
@@ -171,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (IsDisabledCommandType(commandTypeName))
+                    if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
                         dbType = null;
@@ -199,14 +201,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        internal static bool IsDisabledCommandType(string commandTypeName)
+        internal static bool IsDisabledCommandType(string commandTypeName, HashSet<string> disabledAdoNetCommandTypes)
         {
             if (string.IsNullOrEmpty(commandTypeName))
             {
                 return false;
             }
 
-            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+            var disabledTypes = disabledAdoNetCommandTypes;
 
             if (disabledTypes is null || disabledTypes.Count == 0)
             {
@@ -244,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 CommandType = typeof(TCommand);
 
-                if (TryGetIntegrationDetails(CommandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(Tracer.Instance.Settings.DisabledAdoNetCommandTypes, CommandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
                     DbTypeName = dbTypeName;
@@ -274,7 +276,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
-                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(tracer.Settings.DisabledAdoNetCommandTypes, commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
@@ -298,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
+                        return tracer.CurrentTraceSettings.GetServiceName(dbTypeName);
                     }
 
                     var serviceNameCache = _serviceNameCache;
@@ -314,7 +316,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // We create or replace the cache with the new service name
                     // Slowpath
                     var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
+                    serviceName = tracer.CurrentTraceSettings.GetServiceName(dbTypeName);
                     _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
                 }
 

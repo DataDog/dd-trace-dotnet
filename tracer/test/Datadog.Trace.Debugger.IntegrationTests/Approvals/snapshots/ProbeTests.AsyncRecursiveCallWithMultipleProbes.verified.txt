@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,8 +13,7 @@
                 "value": "0"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -52,69 +50,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
-    "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "entry": {
-            "arguments": {
-              "i": {
-                "type": "Int32",
-                "value": "0"
-              },
-              "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
-              }
-            }
-          },
-          "return": {
-            "arguments": {
-              "i": {
-                "type": "Int32",
-                "value": "1"
-              },
-              "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
-              }
-            },
-            "locals": {
-              "@return": {
-                "type": "Int32",
-                "value": "3"
-              }
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes"
-          },
-          "version": 0
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -139,8 +76,7 @@
                 "value": "0"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -151,8 +87,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -178,6 +113,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -199,11 +136,10 @@
             "arguments": {
               "i": {
                 "type": "Int32",
-                "value": "1"
+                "value": "0"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -211,11 +147,10 @@
             "arguments": {
               "i": {
                 "type": "Int32",
-                "value": "2"
+                "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -241,69 +176,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
-    "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "entry": {
-            "arguments": {
-              "i": {
-                "type": "Int32",
-                "value": "1"
-              },
-              "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
-              }
-            }
-          },
-          "return": {
-            "arguments": {
-              "i": {
-                "type": "Int32",
-                "value": "2"
-              },
-              "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
-              }
-            },
-            "locals": {
-              "@return": {
-                "type": "Int32",
-                "value": "3"
-              }
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes"
-          },
-          "version": 0
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -328,8 +202,7 @@
                 "value": "1"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -340,8 +213,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -367,6 +239,134 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "i": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "AsyncRecursiveCallWithMultipleProbes"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "i": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "AsyncRecursiveCallWithMultipleProbes"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "3"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "i": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "AsyncRecursiveCallWithMultipleProbes"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "i": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "AsyncRecursiveCallWithMultipleProbes"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "3"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -391,8 +391,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -403,8 +402,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -430,6 +428,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -454,8 +454,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -466,8 +465,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -493,6 +491,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",
@@ -517,8 +517,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             }
           },
@@ -529,8 +528,7 @@
                 "value": "2"
               },
               "this": {
-                "type": "AsyncRecursiveCallWithMultipleProbes",
-                "value": "AsyncRecursiveCallWithMultipleProbes"
+                "type": "AsyncRecursiveCallWithMultipleProbes"
               }
             },
             "locals": {
@@ -556,6 +554,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Recursive",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCallWithMultipleProbes",

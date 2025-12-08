@@ -119,32 +119,4 @@ public class StringConfigurationSourceTests
         dictionary.Should().HaveCount(1);
         dictionary.Should().Contain(new KeyValuePair<string, string>("key", "value"));
     }
-
-    [Theory]
-    [InlineData("key:value")]     // no space
-    [InlineData("key:value ")]    // space after value
-    [InlineData("key: value")]    // space before value
-    [InlineData("key: value ")]   // 1 space around value
-    [InlineData("key:  value  ")] // 2 spaces around value
-    public void ParseCustomKeyValues_WhitespaceAroundValue(string entry)
-    {
-        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry);
-
-        dictionary.Should().HaveCount(1);
-        dictionary.Should().Contain(new KeyValuePair<string, string>("key", "value"));
-    }
-
-    [Theory]
-    [InlineData("key:value", "value")]                   // none
-    [InlineData("key::value", ":value")]                 // leading
-    [InlineData("key:value:", "value:")]                 // trailing
-    [InlineData("key:value:1", "value:1")]               // middle
-    [InlineData("key: : value : 1 : ", ": value : 1 :")] // mix in some spaces
-    public void ParseCustomKeyValues_ColonsInValue(string entry, string expectedValue)
-    {
-        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry);
-
-        dictionary.Should().HaveCount(1);
-        dictionary.Should().Contain(new KeyValuePair<string, string>("key", expectedValue));
-    }
 }

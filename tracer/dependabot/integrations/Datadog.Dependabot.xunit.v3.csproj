@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: xunit.v3.core -->
     <!--    Assembly: xunit.v3.core -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.v3/3.1.0 -->
-    <PackageReference Include="xunit.v3" Version="3.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.v3/3.2.1 -->
+    <PackageReference Include="xunit.v3" Version="3.2.1" />
   </ItemGroup>
 
 </Project>

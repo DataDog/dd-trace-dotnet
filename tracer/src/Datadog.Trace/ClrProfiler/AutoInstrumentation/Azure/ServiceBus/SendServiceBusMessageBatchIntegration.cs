@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -50,8 +51,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         {
             Scope? messageScope = null;
 
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            var tracer = Tracer.Instance;
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+             && tracer.TracerManager.DataStreamsManager.IsEnabled)
             {
                 // Adding DSM to the send operation of ServiceBusMessageBatch - Step One:
                 // While we have access to the message object itself, create a mapping from the
@@ -60,8 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             // Create TryAdd message spans for batch with links when enabled
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false) &&
-                Tracer.Instance.Settings.AzureServiceBusBatchLinksEnabled)
+            if (tracer.Settings.AzureServiceBusBatchLinksEnabled)
             {
                 messageScope = CreateAddMessageSpan(instance, message);
             }
@@ -75,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 if (returnValue && instance != null)
                 {
-                    ServiceBusBatchSpanContext.AddMessageSpanContext(instance, state.Scope.Span.Context);
+                    BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
                 }
 
                 state.Scope.DisposeWithException(exception);

@@ -77,9 +77,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             var formatter = LogSettingsHelper.GetFormatter();
             var logger = new DirectSubmissionLogger(
                 name: "TestLogger",
-                scopeProvider: new NullScopeProvider(),
+                logEventCreator: new DatadogLogEventCreator(formatter, scopeProvider: new NullScopeProvider()),
                 sink: sink,
-                logFormatter: formatter,
                 minimumLogLevel: DirectSubmissionLogLevel.Information);
 
             var level = (int)DirectSubmissionLogLevel.Debug;
@@ -99,10 +98,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             var settings = LogSettingsHelper.GetValidSettings();
             return new DirectSubmissionLogger(
                 name: "TestLogger",
-                scopeProvider: new NullScopeProvider(),
+                logEventCreator: new DatadogLogEventCreator(LogSettingsHelper.GetFormatter(), scopeProvider: new NullScopeProvider()),
                 sink: sink,
-                logFormatter: LogSettingsHelper.GetFormatter(),
-                minimumLogLevel: settings.MinimumLevel);
+                minimumLogLevel: settings.LogSubmissionSettings.MinimumLevel);
         }
 
         internal class TestSink : IDirectSubmissionLogSink

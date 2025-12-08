@@ -119,6 +119,9 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\CrashReporting.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>

@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             where TServerRpc : IServerRpcNew
         {
             var tracer = Tracer.Instance;
-            if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            if (GrpcCoreApiVersionHelper.IsSupported && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 var scope = GrpcLegacyServerCommon.CreateServerSpan(tracer, instance, serverRpc.RequestMetadata);
                 return new CallTargetState(scope);

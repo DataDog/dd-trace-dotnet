@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -25,7 +24,6 @@ namespace Datadog.Trace.Debugger.Snapshots
     internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {
         private const string LoggerVersion = "2";
-        private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
 
 #pragma warning disable SA1401
@@ -35,6 +33,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
+        private readonly bool _injectProcessTags;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
@@ -44,7 +43,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -57,16 +56,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             ProbeHasCondition = hasCondition;
             Tags = tags;
             _limitInfo = limitInfo;
+            _injectProcessTags = withProcessTags;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags)
         {
             MethodScopeMembers = methodScopeMembers;
         }
+
+        internal virtual string DebuggerProduct => DebuggerTags.DebuggerProduct.DI;
 
         internal string SnapshotId
         {
@@ -730,7 +732,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, traceId, spanId)
+            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, ProcessTags.SerializedTags, traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -868,19 +870,31 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string processTags, string traceId, string spanId)
         {
             JsonWriter.WritePropertyName("service");
             JsonWriter.WriteValue(service ?? UnknownValue);
 
+            if (_injectProcessTags && !string.IsNullOrEmpty(processTags))
+            {
+                JsonWriter.WritePropertyName("process_tags");
+                JsonWriter.WriteValue(processTags);
+            }
+
             JsonWriter.WritePropertyName("ddsource");
-            JsonWriter.WriteValue(DDSource);
+            JsonWriter.WriteValue(DebuggerTags.DDSource);
 
             JsonWriter.WritePropertyName("dd.trace_id");
             JsonWriter.WriteValue(traceId);
 
             JsonWriter.WritePropertyName("dd.span_id");
             JsonWriter.WriteValue(spanId);
+
+            JsonWriter.WritePropertyName("debugger.type");
+            JsonWriter.WriteValue(DebuggerTags.DebuggerType.Snapshot);
+
+            JsonWriter.WritePropertyName("debugger.product");
+            JsonWriter.WriteValue(DebuggerProduct);
 
             return this;
         }

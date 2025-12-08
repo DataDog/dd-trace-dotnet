@@ -102,8 +102,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var tracerSettings = TracerSettings.Create(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), "true" },
-                { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.AdoNet)), "false" },
+                { string.Format(IntegrationSettings.IntegrationEnabled, integrationName), "true" },
+                { string.Format(IntegrationSettings.IntegrationEnabled, nameof(IntegrationId.AdoNet)), "false" },
             });
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
@@ -689,7 +689,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
-            bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails([], command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
             Assert.True(result);
             Assert.Equal(expectedIntegrationName, actualIntegrationId.ToString());
             Assert.Equal(expectedDbType, actualDbType);
@@ -698,12 +698,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         internal void TryGetIntegrationDetails_FailsForKnownCommandType()
         {
-            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
+            var defaultDisabledCommands = new TracerSettings().DisabledAdoNetCommandTypes;
+            bool result = DbScopeFactory.TryGetIntegrationDetails(defaultDisabledCommands, "InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
 
-            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails(defaultDisabledCommands, "ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
             Assert.False(result2);
             Assert.False(actualIntegrationId2.HasValue);
             Assert.Null(actualDbType2);
@@ -712,18 +713,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         internal void TryGetIntegrationDetails_FailsForKnownCommandTypes_AndUserDefined()
         {
-            Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DisabledAdoNetCommandTypes, "SomeFakeDbCommand" } }));
-            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
+            var disabledCommandTypes = TracerSettings.Create(new() { { ConfigurationKeys.DisabledAdoNetCommandTypes, "SomeFakeDbCommand" } }).DisabledAdoNetCommandTypes;
+            bool result = DbScopeFactory.TryGetIntegrationDetails(disabledCommandTypes, "InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
 
-            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails(disabledCommandTypes, "ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
             Assert.False(result2);
             Assert.False(actualIntegrationId2.HasValue);
             Assert.Null(actualDbType2);
 
-            bool result3 = DbScopeFactory.TryGetIntegrationDetails("SomeFakeDbCommand", out var actualIntegrationId3, out var actualDbType3);
+            bool result3 = DbScopeFactory.TryGetIntegrationDetails(disabledCommandTypes, "SomeFakeDbCommand", out var actualIntegrationId3, out var actualDbType3);
             Assert.False(result3);
             Assert.False(actualIntegrationId3.HasValue);
             Assert.Null(actualDbType3);
@@ -740,7 +741,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("Custom.DB.Command", "AdoNet", "db")]
         internal void TryGetIntegrationDetails_CustomCommandType(string commandTypeFullName, string integrationId, string expectedDbType)
         {
-            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out var actualIntegrationId, out var actualDbType);
+            var defaultDisabledCommands = new TracerSettings().DisabledAdoNetCommandTypes;
+            DbScopeFactory.TryGetIntegrationDetails(defaultDisabledCommands, commandTypeFullName, out var actualIntegrationId, out var actualDbType);
             Assert.Equal(integrationId, actualIntegrationId?.ToString());
             Assert.Equal(expectedDbType, actualDbType);
         }
@@ -750,7 +752,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Set up tracer
             var tracerSettings = TracerSettings.Create(new()
             {
-                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), enabled },
+                { string.Format(IntegrationSettings.IntegrationEnabled, integrationName), enabled },
             });
             return TracerHelper.Create(tracerSettings);
         }

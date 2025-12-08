@@ -389,6 +389,9 @@ datadog-coverage-*
 # nuke
 .nuke/build.schema.json
 
+# Claude Code
+.claude/settings.local.json
+
 # tools/dumps
 tools/dumps/
 !tools/dumps/README_ALPINE_ARM64.md

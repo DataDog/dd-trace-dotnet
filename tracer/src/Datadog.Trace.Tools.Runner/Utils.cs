@@ -417,9 +417,9 @@ namespace Datadog.Trace.Tools.Runner
 
             var settings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
 
-            Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Exporter.AgentUri);
-            var discoveryService = DiscoveryService.Create(
-                settings.Exporter,
+            Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Manager.InitialExporterSettings.AgentUri);
+            var discoveryService = DiscoveryService.CreateUnmanaged(
+                settings.Manager.InitialExporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
@@ -433,7 +433,7 @@ namespace Datadog.Trace.Tools.Runner
             using (cts.Token.Register(
                        () =>
                        {
-                           WriteError($"Error connecting to the Datadog Agent at {settings.Exporter.AgentUri}.");
+                           WriteError($"Error connecting to the Datadog Agent at {settings.Manager.InitialExporterSettings.AgentUri}.");
                            tcs.TrySetResult(null);
                        }))
             {

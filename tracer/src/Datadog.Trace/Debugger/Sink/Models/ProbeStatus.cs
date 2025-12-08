@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink.Models
@@ -14,7 +15,6 @@ namespace Datadog.Trace.Debugger.Sink.Models
         {
             Message = GetMessage();
             Service = service;
-
             DebuggerDiagnostics = new DebuggerDiagnostics(new Diagnostics(probeId, status, probeVersion));
 
             if (status == Status.ERROR)
@@ -37,13 +37,20 @@ namespace Datadog.Trace.Debugger.Sink.Models
         }
 
         [JsonProperty("ddsource")]
-        public string DdSource { get; } = "dd_debugger";
+        public string DdSource { get; } = DebuggerTags.DDSource;
 
         [JsonProperty("service")]
         public string Service { get; }
 
         [JsonProperty("message")]
         public string Message { get; }
+
+        [JsonProperty("debugger.type")]
+        public string DebuggerType { get; } = DebuggerTags.DebuggerType.Diagnostic;
+
+        // in .net tracer, this is always "di" for now
+        [JsonProperty("debugger.product")]
+        public string DebuggerProduct { get; } = DebuggerTags.DebuggerProduct.DI;
 
         [JsonProperty("debugger")]
         public DebuggerDiagnostics DebuggerDiagnostics { get; }

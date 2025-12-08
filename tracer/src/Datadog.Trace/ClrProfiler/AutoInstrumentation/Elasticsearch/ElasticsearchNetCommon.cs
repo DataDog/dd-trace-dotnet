@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         public static Scope? CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -44,7 +44,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
         public static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string? method, object? requestParameters, out ElasticsearchTags? tags)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 tags = null;
@@ -53,9 +54,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             var requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
-            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-            tags = tracer.CurrentTraceSettings.Schema.Database.CreateElasticsearchTags();
+            var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            tags = perTraceSettings.Schema.Database.CreateElasticsearchTags();
 
             Scope? scope = null;
 
@@ -68,8 +69,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 tags.Action = requestName;
                 tags.Method = method;
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }

@@ -25,6 +25,7 @@ pr:
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
+      - .gitignore
       - .github/
       - .claude/
       - .devcontainer/
@@ -62,15 +63,15 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100-rc.1.25451.107
+  dotnetCoreSdkLatestVersion: 10.0.100
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 10.0.100-rc.1
+  dotnetCoreSdkLatestVersionShort: 10.0.100
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
-  linuxX64SmokePool: azure-managed-linux-smoke-2
-  linuxX64Pool: azure-managed-linux-x64-2
+  linuxX64SmokePool: azure-managed-linux-smoke
+  linuxX64Pool: azure-managed-linux-x64-1
   linuxArm64Pool: azure-managed-linux-arm64-1
   windowsX64Pool: azure-managed-windows-x64-2
 
@@ -134,7 +135,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.29.0
+  ToolVersion: 3.33.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -946,7 +947,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -966,7 +967,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -991,7 +992,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - checkout: none
 
@@ -1287,7 +1288,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1362,7 +1363,7 @@ stages:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_macos_matrix'] ]
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1618,7 +1619,7 @@ stages:
     - job: macos
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: macos-13
+        vmImage: macos-14
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1683,6 +1684,14 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
+#    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
+#    Tests with [Trait("RequiresDockerDependency", "true")] are skipped below
+#    - powershell: |
+#        mkdir -Force ./artifacts/build_data/snapshots
+#        docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
+#      displayName: Start test agent
+#      retryCountOnTaskFailure: 3
+
     - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Build integration tests
       retryCountOnTaskFailure: 3
@@ -1699,6 +1708,12 @@ stages:
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+
+#    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
+#    - script: docker compose -f docker-compose.windows.yml down
+#      displayName: Stop test agent
+#      condition: succeededOrFailed()
+#      continueOnError: true
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1964,7 +1979,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-13
+      vmImage: macos-14
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -2234,7 +2249,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apikey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2303,6 +2318,14 @@ stages:
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
+    - bash: |
+        if [ -z "$(IntegrationTestFilter)" ]; then
+          newFilter="DockerGroup=$(dockerGroup)"
+        else
+          newFilter="$(IntegrationTestFilter)&(DockerGroup=$(dockerGroup))"
+        fi
+        echo "##vso[task.setvariable variable=IntegrationTestFilter]$newFilter"
+      displayName: "Calculate IntegrationTestFilter"
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2310,24 +2333,25 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
     - script: |
-        docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
-        docker-compose -p $(DockerComposeProjectName) run --rm StartDependencies
+        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) run --rm StartDependencies.Group$(dockerGroup)
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-      displayName: docker-compose build IntegrationTests and run StartDependencies
+        COMPOSE_PROFILES: group$(dockerGroup)
+      displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) \
           run --rm \
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
@@ -2337,22 +2361,25 @@ stages:
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
-      displayName: docker-compose run IntegrationTests
+      displayName: docker-compose run IntegrationTests (Group $(dockerGroup))
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+        COMPOSE_PROFILES: group$(dockerGroup)
 
-    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
       displayName: docker-compose logs
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        COMPOSE_PROFILES: group$(dockerGroup)
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        COMPOSE_PROFILES: group$(dockerGroup)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3052,7 +3079,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 
@@ -3122,7 +3149,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 
@@ -3391,6 +3418,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "CleanObjFiles"
+        retryCountForRunCommand: 3
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -6373,8 +6401,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |
@@ -6427,8 +6461,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |

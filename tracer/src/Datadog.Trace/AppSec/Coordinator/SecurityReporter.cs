@@ -231,7 +231,7 @@ internal partial class SecurityReporter
 
             if (status is not null)
             {
-                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
             }
         }
 

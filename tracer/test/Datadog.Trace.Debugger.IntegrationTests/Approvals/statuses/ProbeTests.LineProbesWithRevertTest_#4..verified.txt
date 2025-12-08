@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {
@@ -10,6 +10,8 @@
         "status": "EMITTING"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "diagnostic",
     "message": "Emitted probe d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70.",
     "service": "probes"
   }

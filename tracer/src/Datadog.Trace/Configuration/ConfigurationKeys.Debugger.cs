@@ -179,6 +179,18 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
             public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling agentless Exception Replay uploads.
+            /// Default value is false.
+            /// </summary>
+            public const string ExceptionReplayAgentlessEnabled = "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for overriding the agentless Exception Replay intake URL.
+            /// Default value is derived from DD_SITE (https://debugger-intake.&lt;site&gt;/api/v2/debugger).
+            /// </summary>
+            public const string ExceptionReplayAgentlessUrl = "DD_EXCEPTION_REPLAY_AGENTLESS_URL";
         }
     }
 }

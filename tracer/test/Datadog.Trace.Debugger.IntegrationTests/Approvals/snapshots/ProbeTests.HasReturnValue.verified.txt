@@ -15,8 +15,7 @@
                     "value": "0"
                   }
                 },
-                "type": "HasReturnValue",
-                "value": "HasReturnValue"
+                "type": "HasReturnValue"
               }
             }
           },
@@ -29,8 +28,7 @@
                     "value": "7"
                   }
                 },
-                "type": "HasReturnValue",
-                "value": "HasReturnValue"
+                "type": "HasReturnValue"
               }
             },
             "locals": {
@@ -56,6 +54,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasReturnValue",

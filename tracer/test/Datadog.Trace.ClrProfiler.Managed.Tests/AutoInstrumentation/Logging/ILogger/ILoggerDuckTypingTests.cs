@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void CanReverseDuckTypeILogger()
         {
-            var logger = new DirectSubmissionLogger("Test logger", null, _sink, _formatter, DirectSubmissionLogLevel.Debug);
+            var logger = new DirectSubmissionLogger("Test logger", _sink, new DatadogLogEventCreator(_formatter, null), DirectSubmissionLogLevel.Debug);
             var proxy = (Microsoft.Extensions.Logging.ILogger)logger.DuckImplement(typeof(Microsoft.Extensions.Logging.ILogger));
 
             proxy.BeginScope(123).Should().NotBeNull();
