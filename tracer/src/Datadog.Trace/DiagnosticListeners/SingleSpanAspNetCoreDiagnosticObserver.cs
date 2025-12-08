@@ -272,22 +272,10 @@ namespace Datadog.Trace.DiagnosticListeners
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
                     // No need to ToLowerInvariant() these strings, as we lower case
                     // the whole route later
-                    var controllerName = routeValues.TryGetValue("controller", out var raw)
-                                             ? raw as string
-                                             : null;
-                    var actionName = routeValues.TryGetValue("action", out raw)
-                                         ? raw as string
-                                         : null;
-                    var areaName = routeValues.TryGetValue("area", out raw)
-                                       ? raw as string
-                                       : null;
 
                     var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                         routePattern,
                         routeValues,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName,
                         _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                     // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
