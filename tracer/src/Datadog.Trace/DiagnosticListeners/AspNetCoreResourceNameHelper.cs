@@ -84,10 +84,17 @@ internal static class AspNetCoreResourceNameHelper
                         var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
                         if (!parameter.IsOptional || haveParameter)
                         {
-                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                            // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+                            // so never expand them. This avoids an allocating ToString() call, but means that
+                            // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+                            if (expandRouteParameters
+                             && haveParameter
+                             && (value is null ||
+                                 (value is string valueAsString
+                               && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
                             {
                                 // write the expanded parameter value
-                                sb.Append(valueAsString);
+                                sb.Append(value as string);
                             }
                             else
                             {
@@ -119,8 +126,8 @@ internal static class AspNetCoreResourceNameHelper
             }
         }
 
-        // We need a lower invariant version of the string
-        if (sb.Length == 1)
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+        if (sb.Length <= 1)
         {
             sb.Dispose();
             return "/";
