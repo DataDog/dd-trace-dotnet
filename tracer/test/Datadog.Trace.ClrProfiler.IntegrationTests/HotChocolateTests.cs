@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
-        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.ThrowException\([^""]*""");
+        private readonly Regex _stacktraceRegex = new(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.Throw(Exception|ExceptionIndex)\([^""]*""");
 
         protected HotChocolateTestsBase(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
@@ -108,6 +108,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
             settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00""");
 
+            // Additional scrubber for ThrowExceptionIndex to handle full path and extended stacktrace
+            var stacktraceIndexRegex = new Regex(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.ThrowExceptionIndex\(\) in [^""\\]*\\Query\.cs:line \d+([^""]*)?""");
+            settings.AddRegexScrubber(stacktraceIndexRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowExceptionIndex() in Query.cs:line 00""");
+
             var versionSuffix = GetSuffix(packageVersion);
 
             await VerifyHelper.VerifySpans(spans, settings)
@@ -147,6 +151,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // FAILURE: query fails 'execute' step
                 SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{throwException}""}");
+
+                // FAILURE: query fails with an index error
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{throwExceptionIndex}""}");
             }
 
             async Task SubmitWebsocketRequests()
