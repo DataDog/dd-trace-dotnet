@@ -528,6 +528,12 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_RemoveBaggageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageItemsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
