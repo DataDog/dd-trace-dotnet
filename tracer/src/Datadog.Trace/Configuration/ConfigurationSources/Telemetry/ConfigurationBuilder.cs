@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
@@ -19,14 +20,15 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
-    public HasKeys WithIntegrationKey(string integrationName) => new(
-        _source,
-        _telemetry,
-        string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
-            $"DD_{integrationName}_ENABLED"
-        ]);
+    public HasKeys WithIntegrationKey(string integrationName)
+    {
+        var integrationEnabledKeys = IntegrationNameToKeys.GetIntegrationEnabledKeys(integrationName);
+        return new(
+            _source,
+            _telemetry,
+            integrationEnabledKeys[0],
+            integrationEnabledKeys.Skip(1).ToArray());
+    }
 
     public HasKeys WithIntegrationAnalyticsKey(string integrationName)
     {
