@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -106,7 +107,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 await WaitForBatchesAsync(sink, batchCount: i + 1);
             }
 
-            mutex.Wait(30_000).Should().BeTrue($"Sink should be disabled after {FailuresBeforeCircuitBreak} faults");
+            mutex.WaitOrDump(30_000).Should().BeTrue($"Sink should be disabled after {FailuresBeforeCircuitBreak} faults");
         }
 
         [Fact]
@@ -159,7 +160,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 _output.WriteLine($"Queueing broken event {i}");
                 mutex.Reset();
                 sink.EnqueueLog(evt);
-                mutex.Wait(TimeSpan.FromSeconds(1));
+                mutex.WaitOrDump(TimeSpan.FromSeconds(1));
                 batches = await WaitForBatchesAsync(sink, batchCount: i + 1); // +1 because of initial success event
                 _output.WriteLine($"Found {batches.Count} batches");
             }
@@ -167,7 +168,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             _output.WriteLine($"Queueing broken event {FailuresBeforeCircuitBreak} to break the circuit");
             mutex.Reset();
             sink.EnqueueLog(evt);
-            mutex.Wait(TimeSpan.FromSeconds(1));
+            mutex.WaitOrDump(TimeSpan.FromSeconds(1));
             batches = await WaitForBatchesAsync(sink, batchCount: FailuresBeforeCircuitBreak + 1);
             _output.WriteLine($"Found {batches.Count} batches (should now be broken)");
 
@@ -219,7 +220,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.Start();
 
             sink.CloseImmediately();
-            mutex.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(3)).Should().BeTrue();
         }
 
         [Fact]

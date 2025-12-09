@@ -16,6 +16,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(logEvent);
 
             // Wait for the logs to be sent
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].Message.Should().Be("First OTLP message");
             capturedLogs[0].LogLevel.Should().Be(2);
@@ -81,7 +82,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(CreateTestLogEvent("Log 2", logLevel: 2)); // Information
             sink.EnqueueLog(CreateTestLogEvent("Log 3", logLevel: 3)); // Warning
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().HaveCount(3);
             capturedLogs[0].Message.Should().Be("Log 1");
             capturedLogs[1].Message.Should().Be("Log 2");
@@ -111,7 +112,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             sink.EnqueueLog(logEvent);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].TraceId.Should().Be(traceId);
             capturedLogs[0].SpanId.Should().Be(spanId);
@@ -145,7 +146,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             sink.EnqueueLog(logEvent);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].Attributes.Should().ContainKey("CustomAttribute");
             capturedLogs[0].Attributes["CustomAttribute"].Should().Be("CustomValue");
@@ -182,7 +183,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var otlpLogEvent = CreateTestLogEvent("OTLP log", logLevel: 2);
             sink.EnqueueLog(otlpLogEvent);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle(); // Only OTLP log should be captured
             capturedLogs[0].Message.Should().Be("OTLP log");
         }
@@ -215,7 +216,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(CreateTestLogEvent("Error", logLevel: 4));
             sink.EnqueueLog(CreateTestLogEvent("Critical", logLevel: 5));
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().HaveCount(6);
             capturedLogs.Select(l => l.LogLevel).Should().BeEquivalentTo(new[] { 0, 1, 2, 3, 4, 5 });
         }
