@@ -38,7 +38,7 @@ internal static class AspNetCoreResourceNameHelper
             {
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
                 {
-                    sb.Append(contentPart.Content);
+                    sb.AppendToLowerInvariant(contentPart.Content);
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
@@ -48,7 +48,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("area", out var value)
                             && value is string name)
                         {
-                            sb.Append(name);
+                            sb.AppendToLowerInvariant(name);
                         }
                         else
                         {
@@ -60,7 +60,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("controller", out var value)
                          && value is string name)
                         {
-                            sb.Append(name);
+                            sb.AppendToLowerInvariant(name);
                         }
                         else
                         {
@@ -72,7 +72,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("action", out var value)
                          && value is string name)
                         {
-                            sb.Append(name);
+                            sb.AppendToLowerInvariant(name);
                         }
                         else
                         {
@@ -94,7 +94,7 @@ internal static class AspNetCoreResourceNameHelper
                                && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
                             {
                                 // write the expanded parameter value
-                                sb.Append(value as string);
+                                sb.AppendToLowerInvariant(value as string);
                             }
                             else
                             {
@@ -112,7 +112,7 @@ internal static class AspNetCoreResourceNameHelper
                                     }
                                 }
 
-                                sb.Append(parameterName);
+                                sb.AppendToLowerInvariant(parameterName);
                                 if (parameter.IsOptional)
                                 {
                                     sb.Append('?');
@@ -133,17 +133,7 @@ internal static class AspNetCoreResourceNameHelper
             return "/";
         }
 
-        if (sb.Length > 1024)
-        {
-            // just do the ToString and accept the allocations for simplicity
-            return sb.ToString().ToLowerInvariant();
-        }
-
-        Span<char> dest = stackalloc char[1024];
-        var result = sb.AsSpan().ToLowerInvariant(dest).ToString();
-
-        sb.Dispose();
-        return result;
+        return sb.ToString();
     }
 #endif
 
