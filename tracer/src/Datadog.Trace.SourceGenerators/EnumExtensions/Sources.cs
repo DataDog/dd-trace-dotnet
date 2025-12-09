@@ -1,4 +1,4 @@
-﻿// <copyright file="Sources.cs" company="Datadog">
+// <copyright file="Sources.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -78,6 +78,124 @@ internal class Sources
                     };{{GetDescriptions(sb, in enumToGenerate)}}
             }
             """;
+    }
+
+    public static string GenerateIntegrationNameToKeys(StringBuilder sb, in EnumToGenerate enumToGenerate)
+    {
+        var arrayKeys = new StringBuilder();
+        var switchCasesEnabled = new StringBuilder();
+        var switchCasesAnalyticsEnabled = new StringBuilder();
+        var switchCasesAnalyticsSampleRate = new StringBuilder();
+
+        // Single loop to build array keys and all switch cases
+        foreach (var member in enumToGenerate.Names)
+        {
+            var name = member.Property;
+            var upperName = name.ToUpperInvariant();
+
+            // Configuration key pattern for enabling or disabling an integration
+            var upperKey = $"DD_TRACE_{upperName}_ENABLED";
+            var mixedKey = $"DD_TRACE_{name}_ENABLED";
+            var shortKey = $"DD_{name}_ENABLED";
+            arrayKeys.AppendLine($"            \"{upperKey}\", \"{mixedKey}\", \"{shortKey}\",");
+            switchCasesEnabled.AppendLine($"                \"{name}\" => new[] {{ \"{upperKey}\", \"{mixedKey}\", \"{shortKey}\" }},");
+
+            // Configuration key pattern for enabling or disabling Analytics in an integration
+            var analyticsUpperKey = $"DD_TRACE_{upperName}_ANALYTICS_ENABLED";
+            var analyticsMixedKey = $"DD_TRACE_{name}_ANALYTICS_ENABLED";
+            var analyticsShortKey = $"DD_{name}_ANALYTICS_ENABLED";
+            switchCasesAnalyticsEnabled.AppendLine($"                \"{name}\" => new[] {{ \"{analyticsUpperKey}\", \"{analyticsMixedKey}\", \"{analyticsShortKey}\" }},");
+            arrayKeys.AppendLine($"            \"{analyticsUpperKey}\", \"{analyticsMixedKey}\", \"{analyticsShortKey}\",");
+
+            // Configuration key pattern for setting Analytics sampling rate in an integration
+            var sampleRateUpperKey = $"DD_TRACE_{upperName}_ANALYTICS_SAMPLE_RATE";
+            var sampleRateMixedKey = $"DD_TRACE_{name}_ANALYTICS_SAMPLE_RATE";
+            var sampleRateShortKey = $"DD_{name}_ANALYTICS_SAMPLE_RATE";
+            switchCasesAnalyticsSampleRate.AppendLine($"                \"{name}\" => new[] {{ \"{sampleRateUpperKey}\", \"{sampleRateMixedKey}\", \"{sampleRateShortKey}\" }},");
+            arrayKeys.AppendLine($"            \"{sampleRateUpperKey}\", \"{sampleRateMixedKey}\", \"{sampleRateShortKey}\", ");
+        }
+
+        sb.Clear();
+        sb.AppendLine(Constants.FileHeader);
+        sb.AppendLine("namespace Datadog.Trace.Configuration");
+        sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Generated mapping of integration names to their configuration keys.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    internal static partial class IntegrationNameToKeys");
+        sb.AppendLine("    {");
+        sb.AppendLine("        private const string ObsoleteMessage = DeprecationMessages.AppAnalytics;");
+        sb.AppendLine();
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// All integration enabled keys (canonical + aliases).");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine("        public static readonly string[] AllIntegrationEnabledKeys = new[]");
+        sb.AppendLine("        {");
+        sb.Append(arrayKeys);
+        sb.AppendLine("        };");
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the configuration keys for the specified integration name.");
+        sb.AppendLine("        /// Returns keys in order: [canonical key, alias1, alias2]");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine("        /// <param name=\"integrationName\">The integration name</param>");
+        sb.AppendLine("        /// <returns>Array of configuration keys to check in order</returns>");
+        sb.AppendLine("        public static string[] GetIntegrationEnabledKeys(string integrationName)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return integrationName switch");
+        sb.AppendLine("            {");
+        sb.Append(switchCasesEnabled);
+        sb.AppendLine("                _ => new[]");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ENABLED\", integrationName.ToUpperInvariant()),");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ENABLED\", integrationName),");
+        sb.AppendLine("                    $\"DD_{integrationName}_ENABLED\"");
+        sb.AppendLine("                }");
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the analytics enabled configuration keys for the specified integration name.");
+        sb.AppendLine("        /// Returns keys in order: [canonical key, alias1, alias2]");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine("        /// <param name=\"integrationName\">The integration name</param>");
+        sb.AppendLine("        /// <returns>Array of configuration keys to check in order</returns>");
+        sb.AppendLine("        [System.Obsolete(ObsoleteMessage)]");
+        sb.AppendLine("        public static string[] GetIntegrationAnalyticsEnabledKeys(string integrationName)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return integrationName switch");
+        sb.AppendLine("            {");
+        sb.Append(switchCasesAnalyticsEnabled);
+        sb.AppendLine("                _ => new[]");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ANALYTICS_ENABLED\", integrationName.ToUpperInvariant()),");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ANALYTICS_ENABLED\", integrationName),");
+        sb.AppendLine("                    $\"DD_{integrationName}_ANALYTICS_ENABLED\"");
+        sb.AppendLine("                }");
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine("        /// Gets the analytics sample rate configuration keys for the specified integration name.");
+        sb.AppendLine("        /// Returns keys in order: [canonical key, alias1, alias2]");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine("        /// <param name=\"integrationName\">The integration name</param>");
+        sb.AppendLine("        /// <returns>Array of configuration keys to check in order</returns>");
+        sb.AppendLine("        [System.Obsolete(ObsoleteMessage)]");
+        sb.AppendLine("        public static string[] GetIntegrationAnalyticsSampleRateKeys(string integrationName)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return integrationName switch");
+        sb.AppendLine("            {");
+        sb.Append(switchCasesAnalyticsSampleRate);
+        sb.AppendLine("                _ => new[]");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE\", integrationName.ToUpperInvariant()),");
+        sb.AppendLine("                    string.Format(\"DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE\", integrationName),");
+        sb.AppendLine("                    $\"DD_{integrationName}_ANALYTICS_SAMPLE_RATE\"");
+        sb.AppendLine("                }");
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        return sb.ToString();
     }
 
     private static string GetToStringFast(StringBuilder sb, in EnumToGenerate enumToGenerate)

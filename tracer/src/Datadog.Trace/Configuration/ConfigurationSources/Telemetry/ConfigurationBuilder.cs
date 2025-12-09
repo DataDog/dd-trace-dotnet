@@ -28,27 +28,29 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             $"DD_{integrationName}_ENABLED"
         ]);
 
-    public HasKeys WithIntegrationAnalyticsKey(string integrationName) => new(
-        _source,
-        _telemetry,
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName)
+    {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
+        var integrationAnalyticsEnabledKeys = IntegrationNameToKeys.GetIntegrationAnalyticsEnabledKeys(integrationName);
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_ENABLED"
-        ]);
+        return new(
+            _source,
+            _telemetry,
+            integrationAnalyticsEnabledKeys[0],
+            integrationAnalyticsEnabledKeys.Skip(1).ToArray());
+    }
 
-    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
-        _source,
-        _telemetry,
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName)
+    {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
+        var integrationAnalyticsSampleRateKeys = IntegrationNameToKeys.GetIntegrationAnalyticsSampleRateKeys(integrationName);
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
-        ]);
+        return new(
+            _source,
+            _telemetry,
+            integrationAnalyticsSampleRateKeys[0],
+            integrationAnalyticsSampleRateKeys.Skip(1).ToArray());
+    }
 
     internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? providedAliases = null)
     {
