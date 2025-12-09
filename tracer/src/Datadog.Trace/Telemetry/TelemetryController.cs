@@ -27,7 +27,7 @@ using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryController : ITelemetryController
+internal sealed class TelemetryController : ITelemetryController
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryController>();
     private readonly TelemetryDataBuilder _dataBuilder = new();
@@ -363,7 +363,7 @@ internal class TelemetryController : ITelemetryController
         public object? State { get; }
     }
 
-    internal class TagBuilder
+    internal sealed class TagBuilder
     {
         private bool _isCiVisEnabled;
         private bool _isAsmEnabled;
@@ -438,7 +438,7 @@ internal class TelemetryController : ITelemetryController
     /// <summary>
     /// Internal for testing
     /// </summary>
-    internal class Scheduler
+    internal sealed class Scheduler
     {
         private const int DelayTaskIndex = 0;
         private const int ProcessTaskIndex = 1;
@@ -567,12 +567,12 @@ internal class TelemetryController : ITelemetryController
             }
         }
 
-        private class Clock : IClock
+        private sealed class Clock : IClock
         {
             public DateTime UtcNow => DateTime.UtcNow;
         }
 
-        private class DelayFactory : IDelayFactory
+        private sealed class DelayFactory : IDelayFactory
         {
             public Task Delay(TimeSpan delay) => Task.Delay(delay);
         }

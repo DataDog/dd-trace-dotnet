@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContextInjectorInjectIncludingDsmIntegration.cs" company="Datadog">
+// <copyright file="SpanContextInjectorInjectIncludingDsmIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(browsable: false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanContextInjectorInjectIncludingDsmIntegration
+public sealed class SpanContextInjectorInjectIncludingDsmIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TCarrier, TAction, TSpanContext>(TTarget instance, in TCarrier carrier, in TAction setter, TSpanContext context, string messageType, string target)
     {

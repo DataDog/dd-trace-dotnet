@@ -1,4 +1,4 @@
-// <copyright file="ExceptionProbe.cs" company="Datadog">
+﻿// <copyright file="ExceptionProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionProbe
+    internal sealed class ExceptionProbe
     {
         internal ExceptionProbe(HashSet<Type> exceptionTypes, ExceptionReplayProbe[] parentProbes, ExceptionReplayProbe[] childProbes)
         {

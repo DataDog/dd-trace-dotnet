@@ -1,4 +1,4 @@
-// <copyright file="ActivityHandlerCommon.cs" company="Datadog">
+﻿// <copyright file="ActivityHandlerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Activity.Handlers
 {
-    internal class ActivityHandlerCommon
+    internal sealed class ActivityHandlerCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityHandlerCommon));
         internal static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();

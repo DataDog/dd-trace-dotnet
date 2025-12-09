@@ -30,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Session;
     InstrumentationCategory = InstrumentationCategory.Iast)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SessionOptionsIdleTimeoutIntegration
+public sealed class SessionOptionsIdleTimeoutIntegration
 {
     private const string MethodName = "set_IdleTimeout";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SessionOptionsIdleTimeoutIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SessionOptionsIdleTimeoutIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref TimeSpan value)
     {

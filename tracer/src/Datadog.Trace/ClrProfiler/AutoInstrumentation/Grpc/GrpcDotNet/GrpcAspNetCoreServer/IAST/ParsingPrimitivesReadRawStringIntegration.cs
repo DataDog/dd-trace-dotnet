@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     InstrumentationCategory = InstrumentationCategory.Iast)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ParsingPrimitivesReadRawStringIntegration
+public sealed class ParsingPrimitivesReadRawStringIntegration
 {
     internal static CallTargetReturn<string?> OnMethodEnd<TTarget>(string? returnValue, Exception? exception, in CallTargetState state)
     {

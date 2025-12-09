@@ -9,7 +9,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
 {
-    internal class RedisObfuscationUtil
+    internal static class RedisObfuscationUtil
     {
         private const int MaxRedisNbCommands = 3;
 

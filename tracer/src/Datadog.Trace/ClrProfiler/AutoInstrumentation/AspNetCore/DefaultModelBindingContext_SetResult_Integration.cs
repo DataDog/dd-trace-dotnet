@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DefaultModelBindingContext_SetResult_Integration
+    public sealed class DefaultModelBindingContext_SetResult_Integration
     {
         /// <summary>
         /// IntegrationName integration name

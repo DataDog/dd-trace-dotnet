@@ -1,4 +1,4 @@
-// <copyright file="FilterList.cs" company="Datadog">
+﻿// <copyright file="FilterList.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal class FilterList : IEquatable<FilterList>
+    internal sealed class FilterList : IEquatable<FilterList>
     {
         public string[] PackagePrefixes { get; set; }
 

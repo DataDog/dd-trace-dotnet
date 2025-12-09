@@ -1,4 +1,4 @@
-// <copyright file="PerformanceCountersListener.cs" company="Datadog">
+﻿// <copyright file="PerformanceCountersListener.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,10 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
+    // We derive from this type in tests, so need to leave it unsealed
+#pragma warning  disable DDSEAL001 // Types should be sealed where possible. Types used for duck-typing cannot be sealed.
     internal class PerformanceCountersListener : IRuntimeMetricsListener
+#pragma warning restore DDSEAL001
     {
         private const string MemoryCategoryName = ".NET CLR Memory";
         private const string ThreadingCategoryName = ".NET CLR LocksAndThreads";

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Telemetry;
 
-internal class MessageBatchData
+internal sealed class MessageBatchData
 {
     public MessageBatchData(string requestType, IPayload? payload)
     {

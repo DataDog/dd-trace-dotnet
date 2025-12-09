@@ -1,4 +1,4 @@
-// <copyright file="MessageWriteToIntegration.cs" company="Datadog">
+﻿// <copyright file="MessageWriteToIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class MessageWriteToIntegration
+// Can't be static because referenced in Helper.cs
+public sealed class MessageWriteToIntegration
 {
     // For performance reasons, we want to do the actual instrumentation work with a Duck constraint,
     // but to be able to disable the instrumentation we need the raw type

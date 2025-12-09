@@ -6,7 +6,7 @@
 #nullable enable
 namespace Datadog.Trace.Telemetry;
 
-internal class ProductData
+internal sealed class ProductData
 {
     public ProductData(bool enabled, ErrorData? error)
     {

@@ -13,7 +13,7 @@ using Datadog.Trace.Processors;
 
 namespace Datadog.Trace.Ci.Processors
 {
-    internal class OriginTagTraceProcessor : ITraceProcessor
+    internal sealed class OriginTagTraceProcessor : ITraceProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OriginTagTraceProcessor>();
 
