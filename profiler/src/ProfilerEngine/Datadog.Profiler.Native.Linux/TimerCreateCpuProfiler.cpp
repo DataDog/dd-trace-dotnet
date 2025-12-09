@@ -12,7 +12,6 @@
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
 
-#include <libunwind.h>
 #include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <sys/types.h>
 #include <ucontext.h>
@@ -256,8 +255,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     }
 
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
-    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
+    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)
