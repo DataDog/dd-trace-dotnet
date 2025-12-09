@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.13.1",
-        "maxVersionAvailableInclusive": "4.0.13.1",
-        "maxVersionTestedInclusive": "4.0.13.1"
+        "maxVersionSupportedInclusive": "4.0.14",
+        "maxVersionAvailableInclusive": "4.0.14",
+        "maxVersionTestedInclusive": "4.0.14"
       }
     ]
   },
@@ -1217,16 +1217,16 @@
     "integrationName": "ServiceStackRedis",
     "assemblyName": "ServiceStack.Redis",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "maxAssemblyVersionInclusive": "10.65535.65535",
     "packages": [
       {
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
         "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "8.10.0",
-        "maxVersionAvailableInclusive": "8.10.0",
-        "maxVersionTestedInclusive": "8.10.0"
+        "maxVersionSupportedInclusive": "10.0.0",
+        "maxVersionAvailableInclusive": "10.0.0",
+        "maxVersionTestedInclusive": "10.0.0"
       }
     ]
   },
