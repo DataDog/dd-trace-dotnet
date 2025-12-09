@@ -59,11 +59,11 @@ public class FeatureFlagsTests : TestHelper
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
         Assert.Contains("Eval (nonexistent) : <ERROR: No config loaded>", output);
-        Assert.Contains("Eval (simple-string) : <OK: >", output);
-        Assert.Contains("Eval (rule-based-flag) : <OK: >", output);
-        Assert.Contains("Eval (numeric-rule-flag) : <OK: >", output);
-        Assert.Contains("Eval (time-based-flag) : <OK: >", output);
-        Assert.Contains("Eval (exposure-flag) : <OK: >", output);
+        Assert.Contains("Eval (simple-string) : <OK: ", output);
+        Assert.Contains("Eval (rule-based-flag) : <OK: ", output);
+        Assert.Contains("Eval (numeric-rule-flag) : <OK: ", output);
+        Assert.Contains("Eval (time-based-flag) : <OK: ", output);
+        Assert.Contains("Eval (exposure-flag) : <OK: ", output);
     }
 
     [SkippableFact]
