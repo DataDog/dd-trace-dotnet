@@ -564,8 +564,12 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        // for x86_64, we use the Backtrace2Unwinder, otherwise we use the new unwinder
-        _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+        _pUnwinder =
+#ifdef AMD64
+            std::make_unique<Backtrace2Unwinder>();
+#else
+            std::make_unique<HybridUnwinder>();
+#endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
