@@ -25,7 +25,9 @@ internal static class AspNetCoreResourceNameHelper
         RouteValueDictionary routeValueDictionary,
         bool expandRouteParameters)
     {
-        var sb = StringBuilderCache.Acquire();
+        var sb = routePattern.RawText?.Length < 1024
+                     ? new ValueStringBuilder(stackalloc char[1024])
+                     : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
@@ -120,7 +122,7 @@ internal static class AspNetCoreResourceNameHelper
         // We need a lower invariant version of the string
         if (sb.Length == 1)
         {
-            StringBuilderCache.Release(sb);
+            sb.Dispose();
             return "/";
         }
 
@@ -131,14 +133,10 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         Span<char> dest = stackalloc char[1024];
-        var length = 0;
-        foreach (var chunk in sb.GetChunks())
-        {
-            length += chunk.Span.ToLowerInvariant(dest.Slice(0));
-        }
+        var result = sb.AsSpan().ToLowerInvariant(dest).ToString();
 
-        StringBuilderCache.Release(sb);
-        return dest.Slice(0, length).ToString();
+        sb.Dispose();
+        return result;
     }
 #endif
 
