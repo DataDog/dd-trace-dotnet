@@ -235,6 +235,19 @@ namespace Datadog.Trace.Util
             return _chars.Slice(origPos, length);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendToLowerInvariant(scoped ReadOnlySpan<char> value)
+        {
+            int pos = _pos;
+            if (pos > _chars.Length - value.Length)
+            {
+                Grow(value.Length);
+            }
+
+            value.ToLowerInvariant(_chars.Slice(_pos));
+            _pos += value.Length;
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void GrowAndAppend(char c)
         {
