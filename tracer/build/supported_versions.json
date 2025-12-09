@@ -693,6 +693,23 @@
     ]
   },
   {
+    "integrationName": "Hangfire",
+    "assemblyName": "Hangfire.Core",
+    "minAssemblyVersionInclusive": "1.7.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "Hangfire",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "1.7.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "1.8.21",
+        "maxVersionAvailableInclusive": "1.8.21",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
     "integrationName": "HashAlgorithm",
     "assemblyName": "System.Security.Cryptography",
     "minAssemblyVersionInclusive": "7.0.0",
