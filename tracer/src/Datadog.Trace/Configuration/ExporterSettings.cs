@@ -1,4 +1,4 @@
-// <copyright file="ExporterSettings.cs" company="Datadog">
+﻿// <copyright file="ExporterSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains exporter settings.
     /// </summary>
-    public partial class ExporterSettings
+    public sealed partial class ExporterSettings
     {
         /// <summary>
         /// Allows overriding of file system access for tests.
@@ -425,7 +425,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// These contain the "raw" settings loaded from config. If these don't change, the exporter settings also won't change
         /// </summary>
-        internal record Raw
+        internal sealed record Raw
         {
             public Raw(IConfigurationSource source, IConfigurationTelemetry telemetry)
             {

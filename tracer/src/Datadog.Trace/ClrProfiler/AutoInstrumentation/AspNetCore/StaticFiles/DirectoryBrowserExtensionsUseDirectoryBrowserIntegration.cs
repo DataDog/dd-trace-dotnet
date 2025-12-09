@@ -36,10 +36,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class DirectoryBrowserExtensionsUseDirectoryBrowserIntegration
+public sealed class DirectoryBrowserExtensionsUseDirectoryBrowserIntegration
 {
     private const string MethodName = "UseDirectoryBrowser";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectoryBrowserExtensionsUseDirectoryBrowserIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DirectoryBrowserExtensionsUseDirectoryBrowserIntegration));
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {

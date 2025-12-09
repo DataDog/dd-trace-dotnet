@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class MvcOptionsIntegration
+public sealed class MvcOptionsIntegration
 {
     private const string TypeName = "Microsoft.AspNetCore.Mvc.MvcOptions";
 

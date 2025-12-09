@@ -30,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DeleteItemAsyncIntegration
+    public sealed class DeleteItemAsyncIntegration
     {
         private const string Operation = "DeleteItem";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemAsyncIntegration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DeleteItemAsyncIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget, TDeleteItemRequest>(TTarget instance, TDeleteItemRequest request, CancellationToken cancellationToken)
             where TDeleteItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType

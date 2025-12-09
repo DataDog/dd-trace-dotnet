@@ -1,4 +1,4 @@
-// <copyright file="RemotingTags.cs" company="Datadog">
+﻿// <copyright file="RemotingTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tagging
         }
     }
 
-    internal partial class RemotingClientV1Tags : RemotingClientTags
+    internal sealed partial class RemotingClientV1Tags : RemotingClientTags
     {
         private string _peerServiceOverride = null;
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tagging
         }
     }
 
-    internal partial class RemotingServerTags : RemotingTags
+    internal sealed partial class RemotingServerTags : RemotingTags
     {
         public RemotingServerTags()
             : base(SpanKinds.Server)

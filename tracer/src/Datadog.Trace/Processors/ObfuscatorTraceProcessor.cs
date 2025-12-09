@@ -1,4 +1,4 @@
-// <copyright file="ObfuscatorTraceProcessor.cs" company="Datadog">
+﻿// <copyright file="ObfuscatorTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ namespace Datadog.Trace.Processors
 {
     // https://github.com/DataDog/dd-trace-java/blob/35487fa08f16503105b2ff37fb084ffa5c894f24/internal-api/src/main/java/datadog/trace/api/normalize/SQLNormalizer.java
 
-    internal class ObfuscatorTraceProcessor : ITraceProcessor
+    internal sealed class ObfuscatorTraceProcessor : ITraceProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTraceProcessor>();
         private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);

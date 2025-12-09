@@ -1,4 +1,4 @@
-// <copyright file="RetryMessageBus.cs" company="Datadog">
+﻿// <copyright file="RetryMessageBus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
-internal class RetryMessageBus : IMessageBus
+internal sealed class RetryMessageBus : IMessageBus
 {
     private readonly Dictionary<string, RetryTestCaseMetadata> _testMethodMetadata = new();
     private readonly IMessageBus _innerMessageBus;
@@ -240,7 +240,7 @@ internal class RetryMessageBus : IMessageBus
         string? TestMethodUniqueID { get; set; }
     }
 
-    private class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)
+    private sealed class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)
     {
         private List<object>?[]? _listOfMessages;
 

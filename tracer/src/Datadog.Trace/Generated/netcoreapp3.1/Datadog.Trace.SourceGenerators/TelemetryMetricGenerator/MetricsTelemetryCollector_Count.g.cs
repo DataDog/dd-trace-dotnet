@@ -9,7 +9,7 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class MetricsTelemetryCollector
+internal sealed partial class MetricsTelemetryCollector
 {
     private const int CountLength = 651;
 

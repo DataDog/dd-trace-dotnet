@@ -1,4 +1,4 @@
-// <copyright file="TraceSampler.cs" company="Datadog">
+﻿// <copyright file="TraceSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
-    internal class TraceSampler : ITraceSampler
+    internal sealed class TraceSampler : ITraceSampler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Sampling
             return new SamplingDecision(priority, mechanism, rate, limiterRate);
         }
 
-        public class Builder(IRateLimiter limiter)
+        public sealed class Builder(IRateLimiter limiter)
         {
             private readonly IRateLimiter _limiter = limiter;
             private readonly List<ISamplingRule> _rules = [];

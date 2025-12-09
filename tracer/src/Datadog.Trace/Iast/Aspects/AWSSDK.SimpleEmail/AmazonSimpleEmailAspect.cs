@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("AWSSDK.SimpleEmail", AspectType.Sink, VulnerabilityType.EmailHtmlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class AmazonSimpleEmailAspect
+public sealed class AmazonSimpleEmailAspect
 {
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.

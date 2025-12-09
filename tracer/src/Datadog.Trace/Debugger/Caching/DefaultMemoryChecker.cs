@@ -1,4 +1,4 @@
-// <copyright file="DefaultMemoryChecker.cs" company="Datadog">
+﻿// <copyright file="DefaultMemoryChecker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System;
 
 namespace Datadog.Trace.Debugger.Caching;
 
-internal class DefaultMemoryChecker : IMemoryChecker
+internal sealed class DefaultMemoryChecker : IMemoryChecker
 {
     private const long LowMemoryThreshold = 1_073_741_824; // 1 GB in bytes
 
@@ -125,7 +125,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
         return false;
     }
 
-    protected virtual Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char> ReadMemInfo()
+    private Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char> ReadMemInfo()
     {
         var empty = Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char>.Empty;
         var memInfo = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(System.IO.File.ReadAllText("/proc/meminfo"));
@@ -154,7 +154,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     // Windows API for memory information
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private class MEMORYSTATUSEX
+    private sealed class MEMORYSTATUSEX
     {
 #pragma warning disable IDE0044 // Add readonly modifier
 #pragma warning disable CS0169 // Field is never used

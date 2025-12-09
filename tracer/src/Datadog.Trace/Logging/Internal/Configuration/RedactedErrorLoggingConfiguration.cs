@@ -8,7 +8,7 @@ using Datadog.Trace.Telemetry.Collectors;
 
 namespace Datadog.Trace.Logging.Internal.Configuration;
 
-internal class RedactedErrorLoggingConfiguration
+internal sealed class RedactedErrorLoggingConfiguration
 {
     public RedactedErrorLoggingConfiguration(RedactedErrorLogCollector collector)
     {

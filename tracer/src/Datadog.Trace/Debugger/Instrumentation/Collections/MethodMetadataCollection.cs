@@ -1,4 +1,4 @@
-// <copyright file="MethodMetadataCollection.cs" company="Datadog">
+﻿// <copyright file="MethodMetadataCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// In these scenario, there will be multiple <see cref="EverGrowingCollection{TPayload}.Items"/> arrays, one for each AppDomain.
     /// In order for us to grab the same MethodMetadataInfo across all of them, we need to dereference the same index,
     /// because the same instrumented bytecode could execute in different AppDomains, and static fields are not shared across AppDomains.
-    internal class MethodMetadataCollection : EverGrowingCollection<MethodMetadataInfo>
+    internal sealed class MethodMetadataCollection : EverGrowingCollection<MethodMetadataInfo>
     {
         private static MethodMetadataCollection _instance;
         private static object _instanceLock = new();

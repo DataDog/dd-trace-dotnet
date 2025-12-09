@@ -1,4 +1,4 @@
-// <copyright file="LogFormatter.cs" company="Datadog">
+﻿// <copyright file="LogFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
-    internal class LogFormatter : IDisposable
+    internal sealed class LogFormatter : IDisposable
     {
         private const char KeyValueTagSeparator = ':';
         private const char TagSeparator = ',';
@@ -485,6 +485,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         public void Dispose() => _settingSub.Dispose();
 
-        private record ServiceTags(string? Service, string? Env, string? Version, string? Tags);
+        private sealed record ServiceTags(string? Service, string? Env, string? Version, string? Tags);
     }
 }

@@ -11,7 +11,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Processors
 {
-    internal class NormalizerTraceProcessor : ITraceProcessor
+    internal sealed class NormalizerTraceProcessor : ITraceProcessor
     {
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go
 

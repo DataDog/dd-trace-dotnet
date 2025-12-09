@@ -11,7 +11,7 @@ using System.Net.Http;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class SocketHandlerRequestFactory : HttpClientRequestFactory
+    internal sealed class SocketHandlerRequestFactory : HttpClientRequestFactory
     {
         private readonly IStreamFactory _streamFactory;
 

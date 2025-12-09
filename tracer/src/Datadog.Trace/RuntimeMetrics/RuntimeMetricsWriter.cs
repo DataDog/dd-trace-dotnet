@@ -1,4 +1,4 @@
-// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
+﻿// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
-    internal class RuntimeMetricsWriter : IDisposable
+    internal sealed class RuntimeMetricsWriter : IDisposable
     {
 #if NETSTANDARD
         // In < .NET Core 3.1 we don't send CommittedMemory, so we report differently on < .NET Core 3.1

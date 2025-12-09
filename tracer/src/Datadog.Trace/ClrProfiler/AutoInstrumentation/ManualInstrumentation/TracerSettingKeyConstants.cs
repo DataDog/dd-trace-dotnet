@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 
-internal class TracerSettingKeyConstants
+internal static class TracerSettingKeyConstants
 {
     // These keys are used when sending from manual to automatic, but not in reverse
     public const string IsFromDefaultSourcesKey = "IsFromDefaultSources";

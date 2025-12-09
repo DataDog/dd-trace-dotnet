@@ -9,7 +9,7 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 
-internal class ManualInstrumentationConstants
+internal static class ManualInstrumentationConstants
 {
     public const string MinVersion = "3.0.0";
     public const string MaxVersion = "3.*.*";

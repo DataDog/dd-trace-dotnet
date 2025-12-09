@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 [AspectClass("Newtonsoft.Json")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class NewtonsoftJsonAspects
+public sealed class NewtonsoftJsonAspects
 {
     private static readonly ICanParse? JObjectProxy;
     private static readonly ICanParse? JArrayProxy;

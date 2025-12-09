@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class SyncProcessMessageIntegration
+    public sealed class SyncProcessMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
