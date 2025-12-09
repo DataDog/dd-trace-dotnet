@@ -1,4 +1,4 @@
-// <copyright file="DatadogLoggingScope.cs" company="Datadog">
+﻿// <copyright file="DatadogLoggingScope.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
-    internal class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
+    internal sealed class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
     {
         private readonly string _service;
         private readonly string _env;

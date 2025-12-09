@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     IntegrationName = AzureFunctionsCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class FunctionExecutionMiddlewareInvokeIntegration
+public sealed class FunctionExecutionMiddlewareInvokeIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TFunctionContext>(TTarget instance, TFunctionContext functionContext)
         where TFunctionContext : IFunctionContext

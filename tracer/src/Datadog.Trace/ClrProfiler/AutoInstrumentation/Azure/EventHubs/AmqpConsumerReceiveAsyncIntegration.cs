@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
     IntegrationName = nameof(IntegrationId.AzureEventHubs))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class AmqpConsumerReceiveAsyncIntegration
+public sealed class AmqpConsumerReceiveAsyncIntegration
 {
     private const string OperationName = "receive";
     private const string SpanOperationName = "azure_eventhubs." + OperationName;

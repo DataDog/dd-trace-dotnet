@@ -1,4 +1,4 @@
-// <copyright file="DuckTypeExceptions.cs" company="Datadog">
+﻿// <copyright file="DuckTypeExceptions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -49,7 +49,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy type definition is null
     /// </summary>
-    internal class DuckTypeProxyTypeDefinitionIsNull : DuckTypeException
+    internal sealed class DuckTypeProxyTypeDefinitionIsNull : DuckTypeException
     {
         private DuckTypeProxyTypeDefinitionIsNull()
             : base($"The proxy type definition is null.")
@@ -67,7 +67,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType target object instance is null
     /// </summary>
-    internal class DuckTypeTargetObjectInstanceIsNull : DuckTypeException
+    internal sealed class DuckTypeTargetObjectInstanceIsNull : DuckTypeException
     {
         private DuckTypeTargetObjectInstanceIsNull()
             : base($"The target object instance is null.")
@@ -85,7 +85,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType invalid type conversion exception
     /// </summary>
-    internal class DuckTypeInvalidTypeConversionException : DuckTypeException
+    internal sealed class DuckTypeInvalidTypeConversionException : DuckTypeException
     {
         private DuckTypeInvalidTypeConversionException(Type actualType, Type expectedType)
             : base($"Invalid type conversion from {actualType.FullName} to {expectedType.FullName}")
@@ -103,7 +103,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property can't be read
     /// </summary>
-    internal class DuckTypePropertyCantBeReadException : DuckTypeException
+    internal sealed class DuckTypePropertyCantBeReadException : DuckTypeException
     {
         private DuckTypePropertyCantBeReadException(PropertyInfo property)
             : base($"The property '{property.Name}' can't be read, you should remove the getter from the proxy definition base type class or interface.")
@@ -121,7 +121,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property can't be written
     /// </summary>
-    internal class DuckTypePropertyCantBeWrittenException : DuckTypeException
+    internal sealed class DuckTypePropertyCantBeWrittenException : DuckTypeException
     {
         private DuckTypePropertyCantBeWrittenException(PropertyInfo property)
             : base($"The property '{property.Name}' can't be written, you should remove the setter from the proxy definition base type class or interface.")
@@ -139,7 +139,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property argument doesn't have the same argument length
     /// </summary>
-    internal class DuckTypePropertyArgumentsLengthException : DuckTypeException
+    internal sealed class DuckTypePropertyArgumentsLengthException : DuckTypeException
     {
         private DuckTypePropertyArgumentsLengthException(PropertyInfo property)
             : base($"The property '{property.Name}' doesn't have the same number of arguments as the original property.")
@@ -157,7 +157,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType field is readonly
     /// </summary>
-    internal class DuckTypeFieldIsReadonlyException : DuckTypeException
+    internal sealed class DuckTypeFieldIsReadonlyException : DuckTypeException
     {
         private DuckTypeFieldIsReadonlyException(FieldInfo field)
             : base($"The field '{field.Name}' is marked as readonly, you should remove the setter from the base type class or interface.")
@@ -175,7 +175,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property or field not found
     /// </summary>
-    internal class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
+    internal sealed class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
     {
         private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName, string type)
             : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance of type '{type}'.")
@@ -193,7 +193,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType struct members cannot be changed exception
     /// </summary>
-    internal class DuckTypeStructMembersCannotBeChangedException : DuckTypeException
+    internal sealed class DuckTypeStructMembersCannotBeChangedException : DuckTypeException
     {
         private DuckTypeStructMembersCannotBeChangedException(Type type)
             : base($"Modifying struct members is not supported. [{type.FullName}]")
@@ -211,7 +211,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType target method can not be found exception
     /// </summary>
-    internal class DuckTypeTargetMethodNotFoundException : DuckTypeException
+    internal sealed class DuckTypeTargetMethodNotFoundException : DuckTypeException
     {
         private DuckTypeTargetMethodNotFoundException(MethodInfo method)
             : base($"The target method for the proxy method '{method}' was not found.")
@@ -229,7 +229,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy method parameter is missing exception
     /// </summary>
-    internal class DuckTypeProxyMethodParameterIsMissingException : DuckTypeException
+    internal sealed class DuckTypeProxyMethodParameterIsMissingException : DuckTypeException
     {
         private DuckTypeProxyMethodParameterIsMissingException(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
             : base($"The proxy method '{proxyMethod.Name}' is missing parameter '{targetParameterInfo.Name}' declared in the target method.")
@@ -247,7 +247,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType parameter signature mismatch between proxy and target method
     /// </summary>
-    internal class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : DuckTypeException
+    internal sealed class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : DuckTypeException
     {
         private DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Parameter signature mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'")
@@ -265,7 +265,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType parameter signature mismatch between proxy and target method
     /// </summary>
-    internal class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : DuckTypeException
+    internal sealed class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : DuckTypeException
     {
         private DuckTypeProxyAndTargetMethodReturnTypeMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Return type mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'.")
@@ -283,7 +283,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy methods with generic parameters are not supported in non public instances exception
     /// </summary>
-    internal class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : DuckTypeException
+    internal sealed class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : DuckTypeException
     {
         private DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(MethodInfo proxyMethod)
             : base($"The proxy method with generic parameters '{proxyMethod}' are not supported on non public instances")
@@ -301,7 +301,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy method has an ambiguous match in the target type exception
     /// </summary>
-    internal class DuckTypeTargetMethodAmbiguousMatchException : DuckTypeException
+    internal sealed class DuckTypeTargetMethodAmbiguousMatchException : DuckTypeException
     {
         private DuckTypeTargetMethodAmbiguousMatchException(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
             : base($"The proxy method '{proxyMethod}' matches at least two methods in the target type. Method1 = '{targetMethod}' and Method2 = '{targetMethod2}'")
@@ -319,7 +319,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType reverse proxy type to derive from is a struct exception
     /// </summary>
-    internal class DuckTypeReverseProxyBaseIsStructException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyBaseIsStructException : DuckTypeException
     {
         private DuckTypeReverseProxyBaseIsStructException(Type type)
             : base($"Cannot derive from struct type '{type.FullName}' for reverse proxy")
@@ -337,7 +337,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy method is abstract
     /// </summary>
-    internal class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : DuckTypeException
     {
         private DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(Type type)
             : base($"The implementation type '{type.FullName}' must not be an interface or abstract type for reverse proxy")
@@ -355,7 +355,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property can't be read
     /// </summary>
-    internal class DuckTypeReverseProxyPropertyCannotBeAbstractException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyPropertyCannotBeAbstractException : DuckTypeException
     {
         private DuckTypeReverseProxyPropertyCannotBeAbstractException(PropertyInfo property)
             : base($"The property '{property.Name}' cannot be abstract for reverse proxy")
@@ -373,7 +373,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType method was [DuckReverseMethod] in non-reverse proxy
     /// </summary>
-    internal class DuckTypeIncorrectReverseMethodUsageException : DuckTypeException
+    internal sealed class DuckTypeIncorrectReverseMethodUsageException : DuckTypeException
     {
         private DuckTypeIncorrectReverseMethodUsageException(MethodInfo method)
             : base($"The method '{method.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
@@ -391,7 +391,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property was [DuckReverseMethod] in non-reverse proxy
     /// </summary>
-    internal class DuckTypeIncorrectReversePropertyUsageException : DuckTypeException
+    internal sealed class DuckTypeIncorrectReversePropertyUsageException : DuckTypeException
     {
         private DuckTypeIncorrectReversePropertyUsageException(PropertyInfo property)
             : base($"The property '{property.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
@@ -409,7 +409,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy was missing an implementation
     /// </summary>
-    internal class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
     {
         private DuckTypeReverseProxyMissingPropertyImplementationException(IEnumerable<PropertyInfo> properties)
             : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(x => x.Name))}")
@@ -427,7 +427,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy was missing an implementation
     /// </summary>
-    internal class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
     {
         private DuckTypeReverseProxyMissingMethodImplementationException(IEnumerable<MethodInfo> methods)
             : base($"The duck reverse proxy was missing implementations for methods: {string.Join(", ", methods.Select(x => x.Name))}")
@@ -445,7 +445,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy tried to implement a generic method in a non-generic way
     /// </summary>
-    internal class DuckTypeReverseAttributeParameterNamesMismatchException : DuckTypeException
+    internal sealed class DuckTypeReverseAttributeParameterNamesMismatchException : DuckTypeException
     {
         private DuckTypeReverseAttributeParameterNamesMismatchException(MethodInfo method)
             : base($"The reverse duck attribute parameter names for method '{method.Name}' did not match the method's parameters ")
@@ -463,7 +463,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy tried to implement a generic method in a non-generic way
     /// </summary>
-    internal class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : DuckTypeException
+    internal sealed class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : DuckTypeException
     {
         private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(MethodInfo implementationMethod, MethodInfo targetMethod)
             : base($"The duck reverse proxy implementation '{implementationMethod.Name}' for generic target method '{targetMethod.Name}' " +
@@ -482,7 +482,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType property or field not found
     /// </summary>
-    internal class DuckTypeCustomAttributeHasNamedArgumentsException : DuckTypeException
+    internal sealed class DuckTypeCustomAttributeHasNamedArgumentsException : DuckTypeException
     {
         private DuckTypeCustomAttributeHasNamedArgumentsException(string attributeName, string type)
             : base($"The attribute '{attributeName}' applied to '{type}' uses named arguments. Named arguments are not supported for custom attributes.")
@@ -500,7 +500,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Ducktype DuckCopy struct does not contains any field
     /// </summary>
-    internal class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
+    internal sealed class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
     {
         private DuckTypeDuckCopyStructDoesNotContainsAnyField(string type)
             : base($"The [DuckCopy] struct '{type}' does not contains any public field. Remember that DuckCopy proxies must be declared using fields instead of properties.")

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
     IntegrationName = KafkaConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KafkaConsumerCommitIntegration
+public sealed class KafkaConsumerCommitIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object offsets)
     {

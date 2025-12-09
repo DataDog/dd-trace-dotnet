@@ -1,4 +1,4 @@
-// <copyright file="Iast.cs" company="Datadog">
+﻿// <copyright file="Iast.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// The class responsible for coordinating IAST
 /// </summary>
-internal class Iast
+internal sealed class Iast
 {
     private static Iast? _instance;
     private static bool _globalInstanceInitialized;

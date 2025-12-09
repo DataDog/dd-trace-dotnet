@@ -1,4 +1,4 @@
-// <copyright file="HttpClientRequestFactory.cs" company="Datadog">
+﻿// <copyright file="HttpClientRequestFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,11 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
+#if NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
     internal class HttpClientRequestFactory : IApiRequestFactory
+#else
+    internal sealed class HttpClientRequestFactory : IApiRequestFactory
+#endif
     {
         private readonly HttpClient _client;
         private readonly HttpMessageHandler _handler;
@@ -39,7 +43,11 @@ namespace Datadog.Trace.Agent.Transports
 
         public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
 
+#if NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
         public virtual string Info(Uri endpoint)
+#else
+        public string Info(Uri endpoint)
+#endif
         {
             return endpoint.ToString();
         }

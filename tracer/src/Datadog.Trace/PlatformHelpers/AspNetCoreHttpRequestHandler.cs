@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
+﻿// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -250,7 +250,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        internal class RequestTrackingFeature
+        internal sealed class RequestTrackingFeature
         {
             public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
             {

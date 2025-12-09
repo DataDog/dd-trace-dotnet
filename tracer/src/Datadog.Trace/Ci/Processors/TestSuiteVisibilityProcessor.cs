@@ -13,7 +13,7 @@ using Datadog.Trace.Processors;
 
 namespace Datadog.Trace.Ci.Processors;
 
-internal class TestSuiteVisibilityProcessor : ITraceProcessor
+internal sealed class TestSuiteVisibilityProcessor : ITraceProcessor
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestSuiteVisibilityProcessor>();
 

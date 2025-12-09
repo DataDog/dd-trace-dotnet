@@ -19,7 +19,7 @@ using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Agent
 {
-    internal class AgentWriter : IAgentWriter
+    internal sealed class AgentWriter : IAgentWriter
     {
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 

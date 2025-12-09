@@ -1,4 +1,4 @@
-// <copyright file="Decoration.cs" company="Datadog">
+﻿// <copyright file="Decoration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,21 +8,21 @@
 #nullable enable
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
-internal record Decoration
+internal sealed record Decoration
 {
     public SnapshotSegment? When { get; set; }
 
     public Tags[]? Tags { get; set; }
 }
 
-internal record Tags
+internal sealed record Tags
 {
     public string? Name { get; set; }
 
     public TagValue? Value { get; set; }
 }
 
-internal record TagValue
+internal sealed record TagValue
 {
     public string? Template { get; set; }
 

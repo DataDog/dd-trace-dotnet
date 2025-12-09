@@ -42,7 +42,7 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
     {
         [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
         public object Execute(object testMethod)
@@ -52,7 +52,7 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
     {
         private object? _resultInstance;
 
@@ -69,7 +69,7 @@ internal abstract class SkipTestMethodExecutor
             public abstract object Result { get; }
         }
 
-        private class TaskTestResultArray<T>(T value) : TaskTestResultArray
+        private sealed class TaskTestResultArray<T>(T value) : TaskTestResultArray
         {
             public override object Result { get; } = Task.FromResult(value);
         }

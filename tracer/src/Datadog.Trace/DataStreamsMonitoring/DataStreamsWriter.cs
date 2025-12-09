@@ -19,7 +19,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
-internal class DataStreamsWriter : IDataStreamsWriter
+internal sealed class DataStreamsWriter : IDataStreamsWriter
 {
     private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 

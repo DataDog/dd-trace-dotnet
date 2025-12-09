@@ -1,4 +1,4 @@
-// <copyright file="ApmAgentWriter.cs" company="Datadog">
+﻿// <copyright file="ApmAgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci.Agent;
 /// <summary>
 /// APM Agent Writer for CI Visibility
 /// </summary>
-internal class ApmAgentWriter : IEventWriter
+internal sealed class ApmAgentWriter : IEventWriter
 {
     private const int DefaultMaxBufferSize = 1024 * 1024 * 10;
 

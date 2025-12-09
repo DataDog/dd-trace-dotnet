@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.AspNetCore.Mvc;
 [AspectClass("Microsoft.AspNetCore.Mvc", InstrumentationCategory.Iast, AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class ControllerBaseAspect
+public sealed class ControllerBaseAspect
 {
     /// <summary>
     /// Redirect aspect

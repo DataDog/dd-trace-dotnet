@@ -1,4 +1,4 @@
-// <copyright file="TruncatorTraceProcessor.cs" company="Datadog">
+﻿// <copyright file="TruncatorTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors
 {
-    internal class TruncatorTraceProcessor : ITraceProcessor
+    internal sealed class TruncatorTraceProcessor : ITraceProcessor
     {
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go
 
