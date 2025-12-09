@@ -29,6 +29,7 @@ class IConfiguration;
 class IRuntimeInfo;
 class ISsiManager;
 class IHeapSnapshotManager;
+class IGcSettingsProvider;
 
 namespace libdatadog {
 class Exporter;
@@ -59,6 +60,7 @@ public:
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
     void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) override;
     void RegisterApplication(std::string_view runtimeId) override;
+    void RegisterGcSettingsProvider(IGcSettingsProvider* provider) override;
 
     static std::string BuildAgentEndpoint(IConfiguration const* configuration);
 
@@ -112,8 +114,24 @@ private:
     std::vector<UpscalingPoissonInfo> GetUpscalingPoissonInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
-    std::string GetMetadata() const;
-    std::string GetInfo() const;
+    std::string GetMetadataJson() const;
+    std::string GetInfoJson(std::string& runtimeId) const;
+    void AppendProfilerInfo(std::stringstream& builder, std::string& runtimeId) const;
+    bool AppendSystemProperties(std::stringstream& builder) const;
+    void AppendGcConfig(std::stringstream& builder) const;
+
+    inline void ElementStart(std::stringstream& builder, const std::string& name) const
+    {
+        builder << "\"" << name << "\": {";
+    }
+    inline void ElementEnd(std::stringstream& builder) const
+    {
+        builder << "}";
+    }
+    inline void AppendValue(std::stringstream& builder, const std::string& key, const std::string& value) const
+    {
+        builder << "\"" << key << "\":\"" << value << "\"";
+    }
 
 private:
     static tags CommonTags;
@@ -128,6 +146,9 @@ private:
     static std::string const RequestFileName;
     static std::string const ProfilePeriodType;
     static std::string const ProfilePeriodUnit;
+    static std::string const StartTime;
+
+    std::string const ProviderList;
 
     std::vector<SampleValueType> _sampleTypeDefinitions;
     fs::path _outputPath;
@@ -150,7 +171,8 @@ private:
     IRuntimeInfo* _runtimeInfo;
     ISsiManager* _ssiManager;
     IHeapSnapshotManager* _heapSnapshotManager;
+    IGcSettingsProvider* _gcSettingsProvider = nullptr;  // could be null with .NET Framework
 
 public: // for tests
-    static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);
+    static std::string GetEnabledProfilers(IEnabledProfilers* enabledProfilers);
 };

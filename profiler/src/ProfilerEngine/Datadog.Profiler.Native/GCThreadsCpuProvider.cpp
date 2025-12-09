@@ -18,6 +18,20 @@ const char* GCThreadsCpuProvider::GetName()
     return "Garbage Collector Threads CPU provider";
 }
 
+GCMode GCThreadsCpuProvider::GetMode()
+{
+    // TODO: implement the env var-based GC configuration in IConfiguration and use it here
+
+    // ensure that we have attempted to get the GC threads at least once
+    if (_number_of_attempts == 0)
+    {
+        GetThreads();
+    }
+
+    return _gcThreads.empty() ? GCMode::Workstation : GCMode::Server;
+}
+
+
 bool GCThreadsCpuProvider::IsGcThread(std::shared_ptr<IThreadInfo> const& thread)
 {
     static shared::WSTRING GcServerThread = WStr(".NET Server GC");

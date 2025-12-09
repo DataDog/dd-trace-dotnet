@@ -29,6 +29,21 @@ const std::string MetadataProvider::DebugInfoEnabled("DD_INTERNAL_PROFILING_DEBU
 const std::string MetadataProvider::GcThreadsCpuTimeEnabled("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
 const std::string MetadataProvider::InternalMetricsEnabled("DD_INTERNAL_METRICS_ENABLED");
 
+const std::string MetadataProvider::ThreadLifetimeEnabled("DD_INTERNAL_THREAD_LIFETIME_ENABLED");
+const std::string MetadataProvider::SystemCallsShieldEnabled("DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED");
+const std::string MetadataProvider::EtwEnabled("DD_INTERNAL_PROFILING_ETW_ENABLED");
+const std::string MetadataProvider::ManagedActivationEnabled("DD_PROFILING_MANAGED_ACTIVATION_ENABLED");
+const std::string MetadataProvider::CpuProfilerType("DD_INTERNAL_CPU_PROFILER_TYPE");
+const std::string MetadataProvider::CpuProfilingInterval("DD_INTERNAL_CPU_PROFILING_INTERVAL");
+const std::string MetadataProvider::SsiLongLivedThreshold("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
+const std::string MetadataProvider::HttpProfilingEnabled("DD_INTERNAL_PROFILING_HTTP_ENABLED");
+const std::string MetadataProvider::HttpRequestDurationThreshold("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");
+const std::string MetadataProvider::HeapSnapshotInterval("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL");
+const std::string MetadataProvider::HeapSnapshotCheckInterval("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL");
+const std::string MetadataProvider::HeapSnapshotMemoryPressureThreshold("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD");
+const std::string MetadataProvider::ForceHttpSampling("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
+const std::string MetadataProvider::WaitHandleProfilingEnabled("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");
+
 const std::string MetadataProvider::SectionRuntimeSettings("Runtime Settings");
 const std::string MetadataProvider::StartTime("Start Time");
 const std::string MetadataProvider::NbCores("Number of Cores");
@@ -55,6 +70,28 @@ void MetadataProvider::Initialize()
     AddEnvVar(SectionEnvVars, GcThreadsCpuTimeEnabled, EnvironmentVariables::GcThreadsCpuTimeEnabled);
     AddEnvVar(SectionEnvVars, InternalMetricsEnabled, EnvironmentVariables::InternalMetricsEnabled);
     AddEnvVar(SectionEnvVars, CpuWallTimeSamplingRate, EnvironmentVariables::CpuWallTimeSamplingRate);
+
+    AddEnvVar(SectionEnvVars, DebugLogEnabled, EnvironmentVariables::DebugLogEnabled);
+    AddEnvVar(SectionEnvVars, UploadInterval, EnvironmentVariables::UploadInterval);
+    AddEnvVar(SectionEnvVars, NamedPipeName, EnvironmentVariables::NamedPipeName);
+    AddEnvVar(SectionEnvVars, NativeFramesEnabled, EnvironmentVariables::NativeFramesEnabled);
+    AddEnvVar(SectionEnvVars, DeprecatedContentionProfilingEnabled, EnvironmentVariables::DeprecatedContentionProfilingEnabled);
+    AddEnvVar(SectionEnvVars, TimestampsAsLabelEnabled, EnvironmentVariables::TimestampsAsLabelEnabled);
+    AddEnvVar(SectionEnvVars, CoreMinimumOverride, EnvironmentVariables::CoreMinimumOverride);
+    AddEnvVar(SectionEnvVars, ThreadLifetimeEnabled, EnvironmentVariables::ThreadLifetimeEnabled);
+    AddEnvVar(SectionEnvVars, SystemCallsShieldEnabled, EnvironmentVariables::SystemCallsShieldEnabled);
+    AddEnvVar(SectionEnvVars, EtwEnabled, EnvironmentVariables::EtwEnabled);
+    AddEnvVar(SectionEnvVars, ManagedActivationEnabled, EnvironmentVariables::ManagedActivationEnabled);
+    AddEnvVar(SectionEnvVars, CpuProfilerType, EnvironmentVariables::CpuProfilerType);
+    AddEnvVar(SectionEnvVars, CpuProfilingInterval, EnvironmentVariables::CpuProfilingInterval);
+    AddEnvVar(SectionEnvVars, SsiLongLivedThreshold, EnvironmentVariables::SsiLongLivedThreshold);
+    AddEnvVar(SectionEnvVars, HttpProfilingEnabled, EnvironmentVariables::HttpProfilingEnabled);
+    AddEnvVar(SectionEnvVars, HttpRequestDurationThreshold, EnvironmentVariables::HttpRequestDurationThreshold);
+    AddEnvVar(SectionEnvVars, HeapSnapshotInterval, EnvironmentVariables::HeapSnapshotInterval);
+    AddEnvVar(SectionEnvVars, HeapSnapshotCheckInterval, EnvironmentVariables::HeapSnapshotCheckInterval);
+    AddEnvVar(SectionEnvVars, HeapSnapshotMemoryPressureThreshold, EnvironmentVariables::HeapSnapshotMemoryPressureThreshold);
+    AddEnvVar(SectionEnvVars, ForceHttpSampling, EnvironmentVariables::ForceHttpSampling);
+    AddEnvVar(SectionEnvVars, WaitHandleProfilingEnabled, EnvironmentVariables::WaitHandleProfilingEnabled);
 
     auto st = OsSpecificApi::GetProcessStartTime();
     if (!st.empty())

@@ -599,6 +599,7 @@ void CorProfilerCallback::InitializeServices()
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
 
         _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
+        _pExporter->RegisterGcSettingsProvider(_gcThreadsCpuProvider.get());
     }
 
     if (_pContentionProvider != nullptr)
