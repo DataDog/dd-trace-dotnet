@@ -19,6 +19,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -39,14 +40,13 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         [Fact]
         public async Task CompleteDiagnosticObserverTest()
         {
-            TracerRestorerAttribute.SetTracer(GetTracer());
+            await using var tracer = GetTracer();
 
             var builder = new WebHostBuilder()
                 .UseStartup<Startup>();
 
-            var testServer = new TestServer(builder);
+            using var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
-            var tracer = GetTracer();
             var (security, iast) = GetSecurity();
             var spanCodeOrigin = GetSpanCodeOrigin();
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin) };
@@ -70,9 +70,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
         [Theory]
         [CombinatorialData]
-        public void HttpRequestIn_PopulateSpan(bool hasResourceBasedSamplingRules)
+        public async Task HttpRequestIn_PopulateSpan(bool hasResourceBasedSamplingRules)
         {
-            var tracer = GetTracer(hasResourceBasedSamplingRules);
+            await using var tracer = GetTracer(hasResourceBasedSamplingRules);
             var (security, iast) = GetSecurity();
             var spanCodeOrigin = GetSpanCodeOrigin();
 
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
-        private static Tracer GetTracer(bool hasResourceBasedSamplingRules = false)
+        private static ScopedTracer GetTracer(bool hasResourceBasedSamplingRules = false)
         {
             TracerSettings settings;
             if (hasResourceBasedSamplingRules)
@@ -123,9 +123,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 settings = new TracerSettings();
             }
 
-            var writerMock = new Mock<IAgentWriter>();
-
-            var tracer = new Tracer(settings, writerMock.Object, sampler: null, scopeManager: null, statsd: null);
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
             tracer.TracerManager.PerTraceSettings.HasResourceBasedSamplingRule.Should().Be(hasResourceBasedSamplingRules);
             return tracer;
         }
