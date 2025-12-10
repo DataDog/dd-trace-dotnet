@@ -27,7 +27,7 @@ GCMode GCThreadsCpuProvider::GetMode()
     // Note:
     //  - DOTNET_gcServer overrides COMPlus_gcServer
     //  - env var override config files
-    auto gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(L"DOTNET_gcServer"));
+    auto gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(WStr("DOTNET_gcServer")));
     if (!gcServerEnvValue.empty())
     {
         if ((gcServerEnvValue == WStr("1")) || (gcServerEnvValue == WStr("0x1")))
@@ -40,7 +40,7 @@ GCMode GCThreadsCpuProvider::GetMode()
         }
     }
 
-    gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(L"COMPlus_gcServer"));
+    gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(WStr("COMPlus_gcServer")));
     if (!gcServerEnvValue.empty())
     {
         if ((gcServerEnvValue == WStr("1")) || (gcServerEnvValue == WStr("0x1")))
