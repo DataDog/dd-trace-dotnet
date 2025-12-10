@@ -6,18 +6,20 @@
 using System;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class AwsApiGatewayExtractorTests
+public class AwsApiGatewayExtractorTests : IAsyncLifetime
 {
     private readonly AwsApiGatewayExtractor _extractor;
-    private readonly Tracer _tracer; // this is a mocked instance of the tracer
+    private readonly ScopedTracer _tracer; // this is a mocked instance of the tracer
 
     public AwsApiGatewayExtractorTests()
     {
@@ -25,15 +27,19 @@ public class AwsApiGatewayExtractorTests
         _tracer = ProxyTestHelpers.GetMockTracer();
     }
 
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await _tracer.DisposeAsync();
+
     [Fact]
-    public void TryExtract_WhenProxySpansDisabled_ReturnsFalse()
+    public async Task TryExtract_WhenProxySpansDisabled_ReturnsFalse()
     {
         var collection = new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, "false" }
         };
 
-        var tracer = ProxyTestHelpers.GetMockTracer(collection);
+        await using var tracer = ProxyTestHelpers.GetMockTracer(collection);
         var headers = ProxyTestHelpers.CreateValidHeaders();
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), tracer, out var data);

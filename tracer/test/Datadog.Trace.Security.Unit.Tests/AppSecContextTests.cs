@@ -4,9 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -18,10 +20,10 @@ public class AppSecContextTests
     [InlineData(2, -2, -1, 1, null, -1)]
     [InlineData(2, 2, 1, 2, null, null)]
     [Theory]
-    public void GivenAQuery_WhenWAFError_ThenSpanHasErrorTags(int raspErrorCode, int wafErrorCode, int wafErrorCode2, int wafTimeouts, int? expectedRaspErrorCode, int? expectedWafErrorCode)
+    public async Task GivenAQuery_WhenWAFError_ThenSpanHasErrorTags(int raspErrorCode, int wafErrorCode, int wafErrorCode2, int wafTimeouts, int? expectedRaspErrorCode, int? expectedWafErrorCode)
     {
         var settings = TracerSettings.Create(new Dictionary<string, object>());
-        var tracer = new Tracer(settings, null, null, null, null);
+        await using var tracer = TracerHelper.Create(settings);
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
         var appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;

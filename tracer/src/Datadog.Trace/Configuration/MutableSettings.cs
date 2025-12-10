@@ -261,9 +261,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal OverrideErrorLog ErrorLog { get; }
 
-    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
-            config.WithKeys(key).AsDictionaryResult(allowOptionalMappings: true),
+            key.AsDictionaryResult(allowOptionalMappings: true),
             headerTagsNormalizationFixEnabled);
 
     private static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
@@ -861,7 +861,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             };
 
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult(parser: updatedTagsParser)
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -875,7 +875,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         else
         {
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult()
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -896,7 +896,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .WithKeys(ConfigurationKeys.ServiceName)
                          .AsStringResult()
                          .OverrideWith(in otelServiceName, errorLog);
 
@@ -982,7 +982,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
@@ -996,10 +996,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTagsConfig = config.WithKeys(ConfigurationKeys.HeaderTags);
+        var headerTags = InitializeHeaderTags(in headerTagsConfig, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTagsConfig = config.WithKeys(ConfigurationKeys.GrpcTags);
+        var grpcTags = InitializeHeaderTags(in grpcTagsConfig, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
@@ -1018,24 +1020,20 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var kafkaCreateConsumerScopeEnabled = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
-        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+        var serviceNameMappings = TracerSettings.TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.ServiceNameMappings)) ?? ReadOnlyDictionary.Empty;
 
         var tracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
 
         var httpServerErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
                                               .AsString(defaultValue: "500-599");
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
         var httpClientErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
                                               .AsString(defaultValue: "400-499");
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);

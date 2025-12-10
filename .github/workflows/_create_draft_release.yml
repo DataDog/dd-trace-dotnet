@@ -25,6 +25,20 @@ on:
         required: true
       GH_APP_PRIVATE_KEY:
         required: true
+      DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US3:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US5:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_EU1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_AP1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_AP2:
+        required: true
 
 jobs:
   create_draft_release:

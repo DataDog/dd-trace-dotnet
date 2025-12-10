@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
@@ -21,11 +22,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
-    public class SpanTests
+    public class SpanTests : IAsyncLifetime
     {
         private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
-        private readonly Tracer _tracer;
+        private readonly ScopedTracer _tracer;
 
         public SpanTests(ITestOutputHelper output)
         {
@@ -40,8 +41,12 @@ namespace Datadog.Trace.Tests
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = TracerHelper.Create(settings, _writerMock.Object, samplerMock.Object);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
         public void SetTag_KeyValue_KeyValueSet()

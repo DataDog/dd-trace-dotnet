@@ -89,5 +89,6 @@ namespace Datadog.Trace.Configuration
         Protobuf,
         AzureEventHubs,
         DatadogTraceVersionConflict,
+        Hangfire
     }
 }

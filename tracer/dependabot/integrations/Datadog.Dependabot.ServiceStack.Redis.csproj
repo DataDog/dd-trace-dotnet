@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.10.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="8.10.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/10.0.4 -->
+    <PackageReference Include="ServiceStack.Redis" Version="10.0.4" />
   </ItemGroup>
 
 </Project>

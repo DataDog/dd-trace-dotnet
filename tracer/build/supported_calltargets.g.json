@@ -8283,6 +8283,28 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "Hangfire",
+    "AssemblyName": "Hangfire.Core",
+    "TargetTypeName": "Hangfire.Common.JobFilterCollection",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionCtorIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "HashAlgorithm",
     "AssemblyName": "System.Security.Cryptography",
     "TargetTypeName": "System.Security.Cryptography.HashAlgorithm",
@@ -16156,7 +16178,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },

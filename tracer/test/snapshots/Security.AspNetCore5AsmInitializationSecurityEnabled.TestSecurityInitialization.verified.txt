@@ -35,7 +35,7 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
-      _dd.appsec.waf.version: 1.28.1,
+      _dd.appsec.waf.version: 1.30.0,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },

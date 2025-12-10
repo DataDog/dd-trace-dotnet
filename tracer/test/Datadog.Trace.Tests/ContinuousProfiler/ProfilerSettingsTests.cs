@@ -55,7 +55,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
 
         if (ssiValue is not null)
         {
-            values.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.SsiDeployed, ssiValue));
+            values.Add((Datadog.Trace.Configuration.ConfigurationKeys.SsiDeployed, ssiValue));
         }
 
         var source = CreateConfigurationSource(values.ToArray());

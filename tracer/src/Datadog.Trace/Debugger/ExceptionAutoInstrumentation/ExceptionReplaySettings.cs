@@ -23,9 +23,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-#pragma warning disable CS0612 // Type or member is obsolete
-            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled, fallbackKey: ConfigurationKeys.Debugger.ExceptionDebuggingEnabled).AsBoolResult();
-#pragma warning restore CS0612 // Type or member is obsolete
+            var erEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBoolResult();
             Enabled = erEnabledResult.WithDefault(false);
             CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 

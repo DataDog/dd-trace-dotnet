@@ -126,7 +126,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             tags.MessagingDestinationName = entityPath;
             tags.MessagingOperation = operationName;
             tags.MessagingSystem = "servicebus";
-            tags.InstrumentationName = "AzureServiceBus";
 
             string serviceName = perTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
             var scope = tracer.StartActiveInternal(

@@ -138,7 +138,6 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         tags.MessagingDestinationName = entityPath;
         tags.MessagingOperation = "receive";
         tags.MessagingSystem = "servicebus";
-        tags.InstrumentationName = "AzureServiceBus";
 
         string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
         var scope = tracer.StartActiveInternal(

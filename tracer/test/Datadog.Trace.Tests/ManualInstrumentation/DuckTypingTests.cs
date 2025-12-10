@@ -9,6 +9,7 @@ extern alias DatadogTraceManual;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tagging;
@@ -18,6 +19,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -40,19 +42,13 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 [TracerRestorer]
 public class DuckTypingTests
 {
-    private readonly AsyncLocalScopeManager _scopeManager = new();
-    private readonly TracerSettings _settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-    private readonly Tracer _tracer;
-
-    public DuckTypingTests()
-    {
-        _tracer = new Tracer(_settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object, scopeManager: _scopeManager, statsd: null);
-    }
-
     [Fact]
-    public void CanDuckTypeScopeAsManualIScope()
+    public async Task CanDuckTypeScopeAsManualIScope()
     {
-        var scope = _tracer.StartActiveInternal("manual");
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = tracer.StartActiveInternal("manual");
         var span = scope.Span;
         var spanContext = span.Context;
 

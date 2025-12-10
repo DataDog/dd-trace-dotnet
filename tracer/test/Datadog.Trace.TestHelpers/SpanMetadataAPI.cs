@@ -195,6 +195,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsGrpcServerV0(excludeTags),
             };
 
+        public static Result IsHangfire(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsHangfireV1(),
+                _ => span.IsHangfireV0(),
+            };
+
         public static Result IsHotChocolate(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

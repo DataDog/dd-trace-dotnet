@@ -96,10 +96,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void GivenHttpTransportInstanceWithUninitializedContext_WhenRunWaf_ThenResultIsNull()
+        public async Task GivenHttpTransportInstanceWithUninitializedContext_WhenRunWaf_ThenResultIsNull()
         {
             var settings = TracerSettings.Create(new Dictionary<string, object>());
-            var tracer = new Tracer(settings, null, null, null, null);
+            await using var tracer = TracerHelper.Create(settings);
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
             var contextMoq = new Mock<HttpContext>();
@@ -120,10 +120,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void GivenHttpTransportInstanceWithUninitializedContext_WhenAccessingStatusCode_ThenResultIsNull()
+        public async Task GivenHttpTransportInstanceWithUninitializedContext_WhenAccessingStatusCode_ThenResultIsNull()
         {
             var settings = TracerSettings.Create(new Dictionary<string, object>());
-            var tracer = new Tracer(settings, null, null, null, null);
+            await using var tracer = TracerHelper.Create(settings);
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
             var wafContext = new Mock<IContext>();

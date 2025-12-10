@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!--    Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.43 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.43" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.44 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.44" />
   </ItemGroup>
 
 </Project>

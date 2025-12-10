@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public string InstrumentationName => nameof(Configuration.IntegrationId.RabbitMQ);
 
         [Tag(Trace.Tags.AmqpCommand)]
         public string Command { get; set; }

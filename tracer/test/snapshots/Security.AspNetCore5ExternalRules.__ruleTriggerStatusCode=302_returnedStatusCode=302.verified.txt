@@ -28,7 +28,7 @@
       _dd.appsec.fp.http.endpoint: http-get-8a5edab2--,
       _dd.appsec.fp.http.header: hdr-0000000000-b1e858a9-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"canary_rule_redirect_302","name":"Canary rule redirect 302","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Canary\\/v3_302","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Canary/v3_302"],"key_path":["user-agent"],"value":"Mistake Not... Canary/v3_302"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"canary_rule_redirect_302","name":"Canary rule redirect 302","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Canary\\/v3_302","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Canary/v3_302"],"key_path":["user-agent"],"value":"Mistake Not... Canary/v3_302"}]}],"security_response_id":"Guid_2"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
