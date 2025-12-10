@@ -183,7 +183,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
                     var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(_tracer, _security, _iast, httpContext, resourceName, new AspNetCoreSingleSpanTags());
+                    var scope = AspNetCoreRequestHandler.StartAspNetCoreSingleSpanPipelineScope(_tracer, _security, _iast, httpContext, resourceName, new AspNetCoreSingleSpanTags());
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
