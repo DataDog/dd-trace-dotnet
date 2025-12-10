@@ -36,13 +36,24 @@ public:
         static const std::string CpuProfilerType;
         static const std::string CpuProfilingInterval;
         static const std::string SsiLongLivedThreshold;
-        static const std::string HttpProfilingEnabled;
         static const std::string HttpRequestDurationThreshold;
         static const std::string HeapSnapshotInterval;
         static const std::string HeapSnapshotCheckInterval;
         static const std::string HeapSnapshotMemoryPressureThreshold;
         static const std::string ForceHttpSampling;
+
+    static const std::string SectionOverrides;
+        static const std::string ProfilerEnabled;
+        static const std::string CpuProfilingEnabled;
+        static const std::string WallTimeProfilingEnabled;
+        static const std::string ExceptionProfilingEnabled;
+        static const std::string AllocationProfilingEnabled;
+        static const std::string LockContentionProfilingEnabled;
+        static const std::string GCProfilingEnabled;
+        static const std::string HeapProfilingEnabled;
+        static const std::string HttpProfilingEnabled;
         static const std::string WaitHandleProfilingEnabled;
+        static const std::string HeapSnapshotEnabled;
 
     static const std::string SectionRuntimeSettings;
         static const std::string NbCores;

@@ -849,7 +849,7 @@ std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
     builder << ",";
         AppendGcConfig(builder);
     builder << ",";
-        AppendSystemProperties(builder);
+        AppendEnvVars(builder);
     builder << "}";
 
     return builder.str();
@@ -899,7 +899,22 @@ void ProfileExporter::AppendProfilerInfo(std::stringstream& builder, std::string
     ElementEnd(builder);
 }
 
-bool ProfileExporter::AppendSystemProperties(std::stringstream& builder) const
+void ProfileExporter::AppendValueList(const tags& kvp, std::stringstream& builder) const
+{
+    auto keyCount = kvp.size();
+    auto currentKey = 0;
+    for (auto const& [key, value] : kvp)
+    {
+        currentKey++;
+        AppendValue(builder, key, value);
+        if (currentKey < keyCount)
+        {
+            builder << ", ";
+        }
+    }
+}
+
+bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
 {
     auto const& metadata = _metadataProvider->Get();
     if (metadata.empty())
@@ -908,25 +923,22 @@ bool ProfileExporter::AppendSystemProperties(std::stringstream& builder) const
     }
 
     // list the overriden env vars
-    ElementStart(builder, "System Properties");
     for (auto const& [section, kvp] : metadata)
     {
         if (section == MetadataProvider::SectionEnvVars)
         {
-            auto keyCount = kvp.size();
-            auto currentKey = 0;
-            for (auto const& [key, value] : kvp)
-            {
-                currentKey++;
-                AppendValue(builder, key, value);
-                if (currentKey < keyCount)
-                {
-                    builder << ", ";
-                }
-            }
+            ElementStart(builder, "System Properties");
+            AppendValueList(kvp, builder);
+            ElementEnd(builder);
+            builder << ", ";
+        }
+        else if (section == MetadataProvider::SectionOverrides)
+        {
+            ElementStart(builder, "System Overrides");
+            AppendValueList(kvp, builder);
+            ElementEnd(builder);
         }
     }
-    ElementEnd(builder);
 
     return true;
 }

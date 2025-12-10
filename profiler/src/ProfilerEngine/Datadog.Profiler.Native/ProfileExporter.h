@@ -117,7 +117,8 @@ private:
     std::string GetMetadataJson() const;
     std::string GetInfoJson(std::string& runtimeId) const;
     void AppendProfilerInfo(std::stringstream& builder, std::string& runtimeId) const;
-    bool AppendSystemProperties(std::stringstream& builder) const;
+    void AppendValueList(const tags& kvp, std::stringstream& builder) const;
+    bool AppendEnvVars(std::stringstream& builder) const;
     void AppendGcConfig(std::stringstream& builder) const;
 
     inline void ElementStart(std::stringstream& builder, const std::string& name) const
