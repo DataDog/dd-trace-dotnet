@@ -501,6 +501,9 @@
     <ClInclude Include="HeapSnapshotManager.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
+    <ClInclude Include="IGCDumpListener.h" />
+    <ClInclude Include="INativeThreadList.h" />
+    <ClInclude Include="NativeThreadList.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -766,6 +769,9 @@
     </ClCompile>
     <ClCompile Include="HeapSnapshotManager.cpp">
       <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeThreadList.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

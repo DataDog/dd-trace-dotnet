@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{91B6272F-5780-4C94-8071-DBBA7B4F67F3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <RootNamespace>ClrProfiler</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <CORECLR_PATH>..\..\..\shared\src\native-lib\coreclr</CORECLR_PATH>
