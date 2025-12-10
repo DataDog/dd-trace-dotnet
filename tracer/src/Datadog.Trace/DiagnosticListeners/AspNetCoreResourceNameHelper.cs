@@ -23,8 +23,10 @@ internal static class AspNetCoreResourceNameHelper
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
-        bool expandRouteParameters)
+        bool expandRouteParameters,
+        out bool canBeCached)
     {
+        canBeCached = true;
         var sb = routePattern.RawText?.Length < 1024
                      ? new ValueStringBuilder(stackalloc char[1024])
                      : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
@@ -48,6 +50,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("area", out var value)
                             && value is string name)
                         {
+                            canBeCached = false;
                             sb.AppendToLowerInvariant(name);
                         }
                         else
@@ -60,6 +63,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("controller", out var value)
                          && value is string name)
                         {
+                            canBeCached = false;
                             sb.AppendToLowerInvariant(name);
                         }
                         else
@@ -72,6 +76,7 @@ internal static class AspNetCoreResourceNameHelper
                         if (routeValueDictionary.TryGetValue("action", out var value)
                          && value is string name)
                         {
+                            canBeCached = false;
                             sb.AppendToLowerInvariant(name);
                         }
                         else
@@ -95,6 +100,7 @@ internal static class AspNetCoreResourceNameHelper
                             {
                                 // write the expanded parameter value
                                 sb.AppendToLowerInvariant(value as string);
+                                canBeCached = false;
                             }
                             else
                             {
