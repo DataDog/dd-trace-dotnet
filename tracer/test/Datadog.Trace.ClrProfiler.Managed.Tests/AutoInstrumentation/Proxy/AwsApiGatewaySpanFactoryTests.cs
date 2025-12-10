@@ -6,22 +6,28 @@
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class AwsApiGatewaySpanFactoryTests
+public class AwsApiGatewaySpanFactoryTests : IAsyncLifetime
 {
     private readonly AwsApiGatewaySpanFactory _factory;
-    private readonly Tracer _tracer; // this is a mocked instance of the tracer
+    private readonly ScopedTracer _tracer; // this is a mocked instance of the tracer
 
     public AwsApiGatewaySpanFactoryTests()
     {
         _factory = new AwsApiGatewaySpanFactory();
         _tracer = ProxyTestHelpers.GetMockTracer();
     }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
     [Fact]
     public void CreateSpan_CreatesSpanWithCorrectProperties()
