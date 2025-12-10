@@ -6,6 +6,20 @@
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
 
+.dd-octo-sts-setup:
+  before_script:
+    - |
+      set +e
+      echo "Attempting to retrieve a GitHub token for scope '$DDOCTOSTS_SCOPE' with policy '$DDOCTOSTS_POLICY' with dd-octo-sts..."
+      error_output=$({ dd-octo-sts token --scope $DDOCTOSTS_SCOPE --policy $DDOCTOSTS_POLICY > "/tmp/github-token"; } 2>&1)
+      exit_code=$?
+      if [ $exit_code -ne 0 ]; then
+        echo "Error: Failed to retrieve GitHub token."
+        echo "Original error: $error_output"
+        echo "Continuing execution anyway..."
+      fi
+      set -e
+
 stages:
   - infra-update
   - check-azure-pipeline
