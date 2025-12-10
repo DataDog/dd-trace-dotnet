@@ -487,13 +487,13 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "10.0.0",
+    "MaxVersionExclusive": "11.0.0",
     "SpecificVersions": [
       "2.*.*",
       "5.*.*",
-      "7.*.*",
       "8.*.*",
-      "9.*.*"
+      "9.*.*",
+      "10.*.*"
     ],
     "VersionConditions": [
       {
