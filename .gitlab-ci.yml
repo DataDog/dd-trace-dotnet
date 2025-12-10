@@ -7,7 +7,7 @@ stages:
   - benchmarks
 
 include:
-  - local: .gitlab/one-pipeline.locked.yaml
+  - local: .gitlab/one-pipeline.locked.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
