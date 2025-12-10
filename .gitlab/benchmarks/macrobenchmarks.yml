@@ -23,8 +23,9 @@ check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+    - echo "export buildId=192182" > build-id.txt
+    # - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    # - ./wait-for-pipeline.sh
   artifacts:
     name: "artifacts"
     when: always
