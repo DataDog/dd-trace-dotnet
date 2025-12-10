@@ -486,7 +486,15 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+#if NET6_0_OR_GREATER
+                // Tracer, Security, should both have been initialized by now.
+                // Iast hasn't yet, but doing it now is fine
+                // span origins is _not_ initialized yet, and we can't guarantee it will be
+                // so just be lazy instead
+                observers.Add(new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, null));
+#else
                 observers.Add(new AspNetCoreDiagnosticObserver());
+#endif
                 observers.Add(new QuartzDiagnosticObserver());
             }
 

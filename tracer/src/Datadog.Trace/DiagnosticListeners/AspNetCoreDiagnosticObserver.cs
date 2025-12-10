@@ -441,7 +441,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
                     var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName);
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, CurrentIast, httpContext, resourceName);
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
@@ -660,7 +660,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
         {
             try
             {
