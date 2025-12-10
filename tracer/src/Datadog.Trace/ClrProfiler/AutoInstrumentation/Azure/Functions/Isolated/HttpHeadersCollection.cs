@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
 
@@ -52,5 +53,18 @@ internal readonly struct HttpHeadersCollection : IHeadersCollection
     {
         _headers.Remove(name);
     }
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("Headers:");
+        foreach (var header in _headers)
+        {
+            sb.AppendLine($"{header.Key}: {header.Value}");
+        }
+
+        return sb.ToString();
+    }
 }
 #endif
+

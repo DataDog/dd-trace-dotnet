@@ -1,4 +1,4 @@
-﻿// <copyright file="AwsApiGatewayExtractor.cs" company="Datadog">
+// <copyright file="AzureApiManagementExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,14 +13,14 @@ using Datadog.Trace.Vendors.Serilog.Events;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Extracts proxy metadata from AWS API Gateway headers.
+/// Extracts proxy metadata from Azure API Management headers.
 /// </summary>
-internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
+internal class AzureApiManagementExtractor : IInferredProxyExtractor
 {
     // This is the expected value of the x-dd-proxy header
-    private const string ProxyName = "aws-apigateway";
+    private const string ProxyName = "azure-apim";
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewayExtractor>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementExtractor>();
 
     public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>
@@ -41,15 +41,14 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             var domainName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Domain);
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
-            var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
-
-            data = new InferredProxyData(ProxyName, startTime, domainName, httpMethod, path, stage);
+            var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
+            data = new InferredProxyData(ProxyName, startTime, domainName, httpMethod, path, null);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
                     "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
-                    [startTimeHeaderValue, domainName, httpMethod, path, stage]);
+                    [startTimeHeaderValue, domainName, httpMethod, path, region]);
             }
 
             return true;
@@ -71,21 +70,14 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             return false;
         }
 
-        if (!long.TryParse(startTime, out var startTimeMs))
+        // Parse as ISO 8601 timestamp (e.g., "2025-12-03T14:21:01.1900116Z")
+        if (!DateTimeOffset.TryParse(startTime, out var parsedTime))
         {
             Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
             return false;
         }
 
-        try
-        {
-            start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
-            return false;
-        }
+        start = parsedTime;
+        return true;
     }
 }
