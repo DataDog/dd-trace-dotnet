@@ -161,6 +161,62 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
+        public Scope StartAspNetCoreSingleSpanPipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags)
+            where T : WebTags
+        {
+            var request = httpContext.Request;
+            string host = request.Host.Value;
+            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+            string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+            var userAgent = request.Headers[HttpHeaderNames.UserAgent];
+
+            resourceName ??= GetDefaultResourceName(request);
+            var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
+            InferredProxyScopePropagationContext? proxyContext = null;
+
+            if (tracer.Settings.InferredProxySpansEnabled && request.Headers is { } headers)
+            {
+                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new HeadersCollectionAdapter(headers), extractedContext);
+                if (proxyContext != null)
+                {
+                    extractedContext = proxyContext.Value.Context;
+                }
+            }
+
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            AddHeaderTagsToSpan(scope.Span, request, tracer);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+
+            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+            var requestTrackingFeature = new SingleSpanRequestTrackingFeature(originalPath, scope);
+
+            if (proxyContext?.Scope is { } proxyScope)
+            {
+                requestTrackingFeature.ProxyScope = proxyScope;
+            }
+
+            httpContext.Features.Set(requestTrackingFeature);
+
+            if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
+            {
+                var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
+                string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
+                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+            }
+
+            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
+            {
+                // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
+                scope.Span.Context?.TraceContext?.EnableIastInRequest();
+            }
+
+            tags.SetAnalyticsSampleRate(_integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
+
+            return scope;
+        }
+
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
             => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: httpContext.Features.Get<RequestTrackingFeature>()?.ProxyScope);
 
