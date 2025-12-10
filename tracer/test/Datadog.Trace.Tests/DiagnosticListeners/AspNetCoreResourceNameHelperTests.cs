@@ -183,5 +183,35 @@ public class AspNetCoreResourceNameHelperTests
 
         resource.Should().Be(expected);
     }
+
+#if NET6_0_OR_GREATER
+    [Theory]
+    [MemberData(nameof(ValidRouteTemplates))]
+    public void SingleSpan_SimplifyRoutePattern_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
+    {
+        var originalPattern = RoutePatternFactory.Parse(template);
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: duckTypedPattern,
+            routeValueDictionary: Values,
+            expandRouteTemplates);
+
+        resource.Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidRouteTemplatesWithExternalDefaults))]
+    public void SingleSpan_SimplifyRoutePattern_CleansValidRouteTemplatesWithDefaults(string template, string expected, bool expandRouteTemplates)
+    {
+        var originalPattern = RoutePatternFactory.Parse(template, Defaults, parameterPolicies: ParameterPolicies);
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: duckTypedPattern,
+            routeValueDictionary: Values,
+            expandRouteTemplates);
+
+        resource.Should().Be(expected);
+    }
+#endif
 }
 #endif
