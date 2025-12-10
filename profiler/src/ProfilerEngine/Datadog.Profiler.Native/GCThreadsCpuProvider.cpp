@@ -7,6 +7,9 @@
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
 
+#include "shared/src/native-src/string.h"
+#include "shared/src/native-src/util.h"
+
 GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry) :
     NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer)
 {
@@ -20,8 +23,42 @@ const char* GCThreadsCpuProvider::GetName()
 
 GCMode GCThreadsCpuProvider::GetMode()
 {
-    // TODO: implement the env var-based GC configuration in IConfiguration and use it here
+    // Based on https://learn.microsoft.com/en-us/dotnet/core/runtime-config/garbage-collector#workstation-vs-server
+    // Note:
+    //  - DOTNET_gcServer overrides COMPlus_gcServer
+    //  - env var override config files
+    auto gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(L"DOTNET_gcServer"));
+    if (!gcServerEnvValue.empty())
+    {
+        if ((gcServerEnvValue == WStr("1")) || (gcServerEnvValue == WStr("0x1")))
+        {
+            return GCMode::Server;
+        }
+        else // all other values are considered as 0
+        {
+            return GCMode::Workstation;
+        }
+    }
 
+    gcServerEnvValue = shared::Trim(shared::GetEnvironmentValue(L"COMPlus_gcServer"));
+    if (!gcServerEnvValue.empty())
+    {
+        if ((gcServerEnvValue == WStr("1")) || (gcServerEnvValue == WStr("0x1")))
+        {
+            return GCMode::Server;
+        }
+        else // all other values are considered as 0
+        {
+            return GCMode::Workstation;
+        }
+    }
+
+    // TODO: check if we can directy call the exported function by the CLR
+    //   [DllImport("QCall", EntryPoint = "GCInterface_EnumerateConfigurationValues", ExactSpelling = true)]
+    //   [LibraryImport("QCall", EntryPoint = "GCInterface_EnumerateConfigurationValues")]
+    //   internal unsafe static extern void _EnumerateConfigurationValues(void* configurationDictionary, delegate* unmanaged<void*, void*, void*, GCConfigurationType, long, void> callback);
+    //
+    // Note: server mode can be enable via config files so we need to check the GC threads
     // ensure that we have attempted to get the GC threads at least once
     if (_number_of_attempts == 0)
     {
