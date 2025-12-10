@@ -35,10 +35,13 @@ variables:
 
 check-azure-pipeline:
   stage: check-azure-pipeline
+  tags: ["arch:amd64"]
   image: $MACROBENCHMARKS_CI_IMAGE
-  script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
+  timeout: 1h
   artifacts:
     name: "artifacts"
     when: always
@@ -46,12 +49,19 @@ check-azure-pipeline:
       - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
-  tags: ["arch:amd64"]
-  timeout: 1h
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "master"
-      interruptible: false
-    - interruptible: true
+  variables:
+    # Set this for quickly testing benchmarking workflows.
+    HARDCODED_BUILD_ID: "192182" 
+  script:
+    - |
+      if [[ -n "$HARDCODED_BUILD_ID" ]]; then
+        echo "Using hardcoded build ID $HARDCODED_BUILD_ID"
+        echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
+        exit 0
+      fi
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./wait-for-pipeline.sh
+
 
 update-bp-infra:
   stage: infra-update
@@ -90,7 +100,7 @@ update-bp-infra:
 .benchmarks-x86:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   timeout: 2h
   retry:
     max: 2
@@ -469,8 +479,11 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
   timeout: 2h
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
   retry:
     max: 2
     when:
@@ -491,6 +504,10 @@ profiler_cpu_timer_create-arm64:
       - platform/artifacts/
     expire_in: 3 months
   variables:
+    # Allows ephemeral instances to read content from benchmarking-platform
+    DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
+    DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
+
     AWS_REGION: "us-east-1"
     
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
@@ -517,12 +534,16 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_VUS: 2
 
     DD_RUNTIME_METRICS_ENABLED: true
+  before_script:
+    - !reference [.dd-octo-sts-setup, before_script]
   script:
     - source build-id.txt
-    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./ephemeral-infra/run-windows-benchmarks.sh
+    - echo "Running Windows benchmarks for build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    - export GITHUB_TOKEN=$(cat /tmp/github-token)
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/steps/run-windows-benchmarks.sh
   after_script:
+    # TODO: Consider having an ephemeral-infra/cleanup-windows-benchmarks.sh
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
