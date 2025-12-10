@@ -274,7 +274,7 @@ profiler_cpu_timer_create-x86:
 .benchmarks-arm64:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   timeout: 2h
   retry:
     max: 2
@@ -467,7 +467,7 @@ profiler_cpu_timer_create-arm64:
 
 .benchmarks-win:
   stage: benchmarks-win
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
   timeout: 2h
