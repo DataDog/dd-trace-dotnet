@@ -31,52 +31,40 @@ internal static class AspNetCoreResourceNameHelper
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
-            // I'm not sure if this is actually a good idea, but I _think_ it's basically what we will always do
-            // TODO: add a bunch of edge case tests to confirm it
-            sb.Append('/');
+            var addedPart = false;
             foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
             {
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
                 {
+                    if (!addedPart)
+                    {
+                        sb.Append('/');
+                        addedPart = true;
+                    }
+
                     sb.AppendToLowerInvariant(contentPart.Content);
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
                     var parameterName = parameter.Name;
-                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+                        || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+                        || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (routeValueDictionary.TryGetValue("area", out var value)
+                        if (!addedPart)
+                        {
+                            sb.Append('/');
+                            addedPart = true;
+                        }
+
+                        if (routeValueDictionary.TryGetValue(parameterName, out var value)
                             && value is string name)
                         {
                             sb.AppendToLowerInvariant(name);
                         }
                         else
                         {
-                            sb.Append("area");
-                        }
-                    }
-                    else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (routeValueDictionary.TryGetValue("controller", out var value)
-                         && value is string name)
-                        {
-                            sb.AppendToLowerInvariant(name);
-                        }
-                        else
-                        {
-                            sb.Append("controller");
-                        }
-                    }
-                    else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (routeValueDictionary.TryGetValue("action", out var value)
-                         && value is string name)
-                        {
-                            sb.AppendToLowerInvariant(name);
-                        }
-                        else
-                        {
-                            sb.Append("action");
+                            sb.Append(parameterName);
                         }
                     }
                     else
@@ -84,6 +72,12 @@ internal static class AspNetCoreResourceNameHelper
                         var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
                         if (!parameter.IsOptional || haveParameter)
                         {
+                            if (!addedPart)
+                            {
+                                sb.Append('/');
+                                addedPart = true;
+                            }
+
                             // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
                             // so never expand them. This avoids an allocating ToString() call, but means that
                             // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
