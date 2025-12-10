@@ -7,6 +7,8 @@
 
 #if NET6_0_OR_GREATER
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -17,6 +19,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -270,30 +273,61 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
 
-                var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
-
+                // We only need the route values if we have security/iast/or need to extract metadata
                 var request = httpContext.Request.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestStruct>();
-                var routeValues = request.RouteValues;
+                var metadataCollection = routeEndpoint.Value.Metadata.DuckCast<IEndpointMetadataCollection>();
+                var metadata = metadataCollection.GetMetadata();
+                if (metadata is null || !metadata.ResourceRouteIsCached)
+                {
+                    // We don't have previous metadata, either because this is the first execution,
+                    // or we're not allowed to cache it.
+                    var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
-                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    _tracer.Settings.ExpandRouteTemplatesEnabled);
+                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                        routePattern,
+                        request.RouteValues,
+                        _tracer.Settings.ExpandRouteTemplatesEnabled,
+                        out var canBeCached);
 
-                // Overwrite/Update the route in the parent span
-                // TODO optimize this allocation?
-                rootSpan.ResourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
-                tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                    if (metadata is null)
+                    {
+                        var route = routePattern.RawText?.ToLowerInvariant();
+                        metadata = canBeCached
+                                       ? new DatadogEndpointDataCache(route, resourcePathName)
+                                       : new DatadogEndpointDataCache(route);
+                        // set it back in the cache
+                        metadataCollection.Cache.TryAdd(typeof(DatadogEndpointDataCache), [metadata]);
+                    }
+
+                    if (!canBeCached)
+                    {
+                        // we're not going to be able to cache this, so just calculate it directly and set it on the tags
+                        // if we _can_ cache this, do it in the next block instead
+                        tags.AspNetCoreEndpoint = metadata.RawRouteText;
+                        rootSpan.ResourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
+                }
+
+                if (metadata.ResourceRouteIsCached)
+                {
+                    rootSpan.ResourceName = metadata.ResourceNameCache.TryGetValue((tags.HttpMethod, request.PathBase), out var resourceName)
+                                                ? resourceName
+                                                : metadata.ResourceNameCache.GetOrAdd(
+                                                    (tags.HttpMethod, request.PathBase),
+                                                    static (key, cache) => $"{key.HttpMethod} {new PathString(key.RequestPathBase).ToUriComponent()}{cache.ResourceRouteName}",
+                                                    metadata);
+                    tags.AspNetCoreRoute = metadata.RawRouteText;
+                }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
                 if (_security.AppsecEnabled)
                 {
-                    _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                    _security.CheckPathParamsAndSessionId(httpContext, rootSpan, request.RouteValues);
                 }
 
                 if (_iast.Settings.Enabled)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, request.RouteValues);
                 }
             }
         }
@@ -407,6 +441,54 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
         }
+
+#pragma warning disable SA1201 // An interface should not follow a method
+        /// <summary>
+        /// Proxy for https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.endpointmetadatacollection?view=aspnetcore-6.0
+        /// </summary>
+        internal interface IEndpointMetadataCollection : IDuckType
+        {
+            [Duck(Name = "GetMetadata", GenericParameterTypeNames = ["Datadog.Trace.DiagnosticListeners.SingleSpanAspNetCoreDiagnosticObserver+DatadogEndpointDataCache"])]
+            DatadogEndpointDataCache? GetMetadata();
+
+            [DuckField(Name = "_cache")]
+            ConcurrentDictionary<Type, object[]> Cache { get; }
+        }
+
+        public class DatadogEndpointDataCache
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DatadogEndpointDataCache"/> class.
+            /// Create a DatadogEndpointDataCache object indicating that we _can't_ cache this route data
+            /// </summary>
+            public DatadogEndpointDataCache(string? rawRouteText)
+            {
+                RawRouteText = rawRouteText;
+                // Used when we _can't_ cache the route name
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DatadogEndpointDataCache"/> class.
+            /// Create a DatadogEndpointDataCache object that _can_ be cached
+            /// </summary>
+            public DatadogEndpointDataCache(string? rawRouteText, string resourceRouteName)
+                : this(rawRouteText)
+            {
+                ResourceRouteName = resourceRouteName;
+                ResourceNameCache = new();
+            }
+
+            public string? RawRouteText { get; }
+
+            public string? ResourceRouteName { get; }
+
+            [MemberNotNullWhen(true,  nameof(ResourceNameCache))]
+            [MemberNotNullWhen(true,  nameof(ResourceRouteName))]
+            public bool ResourceRouteIsCached => ResourceRouteName is not null;
+
+            public ConcurrentDictionary<(string HttpMethod, string RequestPathBase), string>? ResourceNameCache { get; }
+        }
+#pragma warning restore SA1201
     }
 }
 #endif
