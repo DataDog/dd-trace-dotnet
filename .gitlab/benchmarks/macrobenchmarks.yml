@@ -23,8 +23,9 @@ check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+    - echo "export buildId=192182" > build-id.txt
+    # - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    # - ./wait-for-pipeline.sh
   artifacts:
     name: "artifacts"
     when: always
@@ -455,7 +456,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:d1f80fe7
   timeout: 2h
   retry:
     max: 2
@@ -482,7 +483,7 @@ profiler_cpu_timer_create-arm64:
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet/macro/use-dd-octo-sts-on-windows-benchmarks"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
