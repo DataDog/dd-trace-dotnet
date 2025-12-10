@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         private string _spanKind;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => "AzureServiceBus";
+        public string InstrumentationName => nameof(Configuration.IntegrationId.AzureServiceBus);
 
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
