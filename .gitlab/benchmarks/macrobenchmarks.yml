@@ -21,7 +21,7 @@
       set -e
 
 stages:
-  - infra-update
+  - build-win
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
@@ -64,7 +64,7 @@ check-azure-pipeline:
 
 
 update-bp-infra:
-  stage: infra-update
+  stage: build-win
   tags: ["arch:amd64"]
   timeout: 3h
   allow_failure: true
