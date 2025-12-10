@@ -8,7 +8,7 @@ set(LIBDATADOG_VERSION "v24.0.2" CACHE STRING "libdatadog version")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
-    set(SHA256_LIBDATADOG_ARM64 "a1dab087732594bee6776fc7fa86b7753d8894b93df4a6318bd759d4aaa57272" CACHE STRING "libdatadog arm64 sha256")
+    set(SHA256_LIBDATADOG_ARM64 "6ec12383537557649cb571326fd0dca8ed5243e349970755efe17da1a7622c03" CACHE STRING "libdatadog arm64 sha256")
     set(SHA256_LIBDATADOG_X86_64 "ec5ebb2d849fbf336775b5e396aa6f661b62da49cf2761f82c829f0aed11b3d5" CACHE STRING "libdatadog x86_64 sha256")
     set(FILE_TO_DOWNLOAD_ARM64 libdatadog-aarch64-apple-darwin.tar.gz)
     set(FILE_TO_DOWNLOAD_X86_64 libdatadog-x86_64-apple-darwin.tar.gz)
