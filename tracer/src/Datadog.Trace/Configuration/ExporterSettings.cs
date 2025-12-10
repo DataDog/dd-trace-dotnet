@@ -437,11 +437,11 @@ namespace Datadog.Trace.Configuration
                 TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
 
                 TraceAgentHost = config
-                               .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
+                               .WithKeys(ConfigurationKeys.AgentHost)
                                .AsString()?.Trim();
 
                 TraceAgentPort = config
-                               .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
+                               .WithKeys(ConfigurationKeys.AgentPort)
                                .AsInt32();
 
                 MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString()?.Trim();
