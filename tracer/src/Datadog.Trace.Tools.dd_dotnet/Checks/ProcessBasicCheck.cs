@@ -322,9 +322,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
                 else
                 {
-                    if (Path.GetFileName(ldPreload) != "Datadog.Linux.ApiWrapper.x64.so")
+                    var expectedWrapper = GetExpectedLinuxApiWrapperName();
+                    if (!string.Equals(Path.GetFileName(ldPreload), expectedWrapper, StringComparison.Ordinal))
                     {
-                        Utils.WriteError(WrongLdPreload(ldPreload));
+                        Utils.WriteError(WrongLdPreload(ldPreload, expectedWrapper));
                         ok = false;
                     }
                     else if (!File.Exists(ldPreload))
@@ -513,6 +514,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             return true;
         }
+
+        private static string GetExpectedLinuxApiWrapperName() =>
+            RuntimeInformation.OSArchitecture == Architecture.Arm64
+                ? "Datadog.Linux.ApiWrapper.arm64.so"
+                : "Datadog.Linux.ApiWrapper.x64.so";
 
         internal static bool IsExpectedProfilerFile(string fullPath)
         {

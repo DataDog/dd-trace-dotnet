@@ -153,7 +153,8 @@ partial class Build
         .Executes(() =>
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+            var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+            var libraryPath = ProfilerDeployDirectory / arch / wrapperFileName;
             var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
@@ -193,7 +194,8 @@ partial class Build
         {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper}" };
+            var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / wrapperFileName}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
@@ -266,26 +268,32 @@ partial class Build
             }
         });
 
-    Target PublishNativeWrapper => _ => _
-        .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
-        .After(CompileNativeWrapper)
-        .Executes(() =>
+
+
+Target PublishNativeWrapper => _ => _
+    .Unlisted()
+    .OnlyWhenStatic(() => IsLinux)
+    .After(CompileNativeWrapper)
+    .Executes(() =>
+    {
+        var (arch, _) = GetUnixArchitectureAndExtension();
+        var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+        var sourceDir = ProfilerDeployDirectory / arch;
+        var source = sourceDir / wrapperFileName;
+        var dest = MonitoringHomeDirectory / arch / wrapperFileName;
+
+        Logger.Debug("PublishNativeWrapper: arch={Arch} wrapper={Wrapper} source={Source} dest={Dest}", arch, wrapperFileName, source, dest);
+
+        EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+
+        if (AsUniversal)
         {
-            var (arch, _) = GetUnixArchitectureAndExtension();
-            var sourceDir = ProfilerDeployDirectory / arch;
-            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+            var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
+            PatchElf.Value.Invoke($"--remove-needed {libc} {dest} --remove-rpath");
+        }
+    });
 
-            var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
-            var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            CopyFile(source, dest, FileExistsPolicy.Overwrite);
-
-            if (AsUniversal)
-            {
-                var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
-                PatchElf.Value.Invoke($"--remove-needed {libc} {dest} --remove-rpath");
-            }
-        });
 
     Target PublishProfilerWindows => _ => _
         .Unlisted()

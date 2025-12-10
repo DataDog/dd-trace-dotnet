@@ -1280,18 +1280,20 @@ partial class Build
                     HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
                 }
 
-                // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
+                // we must always have the Datadog.Linux.ApiWrapper.<arch>.so file in the continuousprofiler subfolder
                 // as it's set in the LD_PRELOAD env var
                 var continuousProfilerDir = assetsDirectory / "continuousprofiler";
                 EnsureExistingDirectory(continuousProfilerDir);
-                archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-                linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
+                var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+                archSpecificFile = assetsDirectory / arch / wrapperFileName;
+                linkLocation = continuousProfilerDir / wrapperFileName;
                 HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
 
                 if (includeMuslArtifacts)
                 {
                     // The wrapper library is the same for glibc/musl so can share the file
-                    var muslLinkLocation = assetsDirectory / muslArch / FileNames.ProfilerLinuxApiWrapper;
+                    var muslWrapperFileName = FileNames.GetProfilerLinuxApiWrapper(muslArch);
+                    var muslLinkLocation = assetsDirectory / muslArch / muslWrapperFileName;
                     DeleteFile(muslLinkLocation);
                     HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
                 }

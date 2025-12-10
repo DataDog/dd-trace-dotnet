@@ -245,7 +245,10 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
         }
 
-        var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so");
+        var expectedWrapper = archFolder.Contains("arm64", StringComparison.OrdinalIgnoreCase)
+            ? "Datadog.Linux.ApiWrapper.arm64.so"
+            : "Datadog.Linux.ApiWrapper.x64.so";
+        var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, archFolder, expectedWrapper);
 
         using var helper = await StartConsole(
                                enableProfiler: true,
@@ -306,7 +309,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         result.Should().BeFalse();
 
         console.Output.Should().NotContain(ApiWrapperNotFound("/dummyPath"));
-        console.Output.Should().Contain(Resources.WrongLdPreload("/dummyPath"));
+        var expectedWrapper = RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? "Datadog.Linux.ApiWrapper.arm64.so"
+            : "Datadog.Linux.ApiWrapper.x64.so";
+
+        console.Output.Should().Contain(Resources.WrongLdPreload("/dummyPath", expectedWrapper));
     }
 
     [SkippableFact]
@@ -314,10 +321,15 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
+        var expectedWrapper = RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? "Datadog.Linux.ApiWrapper.arm64.so"
+            : "Datadog.Linux.ApiWrapper.x64.so";
+        var wrapperPath = $"/dummyPath/{expectedWrapper}";
+
         using var helper = await StartConsole(
                                enableProfiler: true,
                                ("DD_PROFILING_ENABLED", "1"),
-                               ("LD_PRELOAD", "/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+                               ("LD_PRELOAD", wrapperPath));
 
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -332,8 +344,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         result.Should().BeFalse();
 
-        console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
-        console.Output.Should().NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+        console.Output.Should().Contain(ApiWrapperNotFound(wrapperPath));
+        console.Output.Should().NotContain(Resources.WrongLdPreload(wrapperPath, expectedWrapper));
     }
 
     [SkippableTheory]

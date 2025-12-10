@@ -9,7 +9,8 @@ project("Datadog.Linux.ApiWrapper" VERSION 3.33.0)
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c11 -fPIC -gdwarf-4) 
+# __stack_chk_fail and __stack_chk_guard can be pulled without no-stack-protector
+add_compile_options(-std=c11 -fPIC -gdwarf-4 -fno-stack-protector)
 
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
@@ -37,7 +38,11 @@ endif()
 # ******************************************************
 
 SET(API_WRAPPER_BASENAME Datadog.Linux.ApiWrapper)
-SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.x64)
+if (DEFINED ARCH_POSTFIX AND NOT "${ARCH_POSTFIX}" STREQUAL "")
+    SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.${ARCH_POSTFIX})
+else()
+    SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.x64)
+endif()
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DEPLOY_DIR})

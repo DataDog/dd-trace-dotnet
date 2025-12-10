@@ -61,6 +61,7 @@ public:
     bool IsGarbageCollectionProfilingEnabled() const override;
     bool IsHeapProfilingEnabled() const override;
     bool UseBacktrace2() const override;
+    bool UseHybridUnwinding() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
@@ -172,6 +173,7 @@ private:
     int32_t _codeHotspotsThreadsThreshold;
     uint32_t _heapHandleLimit;
     bool _useBacktrace2;
+    bool _useHybridUnwinding;
     bool _isAllocationRecorderEnabled;
     bool _isGcThreadsCpuTimeEnabled;
     std::string _gitRepositoryUrl;

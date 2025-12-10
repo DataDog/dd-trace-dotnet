@@ -576,7 +576,12 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 
+    // these are defined in Projects.cs (as C# constants)
+#ifdef ARM64
+    const std::string wrapperLibraryName = "Datadog.Linux.ApiWrapper.arm64.so";
+#else
     const std::string wrapperLibraryName = "Datadog.Linux.ApiWrapper.x64.so";
+#endif
     const std::string customFnName = "dl_iterate_phdr";
     auto* dlIteratePhdr = reinterpret_cast<void*>(::dl_iterate_phdr);
 

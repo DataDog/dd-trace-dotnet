@@ -73,6 +73,13 @@ Configuration::Configuration()
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, true);
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
+    _useHybridUnwinding = GetEnvironmentValue(EnvironmentVariables::UseHybridUnwinding, 
+#ifdef ARM64
+        true  // Default to true on ARM64 where libunwind has issues
+#else
+        false // Default to false on other architectures
+#endif
+    );
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled,
@@ -318,6 +325,11 @@ std::string const& Configuration::GetServiceName() const
 bool Configuration::UseBacktrace2() const
 {
     return _useBacktrace2;
+}
+
+bool Configuration::UseHybridUnwinding() const
+{
+    return _useHybridUnwinding;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const
