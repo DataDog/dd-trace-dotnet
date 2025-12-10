@@ -32,6 +32,8 @@ CpuProfilerType const Configuration::DefaultCpuProfilerType =
 #else
     CpuProfilerType::TimerCreate;
 #endif
+std::chrono::minutes const Configuration::DefaultDevHeapSnapshotInterval = 1min;
+std::chrono::minutes const Configuration::DefaultProdHeapSnapshotInterval = 5min;
 
 Configuration::Configuration()
 {
@@ -118,6 +120,11 @@ Configuration::Configuration()
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
+    _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
+    _heapSnapshotInterval = ExtractHeapSnapshotInterval();
+    _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
+    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
+    _heapHandleLimit = ExtractHeapHandleLimit();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -797,7 +804,6 @@ void Configuration::SetEnablementStatus(EnablementStatus status)
     _enablementStatus = status;
 }
 
-
 std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() const
 {
     auto const defaultValue = 50ms;
@@ -811,4 +817,74 @@ std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() c
 std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
 {
     return _httpRequestDurationThreshold;
+}
+
+bool Configuration::IsHeapSnapshotEnabled() const
+{
+    return _isHeapSnapshotEnabled;
+}
+
+std::chrono::minutes Configuration::GetDefaultHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
+
+    bool isDev;
+    if (shared::TryParseBooleanEnvironmentValue(r, isDev) && isDev)
+        return DefaultDevHeapSnapshotInterval;
+
+    return DefaultProdHeapSnapshotInterval;
+}
+
+std::chrono::minutes Configuration::ExtractHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::HeapSnapshotInterval);
+    int32_t interval;
+    if (TryParse(r, interval))
+    {
+        return std::chrono::minutes(interval);
+    }
+
+    return GetDefaultHeapSnapshotInterval();
+}
+
+std::chrono::minutes Configuration::GetHeapSnapshotInterval() const
+{
+    return _heapSnapshotInterval;
+}
+
+std::chrono::milliseconds Configuration::ExtractHeapSnapshotCheckInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::HeapSnapshotCheckInterval);
+    int32_t interval;
+    if (TryParse(r, interval))
+    {
+        return std::chrono::milliseconds(interval);
+    }
+
+    return 250ms;
+}
+
+std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
+{
+    return _heapSnapshotCheckInterval;
+}
+
+uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const
+{
+    return _heapSnapshotMemoryPressureThreshold;
+}
+
+int32_t Configuration::ExtractHeapHandleLimit() const
+{
+    // default handle count limit is 4096; could be changed via env vars from 1024 to 16000
+    int32_t limit =
+        std::min(
+            std::max(GetEnvironmentValue(EnvironmentVariables::HeapHandleLimit, 4096), 1024),
+            16000);
+    return limit;
+}
+
+uint32_t Configuration::GetHeapHandleLimit() const
+{
+    return _heapHandleLimit;
 }

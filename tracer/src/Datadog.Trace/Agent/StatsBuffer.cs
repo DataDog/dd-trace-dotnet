@@ -1,4 +1,4 @@
-// <copyright file="StatsBuffer.cs" company="Datadog">
+﻿// <copyright file="StatsBuffer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,11 +12,11 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsBuffer
+    internal sealed class StatsBuffer
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        private readonly ClientStatsPayload _header;
+        private ClientStatsPayload _header;
 
         public StatsBuffer(ClientStatsPayload header)
         {
@@ -59,16 +59,29 @@ namespace Datadog.Trace.Agent
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            MessagePackBinary.WriteMapHeader(stream, 8);
+            var count = 8;
+            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            {
+                count++;
+            }
+
+            MessagePackBinary.WriteMapHeader(stream, count);
 
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
+            var details = _header.Details;
             MessagePackBinary.WriteString(stream, "Env");
-            MessagePackBinary.WriteString(stream, _header.Environment ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Version");
-            MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            {
+                MessagePackBinary.WriteString(stream, "ProcessTags");
+                MessagePackBinary.WriteString(stream, _header.ProcessTags);
+            }
 
             MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);

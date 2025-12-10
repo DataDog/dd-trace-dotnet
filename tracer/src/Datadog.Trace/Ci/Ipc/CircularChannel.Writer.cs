@@ -1,4 +1,4 @@
-// <copyright file="CircularChannel.Writer.cs" company="Datadog">
+﻿// <copyright file="CircularChannel.Writer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal partial class CircularChannel
 {
-    private class Writer : IChannelWriter
+    private sealed class Writer : IChannelWriter
     {
         private readonly CircularChannel _channel;
         private long _disposed;

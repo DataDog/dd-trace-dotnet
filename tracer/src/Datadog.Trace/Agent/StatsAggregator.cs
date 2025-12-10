@@ -1,4 +1,4 @@
-// <copyright file="StatsAggregator.cs" company="Datadog">
+﻿// <copyright file="StatsAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,13 +14,14 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsAggregator : IStatsAggregator
+    internal sealed class StatsAggregator : IStatsAggregator
     {
         private const int BufferCount = 2;
 
@@ -43,6 +44,7 @@ namespace Datadog.Trace.Agent
         private readonly ErrorSampler _errorSampler;
         private readonly RareSampler _rareSampler;
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
+        private readonly IDisposable _settingSubscription;
 
         private int _currentBuffer;
 
@@ -63,12 +65,19 @@ namespace Datadog.Trace.Agent
             _rareSampler = new RareSampler(settings);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
-            var header = new ClientStatsPayload
+            // Create with the initial mutable settings, but be aware that this could change later
+            var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
             {
-                Environment = settings.Environment,
-                Version = settings.ServiceVersion,
-                HostName = HostMetadata.Instance.Hostname
+                HostName = HostMetadata.Instance.Hostname,
+                ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null
             };
+            _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    header.UpdateDetails(mutable);
+                }
+            });
 
             for (int i = 0; i < _buffers.Length; i++)
             {
@@ -100,15 +109,17 @@ namespace Datadog.Trace.Agent
         {
             _discoveryService.RemoveSubscription(HandleConfigUpdate);
             _processExit.TrySetResult(true);
+            _settingSubscription.Dispose();
             return _flushTask;
         }
 
+        [TestingOnly]
         public void Add(params Span[] spans)
         {
-            AddRange(new ArraySegment<Span>(spans, 0, spans.Length));
+            AddRange(new(spans, spans.Length));
         }
 
-        public void AddRange(ArraySegment<Span> spans)
+        public void AddRange(in SpanCollection spans)
         {
             // Contention around this lock is expected to be very small:
             // AddRange is called from the serialization thread, and concurrent serialization
@@ -116,34 +127,35 @@ namespace Datadog.Trace.Agent
             // The Flush thread only acquires the lock long enough to swap the metrics buffer.
             lock (_buffers)
             {
-                for (int i = 0; i < spans.Count; i++)
+                foreach (var span in spans)
                 {
-                    AddToBuffer(spans.Array[i + spans.Offset]);
+                    AddToBuffer(span);
                 }
             }
         }
 
-        public bool ShouldKeepTrace(ArraySegment<Span> trace)
+        public bool ShouldKeepTrace(in SpanCollection trace)
         {
             // Note: The RareSampler must be run before all other samplers so that
             // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
             // The sampling decision is only used if no other samplers choose to keep the trace chunk.
-            bool rareSpanFound = _rareSampler.Sample(trace);
+            bool rareSpanFound = _rareSampler.Sample(in trace);
 
             return rareSpanFound
-                || _prioritySampler.Sample(trace)
-                || _errorSampler.Sample(trace)
-                || _analyticsEventSampler.Sample(trace);
+                || _prioritySampler.Sample(in trace)
+                || _errorSampler.Sample(in trace)
+                || _analyticsEventSampler.Sample(in trace);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace)
+        public SpanCollection ProcessTrace(in SpanCollection trace)
         {
+            var spans = trace;
             foreach (var processor in _traceProcessors)
             {
                 try
                 {
-                    trace = processor.Process(trace);
+                    spans = processor.Process(in spans);
                 }
                 catch (Exception e)
                 {
@@ -151,7 +163,7 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            return trace;
+            return spans;
         }
 
         internal static StatsAggregationKey BuildKey(Span span)

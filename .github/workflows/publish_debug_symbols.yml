@@ -10,12 +10,13 @@ on:
 jobs:
   publish_native_debug_symbols:
     runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
     env:
       ARTIFACTS_PATH: ${{ github.workspace }}/artifacts
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
       - name: Download Linux native symbols v${{ github.event.inputs.version }}
@@ -33,5 +34,10 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{ env.ARTIFACTS_PATH }}
-          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          public_symbols_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
+          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
+          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
+          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
+          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
+          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
+          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
+          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

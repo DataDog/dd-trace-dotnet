@@ -1,4 +1,4 @@
-// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
+﻿// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
-internal class ServiceDiscoveryHelper
+internal static class ServiceDiscoveryHelper
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ServiceDiscoveryHelper>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceDiscoveryHelper));
 
     internal enum StoreMetadataResult
     {
@@ -22,7 +22,7 @@ internal class ServiceDiscoveryHelper
         Exception
     }
 
-    internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings)
+    internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings, MutableSettings mutableSettings)
     {
         var platformIsSupported = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
         var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
@@ -36,9 +36,9 @@ internal class ServiceDiscoveryHelper
                     TracerConstants.Language,
                     TracerConstants.ThreePartVersion,
                     Environment.MachineName,
-                    tracerSettings.MutableSettings.DefaultServiceName,
-                    tracerSettings.Environment,
-                    tracerSettings.ServiceVersion);
+                    mutableSettings.DefaultServiceName,
+                    mutableSettings.Environment,
+                    mutableSettings.ServiceVersion);
 
                 if (result.Tag == ResultTag.Error)
                 {

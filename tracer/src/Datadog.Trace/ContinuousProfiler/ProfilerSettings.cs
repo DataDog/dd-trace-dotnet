@@ -1,4 +1,4 @@
-// <copyright file="ProfilerSettings.cs" company="Datadog">
+﻿// <copyright file="ProfilerSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,10 +8,11 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ContinuousProfiler;
 
-internal class ProfilerSettings
+internal sealed class ProfilerSettings
 {
     private readonly bool _isManagedActivationEnabled = false;
 
@@ -20,7 +21,7 @@ internal class ProfilerSettings
     {
     }
 
-    // Internal for testing only
+    [TestingAndPrivateOnly]
     internal ProfilerSettings(IConfigurationSource config, IConfigurationSource envConfig, IConfigurationTelemetry telemetry)
     {
         if (!IsProfilingSupported)
@@ -68,7 +69,7 @@ internal class ProfilerSettings
         };
     }
 
-    // Internal for testing only
+    [TestingOnly]
     internal ProfilerSettings(ProfilerState state)
     {
         ProfilerState = state;

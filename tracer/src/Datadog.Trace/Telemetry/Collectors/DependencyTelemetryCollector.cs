@@ -10,10 +10,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class DependencyTelemetryCollector : IDependencyTelemetryCollector
+    internal sealed class DependencyTelemetryCollector : IDependencyTelemetryCollector
     {
         // value is true when sent to the backend
         private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        // Internal for testing
+        [TestingAndPrivateOnly]
         internal void AssemblyLoaded(AssemblyName assembly, string moduleVersionId)
         {
             // exclude dlls we're not interested in which have a "random" component

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation;
 
-internal class RedactAllObfuscator : ObfuscatorBase
+internal sealed class RedactAllObfuscator : ObfuscatorBase
 {
     internal override string Obfuscate(string queryString)
     {

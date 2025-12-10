@@ -15,9 +15,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// <summary>
     /// A class that attempts to load the Datadog.Trace .NET assembly.
     /// </summary>
-    public partial class Startup
+    public sealed partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.31.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=3.33.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 

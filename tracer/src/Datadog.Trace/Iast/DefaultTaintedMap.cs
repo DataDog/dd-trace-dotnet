@@ -1,4 +1,4 @@
-// <copyright file = "DefaultTaintedMap.cs" company = "Datadog" >
+﻿// <copyright file = "DefaultTaintedMap.cs" company = "Datadog" >
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Datadog.Trace.Iast;
 
-internal class DefaultTaintedMap : ITaintedMap
+internal sealed class DefaultTaintedMap : ITaintedMap
 {
     // Default capacity. It MUST be a power of 2.
     public const int DefaultCapacity = 1 << 14;
@@ -228,7 +228,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
     private int IndexObject(object objectStored)
     {
-        return Index(PositiveHashCode(objectStored.GetHashCode()));
+        return Index(PositiveHashCode(IastUtils.IdentityHashCode(objectStored)));
     }
 
     private int PositiveHashCode(int hash)

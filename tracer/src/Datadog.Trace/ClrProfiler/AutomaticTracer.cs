@@ -1,4 +1,4 @@
-// <copyright file="AutomaticTracer.cs" company="Datadog">
+﻿// <copyright file="AutomaticTracer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
-    internal class AutomaticTracer : CommonTracer, IAutomaticTracer, IDistributedTracer
+    internal sealed class AutomaticTracer : CommonTracer, IAutomaticTracer, IDistributedTracer
     {
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));

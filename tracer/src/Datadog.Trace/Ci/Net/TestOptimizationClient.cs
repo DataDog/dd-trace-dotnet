@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationClient.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationClient.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -72,11 +72,12 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var settings = _testOptimization.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(settings.TracerSettings.Environment ?? "none") ?? "none";
-        _serviceName = NormalizerTraceProcessor.NormalizeService(settings.TracerSettings.ServiceName) ?? string.Empty;
+        var initialMutableSettings = settings.TracerSettings.Manager.InitialMutableSettings;
+        _environment = TraceUtil.NormalizeTag(initialMutableSettings.Environment ?? "none") ?? "none";
+        _serviceName = NormalizerTraceProcessor.NormalizeService(initialMutableSettings.ServiceName) ?? string.Empty;
 
         // Extract custom tests configurations from DD_TAGS
-        _customConfigurations = GetCustomTestsConfigurations(settings.TracerSettings.GlobalTags);
+        _customConfigurations = GetCustomTestsConfigurations(initialMutableSettings.GlobalTags);
 
         _apiRequestFactory = _testOptimization.TracerManagement!.GetRequestFactory(settings.TracerSettings, TimeSpan.FromSeconds(45));
         _eventPlatformProxySupport = settings.Agentless ? EventPlatformProxySupport.None : _testOptimization.TracerManagement.EventPlatformProxySupport;
@@ -610,7 +611,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         }
     }
 
-    private class RateLimitException : Exception
+    private sealed class RateLimitException : Exception
     {
         public RateLimitException()
             : base("Server rate limiting response received. Cancelling request.")

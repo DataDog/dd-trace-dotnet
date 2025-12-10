@@ -1,4 +1,4 @@
-// <copyright file="TelemetryFactory.cs" company="Datadog">
+﻿// <copyright file="TelemetryFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.Telemetry.Transports;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetryFactory
+    internal sealed class TelemetryFactory
     {
         // need to start collecting these immediately
         private static readonly Lazy<RedactedErrorLogCollector> _logs = new();
@@ -59,11 +59,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public static TelemetryFactory CreateFactory() => new();
 
-        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable: null), discoveryService, useCiVisibilityTelemetry: false);
+        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, TelemetrySettings telemetrySettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, telemetrySettings, discoveryService, useCiVisibilityTelemetry: false);
 
-        public ITelemetryController CreateCiVisibilityTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable), discoveryService, useCiVisibilityTelemetry: true);
+        public ITelemetryController CreateCiVisibilityTelemetryController(TracerSettings tracerSettings, TelemetrySettings telemetrySettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, telemetrySettings, discoveryService, useCiVisibilityTelemetry: true);
 
         public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
         {
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Telemetry
 
             try
             {
-                var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+                var telemetryTransports = new TelemetryTransportFactory(settings);
 
                 if (!telemetryTransports.HasTransports)
                 {
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 log.Debug("Creating telemetry controller v2");
-                return CreateController(telemetryTransports, settings, discoveryService);
+                return CreateController(tracerSettings, telemetryTransports, settings, discoveryService);
             }
             catch (Exception ex)
             {
@@ -155,11 +155,12 @@ namespace Datadog.Trace.Telemetry
         }
 
         private ITelemetryController CreateController(
-            TelemetryTransports telemetryTransports,
+            TracerSettings tracerSettings,
+            TelemetryTransportFactory telemetryTransports,
             TelemetrySettings settings,
             IDiscoveryService discoveryService)
         {
-            var transportManager = new TelemetryTransportManager(telemetryTransports, discoveryService);
+            var transportManager = new TelemetryTransportManager(tracerSettings.Manager, telemetryTransports, discoveryService);
             // The telemetry controller must be a singleton, so we initialize once
             // Note that any dependencies initialized inside the controller are also singletons (by design)
             // Initialized once so if we create a new controller from this factory we get the same collector instances.
@@ -171,6 +172,7 @@ namespace Datadog.Trace.Telemetry
                 lock (_sync)
                 {
                     _controller ??= new TelemetryController(
+                        tracerSettings,
                         Config,
                         _dependencies!,
                         Metrics,
@@ -180,7 +182,6 @@ namespace Datadog.Trace.Telemetry
                 }
             }
 
-            _controller.DisableSending(); // disable sending until fully configured
             _controller.SetTransportManager(transportManager);
             _controller.SetFlushInterval(settings.HeartbeatInterval);
 

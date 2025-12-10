@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -17,41 +18,44 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareApi
+internal sealed class TracerFlareApi
 {
     internal const string TracerFlareSentLog = "Tracer flare sent successfully";
     private const string TracerFlareEndpoint = "tracer_flare/v1";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerFlareApi>();
 
-    private readonly IApiRequestFactory _requestFactory;
-    private readonly Uri _endpoint;
+    private Api _api;
 
+    // Internal for testing
     public TracerFlareApi(IApiRequestFactory requestFactory)
     {
-        _requestFactory = requestFactory;
-        _endpoint = _requestFactory.GetEndpoint(TracerFlareEndpoint);
+        _api = new(requestFactory, requestFactory.GetEndpoint(TracerFlareEndpoint));
     }
 
-    public static TracerFlareApi Create(ExporterSettings exporterSettings)
+    public TracerFlareApi(TracerSettings.SettingsManager settings)
+    : this(CreateApiRequestFactory(settings.InitialExporterSettings))
     {
-        var requestFactory = AgentTransportStrategy.Get(
-            exporterSettings,
-            productName: "tracer_flare",
-            tcpTimeout: TimeSpan.FromSeconds(30),
-            AgentHttpHeaderNames.MinimalHeaders,
-            () => new MinimalAgentHeaderHelper(),
-            uri => uri);
-
-        return new TracerFlareApi(requestFactory);
+        settings.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedExporter is { } exporter)
+            {
+                var requestFactory = CreateApiRequestFactory(exporter);
+                var api = new Api(requestFactory, requestFactory.GetEndpoint(TracerFlareEndpoint));
+                Interlocked.Exchange(ref _api, api);
+            }
+        });
     }
+
+    public static TracerFlareApi CreateManaged(TracerSettings.SettingsManager settings) => new(settings);
 
     public async Task<KeyValuePair<bool, string?>> SendTracerFlare(Func<Stream, Task> writeFlareToStreamFunc, string caseId, string hostname, string email)
     {
+        var api = Volatile.Read(ref _api);
         try
         {
-            Log.Debug("Sending tracer flare to {Endpoint}", _endpoint);
+            Log.Debug("Sending tracer flare to {Endpoint}", api.Endpoint);
 
-            var request = _requestFactory.Create(_endpoint);
+            var request = api.RequestFactory.Create(api.Endpoint);
             using var response = await request.PostAsync(
                                                    stream => TracerFlareRequestFactory.WriteRequestBody(stream, writeFlareToStreamFunc, caseId, hostname: hostname, email: email),
                                                    MimeTypes.MultipartFormData,
@@ -80,13 +84,27 @@ internal class TracerFlareApi
                 Log.Warning<int, string?>(e, "Error parsing {StatusCode} response from tracer flare endpoint: {ResponseContent}", response.StatusCode, responseContent);
             }
 
-            Log.Warning<string, int>("Error sending tracer flare to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
+            Log.Warning<string, int>("Error sending tracer flare to '{Endpoint}' {StatusCode} ", api.RequestFactory.Info(api.Endpoint), response.StatusCode);
             return new(false, error);
         }
         catch (Exception ex)
         {
-            Log.Information(ex, "Error sending tracer flare to '{Endpoint}'", _requestFactory.Info(_endpoint));
+            Log.Information(ex, "Error sending tracer flare to '{Endpoint}'", api.RequestFactory.Info(api.Endpoint));
             return new(false, null);
         }
     }
+
+    private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings)
+    {
+        var requestFactory = AgentTransportStrategy.Get(
+            exporterSettings,
+            productName: "tracer_flare",
+            tcpTimeout: TimeSpan.FromSeconds(30),
+            AgentHttpHeaderNames.MinimalHeaders,
+            () => new MinimalAgentHeaderHelper(),
+            uri => uri);
+        return requestFactory;
+    }
+
+    private sealed record Api(IApiRequestFactory RequestFactory, Uri Endpoint);
 }

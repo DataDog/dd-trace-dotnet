@@ -190,6 +190,7 @@ internal static class MetricTags
         // manual integration
         [Description("integration_name:datadog")]Manual,
         [Description("integration_name:opentracing")]OpenTracing,
+        [Description("integration_name:version_conflict")]VersionConflict,
 
         // automatic "custom" integration
         [Description("integration_name:ciapp")]CiAppManual,
@@ -272,7 +273,8 @@ internal static class MetricTags
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
-        [Description("integration_name:protobuf")] Protobuf
+        [Description("integration_name:protobuf")] Protobuf,
+        [Description("integration_name:hangfire")] Hangfire
     }
 
     public enum InstrumentationError

@@ -1,4 +1,4 @@
-// <copyright file="ProcessHelpers.cs" company="Datadog">
+﻿// <copyright file="ProcessHelpers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Util
 {
@@ -61,10 +62,16 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
-        /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
+        /// Gets the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
         /// </summary>
         /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
         public static bool ShouldTraceProcessStart() => !_doNotTrace;
+
+        /// <summary>
+        /// Used to override the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>.
+        /// Prefer using <see cref="StartWithDoNotTrace"/> - this should only be used to work around version conflict scenarios
+        /// </summary>
+        public static void ForceDoNotTrace(bool doNotTrace) => _doNotTrace = doNotTrace;
 
         /// <summary>
         /// Run a command and get the standard output content as a string
@@ -196,6 +203,7 @@ namespace Datadog.Trace.Util
         /// <summary>
         /// Internal for testing to make it easier to call using reflection from a sample app
         /// </summary>
+        [TestingOnly]
         internal static void TestingOnly_RunCommand(string cmd, string? args)
         {
             RunCommand(new Command(cmd, args));
@@ -271,7 +279,7 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public class CommandOutput
+        public sealed class CommandOutput
         {
             public CommandOutput(string output, string error, int exitCode, bool timedOut)
             {

@@ -87,6 +87,8 @@ namespace Datadog.Trace.Configuration
         DatadogTraceManual,
         EmailHtmlInjection,
         Protobuf,
-        AzureEventHubs
+        AzureEventHubs,
+        DatadogTraceVersionConflict,
+        Hangfire
     }
 }

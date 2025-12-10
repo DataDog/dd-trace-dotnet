@@ -1,4 +1,4 @@
-// <copyright file="NoOpStatsd.cs" company="Datadog">
+﻿// <copyright file="NoOpStatsd.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,8 +8,10 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
 {
-    internal class NoOpStatsd : IDogStatsd
+    internal sealed class NoOpStatsd : IDogStatsd
     {
+        public static readonly NoOpStatsd Instance = new();
+
         public ITelemetryCounters TelemetryCounters => null;
 
         public void Configure(StatsdConfig config)
@@ -78,7 +80,7 @@ namespace Datadog.Trace.DogStatsd
         {
         }
 
-        private class NoOpTimer : IDisposable
+        private sealed class NoOpTimer : IDisposable
         {
             internal static readonly NoOpTimer Instance = new NoOpTimer();
 

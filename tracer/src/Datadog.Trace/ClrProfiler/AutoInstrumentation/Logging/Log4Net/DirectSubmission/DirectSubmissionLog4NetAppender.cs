@@ -8,6 +8,7 @@ using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -16,14 +17,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     /// <summary>
     /// Duck type for IAppender
     /// </summary>
-    internal class DirectSubmissionLog4NetAppender
+    internal sealed class DirectSubmissionLog4NetAppender
     {
         private static DirectSubmissionLog4NetAppender _instance = null!;
 
         private readonly IDirectSubmissionLogSink _sink;
         private readonly DirectSubmissionLogLevel _minimumLevel;
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal DirectSubmissionLog4NetAppender(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;

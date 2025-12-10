@@ -1,4 +1,4 @@
-// <copyright file="ProbeProcessor.cs" company="Datadog">
+﻿// <copyright file="ProbeProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,7 +23,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
-    internal class ProbeProcessor : IProbeProcessor
+    internal sealed class ProbeProcessor : IProbeProcessor
     {
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo);
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, Tracer.Instance.Settings.PropagateProcessTags);
         }
 
         private void SetExpressions(ProbeDefinition probe)

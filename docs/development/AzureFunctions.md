@@ -3,7 +3,7 @@
 This document describes how dd-trace-dotnet integrates with Azure Functions for distributed tracing.
 
 **Related Documentation:**
-- [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md) - Detailed architectural information about Azure Functions Host and .NET Worker
+- [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md) - Detailed architectural information about Azure Functions Host and .NET Worker
 
 Azure functions operates in one of two ways:
 
@@ -16,11 +16,11 @@ Azure functions operates in one of two ways:
 
 The `Datadog.AzureFunctions` NuGet package is the primary instrumentation package for Azure Functions. It contains:
 
-- **Datadog.Trace.dll** - The full managed tracer with all auto-instrumentation code
-- **Native profiler binaries** - Platform-specific profiler libraries (e.g., `Datadog.Trace.ClrProfiler.Native.so` for Linux)
+- **Datadog.Trace.dll** - The full managed tracer component with all auto-instrumentation code
+- **Native binaries** - Platform-specific native libraries (e.g., `Datadog.Trace.ClrProfiler.Native.so` for Linux)
 - **Monitoring home directory structure** - Deployed to `/home/site/wwwroot/datadog/` (Linux) or equivalent on Windows
 
-When profiling is enabled globally (via `CORECLR_ENABLE_PROFILING=1`), the native profiler loads `Datadog.Trace.dll` into **both the host process (`func.exe` or `Microsoft.Azure.WebJobs.Script.WebHost`) and the worker process**. This allows instrumentation code to run in both processes, which is essential for:
+When instrumentation is enabled globally (via `CORECLR_ENABLE_PROFILING=1`), the native profiler loads `Datadog.Trace.dll` into **both the host process (`func.exe` or `Microsoft.Azure.WebJobs.Script.WebHost`) and the worker process**. This allows instrumentation code to run in both processes, which is essential for:
 - Instrumenting host process methods (e.g., `GrpcMessageConversionExtensions.ToRpcHttp()`)
 - Instrumenting worker process methods (e.g., `FunctionExecutionMiddleware`)
 - Ensuring correct trace context propagation across the process boundary
@@ -33,7 +33,7 @@ The `Datadog.Trace` NuGet package is different from `Datadog.AzureFunctions`:
 - **Does NOT contain** auto-instrumentation code or native profiler binaries
 - Used by application code for manual instrumentation (e.g., `Tracer.Instance.StartActive()`)
 
-In Azure Functions scenarios, the worker application references `Datadog.Trace` for manual instrumentation, while `Datadog.AzureFunctions` provides the auto-instrumentation. The version of `Datadog.Trace` referenced by the application doesn't need to match `Datadog.AzureFunctions` exactly, as the auto-instrumentation comes entirely from `Datadog.Trace.dll` bundled in `Datadog.AzureFunctions`.
+In Azure Functions scenarios, applications typically only need to reference `Datadog.AzureFunctions`, which provides both auto-instrumentation and pulls in `Datadog.Trace` as a transitive dependency for manual instrumentation APIs. If an application explicitly references `Datadog.Trace` (e.g., for version pinning), the version doesn't need to match `Datadog.AzureFunctions` exactly, as the auto-instrumentation comes entirely from `Datadog.Trace.dll` bundled in `Datadog.AzureFunctions`.
 
 ## In-process Azure Functions integration
 
@@ -47,7 +47,7 @@ We also instrument the `FunctionExecutor`. This provides all the details about t
 
 Isolated functions are the only supported model for Azure Functions going forward. In this model, instead of the customer's app being a class library, its a real ASP.NET Core application. The host `func.exe` starts the customer app as a sub process, and sets up a GRPC channel between the two apps. The `func.exe` host acts as a proxy for requests to the customer's app.
 
-For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](AzureFunctions-Architecture.md).
+For detailed information about the isolated worker architecture, gRPC protocol, and middleware model, see [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md).
 
 `func.exe` sets up an in-process Azure Function for every function in the customer's app. Each of the functions in `func.exe` are simple calls that proxy the request to the customer app, and then return the response.
 
@@ -113,16 +113,16 @@ gantt
 
 ### Isolated Azure Functions with ASP.NET Core Integration
 
-Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) that operates differently from the standard gRPC-based communication.
+Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) mode where the host uses HTTP proxying instead of sending all request details over gRPC.
 
-#### HTTP Proxying Architecture
+**For architectural details** about HTTP proxying, YARP, and detection, see [Azure Functions Architecture Deep Dive](for-ai/AzureFunctions-Architecture.md).
 
 When ASP.NET Core integration is enabled, the `func.exe` host uses **HTTP proxying** instead of sending all request details over gRPC:
 
 1. **Request Reception**: `func.exe` receives the incoming HTTP request
 2. **Capability Detection**: Host checks if worker advertised the `HttpUri` capability
-3. **Minimal gRPC Message**: `GrpcMessageConversionExtensions.ToRpcHttp()` returns an **empty** or minimal gRPC message (see [GrpcMessageConversionExtensions.cs:123-125](https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.Grpc/MessageExtensions/GrpcMessageConversionExtensions.cs#L123-L125))
-4. **HTTP Forwarding**: Host uses [YARP (Yet Another Reverse Proxy)](https://microsoft.github.io/reverse-proxy/) to forward the original HTTP request to the worker process via `DefaultHttpProxyService.StartForwarding()` ([source](https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script/Http/DefaultHttpProxyService.cs#L82-L108))
+3. **Minimal gRPC Message**: `GrpcMessageConversionExtensions.ToRpcHttp()` returns an **empty** or minimal gRPC message (see [GrpcMessageConversionExtensions.cs:123-125](https://github.com/Azure/azure-functions-host/blob/de87f37cec3cf02b3e29716764d4ceb6c2856fa8/src/WebJobs.Script.Grpc/MessageExtensions/GrpcMessageConversionExtensions.cs#L123-L125))
+4. **HTTP Forwarding**: Host uses [YARP (Yet Another Reverse Proxy)](https://microsoft.github.io/reverse-proxy/) to forward the original HTTP request to the worker process via `DefaultHttpProxyService.StartForwarding()` ([source](https://github.com/Azure/azure-functions-host/blob/de87f37cec3cf02b3e29716764d4ceb6c2856fa8/src/WebJobs.Script/Http/DefaultHttpProxyService.cs#L82-L108))
 5. **Worker Processing**: Worker receives the HTTP request and processes the function
 6. **Response Proxying**: Worker's HTTP response is proxied back through the host to the client
 
@@ -181,6 +181,8 @@ Worker spans (serialized by PID 56, tagged as "worker"):
    └─ azure_functions.invoke (s_id: 114d..., p_id: 9ddf...)  [Child of worker's aspnet_core]
       └─ ... (additional spans)
 ```
+
+<!-- TODO: Update this section if/when span parenting is fixed to properly connect host and worker spans -->
 
 **Key insight**: When troubleshooting traces in Datadog, a single distributed trace will contain spans from both processes with different `aas.function.process` tag values. This is expected behavior.
 
@@ -361,10 +363,10 @@ Use the Azure CLI to download all log files at once:
 
 ```bash
 # Download logs to a local zip file
-az functionapp log download \
+az webapp log download \
   --name lucasp-premium-linux-isolated \
   --resource-group lucasp \
-  --log-path D:/temp/azure-logs.zip
+  --log-file D:/temp/azure-logs.zip
 
 # Extract the logs
 unzip D:/temp/azure-logs.zip -d D:/temp/LogFiles
@@ -546,7 +548,7 @@ grep "2025-10-10 17:53:3[89]" worker.log | grep "Span started"
    # Trigger function first
    curl https://<app>.azurewebsites.net/api/HttpTest
    # Wait a few seconds, then download
-   az functionapp log download --name <app> --resource-group <rg> --log-path logs.zip
+   az webapp log download --name <app> --resource-group <rg> --log-file logs.zip
    ```
 
 #### Scenario 3: Wrong Tracer Version After Deployment
@@ -669,10 +671,10 @@ curl https://<app>.azurewebsites.net/api/HttpTest
 sleep 5
 
 # 3. Download logs with timestamp in filename
-az functionapp log download \
+az webapp log download \
   --name <app> \
   --resource-group <rg> \
-  --log-path D:/temp/logs-$(date +%H%M%S).zip
+  --log-file "D:/temp/logs-$(date +%H%M%S).zip"
 ```
 
 This creates a snapshot of logs for each test execution.
@@ -690,10 +692,10 @@ curl https://lucasp-premium-linux-isolated.azurewebsites.net/api/HttpTest
 sleep 5  # Wait for logs to be written
 
 # === Step 2: Download logs ===
-az functionapp log download \
+az webapp log download \
   --name lucasp-premium-linux-isolated \
   --resource-group lucasp \
-  --log-path D:/temp/logs-175339.zip
+  --log-file D:/temp/logs-175339.zip
 
 unzip -q D:/temp/logs-175339.zip -d D:/temp/LogFiles
 

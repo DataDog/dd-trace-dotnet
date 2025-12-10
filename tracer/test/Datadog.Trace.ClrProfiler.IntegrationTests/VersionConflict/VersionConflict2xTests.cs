@@ -18,11 +18,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         public VersionConflict2xTests(ITestOutputHelper output)
             : base("VersionConflict.2x", output)
         {
-            // We disable the process integration to prevent the `stat` process spans that
-            // _may_ be present depending on the underlying host system (cgroup v1/v2).
-            // The "do not trace" helper that normally blocks tracing these spans doesn't
-            // work in version conflict scenarios.
-            SetEnvironmentVariable("DD_TRACE_Process_ENABLED", "0");
         }
 
         [SkippableFact]

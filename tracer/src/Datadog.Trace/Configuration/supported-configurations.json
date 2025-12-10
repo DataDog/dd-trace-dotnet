@@ -23,6 +23,11 @@
         "A"
       ]
     },
+    "DD_AGENT_FEATURE_POLLING_ENABLED": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_API_KEY": {
       "version": [
         "A"
@@ -505,6 +510,18 @@
       ],
       "product": "Debugger"
     },
+    "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "Debugger"
+    },
+    "DD_EXCEPTION_REPLAY_AGENTLESS_URL": {
+      "version": [
+        "A"
+      ],
+      "product": "Debugger"
+    },
     "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT": {
       "version": [
         "A"
@@ -522,6 +539,11 @@
         "A"
       ],
       "product": "AppSec"
+    },
+    "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": {
+      "version": [
+        "A"
+      ]
     },
     "DD_GIT_COMMIT_SHA": {
       "version": [
@@ -661,6 +683,12 @@
       "product": "Telemetry"
     },
     "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "Telemetry"
+    },
+    "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD": {
       "version": [
         "A"
       ],
@@ -960,7 +988,7 @@
       "version": [
         "A"
       ],
-      "product": "Telemetry"
+      "product": "OpenTelemetry"
     },
     "DD_TRACE_AGENT_ARGS": {
       "version": [

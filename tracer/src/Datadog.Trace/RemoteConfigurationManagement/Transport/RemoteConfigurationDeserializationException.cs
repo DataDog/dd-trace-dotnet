@@ -9,6 +9,6 @@ using System;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport;
 
-internal class RemoteConfigurationDeserializationException(Exception inner) : Exception("Error deserializing RCM request", inner)
+internal sealed class RemoteConfigurationDeserializationException(Exception inner) : Exception("Error deserializing RCM request", inner)
 {
 }

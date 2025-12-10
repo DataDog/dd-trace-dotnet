@@ -15,7 +15,11 @@ namespace Datadog.Trace.Tagging
     partial class AspNetCoreEndpointTags
     {
         // AspNetCoreEndpointBytes = MessagePack.Serialize("aspnet_core.endpoint");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
+#else
+        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -26,7 +30,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

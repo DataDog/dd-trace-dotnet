@@ -1,4 +1,4 @@
-// <copyright file="SpanSamplingRule.cs" company="Datadog">
+﻿// <copyright file="SpanSamplingRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Sampling
     /// <summary>
     /// Represents a sampling rules for single span ingestion.
     /// </summary>
-    internal class SpanSamplingRule : ISpanSamplingRule
+    internal sealed class SpanSamplingRule : ISpanSamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSamplingRule>();
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Sampling
         }
 
         [Serializable]
-        internal class SpanSamplingRuleConfig
+        internal sealed class SpanSamplingRuleConfig
         {
             [JsonProperty(PropertyName = "service")]
             public string ServiceNameGlob { get; set; } = "*";

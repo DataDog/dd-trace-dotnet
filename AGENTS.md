@@ -21,7 +21,7 @@
 
 ## NuGet Package Architecture
 
-### Datadog.Trace Package
+### `Datadog.Trace` Package
 The `Datadog.Trace` NuGet package provides the **manual instrumentation API** for customers:
 - **Contains**: `Datadog.Trace.Manual.dll` - Public API for manual instrumentation
 - **Does NOT contain**: Auto-instrumentation code or native profiler binaries
@@ -29,14 +29,14 @@ The `Datadog.Trace` NuGet package provides the **manual instrumentation API** fo
 
 Auto-instrumentation comes from the tracer "monitoring home" deployed separately (via installers, MSI, container images, or specialized packages like `Datadog.AzureFunctions`).
 
-### Datadog.Trace.dll vs Datadog.Trace.Manual.dll
+### `Datadog.Trace.dll` vs `Datadog.Trace.Manual.dll`
 - `Datadog.Trace.dll` - The full managed tracer with all auto-instrumentation code, loaded by the native profiler into instrumented processes
 - `Datadog.Trace.Manual.dll` - Lightweight manual instrumentation API packaged in the `Datadog.Trace` NuGet package for customer reference
 
 ### Specialized Packages
-- **Datadog.AzureFunctions**: Bundles `Datadog.Trace.dll` and native profiler for Azure Functions (see `docs/development/AzureFunctions.md`)
-- **Datadog.Monitoring.Distribution**: MSI installer for Windows (IIS, Windows Services)
-- Other serverless/platform-specific packages may bundle the full tracer similarly
+- **Datadog.Trace.Bundle**: Complete bundle with managed/native libraries for all supported .NET runtimes, OS/arch combinations, and products (APM, ASM, Continuous Profiler). An alternative distribution mechanism for auto instrumentation
+- **Datadog.AzureFunctions**: Leaner bundle for Azure Functions (see `docs/development/AzureFunctions.md`)
+- Other serverless/platform-specific packages may bundle the tracer similarly
 
 ## Tracer Structure
 
@@ -217,14 +217,13 @@ tracer/src/Datadog.Trace
 **Quick reference:**
 - **Setup**: Use Azure App Services Site Extension on Windows Premium/Elastic Premium/Dedicated plans; use `Datadog.AzureFunctions` NuGet package for Linux Consumption/Container Apps
 - **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
-- **Dependencies**: `Datadog.AzureFunctions` → `Datadog.Serverless.Compat` ([datadog-serverless-compat-dotnet](https://github.com/DataDog/datadog-serverless-compat-dotnet)) contains agent executable
 - **External Repos**: [Azure Functions Host](https://github.com/Azure/azure-functions-host) and [.NET Worker](https://github.com/Azure/azure-functions-dotnet-worker)
 
 📖 **Load when**: Working on Azure Functions instrumentation or debugging serverless issues
-- **`docs/development/AzureFunctions.md`** — In-process vs isolated worker models, instrumentation specifics, ASP.NET Core integration, GRPC context propagation, and debugging guide
+- **`docs/development/AzureFunctions.md`** — Setup, testing, instrumentation specifics, and debugging guide
 
 📖 **Load when**: Need detailed architectural understanding of Azure Functions internals
-- **`docs/development/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, middleware model, distributed tracing integration, environment variables, and instrumentation hook points
+- **`docs/development/for-ai/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, and instrumentation hook points
 
 📖 **Load when**: Working on AWS Lambda or general serverless instrumentation
 - **`docs/development/Serverless.md`** — Serverless instrumentation patterns across cloud providers
@@ -319,7 +318,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
-- `docs/development/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
+- `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/Serverless.md` — Serverless instrumentation
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)

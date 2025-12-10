@@ -48,7 +48,8 @@ namespace Datadog.Trace.Tests
 
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
-            // no methods should be called on the IStatsd
+            // no methods should be called on the IStatsd other than dispose
+            statsd.Verify(s => s.Dispose(), Times.Once);
             statsd.VerifyNoOtherCalls();
         }
 
@@ -127,14 +128,18 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.DogStatsdPort, port },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
-            var expectedPort = settings.Exporter.DogStatsdPort;
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDP);
+            var expectedPort = settings.Manager.InitialExporterSettings.DogStatsdPort;
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
             using var agent = MockTracerAgent.Create(_output, useStatsd: true, requestedStatsDPort: expectedPort);
 
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = StatsdFactory.CreateDogStatsdClient(
+                settings.Manager.InitialMutableSettings,
+                settings.Manager.InitialExporterSettings,
+                includeDefaultTags: true,
+                prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -155,11 +160,15 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.NamedPipe);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.NamedPipe);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = StatsdFactory.CreateDogStatsdClient(
+                settings.Manager.InitialMutableSettings,
+                settings.Manager.InitialExporterSettings,
+                includeDefaultTags: true,
+                prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -185,11 +194,15 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
             }));
 
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDS);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDS);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = StatsdFactory.CreateDogStatsdClient(
+                settings.Manager.InitialMutableSettings,
+                settings.Manager.InitialExporterSettings,
+                includeDefaultTags: true,
+                prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()
@@ -213,11 +226,15 @@ namespace Datadog.Trace.Tests
 
             // If we're not using the "default" UDS path, then we fallback to UDP for stats
             // Should fallback to the "default" stats location
-            settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
+            settings.Manager.InitialExporterSettings.MetricsTransport.Should().Be(TransportType.UDP);
 
             // Dogstatsd tries to actually contact the agent during creation, so need to have something listening
             // No guarantees it's actually using the _right_ config here, but it's better than nothing
-            var dogStatsD = TracerManagerFactory.CreateDogStatsdClient(settings, "test service", null);
+            var dogStatsD = StatsdFactory.CreateDogStatsdClient(
+                settings.Manager.InitialMutableSettings,
+                settings.Manager.InitialExporterSettings,
+                includeDefaultTags: true,
+                prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
             dogStatsD.Should()

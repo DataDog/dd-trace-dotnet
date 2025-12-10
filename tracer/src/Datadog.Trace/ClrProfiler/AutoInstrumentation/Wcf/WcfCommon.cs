@@ -1,4 +1,4 @@
-// <copyright file="WcfCommon.cs" company="Datadog">
+﻿// <copyright file="WcfCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -23,7 +24,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
-    internal class WcfCommon
+    internal static class WcfCommon
     {
         private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
         private static readonly Lazy<Func<object>?> _getCurrentOperationContext = new(CreateGetCurrentOperationContextDelegate, isThreadSafe: true);
@@ -77,7 +78,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
 
                     // try to extract propagated context values from http headers
-                    if (tracer.ActiveScope == null)
+                    if (tracer.ActiveScope is { } activeScope)
+                    {
+                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
+                    }
+                    else
                     {
                         try
                         {
@@ -215,6 +220,49 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             }
 
             return null;
+        }
+
+        public static CallTargetState ActivateScopeFromContext()
+        {
+            // First, capture the active scope
+            var tracer = Tracer.Instance;
+            var activeScope = tracer.InternalActiveScope;
+
+            var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
+            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+            {
+                var requestContext = operationContextProxy.RequestContext;
+
+                // Retrieve the scope that we saved during InvokeBegin
+                if (requestContext?.Instance is { } requestContextInstance
+                 && Scopes.TryGetValue(requestContextInstance, out var scope)
+                    && scope is not null
+                    && scope.Span.SpanId != activeScope?.Span.SpanId)
+                {
+                    // capture the raw context for later activation
+                    var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span.Context;
+                    Log.Debug("Activating scope from operation context {ActivatedSpan}", scope.Span);
+
+                    tracer.ActivateSpan(scope.Span);
+                    // Add the exception but do not dispose the span.
+                    // BeforeSendReplyIntegration is responsible for closing the span.
+                    return new CallTargetState(scope, activeScope, spanContextRaw);
+                }
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        public static void RestorePreviousScope(in CallTargetState state)
+        {
+            // Reset the scope to the previous active scope, so that callers of this method do not see this scope
+            // Don't worry, this will be accessed and closed by the BeforeSendReplyIntegration
+            if (state.Scope is not null && Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+            {
+                Log.Debug("Restoring previous scope from {Previous} to {Restored}", state.Scope.Span, state.PreviousScope?.Span);
+                rawAccess.Active = state.PreviousScope;
+                DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
+            }
         }
     }
 }

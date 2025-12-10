@@ -45,8 +45,8 @@
     <PackageReference Include="Perfolizer" Version="0.2.1" />
     <PackageReference Include="Sep" Version="0.7.0" />
     <PackageReference Include="ByteSize" Version="2.1.0" />
-    <!-- Enable binary serialization for .NET 9 -->
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0-rc.2.25502.107" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
+    <!-- Enable binary serialization for .NET 9+ -->
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
   </ItemGroup>
 
   <!-- On it's own, since windows only and just used for notifications -->

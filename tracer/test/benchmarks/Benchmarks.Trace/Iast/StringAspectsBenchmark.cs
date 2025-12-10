@@ -20,8 +20,7 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+[BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class StringAspectsBenchmark
 {
@@ -29,7 +28,7 @@ public class StringAspectsBenchmark
 
     private List<string> _initTaintedContextTrue;
     private List<string> _initTaintedContextFalse;
-    
+
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
         TaintedObjects taintedObjects = null;
@@ -66,6 +65,11 @@ public class StringAspectsBenchmark
     }
 
     const int Iterations = 100;
+
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+    }
 
     [IterationSetup(Target = nameof(StringConcatBenchmark))]
     public void InitTaintedContextWhenFalse()

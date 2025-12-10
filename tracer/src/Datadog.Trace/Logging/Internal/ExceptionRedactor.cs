@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.Internal;
@@ -93,7 +94,7 @@ internal static class ExceptionRedactor
         }
     }
 
-    // internal for testing
+    [TestingAndPrivateOnly]
     internal static void RedactStackTrace(StringBuilder sb, StackTrace stackTrace)
     {
         for (var i = 0; i < stackTrace.FrameCount; i++)

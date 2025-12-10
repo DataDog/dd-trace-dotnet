@@ -7,7 +7,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors
 {
-    internal class ObfuscatorTagsProcessor : ITagProcessor
+    internal sealed class ObfuscatorTagsProcessor : ITagProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTagsProcessor>();
         private readonly bool _redisObfuscationEnabled;

@@ -1,4 +1,4 @@
-// <copyright file="DiscoveryService.cs" company="Datadog">
+﻿// <copyright file="DiscoveryService.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// <summary>
     /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
-    internal class DiscoveryService : IDiscoveryService
+    internal sealed class DiscoveryService : IDiscoveryService
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";
         private const string SupportedDebuggerV2Endpoint = "debugger/v2/input";
@@ -35,7 +35,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedTracerFlareEndpoint = "tracer_flare/v1";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
-        private readonly IApiRequestFactory _apiRequestFactory;
         private readonly int _initialRetryDelayMs;
         private readonly int _maxRetryDelayMs;
         private readonly int _recheckIntervalMs;
@@ -43,7 +42,28 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly List<Action<AgentConfiguration>> _agentChangeCallbacks = new();
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
+        private readonly IDisposable? _settingSubscription;
+        private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
+
+        public DiscoveryService(
+            TracerSettings.SettingsManager settings,
+            TimeSpan tcpTimeout,
+            int initialRetryDelayMs,
+            int maxRetryDelayMs,
+            int recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, tcpTimeout), initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+        {
+            // Create as a "managed" service that can update the request factory
+            _settingSubscription = settings.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedExporter is { } exporter)
+                {
+                    var newFactory = CreateApiRequestFactory(exporter, tcpTimeout);
+                    Interlocked.Exchange(ref _apiRequestFactory!, newFactory);
+                }
+            });
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DiscoveryService"/> class.
@@ -82,28 +102,39 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTracerFlareEndpoint,
             };
 
-        public static DiscoveryService Create(ExporterSettings exporterSettings)
-            => Create(
+        /// <summary>
+        /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
+        /// </summary>
+        public static DiscoveryService CreateManaged(TracerSettings settings)
+            => new(
+                settings.Manager,
+                tcpTimeout: TimeSpan.FromSeconds(15),
+                initialRetryDelayMs: 500,
+                maxRetryDelayMs: 5_000,
+                recheckIntervalMs: 30_000);
+
+        /// <summary>
+        /// Create a <see cref="DiscoveryService"/> instance that does _not_ respond to runtime changes in settings
+        /// </summary>
+        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings)
+            => CreateUnmanaged(
                 exporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
                 recheckIntervalMs: 30_000);
 
-        public static DiscoveryService Create(
+        /// <summary>
+        /// Create a <see cref="DiscoveryService"/> instance that does _not_ respond to runtime changes in settings
+        /// </summary>
+        public static DiscoveryService CreateUnmanaged(
             ExporterSettings exporterSettings,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
             => new(
-                AgentTransportStrategy.Get(
-                    exporterSettings,
-                    productName: "discovery",
-                    tcpTimeout: tcpTimeout,
-                    AgentHttpHeaderNames.MinimalHeaders,
-                    () => new MinimalAgentHeaderHelper(),
-                    uri => uri),
+                CreateApiRequestFactory(exporterSettings, tcpTimeout),
                 initialRetryDelayMs,
                 maxRetryDelayMs,
                 recheckIntervalMs);
@@ -169,7 +200,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task FetchConfigurationLoopAsync()
         {
-            var uri = _apiRequestFactory.GetEndpoint("info");
+            var requestFactory = _apiRequestFactory;
+            var uri = requestFactory.GetEndpoint("info");
 
             int? sleepDuration = null;
 
@@ -177,7 +209,15 @@ namespace Datadog.Trace.Agent.DiscoveryService
             {
                 try
                 {
-                    var api = _apiRequestFactory.Create(uri);
+                    // If the exporter settings have been updated, refresh the endpoint
+                    var updatedFactory = Volatile.Read(ref _apiRequestFactory);
+                    if (requestFactory != updatedFactory)
+                    {
+                        requestFactory = updatedFactory;
+                        uri = requestFactory.GetEndpoint("info");
+                    }
+
+                    var api = requestFactory.Create(uri);
 
                     using var response = await api.GetAsync().ConfigureAwait(false);
                     if (response.StatusCode is >= 200 and < 300)
@@ -323,6 +363,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public Task DisposeAsync()
         {
+            _settingSubscription?.Dispose();
             if (!_processExit.TrySetResult(true))
             {
                 // Double dispose in prod shouldn't happen, and should be avoided, so logging for follow-up
@@ -331,5 +372,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             return _discoveryTask;
         }
+
+        private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, TimeSpan tcpTimeout)
+            => AgentTransportStrategy.Get(
+                exporterSettings,
+                productName: "discovery",
+                tcpTimeout: tcpTimeout,
+                AgentHttpHeaderNames.MinimalHeaders,
+                () => new MinimalAgentHeaderHelper(),
+                uri => uri);
     }
 }

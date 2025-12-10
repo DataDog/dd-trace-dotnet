@@ -21,7 +21,7 @@ public class ContextUserEventTests
     public void NewValuesTests()
     {
         var iWaf = new Mock<IWaf>().Object;
-        var encoder = new Mock<Encoder>().Object;
+        var encoder = new Mock<IEncoder>().Object;
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
@@ -46,7 +46,7 @@ public class ContextUserEventTests
     public void NewValuesSessionTests()
     {
         var iWaf = new Mock<IWaf>().Object;
-        var encoder = new Mock<Encoder>().Object;
+        var encoder = new Mock<IEncoder>().Object;
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
@@ -78,7 +78,7 @@ public class ContextUserEventTests
     public void AddressDisabledNo()
     {
         var iWaf = new Mock<IWaf>().Object;
-        var encoder = new Mock<Encoder>().Object;
+        var encoder = new Mock<IEncoder>().Object;
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(false);
@@ -101,7 +101,7 @@ public class ContextUserEventTests
     public void NullValueNo()
     {
         var iWaf = new Mock<IWaf>().Object;
-        var encoder = new Mock<Encoder>().Object;
+        var encoder = new Mock<IEncoder>().Object;
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
@@ -115,7 +115,7 @@ public class ContextUserEventTests
     public void SdkOverrideTest()
     {
         var iWaf = new Mock<IWaf>().Object;
-        var encoder = new Mock<Encoder>().Object;
+        var encoder = new Mock<IEncoder>().Object;
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);

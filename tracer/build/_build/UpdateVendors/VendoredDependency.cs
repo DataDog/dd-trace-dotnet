@@ -112,6 +112,25 @@ namespace UpdateVendors
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    if (filePath.EndsWith(Path.Join("Buffers", "Utilities.cs")))
+                    {
+                        // Fix cases where we're relying on this behaviour:
+                        // private static ReadOnlySpan<byte> Property => new byte[32]
+                        // it "works" in .NET Core, but is very allocaty in .NET FX
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]",
+                                """
+                                #if NETCOREAPP
+                                        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
+                                #else
+                                        private static ReadOnlySpan<byte> Log2DeBruijn => _log2DeBruijn.AsSpan();
+                                        private static readonly byte[] _log2DeBruijn = new byte[32]
+                                #endif
+                                """
+                            ));
+                    }
                 },
                 relativePathsToExclude: new[] { "Buffers/ArrayPoolEventSource.cs" });
 
@@ -138,6 +157,25 @@ namespace UpdateVendors
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+
+                    if (filePath.EndsWith(Path.Join("Reflection", "PortableExecutable", "PEBuilder.cs")))
+                    {
+                        // Fix cases where we're relying on this behaviour:
+                        // private static ReadOnlySpan<byte> Property => new byte[32]
+                        // it "works" in .NET Core, but is very allocaty in .NET FX
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
+                                """
+                                #if NETCOREAPP
+                                      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
+                                #else
+                                      private static readonly byte[] DosHeader = new byte[DosHeaderSize]
+                                #endif
+                                """
+                            ));
+                    }
                 });
 
             Add(

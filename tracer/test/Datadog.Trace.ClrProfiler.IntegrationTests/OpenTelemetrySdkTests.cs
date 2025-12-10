@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -224,11 +225,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var snapshotName = runtimeMajor switch
             {
-                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => otelMetricsEnabled.Equals("true") ? ".NET_6_OTEL" : ".NET_6_DD",
+                6 when parsedVersion >= new Version("1.3.2") && parsedVersion < new Version("1.5.0") => ".NET_6",
                 7 or 8 when parsedVersion >= new Version("1.5.1") && parsedVersion < new Version("1.10.0") => ".NET_7_8",
                 >= 9 when parsedVersion >= new Version("1.10.0") => string.Empty,
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
             };
+
+            snapshotName = otelMetricsEnabled.Equals("true") ? $"{snapshotName}_OTEL" : $"{snapshotName}_DD";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
@@ -337,9 +340,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
+            var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
+                var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+
                 using var httpClient = new System.Net.Http.HttpClient();
                 var logsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/logs");
                 logsResponse.EnsureSuccessStatusCode();
@@ -348,6 +355,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var logsData = JToken.Parse(logsJson);
 
                 logsData.Should().NotBeNullOrEmpty();
+                logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
+                {
+                    var timeUnixNano = logRecord.Value<long>("time_unix_nano");
+                    var observedTimeUnixNano = logRecord.Value<long>("observed_time_unix_nano");
+
+                    timeUnixNano.Should().Be(observedTimeUnixNano);
+                    timeUnixNano.Should().BeInRange(startTimeNanoseconds, endTimeNanoseconds);
+                });
 
                 foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {

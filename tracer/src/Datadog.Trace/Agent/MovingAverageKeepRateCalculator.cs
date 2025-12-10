@@ -1,4 +1,4 @@
-// <copyright file="MovingAverageKeepRateCalculator.cs" company="Datadog">
+﻿// <copyright file="MovingAverageKeepRateCalculator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Agent
     /// Traces that are subsequently dropped by the agent due to sampling
     /// will not count as dropped in this rate.
     /// </summary>
-    internal class MovingAverageKeepRateCalculator : IKeepRateCalculator
+    internal sealed class MovingAverageKeepRateCalculator : IKeepRateCalculator
     {
         private const int DefaultWindowSize = 10;
         private static readonly TimeSpan DefaultBucketDuration = TimeSpan.FromSeconds(1);
@@ -106,6 +107,7 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Update the current rate. Internal for testing only. Should not be called in normal usage.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal void UpdateBucket()
         {
             var index = _index;

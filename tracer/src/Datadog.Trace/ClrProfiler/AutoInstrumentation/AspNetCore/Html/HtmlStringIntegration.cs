@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
 #endif
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class HtmlStringIntegration
+    public sealed class HtmlStringIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

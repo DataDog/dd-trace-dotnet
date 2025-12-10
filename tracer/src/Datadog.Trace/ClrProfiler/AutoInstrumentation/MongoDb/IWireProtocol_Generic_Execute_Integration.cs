@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         AssemblyNames = [MongoDbIntegration.MongoDbClientV2Assembly, MongoDbIntegration.MongoDbClientV3Assembly],
         IntegrationName = MongoDbIntegration.IntegrationName,
         MinimumVersion = MongoDbIntegration.Major2Minor2,
-        MaximumVersion = MongoDbIntegration.Major3,
+        MaximumVersion = MongoDbIntegration.Major3Minor5,
         MethodName = "Execute",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
         ReturnTypeName = "!0",
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class IWireProtocol_Generic_Execute_Integration
+    public sealed class IWireProtocol_Generic_Execute_Integration
     {
         /// <summary>
         /// OnMethodBegin callback

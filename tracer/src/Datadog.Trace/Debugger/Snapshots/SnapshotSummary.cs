@@ -1,4 +1,4 @@
-// <copyright file="SnapshotSummary.cs" company="Datadog">
+﻿// <copyright file="SnapshotSummary.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal class SnapshotSummary
+    internal sealed class SnapshotSummary
     {
         public static string FormatMessage(Snapshot snapshot)
         {

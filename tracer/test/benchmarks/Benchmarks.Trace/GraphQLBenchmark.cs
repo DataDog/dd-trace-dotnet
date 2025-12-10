@@ -9,41 +9,53 @@ using GraphQL.Execution;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent3]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class GraphQLBenchmark
     {
-        private static readonly Task<ExecutionResult> Result = Task.FromResult(new ExecutionResult { Value = 42 });
-        private static readonly GraphQLClient Client = new GraphQLClient();
-        private static readonly ExecutionContext Context = new ExecutionContext();
+        private readonly static Task<ExecutionResult> _result = Task.FromResult(new ExecutionResult { Value = 42 });
+        private ExecutionContext _context;
+        private GraphQLClient _client;
 
-        static GraphQLBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
+            TracerHelper.SetGlobalTracer();
 
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+            _context = new ExecutionContext();
+            _client = new GraphQLClient(_result);
+        }
 
-            new GraphQLBenchmark().ExecuteAsync();
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
         public unsafe int ExecuteAsync()
         {
             var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
-                Client,
-                Context,
-                &ExecuteAsync);
+                _client,
+                _context,
+                &ExecuteAsyncImpl);
 
             return task.GetAwaiter().GetResult().Value;
 
-            static Task<ExecutionResult> ExecuteAsync(ExecutionContext context) => Result;
+            static Task<ExecutionResult> ExecuteAsyncImpl(ExecutionContext context) => _result;
         }
 
         private class GraphQLClient : IExecutionStrategy
         {
+            private readonly Task<ExecutionResult> _result;
+
+            public GraphQLClient(Task<ExecutionResult> result)
+            {
+                _result = result;
+            }
+
             public Task<ExecutionResult> ExecuteAsync(ExecutionContext context)
             {
-                return Result;
+                return _result;
             }
         }
     }

@@ -11,7 +11,7 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal partial class ConfigurationTelemetry : IConfigurationTelemetry
+internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
 {
     private static long _seqId;
     private ConcurrentQueue<ConfigurationTelemetryEntry> _entries = new();
@@ -69,9 +69,8 @@ internal partial class ConfigurationTelemetry : IConfigurationTelemetry
     /// </summary>
     internal ConcurrentQueue<ConfigurationTelemetryEntry> GetQueueForTesting() => _entries;
 
-    public class ConfigurationTelemetryEntry
+    public sealed class ConfigurationTelemetryEntry
     {
-        // internal for testing
         private ConfigurationTelemetryEntry(string key, ConfigurationOrigins origin, ConfigurationTelemetryEntryType type, TelemetryErrorCode? error, string? stringValue = null, bool? boolValue = null, int? intValue = null, double? doubleValue = null)
         {
             Key = key;

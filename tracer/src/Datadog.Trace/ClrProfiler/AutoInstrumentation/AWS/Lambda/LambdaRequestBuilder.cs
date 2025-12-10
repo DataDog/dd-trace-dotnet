@@ -1,4 +1,4 @@
-// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
+﻿// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
-internal class LambdaRequestBuilder : ILambdaExtensionRequest
+internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
 {
     private const string EndInvocationPath = "/lambda/end-invocation";
     private const string StartInvocationPath = "/lambda/start-invocation";
@@ -35,11 +35,16 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
         return request;
     }
 
-    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, bool isError)
+    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, object state, bool isError)
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";
         request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+
+        if (state != null)
+        {
+            request.Headers.Set("lambda-runtime-aws-request-id", (string)state);
+        }
 
         if (scope is { Span: var span })
         {

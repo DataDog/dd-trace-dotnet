@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationTracerManagerFactory.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationTracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -24,7 +25,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
 {
-    internal class TestOptimizationTracerManagerFactory : TracerManagerFactory
+    internal sealed class TestOptimizationTracerManagerFactory : TracerManagerFactory
     {
         private readonly TestOptimizationSettings _settings;
         private readonly bool _enabledEventPlatformProxy;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -64,9 +65,15 @@ namespace Datadog.Trace.Ci
             return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
         }
 
-        protected override ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
+        protected override TelemetrySettings CreateTelemetrySettings(TracerSettings settings)
         {
-            return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService, isAgentAvailable: !_settings.Agentless);
+            var isAgentAvailable = !_settings.Agentless;
+            return TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable);
+        }
+
+        protected override ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        {
+            return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, telemetrySettings: telemetrySettings, discoveryService);
         }
 
         protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
@@ -81,7 +88,7 @@ namespace Datadog.Trace.Ci
 
         protected override bool ShouldEnableRemoteConfiguration(TracerSettings settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Check for agentless scenario
             if (_settings.Agentless)

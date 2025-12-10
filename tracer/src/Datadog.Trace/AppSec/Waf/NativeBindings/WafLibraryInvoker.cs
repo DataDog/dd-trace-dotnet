@@ -1,4 +1,4 @@
-// <copyright file="WafLibraryInvoker.cs" company="Datadog">
+﻿// <copyright file="WafLibraryInvoker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal class WafLibraryInvoker : IWafLibraryInvoker
+    internal sealed class WafLibraryInvoker : IWafLibraryInvoker
     {
 #if NETFRAMEWORK
         private const string DllName = "ddwaf.dll";

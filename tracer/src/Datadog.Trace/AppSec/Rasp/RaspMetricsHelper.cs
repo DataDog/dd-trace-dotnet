@@ -1,4 +1,4 @@
-// <copyright file="RaspMetricsHelper.cs" company="Datadog">
+﻿// <copyright file="RaspMetricsHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using Datadog.Trace.Tagging;
 #nullable enable
 namespace Datadog.Trace.AppSec.Rasp;
 
-internal class RaspMetricsHelper
+internal sealed class RaspMetricsHelper
 {
     private ulong _raspWafDuration = 0;
     private ulong _raspWafAndBindingsDuration = 0;

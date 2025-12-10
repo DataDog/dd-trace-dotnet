@@ -1,4 +1,4 @@
-// <copyright file="TraceExporter.cs" company="Datadog">
+﻿// <copyright file="TraceExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ using static Datadog.Trace.Agent.Api;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;
 
-internal class TraceExporter : SafeHandle, IApi
+internal sealed class TraceExporter : SafeHandle, IApi
 {
     private readonly IDatadogLogger _log;
     private readonly Action<Dictionary<string, float>> _updateSampleRates;
