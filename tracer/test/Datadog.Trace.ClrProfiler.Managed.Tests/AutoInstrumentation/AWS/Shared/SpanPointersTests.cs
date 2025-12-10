@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -68,9 +70,9 @@ public class SpanPointersTests
     }
 
     [Fact]
-    public void AddS3SpanPointer_ShouldAddCorrectSpanLink()
+    public async Task AddS3SpanPointer_ShouldAddCorrectSpanLink()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsS3Common.CreateScope(tracer, "PutObject", out _);
         var span = scope!.Span;
         const string bucket = "test-bucket";
@@ -91,9 +93,9 @@ public class SpanPointersTests
     }
 
     [Fact]
-    public void AddS3SpanPointer_ShouldSkipMissingEtag()
+    public async Task AddS3SpanPointer_ShouldSkipMissingEtag()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsS3Common.CreateScope(tracer, "PutObject", out _);
         var span = scope!.Span;
         const string bucket = "test-bucket";
@@ -105,9 +107,9 @@ public class SpanPointersTests
     }
 
     [Fact]
-    public void AddDynamoDbSpanPointer_ShouldAddCorrectSpanLink()
+    public async Task AddDynamoDbSpanPointer_ShouldAddCorrectSpanLink()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "UpdateItem", out _);
         var span = scope!.Span;
         const string table = "test-table";
@@ -133,7 +135,7 @@ public class SpanPointersTests
         link.Attributes.Should().Contain("ptr.hash", "3fcdea19376daafa3e4202308099429d");
     }
 
-    private static Tracer GetTracer()
+    private static ScopedTracer GetTracer()
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -141,6 +143,6 @@ public class SpanPointersTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }

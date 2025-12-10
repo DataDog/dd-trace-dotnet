@@ -5,11 +5,13 @@
 #nullable enable
 
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -22,19 +24,19 @@ public class AwsS3CommonTests
     private const string ObjectKey = "MyObjectKey";
 
     [Fact]
-    public void GetCorrectOperationName()
+    public async Task GetCorrectOperationName()
     {
-        var tracerV0 = GetTracer("v0");
+        await using var tracerV0 = GetTracer("v0");
         AwsS3Common.GetOperationName(tracerV0).Should().Be("s3.request");
 
-        var tracerV1 = GetTracer("v1");
+        await using var tracerV1 = GetTracer("v1");
         AwsS3Common.GetOperationName(tracerV1).Should().Be("aws.s3.request");
     }
 
     [Fact]
-    public void CreateScopeCorrectAttributes()
+    public async Task CreateScopeCorrectAttributes()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsS3Common.CreateScope(tracer, "PutObject", out var tags);
         scope.Should().NotBeNull();
 
@@ -50,9 +52,9 @@ public class AwsS3CommonTests
     }
 
     [Fact]
-    public void SetTags_WithValidParams()
+    public async Task SetTags_WithValidParams()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         AwsS3Common.CreateScope(tracer, "PutObject", out var tags);
         tags.Should().NotBeNull();
 
@@ -82,9 +84,9 @@ public class AwsS3CommonTests
     }
 
     [Fact]
-    public void SetTags_WithMissingBucketName()
+    public async Task SetTags_WithMissingBucketName()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         AwsS3Common.CreateScope(tracer, "SomeOperation", out var tags);
         tags.Should().NotBeNull();
 
@@ -94,9 +96,9 @@ public class AwsS3CommonTests
     }
 
     [Fact]
-    public void SetTags_WithMissingObjectKey()
+    public async Task SetTags_WithMissingObjectKey()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         AwsS3Common.CreateScope(tracer, "PutBucket", out var tags);
         tags.Should().NotBeNull();
 
@@ -105,7 +107,7 @@ public class AwsS3CommonTests
         tags.ObjectKey.Should().BeNull();
     }
 
-    private static Tracer GetTracer(string schemaVersion = "v1")
+    private static ScopedTracer GetTracer(string schemaVersion = "v1")
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -113,6 +115,6 @@ public class AwsS3CommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }
