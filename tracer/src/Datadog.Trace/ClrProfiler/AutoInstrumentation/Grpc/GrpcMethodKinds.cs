@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
 {
-    internal class GrpcMethodKinds
+    internal static class GrpcMethodKinds
     {
         public const string Unary = "unary";
         public const string ClientStreaming = "client_streaming";

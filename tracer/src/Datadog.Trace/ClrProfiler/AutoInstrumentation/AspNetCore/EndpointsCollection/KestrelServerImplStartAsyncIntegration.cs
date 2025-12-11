@@ -41,9 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KestrelServerImplStartAsyncIntegration
+public sealed class KestrelServerImplStartAsyncIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<KestrelServerImplStartAsyncIntegration>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KestrelServerImplStartAsyncIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TApplication>(TTarget instance, ref TApplication? application, ref CancellationToken cancellationToken)
         where TTarget : IKestrelServer

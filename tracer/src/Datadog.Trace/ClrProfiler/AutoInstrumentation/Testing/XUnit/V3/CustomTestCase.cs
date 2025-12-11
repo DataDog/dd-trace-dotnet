@@ -1,4 +1,4 @@
-// <copyright file="CustomTestCase.cs" company="Datadog">
+﻿// <copyright file="CustomTestCase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
-internal class CustomTestCase : ITestCase
+internal sealed class CustomTestCase : ITestCase
 {
     public object? Instance => null;
 

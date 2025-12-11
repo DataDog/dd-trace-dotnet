@@ -11,7 +11,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
 namespace Datadog.Trace.Telemetry.DTOs;
 
-internal class LogMessageData
+internal sealed class LogMessageData
 {
     private const int TagsCharacterCount = 10; // "tags":"",
     private const int StackTraceCharacterCount = 17; // "stack_trace":"",

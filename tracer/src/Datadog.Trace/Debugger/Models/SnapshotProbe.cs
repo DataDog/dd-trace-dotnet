@@ -1,4 +1,4 @@
-// <copyright file="SnapshotProbe.cs" company="Datadog">
+﻿// <copyright file="SnapshotProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger.Models
         public StackInfo[] Stacktrace { get; set; }
     }
 
-    internal record CapturedValue : IComparable<CapturedValue>
+    internal sealed record CapturedValue : IComparable<CapturedValue>
     {
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Debugger.Models
         }
     }
 
-    internal record CapturedLines
+    internal sealed record CapturedLines
     {
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Debugger.Models
         }
     }
 
-    internal record CapturedContext
+    internal sealed record CapturedContext
     {
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();

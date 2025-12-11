@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class KafkaProduceSyncDeliveryHandlerIntegration
+    public sealed class KafkaProduceSyncDeliveryHandlerIntegration
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KafkaProduceSyncDeliveryHandlerIntegration>();
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(KafkaProduceSyncDeliveryHandlerIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// Helper class for creating a <typeparamref name="TActionDelegate"/> that wraps an <see cref="Action{T}"/>,
         /// </summary>
         /// <typeparam name="TActionDelegate">Makes the assumption that TActionDelegate is an <see cref="Action{T}"/></typeparam>
-        internal static class CachedWrapperDelegate<TActionDelegate>
+        internal sealed class CachedWrapperDelegate<TActionDelegate>
         {
             private static readonly CreateWrapperDelegate _createWrapper;
 

@@ -13,7 +13,7 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Uninstall a single version of the fleet-installed .NET tracer
 /// </summary>
-internal class UninstallVersionCommand : CommandBase
+internal sealed class UninstallVersionCommand : CommandBase
 {
     private const string Command = "uninstall-version";
     private const string CommandDescription = "Uninstalls a single of the .NET library";

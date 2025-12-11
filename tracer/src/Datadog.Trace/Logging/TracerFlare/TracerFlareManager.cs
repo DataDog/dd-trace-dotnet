@@ -1,4 +1,4 @@
-// <copyright file="TracerFlareManager.cs" company="Datadog">
+﻿// <copyright file="TracerFlareManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareManager : ITracerFlareManager
+internal sealed class TracerFlareManager : ITracerFlareManager
 {
     internal const string TracerFlareInitializationLog = "Enabling debug mode due to tracer flare initialization";
     internal const string TracerFlareCompleteLog = "Disabled debug mode due to tracer flare complete";

@@ -238,7 +238,7 @@ internal partial class Sources
 
             namespace Datadog.Trace.Telemetry;
 
-            internal partial class {{GetCollectorName(type)}}
+            internal sealed partial class {{GetCollectorName(type)}}
             {
                 private readonly Lazy<AggregatedMetrics> _aggregated = new();
                 private MetricBuffer _buffer = new();
@@ -519,7 +519,7 @@ internal partial class Sources
 
         sb.Append($$"""
 
-                private class AggregatedMetrics
+                private sealed class AggregatedMetrics
                 {
                     public readonly AggregatedMetric[] PublicApiCounts;
 
@@ -569,7 +569,7 @@ internal partial class Sources
                     }
                 }
 
-                protected class MetricBuffer
+                private sealed class MetricBuffer
                 {
                     public readonly int[] PublicApiCounts;
 
@@ -672,7 +672,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);
@@ -747,7 +747,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);
@@ -821,7 +821,7 @@ internal partial class Sources
               using System.Threading;
 
               namespace Datadog.Trace.Telemetry;
-              internal partial class {{collectorName}}
+              internal sealed partial class {{collectorName}}
               {
 
               """);

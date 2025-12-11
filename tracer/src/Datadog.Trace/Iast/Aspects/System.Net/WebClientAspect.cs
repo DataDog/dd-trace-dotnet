@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 [AspectClass("System.Net.WebClient,System", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class WebClientAspect
+public sealed class WebClientAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url is tainted

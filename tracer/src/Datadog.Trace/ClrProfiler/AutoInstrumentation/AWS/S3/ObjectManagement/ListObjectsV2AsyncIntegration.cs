@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ListObjectsV2AsyncIntegration
+public sealed class ListObjectsV2AsyncIntegration
 {
     private const string Operation = "ListObjectsV2";
 

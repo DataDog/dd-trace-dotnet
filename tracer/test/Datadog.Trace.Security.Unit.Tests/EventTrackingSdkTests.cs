@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
 using Xunit;
@@ -19,12 +21,12 @@ namespace Datadog.Trace.Security.Unit.Tests;
 public class EventTrackingSdkTests
 {
     [Fact]
-    public void TrackUserLoginSuccessEvent_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackUserLoginSuccessEvent_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -41,12 +43,12 @@ public class EventTrackingSdkTests
     }
 
     [Fact]
-    public void TrackUserLoginSuccessEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackUserLoginSuccessEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -75,12 +77,12 @@ public class EventTrackingSdkTests
     }
 
     [Fact]
-    public void TrackUserLoginFailureEvent_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackUserLoginFailureEvent_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -98,12 +100,12 @@ public class EventTrackingSdkTests
     }
 
     [Fact]
-    public void TrackUserLoginFailureEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackUserLoginFailureEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -132,12 +134,12 @@ public class EventTrackingSdkTests
     }
 
     [Fact]
-    public void TrackCustomEvent_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackCustomEvent_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -153,12 +155,12 @@ public class EventTrackingSdkTests
     }
 
     [Fact]
-    public void TrackCustomEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
+    public async Task TrackCustomEvent_WithMeta_OnRootSpanDirectly_ShouldSetOnTrace()
     {
         var scopeManager = new AsyncLocalScopeManager();
 
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, new TestStatsdManager(Mock.Of<IDogStatsd>()));
+        await using var tracer = TracerHelper.Create(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");

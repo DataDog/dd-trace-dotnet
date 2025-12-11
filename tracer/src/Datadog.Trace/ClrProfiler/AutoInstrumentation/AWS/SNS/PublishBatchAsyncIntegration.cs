@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         IntegrationName = AwsSnsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PublishBatchAsyncIntegration
+    public sealed class PublishBatchAsyncIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TPublishBatchRequest>(TTarget instance, TPublishBatchRequest request, CancellationToken cancellationToken)
         {

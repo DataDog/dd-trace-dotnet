@@ -1,4 +1,4 @@
-﻿// <copyright file="MetadataArraySafeHandleCreateInstrumentation.cs" company="Datadog">
+// <copyright file="MetadataArraySafeHandleCreateInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class MetadataArraySafeHandleCreateInstrumentation
+    public sealed class MetadataArraySafeHandleCreateInstrumentation
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             return new CallTargetReturn<TResponse>(response);
         }
 
-        private class TemporaryGrpcHeaders
+        private sealed class TemporaryGrpcHeaders
         {
             public TemporaryGrpcHeaders(
                 IMetadata metadata,

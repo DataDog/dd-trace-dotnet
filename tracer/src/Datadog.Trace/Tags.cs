@@ -744,6 +744,10 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        // Hangfire tags
+        internal const string HangfireJobCreatedAt = "job.CreatedAt";
+        internal const string HangfireJobId = "job.ID";
+
         // general Service Fabric
         internal const string ServiceFabricApplicationId = "service-fabric.application-id";
         internal const string ServiceFabricApplicationName = "service-fabric.application-name";

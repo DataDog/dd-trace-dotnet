@@ -1,4 +1,4 @@
-// <copyright file="HttpClientRequest.cs" company="Datadog">
+﻿// <copyright file="HttpClientRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class HttpClientRequest : IApiRequest
+    internal sealed class HttpClientRequest : IApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 

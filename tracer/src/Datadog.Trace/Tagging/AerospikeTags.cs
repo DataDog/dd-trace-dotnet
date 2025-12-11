@@ -1,4 +1,4 @@
-// <copyright file="AerospikeTags.cs" company="Datadog">
+﻿// <copyright file="AerospikeTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tagging
         public string UserKey { get; set; }
     }
 
-    internal partial class AerospikeV1Tags : AerospikeTags
+    internal sealed partial class AerospikeV1Tags : AerospikeTags
     {
         private string _peerServiceOverride = null;
 

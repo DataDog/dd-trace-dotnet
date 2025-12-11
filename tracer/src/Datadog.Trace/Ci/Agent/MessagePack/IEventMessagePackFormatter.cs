@@ -1,4 +1,4 @@
-// <copyright file="IEventMessagePackFormatter.cs" company="Datadog">
+﻿// <copyright file="IEventMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class IEventMessagePackFormatter : IMessagePackFormatter<IEvent>
+internal sealed class IEventMessagePackFormatter : IMessagePackFormatter<IEvent>
 {
     public IEvent Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
     {

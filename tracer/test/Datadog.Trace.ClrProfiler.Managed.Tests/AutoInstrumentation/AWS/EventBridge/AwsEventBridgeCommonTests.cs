@@ -5,11 +5,13 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -44,16 +46,16 @@ public class AwsEventBridgeCommonTests
     }
 
     [Fact]
-    public void GetCorrectOperationName()
+    public async Task GetCorrectOperationName()
     {
-        var tracerV0 = GetTracer("v0");
+        await using var tracerV0 = GetTracer("v0");
         AwsEventBridgeCommon.GetOperationName(tracerV0).Should().Be("eventbridge.request");
 
-        var tracerV1 = GetTracer("v1");
+        await using var tracerV1 = GetTracer("v1");
         AwsEventBridgeCommon.GetOperationName(tracerV1).Should().Be("aws.eventbridge.send");
     }
 
-    private static Tracer GetTracer(string schemaVersion)
+    private static ScopedTracer GetTracer(string schemaVersion)
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -61,6 +63,6 @@ public class AwsEventBridgeCommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }

@@ -15,7 +15,7 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]
 /// </summary>
-internal unsafe class UnmanagedMemoryPool : IDisposable
+internal sealed unsafe class UnmanagedMemoryPool : IDisposable
 {
     private readonly IntPtr* _items;
     private readonly int _length;

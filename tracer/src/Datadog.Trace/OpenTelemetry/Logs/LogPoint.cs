@@ -1,4 +1,4 @@
-// <copyright file="LogPoint.cs" company="Datadog">
+﻿// <copyright file="LogPoint.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.OpenTelemetry.Logs;
 /// This is similar to MetricPoint but for logs data.
 /// Uses Datadog's native TraceId (128-bit) and SpanId (64-bit) for trace correlation.
 /// </summary>
-internal class LogPoint
+internal sealed class LogPoint
 {
     public string Message { get; set; } = string.Empty;
 

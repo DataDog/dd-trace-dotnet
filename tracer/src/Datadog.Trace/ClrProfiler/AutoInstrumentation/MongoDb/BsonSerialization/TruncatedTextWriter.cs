@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// Derived from TextWriter to stop writing at 5k characters since the UI/Backend would truncate anyways for tag key values:
 /// https://docs.datadoghq.com/tracing/troubleshooting/#data-volume-guidelines
 /// </summary>
-internal class TruncatedTextWriter : TextWriter
+internal sealed class TruncatedTextWriter : TextWriter
 {
     private static volatile UnicodeEncoding? _encoding;
     private readonly StringBuilder _sb;

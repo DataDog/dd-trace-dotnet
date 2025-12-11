@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class OldMessageMergeFromIntegration
+public sealed class OldMessageMergeFromIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
     {

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         IntegrationName = IbmMqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PutIntegration
+    public sealed class PutIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TOptions>(TTarget instance, TMessage msg, TOptions options)
         where TMessage : IMqMessage, IDuckType

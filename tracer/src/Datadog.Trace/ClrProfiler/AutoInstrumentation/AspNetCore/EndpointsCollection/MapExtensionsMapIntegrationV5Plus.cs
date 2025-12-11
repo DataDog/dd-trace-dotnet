@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class MapExtensionsMapIntegrationV5Plus
+public sealed class MapExtensionsMapIntegrationV5Plus
 {
     internal static CallTargetState OnMethodBegin<TTarget, TApp, TPathMatch, TConfiguration>(ref TApp? app, ref TPathMatch pathMatch, ref bool preserveMatchedPathSegment, ref TConfiguration? configuration)
     {

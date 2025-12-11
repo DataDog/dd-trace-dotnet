@@ -1,4 +1,4 @@
-﻿// <copyright file="ServerCallHandlerBaseHandleCallAsyncIntegration.cs" company="Datadog">
+// <copyright file="ServerCallHandlerBaseHandleCallAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ServerCallHandlerBaseHandleCallAsyncIntegration
+    public sealed class ServerCallHandlerBaseHandleCallAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

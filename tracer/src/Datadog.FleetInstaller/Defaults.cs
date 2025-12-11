@@ -8,7 +8,7 @@ using System.IO;
 
 namespace Datadog.FleetInstaller;
 
-internal class Defaults
+internal static class Defaults
 {
     public const string CrashTrackingRegistryKey = @"Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules";
     public const string InstrumentationInstallTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
