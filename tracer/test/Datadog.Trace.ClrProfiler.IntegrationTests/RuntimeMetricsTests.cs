@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Assert tags
             metrics
                .Should()
-               .OnlyContain(s => Regex.Matches(s, @"\bservice:_samples\._runtimemetrics").Count == 1)
+               .OnlyContain(s => Regex.Matches(s, @"\bservice:12_samples\._runtimemetrics").Count == 1)
                .And.OnlyContain(s => Regex.Matches(s, @"\benv:integration_tests").Count == 1)
                .And.OnlyContain(s => Regex.Matches(s, @"\bversion:1\.0\.0").Count == 1)
                .And.OnlyContain(s => Regex.Matches(s, @"\benv:").Count == 1)
