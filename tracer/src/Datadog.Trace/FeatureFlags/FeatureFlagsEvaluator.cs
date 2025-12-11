@@ -45,11 +45,11 @@ namespace Datadog.Trace.FeatureFlags
                 typeof(double),
             };
 
-        private readonly Action<Exposure.ExposureEvent>? _onExposureEvent;
+        private readonly Action<Exposure.Model.ExposureEvent>? _onExposureEvent;
         private readonly ServerConfiguration? _config;
         private readonly long _timeoutMs;
 
-        public FeatureFlagsEvaluator(Action<Exposure.ExposureEvent>? onExposureEvent, ServerConfiguration? config, long timeoutMs = 1000)
+        public FeatureFlagsEvaluator(Action<Exposure.Model.ExposureEvent>? onExposureEvent, ServerConfiguration? config, long timeoutMs = 1000)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
@@ -673,12 +673,12 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
-            var evt = new Exposure.ExposureEvent(
+            var evt = new Exposure.Model.ExposureEvent(
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                new Exposure.Allocation(allocationKey),
-                new Exposure.Flag(flag),
-                new Exposure.Variant(variantKey),
-                new Exposure.Subject(context.TargetingKey, FlattenContext(context)));
+                new Exposure.Model.Allocation(allocationKey),
+                new Exposure.Model.Flag(flag),
+                new Exposure.Model.Variant(variantKey),
+                new Exposure.Model.Subject(context.TargetingKey, FlattenContext(context)));
 
             _onExposureEvent?.Invoke(evt);
         }
