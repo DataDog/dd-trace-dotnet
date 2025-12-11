@@ -22,19 +22,4 @@ internal static class TestSuiteVisibilityTags
     /// Test suite id
     /// </summary>
     public const string TestSuiteId = "test_suite_id";
-
-    /// <summary>
-    /// Test session command environment variable
-    /// </summary>
-    public const string TestSessionCommandEnvironmentVariable = "DD_TESTSESSION_COMMAND";
-
-    /// <summary>
-    /// Test session working directory environment variable
-    /// </summary>
-    public const string TestSessionWorkingDirectoryEnvironmentVariable = "DD_TESTSESSION_WORKINGDIRECTORY";
-
-    /// <summary>
-    /// Test session auto injected environment variable
-    /// </summary>
-    public const string TestSessionAutoInjectedEnvironmentVariable = "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER";
 }

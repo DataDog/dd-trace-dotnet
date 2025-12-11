@@ -154,15 +154,36 @@ var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTi
 
 **Note:** The generated constants are in the `Datadog.Trace.Configuration` namespace.
 
-#### Syntax Analyzers
+### Syntax Analyzers
 
 The codebase includes Roslyn analyzers that enforce the use of configuration keys from the `ConfigurationKeys` classes:
 
-- **`ConfigurationBuilderWithKeysAnalyzer`**  - Enforces that `ConfigurationBuilder.WithKeys()` method calls only accept string constants from `ConfigurationKeys` or `PlatformKeys` classes, not hardcoded strings or variables.
+#### 1. ConfigurationBuilderWithKeysAnalyzer
 
-**Diagnostic rules:**
+- **`ConfigurationBuilderWithKeysAnalyzer`** - Enforces that `ConfigurationBuilder.WithKeys()` method calls only accept string constants from `ConfigurationKeys` or `PlatformKeys` classes, not hardcoded strings or variables.
+
+##### Diagnostic rules:
 - **DD0007**: Triggers when hardcoded string literals are used instead of configuration key constants
 - **DD0008**: Triggers when variables or expressions are used instead of configuration key constants
+
+#### 2. EnvironmentGetEnvironmentVariableAnalyzer
+
+- **`EnvironmentGetEnvironmentVariableAnalyzer`** - Enforces that `EnvironmentHelpers.GetEnvironmentVariable()` and related methods only accept constants from `ConfigurationKeys` or `PlatformKeys` classes.
+
+##### Diagnostic rules:
+- **DD0011**: Triggers when hardcoded string literals are used instead of configuration key constants
+- **DD0012**: Triggers when variables or expressions are used instead of configuration key constants
+
+#### 3. Banned API Analyzer
+
+- **Banned API Analyzer** - Uses Microsoft's `BannedApiAnalyzers` package to prevent direct usage of `System.Environment.GetEnvironmentVariable()` throughout the codebase.
+
+**Configuration:**
+- **`BannedSymbols.txt`** (`tracer/src/Datadog.Trace.Tools.Analyzers/ConfigurationAnalyzers/BannedSymbols.txt`) - Defines banned APIs with custom error messages
+- **`.editorconfig`** - Configures RS0030 diagnostic severity as error, with exceptions for vendored code and `EnvironmentConfigurationSource.cs`
+
+##### Diagnostic rules:
+- **RS0030**: Triggers when banned APIs are used (e.g., `System.Environment.GetEnvironmentVariable()`)
 
 These analyzers help prevent typos and ensure consistency across the codebase by enforcing compile-time validation of configuration keys.
 

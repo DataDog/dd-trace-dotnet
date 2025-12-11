@@ -237,6 +237,14 @@
       "const_name": "RumFlushWaitMillis"
     },
     {
+      "env_var": "DD_TESTSESSION_COMMAND",
+      "const_name": "TestSessionCommand"
+    },
+    {
+      "env_var": "DD_TESTSESSION_WORKINGDIRECTORY",
+      "const_name": "TestSessionWorkingDirectory"
+    },
+    {
       "env_var": "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED",
       "const_name": "TestsSkippingEnabled"
     },
