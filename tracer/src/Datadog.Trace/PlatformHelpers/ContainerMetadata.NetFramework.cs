@@ -12,26 +12,14 @@ namespace Datadog.Trace.PlatformHelpers;
 /// <summary>
 /// Utility class with methods to interact with container hosts.
 /// </summary>
-internal static class ContainerMetadata
+internal sealed class ContainerMetadata : IContainerMetadata
 {
-    /// <summary>
-    /// Gets the id of the container executing the code.
-    /// Return <c>null</c> if code is not executing inside a supported container.
-    /// </summary>
-    /// <returns>The container id or <c>null</c>.</returns>
-    public static string? GetContainerId() => null;
+    public static readonly IContainerMetadata Instance = new ContainerMetadata();
 
-    /// <summary>
-    /// Gets the unique identifier of the container executing the code.
-    /// Return values may be:
-    /// <list type="bullet">
-    /// <item>"ci-&lt;containerID&gt;" if the container id is available.</item>
-    /// <item>"in-&lt;inode&gt;" if the cgroup node controller's inode is available.
-    ///        We use the memory controller on cgroupv1 and the root cgroup on cgroupv2.</item>
-    /// <item><c>null</c> if neither are available.</item>
-    /// </list>
-    /// </summary>
-    /// <returns>The entity id or <c>null</c>.</returns>
-    public static string? GetEntityId() => null;
+    /// <inheritdoc/>
+    public string? ContainerId => null;
+
+    /// <inheritdoc/>
+    public string? EntityId => null;
 }
 #endif
