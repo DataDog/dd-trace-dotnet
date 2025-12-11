@@ -18,16 +18,19 @@ internal class TestApiRequest : IApiRequest
     private readonly int _statusCode;
     private readonly string _responseContent;
     private readonly string _responseContentType;
+    private readonly Dictionary<string, string> _responseHeaders;
 
     public TestApiRequest(
         Uri endpoint,
         int statusCode = 200,
         string responseContent = "{}",
-        string responseContentType = "application/json")
+        string responseContentType = "application/json",
+        Dictionary<string, string> responseHeaders = null)
     {
         _statusCode = statusCode;
         _responseContent = responseContent;
         _responseContentType = responseContentType;
+        _responseHeaders = responseHeaders;
         Endpoint = endpoint;
     }
 
@@ -46,7 +49,7 @@ internal class TestApiRequest : IApiRequest
 
     public virtual Task<IApiResponse> GetAsync()
     {
-        var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
+        var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType, _responseHeaders);
         Responses.Add(response);
 
         return Task.FromResult((IApiResponse)response);
@@ -57,7 +60,7 @@ internal class TestApiRequest : IApiRequest
 
     public virtual Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
     {
-        var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
+        var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType, _responseHeaders);
         Responses.Add(response);
         ContentType = contentType;
 

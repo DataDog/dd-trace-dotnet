@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Agent.DiscoveryService
@@ -219,6 +220,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
                     var api = requestFactory.Create(uri);
 
+                    // Add container ID header if available
+                    var containerId = ContainerMetadata.GetContainerId();
+                    if (containerId != null)
+                    {
+                        api.AddHeader(AgentHttpHeaderNames.ContainerId, containerId);
+                    }
+
                     using var response = await api.GetAsync().ConfigureAwait(false);
                     if (response.StatusCode is >= 200 and < 300)
                     {
@@ -254,6 +262,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
+            // Extract and store container tags hash from response headers
+            var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
+            if (containerTagsHash != null)
+            {
+                ContainerMetadata.ContainerTagsHash = containerTagsHash;
+            }
+
             var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);
             if (jObject is null)
             {
