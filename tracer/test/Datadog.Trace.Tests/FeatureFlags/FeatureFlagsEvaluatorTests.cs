@@ -17,7 +17,8 @@ using ValueType = Datadog.Trace.FeatureFlags.Rcm.Model.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
-public class FeatureFlagsEvaluatorTests
+/// <summary> FeatureFlagsEvaluator discrete tests </summary>
+public partial class FeatureFlagsEvaluatorTests
 {
 #pragma warning disable SA1204 // Static elements should appear before instance elements
 #pragma warning disable SA1500 // Braces for multi-line statements should not share line
@@ -175,12 +176,12 @@ public class FeatureFlagsEvaluatorTests
         var result1 = evaluator.Evaluate("null-allocation", 23, ctx);
         Assert.Equal(23, result1.Value);
         Assert.Equal(EvaluationReason.ERROR, result1.Reason);
-        Assert.Equal("GENERAL", result1.Metadata?["errorCode"]);
+        Assert.Equal("GENERAL", result1.FlagMetadata?["errorCode"]);
 
         var result2 = evaluator.Evaluate("empty-allocation", 23, ctx);
         Assert.Equal(23, result2.Value);
         Assert.Equal(EvaluationReason.ERROR, result2.Reason);
-        Assert.Equal("GENERAL", result2.Metadata?["errorCode"]);
+        Assert.Equal("GENERAL", result2.FlagMetadata?["errorCode"]);
     }
 
     // ---------------------------------------------------------------------
