@@ -123,6 +123,7 @@ static std::vector<WSTRING> _methodAttributeExcludeFilters = {
 
 ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
 {
+    ENTER_FUNC
     this->_module = module;
 
     // Determine aspects which apply to this module
@@ -134,26 +135,38 @@ ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
             _aspects.push_back(aspectReference);
         }
     }
+    EXIT_FUNC
 }
 ModuleAspects::~ModuleAspects()
 {
+    ENTER_FUNC
+
     DEL_MAP_VALUES(_filters);
     DEL_VEC_VALUES(_aspects);
+
+    EXIT_FUNC
 }
 AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 {
+    ENTER_FUNC
+
     if (filterValue == DataflowAspectFilterValue::None)
     {
-        return nullptr;
+        EXIT_FUNC
+        EXIT_FUNC return nullptr;
     }
     auto value = _filters.find(filterValue);
     if (value != _filters.end())
     {
-        return value->second;
+        EXIT_FUNC
+        EXIT_FUNC return value->second;
     }
     auto res = GetAspectFilter(filterValue, this);
     _filters[filterValue] = res;
-    return res;
+
+    EXIT_FUNC
+    EXIT_FUNC return res;
+    
 }
 
 //--------------------
@@ -162,6 +175,8 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
                    const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
+    ENTER_FUNC
+
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
@@ -178,15 +193,20 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         _profiler = nullptr;
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
     }
+
+    EXIT_FUNC
 }
 
 Dataflow::~Dataflow()
 {
+    ENTER_FUNC
     REL(_profiler);
+    EXIT_FUNC
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
 
     if (_aspects.size() == 0)
@@ -240,10 +260,12 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
         trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
         m_rejitHandler->RegisterRejitter(this);
     }
+    EXIT_FUNC
 }
 
 void Dataflow::LoadSecurityControls()
 {
+    ENTER_FUNC
     auto securityControlsConfig = shared::GetEnvironmentValue(environment::security_controls_configuration);
     if (!securityControlsConfig.empty())
     {
@@ -360,11 +382,13 @@ void Dataflow::LoadSecurityControls()
 
         DBG("Dataflow::LoadSecurityControls -> Exit");
     }
+    EXIT_FUNC
 }
 
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
@@ -372,19 +396,23 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
         DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
-        return S_OK;
+
+        EXIT_FUNC return S_OK;
     }
-    return S_FALSE;
+
+    EXIT_FUNC return S_FALSE;
 }
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
+    ENTER_FUNC
     GetModuleInfo(moduleId);
-    return S_OK;
+    EXIT_FUNC return S_OK;
 }
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
@@ -409,13 +437,14 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         _modules.erase(moduleId);
     }
 
-    return S_OK;
+    EXIT_FUNC return S_OK;
 }
 
 HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
                                       IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
+    ENTER_FUNC
     HRESULT hr = S_OK;
     if (hr == S_OK)
     {
@@ -457,44 +486,54 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
             REL(piUnk);
         }
     }
-    return hr;
+    EXIT_FUNC return hr;
 }
 
 bool Dataflow::IsAppDomainExcluded(const WSTRING& appDomainName, MatchResult* includedMatch, MatchResult* excludedMatch)
 {
-    return IsExcluded(_domainIncludeFilters, _domainExcludeFilters, appDomainName, includedMatch, excludedMatch);
+    ENTER_FUNC
+    EXIT_FUNC return IsExcluded(_domainIncludeFilters, _domainExcludeFilters, appDomainName, includedMatch, excludedMatch);
 }
 bool Dataflow::IsAssemblyExcluded(const WSTRING& assemblyName, MatchResult* includedMatch, MatchResult* excludedMatch)
 {
-    return IsExcluded(_assemblyIncludeFilters, _assemblyExcludeFilters, assemblyName, includedMatch, excludedMatch);
+    ENTER_FUNC
+    EXIT_FUNC return IsExcluded(_assemblyIncludeFilters, _assemblyExcludeFilters, assemblyName, includedMatch,
+                                excludedMatch);
 }
 bool Dataflow::IsMethodExcluded(const WSTRING& methodSignature, MatchResult* includedMatch, MatchResult* excludedMatch)
 {
-    return IsExcluded(_methodIncludeFilters, _methodExcludeFilters, methodSignature, includedMatch, excludedMatch);
+    ENTER_FUNC
+    EXIT_FUNC return IsExcluded(_methodIncludeFilters, _methodExcludeFilters, methodSignature, includedMatch,
+                                excludedMatch);
 }
 bool Dataflow::IsMethodAttributeExcluded(const WSTRING& attributeName, MatchResult* includedMatch,
                                          MatchResult* excludedMatch)
 {
-    return IsExcluded(_methodAttributeIncludeFilters, _methodAttributeExcludeFilters, attributeName, includedMatch,
+    ENTER_FUNC
+    EXIT_FUNC return IsExcluded(_methodAttributeIncludeFilters, _methodAttributeExcludeFilters, attributeName,
+                                includedMatch,
                       excludedMatch);
 }
 bool Dataflow::HasMethodAttributeExclusions()
 {
-    return _methodAttributeExcludeFilters.size() > 0;
+    ENTER_FUNC
+    EXIT_FUNC return _methodAttributeExcludeFilters.size() > 0;
 }
 
 ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 {
-    return _profiler;
+    ENTER_FUNC
+    EXIT_FUNC return _profiler;
 }
 
 AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     auto found = _appDomains.find(id);
     if (found != _appDomains.end())
     {
-        return found->second;
+        EXIT_FUNC return found->second;
     }
 
     HRESULT hr = S_OK;
@@ -508,21 +547,22 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     {
         trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
         _appDomains[id] = nullptr; // Cache the failure
-        return nullptr;
+        EXIT_FUNC return nullptr;
     }
 
     AppDomainInfo* info = new AppDomainInfo(id, wszAppDomainName, IsAppDomainExcluded(wszAppDomainName));
     _appDomains[id] = info;
 
-    return info;
+    EXIT_FUNC return info;
 }
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     auto found = _modules.find(id);
     if (found != _modules.end())
     {
-        return found->second;
+        EXIT_FUNC return found->second;
     }
 
     // Retrieve module information if not found
@@ -541,12 +581,12 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id);
         _modules[id] = nullptr; 
-        return nullptr;
+        EXIT_FUNC return nullptr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
     {
         _modules[id] = nullptr;
-        return nullptr;
+        EXIT_FUNC return nullptr;
     } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
@@ -554,7 +594,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
         _modules[id] = nullptr;
-        return nullptr;
+        EXIT_FUNC return nullptr;
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
@@ -562,7 +602,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
         _modules[id] = nullptr;
-        return nullptr;
+        EXIT_FUNC return nullptr;
     }
 
     WSTRING moduleName = WSTRING(wszName);
@@ -571,49 +611,54 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     DBG("Dataflow::GetModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
 
     _modules[id] = moduleInfo;
-    return moduleInfo;
+    EXIT_FUNC return moduleInfo;
 }
 
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
     if (moduleId > 0)
     {
-        return GetModuleInfo(moduleId);
+        EXIT_FUNC return GetModuleInfo(moduleId);
     }
 
-    return nullptr;
+    EXIT_FUNC return nullptr;
 }
 
 MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     auto module = GetModuleInfo(moduleId);
     if (module)
     {
-        return module->GetMethodInfo(methodId);
+        EXIT_FUNC return module->GetMethodInfo(methodId);
     }
-    return nullptr;
+    EXIT_FUNC return nullptr;
 }
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
+    ENTER_FUNC
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
     if (method)
     {
-        return method->IsInlineEnabled();
+        EXIT_FUNC return method->IsInlineEnabled();
     }
-    return true;
+    EXIT_FUNC return true;
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
+    ENTER_FUNC
     auto method = JITProcessMethod(moduleId, methodId);
-    return method != nullptr;
+    EXIT_FUNC return method != nullptr;
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
+    ENTER_FUNC
     CSGUARD(_cs);
     MethodInfo* method = nullptr;
     auto module = GetModuleInfo(moduleId);
@@ -629,20 +674,23 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
             }
         }
     }
-    return method;
+    EXIT_FUNC return method;
 }
 
 bool IsCandidate(unsigned opcode)
 {
-    return (opcode == CEE_CALL || opcode == CEE_CALLI || opcode == CEE_CALLVIRT || opcode == CEE_NEWOBJ);
+    ENTER_FUNC
+    EXIT_FUNC return (opcode == CEE_CALL || opcode == CEE_CALLI || opcode == CEE_CALLVIRT || opcode == CEE_NEWOBJ);
 }
 
 HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl, ULONG size, LPCBYTE pBody)
 {
-    return method->SetMethodIL(size, pBody, pFunctionControl);
+    ENTER_FUNC
+    EXIT_FUNC return method->SetMethodIL(size, pBody, pFunctionControl);
 }
 HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
 {
+    ENTER_FUNC
     HRESULT hr = S_OK;
 
     CSGUARD(_cs);
@@ -704,59 +752,70 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
         }
     }
 
-    return hr;
+    EXIT_FUNC return hr;
 }
 
 std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
 {
+    ENTER_FUNC
     auto value = _moduleAspects.find(module->_id);
     if (value != _moduleAspects.end())
     {
-        return value->second->_aspects;
+        EXIT_FUNC return value->second->_aspects;
     }
     auto res = new ModuleAspects(this, module);
     _moduleAspects[module->_id] = res;
-    return res->_aspects;
+    EXIT_FUNC return res->_aspects;
 }
 
 bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects)
 {
+    ENTER_FUNC
     for (auto const& aspect : aspects)
     {
         if (aspect->Apply(context))
         {
-            return true;
+            EXIT_FUNC return true;
         }
     }
-    return false;
+    EXIT_FUNC return false;
 }
 
 void Dataflow::Shutdown()
 {
+    ENTER_FUNC
+    EXIT_FUNC
 }
 RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
 {
-    return nullptr;
+    ENTER_FUNC
+    EXIT_FUNC return nullptr;
 }
 bool Dataflow::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
-    return false;
+    ENTER_FUNC
+    EXIT_FUNC return false;
 }
 void Dataflow::RemoveModule(ModuleID moduleId)
 {
+    ENTER_FUNC
+    EXIT_FUNC
 }
 void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 {
+    ENTER_FUNC
+    EXIT_FUNC
 }
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
+    ENTER_FUNC
     auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
     if (method && method->IsWritten())
     {
-        return S_OK;
+        EXIT_FUNC return S_OK;
     }
-    return S_FALSE;
+    EXIT_FUNC return S_FALSE;
 }
 
 
