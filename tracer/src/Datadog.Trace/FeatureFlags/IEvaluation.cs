@@ -30,5 +30,5 @@ public partial interface IEvaluation
     string? Error { get; }
 
     /// <summary> Gets the evaluation metadata </summary>
-    IDictionary<string, string>? Metadata { get; }
+    IDictionary<string, string>? FlagMetadata { get; }
 }

@@ -25,8 +25,14 @@ namespace Datadog.Trace.FeatureFlags
 
         private static readonly string[] DateFormats =
         {
+            "MM-dd-yyyy HH:mm:ss",
+            "MM/dd/yyyy HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy/MM/dd HH:mm:ss",
             "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss'Z'"
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "MM-dd-yyyy'T'HH:mm:ss.fff'Z'",
+            "MM-dd-yyyy'T'HH:mm:ss'Z'",
         };
 
         private static readonly HashSet<Type> SupportedResolutionTypes =
@@ -35,8 +41,8 @@ namespace Datadog.Trace.FeatureFlags
                 typeof(string),
                 typeof(bool),
                 typeof(int),
+                typeof(long),
                 typeof(double),
-                // typeof(Value)
             };
 
         private readonly Action<Exposure.ExposureEvent>? _onExposureEvent;
@@ -317,11 +323,18 @@ namespace Datadog.Trace.FeatureFlags
             {
                 var pattern = conditionValue?.ToString() ?? string.Empty;
                 var regex = new Regex(pattern);
-                return regex.IsMatch(attributeValue?.ToString() ?? string.Empty);
+                return regex.IsMatch(ToString(attributeValue));
             }
             catch
             {
                 return false;
+            }
+
+            static string ToString(object attributeValue)
+            {
+                if (attributeValue is null) { return string.Empty; }
+                if (attributeValue is bool boolValue) { return boolValue ? "true" : "false"; }
+                return Convert.ToString(attributeValue, CultureInfo.InvariantCulture) ?? string.Empty;
             }
         }
 
@@ -353,6 +366,11 @@ namespace Datadog.Trace.FeatureFlags
             if (Equals(a, b))
             {
                 return true;
+            }
+
+            if (a is string aTxt && b is string bTxt)
+            {
+                return aTxt.Equals(bTxt);
             }
 
             if (a is IConvertible || b is IConvertible)
@@ -505,6 +523,12 @@ namespace Datadog.Trace.FeatureFlags
                 return (int)number;
             }
 
+            if (target == typeof(long))
+            {
+                var number = ParseDouble(value);
+                return (long)number;
+            }
+
             if (target == typeof(double))
             {
                 var number = ParseDouble(value);
@@ -516,22 +540,31 @@ namespace Datadog.Trace.FeatureFlags
 
         private static double ParseDouble(object value)
         {
-            if (value is IConvertible)
+            if (value is string txt)
+            {
+                return txt.ToLower() switch
+                {
+                    "true" => 1.0,
+                    "false" => 0.0,
+                    _ => double.Parse(txt, CultureInfo.InvariantCulture)
+                };
+            }
+            else if (value is IConvertible)
             {
                 return Convert.ToDouble(value, CultureInfo.InvariantCulture);
             }
 
-            return double.Parse(Convert.ToString(value)!);
+            return double.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
         private static string? AllocationKey(Evaluation evaluation)
         {
-            if (evaluation.Metadata == null)
+            if (evaluation.FlagMetadata == null)
             {
                 return null;
             }
 
-            return evaluation.Metadata.TryGetValue("allocationKey", out var key) ? key : null;
+            return evaluation.FlagMetadata.TryGetValue("allocationKey", out var key) ? key : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(IEvaluationContext context)
