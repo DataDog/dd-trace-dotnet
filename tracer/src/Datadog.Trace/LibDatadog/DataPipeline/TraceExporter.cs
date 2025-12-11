@@ -41,6 +41,12 @@ internal sealed class TraceExporter : SafeHandle, IApi
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
     {
+        if (IsInvalid || IsClosed)
+        {
+            _log.Warning("Trace Exporter already disposed");
+            return Task.FromResult(false);
+        }
+
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
         try
@@ -95,13 +101,13 @@ internal sealed class TraceExporter : SafeHandle, IApi
         try
         {
             NativeInterop.Exporter.Free(handle);
+            return true;
         }
         catch (Exception ex)
         {
             _log.Error(ex, "An error occurred while releasing the handle for TraceExporter.");
+            return false;
         }
-
-        return true;
     }
 
     private unsafe TraceExporterResponse Send(ArraySegment<byte> traces, int numberOfTraces)
