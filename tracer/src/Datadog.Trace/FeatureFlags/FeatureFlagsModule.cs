@@ -15,7 +15,8 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.FeatureFlags.Exposure;
+using Datadog.Trace.Exposure;
+using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.FeatureFlags
         private ISubscription? _rcmSubscription = null;
         private FfeProduct? _ffeProduct = null;
         private Action? _onNewConfigEventHander = null;
+        private ExposureApi? _exposureApi = null;
 
         private FeatureFlagsEvaluator? _evaluator = null;
 
@@ -68,6 +70,8 @@ namespace Datadog.Trace.FeatureFlags
                     _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
                     _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
                 }
+
+                _exposureApi = ExposureApi.Create(settings);
             }
         }
 
@@ -133,6 +137,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private void ReportExposure(ExposureEvent exposure)
         {
+            _exposureApi?.SendExposure(exposure);
         }
     }
 }
