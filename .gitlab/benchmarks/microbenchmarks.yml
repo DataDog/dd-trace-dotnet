@@ -26,7 +26,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   timeout: 3h
   allow_failure: true
   when: manual
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:d1f80fe7
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
@@ -78,7 +78,7 @@ run-benchmarks:
   tags: ["arch:amd64"]
   timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:d1f80fe7
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
