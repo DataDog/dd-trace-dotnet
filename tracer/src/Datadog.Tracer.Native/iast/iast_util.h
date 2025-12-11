@@ -300,3 +300,7 @@ namespace iast
     }
 }
 #endif
+
+
+#define ENTER_FUNC Logger::Info(__func__, " -> Enter ");
+#define EXIT_FUNC Logger::Info(__func__, " <- Exit ");
