@@ -19,5 +19,5 @@ internal class Variant(string? key, string? value)
 
     public string? Key { get; set; } = key;
 
-    public string? Value { get; set; } = value;
+    public object? Value { get; set; } = value;
 }

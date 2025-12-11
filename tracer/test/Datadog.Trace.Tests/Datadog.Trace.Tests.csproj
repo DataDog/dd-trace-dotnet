@@ -73,6 +73,27 @@
   <ItemGroup>
     <None Remove="Telemetry\config_norm_rules.json" />
     <None Remove="Telemetry\config_prefix_block_list.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\config\flags-v1.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-boolean-one-of-matches.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-comparator-operator-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-disabled-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-empty-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-flag-with-empty-string.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-integer-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-kill-switch-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-new-user-onboarding-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-no-allocations-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-null-operator-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-numeric-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-numeric-one-of.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-race-conditions.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-regex-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-case-start-and-end-date-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-flag-that-does-not-exist.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-json-config-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-no-allocations-flag.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-special-characters.json" />
+    <EmbeddedResource Include="FeatureFlags\resources\data\test-string-with-special-characters.json" />
     <EmbeddedResource Include="Telemetry\config_norm_rules.json" />
     <EmbeddedResource Include="Telemetry\config_prefix_block_list.json" />
     <None Remove="Telemetry\telemetry_*.json" />

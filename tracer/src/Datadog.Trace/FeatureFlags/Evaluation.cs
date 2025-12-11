@@ -25,6 +25,6 @@ namespace Datadog.Trace.FeatureFlags
 
         public string? Error { get; } = error;
 
-        public IDictionary<string, string>? Metadata { get; } = metadata;
+        public IDictionary<string, string>? FlagMetadata { get; } = metadata;
     }
 }
