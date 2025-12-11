@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerValues.cs" company="Datadog">
+// <copyright file="TracerValues.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,6 +47,7 @@ internal sealed class TracerValues
             { "CORECLR_PROFILER_PATH_64", NativeLoaderX64Path },
             { "DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
             // { "COR_ENABLE_PROFILING", "1" },
+            { "DD_INJECTION_ENABLED", "tracer" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "DD_TRACING_ENABLED", "tracing" },
             { "DD_TELEMETRY_FORWARDER_PATH", TelemetryForwarderPath },
