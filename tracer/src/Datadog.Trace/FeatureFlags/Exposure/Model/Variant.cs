@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 
-namespace Datadog.Trace.FeatureFlags.Exposure;
+namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
 internal class Variant(string key)
 {

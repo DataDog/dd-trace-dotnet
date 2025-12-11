@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Datadog.Trace.FeatureFlags.Exposure;
+namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
 internal class ExposureEvent(long timeStamp, Allocation allocation, Flag flag, Variant variant, Subject subject)
 {
