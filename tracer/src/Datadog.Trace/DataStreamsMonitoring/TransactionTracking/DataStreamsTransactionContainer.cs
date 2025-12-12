@@ -1,4 +1,4 @@
-// <copyright file="TransactionContainer.cs" company="Datadog">
+// <copyright file="DataStreamsTransactionContainer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,14 +8,14 @@ using System;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
-internal class TransactionContainer
+internal class DataStreamsTransactionContainer
 {
     private readonly object _lock = new();
 
     private byte[] _data;
     private int _size;
 
-    internal TransactionContainer(int initialSizeBytes)
+    internal DataStreamsTransactionContainer(int initialSizeBytes)
     {
         _data = new byte[initialSizeBytes];
     }

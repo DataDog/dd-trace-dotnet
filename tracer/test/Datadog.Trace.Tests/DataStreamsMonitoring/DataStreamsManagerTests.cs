@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
@@ -121,6 +122,15 @@ public class DataStreamsManagerTests
         var point = writer.BacklogPoints.Should().ContainSingle().Subject;
         point.Value.Should().Be(value);
         point.Tags.Should().Be(tags);
+    }
+
+    [Fact]
+    public void WhenEnabled_TracksTransactions()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        dsm.TrackTransaction("transaction-id", "checkpoint");
+
+        writer.DataStreamsTransactions.Size().Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -331,11 +341,18 @@ public class DataStreamsManagerTests
 
         public ConcurrentQueue<BacklogPoint> BacklogPoints { get; } = new();
 
+        public DataStreamsTransactionContainer DataStreamsTransactions { get; } = new(1024);
+
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
         public void Add(in StatsPoint point)
         {
             Points.Enqueue(point);
+        }
+
+        public void AddTransaction(in DataStreamsTransactionInfo transaction)
+        {
+            DataStreamsTransactions.Add(transaction);
         }
 
         public void AddBacklog(in BacklogPoint point)

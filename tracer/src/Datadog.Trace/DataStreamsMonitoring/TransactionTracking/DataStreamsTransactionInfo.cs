@@ -54,7 +54,9 @@ internal readonly struct DataStreamsTransactionInfo
             index += keyBytes.Length;
         }
 
-        return result;
+        var trimmed = new byte[index];
+        Array.Copy(result, trimmed, index);
+        return trimmed;
     }
 
     internal byte[] GetBytes()

@@ -122,9 +122,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             long bucketDurationNs,
             List<SerializableStatsBucket> statsBuckets,
             List<SerializableBacklogBucket> backlogsBuckets,
-            TransactionContainer transactionContainer)
+            DataStreamsTransactionContainer dataStreamsTransactionContainer)
         {
-            var hasTransactions = transactionContainer.Size() > 0;
+            var hasTransactions = dataStreamsTransactionContainer.Size() > 0;
             var withProcessTags = _writeProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags);
             var bytesWritten = 0;
 
@@ -162,7 +162,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 bytesWritten += MessagePackBinary.WriteMapHeader(stream, 2);
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactions);
-                bytesWritten += MessagePackBinary.WriteBytes(stream, transactionContainer.GetDataAndReset());
+                bytesWritten += MessagePackBinary.WriteBytes(stream, dataStreamsTransactionContainer.GetDataAndReset());
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactionCheckpointIds);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, DataStreamsTransactionInfo.GetCacheBytes());

@@ -31,7 +31,7 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
 
     private readonly Dictionary<long, Dictionary<string, BacklogBucket>> _backlogBuckets = new();
 
-    private readonly TransactionContainer _transactionContainer = new(1024);
+    private readonly DataStreamsTransactionContainer _dataStreamsTransactionContainer = new(1024);
 
     private readonly DataStreamsMessagePackFormatter _formatter = formatter;
     private readonly DDSketchPool _sketchPool = new();
@@ -69,7 +69,7 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
 
     public void AddTransaction(in DataStreamsTransactionInfo transaction)
     {
-        _transactionContainer.Add(transaction);
+        _dataStreamsTransactionContainer.Add(transaction);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
         var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
         if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
         {
-            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd, _transactionContainer);
+            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd, _dataStreamsTransactionContainer);
             Clear(statsToAdd, backlogsToAdd);
 
             return true;
