@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Datadog.FleetInstaller.Commands;
 
-internal class CommandWithExamples : Command
+internal sealed class CommandWithExamples : Command
 {
     private readonly List<string> _examples = new();
 

@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationFlakyRetryFeature.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationFlakyRetryFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFeature
+internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFeature
 {
     public const int FlakyRetryCountDefault = 0;
     public const int TotalFlakyRetryCountDefault = 0;

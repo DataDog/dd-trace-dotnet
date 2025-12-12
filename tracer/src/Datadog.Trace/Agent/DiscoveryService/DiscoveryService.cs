@@ -1,4 +1,4 @@
-// <copyright file="DiscoveryService.cs" company="Datadog">
+﻿// <copyright file="DiscoveryService.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// <summary>
     /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
-    internal class DiscoveryService : IDiscoveryService
+    internal sealed class DiscoveryService : IDiscoveryService
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";
         private const string SupportedDebuggerV2Endpoint = "debugger/v2/input";

@@ -1,4 +1,4 @@
-// <copyright file="InferredProxyCoordinator.cs" company="Datadog">
+﻿// <copyright file="InferredProxyCoordinator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// Coordinates the extraction of proxy metadata and creation of proxy spans.
 /// Acts as the main entry point for creating inferred proxy spans.
 /// </summary>
-internal class InferredProxyCoordinator
+internal sealed class InferredProxyCoordinator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<InferredProxyCoordinator>();
     private readonly IInferredSpanFactory _spanFactory;

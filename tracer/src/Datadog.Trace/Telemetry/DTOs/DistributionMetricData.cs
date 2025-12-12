@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class DistributionMetricData
+internal sealed class DistributionMetricData
 {
     public DistributionMetricData(string metric, List<double> points, bool common)
     {

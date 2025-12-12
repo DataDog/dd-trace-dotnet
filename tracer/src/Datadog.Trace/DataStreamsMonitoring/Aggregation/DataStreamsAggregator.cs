@@ -18,7 +18,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 /// Aggregates multiple <see cref="StatsPoint"/>s into their correct buckets
 /// Note that this class is *not* thread safe
 /// </summary>
-internal class DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
+internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
 {
     // The inner dictionary is constrained in size by the number of unique hashes seen by the app
     // Unique hashes are unique paths from origin to here, which could be unbounded if there are loops

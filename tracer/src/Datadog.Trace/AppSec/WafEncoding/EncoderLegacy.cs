@@ -1,4 +1,4 @@
-// <copyright file="EncoderLegacy.cs" company="Datadog">
+﻿// <copyright file="EncoderLegacy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding;
 
-internal class EncoderLegacy : IEncoder
+internal sealed class EncoderLegacy : IEncoder
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
     private readonly WafLibraryInvoker _wafLibraryInvoker;
@@ -315,7 +315,7 @@ internal class EncoderLegacy : IEncoder
         return sb;
     }
 
-    private class EncodeResult : IEncodeResult
+    private sealed class EncodeResult : IEncodeResult
     {
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private DdwafObjectStruct _resultDdwafObject;

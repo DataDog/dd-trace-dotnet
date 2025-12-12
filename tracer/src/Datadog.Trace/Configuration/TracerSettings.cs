@@ -121,7 +121,7 @@ namespace Datadog.Trace.Configuration
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Configuration
                .WithKeys(ConfigurationKeys.SpanPointersEnabled)
                .AsBool(defaultValue: true);
 
-            PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
+            PeerServiceNameMappings = TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.PeerServiceNameMappings));
 
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Configuration
                                     validator: null);
 
             OtlpMetricsProtocol = config
-                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
                                  .GetAs(
                                       defaultValue: new(OtlpProtocol.Grpc, "grpc"),
                                       converter: x => x switch
@@ -241,14 +241,14 @@ namespace Datadog.Trace.Configuration
                     converter: uriString => new Uri(uriString));
 
             OtlpMetricsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
                             .AsDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpMetricsTimeoutMs = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
 
             OtlpMetricsTemporalityPreference = config
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Configuration
                                    validator: null);
 
             OtlpLogsProtocol = config
-                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
+                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
                                   defaultValue: new(OtlpProtocol.Grpc, "grpc"),
                                   converter: x => x switch
@@ -291,14 +291,14 @@ namespace Datadog.Trace.Configuration
                     converter: uriString => new Uri(uriString));
 
             OtlpLogsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpLogsTimeoutMs = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
 
             var otelLogsExporter = config
@@ -449,14 +449,14 @@ namespace Datadog.Trace.Configuration
                                  converter: otelConverter);
 
             PropagationStyleInject = config
-                                    .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
-                                    .GetAsClassResult(
-                                         validator: injectionValidator, // invalid individual values are rejected later
-                                         converter: style => TrimSplitString(style, commaSeparator))
-                                    .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
+               .WithKeys(ConfigurationKeys.PropagationStyleInject)
+               .GetAsClassResult(
+                    validator: injectionValidator, // invalid individual values are rejected later
+                    converter: style => TrimSplitString(style, commaSeparator))
+               .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
-                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
+                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract)
                                      .GetAsClassResult(
                                           validator: injectionValidator, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator))
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Configuration
                                                    .Value;
 
             IpHeader = config
-                      .WithKeys(ConfigurationKeys.IpHeader, ConfigurationKeys.AppSec.CustomIpHeader)
+                      .WithKeys(ConfigurationKeys.IpHeader)
                       .AsString();
 
             IpHeaderEnabled = config
@@ -680,7 +680,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension() && !EnvironmentHelpers.IsAzureFunctions());
+                                  .AsBool(defaultValue: false);
 
             if (DataPipelineEnabled)
             {
@@ -1279,11 +1279,9 @@ namespace Datadog.Trace.Configuration
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 
-        internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
+        internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {
-            var mappings = config
-               .WithKeys(key)
-               .AsDictionary()
+            var mappings = key.AsDictionary()
               ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
             return mappings is not null ? new(mappings) : null;

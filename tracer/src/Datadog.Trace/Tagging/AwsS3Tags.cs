@@ -1,4 +1,4 @@
-// <copyright file="AwsS3Tags.cs" company="Datadog">
+﻿// <copyright file="AwsS3Tags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.SourceGenerators;
 #pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Tagging
 {
-    internal partial class AwsS3Tags : AwsSdkTags
+    internal sealed partial class AwsS3Tags : AwsSdkTags
     {
         public AwsS3Tags()
             : this(SpanKinds.Client)

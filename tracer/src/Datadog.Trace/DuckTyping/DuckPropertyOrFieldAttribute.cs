@@ -9,7 +9,7 @@ namespace Datadog.Trace.DuckTyping;
 /// <summary>
 /// Duck attribute where the underlying member could be a field or a property
 /// </summary>
-internal class DuckPropertyOrFieldAttribute : DuckAttribute
+internal sealed class DuckPropertyOrFieldAttribute : DuckAttribute
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DuckPropertyOrFieldAttribute"/> class.

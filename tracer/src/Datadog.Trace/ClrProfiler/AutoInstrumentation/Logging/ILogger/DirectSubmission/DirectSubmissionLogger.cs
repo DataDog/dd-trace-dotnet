@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// An implementation of ILogger for use with direct log submission
     /// </summary>
-    internal class DirectSubmissionLogger
+    internal sealed class DirectSubmissionLogger
     {
         private readonly string _name;
         private readonly IDirectSubmissionLogSink _sink;

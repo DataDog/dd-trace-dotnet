@@ -68,7 +68,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.28.1";
+    const string LibDdwafVersion = "1.30.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
@@ -353,7 +353,7 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
-            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 

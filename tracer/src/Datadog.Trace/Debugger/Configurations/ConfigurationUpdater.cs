@@ -1,4 +1,4 @@
-// <copyright file="ConfigurationUpdater.cs" company="Datadog">
+﻿// <copyright file="ConfigurationUpdater.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ConfigurationUpdater
+    internal sealed class ConfigurationUpdater
     {
         private const int MaxAllowedLogProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
@@ -130,6 +130,6 @@ namespace Datadog.Trace.Debugger.Configurations
             // todo handle rate limited changes
         }
 
-        internal record UpdateResult(string Id, string? Error);
+        internal sealed record UpdateResult(string Id, string? Error);
     }
 }

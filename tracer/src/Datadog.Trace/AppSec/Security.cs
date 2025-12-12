@@ -1,4 +1,4 @@
-// <copyright file="Security.cs" company="Datadog">
+﻿// <copyright file="Security.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,7 @@ namespace Datadog.Trace.AppSec
     /// <summary>
     /// The Secure is responsible coordinating ASM
     /// </summary>
-    internal class Security : IDatadogSecurity, IDisposable
+    internal sealed class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
         private static Security? _instance;
@@ -307,6 +307,11 @@ namespace Datadog.Trace.AppSec
         {
             var blockingAction = new BlockingAction();
 
+            string ReplaceSecurityResponseIdPlaceholder(string template, string? securityResponseId)
+            {
+                return template.Replace(SecurityConstants.SecurityResponseIdPlaceholder, securityResponseId);
+            }
+
             void SetAutomaticResponseContent()
             {
                 if (requestAcceptHeaders != null)
@@ -335,13 +340,13 @@ namespace Datadog.Trace.AppSec
             void SetJsonResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.Json;
-                blockingAction.ResponseContent = GetJsonResponse();
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetJsonResponse(), blockingAction.SecurityResponseId);
             }
 
             void SetHtmlResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
-                blockingAction.ResponseContent = GetHtmlResponse();
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetHtmlResponse(), blockingAction.SecurityResponseId);
             }
 
             int GetStatusCode(Dictionary<string, object?> information, int defaultValue)
@@ -375,6 +380,10 @@ namespace Datadog.Trace.AppSec
                 if (blockInfo is not null)
                 {
                     blockInfo.TryGetValue("type", out var type);
+                    if (blockInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
                     switch (type)
                     {
@@ -401,12 +410,16 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     redirectInfo!.TryGetValue("location", out var location);
+                    if (redirectInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
                     if (location is string locationString && locationString != string.Empty)
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
-                        blockingAction.RedirectLocation = locationString;
+                        blockingAction.RedirectLocation = ReplaceSecurityResponseIdPlaceholder(locationString, blockingAction.SecurityResponseId);
                         blockingAction.IsRedirect = true;
                     }
                     else

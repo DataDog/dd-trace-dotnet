@@ -1,4 +1,4 @@
-// <copyright file="AsyncManualResetEvent.cs" company="Datadog">
+﻿// <copyright file="AsyncManualResetEvent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ namespace Datadog.Trace.Util;
 
 // Based on: https://github.com/StephenCleary/AsyncEx/blob/master/src/Nito.AsyncEx.Coordination/AsyncManualResetEvent.cs
 
-internal class AsyncManualResetEvent
+internal sealed class AsyncManualResetEvent
 {
     private readonly object _mutex;
     private TaskCompletionSource<bool> _tcs;

@@ -1,4 +1,4 @@
-// <copyright file="TelemetrySettings.cs" company="Datadog">
+﻿// <copyright file="TelemetrySettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetrySettings
+    internal sealed class TelemetrySettings
     {
         public TelemetrySettings(
             bool telemetryEnabled,
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Telemetry
                 telemetryCompressionMethod);
         }
 
-        public class AgentlessSettings
+        public sealed class AgentlessSettings
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="AgentlessSettings"/> class.
@@ -224,7 +224,7 @@ namespace Datadog.Trace.Telemetry
                 return new AgentlessSettings(agentlessUri, apiKey, cloud);
             }
 
-            public class CloudSettings
+            public sealed class CloudSettings
             {
                 public CloudSettings(
                     string provider,

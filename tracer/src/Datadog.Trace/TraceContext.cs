@@ -27,7 +27,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
-    internal class TraceContext
+    internal sealed class TraceContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 

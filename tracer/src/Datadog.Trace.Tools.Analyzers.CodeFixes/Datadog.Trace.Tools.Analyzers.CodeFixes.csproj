@@ -19,6 +19,7 @@
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\Helpers\RoslynHelper.cs" Link="Helpers\RoslynHelper.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\LogAnalyzer\Diagnostics.cs" Link="LogAnalyzer\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\ThreadAbortAnalyzer\Diagnostics.cs" Link="ThreadAbortAnalyzer\Diagnostics.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\SealedAnalyzer\Diagnostics.cs" Link="SealedAnalyzer\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="Helpers\System.Diagnostics.CodeAnalysis.Attributes.cs" />
     <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs" Link="Helpers\System.Runtime.CompilerServices.Attributes.cs" />
     <Compile Update="LogAnalyzer\ConstantMessageTemplateCodeFixProvider.*.cs">

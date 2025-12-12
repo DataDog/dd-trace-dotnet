@@ -6,11 +6,13 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -87,7 +89,7 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void Inject_IHeadersCollection_Tag_Propagation_Disabled()
+        public async Task Inject_IHeadersCollection_Tag_Propagation_Disabled()
         {
             KeyValuePair<string, string>[] expectedHeaders =
                 {
@@ -98,7 +100,7 @@ namespace Datadog.Trace.Tests.Propagators
                 };
 
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.TagPropagation.HeaderMaxLength, 0 } });
-            var tracer = new Tracer(settings, agentWriter: Mock.Of<IAgentWriter>(), sampler: null, scopeManager: null, null, telemetry: null);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriority);

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         IntegrationName = AwsConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RuntimePipelineInvokeSyncIntegration
+    public sealed class RuntimePipelineInvokeSyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -51,6 +51,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
+                bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
+                if (isOutbound)
+                {
+                    PeerServiceHelpers.DerivePeerService(tags, EnvironmentHelpers.IsAwsLambda());
+                }
+
+                Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
             }
 
             return new CallTargetState(scope, state: executionContext);

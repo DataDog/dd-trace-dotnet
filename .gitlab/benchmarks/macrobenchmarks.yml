@@ -1,13 +1,19 @@
-.setup:
-  script:
-    - mkdir -p ~/.aws
-    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+.dd-octo-sts-setup:
+  before_script:
+    - |
+      set +e
+      echo "Attempting to retrieve a GitHub token for scope '$DDOCTOSTS_SCOPE' with policy '$DDOCTOSTS_POLICY' with dd-octo-sts..."
+      error_output=$({ dd-octo-sts token --scope $DDOCTOSTS_SCOPE --policy $DDOCTOSTS_POLICY > "/tmp/github-token"; } 2>&1)
+      exit_code=$?
+      if [ $exit_code -ne 0 ]; then
+        echo "Error: Failed to retrieve GitHub token."
+        echo "Original error: $error_output"
+        echo "Continuing execution anyway..."
+      fi
+      set -e
 
 stages:
-  - infra-update
+  - build-win
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
@@ -19,12 +25,15 @@ workflow:
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-8
 
-check_azure_pipeline:
+check-azure-pipeline:
   stage: check-azure-pipeline
+  tags: ["arch:amd64"]
   image: $MACROBENCHMARKS_CI_IMAGE
-  script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./wait-for-pipeline.sh
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
+  timeout: 1h
   artifacts:
     name: "artifacts"
     when: always
@@ -32,51 +41,60 @@ check_azure_pipeline:
       - platform/artifacts/
       - build-id.txt
     expire_in: 3 months
-  tags: ["arch:amd64"]
-  timeout: 1h
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "master"
-      interruptible: false
-    - interruptible: true
-
-update-bp-infra:
-  stage: infra-update
-  tags: ["arch:amd64"]
-  timeout: 3h
-  allow_failure: true
-  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-2
-
+  variables:
+    # Set this for quickly testing benchmarking workflows.
+    HARDCODED_BUILD_ID: "" 
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - mkdir -p ~/.aws
-    - /app/bp-infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER >> ~/.aws/config || exit $?
-    - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-name.txt
-    - aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-private-key.pem
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-    - bp-infra launch --no-cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ami.yaml --region "${AWS_REGION}" --bypass-stack-destroy
-  after_script:
-    - !reference [.setup, script]
     - |
-      bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ami.yaml \
-        --region "${AWS_REGION}" \
-        --bypass-stack-destroy
-  rules:
-    - when: manual
+      if [[ -n "$HARDCODED_BUILD_ID" ]]; then
+        echo "Using hardcoded build ID $HARDCODED_BUILD_ID"
+        echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
+        exit 0
+      fi
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./wait-for-pipeline.sh
+
+
+build-dd-trace-dotnet-macrobenchmarks-ami:
+  stage: build-win
+  tags: ["arch:amd64"]
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  allow_failure: true
+  when: manual
+  timeout: 3h
   variables:
     AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
+
+    # Branch containing a provision for building the macrobenchmarks AMI
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+
+    # Whether to cleanup instances after building the AMI, since the AMI is 
+    # based on an instance that is created in this job
+    CLEANUP: "true"
+  script:
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    - |
+      bp-infra launch --region "${AWS_REGION}" --os "windows" \
+        --provision ./platform/ephemeral-infra/ami.yaml \
+        --bypass-stack-destroy \
+        $CLEANUP_ARG
+  after_script:
+    # Makes sure the instance is cleaned up.
+    # Note: This does not clean up the created AMI.
+    - |
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup --region "${AWS_REGION}" --os "windows" \
+          --provision ./platform/ephemeral-infra/ami.yaml \
+          --bypass-stack-destroy
+      else
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
 
 .benchmarks-x86:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   timeout: 2h
   retry:
     max: 2
@@ -260,7 +278,7 @@ profiler_cpu_timer_create-x86:
 .benchmarks-arm64:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   timeout: 2h
   retry:
     max: 2
@@ -453,10 +471,12 @@ profiler_cpu_timer_create-arm64:
 
 .benchmarks-win:
   stage: benchmarks-win
-  needs: ["check_azure_pipeline"]
+  needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
-  timeout: 2h
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
   retry:
     max: 2
     when:
@@ -470,6 +490,7 @@ profiler_cpu_timer_create-arm64:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
     - interruptible: true
+  timeout: 2h
   artifacts:
     name: "artifacts"
     when: always
@@ -477,6 +498,10 @@ profiler_cpu_timer_create-arm64:
       - platform/artifacts/
     expire_in: 3 months
   variables:
+    # Allows ephemeral instances to read content from benchmarking-platform
+    DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
+    DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
+
     AWS_REGION: "us-east-1"
     
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
@@ -503,12 +528,16 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_VUS: 2
 
     DD_RUNTIME_METRICS_ENABLED: true
+  before_script:
+    - !reference [.dd-octo-sts-setup, before_script]
   script:
     - source build-id.txt
-    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - ./ephemeral-infra/run-windows-benchmarks.sh
+    - echo "Running Windows benchmarks for build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    - export GITHUB_TOKEN=$(cat /tmp/github-token)
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/steps/run-windows-benchmarks.sh
   after_script:
+    # TODO: Consider having an ephemeral-infra/cleanup-windows-benchmarks.sh
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \

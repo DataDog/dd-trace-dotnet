@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting
 {
-    internal class NLogLogFormatter
+    internal static class NLogLogFormatter
     {
         internal const string LoggerNameKey = "LoggerName";
 

@@ -27,9 +27,9 @@ using Xunit;
 namespace Datadog.Trace.Tests
 {
     [Collection(nameof(WebRequestCollection))]
-    public class TracerTests
+    public class TracerTests : IAsyncLifetime
     {
-        private readonly Tracer _tracer;
+        private readonly ScopedTracer _tracer;
 
         public TracerTests()
         {
@@ -37,8 +37,12 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
         public void StartActive_SetOperationName_OperationNameIsSet()

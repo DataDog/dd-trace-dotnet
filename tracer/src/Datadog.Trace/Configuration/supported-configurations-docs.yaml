@@ -322,6 +322,14 @@ DD_EXCEPTION_REPLAY_ENABLED: |
   Configuration key for enabling or disabling Exception Replay.
   Default value is false (disabled).
 
+DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED: |
+  Configuration key for enabling or disabling agentless Exception Replay uploads.
+  Default value is false.
+
+DD_EXCEPTION_REPLAY_AGENTLESS_URL: |
+  Configuration key for overriding the agentless Exception Replay intake URL.
+  Default value is derived from DD_SITE (https://debugger-intake.{site}/api/v2/debugger).
+
 DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT: |
   Configuration key for setting the maximum number of exceptions to be analyzed by Exception Replay within a 1-second time interval.
   Default value is <c>100</c>.

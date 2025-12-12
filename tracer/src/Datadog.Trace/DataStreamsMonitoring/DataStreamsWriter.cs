@@ -20,8 +20,10 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
-internal class DataStreamsWriter : IDataStreamsWriter
+internal sealed class DataStreamsWriter : IDataStreamsWriter
 {
+    private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
     private readonly object _initLock = new();
@@ -30,19 +32,20 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<DataStreamsTransactionInfo> _transactionBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly bool _isInDefaultState;
 
-    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskOptions);
     private readonly SemaphoreSlim _flushSemaphore = new(1, 1);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
-    private int _flushRequested;
     private Task? _processTask;
+    private Task? _flushTask;
     private Timer? _flushTimer;
-    private TaskCompletionSource<bool>? _currentFlushTcs;
+    private TaskCompletionSource<bool> _forceFlush = new(TaskOptions);
 
     private int _isSupported = SupportState.Unknown;
     private bool _isInitialized;
@@ -95,8 +98,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Run(ProcessQueueLoopAsync);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _flushTask = Task.Run(FlushTaskLoopAsync);
+            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in data streams flush task"), TaskContinuationOptions.OnlyOnFaulted);
+
             _flushTimer = new Timer(
                 x => ((DataStreamsWriter)x!).RequestFlush(),
                 this,
@@ -189,65 +196,104 @@ internal class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        // request a final flush - as the _processExit flag is now set
-        // this ensures we will definitely flush all the stats
-        // (and sets the mutex if it isn't already set)
-        RequestFlush();
-
-        // wait for the processing loop to complete
         var completedTask = await Task.WhenAny(
                                            _processTask,
-                                           Task.Delay(TimeSpan.FromSeconds(20)))
+                                           Task.Delay(TimeSpan.FromSeconds(1)))
                                       .ConfigureAwait(false);
 
         if (completedTask != _processTask)
         {
             Log.Error("Could not flush all data streams stats before process exit");
         }
-    }
 
-    public async Task FlushAsync()
-    {
-        await _flushSemaphore.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            var timeout = TimeSpan.FromSeconds(5);
-
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
-
-            if (!Volatile.Read(ref _isInitialized) || _processTask == null)
-            {
-                return;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Interlocked.Exchange(ref _currentFlushTcs, tcs);
-
-            RequestFlush();
-
-            var completedTask = await Task.WhenAny(
-                tcs.Task,
-                _processExit.Task,
-                Task.Delay(timeout)).ConfigureAwait(false);
-
-            if (completedTask != tcs.Task)
-            {
-                Log.Error("Data streams flush timeout after {Timeout}ms", timeout.TotalMilliseconds);
-            }
-        }
-        finally
-        {
-            _currentFlushTcs = null;
-            _flushSemaphore.Release();
-        }
+        await FlushAsync().ConfigureAwait(false);
     }
 
     private void RequestFlush()
     {
-        Interlocked.Exchange(ref _flushRequested, 1);
+        _forceFlush.TrySetResult(true);
+    }
+
+    private async Task FlushTaskLoopAsync()
+    {
+        Task[] tasks = new Task[2];
+        tasks[0] = _processTask!;
+        tasks[1] = _forceFlush.Task;
+
+        while (true)
+        {
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+
+            if (_forceFlush.Task.IsCompleted)
+            {
+                _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                tasks[1] = _forceFlush.Task;
+            }
+
+            await FlushAggregatorAsync().ConfigureAwait(false);
+
+            if (_processTask!.IsCompleted)
+            {
+                return;
+            }
+        }
+    }
+
+    public async Task FlushAsync()
+    {
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        {
+            return;
+        }
+
+        if (await _flushSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false))
+        {
+            try
+            {
+                while (_buffer.TryDequeue(out var statsPoint))
+                {
+                    _aggregator.Add(in statsPoint);
+                }
+
+                while (_backlogBuffer.TryDequeue(out var backlogPoint))
+                {
+                    _aggregator.AddBacklog(in backlogPoint);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occured while processing data streams buffers");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
+            }
+        }
+
+        await FlushAggregatorAsync().ConfigureAwait(false);
+    }
+
+    private async Task FlushAggregatorAsync()
+    {
+        if (!await _flushSemaphore.WaitAsync(_flushSemaphoreWaitTime).ConfigureAwait(false))
+        {
+            Log.Warning("Data streams flush timeout");
+            return;
+        }
+
+        try
+        {
+            await WriteToApiAsync().ConfigureAwait(false);
+            FlushComplete?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occured while writing data streams");
+        }
+        finally
+        {
+            _flushSemaphore.Release();
+        }
     }
 
     private async Task WriteToApiAsync()
@@ -288,11 +334,22 @@ internal class DataStreamsWriter : IDataStreamsWriter
         }
     }
 
-    private async Task ProcessQueueLoopAsync()
+    private void ProcessQueueLoop()
     {
-        var isFinalFlush = false;
         while (true)
         {
+            Thread.Sleep(_waitTimeSpan);
+
+            if (!_flushSemaphore.Wait(_flushSemaphoreWaitTime))
+            {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                continue;
+            }
+
             try
             {
                 while (_buffer.TryDequeue(out var statsPoint))
@@ -304,45 +361,23 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 {
                     _aggregator.AddBacklog(in backlogPoint);
                 }
-
                 while (_transactionBuffer.TryDequeue(out var transactionPoint))
                 {
                     _aggregator.AddTransaction(transactionPoint);
                 }
-
-                var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
-                if (flushRequested == 1)
-                {
-                    await WriteToApiAsync().ConfigureAwait(false);
-                    var currentFlushTcs = Volatile.Read(ref _currentFlushTcs);
-                    currentFlushTcs?.TrySetResult(true);
-                    FlushComplete?.Invoke(this, EventArgs.Empty);
-                }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occured in the processing thread");
+                Log.Error(ex, "An error occured in the data streams processing thread");
+            }
+            finally
+            {
+                _flushSemaphore.Release();
             }
 
             if (_processExit.Task.IsCompleted)
             {
-                if (isFinalFlush)
-                {
-                    return;
-                }
-
-                // do one more loop to make sure everything is flushed
-                RequestFlush();
-                isFinalFlush = true;
-                continue;
-            }
-
-            // The logic is copied from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/tests/System/Threading/Tasks/TaskTimeoutExtensions.cs#L26
-            // and modified to avoid dealing with exceptions
-            var tcs = new TaskCompletionSource<bool>();
-            using (new Timer(s => ((TaskCompletionSource<bool>)s!).SetResult(true), tcs, _waitTimeSpan, Timeout.InfiniteTimeSpan))
-            {
-                await Task.WhenAny(_processExit.Task, tcs.Task).ConfigureAwait(false);
+                return;
             }
         }
     }
