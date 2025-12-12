@@ -23,4 +23,8 @@ internal sealed partial class NullMetricsTelemetryCollector
     public void RecordGaugeDirectLogQueue(int value)
     {
     }
+
+    public void RecordGaugeAsmEnabled(Datadog.Trace.Telemetry.Metrics.MetricTags.AppSecEnabledOrigin tag, int value)
+    {
+    }
 }
