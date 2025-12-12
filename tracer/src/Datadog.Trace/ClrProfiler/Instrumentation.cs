@@ -470,24 +470,48 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
-            var observers = new List<DiagnosticObserver>();
+            var observers = new List<DiagnosticObserver>
+                            {
+                                new QuartzDiagnosticObserver()
+                            };
 
-            // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
-
-            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
+            // For Azure Functions, we need to handle AspNetCoreDiagnosticObserver differently based on the process type.
+            // Skip AspNetCoreDiagnosticObserver in:
+            // - In-process functions (due to separate Assembly Load Context issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - Isolated functions worker process (to create aspnet_core.request spans that azure_functions.invoke can parent to)
+            // - All other scenarios (non-Azure Functions)
+            if (EnvironmentHelpers.IsAzureFunctions())
             {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
-                // This is because user code is loaded within the functions host in a separate context.
-                // Even in isolated functions, we don't want the AspNetCore spans to be created.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
+                if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+                {
+                    // Skip AspNetCoreDiagnosticObserver in Azure Functions host processes
+                    Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function host process.");
+                }
+                else if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
+                {
+                    // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                    Log.Debug("Skipping AspNetCoreDiagnosticObserver in in-process Azure Function.");
+                }
+                else
+                {
+                    var azureFunctionsExtensionVersion = EnvironmentHelpers.GetAzureFunctionsExtensionVersion();
+
+                    if (azureFunctionsExtensionVersion != "~4")
+                    {
+                        // Skip AspNetCoreDiagnosticObserver in v1 functions (v2 and v3 are not supported at all)
+                        Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function extension version {Version}.");
+                    }
+                    else
+                    {
+                        observers.Add(new AspNetCoreDiagnosticObserver());
+                    }
+                }
             }
             else
             {
                 observers.Add(new AspNetCoreDiagnosticObserver());
-                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
