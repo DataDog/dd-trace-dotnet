@@ -14,9 +14,11 @@ using System.Web;
 
 namespace Datadog.Trace.FeatureFlags
 {
-    internal class Evaluation(object? value, EvaluationReason reason, string? variant = null, string? error = null, IDictionary<string, string>? metadata = null)
+    internal class Evaluation(string flagKey, object? value, EvaluationReason reason, string? variant = null, string? error = null, IDictionary<string, string>? metadata = null)
         : IEvaluation
     {
+        public string FlagKey { get; } = flagKey;
+
         public object? Value { get; } = value;
 
         public EvaluationReason Reason { get; } = reason;
