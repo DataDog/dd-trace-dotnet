@@ -26,7 +26,7 @@ using Xunit.Abstractions;
 
 #pragma warning disable SA1402 // File may only contain a single type
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests;
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 
 #if NETFRAMEWORK
 // The .NET Framework tests use NGEN which is a global thing, so make sure we don't parallelize

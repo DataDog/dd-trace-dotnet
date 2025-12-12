@@ -17,6 +17,9 @@ namespace Datadog.Trace.FeatureFlags;
 /// <summary>FeatureFlag Evaluation result.</summary>
 public partial interface IEvaluation
 {
+    /// <summary> Gets the flag key being evaluate </summary>
+    string FlagKey { get; }
+
     /// <summary> Gets the evaluation result </summary>
     object? Value { get; }
 
