@@ -33,6 +33,6 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Allows configuring transaction extractors for Data Streams Monitoring.
         /// </summary>
-        public const string DataStreamsTransactionExtractors = "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS";
+        public const string TransactionExtractors = "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS";
     }
 }
