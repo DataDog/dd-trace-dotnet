@@ -41,11 +41,11 @@ class Program
             Thread.Sleep(1000);
         }
 
+        Evaluate("exposure-flag");
         Evaluate("simple-string");
         Evaluate("rule-based-flag");
         Evaluate("numeric-rule-flag");
         Evaluate("time-based-flag");
-        Evaluate("exposure-flag");
 
         IEvaluation? Evaluate(string key)
         {

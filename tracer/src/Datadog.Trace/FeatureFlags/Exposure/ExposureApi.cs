@@ -31,7 +31,7 @@ namespace Datadog.Trace.Exposure
         private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
-        private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(15);
+        private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
         private readonly Dictionary<string, string> _context = new Dictionary<string, string>();
         private int _started = 0;
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Exposure
             var apiRequestFactory = AgentTransportStrategy.Get(
                 tracerSettings.Exporter,
                 productName: "FeatureFlags exposure",
-                tcpTimeout: TimeSpan.FromSeconds(15),
+                tcpTimeout: TimeSpan.FromSeconds(5),
                 AgentHttpHeaderNames.MinimalHeaders,
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
