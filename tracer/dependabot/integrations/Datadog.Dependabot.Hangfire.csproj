@@ -9,7 +9,7 @@
     <!-- Integration: Hangfire.Core -->
     <!--    Assembly: Hangfire.Core -->
     <!-- Latest package https://www.nuget.org/packages/Hangfire/1.8.21 -->
-    <PackageReference Include="Hangfire" Version="1.8.21" />
+    <PackageReference Include="Hangfire" Version="1.8.22" />
   </ItemGroup>
 
 </Project>
