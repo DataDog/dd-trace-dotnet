@@ -14,6 +14,7 @@ using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -44,7 +45,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
 
             // Wait for the logs to be sent, should be done in 50ms
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             logsApi.Logs.Should().ContainSingle();
         }
 
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, message));
 
             // Wait for the logs to be sent, should be done in 50ms
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             logsApi.Logs.Should().BeEmpty();
         }
 
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, firstMessage));
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, secondMessage));
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
             logsApi.Logs.Should().NotBeEmpty();
 
             var logs = logsApi.Logs
@@ -142,7 +143,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fourth message"));
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fifth message"));
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            mutex.WaitOrDump(TimeSpan.FromSeconds(10)).Should().BeTrue();
 
             logsApi.Logs.Should().HaveCountGreaterOrEqualTo(3); // batch size is 2, so at least 3 batches
 
@@ -202,13 +203,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
-                mutex.Wait(30_000).Should().BeTrue();
+                mutex.WaitOrDump(30_000).Should().BeTrue();
                 mutex.Reset();
             }
 
             // circuit should be broken
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
-            mutex.Wait(3_000).Should().BeFalse(); // don't expect it to be set
+            mutex.WaitOrDump(3_000).Should().BeFalse(); // don't expect it to be set
 
             logsReceived.Should().Be(FailuresBeforeCircuitBreak);
         }

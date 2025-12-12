@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Agent
                     // Flush is not called if no spans are processed
                     aggregator.Add(new Span(new SpanContext(1, 1), DateTime.UtcNow));
 
-                    if (mutex.Wait(TimeSpan.FromMilliseconds(100)))
+                    if (mutex.WaitOrDump(TimeSpan.FromMilliseconds(100)))
                     {
                         success = true;
                         break;
