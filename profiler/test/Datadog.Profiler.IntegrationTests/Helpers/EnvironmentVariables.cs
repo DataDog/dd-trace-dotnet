@@ -22,7 +22,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string NamedPipeName = "DD_TRACE_PIPE_NAME";
         public const string TimestampsAsLabelEnabled = "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED";
         public const string GarbageCollectionProfilerEnabled = "DD_PROFILING_GC_ENABLED";
-        public const string UseBacktrace2 = "DD_INTERNAL_USE_BACKTRACE2";
         public const string DebugInfoEnabled = "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED";
         public const string GcThreadsCpuTimeEnabled = "DD_GC_THREADS_CPUTIME_ENABLED";
         public const string ThreadLifetimeEnabled = "DD_THREAD_LIFETIME_ENABLED";

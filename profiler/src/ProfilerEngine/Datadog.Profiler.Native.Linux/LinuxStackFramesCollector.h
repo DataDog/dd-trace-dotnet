@@ -25,6 +25,7 @@ class ProfilerSignalManager;
 class IConfiguration;
 class CallstackProvider;
 class DiscardMetrics;
+class IUnwinder;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
@@ -33,7 +34,8 @@ public:
         ProfilerSignalManager* signalManager,
         IConfiguration const* configuration,
         CallstackProvider* callstackProvider,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        IUnwinder* pUnwinder);
     ~LinuxStackFramesCollector() override;
 
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
@@ -67,8 +69,7 @@ private:
     void UpdateErrorStats(std::int32_t errorCode);
     static bool ShouldLogStats();
     bool CanCollect(int32_t threadId, siginfo_t* info, void* ucontext) const;
-    std::int32_t CollectStackManually(void* ctx);
-    std::int32_t CollectStackWithBacktrace2(void* ctx);
+    std::int32_t CollectStack(void* ctx);
     void MarkAsInterrupted();
 
     std::int32_t _lastStackWalkErrorCode;
@@ -89,11 +90,11 @@ private:
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t CollectCallStackCurrentThread(void* ucontext);
+    std::int32_t CollectCallStackCurrentThread(void* ctx);
 
     ErrorStatistics _errorStatistics;
-    bool _useBacktrace2;
     std::shared_ptr<CounterMetric> _samplingRequest;
 
     std::shared_ptr<DiscardMetrics> _discardMetrics;
+    IUnwinder* _pUnwinder;
 };
