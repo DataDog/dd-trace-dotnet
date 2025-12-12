@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Logging;
@@ -44,14 +43,58 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             activity.AddTag("operation.name", activity.DisplayName);
-            var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
+
+            string? jobName = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "job.name")
+                {
+                    jobName = tag.Value;
+                    break;
+                }
+            }
+
             if (string.IsNullOrEmpty(jobName))
             {
                 Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
                 return;
             }
 
-            activity.DisplayName = CreateResourceName(activity.DisplayName, jobName);
+            activity.DisplayName = CreateResourceName(activity.DisplayName, jobName!);
+        }
+
+        internal static void EnhanceActivityMetadata(IActivity activity)
+        {
+            if (activity is IActivity5 activity5)
+            {
+                EnhanceActivityMetadata(activity5);
+                return;
+            }
+
+            if (activity.OperationName is null)
+            {
+                return;
+            }
+
+            activity.AddTag("operation.name", activity.OperationName);
+
+            string? jobName = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "job.name")
+                {
+                    jobName = tag.Value;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(jobName))
+            {
+                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                return;
+            }
+
+            activity.AddTag("resource.name", CreateResourceName(activity.OperationName, jobName!));
         }
 
         internal static void AddException(object exceptionArg, IActivity activity)
@@ -66,6 +109,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag(Tags.ErrorType, exception.GetType().ToString());
             activity.AddTag(Tags.ErrorStack, exception.ToString());
             activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
+        }
+
+        /// <summary>
+        /// Handles Quartz diagnostic events.
+        /// This method is shared between the DiagnosticObserver (modern .NET) and reflection-based observer (.NET Framework).
+        /// </summary>
+        internal static void HandleDiagnosticEvent(string eventName, object arg)
+        {
+            switch (eventName)
+            {
+                case "Quartz.Job.Execute.Start":
+                case "Quartz.Job.Veto.Start":
+                    var activity = ActivityListener.GetCurrentActivity();
+                    if (activity is IActivity5 activity5)
+                    {
+                        SetActivityKind(activity5);
+                    }
+                    else
+                    {
+                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
+                    }
+
+                    if (activity?.Instance is not null)
+                    {
+                        EnhanceActivityMetadata(activity);
+                    }
+
+                    break;
+                case "Quartz.Job.Execute.Stop":
+                case "Quartz.Job.Veto.Stop":
+                    break;
+                case "Quartz.Job.Execute.Exception":
+                case "Quartz.Job.Veto.Exception":
+                    // setting an exception manually
+                    var closingActivity = ActivityListener.GetCurrentActivity();
+                    if (closingActivity?.Instance is not null)
+                    {
+                        AddException(arg, closingActivity);
+                    }
+
+                    break;
+            }
         }
     }
 }
