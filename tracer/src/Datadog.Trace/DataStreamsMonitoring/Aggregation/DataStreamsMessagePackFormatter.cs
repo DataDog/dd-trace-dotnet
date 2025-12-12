@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -52,6 +53,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
         private readonly byte[] _processTagsBytes = StringEncoding.UTF8.GetBytes("ProcessTags");
         private readonly byte[] _isInDefaultStateBytes = StringEncoding.UTF8.GetBytes("IsInDefaultState");
+
+        private readonly byte[] _transactions = StringEncoding.UTF8.GetBytes("Transactions");
+        private readonly byte[] _transactionCheckpointIds = StringEncoding.UTF8.GetBytes("TransactionCheckpointIds");
 
         private byte[] _environmentValueBytes;
         private byte[] _serviceValueBytes;
@@ -113,8 +117,14 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             return productsMask;
         }
 
-        public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
+        public int Serialize(
+            Stream stream,
+            long bucketDurationNs,
+            List<SerializableStatsBucket> statsBuckets,
+            List<SerializableBacklogBucket> backlogsBuckets,
+            TransactionContainer transactionContainer)
         {
+            var hasTransactions = transactionContainer.Size() > 0;
             var withProcessTags = _writeProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags);
             var bytesWritten = 0;
 
@@ -141,7 +151,22 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionValueBytes);
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
-            bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count + backlogsBuckets.Count);
+            bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count + backlogsBuckets.Count + (hasTransactions ? 1 : 0));
+
+            if (hasTransactions)
+            {
+                var currentTs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+                var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
+                bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 1, 0);
+
+                bytesWritten += MessagePackBinary.WriteMapHeader(stream, 2);
+
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactions);
+                bytesWritten += MessagePackBinary.WriteBytes(stream, transactionContainer.GetDataAndReset());
+
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactionCheckpointIds);
+                bytesWritten += MessagePackBinary.WriteBytes(stream, DataStreamsTransactionInfo.GetCacheBytes());
+            }
 
             foreach (var backlogBucket in backlogsBuckets)
             {

@@ -1004,6 +1004,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
             public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
+
+            /// <summary>
+            /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
+            /// false by default if DSM is in default state, true otherwise
+            /// </summary>
+            /// <see cref="TracerSettings.DataStreamsTransactionExtractors"/>
+            public const string TransactionExtractors = "DD_DATA_STREAM_TRANSACTION_ELECTORS";
         }
     }
 }

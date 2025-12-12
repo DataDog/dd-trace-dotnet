@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -33,6 +34,7 @@ internal class DataStreamsManager
     private bool _isEnabled;
     private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
+    private DataStreamsExtractorRegistry? _registry;
 
     public DataStreamsManager(
         TracerSettings tracerSettings,
@@ -44,6 +46,7 @@ internal class DataStreamsManager
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+        _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
         {
             if (updates.UpdatedMutable is { } updated)
@@ -132,6 +135,20 @@ internal class DataStreamsManager
         }
 
         DataStreamsContextPropagator.Instance.Inject(context.Value, headers, _isLegacyDsmHeadersEnabled);
+    }
+
+    public void TrackTransaction(string transactionId, string checkpointName)
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.AddTransaction(new DataStreamsTransactionInfo(
+                                   transactionId,
+                                   DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+                                   checkpointName));
     }
 
     public void TrackBacklog(string tags, long value)
