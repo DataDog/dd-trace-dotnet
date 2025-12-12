@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
-using Datadog.Trace.FeatureFlags;
+using OpenFeature.Model;
+using Samples.OpenFeature_2._9;
 
 namespace Samples.OpenFeature_2_9;
 
@@ -12,6 +13,9 @@ class Program
         // See https://aka.ms/new-console-template for more information
         Console.WriteLine("OpenFeature 2.9 FeatureFlags SDK Sample");
 
+        OpenFeature.Api.Instance.SetProviderAsync(new DataDogProvider()).Wait();
+        var client = OpenFeature.Api.Instance.GetClient();
+
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
@@ -21,7 +25,7 @@ class Program
         Console.WriteLine($"<INSTRUMENTED>");
 
         var ev = Evaluate("nonexistent");
-        if (ev != null && ev.Error is "FeatureFlagsSdk is disabled")
+        if (ev != null && ev.ErrorMessage is "FeatureFlagsSdk is disabled")
         {
             return;
         }
@@ -48,18 +52,18 @@ class Program
         Evaluate("numeric-rule-flag");
         Evaluate("time-based-flag");
 
-        IEvaluation? Evaluate(string key)
+        FlagEvaluationDetails<string>? Evaluate(string key)
         {
-            var context = new EvaluationContext(key);
-            var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, typeof(string), "Not found", context);
+            var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+            var evaluation = client.GetStringDetailsAsync(key, "Not found", context).Result;
 
             if (evaluation is null)
             {
                 Console.WriteLine($"Eval ({key}) : <NULL>");
             }
-            else if (evaluation.Error is not null)
+            else if (evaluation.ErrorMessage is not null)
             {
-                Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.Error}>");
+                Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.ErrorMessage}>");
             }
             else
             {

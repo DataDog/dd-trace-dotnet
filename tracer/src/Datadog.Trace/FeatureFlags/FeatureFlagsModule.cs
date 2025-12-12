@@ -99,22 +99,22 @@ namespace Datadog.Trace.FeatureFlags
             _onNewConfigEventHander = onNewConfig;
         }
 
-        internal Evaluation Evaluate(string key, Type resultType, object? defaultValue, IEvaluationContext context)
+        internal Evaluation Evaluate(string flagKey, Type resultType, object? defaultValue, IEvaluationContext context)
         {
             if (!_enabled)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> FeatureFlagsModule DISABLED");
-                return new Evaluation(null, EvaluationReason.ERROR, null, "FeatureFlagsSdk is disabled");
+                return new Evaluation(flagKey, null, EvaluationReason.ERROR, null, "FeatureFlagsSdk is disabled");
             }
 
             if (_evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(null, EvaluationReason.ERROR, null, "No config loaded");
+                return new Evaluation(flagKey, null, EvaluationReason.ERROR, null, "No config loaded");
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return _evaluator.Evaluate(key, resultType, defaultValue, context);
+            return _evaluator.Evaluate(flagKey, resultType, defaultValue, context);
         }
 
         private void UpdateConfig(List<KeyValuePair<string, ServerConfiguration>> list)
