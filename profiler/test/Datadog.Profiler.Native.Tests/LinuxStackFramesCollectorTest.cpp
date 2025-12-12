@@ -7,11 +7,7 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
-#ifdef AMD64
 #include "Backtrace2Unwinder.h"
-#else
-#include "HybridUnwinder.h"
-#endif
 #include "CallstackProvider.h"
 #include "ManagedThreadInfo.h"
 #include "MemoryResourceManager.h"
@@ -162,11 +158,8 @@ public:
         _stopWorker = false;
         _workerThread = std::make_unique<WorkerThread>(_stopWorker);
 
-#ifdef AMD64
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
-#else
-        _pUnwinder = std::make_unique<HybridUnwinder>();
-#endif
+
         ResetCallbackState();
 
         _processId = OpSysTools::GetProcId();

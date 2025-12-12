@@ -25,11 +25,7 @@
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
-#ifdef AMD64
 #include "Backtrace2Unwinder.h"
-#else
-#include "HybridUnwinder.h"
-#endif
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
 #include "LinuxStackFramesCollector.h"
@@ -68,12 +64,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     CallstackProvider* callstackProvider,
     MetricsRegistry& metricsRegistry)
 {
-    static auto pUnwinder =
-#ifdef AMD64
-            std::make_unique<Backtrace2Unwinder>();
-#else
-            std::make_unique<HybridUnwinder>();
-#endif
+    static auto pUnwinder = std::make_unique<Backtrace2Unwinder>();
     return std::make_unique<LinuxStackFramesCollector>(
         ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry, pUnwinder.get());
 }
