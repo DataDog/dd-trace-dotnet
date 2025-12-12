@@ -2,9 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
-
-// TO REMOVE: only to trigger profiler tests
-//
 #include "cor.h"
 #include "corprof.h"
 // end
