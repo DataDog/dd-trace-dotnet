@@ -1328,9 +1328,6 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 {
     // TODO: add more env vars values
     // --> should we dump the important ones to ensure that we get them during support investigations?
-
-    Log::Info("Environment variables:");
-    // TODO
 }
 
 // CLR event verbosity definition
