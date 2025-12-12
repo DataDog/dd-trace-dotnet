@@ -600,7 +600,7 @@ TEST(ProfileExporterTest, CheckNoEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -616,7 +616,7 @@ TEST(ProfileExporterTest, CheckAllEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("walltime") != std::string::npos);
     ASSERT_TRUE(tag.find("cpu") != std::string::npos);
@@ -636,7 +636,7 @@ TEST(ProfileExporterTest, CheckCpuIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "cpu");
 }
@@ -650,7 +650,7 @@ TEST(ProfileExporterTest, CheckWalltimeIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "walltime");
 }
@@ -664,7 +664,7 @@ TEST(ProfileExporterTest, CheckExceptionIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "exceptions");
 }
@@ -678,7 +678,7 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "allocations");
 }
@@ -692,7 +692,7 @@ TEST(ProfileExporterTest, CheckAllocationIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -706,7 +706,7 @@ TEST(ProfileExporterTest, CheckLockContentionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "lock");
 }
@@ -720,7 +720,7 @@ TEST(ProfileExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -734,7 +734,7 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "gc");
 }
@@ -748,7 +748,7 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -761,7 +761,7 @@ TEST(ProfileExporterTest, CheckHeapIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
@@ -774,7 +774,7 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, true); // this should never happen but test it anyway
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -787,7 +787,7 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") == std::string::npos);
 }
@@ -800,7 +800,7 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("allocations") != std::string::npos);
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
