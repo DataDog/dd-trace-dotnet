@@ -995,6 +995,7 @@
    <assembly fullname="System.Runtime.Serialization.Primitives">
       <type fullname="System.Runtime.Serialization.DataContractAttribute" />
       <type fullname="System.Runtime.Serialization.DataMemberAttribute" />
+      <type fullname="System.Runtime.Serialization.EnumMemberAttribute" />
       <type fullname="System.Runtime.Serialization.IgnoreDataMemberAttribute" />
    </assembly>
    <assembly fullname="System.Security.Claims">
