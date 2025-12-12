@@ -486,7 +486,10 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void StartDiagnosticManager()
         {
-            var observers = new List<DiagnosticObserver>();
+            var observers = new List<DiagnosticObserver>
+                            {
+                                new QuartzDiagnosticObserver()
+                            };
 
 #if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
