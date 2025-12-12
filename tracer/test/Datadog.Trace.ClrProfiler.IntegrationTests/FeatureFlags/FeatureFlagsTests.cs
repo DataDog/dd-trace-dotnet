@@ -9,16 +9,22 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+
+#pragma warning disable SA1402 // File may only contain a single type
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
@@ -27,21 +33,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 // Include these tests in the ManualInstrumentation batch
 [Collection(nameof(ManualInstrumentationTests))]
 #endif
-[UsesVerify]
-public class FeatureFlagsTests : TestHelper
+public class FeatureFlagsTests : FeatureFlagsTestsBase
 {
     public FeatureFlagsTests(ITestOutputHelper output)
         : base("FeatureFlags", output)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        EnableDebugMode();
-#pragma warning restore CS0618 // Type or member is obsolete
+    }
+}
+
+#if NETFRAMEWORK
+[Collection(nameof(ManualInstrumentationTests))]
+#endif
+public class OpenFeature_2_9_FeatureFlagsTests : FeatureFlagsTestsBase
+{
+    public OpenFeature_2_9_FeatureFlagsTests(ITestOutputHelper output)
+        : base("OpenFeature-2.9", output)
+    {
+    }
+}
+
+public abstract class FeatureFlagsTestsBase : TestHelper
+{
+    public FeatureFlagsTestsBase(string sampleName, ITestOutputHelper output)
+        : base(sampleName, output)
+    {
     }
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task FfeEnabled()
     {
+        int eventsReceived = 0;
         using var agent = EnvironmentHelper.GetMockAgent();
         var request1 = agent.SetupRcm(
             Output,
@@ -54,6 +76,17 @@ public class FeatureFlagsTests : TestHelper
                 nameof(FeatureFlagsTests))
             ]);
 
+        agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+        {
+            if (e.Value.PathAndQuery.EndsWith("api/v2/exposure"))
+            {
+                eventsReceived++;
+                e.Value.Headers["Content-Encoding"].Should().Be(MimeTypes.Json);
+                var payload = JsonConvert.DeserializeObject(e.Value.BodyInJson);
+                return;
+            }
+        };
+
         var output = await RunTest(agent, enabled: true);
 
         Assert.NotNull(output);
@@ -64,6 +97,7 @@ public class FeatureFlagsTests : TestHelper
         Assert.Contains("Eval (numeric-rule-flag) : <OK: ", output);
         Assert.Contains("Eval (time-based-flag) : <OK: ", output);
         Assert.Contains("Eval (exposure-flag) : <OK: ", output);
+        Assert.True(eventsReceived > 0);
     }
 
     [SkippableFact]
@@ -88,3 +122,5 @@ public class FeatureFlagsTests : TestHelper
         return process.StandardOutput.ToString();
     }
 }
+
+#pragma warning restore SA1402 // File may only contain a single type
