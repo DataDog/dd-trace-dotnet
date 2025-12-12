@@ -152,6 +152,11 @@ namespace Datadog.Trace.Util
             return GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
         }
 
+        public static string? GetAzureFunctionsExtensionVersion()
+        {
+            return GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
+        }
+
         /// <summary>
         /// Check if the current environment is the Azure Functions host process
         /// by checking that:

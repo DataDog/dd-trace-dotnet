@@ -470,7 +470,10 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
-            var observers = new List<DiagnosticObserver>();
+            var observers = new List<DiagnosticObserver>
+                            {
+                                new QuartzDiagnosticObserver()
+                            };
 
             // For Azure Functions, we need to handle AspNetCoreDiagnosticObserver differently based on the process type.
             // Skip AspNetCoreDiagnosticObserver in:
@@ -479,20 +482,36 @@ namespace Datadog.Trace.ClrProfiler
             // Enable AspNetCoreDiagnosticObserver in:
             // - Isolated functions worker process (to create aspnet_core.request spans that azure_functions.invoke can parent to)
             // - All other scenarios (non-Azure Functions)
-            var isAzureFunctionsIsolatedHost = EnvironmentHelpers.IsRunningInAzureFunctionsHost();
-            var isAzureFunctionsInProcess = EnvironmentHelpers.IsAzureFunctions() && !EnvironmentHelpers.IsAzureFunctionsIsolated();
-            var shouldSkipAspNetCore = isAzureFunctionsIsolatedHost || isAzureFunctionsInProcess;
-
-            if (shouldSkipAspNetCore)
+            if (EnvironmentHelpers.IsAzureFunctions())
             {
-                // Skip AspNetCoreDiagnosticObserver in Azure Functions host process or in-process functions
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions (host process or in-process).");
+                if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+                {
+                    // Skip AspNetCoreDiagnosticObserver in Azure Functions host processes
+                    Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function host process.");
+                }
+                else if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
+                {
+                    // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                    Log.Debug("Skipping AspNetCoreDiagnosticObserver in in-process Azure Function.");
+                }
+                else
+                {
+                    var azureFunctionsExtensionVersion = EnvironmentHelpers.GetAzureFunctionsExtensionVersion();
+
+                    if (azureFunctionsExtensionVersion != "~4")
+                    {
+                        // Skip AspNetCoreDiagnosticObserver in v1 functions (v2 and v3 are not supported at all)
+                        Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function extension version {Version}.");
+                    }
+                    else
+                    {
+                        observers.Add(new AspNetCoreDiagnosticObserver());
+                    }
+                }
             }
             else
             {
-                // Enable AspNetCoreDiagnosticObserver in isolated worker process or other scenarios
                 observers.Add(new AspNetCoreDiagnosticObserver());
-                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
