@@ -10,7 +10,7 @@
 
 using namespace std::chrono_literals;
 
-LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
+std::atomic<LibrariesInfoCache*> LibrariesInfoCache::s_instance{nullptr};
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
@@ -31,20 +31,53 @@ const char* LibrariesInfoCache::GetName()
 bool LibrariesInfoCache::StartImpl()
 {
     _librariesInfo.reserve(100);
-    s_instance = this;
-    unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+
+    // CRITICAL ORDERING:
+    // 1. Start the worker thread to populate the cache
+    // 2. Wait for the first cache update to complete
+    // 3. Set s_instance ONLY after cache is populated
+    // 4. THEN register the custom function with libunwind
+    //
+    // This ensures s_instance is NEVER set with an empty cache, and when the
+    // custom function is registered and could be called from signal handlers,
+    // both s_instance is set AND the cache is fully populated.
+
     auto startEvent = std::make_shared<AutoResetEvent>(false);
     _worker = std::thread(&LibrariesInfoCache::Work, this, startEvent);
-    // We must wait for the thread to be fully started and the cache populated
-    // before reporting the service start status.
-    // 2s for CI
-    return startEvent->Wait(2s);
+
+    // Wait for the thread to be fully started and the cache populated
+    // before setting s_instance and registering with libunwind. 2s timeout for CI.
+    if (!startEvent->Wait(2s))
+    {
+        Log::Error("Failed to populate LibrariesInfoCache within timeout. "
+                   "Not registering custom iterate_phdr_function with libunwind.");
+        return false;
+    }
+
+    // Now that the cache is populated, set the instance pointer
+    s_instance.store(this, std::memory_order_release);
+
+    // Register the custom function with libunwind
+    // Note: unw_set_iterate_phdr_function will call tdep_init() if needed,
+    // which has once-initialization semantics, so this is thread-safe.
+    unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+
+    // CRITICAL: Force a memory barrier to ensure the write to iterate_phdr_function
+    // is visible to all CPU cores. libunwind's unw_set_iterate_phdr_function does
+    // a plain pointer write with no memory barriers, which can cause the signal
+    // handler on a different CPU core to see the old value (dl_iterate_phdr).
+    // This atomic fence with seq_cst ordering ensures all previous writes are visible.
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+
+    Log::Info("LibrariesInfoCache: Registered custom iterate_phdr_function with libunwind.");
+
+    return true;
 }
 
 bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
-    s_instance = nullptr;
+    s_instance.store(nullptr, std::memory_order_release);
 
     _stopRequested = true;
     NotifyCacheUpdateImpl();
@@ -142,11 +175,10 @@ void LibrariesInfoCache::UpdateCache()
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
 {
-    int rc = 0;
-    auto* instance = s_instance;
+    auto* instance = s_instance.load(std::memory_order_acquire);
     if (instance == nullptr)
     {
-        return rc;
+        return 0;
     }
 
     return instance->DlIteratePhdrImpl(callback, data);
@@ -171,7 +203,7 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
 
 void LibrariesInfoCache::NotifyCacheUpdate()
 {
-    auto* instance = s_instance;
+    auto* instance = s_instance.load(std::memory_order_acquire);
     if (instance == nullptr)
     {
         return;
