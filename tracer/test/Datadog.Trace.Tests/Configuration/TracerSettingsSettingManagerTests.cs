@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
@@ -19,13 +20,14 @@ public class TracerSettingsSettingManagerTests
     [Fact]
     public void UpdateSettings_HandlesDynamicConfigurationChanges()
     {
-        var tracerSettings = new TracerSettings();
+        var initialTelemetry = new ConfigurationTelemetry();
+        var tracerSettings = new TracerSettings(source: null, initialTelemetry);
         SettingChanges settingChanges = null;
         tracerSettings.Manager.SubscribeToChanges(changes => settingChanges = changes);
 
         // default is null, but it's recorded as "1.0" in  telemetry
         tracerSettings.Manager.InitialMutableSettings.GlobalSamplingRate.Should().Be(null);
-        var sampleRateConfig = GetLatestSampleRateTelemetry((ConfigurationTelemetry)tracerSettings.Telemetry);
+        var sampleRateConfig = GetLatestSampleRateTelemetry(initialTelemetry);
 
         sampleRateConfig.Should().NotBeNull();
         sampleRateConfig.Origin.Should().Be(ConfigurationOrigins.Default);
