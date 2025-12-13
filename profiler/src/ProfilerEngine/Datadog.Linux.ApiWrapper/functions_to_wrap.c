@@ -373,7 +373,7 @@ void initLibrary(void)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
 
-int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
+int dl_iterate_phdr_old(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
 {
     check_init();
 
@@ -394,7 +394,7 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
-void* dlopen(const char* file, int mode)
+void* dlopen_old(const char* file, int mode)
 {
     check_init();
 
@@ -402,7 +402,7 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
-    __dd_notify_libraries_cache_update();
+    //__dd_notify_libraries_cache_update();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 
@@ -412,13 +412,13 @@ void* dlopen(const char* file, int mode)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dlclose)(void* handle) = NULL;
 
-int dlclose(void* handle)
+int dlclose_old(void* handle)
 {
     check_init();
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
-    __dd_notify_libraries_cache_update();
+    //__dd_notify_libraries_cache_update();
 
     return result;
 }

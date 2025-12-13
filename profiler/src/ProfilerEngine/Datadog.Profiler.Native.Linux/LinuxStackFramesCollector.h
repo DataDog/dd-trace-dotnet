@@ -93,7 +93,9 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+
     std::shared_ptr<CounterMetric> _samplingRequest;
 
     std::shared_ptr<DiscardMetrics> _discardMetrics;
+    std::exception* _ex;
 };

@@ -17,6 +17,10 @@
 #include "util.h"
 #include <map>
 
+#ifdef LINUX
+#include "symbols_overrides.h"
+#endif
+
 #ifndef _WIN32
 #undef EXTERN_C
 #define EXTERN_C extern "C" __attribute__((visibility("default")))
@@ -39,6 +43,9 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
     {
     case DLL_PROCESS_ATTACH:
     {
+        #ifdef LINUX
+        setup_overrides();
+        #endif
         // Initialize once for each new process.
         // Return FALSE to fail DLL load.
 

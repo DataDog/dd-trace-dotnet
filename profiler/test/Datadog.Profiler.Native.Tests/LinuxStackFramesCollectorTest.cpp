@@ -43,6 +43,11 @@ extern "C" unsigned long long dd_inside_wrapped_functions()
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() = nullptr;
 
+extern "C" unsigned long long dd_inside_wrapped_functions2()
+{
+    return inside_wrapped_functions;
+}
+
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
     {                                                                             \
         std::promise<bool> completed;                                             \

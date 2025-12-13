@@ -38,8 +38,10 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _ex{nullptr}
 {
+    // test
     if (_signalManager != nullptr)
     {
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
@@ -102,6 +104,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
     auto timerId = pThreadInfo->GetTimerId();
 
+    _ex = nullptr;
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
@@ -154,7 +157,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
             if (status == std::cv_status::timeout)
             {
-                _lastStackWalkErrorCode = E_ABORT;
+                _lastStackWalkErrorCode = 0x80004006L;
                 
                 if (!_signalManager->CheckSignalHandler())
                 {
@@ -169,6 +172,11 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         }
     }
 
+    if (_ex != nullptr)
+    {
+        Log::Warn("---- ", _ex->what());
+        delete _ex;
+    }
     // errorCode domain values
     // * < 0 : libunwind error codes
     // * > 0 : other errors (ex: failed to create frame while walking the stack)
@@ -193,13 +201,19 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
 // This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
 // contains a frame of a function that might cause a deadlock.
 extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
+extern "C" unsigned long long dd_inside_wrapped_functions2() __attribute__((weak));
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
+    if (dd_inside_wrapped_functions == nullptr || dd_inside_wrapped_functions2 == nullptr)
+    {
+        return 0x80004007L;
+    }
+    
+    if (dd_inside_wrapped_functions() != 0 || dd_inside_wrapped_functions2() != 0)
     {
         _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
-        return E_ABORT;
+        return 0x80004008L;
     }
 
     try
@@ -209,9 +223,10 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 
         return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
-    catch (...)
+    catch (std::exception* ex)
     {
-        return E_ABORT;
+        _ex = ex;
+        return 0x80004009L;
     }
 }
 
@@ -285,7 +300,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     if (count == 0)
     {
         _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
-        return E_FAIL;
+        return 0x80004010L;
     }
 
     SetFrameCount(count);
