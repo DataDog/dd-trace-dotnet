@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.3.4 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.3.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.3.6 -->
+    <PackageReference Include="AWSSDK.Core" Version="4.0.3.6" />
   </ItemGroup>
 
 </Project>
