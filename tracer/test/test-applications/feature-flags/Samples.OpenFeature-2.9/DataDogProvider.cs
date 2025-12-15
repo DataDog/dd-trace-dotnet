@@ -56,7 +56,12 @@ namespace Samples.OpenFeature_2._9
 
         public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return Task.Run(() =>
+            {
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, typeof(Value), defaultValue, GetContext(context));
+                return GetResolutionDetails<Value>(res);
+            },
+            cancellationToken);
         }
 
         private static Datadog.Trace.FeatureFlags.IEvaluationContext? GetContext(EvaluationContext? context)
@@ -79,10 +84,9 @@ namespace Samples.OpenFeature_2._9
         private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
         {
             if (evaluation == null) { return default!; }
-            var value = evaluation.Value ?? default(T);
             var res = new ResolutionDetails<T>(
                 evaluation.FlagKey, 
-                (T)value!,
+                (T)(evaluation.Value ?? default(T)!),
                 ToErrorType(evaluation.Reason), 
                 evaluation.Reason.ToString(), 
                 evaluation.Variant, 
@@ -94,12 +98,12 @@ namespace Samples.OpenFeature_2._9
 
         private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason)
         {
-            return ErrorType.None;
+            return ErrorType.None; // TODO: Map error types properly
         }
 
         private static ImmutableMetadata ToMetadata(IDictionary<string, string> metadata)
         {
-            return default!;
+            return default!; // TODO: Map metadata properly
         }
     }
 }
