@@ -42,6 +42,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public TestOptimization()
     {
+        using var cd = CodeDurationRef.Create();
         _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
         _enablement = InternalEnabled(Log);
@@ -101,15 +102,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public ITestOptimizationHostInfo HostInfo
     {
-        get
-        {
-            if (_hostInfo is null)
-            {
-                _additionalFeaturesTask?.SafeWait();
-            }
-
-            return _hostInfo ??= new TestOptimizationHostInfo();
-        }
+        get => _hostInfo ??= new TestOptimizationHostInfo();
         private set => _hostInfo = value;
     }
 
@@ -229,6 +222,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void Initialize()
     {
+        using var cd = CodeDurationRef.Create();
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {
             // Initialize() or InitializeFromRunner() or InitializeFromManualInstrumentation() was already called before
@@ -316,6 +310,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null)
     {
+        using var cd = CodeDurationRef.Create();
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {
             // Initialize() or InitializeFromRunner() was already called before
@@ -365,6 +360,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void Flush()
     {
+        using var cd = CodeDurationRef.Create();
         TaskExtensions.SafeWait(funcTask: FlushAsync, millisecondsTimeout: 30_000);
     }
 
@@ -407,6 +403,7 @@ internal sealed class TestOptimization : ITestOptimization
     /// </summary>
     public void Close()
     {
+        using var cd = CodeDurationRef.Create();
         if (!IsRunning)
         {
             return;
@@ -452,6 +449,8 @@ internal sealed class TestOptimization : ITestOptimization
 
     private async Task ShutdownAsync(Exception? exception)
     {
+        using var cd = CodeDuration.Create();
+
         // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
         // But marking them as failed.
 
@@ -501,6 +500,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     private async Task InitializeAdditionalFeaturesAsync()
     {
+        using var cd = CodeDuration.Create();
         try
         {
             Log.Information("TestOptimization: Initializing additional features.");
@@ -549,10 +549,10 @@ internal sealed class TestOptimization : ITestOptimization
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
-                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
@@ -586,6 +586,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     private async Task TryUploadRepositoryChangesAsync()
     {
+        using var cd = CodeDuration.Create();
         try
         {
             await Client.UploadRepositoryChangesAsync().ConfigureAwait(false);
@@ -598,11 +599,12 @@ internal sealed class TestOptimization : ITestOptimization
 
     private void InitializeDefaultFeatures(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement, ITestOptimizationClient client, CIEnvironmentValues environmentValues)
     {
+        using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
-        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);

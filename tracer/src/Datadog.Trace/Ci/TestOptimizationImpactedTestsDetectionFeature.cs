@@ -28,17 +28,8 @@ internal sealed class TestOptimizationImpactedTestsDetectionFeature : ITestOptim
             settings.SetImpactedTestsEnabled(clientSettingsResponse.ImpactedTestsEnabled.Value);
         }
 
-        if (settings.ImpactedTestsDetectionEnabled == true)
-        {
-            Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is enabled.");
-            Enabled = true;
-        }
-        else
-        {
-            Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
-            _impactedTestsModule = ImpactedTestsModule.CreateNoOp();
-            Enabled = false;
-        }
+        Enabled = settings.ImpactedTestsDetectionEnabled == true;
+        Log.Information("{V}", Enabled ? "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is enabled." : "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
     }
 
     public bool Enabled { get; }
@@ -52,7 +43,12 @@ internal sealed class TestOptimizationImpactedTestsDetectionFeature : ITestOptim
                 return _impactedTestsModule;
             }
 
-            return _impactedTestsModule = ImpactedTestsModule.CreateInstance(_environmentValues, _defaultBranch);
+            if (Enabled)
+            {
+                return _impactedTestsModule = ImpactedTestsModule.CreateInstance(_environmentValues, _defaultBranch);
+            }
+
+            return _impactedTestsModule = ImpactedTestsModule.CreateNoOp();
         }
     }
 

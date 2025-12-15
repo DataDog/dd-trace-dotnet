@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci;
 internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
-    private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
+    private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
@@ -36,7 +36,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         else
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is disabled.");
-            _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
+            _skippableTestsTask = null;
             Enabled = false;
         }
 
@@ -85,7 +85,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         try
         {
-            _skippableTestsTask.SafeWait();
+            _skippableTestsTask?.SafeWait();
         }
         catch (Exception ex)
         {
@@ -101,6 +101,11 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
     private IList<SkippableTest> InternalGetSkippableTestsFromSuiteAndName(string suite, string name)
     {
+        if (_skippableTestsTask is null)
+        {
+            return [];
+        }
+
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
             testsInSuite.TryGetValue(name, out var tests))
@@ -113,12 +118,22 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
     public bool HasSkippableTests()
     {
+        if (_skippableTestsTask is null)
+        {
+            return false;
+        }
+
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         return skippableTestsBySuiteAndName.Count > 0;
     }
 
     public string? GetCorrelationId()
     {
+        if (_skippableTestsTask is null)
+        {
+            return null;
+        }
+
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         return skippableTestsBySuiteAndName.CorrelationId;
     }
