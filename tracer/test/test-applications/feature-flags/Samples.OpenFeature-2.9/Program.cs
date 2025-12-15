@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using OpenFeature.Model;
 using Samples.OpenFeature_2._9;
 
@@ -43,7 +42,7 @@ class Program
                 return;
             }
             Console.WriteLine($"Waiting for RC...");
-            Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(1000);
         }
 
         Evaluate("exposure-flag");
