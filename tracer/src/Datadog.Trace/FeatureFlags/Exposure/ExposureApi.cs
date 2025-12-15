@@ -38,15 +38,15 @@ namespace Datadog.Trace.Exposure
         private ExposureApi(IApiRequestFactory apiRequestFactory, TracerSettings tracerSettings)
         {
             _apiRequestFactory = apiRequestFactory;
-            _context["service"] = tracerSettings.ServiceName ?? "unknown";
-            _context["env"] = tracerSettings.Environment ?? "unknown";
-            _context["version"] = tracerSettings.ServiceVersion ?? "unknown";
+            _context["service"] = tracerSettings.Manager.InitialMutableSettings.ServiceName ?? "unknown";
+            _context["env"] = tracerSettings.Manager.InitialMutableSettings.Environment ?? "unknown";
+            _context["version"] = tracerSettings.Manager.InitialMutableSettings.ServiceVersion ?? "unknown";
         }
 
         public static ExposureApi Create(TracerSettings tracerSettings)
         {
             var apiRequestFactory = AgentTransportStrategy.Get(
-                tracerSettings.Exporter,
+                tracerSettings.Manager.InitialExporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 AgentHttpHeaderNames.MinimalHeaders,
