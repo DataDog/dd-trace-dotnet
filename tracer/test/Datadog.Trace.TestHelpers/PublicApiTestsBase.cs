@@ -77,8 +77,14 @@ namespace Datadog.Trace.Tests
                 // Exclusions
                 // Datadog.Trace: This dependency is fine and the version will change over time
                 // netstandard: This dependency is fine and there's a discrepancy between local builds and CI builds containing/not containing a reference to it
+                // System.Runtime.CompilerServices.Unsafe: This dependency is vendored internally and the assembly version can vary across platforms due to transitive dependencies. Observed under NETCORE 3.
                 if (!referencedAssembly.Name.StartsWith("Datadog.Trace")
+#if NETCOREAPP3_0
+                    && !referencedAssembly.Name.Equals("netstandard")
+                    && !referencedAssembly.Name.Equals("System.Runtime.CompilerServices.Unsafe"))
+#else
                     && !referencedAssembly.Name.Equals("netstandard"))
+#endif
                 {
                     sb.AppendLine(referencedAssembly.FullName);
                 }
