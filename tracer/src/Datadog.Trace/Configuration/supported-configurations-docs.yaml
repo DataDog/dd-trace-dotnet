@@ -882,6 +882,10 @@ DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED: |
     <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
   </ul>
 
+DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED: |
+  Enables Feature Flags Provider (Experimental).
+
+
 DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED: |
   Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
   Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
