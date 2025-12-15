@@ -38,7 +38,7 @@ class Program
                 return;
             }
             Console.WriteLine($"Waiting for RC...");
-            Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(1000);
         }
 
         Evaluate("exposure-flag");
