@@ -59,6 +59,12 @@ internal readonly struct DataStreamsTransactionInfo
         return trimmed;
     }
 
+    // ClearCache is for using in tests only
+    internal static void ClearCache()
+    {
+        Cache.Clear();
+    }
+
     internal byte[] GetBytes()
     {
         var idBytes = Encoding.UTF8.GetBytes(_id);

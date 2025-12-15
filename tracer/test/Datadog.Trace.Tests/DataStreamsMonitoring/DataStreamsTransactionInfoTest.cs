@@ -22,6 +22,7 @@ public class DataStreamsTransactionInfoTest
     [Fact]
     public void TransactionInfoCacheSerializesCorrectly()
     {
+        DataStreamsTransactionInfo.ClearCache();
         _ = new DataStreamsTransactionInfo("1", 1, "1");
         var cacheBytes = DataStreamsTransactionInfo.GetCacheBytes();
         cacheBytes.Should().BeEquivalentTo(new byte[] { 1, 1, 49 });

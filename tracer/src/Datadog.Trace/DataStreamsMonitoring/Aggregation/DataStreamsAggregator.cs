@@ -82,7 +82,7 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
     {
         var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
         var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
-        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
+        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0 || _dataStreamsTransactionContainer.Size() > 0)
         {
             _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd, _dataStreamsTransactionContainer);
             Clear(statsToAdd, backlogsToAdd);
