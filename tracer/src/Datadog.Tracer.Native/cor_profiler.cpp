@@ -4308,6 +4308,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // profiler may have enabled COR_PRF_MONITOR_CACHE_SEARCHES but not the tracer.
+    if (!IsNGENEnabled())
+    {
+        return S_OK;
+    }
+
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
     if (pbUseCachedFunction == nullptr || !*pbUseCachedFunction)
     {
