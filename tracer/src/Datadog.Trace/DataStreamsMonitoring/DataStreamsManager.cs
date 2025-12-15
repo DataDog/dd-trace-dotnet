@@ -5,7 +5,9 @@
 
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -30,11 +32,11 @@ internal sealed class DataStreamsManager
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
+    private readonly DataStreamsExtractorRegistry _registry;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private bool _isEnabled;
     private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
-    private DataStreamsExtractorRegistry? _registry;
 
     public DataStreamsManager(
         TracerSettings tracerSettings,
@@ -120,6 +122,11 @@ internal sealed class DataStreamsManager
     public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
         => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+
+    public List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)
+    {
+        return _registry.GetExtractorsByType(extractorType);
+    }
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
