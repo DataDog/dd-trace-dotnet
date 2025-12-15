@@ -314,12 +314,13 @@ private:
     void GetFullFrameworkVersion(ModuleID moduleId);
 #endif
 
-void DisposeInternal();
+    void DisposeInternal();
     void InitializeServices();
     bool DisposeServices();
     bool StartServices();
     bool StopServices();
     void StartEtwCommunication();
+    void UpdateCodeCache(FunctionID functionId);
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)
