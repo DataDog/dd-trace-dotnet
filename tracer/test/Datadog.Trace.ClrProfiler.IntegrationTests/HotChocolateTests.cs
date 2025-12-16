@@ -108,10 +108,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
             settings.AddRegexScrubber(_stacktraceRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00""");
 
-            // Additional scrubber for ThrowExceptionIndex to handle full path and extended stacktrace
-            var stacktraceIndexRegex = new Regex(@"""stacktrace"":""   at Samples\.HotChocolate\.Query\.ThrowExceptionIndex\(\) in [^""\\]*\\Query\.cs:line \d+([^""]*)?""");
-            settings.AddRegexScrubber(stacktraceIndexRegex, @"""stacktrace"":""   at Samples.HotChocolate.Query.ThrowExceptionIndex() in Query.cs:line 00""");
-
             var versionSuffix = GetSuffix(packageVersion);
 
             await VerifyHelper.VerifySpans(spans, settings)
