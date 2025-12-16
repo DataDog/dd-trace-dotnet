@@ -62,6 +62,7 @@ class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
 class CpuSampleProvider;
+class ManagedCodeCache;
 class NetworkProvider;
 class IUnwinder;
 
@@ -299,6 +300,8 @@ private :
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
 
+    std::unique_ptr<ManagedCodeCache> _managedCodeCache = nullptr;
+
 private:
     static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor);
@@ -318,7 +321,6 @@ private:
     bool StartServices();
     bool StopServices();
     void StartEtwCommunication();
-    void UpdateCodeCache(FunctionID functionId);
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)
