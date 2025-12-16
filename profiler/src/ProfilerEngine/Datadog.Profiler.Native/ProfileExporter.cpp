@@ -922,21 +922,33 @@ bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
         return false;
     }
 
-    // list the overriden env vars
+    int expectedSectionCount = 2;
+    int currentSection = 0;
     for (auto const& [section, kvp] : metadata)
     {
+        currentSection++;
+
         if (section == MetadataProvider::SectionEnvVars)
         {
             ElementStart(builder, "System Properties");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
-            builder << ", ";
         }
         else if (section == MetadataProvider::SectionOverrides)
         {
             ElementStart(builder, "System Overrides");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
+        }
+        else
+        {
+            // skip Runtime Settings and others
+            continue;
+        }
+
+        if (currentSection < expectedSectionCount)
+        {
+            builder << ", ";
         }
     }
 
