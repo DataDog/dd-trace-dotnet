@@ -98,12 +98,12 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     public static ITestOptimizationClient Create(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new TestOptimizationClient(workingDirectory, testOptimization);
+        return new FileTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization), testOptimization);
     }
 
     public static ITestOptimizationClient CreateCached(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization));
+        return new CachedTestOptimizationClient(new FileTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization), testOptimization));
     }
 
     internal static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)

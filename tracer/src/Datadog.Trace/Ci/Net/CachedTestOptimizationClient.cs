@@ -12,13 +12,14 @@ namespace Datadog.Trace.Ci.Net;
 internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
 {
     private readonly ITestOptimizationClient _client;
-    private readonly Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithoutFrameworkInfo;
-    private readonly Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithFrameworkInfo;
     private readonly Lazy<Task<TestOptimizationClient.KnownTestsResponse>> _knownTests;
     private readonly Lazy<Task<TestOptimizationClient.SearchCommitResponse>> _commits;
     private readonly Lazy<Task<TestOptimizationClient.SkippableTestsResponse>> _skippableTests;
     private readonly Lazy<Task<TestOptimizationClient.TestManagementResponse>> _testManagementTests;
     private readonly Lazy<Task<long>> _uploadRepositoryChanges;
+
+    private Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithoutFrameworkInfo;
+    private Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithFrameworkInfo;
 
     public CachedTestOptimizationClient(ITestOptimizationClient client)
     {
@@ -36,10 +37,24 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     {
         if (skipFrameworkInfo)
         {
-            return await _settingsWithoutFrameworkInfo.Value.ConfigureAwait(false);
+            var response1 = await _settingsWithoutFrameworkInfo.Value.ConfigureAwait(false);
+            if (response1.RequireGit == true)
+            {
+                // if we require git we need to avoid catching the value because another settings request need to be executed.
+                _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(true));
+            }
+
+            return response1;
         }
 
-        return await _settingsWithFrameworkInfo.Value.ConfigureAwait(false);
+        var response2 = await _settingsWithFrameworkInfo.Value.ConfigureAwait(false);
+        if (response2.RequireGit == true)
+        {
+            // if we require git we need to avoid catching the value because another settings request need to be executed.
+            _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
+        }
+
+        return response2;
     }
 
     public async Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()

@@ -39,6 +39,7 @@ internal sealed class TestOptimization : ITestOptimization
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
     private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
+    private string? _runId;
 
     public TestOptimization()
     {
@@ -71,6 +72,11 @@ internal sealed class TestOptimization : ITestOptimization
             // If the value is not 0, maybe the value hasn't been updated yet, so we use the Interlocked operation to ensure the value is correct.
             return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
         }
+    }
+
+    public string RunId
+    {
+        get => _runId ??= EnsureRunId();
     }
 
     public bool Enabled => _enablement.IsEnabled;
@@ -234,7 +240,8 @@ internal sealed class TestOptimization : ITestOptimization
             PropagateCiVisibilityEnvironmentVariable();
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility");
+        Log.Information("TestOptimization: Initializing CI Visibility with RunId: {RunId}", RunId);
+
         var settings = Settings;
 
         // In case we are running using the agent, check if the event platform proxy is supported.
@@ -317,7 +324,8 @@ internal sealed class TestOptimization : ITestOptimization
             return;
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner");
+        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner with RunId: {RunId}", RunId);
+
         Settings = settings;
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
@@ -446,6 +454,18 @@ internal sealed class TestOptimization : ITestOptimization
 
     private static TestOptimizationDetection.Enablement InternalEnabled(IDatadogLogger log)
         => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log);
+
+    private string EnsureRunId()
+    {
+        const string testOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
+        if (EnvironmentHelpers.GetEnvironmentVariable(testOptimizationRunId) is not { } runId)
+        {
+            runId = Guid.NewGuid().ToString("n");
+            EnvironmentHelpers.SetEnvironmentVariable(testOptimizationRunId, runId);
+        }
+
+        return runId;
+    }
 
     private async Task ShutdownAsync(Exception? exception)
     {
