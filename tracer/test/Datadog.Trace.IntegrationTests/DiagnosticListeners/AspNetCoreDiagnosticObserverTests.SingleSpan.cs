@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreSingleSpanDiagnosticObserverTests.cs" company="Datadog">
+// <copyright file="AspNetCoreDiagnosticObserverTests.SingleSpan.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -35,7 +35,11 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
-    public class AspNetCoreSingleSpanDiagnosticObserverTests
+    /// <summary>
+    /// This is the single-span observer tests. Moving to a separate class causes issues because the observer uses global state,
+    /// so for simplicity,
+    /// </summary>
+    public partial class AspNetCoreDiagnosticObserverTests
     {
         /// <summary>
         /// Gets data for Razor Pages tests with single-span feature enabled
@@ -63,9 +67,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(RazorPagesSingleSpan))]
-        public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForRazorPages_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
@@ -75,9 +79,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(RazorPagesSingleSpanWithExpandRouteTemplates))]
-        public async Task DiagnosticObserver_ForRazorPages_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForRazorPages_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
@@ -88,9 +92,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpan))]
-        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
                 path,
                 statusCode,
                 isError,
@@ -100,9 +104,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpanWithExpandRouteTemplates))]
-        public async Task DiagnosticObserver_ForEndpointRouting_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForEndpointRouting_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
                 path,
                 statusCode,
                 isError,
@@ -113,33 +117,33 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpan))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags);
+            await AssertSingleSpanDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags);
         }
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpan))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithImplicitRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForWebApplicationBuilder_WithImplicitRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags);
+            await AssertSingleSpanDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags);
         }
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpanWithExpandRouteTemplates))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, expandRouteParameters: true);
+            await AssertSingleSpanDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, expandRouteParameters: true);
         }
 
         [SkippableTheory]
         [MemberData(nameof(EndpointRoutingSingleSpanWithExpandRouteTemplates))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_WithImplicitRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task SingleSpanDiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_WithImplicitRouting_SubmitsSpans(string path, int statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, expandRouteParameters: true);
+            await AssertSingleSpanDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, expandRouteParameters: true);
         }
 
-        private static async Task AssertDiagnosticObserverForWebApplicationBuilder(
+        private static async Task AssertSingleSpanDiagnosticObserverForWebApplicationBuilder(
             bool useImplicitRouting,
             string path,
             int statusCode,
@@ -175,7 +179,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var testServer = (TestServer)app.Services.GetService(typeof(IServer));
             var client = testServer.CreateClient();
 
-            await AssertDiagnosticObserverSubmitsSpans(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans(
                 client,
                 path,
                 statusCode,
@@ -186,7 +190,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 expandRouteParameters);
         }
 
-        private static async Task AssertDiagnosticObserverSubmitsSpans<T>(
+        private static async Task AssertSingleSpanDiagnosticObserverSubmitsSpans<T>(
             string path,
             int statusCode,
             bool isError,
@@ -206,7 +210,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #pragma warning restore ASPDEPR008 // Type or member is obsolete
             var client = testServer.CreateClient();
 
-            await AssertDiagnosticObserverSubmitsSpans(
+            await AssertSingleSpanDiagnosticObserverSubmitsSpans(
                 client,
                 path,
                 statusCode,
@@ -217,7 +221,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 expandRouteParameters);
         }
 
-        private static async Task AssertDiagnosticObserverSubmitsSpans(
+        private static async Task AssertSingleSpanDiagnosticObserverSubmitsSpans(
             HttpClient client,
             string path,
             int statusCode,
@@ -289,44 +293,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                     AssertTagHasValue(parentSpan, expectedTag.Key, expectedTag.Value);
                 }
             }
-        }
-
-        private static void AssertTagHasValue(Span span, string tagName, string expected)
-        {
-            span.GetTag(tagName).Should().Be(expected, $"'{tagName}' should have correct value");
-        }
-
-        private static ScopedTracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
-        {
-            var settings = new TracerSettings(configSource);
-            var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
-            var samplerMock = new Mock<ITraceSampler>();
-
-            return new ScopedTracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
-        }
-
-        private static SpanCodeOrigin GetSpanCodeOrigin()
-        {
-            var settings = new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
-            });
-
-            var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
-            return co;
-        }
-
-        private class AgentWriterStub : IAgentWriter
-        {
-            public List<SpanCollection> Traces { get; } = new();
-
-            public Task FlushAndCloseAsync() => Task.CompletedTask;
-
-            public Task FlushTracesAsync() => Task.CompletedTask;
-
-            public Task<bool> Ping() => Task.FromResult(true);
-
-            public void WriteTrace(in SpanCollection trace) => Traces.Add(trace);
         }
     }
 }
