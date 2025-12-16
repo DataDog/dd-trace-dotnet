@@ -135,5 +135,7 @@ run-benchmarks:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+    - ./platform/steps/fetch-results.sh
+    - ./platform/steps/analyze-results.sh
     - ./platform/steps/post-pr-comment.sh
     - ./platform/steps/upload-to-bp-ui.sh
