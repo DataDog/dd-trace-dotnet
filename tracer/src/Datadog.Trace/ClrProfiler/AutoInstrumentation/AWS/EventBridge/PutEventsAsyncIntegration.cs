@@ -63,11 +63,8 @@ public sealed class PutEventsAsyncIntegration
             }
         }
 
-        if (scope?.Span.Context is { } context)
-        {
-            var propagationContext = new PropagationContext(context, Baggage.Current);
-            ContextPropagation.InjectContext(tracer, request, propagationContext);
-        }
+        var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
+        ContextPropagation.InjectContext(tracer, request, context);
 
         return new CallTargetState(scope);
     }

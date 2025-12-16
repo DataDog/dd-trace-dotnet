@@ -48,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             Dictionary<string, object>? jsonData = null;
+            var context = new PropagationContext(scope.Span.Context, Baggage.Current);
             if (record.Data is not null)
             {
                 jsonData = ParseDataObject(record.Data);
@@ -86,26 +87,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            if (scope.Span.Context is { } context)
+            try
             {
-                try
-                {
-                    var propagationContext = new PropagationContext(context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, propagatedContext, default(DictionaryGetterAndSetter));
-                    jsonData[KinesisKey] = propagatedContext;
+                tracer.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+                jsonData[KinesisKey] = propagatedContext;
 
-                    var memoryStreamData = DictionaryToMemoryStream(jsonData);
-                    if (memoryStreamData.Length > MaxKinesisDataSize)
-                    {
-                        return;
-                    }
-
-                    record.Data = memoryStreamData;
-                }
-                catch (Exception)
+                var memoryStreamData = DictionaryToMemoryStream(jsonData);
+                if (memoryStreamData.Length > MaxKinesisDataSize)
                 {
-                    Log.Debug("Unable to inject trace context to Kinesis data.");
+                    return;
                 }
+
+                record.Data = memoryStreamData;
+            }
+            catch (Exception)
+            {
+                Log.Debug("Unable to inject trace context to Kinesis data.");
             }
         }
 
