@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("GraphQL,", StringComparison.Ordinal)
             || assemblyName.StartsWith("GraphQL.SystemReactive,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Grpc.Core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Hangfire.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
             || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver,", StringComparison.Ordinal)
@@ -369,6 +370,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionCtorIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Hangfire,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"

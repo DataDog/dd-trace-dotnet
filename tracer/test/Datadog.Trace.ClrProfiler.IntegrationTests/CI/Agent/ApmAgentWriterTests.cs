@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.TestHelpers.Stats;
 using Moq;
 using Xunit;
 
@@ -27,13 +28,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _settings = Ci.Configuration.TestOptimizationSettings.FromDefaultSources().TracerSettings;
 
             _api = new Mock<IApi>();
-            _ciAgentWriter = new ApmAgentWriter(_api.Object);
+            _ciAgentWriter = new ApmAgentWriter(_api.Object, TestStatsdManager.NoOp);
         }
 
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            var spans1 = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
+            var spans1 = new SpanCollection(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
             var traceChunk1 = new TraceChunkModel(spans1);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
 
@@ -43,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
             _api.Invocations.Clear();
 
-            var spans2 = new ArraySegment<Span>(new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) });
+            var spans2 = new SpanCollection(new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow));
             var traceChunk2 = new TraceChunkModel(spans2);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk2, SpanFormatterResolver.Instance);
 
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new ApmAgentWriter(_api.Object);
+            var w = new ApmAgentWriter(_api.Object, TestStatsdManager.NoOp);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }

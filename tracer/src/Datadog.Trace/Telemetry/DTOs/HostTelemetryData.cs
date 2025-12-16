@@ -6,7 +6,7 @@
 #nullable enable
 namespace Datadog.Trace.Telemetry;
 
-internal class HostTelemetryData
+internal sealed class HostTelemetryData
 {
     public HostTelemetryData(string hostname, string os, string architecture)
     {

@@ -369,6 +369,10 @@
       "const_name": "UseUnsafeEncoder"
     },
     {
+      "env_var": "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED",
+      "const_name": "PropagateProcessTags"
+    },
+    {
       "env_var": "DD_GIT_COMMIT_SHA",
       "const_name": "GitCommitSha"
     },

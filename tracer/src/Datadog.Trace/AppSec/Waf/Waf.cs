@@ -1,4 +1,4 @@
-// <copyright file="Waf.cs" company="Datadog">
+﻿// <copyright file="Waf.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Waf : IWaf
+    internal sealed class Waf : IWaf
     {
         private const string InitContextError = "WAF ddwaf_init_context failed.";
 

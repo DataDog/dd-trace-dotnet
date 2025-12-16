@@ -15,7 +15,11 @@ namespace Datadog.Trace.Tagging
     partial class WcfTags
     {
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

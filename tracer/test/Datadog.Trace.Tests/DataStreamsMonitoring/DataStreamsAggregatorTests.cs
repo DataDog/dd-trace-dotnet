@@ -130,7 +130,7 @@ public class DataStreamsAggregatorTests
     private static DataStreamsAggregator CreateAggregatorWithData(Tracer tracer, long t1, long t2)
     {
         var aggregator = new DataStreamsAggregator(
-            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled),  "service"),
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
             BucketDurationMs);
 
         aggregator.Add(

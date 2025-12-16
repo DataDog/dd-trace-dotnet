@@ -7,7 +7,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class RuleMatch
+    internal sealed class RuleMatch
     {
         /// <summary>
         /// Gets or sets the rule operator that triggered this event. For example, ``match_regex`` or

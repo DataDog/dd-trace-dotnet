@@ -1,4 +1,4 @@
-// <copyright file="DirectoryEntryAspect.cs" company="Datadog">
+﻿// <copyright file="DirectoryEntryAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 [AspectClass("System.DirectoryServices", [AspectFilter.StringOptimization])]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public partial class DirectoryEntryAspect
+public static partial class DirectoryEntryAspect
 {
     /// <summary>
     /// DirectoryEntry instrumentated method

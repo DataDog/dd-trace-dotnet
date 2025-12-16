@@ -34,10 +34,8 @@ src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
-src/Datadog.Trace/Agent/AgentWriter.cs
 src/Datadog.Trace/Agent/Api.cs
 src/Datadog.Trace/Agent/ClientStatsPayload.cs
-src/Datadog.Trace/Agent/IAgentWriter.cs
 src/Datadog.Trace/Agent/IApi.cs
 src/Datadog.Trace/Agent/IApiRequest.cs
 src/Datadog.Trace/Agent/IApiRequestFactory.cs
@@ -79,14 +77,6 @@ src/Datadog.Trace/ClrProfiler/ManualTracer.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs
 src/Datadog.Trace/ClrProfiler/NativeMethods.cs
 src/Datadog.Trace/ClrProfiler/ScopeFactory.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.AppSec.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.AzureAppService.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.DirectLogSubmission.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Exporter.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Iast.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Logging.cs
-src/Datadog.Trace/Configuration/ConfigurationKeys.Rcm.cs
 src/Datadog.Trace/Configuration/DbmPropagationLevel.cs
 src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
@@ -613,7 +603,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/ILoggerFactory.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerExternalScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerFactoryScopeProviderForEachScopeIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerIntegrationCommon.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventDuckBase.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventLegacyDuck.cs

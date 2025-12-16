@@ -65,18 +65,6 @@ namespace Benchmarks.Trace
             config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed);
 
-            var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
-            if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
-            {
-                var attributeName = $"{benchmarkAgent}Attribute";
-                Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}'");
-                config = config.AddFilter(new AttributesFilter(new[] { attributeName }));
-            }
-            else
-            {
-                Console.WriteLine($"Unknown agent name {agentName}; executing all benchmarks");
-            }
-
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
             return Environment.ExitCode;

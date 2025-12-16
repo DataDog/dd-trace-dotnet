@@ -1,4 +1,4 @@
-// <copyright file="AzureServiceBusActivityHandler.cs" company="Datadog">
+﻿// <copyright file="AzureServiceBusActivityHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.Activity.Handlers
     /// This Activity handler captures the "Message" Activity objects, whose span context
     /// is injected into the AzureServiceBus message's properties.
     /// </summary>
-    internal class AzureServiceBusActivityHandler : IActivityHandler
+    internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
         public bool ShouldListenTo(string sourceName, string? version)
             => sourceName.StartsWith("Azure.Messaging.ServiceBus");

@@ -1,4 +1,4 @@
-// <copyright file="OtlpExporter.cs" company="Datadog">
+﻿// <copyright file="OtlpExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,7 +26,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     /// This is the concrete implementation of the MetricExporter base class that handles OTLP protocol specifics.
     /// This is a Push Metric Exporter that sends metrics via the OpenTelemetry Protocol.
     /// </summary>
-    internal class OtlpExporter : MetricExporter
+    internal sealed class OtlpExporter : MetricExporter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
         private readonly HttpClient _httpClient;

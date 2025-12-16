@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry.DTOs;
 
-internal class LogsPayload : IPayload
+internal sealed class LogsPayload : IPayload
 {
     public LogsPayload(List<LogMessageData> logs)
     {

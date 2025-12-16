@@ -76,7 +76,7 @@ public class TelemetryHelperTests
             { ConfigurationKeys.DisabledIntegrations, $"{nameof(IntegrationId.Kafka)};{nameof(IntegrationId.Msmq)}" }
         });
 
-        collector.RecordTracerSettings(tracerSettings);
+        collector.RecordTracerSettings(tracerSettings.Manager.InitialMutableSettings);
         metricsCollector.AggregateMetrics();
         telemetryData.Add(BuildTelemetryData(collector.GetData(), metrics: metricsCollector.GetMetrics(), sendAppClosing: true));
 

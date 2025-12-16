@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class RunExtensionsRunIntegration
+public sealed class RunExtensionsRunIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TApp, THandler>(ref TApp? app, ref THandler? handler)
     {

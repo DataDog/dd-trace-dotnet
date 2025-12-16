@@ -1,4 +1,4 @@
-// <copyright file="ProductConfigChangedEventArgs.cs" company="Datadog">
+﻿// <copyright file="ProductConfigChangedEventArgs.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal class ProductConfigChangedEventArgs : EventArgs
+    internal sealed class ProductConfigChangedEventArgs : EventArgs
     {
         private readonly Dictionary<string, ApplyDetails> _applyStates = new();
 

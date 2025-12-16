@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -56,16 +58,15 @@ namespace Datadog.Trace.Tests
         [InlineData(false)]
         public void FlushPartialTraces(bool partialFlush)
         {
-            var tracer = new Mock<IDatadogTracer>();
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.PartialFlushEnabled, partialFlush },
+                    { ConfigurationKeys.PartialFlushMinSpans, 5 },
+                });
+            var tracer = new StubDatadogTracer(settings);
 
-            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.PartialFlushEnabled, partialFlush },
-                { ConfigurationKeys.PartialFlushMinSpans, 5 },
-            }));
-            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
-
-            var traceContext = new TraceContext(tracer.Object);
+            var traceContext = new TraceContext(tracer);
 
             void AddAndCloseSpan()
             {
@@ -85,18 +86,19 @@ namespace Datadog.Trace.Tests
             }
 
             // At this point in time, we have 4 closed spans in the trace
-            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            tracer.WrittenChunks.Should().BeEmpty();
 
             AddAndCloseSpan();
 
             // Now we have 5 closed spans, partial flush should kick-in if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Once);
+                tracer.WrittenChunks.Should().ContainSingle().Which.Count.Should().Be(5);
+                tracer.WrittenChunks.Clear();
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+                tracer.WrittenChunks.Should().BeEmpty();
             }
 
             for (int i = 0; i < 5; i++)
@@ -107,11 +109,12 @@ namespace Datadog.Trace.Tests
             // We have 5 more closed spans, partial flush should kick-in a second time if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Exactly(2));
+                tracer.WrittenChunks.Should().ContainSingle().Which.Count.Should().Be(5);
+                tracer.WrittenChunks.Clear();
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+                tracer.WrittenChunks.Should().BeEmpty();
             }
 
             traceContext.CloseSpan(rootSpan);
@@ -119,11 +122,11 @@ namespace Datadog.Trace.Tests
             // Now the remaining spans are flushed
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 1)), Times.Once);
+                tracer.WrittenChunks.Should().ContainSingle().Which.Count.Should().Be(1);
             }
             else
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11)), Times.Once);
+                tracer.WrittenChunks.Should().ContainSingle().Which.Count.Should().Be(11);
             }
         }
 
@@ -134,21 +137,13 @@ namespace Datadog.Trace.Tests
 
             Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
-            var tracer = new Mock<IDatadogTracer>();
-
-            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
+            var tracer = new StubDatadogTracer(TracerSettings.Create(new()
             {
                 { ConfigurationKeys.PartialFlushEnabled, true },
                 { ConfigurationKeys.PartialFlushMinSpans, partialFlushThreshold },
             }));
-            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
 
-            ArraySegment<Span>? spans = null;
-
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>((s) => spans = s);
-
-            var traceContext = new TraceContext(tracer.Object);
+            var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
@@ -163,18 +158,17 @@ namespace Datadog.Trace.Tests
             }
 
             // At this point, only one span is missing to reach the threshold for partial flush
-            spans.Should().BeNull("partial flush should not have been triggered");
+            tracer.WrittenChunks.Should().BeEmpty("partial flush should not have been triggered");
 
             // Closing the root span brings the number of closed spans to the threshold
             // but a full flush should be triggered rather than a partial, because every span in the trace has been closed
             traceContext.CloseSpan(rootSpan);
 
-            spans.Should().NotBeNull("a full flush should have been triggered");
-            spans!.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
+            tracer.WrittenChunks.Should().NotBeNullOrEmpty("a full flush should have been triggered");
 
             rootSpan.GetMetric(Metrics.SamplingPriority).Should().BeNull("because sampling priority is not added until serialization");
 
-            spans!.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
+            tracer.WrittenChunks.Should().ContainSingle().Which.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
         }
 
         [Fact]
@@ -184,21 +178,13 @@ namespace Datadog.Trace.Tests
 
             Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
-            var tracer = new Mock<IDatadogTracer>();
-
-            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
+            var tracer = new StubDatadogTracer(TracerSettings.Create(new()
             {
                 { ConfigurationKeys.PartialFlushEnabled, true },
                 { ConfigurationKeys.PartialFlushMinSpans, partialFlushThreshold },
             }));
 
-            ArraySegment<Span>? spans = null;
-
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>((s) => spans = s);
-            tracer.Setup(x => x.PerTraceSettings).Returns(_tracerMock.PerTraceSettings);
-
-            var traceContext = new TraceContext(tracer.Object);
+            var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
@@ -214,19 +200,18 @@ namespace Datadog.Trace.Tests
                 traceContext.CloseSpan(span);
             }
 
-            spans.Should().NotBeNull("partial flush should have been triggered");
-            spans!.Value.Should().NotBeNullOrEmpty("partial flush should have been triggered");
-            spans!.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
+            tracer.WrittenChunks.Should().NotBeEmpty("partial flush should have been triggered");
+            tracer.WrittenChunks.Should().ContainSingle().Which.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
         }
 
         [Fact]
-        public void Null_Service_Names_Dont_Throw()
+        public async Task Null_Service_Names_Dont_Throw()
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             var span = tracer.StartSpan("operation");
             span.ServiceName = null;

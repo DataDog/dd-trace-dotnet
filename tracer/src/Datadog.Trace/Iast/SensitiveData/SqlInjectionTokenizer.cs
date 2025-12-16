@@ -1,4 +1,4 @@
-// <copyright file="SqlInjectionTokenizer.cs" company="Datadog">
+﻿// <copyright file="SqlInjectionTokenizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// It locates all the parameter literals in a SQLQuery
 /// SELECT id FROM users WHERE location = ‘Paris’ and ZipCode = 324502 -> SELECT id FROM users WHERE location = ‘?’ and ZipCode = ?
 /// </summary>
-internal class SqlInjectionTokenizer : ITokenizer
+internal sealed class SqlInjectionTokenizer : ITokenizer
 {
     private const string StringLiteral = "'(?:''|[^'])*'";
     private const string OracleEscapedLiteral = "q'<.*?>'|q'\\(.*?\\)'|q'\\{.*?\\}'|q'\\[.*?\\]'|q'(?<ESCAPE>.).*?\\k<ESCAPE>'";

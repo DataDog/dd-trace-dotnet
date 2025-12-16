@@ -1,4 +1,4 @@
-// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
+﻿// <copyright file="LambdaRequestBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,13 @@ using System;
 using System.Globalization;
 using System.Net;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
-internal class LambdaRequestBuilder : ILambdaExtensionRequest
+internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
 {
     private const string EndInvocationPath = "/lambda/end-invocation";
     private const string StartInvocationPath = "/lambda/start-invocation";
@@ -35,18 +36,18 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
         return request;
     }
 
-    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, object state, bool isError)
+    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(CallTargetState stateObject, bool isError)
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";
         request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
 
-        if (state != null)
+        if (stateObject.State is string state)
         {
-            request.Headers.Set("lambda-runtime-aws-request-id", (string)state);
+            request.Headers.Set("lambda-runtime-aws-request-id", state);
         }
 
-        if (scope is { Span: var span })
+        if (stateObject.Scope is { Span: var span })
         {
             // TODO: add support for 128-bit trace ids in serverless
             request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));

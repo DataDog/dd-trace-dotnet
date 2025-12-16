@@ -14,6 +14,8 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -21,18 +23,22 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Tagging
 {
-    public class TagsListTests
+    public class TagsListTests : IAsyncLifetime
     {
-        private readonly Tracer _tracer;
+        private readonly ScopedTracer _tracer;
         private readonly MockApi _testApi;
 
         public TagsListTests()
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+            _tracer = TracerHelper.Create(settings, agentWriter);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()

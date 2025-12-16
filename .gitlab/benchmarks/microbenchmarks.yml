@@ -6,7 +6,7 @@
       error_output=$({ dd-octo-sts token --scope $DDOCTOSTS_SCOPE --policy $DDOCTOSTS_POLICY > "/tmp/github-token"; } 2>&1)
       exit_code=$?
       if [ $exit_code -ne 0 ]; then
-        echo "ERROR: Failed to retrieve GitHub token."
+        echo "Error: Failed to retrieve GitHub token."
         echo "Original error: $error_output"
         echo "Continuing execution anyway..."
       fi
@@ -15,6 +15,10 @@
 stages:
   - build
   - benchmarks
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
 
 build-dd-trace-dotnet-microbenchmarks-ami:
   stage: build
@@ -79,13 +83,16 @@ run-benchmarks:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
     paths:
       - platform/artifacts
-      - artifacts
     expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform

@@ -28,10 +28,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class UpdateItemIntegration
+    public sealed class UpdateItemIntegration
     {
         private const string Operation = "UpdateItem";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<UpdateItemIntegration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(UpdateItemIntegration));
 
         internal static CallTargetState OnMethodBegin<TTarget, TUpdateItemRequest>(TTarget instance, TUpdateItemRequest request)
             where TUpdateItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType

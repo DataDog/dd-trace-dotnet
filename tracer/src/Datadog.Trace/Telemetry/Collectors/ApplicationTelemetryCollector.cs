@@ -1,4 +1,4 @@
-// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
+﻿// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,46 +11,25 @@ using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry.Collectors;
 
-internal class ApplicationTelemetryCollector
+internal sealed class ApplicationTelemetryCollector
 {
     private GitMetadata? _gitMetadata = null;
     private ApplicationTelemetryData? _applicationData = null;
     private HostTelemetryData? _hostData = null;
 
-    public void RecordTracerSettings(
-        TracerSettings tracerSettings,
-        string defaultServiceName)
+    public void RecordTracerSettings(TracerSettings tracerSettings)
     {
-        // Try to retrieve config based Git Info
-        // If explicitly provided, these values take precedence
-        GitMetadata? gitMetadata = _gitMetadata;
-        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.MutableSettings.GitRepositoryUrl))
-        {
-            gitMetadata = new GitMetadata(tracerSettings.MutableSettings.GitCommitSha!, tracerSettings.MutableSettings.GitRepositoryUrl!);
-            Interlocked.Exchange(ref _gitMetadata, gitMetadata);
-        }
-
         string? processTags = null;
-        if (tracerSettings.PropagateProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags))
+        if (tracerSettings.PropagateProcessTags)
         {
-            processTags = ProcessTags.SerializedTags;
+            var pTags = ProcessTags.SerializedTags;
+            if (!string.IsNullOrEmpty(processTags))
+            {
+                processTags = pTags;
+            }
         }
 
-        var frameworkDescription = FrameworkDescription.Instance;
-        var application = new ApplicationTelemetryData(
-            serviceName: defaultServiceName,
-            env: tracerSettings.MutableSettings.Environment ?? string.Empty, // required, but we don't have it
-            serviceVersion: tracerSettings.MutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
-            tracerVersion: TracerConstants.AssemblyVersion,
-            languageName: TracerConstants.Language,
-            languageVersion: frameworkDescription.ProductVersion,
-            runtimeName: frameworkDescription.Name,
-            runtimeVersion: frameworkDescription.ProductVersion,
-            commitSha: gitMetadata?.CommitSha,
-            repositoryUrl: gitMetadata?.RepositoryUrl,
-            processTags: processTags);
-
-        Interlocked.Exchange(ref _applicationData, application);
+        RecordMutableSettings(tracerSettings, tracerSettings.Manager.InitialMutableSettings, processTags);
 
         // The host properties can't change, so only need to set them the first time
         if (Volatile.Read(ref _hostData) is not null)
@@ -58,6 +37,7 @@ internal class ApplicationTelemetryCollector
             return;
         }
 
+        var frameworkDescription = FrameworkDescription.Instance;
         var host = HostMetadata.Instance;
         var osDescription = frameworkDescription.OSArchitecture == "x86"
                                 ? $"{frameworkDescription.OSDescription} (32bit)"
@@ -73,6 +53,41 @@ internal class ApplicationTelemetryCollector
             KernelRelease = host.KernelRelease,
             KernelVersion = host.KernelVersion
         };
+    }
+
+    public void RecordMutableSettings(TracerSettings tracerSettings, MutableSettings mutableSettings)
+        => RecordMutableSettings(tracerSettings, mutableSettings, null);
+
+    private void RecordMutableSettings(TracerSettings tracerSettings, MutableSettings mutableSettings, string? processTags)
+    {
+        // Try to retrieve config based Git Info
+        GitMetadata? gitMetadata;
+        // If explicitly provided, these values take precedence
+        if (tracerSettings.GitMetadataEnabled && !StringUtil.IsNullOrEmpty(mutableSettings.GitCommitSha) && !StringUtil.IsNullOrEmpty(mutableSettings.GitRepositoryUrl))
+        {
+            gitMetadata = new GitMetadata(mutableSettings.GitCommitSha, mutableSettings.GitRepositoryUrl);
+            Interlocked.Exchange(ref _gitMetadata, gitMetadata);
+        }
+        else
+        {
+            gitMetadata = Volatile.Read(ref _gitMetadata);
+        }
+
+        var frameworkDescription = FrameworkDescription.Instance;
+        var application = new ApplicationTelemetryData(
+            serviceName: mutableSettings.DefaultServiceName,
+            env: mutableSettings.Environment ?? string.Empty, // required, but we don't have it
+            serviceVersion: mutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
+            tracerVersion: TracerConstants.AssemblyVersion,
+            languageName: TracerConstants.Language,
+            languageVersion: frameworkDescription.ProductVersion,
+            runtimeName: frameworkDescription.Name,
+            runtimeVersion: frameworkDescription.ProductVersion,
+            commitSha: gitMetadata?.CommitSha,
+            repositoryUrl: gitMetadata?.RepositoryUrl,
+            processTags: processTags ?? Volatile.Read(ref _applicationData)?.ProcessTags);
+
+        Interlocked.Exchange(ref _applicationData, application);
     }
 
     public void RecordGitMetadata(GitMetadata gitMetadata)
@@ -91,7 +106,7 @@ internal class ApplicationTelemetryCollector
 
         while (true)
         {
-            var original = _applicationData;
+            var original = Volatile.Read(ref _applicationData);
             var application = new ApplicationTelemetryData(
                 serviceName: original.ServiceName,
                 env: original.Env,

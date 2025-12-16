@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange;
     IntegrationName = StackExchangeRedisHelper.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ConnectionMultiplexerSelectServerIntegration
+public sealed class ConnectionMultiplexerSelectServerIntegration
 {
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult result, Exception exception, in CallTargetState state)
     {
