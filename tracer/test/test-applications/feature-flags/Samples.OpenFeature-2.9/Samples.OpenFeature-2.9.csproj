@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.OpenFeature\Datadog.Trace.OpenFeature.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj" />
   </ItemGroup>
 
 </Project>

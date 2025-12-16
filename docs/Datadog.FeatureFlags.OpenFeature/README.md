@@ -1,4 +1,4 @@
-# `Datadog.Trace.OpenFeature` NuGet package
+# `Datadog.FeatureFlags.OpenFeature` NuGet package
 
 This package contains the Datadog .NET OpenFeature SDK
 
@@ -8,26 +8,26 @@ Install this package if:
 
 - You intend to use the DataDog *FeatureFlags* tooling in your OpenFeature enabled app
 
-## What does Datadog.Trace.OpenFeature contain?
+## What does Datadog.FeatureFlags.OpenFeature contain?
 
-Datadog.Trace.OpenFeature contains three things:
+Datadog.FeatureFlags.OpenFeature contains three things:
 
-- The **Datadog.Trace.OpenFeature.dll assembly** with the **DatadogProvider** compatible with **OpenFeature** from **V2.0.0 onwards**.
+- The **Datadog.FeatureFlags.OpenFeature.dll assembly** with the **DatadogProvider** compatible with **OpenFeature** from **V2.0.0 onwards**.
 - A reference to the [Datadog.Trace NuGet package](https://www.nuget.org/packages/Datadog.Trace) for custom instrumentation.
 - The native binaries required for automatic instrumentation, for the Continuous Profiler, and for ASM.
 
-These native binaries are identical to those installed by the MSI and Linux installer packages, so Datadog.Trace.OpenFeature should be considered an alternative deployment mechanism for automatic instrumentation. 
+These native binaries are identical to those installed by the MSI and Linux installer packages, so Datadog.FeatureFlags.OpenFeature should be considered an alternative deployment mechanism for automatic instrumentation. 
 
-The main advantages of Datadog.Trace.OpenFeature over the MSI or Linux packages are:
+The main advantages of Datadog.FeatureFlags.OpenFeature over the MSI or Linux packages are:
 - You can use it in locations where you cannot access the underlying host to install the MSI or Linux package.
 - You can have multiple applications on the same host using different versions of Datadog.Trace.Bundle without issue.
 
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
-2. Add the [Datadog.Trace.OpenFeature](https://www.nuget.org/packages/Datadog.Trace.OpenFeature) NuGet package to your project, using `dotnet add package Datadog.Trace.OpenFeature`, for example.
+2. Add the [Datadog.FeatureFlags.OpenFeature](https://www.nuget.org/packages/Datadog.FeatureFlags.OpenFeature) NuGet package to your project, using `dotnet add package Datadog.FeatureFlags.OpenFeature`, for example.
 3. Configure the tracer on the server, as [described below](#configure-the-tracer)
-4. Add an instance of the **DatadogProvider** to your **OpenFeature.Api.Instance** using `await OpenFeature.Api.Instance.SetProviderAsync(new Datadog.Trace.OpenFeature.DatadogProvider())`
+4. Add an instance of the **DatadogProvider** to your **OpenFeature.Api.Instance** using `await OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider())`
 
 ### Configure the environment
 
