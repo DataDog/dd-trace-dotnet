@@ -198,7 +198,8 @@ namespace Datadog.Trace.PlatformHelpers
 
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-            var requestTrackingFeature = new SingleSpanRequestTrackingFeature(scope, proxyContext?.Scope);
+            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+            var requestTrackingFeature = new SingleSpanRequestTrackingFeature(scope, originalPath, proxyContext?.Scope);
 
             httpContext.Items[SingleSpanAspNetCoreDiagnosticObserver.HttpContextItemsKey] = requestTrackingFeature;
 
@@ -375,10 +376,11 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        internal class SingleSpanRequestTrackingFeature(Scope rootScope, [MaybeNull] Scope proxyScope)
+        internal sealed class SingleSpanRequestTrackingFeature(Scope rootScope, PathString originalPath, [MaybeNull] Scope proxyScope)
         {
             /// <summary>
             /// Gets the root ASP.NET Core Scope
@@ -391,7 +393,27 @@ namespace Datadog.Trace.PlatformHelpers
             /// </summary>
             [MaybeNull]
             public Scope ProxyScope { get; } = proxyScope;
+
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public PathString OriginalPath { get; } = originalPath;
+
+            public bool MatchesOriginalPath(HttpRequest request)
+            {
+                if (!request.PathBase.HasValue)
+                {
+                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return OriginalPath.StartsWithSegments(
+                           request.PathBase,
+                           StringComparison.OrdinalIgnoreCase)
+                    && OriginalPath.Value.AsSpan(request.PathBase.Value.Length)
+                                   .Equals(request.Path.Value, StringComparison.OrdinalIgnoreCase);
+            }
         }
+#endif
     }
 }
 #endif
