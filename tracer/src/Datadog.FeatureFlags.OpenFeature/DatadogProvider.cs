@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
-namespace Datadog.Trace.OpenFeature;
+namespace Datadog.FeatureFlags.OpenFeature;
 
 /// <summary>
 /// OpenFeature V2.0.0+ Provider for Datadog

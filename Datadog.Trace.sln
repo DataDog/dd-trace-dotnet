@@ -633,7 +633,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OpenFeature-2.9", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.OpenFeature", "tracer\src\Datadog.Trace.OpenFeature\Datadog.Trace.OpenFeature.csproj", "{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature", "tracer\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj", "{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

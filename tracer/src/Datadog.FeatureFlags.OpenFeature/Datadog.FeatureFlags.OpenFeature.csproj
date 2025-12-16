@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\docs\Datadog.Trace.OpenFeature\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\docs\Datadog.FeatureFlags.OpenFeature\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

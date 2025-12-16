@@ -11,7 +11,7 @@ class Program
         // See https://aka.ms/new-console-template for more information
         Console.WriteLine("OpenFeature 2.9 FeatureFlags SDK Sample");
 
-        OpenFeature.Api.Instance.SetProviderAsync(new Datadog.Trace.OpenFeature.DatadogProvider()).Wait();
+        OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
         var client = OpenFeature.Api.Instance.GetClient();
 
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
