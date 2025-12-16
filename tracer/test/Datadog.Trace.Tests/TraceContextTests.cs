@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -203,13 +205,13 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Null_Service_Names_Dont_Throw()
+        public async Task Null_Service_Names_Dont_Throw()
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             var span = tracer.StartSpan("operation");
             span.ServiceName = null;
