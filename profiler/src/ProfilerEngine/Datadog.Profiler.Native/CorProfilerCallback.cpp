@@ -37,6 +37,7 @@
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "Log.h"
+#include "ManagedCodeCache.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
 #include "NativeThreadList.h"
@@ -162,6 +163,9 @@ void CorProfilerCallback::InitializeServices()
 
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
 
+    _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _pConfiguration.get());
+    _managedCodeCache->Start();
+    
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
     {
@@ -176,7 +180,8 @@ void CorProfilerCallback::InitializeServices()
     RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
+    _pFrameStore = std::make_unique<FrameStore>(
+        _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -1478,12 +1483,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // TODO rename IsNGENProfilingEnabled into something more tailored for
     // our new feature
-    if (_pConfiguration->IsNGENProfilingEnabled())
+    if (_pConfiguration->UseCustomGetFunctionFromIP())
     {
         eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
-        // if tracer disabled NGEN, we do not need to register for cache.
-        // Maybe we should disable the NGEN too for consistency?
-        eventMask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -1858,6 +1860,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
+    _managedCodeCache->AddModule(moduleId);
+
     return S_OK;
 }
 
@@ -1906,30 +1910,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
     return S_OK;
 }
 
-void CorProfilerCallback::UpdateCodeCache(FunctionID functionId)
-{
-    COR_PRF_CODE_INFO codeInfo[2];
-    ULONG32 cCodeInfos;
-    
-    // here we can pass 2, because the max is 2
-    HRESULT hr = _pCorProfilerInfo->GetCodeInfo2(functionId, 2, &cCodeInfos, codeInfo);
-    
-    if (SUCCEEDED(hr))
-    {
-        for (ULONG32 i = 0; i < cCodeInfos; i++)
-        {
-            _managedCodeCache->AddCodeRange(
-                CodeRange{
-                    .startAddress = codeInfo[i].startAddress,
-                    .endAddress = codeInfo[i].startAddress + codeInfo[i].size,
-                    .info = ManagedCodeInfo{
-                        .functionId = functionId
-                    }
-                });
-        }
-    }
-}
-
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
     if (FAILED(hrStatus))
@@ -1937,7 +1917,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID
         Log::Debug("JITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
         return S_OK;
     }
-    UpdateCodeCache(functionId);
+    _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
 
@@ -1948,10 +1928,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchStarted(Fu
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchFinished(FunctionID functionId, COR_PRF_JIT_CACHE result)
 {
-    if (result == COR_PRF_CACHED_FUNCTION_FOUND)
-    {
-        UpdateCodeCache(functionId);
-    }
     return S_OK;
 }
 
@@ -2464,7 +2440,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(Function
         Log::Debug("ReJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, " ReJit ID=0x", std::hex, rejitId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
         return S_OK;
     }
-    UpdateCodeCache(functionId);
+    
+    _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
 
@@ -2505,6 +2482,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
+    if (FAILED(hrStatus))
+    {
+        Log::Debug("DynamicMethodJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
+        return S_OK;
+    }
+    if (_managedCodeCache != nullptr)
+    {
+        _managedCodeCache->AddFunction(functionId);
+    }
     return S_OK;
 }
 

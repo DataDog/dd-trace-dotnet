@@ -99,6 +99,7 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
+    MOCK_METHOD(bool, UseCustomGetFunctionFromIP, (), (const override));
 };
 
 class MockExporter : public IExporter
