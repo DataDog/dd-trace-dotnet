@@ -1,6 +1,5 @@
 using System;
 using OpenFeature.Model;
-using Samples.OpenFeature_2._9;
 
 namespace Samples.OpenFeature_2_9;
 
@@ -12,7 +11,7 @@ class Program
         // See https://aka.ms/new-console-template for more information
         Console.WriteLine("OpenFeature 2.9 FeatureFlags SDK Sample");
 
-        OpenFeature.Api.Instance.SetProviderAsync(new DataDogProvider()).Wait();
+        OpenFeature.Api.Instance.SetProviderAsync(new Datadog.Trace.OpenFeature.DatadogProvider()).Wait();
         var client = OpenFeature.Api.Instance.GetClient();
 
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
