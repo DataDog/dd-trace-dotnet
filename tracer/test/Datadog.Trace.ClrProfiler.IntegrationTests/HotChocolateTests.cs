@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{throwException}""}");
 
                 // FAILURE: query fails with an index error
-                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{throwExceptionIndex}""}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{ThrowExceptionIndex}""}");
             }
 
             async Task SubmitWebsocketRequests()
