@@ -372,7 +372,7 @@ errors: [
       graphql.operation.type: Query,
       graphql.source:
 query ErrorQuery {
-  ThrowExceptionIndex
+  throwExceptionIndex
 },
       language: dotnet,
       span.kind: server,
