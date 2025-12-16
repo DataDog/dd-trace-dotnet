@@ -10,8 +10,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
-#if NETFRAMEWORK
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+#if NETCOREAPP
+using Unsafe = System.Runtime.CompilerServices.Unsafe;
+#else
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
 
 namespace Datadog.Trace.Agent;
