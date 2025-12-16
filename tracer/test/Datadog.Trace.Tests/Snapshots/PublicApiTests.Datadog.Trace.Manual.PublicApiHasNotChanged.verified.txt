@@ -486,3 +486,47 @@ namespace Datadog.Trace.ExtensionMethods
         public static void SetTraceSamplingPriority(this Datadog.Trace.ISpan span, Datadog.Trace.SamplingPriority samplingPriority) { }
     }
 }
+namespace Datadog.Trace.FeatureFlags
+{
+    public class EvaluationContext : Datadog.Trace.FeatureFlags.IEvaluationContext
+    {
+        public EvaluationContext(string key, System.Collections.Generic.IDictionary<string, object?>? values = null, System.Func<object?, object?>? convertValue = null) { }
+        public string TargetingKey { get; }
+        public System.Collections.Generic.IDictionary<string, object?> Values { get; }
+        public object? ConvertValue(object? value) { }
+        public object? GetValue(string key) { }
+    }
+    public enum EvaluationReason
+    {
+        DEFAULT = 0,
+        STATIC = 1,
+        TARGETING_MATCH = 2,
+        SPLIT = 3,
+        DISABLED = 4,
+        CACHED = 5,
+        UNKNOWN = 6,
+        ERROR = 7,
+    }
+    public static class FeatureFlagsSdk
+    {
+        public static Datadog.Trace.FeatureFlags.IEvaluation? Evaluate(string key, System.Type targetType, object? defaultValue, Datadog.Trace.FeatureFlags.IEvaluationContext? context) { }
+        public static bool IsAvailable() { }
+        public static void RegisterOnNewConfigEventHandler(System.Action onNewConfig) { }
+    }
+    public interface IEvaluation
+    {
+        string? Error { get; }
+        string FlagKey { get; }
+        System.Collections.Generic.IDictionary<string, string>? FlagMetadata { get; }
+        Datadog.Trace.FeatureFlags.EvaluationReason Reason { get; }
+        object? Value { get; }
+        string? Variant { get; }
+    }
+    public interface IEvaluationContext
+    {
+        string TargetingKey { get; }
+        System.Collections.Generic.IDictionary<string, object?> Values { get; }
+        object? ConvertValue(object? value);
+        object? GetValue(string key);
+    }
+}
