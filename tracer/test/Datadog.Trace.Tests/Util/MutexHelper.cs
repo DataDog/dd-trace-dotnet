@@ -42,18 +42,19 @@ internal static class MutexHelper
         if (!result)
         {
             output?.WriteLine($"Mutex timed out in {caller} after {timeout.TotalSeconds:F1}s. Capturing memory dump");
-          try
-          {
-              var process = Process.GetCurrentProcess();
-              var log = MemoryDumpHelper.CaptureMemoryDump(process)
-                            ? "Successfully captured memory dump"
-                            : "Failed to capture memory dump";
-              output?.WriteLine(log);
-          }
-          catch (Exception ex)
-          {
-              output?.WriteLine($"Exception while capturing memory dump: {ex}");
-          }
+
+            try
+            {
+                var process = Process.GetCurrentProcess();
+                var log = MemoryDumpHelper.CaptureMemoryDump(process)
+                                ? "Successfully captured memory dump"
+                                : "Failed to capture memory dump";
+                output?.WriteLine(log);
+            }
+            catch (Exception ex)
+            {
+                output?.WriteLine($"Exception while capturing memory dump: {ex}");
+            }
         }
 
         return result;
