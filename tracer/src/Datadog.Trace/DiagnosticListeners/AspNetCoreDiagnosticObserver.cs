@@ -70,11 +70,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _hostingHttpRequestInStopEventKey;
         private string _routingEndpointMatchedKey;
 
-        public AspNetCoreDiagnosticObserver()
-            : this(null, null, null, null)
-        {
-        }
-
         public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin spanCodeOrigin)
         {
             _tracer = tracer;
@@ -85,12 +80,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
-
-        private Security CurrentSecurity => _security ?? Security.Instance;
-
-        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
-
+        // TODO: Once SpanCodeOrigin initialization is synchronous
+        // just set this on startup instead of having the properties
         private SpanCodeOrigin CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
 #if NETCOREAPP
@@ -421,10 +412,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-            var shouldTrace = tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.AppsecEnabled;
+            var shouldTrace = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldSecure = _security.AppsecEnabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -440,13 +429,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
-                    var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, CurrentIast, httpContext, resourceName);
+                    var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(_tracer, _security, _iast, httpContext, resourceName);
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
-                        securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
+                        securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
                     }
                 }
             }
@@ -454,10 +443,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.RouteTemplateResourceNamesEnabled)
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
+                !_tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
             }
@@ -574,7 +561,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     areaName: areaName,
                     controllerName: controllerName,
                     actionName: actionName,
-                    tracer.Settings.ExpandRouteTemplatesEnabled);
+                    _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
@@ -591,9 +578,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
-                if (CurrentIast.Settings.Enabled)
+                if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
@@ -602,11 +589,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-            var shouldTrace = tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.AppsecEnabled;
-            var shouldUseIast = CurrentIast.Settings.Enabled;
+            var shouldTrace = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldSecure = _security.AppsecEnabled;
+            var shouldUseIast = _iast.Settings.Enabled;
             var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
@@ -625,14 +610,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (shouldTrace)
                 {
-                    if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
+                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
                         // override the parent's resource name with the simplified MVC route template
                         rootSpan.ResourceName = GetLegacyResourceName(typedArg);
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
@@ -650,7 +635,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         }
                     }
 
-                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                    _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (shouldUseIast)
@@ -705,7 +690,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction(object arg)
         {
-            var tracer = CurrentTracer;
+            var tracer = _tracer;
 
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -747,9 +732,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -757,7 +740,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
             {
-                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
 
             CoreHttpContextStore.Instance.Remove();
@@ -766,9 +749,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -777,7 +758,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && unhandledStruct.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception);
             }
 
             // If we don't have a span, no need to call Handle exception
