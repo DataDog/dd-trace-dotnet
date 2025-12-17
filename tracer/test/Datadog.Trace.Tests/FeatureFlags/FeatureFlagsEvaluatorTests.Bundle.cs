@@ -13,7 +13,6 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
-using ValueType = Datadog.Trace.FeatureFlags.Rcm.Model.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -58,37 +57,37 @@ public partial class FeatureFlagsEvaluatorTests
 
         void AssertEqual(object? expected, object? obj)
         {
-            if (type == EvaluationType.INTEGER && obj is int intObj)
+            if (type == Trace.FeatureFlags.ValueType.INTEGER && obj is int intObj)
             {
                 Assert.Equal(Convert.ToInt32(expected), intObj);
             }
-            else if (type == EvaluationType.JSON)
+            else if (type == Trace.FeatureFlags.ValueType.JSON)
             {
                 if (obj is string jsonTxt)
                 {
-                    Assert.Equal(expected?.ToString(), obj);
+                    Assert.Equal<object>(expected?.ToString(), obj);
                 }
                 else
                 {
-                    Assert.Equal(expected, obj);
+                    Assert.Equal<object>(expected, obj);
                 }
             }
             else
             {
-                Assert.Equal(expected, obj);
+                Assert.Equal<object>(expected, obj);
             }
         }
     }
 
-    private static EvaluationType GetVariationType(string? variationType)
+    private static Trace.FeatureFlags.ValueType GetVariationType(string? variationType)
     {
         return variationType switch
         {
-            "INTEGER" => EvaluationType.INTEGER,
-            "NUMERIC" => EvaluationType.NUMERIC,
-            "STRING" => EvaluationType.STRING,
-            "BOOLEAN" => EvaluationType.BOOLEAN,
-            "JSON" => EvaluationType.JSON,
+            "INTEGER" => Trace.FeatureFlags.ValueType.INTEGER,
+            "NUMERIC" => Trace.FeatureFlags.ValueType.NUMERIC,
+            "STRING" => Trace.FeatureFlags.ValueType.STRING,
+            "BOOLEAN" => Trace.FeatureFlags.ValueType.BOOLEAN,
+            "JSON" => Trace.FeatureFlags.ValueType.JSON,
             _ => throw new NotImplementedException(),
         };
     }

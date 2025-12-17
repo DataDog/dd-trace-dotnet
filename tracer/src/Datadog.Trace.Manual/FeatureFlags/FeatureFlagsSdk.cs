@@ -38,7 +38,7 @@ public static class FeatureFlagsSdk
     /// <param name="context">The evaluation context</param>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static IEvaluation? Evaluate(string key, EvaluationType targetType, object? defaultValue, IEvaluationContext? context)
+    public static IEvaluation? Evaluate(string key, ValueType targetType, object? defaultValue, IEvaluationContext? context)
     {
         return null;
     }
