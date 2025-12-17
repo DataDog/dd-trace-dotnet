@@ -48,11 +48,12 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Theory]
-        [InlineData("my-container-id", "my-entity-id")]
-        [InlineData("my-container-id", null)]
-        [InlineData(null, "my-entity-id")]
-        [InlineData(null, null)]
-        public async Task SendWithContainerMetadata(string containerId, string entityId)
+        [CombinatorialData]
+        public async Task SendWithContainerMetadata(
+            [CombinatorialValues(null, "my-container-id")]
+            string containerId,
+            [CombinatorialValues(null, "my-entity-id")]
+            string entityId)
         {
             var responseMock = new Mock<IApiResponse>();
             responseMock.Setup(x => x.StatusCode).Returns(200);

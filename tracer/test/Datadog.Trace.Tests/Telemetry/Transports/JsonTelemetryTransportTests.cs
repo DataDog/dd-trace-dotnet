@@ -6,17 +6,86 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry.Transports
 {
     public class JsonTelemetryTransportTests
     {
+        [Theory]
+        [CombinatorialData]
+        public async Task ShouldContainRequiredHeaders(bool debugEnabled, [CombinatorialValues("", "gzip")] string compression, bool agentless)
+        {
+            var containerMetadata = new Mock<IContainerMetadata>();
+            containerMetadata.Setup(c => c.ContainerId).Returns("my-container-id");
+            containerMetadata.Setup(c => c.EntityId).Returns("my-entity-id");
+
+            // set up the response returned by the request
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(200);
+
+            // set up the request returned by the factory
+            var savedHeaders = new Dictionary<string, string>();
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.AddHeader(It.IsAny<string>(), It.IsAny<string>())).Callback((string k, string v) => savedHeaders.Add(k, v));
+
+            // set up the factory passed to the transport
+            var requestFactoryMock = new Mock<IApiRequestFactory>();
+            requestFactoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+
+            ITelemetryTransport telemetryTransport;
+            // this actually doesn't change anything, but better test both
+            if (agentless)
+            {
+                telemetryTransport = new AgentlessTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata.Object);
+            }
+            else
+            {
+                telemetryTransport = new AgentTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata.Object);
+            }
+
+            var data = new TelemetryData(
+                "my-request-type",
+                tracerTime: 0,
+                string.Empty,
+                seqId: 0,
+                new ApplicationTelemetryData(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty),
+                new HostTelemetryData(string.Empty, string.Empty, string.Empty),
+                payload: null);
+
+            // the actual method being tested 👇
+            var result = await telemetryTransport.PushTelemetry(data);
+
+            result.Should().Be(TelemetryPushResult.Success);
+
+            var allExpected = new Dictionary<string, string>
+            {
+                { "DD-Telemetry-API-Version", TelemetryConstants.ApiVersionV2 },
+                { "DD-Telemetry-Request-Type", "my-request-type" },
+                { "Datadog-Container-ID", "my-container-id" },
+                { "Datadog-Entity-ID", "my-entity-id" }
+            };
+            if (debugEnabled)
+            {
+                allExpected["DD-Telemetry-Debug-Enabled"] = "true";
+            }
+
+            savedHeaders.Should().BeEquivalentTo(allExpected);
+
+            var expectedEncoding = compression == "gzip" ? "gzip" : null;
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/json", expectedEncoding), Times.Once);
+        }
+
         [Fact]
         public void SerializedAppStartedShouldProduceJsonWithExpectedFormat()
         {

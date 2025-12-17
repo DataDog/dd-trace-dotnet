@@ -46,7 +46,7 @@ namespace Datadog.Trace.PlatformHelpers
         private readonly Lazy<string> _containerId;
         private readonly Lazy<string> _entityId;
 
-        public ContainerMetadata()
+        private ContainerMetadata()
         {
             _containerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
             _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);

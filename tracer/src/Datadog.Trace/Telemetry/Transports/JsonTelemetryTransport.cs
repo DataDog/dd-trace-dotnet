@@ -35,12 +35,12 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly bool _telemetryGzipCompressionEnabled;
         private readonly string _telemetryCompressionMethod;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, IContainerMetadata containerMetadata)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
-            _containerMetadata = ContainerMetadata.Instance;
+            _containerMetadata = containerMetadata;
             _telemetryGzipCompressionEnabled = telemetryCompressionMethod.Equals("gzip", StringComparison.OrdinalIgnoreCase);
             _telemetryCompressionMethod = _telemetryGzipCompressionEnabled ? "gzip" : "uncompressed";
         }
