@@ -5,6 +5,9 @@
 
 #nullable enable
 
+using System;
+using Datadog.Trace.Logging;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -15,6 +18,7 @@ namespace Datadog.Trace
     /// </summary>
     internal sealed partial class Scope : IScope
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Scope>();
         private readonly IScopeManager _scopeManager;
         private bool _finishOnClose;
 
@@ -44,10 +48,9 @@ namespace Datadog.Trace
             {
                 Close();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore disposal exceptions here...
-                // TODO: Log? only in test/debug? How should Close() concerns be handled (i.e. independent?)
+                Log.Error(ex, "Exception thrown while disposing scope");
             }
         }
 
