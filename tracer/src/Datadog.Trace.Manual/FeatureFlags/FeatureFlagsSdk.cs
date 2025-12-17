@@ -10,8 +10,7 @@ using Datadog.Trace.SourceGenerators;
 namespace Datadog.Trace.FeatureFlags;
 
 /// <summary>
-/// Handlers for setting ASM login success / failures events in traces
-/// Includes a security scan if asm is enabled
+/// Functions to retrieve FeatureFlags from server
 /// </summary>
 public static class FeatureFlagsSdk
 {

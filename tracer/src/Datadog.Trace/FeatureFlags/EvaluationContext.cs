@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags
 {
-    /// <summary> Estandard implementation of a EvaluationContext </summary>
+    /// <summary> Standard implementation of a EvaluationContext </summary>
     /// <param name="key"> Targeting Key </param>
     /// <param name="values"> Context optional parameters </param>
     public class EvaluationContext(string key, IDictionary<string, object?>? values = null)
