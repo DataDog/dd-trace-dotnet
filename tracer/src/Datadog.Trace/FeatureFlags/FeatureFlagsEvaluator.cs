@@ -71,7 +71,7 @@ namespace Datadog.Trace.FeatureFlags
             return Evaluate(flagKey, typeof(T), defaultValue, context);
         }
 
-        public Evaluation Evaluate(string flagKey, Type resultType, object? defaultValue, IEvaluationContext context)
+        public Evaluation Evaluate(string flagKey, Type resultType, object? defaultValue, IEvaluationContext? context)
         {
             try
             {
@@ -89,20 +89,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (context == null)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.ERROR,
-                        error: "INVALID_CONTEXT",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "INVALID_CONTEXT"
-                        });
-                }
-
-                if (string.IsNullOrEmpty(context.TargetingKey))
+                if (string.IsNullOrEmpty(context?.TargetingKey))
                 {
                     return new Evaluation(
                         flagKey,
@@ -112,6 +99,19 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "TARGETING_KEY_MISSING"
+                        });
+                }
+
+                if (!SupportedResolutionTypes.Contains(resultType))
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.ERROR,
+                        error: "TYPE_MISMATCH",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "TYPE_MISMATCH"
                         });
                 }
 
@@ -151,7 +151,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 var now = DateTime.UtcNow;
-                var targetingKey = context.TargetingKey;
+                var targetingKey = context?.TargetingKey ?? string.Empty;
 
                 foreach (var allocation in flag.Allocations!)
                 {
@@ -249,7 +249,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(IEnumerable<Rule> rules, IEvaluationContext context)
+        private static bool EvaluateRules(IEnumerable<Rule> rules, IEvaluationContext? context)
         {
             foreach (var rule in rules)
             {
@@ -277,7 +277,7 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static bool EvaluateCondition(ConditionConfiguration condition, IEvaluationContext context)
+        private static bool EvaluateCondition(ConditionConfiguration condition, IEvaluationContext? context)
         {
             if (condition.Operator is null)
             {
@@ -467,21 +467,20 @@ namespace Datadog.Trace.FeatureFlags
             return null;
         }
 
-        private static object? ResolveAttribute(string? name, IEvaluationContext context)
+        private static object? ResolveAttribute(string? name, IEvaluationContext? context)
         {
-            if (name == null)
+            if (name == null || context is null)
             {
                 return null;
             }
 
             // Special case "id": if not present, use targeting key
-            if (name == "id" && !context.Values.ContainsKey(name))
+            if (name == "id" && !context.Attributes.ContainsKey(name))
             {
                 return context.TargetingKey;
             }
 
-            var resolved = context.GetValue(name);
-            return context.ConvertValue(resolved) ?? resolved;
+            return context.GetAttribute(name);
         }
 
         internal static object? MapValue<T>(object? value)
@@ -576,45 +575,47 @@ namespace Datadog.Trace.FeatureFlags
             return evaluation.FlagMetadata.TryGetValue("allocationKey", out var key) ? key : null;
         }
 
-        internal static IDictionary<string, object?> FlattenContext(IEvaluationContext context)
+        internal static IDictionary<string, object?> FlattenContext(IEvaluationContext? context)
         {
-            var keys = context.Values.Keys;
             var result = new Dictionary<string, object?>();
-            var seen = new HashSet<object>();
-
-            foreach (var key in keys)
+            if (context is not null)
             {
-                var stack = new Stack<FlattenEntry>();
-                stack.Push(new FlattenEntry(key, context.GetValue(key)));
-
-                while (stack.Count > 0)
+                var seen = new HashSet<object>();
+                var keys = context.Attributes.Keys;
+                foreach (var key in keys)
                 {
-                    var entry = stack.Pop();
-                    var value = entry.Value;
+                    var stack = new Stack<FlattenEntry>();
+                    stack.Push(new FlattenEntry(key, context.GetAttribute(key)));
 
-                    if (value == null || seen.Add(value))
+                    while (stack.Count > 0)
                     {
-                        if (value == null)
+                        var entry = stack.Pop();
+                        var value = entry.Value;
+
+                        if (value == null || seen.Add(value))
                         {
-                            result[entry.Key] = null;
-                        }
-                        else if (value is IList list)
-                        {
-                            for (var i = 0; i < list.Count; i++)
+                            if (value == null)
                             {
-                                stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i]));
+                                result[entry.Key] = null;
                             }
-                        }
-                        else if (value is IDictionary dict)
-                        {
-                            foreach (var pairKey in dict.Keys)
+                            else if (value is IList list)
                             {
-                                stack.Push(new FlattenEntry($"{entry.Key}.{pairKey}", dict[pairKey!]));
+                                for (var i = 0; i < list.Count; i++)
+                                {
+                                    stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i]));
+                                }
                             }
-                        }
-                        else
-                        {
-                            result[entry.Key] = context.ConvertValue(value) ?? value;
+                            else if (value is IDictionary dict)
+                            {
+                                foreach (var pairKey in dict.Keys)
+                                {
+                                    stack.Push(new FlattenEntry($"{entry.Key}.{pairKey}", dict[pairKey!]));
+                                }
+                            }
+                            else
+                            {
+                                result[entry.Key] = value;
+                            }
                         }
                     }
                 }
@@ -630,7 +631,7 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
-            IEvaluationContext context)
+            IEvaluationContext? context)
         {
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
             {
@@ -674,7 +675,7 @@ namespace Datadog.Trace.FeatureFlags
         private void DispatchExposure(
             string flagKey,
             Evaluation evaluation,
-            IEvaluationContext context)
+            IEvaluationContext? context)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
@@ -689,7 +690,7 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
-                new Exposure.Model.Subject(context.TargetingKey, FlattenContext(context)));
+                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)));
 
             _onExposureEvent?.Invoke(evt);
         }
