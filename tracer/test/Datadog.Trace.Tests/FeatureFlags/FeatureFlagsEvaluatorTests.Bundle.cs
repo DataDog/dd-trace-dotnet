@@ -7,14 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Bson;
-using Google.Protobuf.WellKnownTypes;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.Rcm.Model.ValueType;
 
@@ -42,7 +39,7 @@ public partial class FeatureFlagsEvaluatorTests
         var ctx = new EvaluationContext(testCase.TargetingKey ?? string.Empty, testCase.Attributes);
 
         // Not supported format
-        Skip.If(testCase.VariationType == "JSON", "JSON result format not supported");
+        // Skip.If(testCase.VariationType == "JSON", "JSON result format not supported");
 
         var type = GetVariationType(testCase.VariationType);
 
@@ -54,20 +51,44 @@ public partial class FeatureFlagsEvaluatorTests
             _ = 0;
         }
 
-        Assert.Equal(testCase.Result.Value, result.Value);
-        Assert.Equal(testCase.Result.Variant, result.Variant);
+        AssertEqual(testCase.Result.Value, result.Value);
+        AssertEqual(testCase.Result.Variant, result.Variant);
 
         Assert.NotNull(description);
+
+        void AssertEqual(object? expected, object? obj)
+        {
+            if (type == EvaluationType.INTEGER && obj is int intObj)
+            {
+                Assert.Equal(Convert.ToInt32(expected), intObj);
+            }
+            else if (type == EvaluationType.JSON)
+            {
+                if (obj is string jsonTxt)
+                {
+                    Assert.Equal(expected?.ToString(), obj);
+                }
+                else
+                {
+                    Assert.Equal(expected, obj);
+                }
+            }
+            else
+            {
+                Assert.Equal(expected, obj);
+            }
+        }
     }
 
-    private static System.Type GetVariationType(string? variationType)
+    private static EvaluationType GetVariationType(string? variationType)
     {
         return variationType switch
         {
-            "INTEGER" => typeof(long),
-            "NUMERIC" => typeof(double),
-            "STRING" => typeof(string),
-            "BOOLEAN" => typeof(bool),
+            "INTEGER" => EvaluationType.INTEGER,
+            "NUMERIC" => EvaluationType.NUMERIC,
+            "STRING" => EvaluationType.STRING,
+            "BOOLEAN" => EvaluationType.BOOLEAN,
+            "JSON" => EvaluationType.JSON,
             _ => throw new NotImplementedException(),
         };
     }

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,8 +15,12 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -34,16 +39,6 @@ namespace Datadog.Trace.FeatureFlags
             "MM-dd-yyyy'T'HH:mm:ss.fff'Z'",
             "MM-dd-yyyy'T'HH:mm:ss'Z'",
         };
-
-        private static readonly HashSet<Type> SupportedResolutionTypes =
-            new()
-            {
-                typeof(string),
-                typeof(bool),
-                typeof(int),
-                typeof(long),
-                typeof(double),
-            };
 
         private readonly Action<Exposure.Model.ExposureEvent>? _onExposureEvent;
         private readonly ServerConfiguration? _config;
@@ -66,12 +61,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
-        public Evaluation Evaluate<T>(string flagKey, T defaultValue, EvaluationContext context)
-        {
-            return Evaluate(flagKey, typeof(T), defaultValue, context);
-        }
-
-        public Evaluation Evaluate(string flagKey, Type resultType, object? defaultValue, IEvaluationContext? context)
+        public Evaluation Evaluate(string flagKey, EvaluationType resultType, object? defaultValue, IEvaluationContext? context)
         {
             try
             {
@@ -102,6 +92,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
+/*
                 if (!SupportedResolutionTypes.Contains(resultType))
                 {
                     return new Evaluation(
@@ -114,6 +105,7 @@ namespace Datadog.Trace.FeatureFlags
                             ["errorCode"] = "TYPE_MISMATCH"
                         });
                 }
+*/
 
                 if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
                 {
@@ -483,34 +475,19 @@ namespace Datadog.Trace.FeatureFlags
             return context.GetAttribute(name);
         }
 
-        internal static object? MapValue<T>(object? value)
-        {
-            return MapValue(typeof(T), value);
-        }
-
-        internal static object? MapValue(Type target, object? value)
+        internal static object? MapValue(EvaluationType target, object? value)
         {
             if (value is null)
             {
                 return default!;
             }
 
-            if (!SupportedResolutionTypes.Contains(target))
-            {
-                throw new ArgumentException($"Type not supported: {target}");
-            }
-
-            if (target.IsInstanceOfType(value))
-            {
-                return Convert.ChangeType(value, target);
-            }
-
-            if (target == typeof(string))
+            if (target == EvaluationType.STRING)
             {
                 return Convert.ToString(value, CultureInfo.InvariantCulture);
             }
 
-            if (target == typeof(bool))
+            if (target == EvaluationType.BOOLEAN)
             {
                 if (value is IConvertible)
                 {
@@ -525,25 +502,30 @@ namespace Datadog.Trace.FeatureFlags
                 return bool.Parse(value.ToString()!);
             }
 
-            if (target == typeof(int))
+            if (target == EvaluationType.INTEGER)
             {
                 var number = ParseDouble(value);
                 return (int)number;
             }
 
-            if (target == typeof(long))
-            {
-                var number = ParseDouble(value);
-                return (long)number;
-            }
-
-            if (target == typeof(double))
+            if (target == EvaluationType.NUMERIC)
             {
                 var number = ParseDouble(value);
                 return (double)number;
             }
 
-            return default!;
+            if (target == EvaluationType.JSON)
+            {
+                if (value is JObject)
+                {
+                    return value.ToString();
+                }
+
+                var json = JsonConvert.SerializeObject(value);
+                return json;
+            }
+
+            throw new ArgumentException($"Type not supported: {target}");
         }
 
         private static double ParseDouble(object value)
@@ -626,7 +608,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private Evaluation ResolveVariant(
             string flagKey,
-            Type resultType,
+            EvaluationType resultType,
             object? defaultValue,
             Flag flag,
             string variationKey,

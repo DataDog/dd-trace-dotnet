@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     TypeName = "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
     MethodName = "Evaluate",
     ReturnTypeName = "Datadog.Trace.FeatureFlags.IEvaluation",
-    ParameterTypeNames = [ClrNames.String, ClrNames.Type, ClrNames.Object, "Datadog.Trace.FeatureFlags.IEvaluationContext"],
+    ParameterTypeNames = [ClrNames.String, "Datadog.Trace.FeatureFlags.EvaluationType", ClrNames.Object, "Datadog.Trace.FeatureFlags.IEvaluationContext"],
     MinimumVersion = "3.31.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
@@ -31,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class FeatureFlagsSdkEvaluateIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TContext>(ref string key, ref Type targetType, ref object? defaultValue, ref TContext? context)
+    internal static CallTargetState OnMethodBegin<TTarget, TTargetType, TContext>(ref string? key, ref TTargetType targetType, ref object? defaultValue, ref TContext? context)
     {
-        return new CallTargetState(null, new State(key, targetType, defaultValue, context));
+        return new CallTargetState(null, new State(key, (EvaluationType)(Convert.ToInt32(targetType)), defaultValue, context));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
@@ -43,7 +43,7 @@ public class FeatureFlagsSdkEvaluateIntegration
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
-    private record struct State(string? Key, Type TargetType, object? DefaultValue, object? Context)
+    private record struct State(string? Key, EvaluationType TargetType, object? DefaultValue, object? Context)
     {
     }
 }

@@ -72,29 +72,29 @@ public partial class FeatureFlagsEvaluatorTests
     {
         if (expected is null || expected is string)
         {
-            var res = FeatureFlagsEvaluator.MapValue<string>(input);
+            var res = FeatureFlagsEvaluator.MapValue(EvaluationType.STRING, input);
             Assert.Equal(expected, res);
         }
         else if (expected is int expectedInt)
         {
-            var res = FeatureFlagsEvaluator.MapValue<int>(input);
+            var res = FeatureFlagsEvaluator.MapValue(EvaluationType.INTEGER, input);
             Assert.Equal(expected, res);
         }
         else if (expected is double expectedDouble)
         {
-            var res = FeatureFlagsEvaluator.MapValue<double>(input);
+            var res = FeatureFlagsEvaluator.MapValue(EvaluationType.NUMERIC, input);
             Assert.Equal(expected, res);
         }
         else if (expected is bool expectedBool)
         {
-            var res = FeatureFlagsEvaluator.MapValue<bool>(input);
+            var res = FeatureFlagsEvaluator.MapValue(EvaluationType.BOOLEAN, input);
             Assert.Equal(expected, res);
         }
         else if (expected is System.Type)
         {
             try
             {
-                _ = FeatureFlagsEvaluator.MapValue<string>(input);
+                _ = FeatureFlagsEvaluator.MapValue(EvaluationType.STRING, input);
             }
             catch (Exception res)
             {
@@ -113,7 +113,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, null, 1000);
         var ctx = new EvaluationContext("target");
 
-        var result = evaluator.Evaluate("test", 23, ctx);
+        var result = evaluator.Evaluate("test", EvaluationType.INTEGER, 23, ctx);
 
         Assert.Equal(23, result.Value);
         Assert.Equal(EvaluationReason.ERROR, result.Reason);
@@ -126,7 +126,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration(), 1000);
         var ctx = new EvaluationContext(string.Empty); // no targetingKey
 
-        var result = evaluator.Evaluate("flag", "default", ctx);
+        var result = evaluator.Evaluate("flag", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.ERROR, result.Reason);
@@ -138,7 +138,7 @@ public partial class FeatureFlagsEvaluatorTests
     {
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration(), 1000);
         var ctx = new EvaluationContext("user-123");
-        var result = evaluator.Evaluate("unknown", "default", ctx);
+        var result = evaluator.Evaluate("unknown", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.ERROR, result.Reason);
@@ -155,7 +155,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user");
 
-        var result = evaluator.Evaluate("disabled-flag", true, ctx);
+        var result = evaluator.Evaluate("disabled-flag", EvaluationType.BOOLEAN, true, ctx);
 
         Assert.Equal(true, result.Value);
         Assert.Equal(EvaluationReason.DISABLED, result.Reason);
@@ -173,12 +173,12 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("allocation");
 
-        var result1 = evaluator.Evaluate("null-allocation", 23, ctx);
+        var result1 = evaluator.Evaluate("null-allocation", EvaluationType.INTEGER, 23, ctx);
         Assert.Equal(23, result1.Value);
         Assert.Equal(EvaluationReason.ERROR, result1.Reason);
         Assert.Equal("GENERAL", result1.FlagMetadata?["errorCode"]);
 
-        var result2 = evaluator.Evaluate("empty-allocation", 23, ctx);
+        var result2 = evaluator.Evaluate("empty-allocation", EvaluationType.INTEGER, 23, ctx);
         Assert.Equal(23, result2.Value);
         Assert.Equal(EvaluationReason.ERROR, result2.Reason);
         Assert.Equal("GENERAL", result2.FlagMetadata?["errorCode"]);
@@ -251,7 +251,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("simple-string", "default", ctx);
+        var result = evaluator.Evaluate("simple-string", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("test-value", result.Value);
         Assert.Equal(EvaluationReason.TARGETING_MATCH, result.Reason);
@@ -269,7 +269,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-premium", new Dictionary<string, object?> { { "email", "john@company.com" } });
 
-        var result = evaluator.Evaluate("rule-based-flag", "default", ctx);
+        var result = evaluator.Evaluate("rule-based-flag", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("premium", result.Value);
         Assert.Equal(EvaluationReason.TARGETING_MATCH, result.Reason);
@@ -287,7 +287,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-vip", new Dictionary<string, object?> { { "score", 850 } });
 
-        var result = evaluator.Evaluate("numeric-rule-flag", "default", ctx);
+        var result = evaluator.Evaluate("numeric-rule-flag", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("vip", result.Value);
         Assert.Equal(EvaluationReason.TARGETING_MATCH, result.Reason);
@@ -305,7 +305,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user");
 
-        var result = evaluator.Evaluate("time-based-flag", "default", ctx);
+        var result = evaluator.Evaluate("time-based-flag", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.DEFAULT, result.Reason);
@@ -323,7 +323,7 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator((e) => events.Add(e), new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("exposure-flag", "default", ctx);
+        var result = evaluator.Evaluate("exposure-flag", EvaluationType.STRING, "default", ctx);
 
         Assert.Equal("tracked-value", result.Value);
         Assert.Equal(EvaluationReason.TARGETING_MATCH, result.Reason);
