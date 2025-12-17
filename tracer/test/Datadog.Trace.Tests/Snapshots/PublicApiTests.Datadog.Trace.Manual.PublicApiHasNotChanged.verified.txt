@@ -490,11 +490,10 @@ namespace Datadog.Trace.FeatureFlags
 {
     public class EvaluationContext : Datadog.Trace.FeatureFlags.IEvaluationContext
     {
-        public EvaluationContext(string key, System.Collections.Generic.IDictionary<string, object?>? values = null, System.Func<object?, object?>? convertValue = null) { }
+        public EvaluationContext(string key, System.Collections.Generic.IDictionary<string, object?>? values = null) { }
+        public System.Collections.Generic.IDictionary<string, object?> Attributes { get; }
         public string TargetingKey { get; }
-        public System.Collections.Generic.IDictionary<string, object?> Values { get; }
-        public object? ConvertValue(object? value) { }
-        public object? GetValue(string key) { }
+        public object? GetAttribute(string key) { }
     }
     public enum EvaluationReason
     {
@@ -524,9 +523,8 @@ namespace Datadog.Trace.FeatureFlags
     }
     public interface IEvaluationContext
     {
+        System.Collections.Generic.IDictionary<string, object?> Attributes { get; }
         string TargetingKey { get; }
-        System.Collections.Generic.IDictionary<string, object?> Values { get; }
-        object? ConvertValue(object? value);
-        object? GetValue(string key);
+        object? GetAttribute(string key);
     }
 }
