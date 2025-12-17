@@ -11,12 +11,15 @@ namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 internal class DataStreamsTransactionContainer
 {
     private readonly object _lock = new();
+    private readonly int _initialByteSize;
 
     private byte[] _data;
     private int _size;
 
+
     internal DataStreamsTransactionContainer(int initialSizeBytes)
     {
+        _initialByteSize = initialSizeBytes;
         _data = new byte[initialSizeBytes];
     }
 
@@ -28,7 +31,7 @@ internal class DataStreamsTransactionContainer
             var transactionBytes = transactionInfo.GetBytes();
 
             // resize buffer if needed
-            if (_data.Length - _size < transactionBytes.Length)
+            if (_data.Length - _size <= transactionBytes.Length)
             {
                 var resized = new byte[_data.Length * 2];
                 Array.Copy(_data, 0, resized, 0, _size);
@@ -57,7 +60,7 @@ internal class DataStreamsTransactionContainer
             var result = new byte[_size];
             Array.Copy(_data, 0, result, 0, _size);
             // reset buffer and position
-            _data = new byte[_size];
+            _data = new byte[_initialByteSize];
             _size = 0;
             return result;
         }
