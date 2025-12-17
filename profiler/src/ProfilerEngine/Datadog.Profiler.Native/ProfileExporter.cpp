@@ -922,33 +922,35 @@ bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
         return false;
     }
 
-    int expectedSectionCount = 2;
-    int currentSection = 0;
+    bool firstSection = true;
     for (auto const& [section, kvp] : metadata)
     {
-        currentSection++;
-
         if (section == MetadataProvider::SectionEnvVars)
         {
+            if (!firstSection)
+            {
+                builder << ", ";
+            }
             ElementStart(builder, "System Properties");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
+            firstSection = false;
         }
         else if (section == MetadataProvider::SectionOverrides)
         {
+            if (!firstSection)
+            {
+                builder << ", ";
+            }
             ElementStart(builder, "System Overrides");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
+            firstSection = false;
         }
         else
         {
             // skip Runtime Settings and others
             continue;
-        }
-
-        if (currentSection < expectedSectionCount)
-        {
-            builder << ", ";
         }
     }
 
