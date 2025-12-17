@@ -49,6 +49,7 @@ namespace Datadog.Trace.Agent
         public Api(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
+            IContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
@@ -62,7 +63,7 @@ namespace Datadog.Trace.Agent
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
-            _containerMetadata = ContainerMetadata.Instance;
+            _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _healthMetricsEnabled = healthMetricsEnabled;

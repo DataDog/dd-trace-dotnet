@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Ci.Agent;
 
@@ -32,7 +33,7 @@ internal class ApmAgentWriter : IEventWriter
         // CI Vis doesn't allow reconfiguration, so don't need to subscribe to changes
         var apiRequestFactory = TracesTransportStrategy.Get(settings.Manager.InitialExporterSettings);
         var statsdManager = new StatsdManager(settings);
-        var api = new Api(apiRequestFactory, statsdManager, updateSampleRates, partialFlushEnabled, healthMetricsEnabled: false);
+        var api = new Api(apiRequestFactory, statsdManager, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled: false);
         var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
         _agentWriter = new AgentWriter(api, statsAggregator, statsdManager, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled);
