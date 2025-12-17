@@ -506,9 +506,17 @@ namespace Datadog.Trace.FeatureFlags
         UNKNOWN = 6,
         ERROR = 7,
     }
+    public enum EvaluationType
+    {
+        INTEGER = 0,
+        NUMERIC = 1,
+        STRING = 2,
+        BOOLEAN = 3,
+        JSON = 4,
+    }
     public static class FeatureFlagsSdk
     {
-        public static Datadog.Trace.FeatureFlags.IEvaluation? Evaluate(string key, System.Type targetType, object? defaultValue, Datadog.Trace.FeatureFlags.IEvaluationContext? context) { }
+        public static Datadog.Trace.FeatureFlags.IEvaluation? Evaluate(string key, Datadog.Trace.FeatureFlags.EvaluationType targetType, object? defaultValue, Datadog.Trace.FeatureFlags.IEvaluationContext? context) { }
         public static bool IsAvailable() { }
         public static void RegisterOnNewConfigEventHandler(System.Action onNewConfig) { }
     }
