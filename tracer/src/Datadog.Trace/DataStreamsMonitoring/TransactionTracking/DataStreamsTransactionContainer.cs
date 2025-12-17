@@ -53,8 +53,12 @@ internal class DataStreamsTransactionContainer
     {
         lock (_lock)
         {
-            var result = _data;
+            // trim zeros
+            var result = new byte[_size];
+            Array.Copy(_data, 0, result, 0, _size);
+            // reset buffer and position
             _data = new byte[_size];
+            _size = 0;
             return result;
         }
     }
