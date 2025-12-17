@@ -151,7 +151,7 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                TryLogWarning(ex, "Failed to dispose SIGTERM termination signal handler registration.");
+                Log.Warning(ex, "Failed to dispose SIGTERM termination signal handler registration.");
             }
 
             try
@@ -162,7 +162,7 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                TryLogWarning(ex, "Failed to dispose SIGHUP termination signal handler registration.");
+                Log.Warning(ex, "Failed to dispose SIGHUP termination signal handler registration.");
             }
 #endif
 
@@ -231,19 +231,6 @@ namespace Datadog.Trace
         }
 
 #if NET6_0_OR_GREATER
-        private static void TryLogWarning(Exception ex, string message)
-        {
-            try
-            {
-                // The message template must be a constant to avoid allocations and to satisfy logging analyzers.
-                Log.Warning(ex, "LifetimeManager shutdown warning: {Message}", message);
-            }
-            catch
-            {
-                // Ignore: logging must never throw during shutdown paths.
-            }
-        }
-
         private void TryRegisterTerminationSignalHandlers()
         {
             try
@@ -297,7 +284,7 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 // Best-effort. If we can't cancel default handling, still attempt a managed exit.
-                TryLogWarning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
+                Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
             }
 
             // Intentionally do NOT call RunShutdownTasks() directly here.
@@ -318,7 +305,7 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 // Best-effort. If this fails, the OS default handling will likely terminate the process.
-                TryLogWarning(ex, "Failed to initiate managed shutdown via Environment.Exit(0). Attempting best-effort tracer shutdown.");
+                Log.Warning(ex, "Failed to initiate managed shutdown via Environment.Exit(0). Attempting best-effort tracer shutdown.");
                 RunShutdownTasks();
             }
         }
