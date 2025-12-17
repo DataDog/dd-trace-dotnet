@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <!-- .NET Core 3.1 and .NET 5+ -->
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' AND '$(TargetFramework)' != 'netcoreapp2.1' AND '$(TargetFramework)' != 'netcoreapp3.0'">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('netcoreapp3.1', '$(TargetFramework)'))">
     <PackageReference Include="Microsoft.NETCore.App.Ref" Version="3.1.0" PrivateAssets="all" ExcludeAssets="all" />
   </ItemGroup>
   
