@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -23,7 +24,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
     {
         _testOptimizationClient = testOptimizationClient;
         var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-        var cacheFolder = Path.Combine(workingDirectory, ".dd", $".net-{testOptimization.RunId}");
+        var cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, "http");
         if (!Directory.Exists(cacheFolder))
         {
             Directory.CreateDirectory(cacheFolder);
@@ -34,7 +35,10 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     public async Task<TestOptimizationClient.SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {
-        var key = $"getSettings-{(skipFrameworkInfo ? "0" : "1")}.json";
+        using var cd = CodeDuration.Create();
+        const string keySkipFrameworkInfoFalse = "getSettings-false.json";
+        const string keySkipFrameworkInfoTrue = "getSettings-true.json";
+        var key = skipFrameworkInfo ? keySkipFrameworkInfoTrue : keySkipFrameworkInfoFalse;
 
         if (TryReadPayload<TestOptimizationClient.SettingsResponse>(key, out var payload))
         {
@@ -53,6 +57,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     public async Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
     {
+        using var cd = CodeDuration.Create();
         const string key = "getKnownTests.json";
         if (TryReadPayload<TestOptimizationClient.KnownTestsResponse>(key, out var payload))
         {
@@ -66,6 +71,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     public async Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
     {
+        using var cd = CodeDuration.Create();
         const string key = "getCommits.json";
         if (TryReadPayload<TestOptimizationClient.SearchCommitResponse>(key, out var payload))
         {
@@ -79,6 +85,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
     {
+        using var cd = CodeDuration.Create();
         const string key = "getSkippableTests.json";
         if (TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
         {
@@ -102,6 +109,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     public async Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests()
     {
+        using var cd = CodeDuration.Create();
         const string key = "getTestManagement.json";
         if (TryReadPayload<TestOptimizationClient.TestManagementResponse>(key, out var payload))
         {

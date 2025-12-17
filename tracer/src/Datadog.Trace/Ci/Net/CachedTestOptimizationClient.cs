@@ -37,24 +37,24 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     {
         if (skipFrameworkInfo)
         {
-            var response1 = await _settingsWithoutFrameworkInfo.Value.ConfigureAwait(false);
-            if (response1.RequireGit == true)
+            var skipFrameworkResponse = await _settingsWithoutFrameworkInfo.Value.ConfigureAwait(false);
+            if (skipFrameworkResponse.RequireGit == true)
             {
                 // if we require git we need to avoid catching the value because another settings request need to be executed.
                 _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(true));
             }
 
-            return response1;
+            return skipFrameworkResponse;
         }
 
-        var response2 = await _settingsWithFrameworkInfo.Value.ConfigureAwait(false);
-        if (response2.RequireGit == true)
+        var response = await _settingsWithFrameworkInfo.Value.ConfigureAwait(false);
+        if (response.RequireGit == true)
         {
             // if we require git we need to avoid catching the value because another settings request need to be executed.
             _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
         }
 
-        return response2;
+        return response;
     }
 
     public async Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
