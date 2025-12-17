@@ -61,7 +61,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
-        public Evaluation Evaluate(string flagKey, EvaluationType resultType, object? defaultValue, IEvaluationContext? context)
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext? context)
         {
             try
             {
@@ -92,21 +92,6 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-/*
-                if (!SupportedResolutionTypes.Contains(resultType))
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.ERROR,
-                        error: "TYPE_MISMATCH",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "TYPE_MISMATCH"
-                        });
-                }
-*/
-
                 if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
                 {
                     return new Evaluation(
@@ -126,6 +111,19 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.DISABLED);
+                }
+
+                if (flag.VariationType != resultType)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.ERROR,
+                        error: "TYPE_MISMATCH",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "TYPE_MISMATCH"
+                        });
                 }
 
                 if (flag.Allocations is { Count: 0 })
@@ -475,19 +473,19 @@ namespace Datadog.Trace.FeatureFlags
             return context.GetAttribute(name);
         }
 
-        internal static object? MapValue(EvaluationType target, object? value)
+        internal static object? MapValue(ValueType target, object? value)
         {
             if (value is null)
             {
                 return default!;
             }
 
-            if (target == EvaluationType.STRING)
+            if (target == ValueType.STRING)
             {
                 return Convert.ToString(value, CultureInfo.InvariantCulture);
             }
 
-            if (target == EvaluationType.BOOLEAN)
+            if (target == ValueType.BOOLEAN)
             {
                 if (value is IConvertible)
                 {
@@ -502,19 +500,19 @@ namespace Datadog.Trace.FeatureFlags
                 return bool.Parse(value.ToString()!);
             }
 
-            if (target == EvaluationType.INTEGER)
+            if (target == ValueType.INTEGER)
             {
                 var number = ParseDouble(value);
                 return (int)number;
             }
 
-            if (target == EvaluationType.NUMERIC)
+            if (target == ValueType.NUMERIC)
             {
                 var number = ParseDouble(value);
                 return (double)number;
             }
 
-            if (target == EvaluationType.JSON)
+            if (target == ValueType.JSON)
             {
                 if (value is JObject)
                 {
@@ -608,7 +606,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private Evaluation ResolveVariant(
             string flagKey,
-            EvaluationType resultType,
+            ValueType resultType,
             object? defaultValue,
             Flag flag,
             string variationKey,
