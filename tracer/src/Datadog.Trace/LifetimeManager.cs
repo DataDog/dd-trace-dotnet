@@ -9,6 +9,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+#if NET6_0_OR_GREATER
+using System.Runtime.InteropServices;
+#endif
 using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -23,6 +26,25 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
         private static LifetimeManager? _instance;
         private readonly ConcurrentQueue<object> _shutdownHooks = new();
+
+        // We can be triggered by multiple shutdown paths (ProcessExit, CancelKeyPress, signal handlers, etc).
+        // This flag ensures shutdown hooks run at most once.
+        private int _shutdownStarted;
+
+#if NET6_0_OR_GREATER
+        // .NET 10 breaking change:
+        // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/10.0/sigterm-signal-handler
+        //
+        // Starting in .NET 10, the runtime no longer installs default termination signal handlers (SIGTERM on Unix,
+        // and Windows equivalents). Without a custom handler, the OS default behavior can terminate the process
+        // immediately, skipping managed shutdown events like AppDomain.ProcessExit. We keep these registrations
+        // alive for the lifetime of the process to restore the previous behavior.
+        private IDisposable? _sigtermRegistration;
+        private IDisposable? _sighupRegistration;
+
+        // Prevent multiple concurrent calls to Environment.Exit if multiple termination signals are received.
+        private int _terminationExitInitiated;
+#endif
 
         public LifetimeManager()
         {
@@ -50,6 +72,12 @@ namespace Datadog.Trace
             {
                 Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
             }
+
+#if NET6_0_OR_GREATER
+            // Work around the .NET 10 termination signal change described here:
+            // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/10.0/sigterm-signal-handler
+            TryRegisterTerminationSignalHandlers();
+#endif
         }
 
         public static LifetimeManager Instance
@@ -105,6 +133,39 @@ namespace Datadog.Trace
 
         public void RunShutdownTasks(Exception? exception = null)
         {
+            // Ensure shutdown runs once even if multiple events fire.
+            if (Interlocked.Exchange(ref _shutdownStarted, 1) != 0)
+            {
+                return;
+            }
+
+#if NET6_0_OR_GREATER
+            // Unregister our termination handlers once shutdown begins (best-effort).
+            // This avoids re-entrancy and keeps the intent clear: after shutdown starts, we don't want to
+            // initiate additional termination paths.
+            try
+            {
+                _sigtermRegistration?.Dispose();
+                _sigtermRegistration = null;
+            }
+            catch (Exception ex)
+            {
+                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
+                TryLogWarning(ex, "Failed to dispose SIGTERM termination signal handler registration.");
+            }
+
+            try
+            {
+                _sighupRegistration?.Dispose();
+                _sighupRegistration = null;
+            }
+            catch (Exception ex)
+            {
+                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
+                TryLogWarning(ex, "Failed to dispose SIGHUP termination signal handler registration.");
+            }
+#endif
+
             try
             {
                 var current = SynchronizationContext.Current;
@@ -168,5 +229,99 @@ namespace Datadog.Trace
                 }
             }
         }
+
+#if NET6_0_OR_GREATER
+        private static void TryLogWarning(Exception ex, string message)
+        {
+            try
+            {
+                // The message template must be a constant to avoid allocations and to satisfy logging analyzers.
+                Log.Warning(ex, "LifetimeManager shutdown warning: {Message}", message);
+            }
+            catch
+            {
+                // Ignore: logging must never throw during shutdown paths.
+            }
+        }
+
+        private void TryRegisterTerminationSignalHandlers()
+        {
+            try
+            {
+                // We only need this workaround on .NET 10+ runtimes.
+                if (Environment.Version.Major < 10)
+                {
+                    // On .NET <= 9, the runtime provided default termination handlers that result in graceful exit,
+                    // so we do not install our own to avoid changing long-standing behavior.
+                    return;
+                }
+
+                // Register termination handlers to restore the pre-.NET 10 behavior (graceful managed shutdown).
+                //
+                // Microsoft guidance suggests registering SIGTERM on Unix and SIGTERM+SIGHUP on Windows:
+                // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/10.0/sigterm-signal-handler
+                _sigtermRegistration = PosixSignalRegistration.Create(PosixSignal.SIGTERM, TerminationSignalHandler); // Handle termination (Unix + Windows).
+
+                if (OperatingSystem.IsWindows())
+                {
+                    // SIGHUP is used as the Windows equivalent for console close/shutdown in the breaking-change guidance.
+                    _sighupRegistration = PosixSignalRegistration.Create(PosixSignal.SIGHUP, TerminationSignalHandler); // Handle window close/shutdown equivalents.
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register termination signal handlers. Graceful shutdown may not run on .NET 10+ termination.");
+            }
+        }
+
+        private void TerminationSignalHandler(PosixSignalContext context)
+        {
+            // Ensure this handler initiates termination at most once.
+            if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
+            {
+                // Another signal already initiated termination; do nothing.
+                return;
+            }
+
+            try
+            {
+                // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
+                // (On Windows, SIGTERM/SIGHUP can't be canceled.)
+                if (!OperatingSystem.IsWindows())
+                {
+                    // See PosixSignalRegistration.Create remarks:
+                    // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.posixsignalregistration.create
+                    context.Cancel = true; // Keep the process alive long enough to take the managed shutdown path.
+                }
+            }
+            catch (Exception ex)
+            {
+                // Best-effort. If we can't cancel default handling, still attempt a managed exit.
+                TryLogWarning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
+            }
+
+            // Intentionally do NOT call RunShutdownTasks() directly here.
+            //
+            // Reason: pre-.NET 10 behavior was "termination signal => graceful managed exit => ProcessExit event".
+            // Our existing shutdown flow is attached to AppDomain.CurrentDomain.ProcessExit (CurrentDomain_ProcessExit),
+            // so we initiate a managed shutdown and let ProcessExit invoke RunShutdownTasks just like before.
+            //
+            // Supporting runtime source references:
+            // - Environment.Exit is an internal runtime call:
+            //   https://github.com/dotnet/runtime/blob/main/src/coreclr/System.Private.CoreLib/src/System/Environment.CoreCLR.cs
+            // - ProcessExit is raised by the runtime via AppDomain.OnProcessExit():
+            //   https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/AppDomain.cs
+            try
+            {
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                // Best-effort. If this fails, the OS default handling will likely terminate the process.
+                TryLogWarning(ex, "Failed to initiate managed shutdown via Environment.Exit(0). Attempting best-effort tracer shutdown.");
+                RunShutdownTasks();
+            }
+        }
+#endif
     }
 }
