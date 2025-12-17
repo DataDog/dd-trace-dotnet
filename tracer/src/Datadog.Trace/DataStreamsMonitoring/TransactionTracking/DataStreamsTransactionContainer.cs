@@ -16,7 +16,6 @@ internal class DataStreamsTransactionContainer
     private byte[] _data;
     private int _size;
 
-
     internal DataStreamsTransactionContainer(int initialSizeBytes)
     {
         _initialByteSize = initialSizeBytes;
