@@ -44,7 +44,7 @@ internal static class GitCommandHelper
         string? cacheKey = null;
         if (useCache && string.IsNullOrEmpty(input))
         {
-            var cacheFolder = Path.Combine(workingDirectory ?? Environment.CurrentDirectory, ".dd", TestOptimization.Instance.RunId, "git");
+            var cacheFolder = Path.Combine(CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory ?? Environment.CurrentDirectory, ".dd", TestOptimization.Instance.RunId, "git");
             try
             {
                 if (!Directory.Exists(cacheFolder))
