@@ -2440,7 +2440,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(Function
         Log::Debug("ReJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, " ReJit ID=0x", std::hex, rejitId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
         return S_OK;
     }
-    
+    Log::Debug("ReJITCompilationStarted for functionId=0x", std::hex, functionId, std::dec, " ReJit ID=0x", std::hex, rejitId, std::dec);
     _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
