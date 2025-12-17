@@ -6690,7 +6690,7 @@
     "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
     "TargetParameterTypes": [
       "System.String",
-      "System.Type",
+      "Datadog.Trace.FeatureFlags.EvaluationType",
       "System.Object",
       "Datadog.Trace.FeatureFlags.IEvaluationContext"
     ],
