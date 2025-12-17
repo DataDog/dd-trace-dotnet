@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31TestsCallTarget : AspNetCoreMvc31Tests
     {
         public AspNetCoreMvc31TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, AspNetCoreFeatureFlags.None)
         {
         }
     }
@@ -28,7 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31TestsCallTargetWithFeatureFlag : AspNetCoreMvc31Tests
     {
         public AspNetCoreMvc31TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc31TestsCallTargetSingleSpan : AspNetCoreMvc31Tests
+    {
+        public AspNetCoreMvc31TestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, AspNetCoreFeatureFlags.SingleSpan)
         {
         }
     }
@@ -37,8 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         private readonly string _testName;
 
-        protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc31", fixture, output, enableRouteTemplateResourceNames)
+        protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, AspNetCoreFeatureFlags flags)
+            : base("AspNetCoreMvc31", fixture, output, flags)
         {
             SetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE", "1");
             _testName = GetTestName(nameof(AspNetCoreMvc31Tests));

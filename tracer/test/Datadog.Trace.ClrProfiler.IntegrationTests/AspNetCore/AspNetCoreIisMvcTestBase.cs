@@ -15,18 +15,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     [UsesVerify]
     public abstract class AspNetCoreIisMvcTestBase : TracingIntegrationTest, IClassFixture<IisFixture>
     {
-        private readonly bool _enableRouteTemplateResourceNames;
+        private readonly AspNetCoreFeatureFlags _flags;
 
         protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
+            : this(sampleName, fixture, output, inProcess, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None)
+        {
+        }
+
+        protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, AspNetCoreFeatureFlags flags)
             : base(sampleName, output)
         {
             InProcess = inProcess;
-            _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
+            _flags = flags;
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
             SetServiceVersion("1.0.0");
 
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
 
             Fixture = fixture;
         }
@@ -64,7 +70,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             return testName
                  + (InProcess ? ".InProcess" : ".OutOfProcess")
-                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                 + _flags switch
+                   {
+                       AspNetCoreFeatureFlags.RouteTemplateResourceNames => ".WithFF",
+                       AspNetCoreFeatureFlags.SingleSpan => ".Single",
+                       _ => ".NoFF",
+                   };
         }
     }
 }
