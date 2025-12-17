@@ -34,6 +34,11 @@ internal class DataStreamsExtractorRegistry
         }
     }
 
+    internal string AsJson()
+    {
+        return JsonConvert.SerializeObject(_extractors);
+    }
+
     internal List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)
     {
         return _extractors.GetValueOrDefault(extractorType);

@@ -49,6 +49,10 @@ internal sealed class DataStreamsManager
         _writer = writer;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
+
+        Console.WriteLine(@"### Initializing DataStreamsManager with extractors (raw): " + tracerSettings.DataStreamsTransactionExtractors);
+        Console.WriteLine(@"### Extractors loaded (parsed) " + _registry.AsJson());
+
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
         {
             if (updates.UpdatedMutable is { } updated)
@@ -146,6 +150,7 @@ internal sealed class DataStreamsManager
 
     public void TrackTransaction(string transactionId, string checkpointName)
     {
+        Console.WriteLine(@"### Tracking transaction (manager): " + transactionId);
         if (!IsEnabled)
         {
             return;

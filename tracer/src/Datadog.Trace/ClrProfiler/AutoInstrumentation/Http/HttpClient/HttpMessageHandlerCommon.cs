@@ -47,18 +47,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     return new CallTargetState(scope);
                 }
 
+                Console.WriteLine(@"### Handling outgoing http request");
                 var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 if (dataStreamsManager.IsEnabled)
                 {
                     var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders);
+                    Console.WriteLine($@"### Found {extractors?.Count} extractors");
                     if (extractors != null)
                     {
                         foreach (var extractor in extractors)
                         {
+                            Console.WriteLine($@"### Applying extractor named {extractor.Name} with value {extractor.Value}");
                             if (headers.TryGetValues(extractor.Value, out var headerValues))
                             {
                                 foreach (var headerValue in headerValues)
                                 {
+                                    Console.WriteLine($@"### Extracted transaction {headerValue}");
                                     dataStreamsManager.TrackTransaction(headerValue, extractor.Name);
                                 }
                             }

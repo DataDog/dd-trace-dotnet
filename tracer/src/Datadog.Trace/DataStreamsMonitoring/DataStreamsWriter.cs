@@ -134,6 +134,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
     public void AddTransaction(in DataStreamsTransactionInfo transaction)
     {
+        Console.WriteLine(@"### Processing data streams transaction: " + transaction);
         if (!Volatile.Read(ref _isInitialized))
         {
             Initialize();
