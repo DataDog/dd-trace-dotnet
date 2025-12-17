@@ -16,7 +16,6 @@
 
 #include "Log.h"
 
-#ifdef _WINDOWS
 // PE32 and PE64 have different optional headers, which complexify the logic to fetch them
 // This struct contains the common fields between the two types of headers
 struct IMAGE_NT_HEADERS_GENERIC
@@ -25,7 +24,6 @@ struct IMAGE_NT_HEADERS_GENERIC
     IMAGE_FILE_HEADER FileHeader;
     WORD    Magic;
 };
-#endif
 
 ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration)
     : _profilerInfo(pProfilerInfo),
@@ -65,15 +63,30 @@ const char* ManagedCodeCache::GetName()
 bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 {
     std::shared_lock<std::shared_mutex> moduleLock(m_moduleMapLock);
+    
+    // Use lower_bound to find the first range where startAddress > ip
+    // The range we're looking for (if it exists) must be the PREVIOUS range
     auto moduleIt = std::lower_bound(
         m_moduleCodeRanges.begin(),
         m_moduleCodeRanges.end(),
         ip,
         [](const ModuleCodeRange& range, std::uintptr_t ip)
         {
-            return range.startAddress < ip;
+            // Return true if range comes before ip
+            return range.startAddress <= ip;
         });
-    return moduleIt != m_moduleCodeRanges.end() && moduleIt->startAddress <= ip && moduleIt->endAddress > ip;
+    
+    // lower_bound returns first range where startAddress > ip
+    // By definition, that range cannot contain ip
+    // So we only need to check the PREVIOUS range
+    if (moduleIt == m_moduleCodeRanges.begin())
+    {
+        return false;
+    }
+    
+    --moduleIt;
+    
+    return moduleIt->contains(ip);
 }
 
 // must not be called in a signal handler (GetFunctionFromIP is not signal-safe)
@@ -88,20 +101,42 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
     auto info = GetCodeInfo(ip);
     if (info.has_value())
     {
+        //Log::Debug("ManagedCodeCache::GetFunctionId: Found function id ", std::hex, "0x", *info, " in cache for ip: 0x", std::hex, ip);
         return info;
     }
+
+    //Log::Debug("ManagedCodeCache::GetFunctionId: No function id found in function-level cache for ip: 0x", std::hex, ip);
 
     // Level 2: Check if the IP is within a module code range
     
     if (IsCodeInR2RModule(ip))
     {
-        FunctionID functionId;
-        HRESULT hr = _profilerInfo->GetFunctionFromIP((LPCBYTE)(ip), &functionId);
-        if (SUCCEEDED(hr)) {
+        //Log::Debug("ManagedCodeCache::GetFunctionId: Found function id in module code range for ip: 0x", std::hex, ip);
+        auto functionId = GetFunctionIdFromIPOriginal(ip);
+        if (functionId.has_value()) {
+            //Log::Debug("ManagedCodeCache::GetFunctionId: Found function id from GetFunctionFromIPOriginal 0x", std::hex, *functionId, " for ip: 0x", std::hex, ip);
             // in that case no need to defer this action to another thread
             // if we let another thread do this, we can remove the constraint on managed threads
-            AddFunction(functionId);
-            return std::optional<FunctionID>(functionId);
+            AddFunction(*functionId);
+            return std::optional<FunctionID>(*functionId);
+        }
+        else
+        {
+            //Log::Debug("ManagedCodeCache::GetFunctionId: Not able to find function id from GetFunctionFromIPOriginal for ip: 0x", std::hex, ip);
+        }
+    }
+    else
+    {
+        //Log::Debug("ManagedCodeCache::GetFunctionId: No function id found in cache for ip: 0x", std::hex, ip);
+        auto functionId = GetFunctionIdFromIPOriginal(ip);
+        if (functionId.has_value())
+        {
+            // We should get the code ranges and understand why it's not register on our sidde
+            LogOnce(Debug, "ManagedCodeCache::GetFunctionId: Oops, this ip was not marked as managed: 0x", std::hex, ip, " but we found a function id for it", *functionId);
+        }
+        else
+        {
+            //Log::Debug("ManagedCodeCache::GetFunctionId: No function id found from GetFunctionFromIPOriginal, probably a native ip: 0x", std::hex, ip);
         }
     }
 
@@ -193,18 +228,22 @@ const CodeRange* ManagedCodeCache::FindRangeInVector(
 {
     if (ranges.empty()) return nullptr;
     
-    // Binary search for the range containing ip
-    // Find the first range where startAddress > ip
-    auto it = std::upper_bound(
+    // Use lower_bound to find the first range where startAddress > ip
+    // The range we're looking for (if it exists) must be the PREVIOUS range
+    auto it = std::lower_bound(
         ranges.begin(),
         ranges.end(),
         ip,
-        [](UINT_PTR value, const CodeRange& range)
+        [](const CodeRange& range, UINT_PTR ip)
         {
-            return value < range.startAddress;
+            // Return true if range comes before ip
+            // This means range.startAddress <= ip
+            return range.startAddress <= ip;
         });
     
-    // Check the previous range (if it exists)
+    // lower_bound returns first range where startAddress > ip
+    // By definition, that range cannot contain ip
+    // So we only need to check the PREVIOUS range
     if (it != ranges.begin())
     {
         --it;
@@ -224,9 +263,16 @@ void ManagedCodeCache::AddFunction(FunctionID functionId)
 
     if (ranges.empty())
     {
+        //Log::Info("ManagedCodeCache::AddFunction : No ranges found for function id: ", std::hex, "0x", functionId);
         return;
     }
 
+    std::stringstream ss;
+    for (auto &range : ranges)
+    {
+        ss << std::hex << "Range: [0x" << range.startAddress << " - 0x" << range.endAddress  << "], " << std::endl;
+    }
+    //Log::Debug("ManagedCodeCache::AddFunction: Ranges for function id: ", std::hex, "0x", functionId, " are: ", ss.str());
     // IMPORTANT: Defer to background thread to avoid deadlock
     //
     // Why we can't do this synchronously:
@@ -261,8 +307,17 @@ void ManagedCodeCache::AddModule(ModuleID moduleId)
     if (moduleCodeRanges.empty())
     {
         // TODO we may want to log something here
+        Log::Debug("ManagedCodeCache::AddModule: No module code ranges found for module id: ", moduleId);
         return;
     }
+
+    std::stringstream ss;
+    for (auto &range : moduleCodeRanges)
+    {
+        ss << std::hex << "Range: [0x" << range.startAddress << " - 0x" << range.endAddress  << "], " << std::endl;
+    }
+    Log::Debug("ManagedCodeCache::AddModule: Module code ranges for module id: ", moduleId, " are: ", ss.str());
+    
 
     // IMPORTANT: Defer to background thread to avoid deadlock
     //
@@ -404,25 +459,6 @@ std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRange(UINT_PTR baseL
     std::vector<ModuleCodeRange> result;
     result.reserve(2);
 
-#ifdef LINUX
-    // ELF parsing (your existing code)
-    Elf64_Ehdr* ehdr = (Elf64_Ehdr*)baseLoadAddress;
-
-    if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG) == 0)
-    {
-        Elf64_Phdr* phdr = (Elf64_Phdr*)(baseLoadAddress + ehdr->e_phoff);
-        
-        for (int i = 0; i < ehdr->e_phnum; i++)
-        {
-            if (phdr[i].p_type == PT_LOAD && (phdr[i].p_flags & PF_X))
-            {
-                UINT_PTR codeStart = baseLoadAddress + phdr[i].p_vaddr;
-                UINT_PTR codeEnd = codeStart + phdr[i].p_memsz;
-                result.emplace_back(codeStart, codeEnd);
-            }
-        }
-    }
-#elif defined(_WINDOWS)
     // PE parsing
     auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(baseLoadAddress);
 
@@ -454,7 +490,6 @@ std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRange(UINT_PTR baseL
             result.emplace_back(codeStart, codeEnd);
         }
     }
-#endif
     return result;
 }
 
