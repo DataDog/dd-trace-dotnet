@@ -27,6 +27,7 @@ namespace Datadog.Trace.PlatformHelpers
 {
     internal sealed class AspNetCoreHttpRequestHandler
     {
+        internal const string HttpContextItemsKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
@@ -135,7 +136,7 @@ namespace Datadog.Trace.PlatformHelpers
                 requestTrackingFeature.ProxyScope = proxyScope;
             }
 
-            httpContext.Features.Set(requestTrackingFeature);
+            httpContext.Items[HttpContextItemsKey] = requestTrackingFeature;
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
@@ -160,7 +161,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             if (rootScope != null)
             {
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
                 var proxyScope = requestFeature?.ProxyScope;
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
@@ -226,7 +227,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
 
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
                 var proxyScope = requestFeature?.ProxyScope;
                 if (proxyScope?.Span != null)
                 {

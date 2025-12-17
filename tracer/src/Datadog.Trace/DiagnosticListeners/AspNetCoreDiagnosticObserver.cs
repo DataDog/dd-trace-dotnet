@@ -464,7 +464,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
@@ -616,7 +616,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 
@@ -755,7 +755,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
@@ -775,7 +775,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
