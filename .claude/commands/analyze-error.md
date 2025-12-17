@@ -97,20 +97,23 @@ Write this as a clear, step-by-step narrative focused on HOW the error occurred.
 
 ### Phase 5: Actionability Assessment
 
-Determine if this error is actionable within dd-trace-dotnet. Consider:
+Determine if this error is actionable within dd-trace-dotnet. **Default to YES (actionable) unless there's clear evidence otherwise.**
 
-**Actionable IF**:
+**Actionable (YES) IF**:
 - The error occurs entirely within dd-trace-dotnet code
 - The root cause can be identified from the stack trace
 - There's a code path in dd-trace-dotnet that can be fixed to prevent the error
 - The error indicates a bug, race condition, or incorrect assumption in dd-trace-dotnet
 
-**NOT Actionable IF**:
+**NOT Actionable (NO) IF**:
 - The error originates from framework/CLR code that dd-trace-dotnet calls
 - The error is a consequence of invalid application state (unknown to us)
 - Critical frames are REDACTED and we cannot determine the actual cause
 - The error is expected behavior under certain conditions
 - The error is environmental (missing dependencies, permissions, etc.)
+- **AND** you have explicit proof from PR descriptions/commits that this exact error was already fixed
+
+**IMPORTANT**: Do NOT mark as "not actionable" just because you found a PR that touched the same area. You need explicit evidence that this specific error scenario was fixed.
 
 ### Phase 6: Version Analysis
 
@@ -121,7 +124,12 @@ Use Bash tool with git commands to check if this might be a known or fixed issue
 3. Look for related PRs in commit messages (e.g., "(#1234)")
 4. If found, construct PR links: `https://github.com/DataDog/dd-trace-dotnet/pull/{number}`
 
-Note: The stack trace may be from an older version, so a fix may already exist in master.
+**CRITICAL - Do NOT assume a PR fixed this error unless**:
+- The PR explicitly mentions fixing this EXACT exception type and error message
+- The PR description or commit messages reference the specific bug being reported
+- You can verify that the code changes would prevent this exact error scenario
+
+**A PR that touches the same file or area is NOT sufficient evidence** - it might have fixed a different issue or even introduced this one. Default to treating the error as actionable unless you have clear proof it's fixed.
 
 ## Output Format
 
@@ -187,12 +195,17 @@ Generate a well-formatted markdown document with these sections:
 
 **Potentially Related Changes**:
 {If found, list related PRs and commits}
-- [#{PR number}](https://github.com/DataDog/dd-trace-dotnet/pull/{PR number}): {PR title} - {why relevant}
+- [#{PR number}](https://github.com/DataDog/dd-trace-dotnet/pull/{PR number}): {PR title} - {why relevant and whether it definitively fixes THIS error}
 
 {If no related changes found}
 - No recent changes found related to this error area
 
-**Note**: The stack trace may be from an older version. Check if the issue persists in the latest version.
+**IMPORTANT**: Just because a PR touched this code area does NOT mean it fixed this error. Only conclude an error is fixed if:
+1. The PR explicitly mentions this exception type and scenario
+2. The code changes clearly prevent this exact error
+3. The PR description or commits reference this specific bug
+
+Otherwise, treat the error as NEW and actionable.
 
 ## Recommended Action
 
@@ -231,7 +244,10 @@ Generate a well-formatted markdown document with these sections:
 
 ## Output File Management
 
-1. **Create output directory**: Use Bash to create `~/.claude/analysis/` if it doesn't exist
+1. **Create output directory**:
+   - On Windows: Use `powershell.exe -NoProfile -Command 'New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE ".claude\analysis") | Select-Object -ExpandProperty FullName'`
+   - On Linux/Mac: Use `mkdir -p ~/.claude/analysis && echo ~/.claude/analysis`
+   - **IMPORTANT**: On Windows, you MUST use single quotes around the PowerShell command to prevent bash from interpreting `$env:USERPROFILE`
 2. **Generate filename**: Use format `error-analysis-{YYYYMMDD-HHMMSS}.md` (e.g., `error-analysis-20250316-143022.md`)
 3. **Save file**: Write the markdown analysis to the file
 4. **Return path**: Tell the user the full path where the analysis was saved

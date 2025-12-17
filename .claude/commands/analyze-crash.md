@@ -177,7 +177,10 @@ Generate a well-formatted markdown document with these sections:
 
 ## Output File Management
 
-1. **Create output directory**: Use Bash to create `~/.claude/analysis/` if it doesn't exist
+1. **Create output directory**:
+   - On Windows: Use `powershell.exe -NoProfile -Command 'New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE ".claude\analysis") | Select-Object -ExpandProperty FullName'`
+   - On Linux/Mac: Use `mkdir -p ~/.claude/analysis && echo ~/.claude/analysis`
+   - **IMPORTANT**: On Windows, you MUST use single quotes around the PowerShell command to prevent bash from interpreting `$env:USERPROFILE`
 2. **Generate filename**: Use format `crash-analysis-{YYYYMMDD-HHMMSS}.md` (e.g., `crash-analysis-20250316-143022.md`)
 3. **Save file**: Write the markdown analysis to the file
 4. **Return path**: Tell the user the full path where the analysis was saved
