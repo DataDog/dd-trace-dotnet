@@ -112,7 +112,7 @@ run-benchmarks:
 
     # Whether to mock benchmark execution by simply copying the latest 
     # master results. Useful for testing the after_script steps
-    BP_INFRA_TEST: "true"
+    BP_INFRA_TEST: "false"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
