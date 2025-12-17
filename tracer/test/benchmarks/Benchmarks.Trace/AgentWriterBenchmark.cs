@@ -9,6 +9,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -51,7 +52,8 @@ namespace Benchmarks.Trace
 
             var api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
-                statsd: new StatsdManager(settings, (_, _) => null!),
+                new StatsdManager(settings, (_, _) => null!),
+                ContainerMetadata.Instance,
                 updateSampleRates: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
