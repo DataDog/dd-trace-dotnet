@@ -159,9 +159,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 var startBytes = bytesWritten;
                 var currentTs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
                 var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
-                bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 1, 0);
-
-                bytesWritten += MessagePackBinary.WriteMapHeader(stream, 2);
+                bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 0, 0, true);
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactions);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, dataStreamsTransactionContainer.GetDataAndReset());
@@ -175,7 +173,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             foreach (var backlogBucket in backlogsBuckets)
             {
-                bytesWritten += WriteBucketsHeader(stream, backlogBucket.BucketStartTimeNs, bucketDurationNs, 0, backlogBucket.Bucket.Values.Count);
+                bytesWritten += WriteBucketsHeader(stream, backlogBucket.BucketStartTimeNs, bucketDurationNs, 0, backlogBucket.Bucket.Values.Count, false);
 
                 foreach (var point in backlogBucket.Bucket.Values)
                 {
@@ -196,7 +194,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             foreach (var statsBucket in statsBuckets)
             {
-                bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0);
+                bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0, false);
 
                 var timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
                                              ? _currentTimestampTypeBytes
@@ -271,12 +269,13 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             return size + 5; // 5 headers
         }
 
-        private int WriteBucketsHeader(Stream stream, long bucketStartTimeNs, long bucketDurationNs, int statsBucketCount, int backlogBucketCount)
+        private int WriteBucketsHeader(Stream stream, long bucketStartTimeNs, long bucketDurationNs, int statsBucketCount, int backlogBucketCount, bool hasTransactions)
         {
             int bytesWritten = 0;
             int count = 2;
             count += statsBucketCount > 0 ? 1 : 0;
             count += backlogBucketCount > 0 ? 1 : 0;
+            count += hasTransactions ? 2 : 0;
 
             // 2-4 entries per StatsBucket (Backlogs and Stats are both optional):
             // https://github.com/DataDog/data-streams-go/blob/60ba06aec619850aef8ed0b9b1f0f5e310438362/datastreams/payload.go#L48
