@@ -490,7 +490,17 @@ namespace Datadog.Trace.ClrProfiler
                 // Iast hasn't yet, but doing it now is fine
                 // span origins is _not_ initialized yet, and we can't guarantee it will be
                 // so just be lazy instead
-                observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
+#if NET6_0_OR_GREATER
+                if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
+                {
+                    observers.Add(new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, null));
+                }
+                else
+#endif
+                {
+                    observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
+                }
+
                 observers.Add(new QuartzDiagnosticObserver());
             }
 
