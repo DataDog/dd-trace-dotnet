@@ -202,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     if (pathObject != null && pathObject.TryDuckCast<IPath>(out var pathProxy))
                     {
                         var pathList = pathProxy.ToList();
-                        if (pathList != null && pathList.Count > 0)
+                        if (pathList is { Count: > 0 })
                         {
                             var pathArray = new string[pathList.Count];
                             for (int j = 0; j < pathList.Count; j++)
