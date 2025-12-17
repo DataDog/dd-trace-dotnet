@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -50,8 +49,8 @@ internal sealed class DataStreamsManager
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
 
-        Console.WriteLine(@"### Initializing DataStreamsManager with extractors (raw): " + tracerSettings.DataStreamsTransactionExtractors);
-        Console.WriteLine(@"### Extractors loaded (parsed) " + _registry.AsJson());
+        Log.Debug(@"### Initializing DataStreamsManager with extractors (raw) {DataStreamsTransactionExtractors}", tracerSettings.DataStreamsTransactionExtractors);
+        Log.Debug(@"### Extractors loaded (parsed): {AsJson}", _registry.AsJson());
 
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
         {
@@ -150,7 +149,7 @@ internal sealed class DataStreamsManager
 
     public void TrackTransaction(string transactionId, string checkpointName)
     {
-        Console.WriteLine(@"### Tracking transaction (manager): " + transactionId);
+        Log.Debug(@"### Tracking transaction {TransactionId} at checkpoint {CheckpointName}", transactionId, checkpointName);
         if (!IsEnabled)
         {
             return;

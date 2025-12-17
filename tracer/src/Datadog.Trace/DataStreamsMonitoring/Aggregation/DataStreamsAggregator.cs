@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -82,6 +83,8 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
     {
         var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
         var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
+
+        Console.WriteLine($@"### Serializing data streams aggregator {statsToAdd.Count}, {backlogsToAdd.Count}, {_dataStreamsTransactionContainer.Size()}");
         if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0 || _dataStreamsTransactionContainer.Size() > 0)
         {
             _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd, _dataStreamsTransactionContainer);

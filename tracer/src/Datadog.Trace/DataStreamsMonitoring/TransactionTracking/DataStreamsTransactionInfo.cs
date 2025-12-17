@@ -29,6 +29,8 @@ internal readonly struct DataStreamsTransactionInfo
 
     internal long TimestampNs { get => _timestamp; }
 
+    internal string TransactionId { get => _id;  }
+
     internal static byte[] GetCacheBytes()
     {
         var result = new byte[512];

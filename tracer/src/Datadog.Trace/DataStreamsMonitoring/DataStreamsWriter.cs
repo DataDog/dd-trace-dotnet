@@ -134,7 +134,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
     public void AddTransaction(in DataStreamsTransactionInfo transaction)
     {
-        Console.WriteLine(@"### Processing data streams transaction: " + transaction);
+        Log.Debug(@"### Processing data streams transaction {Transaction}", transaction);
         if (!Volatile.Read(ref _isInitialized))
         {
             Initialize();
@@ -365,6 +365,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
                 while (_transactionBuffer.TryDequeue(out var transactionPoint))
                 {
+                    Log.Debug("### Aggregating transaction id {Id}", transactionPoint.TransactionId);
                     _aggregator.AddTransaction(transactionPoint);
                 }
             }

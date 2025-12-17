@@ -13,6 +13,7 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -155,6 +156,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             if (hasTransactions)
             {
+                var startBytes = bytesWritten;
                 var currentTs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
                 var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
                 bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 1, 0);
@@ -166,6 +168,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactionCheckpointIds);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, DataStreamsTransactionInfo.GetCacheBytes());
+
+                var transactionsSize = bytesWritten - startBytes;
+                Console.WriteLine($@"### Written {transactionsSize} for transactions");
             }
 
             foreach (var backlogBucket in backlogsBuckets)

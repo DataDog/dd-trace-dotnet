@@ -318,17 +318,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return;
             }
 
-            Console.WriteLine($@"### Handling kafka for extractor type {extractorType.ToString()}");
             var extractors = dataStreamsManager.GetExtractorsByType(extractorType);
-            Console.WriteLine($@"### Found {extractors?.Count} extractors");
             if (extractors != null && message.Headers != null)
             {
                 foreach (var extractor in extractors)
                 {
-                    Console.WriteLine($@"### Applying extractor named {extractor.Name} with value {extractor.Value}");
                     if (message.Headers.TryGetLastBytes(extractor.Value, out var transactionId))
                     {
-                        Console.WriteLine($@"### Extracted transaction {Encoding.UTF8.GetString(transactionId)}");
                         dataStreamsManager.TrackTransaction(Encoding.UTF8.GetString(transactionId), extractor.Name);
                     }
                 }
