@@ -15,14 +15,11 @@ public partial interface IEvaluationContext
     /// <summary> Gets the tareting key.</summary>
     string TargetingKey { get; }
 
-    /// <summary> Gets context values.</summary>
-    public IDictionary<string, object?> Values { get; }
+    /// <summary> Gets context attributes.</summary>
+    public IDictionary<string, object?> Attributes { get; }
 
-    /// <summary> Get the Context value if existent </summary>
+    /// <summary> Get the Context attribute if existent </summary>
     /// <param name="key"> Value key </param>
     /// <returns> Returns Context Value or null </returns>
-    object? GetValue(string key);
-
-    /// <summary> Custom value converter.</summary>
-    object? ConvertValue(object? value);
+    object? GetAttribute(string key);
 }
