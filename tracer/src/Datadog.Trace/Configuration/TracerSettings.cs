@@ -380,9 +380,23 @@ namespace Datadog.Trace.Configuration
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
 
+            SingleSpanAspNetCoreEnabled = config
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled)
+                                         .AsBool(defaultValue: false);
+#if !NET6_0_OR_GREATER
+            // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
+            if (SingleSpanAspNetCoreEnabled)
+            {
+                SingleSpanAspNetCoreEnabled = false;
+                Log.Warning(
+                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled} is set, but is only supported in .NET 6+");
+                _telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
+
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
-                                         .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
+                                         .AsBool(defaultValue: !(RouteTemplateResourceNamesEnabled || SingleSpanAspNetCoreEnabled)); // disabled by default if route template resource names or single-span enabled
 
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
@@ -1093,9 +1107,15 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
-        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> or <see cref="SingleSpanAspNetCoreEnabled"/> are <code>true</code>.
         /// </summary>
         internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether single-span ASP.NET Core instrumentation should be used.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled"/>
+        internal bool SingleSpanAspNetCoreEnabled { get; }
 
         /// <summary>
         /// Gets the direct log submission settings.
