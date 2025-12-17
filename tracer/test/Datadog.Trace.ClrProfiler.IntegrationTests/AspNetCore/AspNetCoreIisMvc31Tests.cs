@@ -52,13 +52,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+#if NET6_0_OR_GREATER
+    [Collection("IisTests")]
+    public class AspNetCoreIisMvc31TestsInProcessSingleSpan : AspNetCoreIisMvc31Tests
+    {
+        public AspNetCoreIisMvc31TestsInProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, inProcess: true, flags: AspNetCoreFeatureFlags.SingleSpan)
+        {
+        }
+    }
+
+    public class AspNetCoreIisMvc31TestsOutOfProcessSingleSpan : AspNetCoreIisMvc31Tests
+    {
+        public AspNetCoreIisMvc31TestsOutOfProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, inProcess: false, flags: AspNetCoreFeatureFlags.SingleSpan)
+        {
+        }
+    }
+#endif
+
     public abstract class AspNetCoreIisMvc31Tests : AspNetCoreIisMvcTestBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
         protected AspNetCoreIisMvc31Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc31", fixture, output, inProcess, enableRouteTemplateResourceNames)
+            : this(fixture, output, inProcess, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None)
+        {
+        }
+
+        protected AspNetCoreIisMvc31Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, AspNetCoreFeatureFlags flags)
+            : base("AspNetCoreMvc31", fixture, output, inProcess, flags)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc31Tests));
             _iisFixture = fixture;
