@@ -605,6 +605,10 @@
       "const_name": "Site"
     },
     {
+      "env_var": "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED",
+      "const_name": "SingleSpanAspnetcoreEnabled"
+    },
+    {
       "env_var": "DD_SPAN_SAMPLING_RULES",
       "const_name": "SpanSamplingRules"
     },

@@ -1335,6 +1335,12 @@
         "A"
       ]
     },
+    "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "FeatureFlags"
+    },
     "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": {
       "version": [
         "A"
