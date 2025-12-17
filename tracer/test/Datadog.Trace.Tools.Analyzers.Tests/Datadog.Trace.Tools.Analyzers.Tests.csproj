@@ -1,8 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <!-- Suppress package downgrade warning - these packages are excluded from build and only cached for test runtime -->
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,4 +19,23 @@
                       Aliases="AnalyzerCodeFixes"/>
   </ItemGroup>
 
+  <!-- Pre-cache reference assemblies to avoid test-runtime downloads from NuGet.org -->
+  <!-- Based on actual runtime monitoring of packages requested during test execution -->
+
+  <!-- .NET Framework 4.8 -->
+  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.2" PrivateAssets="all" ExcludeAssets="all" />
+  </ItemGroup>
+
+  <!-- .NET Core 2.1 and 3.0 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' OR '$(TargetFramework)' == 'netcoreapp3.0'">
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" PrivateAssets="all" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.1.0" PrivateAssets="all" ExcludeAssets="all" />
+  </ItemGroup>
+
+  <!-- .NET Core 3.1 and .NET 5+ -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' AND '$(TargetFramework)' != 'netcoreapp2.1' AND '$(TargetFramework)' != 'netcoreapp3.0'">
+    <PackageReference Include="Microsoft.NETCore.App.Ref" Version="3.1.0" PrivateAssets="all" ExcludeAssets="all" />
+  </ItemGroup>
+  
 </Project>
