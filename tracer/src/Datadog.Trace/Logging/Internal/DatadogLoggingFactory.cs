@@ -171,6 +171,13 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
+        // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
+        // because of the following API calls
+        // - Directory.Exists
+        // - Directory.CreateDirectory
+        // - Environment.GetFolderPath
+        // - Path.GetTempPath
+
         // try reading from DD_TRACE_LOG_DIRECTORY
         var configurationBuilder = new ConfigurationBuilder(source, telemetry);
         var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
@@ -208,12 +215,6 @@ internal static class DatadogLoggingFactory
 
     private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
-        // because of the following API calls
-        //   - Directory.Exists
-        //   - Directory.CreateDirectory
-        //   - Environment.GetFolderPath
-        //   - Path.GetTempPath
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
         if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
@@ -281,6 +282,7 @@ internal static class DatadogLoggingFactory
     private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         string? logDirectory = null;
+
         try
         {
             logDirectory = GetLogDirectory(source, telemetry);
