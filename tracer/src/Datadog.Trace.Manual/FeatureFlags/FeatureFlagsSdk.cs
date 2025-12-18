@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
 
@@ -12,6 +13,8 @@ namespace Datadog.Trace.FeatureFlags;
 /// <summary>
 /// Functions to retrieve FeatureFlags from server
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
+[Browsable(false)]
 public static class FeatureFlagsSdk
 {
     /// <summary> Gets a value indicating wether FeatureFlags framework is available or not </summary>
