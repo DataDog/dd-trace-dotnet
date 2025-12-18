@@ -44,6 +44,20 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory?.Error}");
             }
 
+            if (gitDirectory.Parent is not null)
+            {
+                var safeDirectory2 = ProcessHelpers.RunCommand(
+                    new ProcessHelpers.Command(
+                        cmd: "git",
+                        arguments: $"config --global --add safe.directory {gitDirectory.Parent.FullName}",
+                        workingDirectory: gitDirectory.FullName,
+                        useWhereIsIfFileNotFound: true));
+                if (safeDirectory2?.ExitCode != 0)
+                {
+                    localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory2?.Error}");
+                }
+            }
+
             // Get the repository URL
             var repositoryOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(

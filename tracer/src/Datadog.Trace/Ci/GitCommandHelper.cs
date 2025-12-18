@@ -42,9 +42,10 @@ internal static class GitCommandHelper
     {
         using var cd = CodeDurationRef.Create();
         string? cacheKey = null;
+        workingDirectory ??= CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory ?? Environment.CurrentDirectory;
         if (useCache && string.IsNullOrEmpty(input))
         {
-            var cacheFolder = Path.Combine(CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory ?? Environment.CurrentDirectory, ".dd", TestOptimization.Instance.RunId, "git");
+            var cacheFolder = Path.Combine(CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory, ".dd", TestOptimization.Instance.RunId, "git");
             try
             {
                 if (!Directory.Exists(cacheFolder))
@@ -105,6 +106,7 @@ internal static class GitCommandHelper
                 var sb = StringBuilderCache.Acquire();
                 sb.AppendLine(" -> ");
                 sb.AppendLine($"  command : git {arguments}");
+                sb.AppendLine($"       wd : {workingDirectory}");
                 sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
