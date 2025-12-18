@@ -5,10 +5,11 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <Nullable>enable</Nullable>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.9.0</ApiVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenFeature" Version="2.9.0" />
+    <PackageReference Include="OpenFeature" Version="$(ApiVersion)" />
   </ItemGroup>
 
   <ItemGroup>

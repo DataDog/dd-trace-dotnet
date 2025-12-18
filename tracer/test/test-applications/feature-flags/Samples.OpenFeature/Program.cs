@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using OpenFeature.Model;
 
-namespace Samples.OpenFeature_2_9;
+namespace Samples.OpenFeature;
 
 class Program
 {
@@ -11,8 +11,8 @@ class Program
     {
         Console.WriteLine("OpenFeature 2.9 FeatureFlags SDK Sample");
 
-        OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
-        var client = OpenFeature.Api.Instance.GetClient();
+        global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
+        var client = global::OpenFeature.Api.Instance.GetClient();
 
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
         {

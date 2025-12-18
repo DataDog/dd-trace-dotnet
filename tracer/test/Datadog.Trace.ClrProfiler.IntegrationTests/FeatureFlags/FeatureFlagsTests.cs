@@ -44,10 +44,10 @@ public class FeatureFlagsTests : FeatureFlagsTestsBase
 #if NETFRAMEWORK
 [Collection(nameof(ManualInstrumentationTests))]
 #endif
-public class OpenFeature_2_9_FeatureFlagsTests : FeatureFlagsTestsBase
+public class OpenFeatureFeatureFlagsTests : FeatureFlagsTestsBase
 {
-    public OpenFeature_2_9_FeatureFlagsTests(ITestOutputHelper output)
-        : base("OpenFeature-2.9", output)
+    public OpenFeatureFeatureFlagsTests(ITestOutputHelper output)
+        : base("OpenFeature", output)
     {
     }
 }
