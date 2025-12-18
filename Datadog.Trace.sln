@@ -633,8 +633,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OpenFeature-2.9", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature", "tracer\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj", "{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1535,10 +1533,6 @@ Global
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E40B79B5-F801-FD8B-901A-0B3CE8B5486C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1789,7 +1783,6 @@ Global
 		{D5A8ABB9-CB23-974E-F338-5D9172D96CD8} = {D0C69381-F696-4113-BE7E-BA43468F431C}
 		{021D714E-1764-D76B-15B5-C9114FE934C2} = {D0C69381-F696-4113-BE7E-BA43468F431C}
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{E40B79B5-F801-FD8B-901A-0B3CE8B5486C} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

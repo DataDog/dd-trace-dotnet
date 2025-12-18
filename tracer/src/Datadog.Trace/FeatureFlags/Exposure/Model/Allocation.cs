@@ -11,27 +11,4 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal class Allocation(string key)
-{
-    public string Key { get; } = key;
-
-    public override bool Equals(object? obj)
-    {
-        if (this == obj)
-        {
-            return true;
-        }
-
-        if (obj is Allocation that)
-        {
-            return Key.Equals(that.Key);
-        }
-
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return Key.GetHashCode();
-    }
-}
+internal sealed record Allocation(string Key);

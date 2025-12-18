@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 using Datadog.Trace.FeatureFlags;
 
 namespace Samples.FeatureFlags;
@@ -8,7 +9,6 @@ class Program
 
     private static void Main(string[] args)
     {
-        // See https://aka.ms/new-console-template for more information
         Console.WriteLine("FeatureFlags SDK Sample");
 
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
@@ -27,7 +27,7 @@ class Program
 
 
         int configUpdates = 0;
-        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => configUpdates++);
+        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
         int attempts = 5;
         while (configUpdates == 0)

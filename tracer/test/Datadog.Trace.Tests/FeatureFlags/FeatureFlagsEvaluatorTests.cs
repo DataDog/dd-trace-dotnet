@@ -340,7 +340,7 @@ public partial class FeatureFlagsEvaluatorTests
         };
 
         List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var evaluator = new FeatureFlagsEvaluator((in e) => events.Add(e), new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
         var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.STRING, "default", ctx);

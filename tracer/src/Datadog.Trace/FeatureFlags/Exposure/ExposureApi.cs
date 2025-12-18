@@ -118,7 +118,7 @@ namespace Datadog.Trace.Exposure
             return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
         }
 
-        public void SendExposure(ExposureEvent exposure)
+        public void SendExposure(in ExposureEvent exposure)
         {
             lock (_exposures)
             {
