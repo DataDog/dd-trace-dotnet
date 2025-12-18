@@ -165,11 +165,12 @@ internal static class DatadogLoggingFactory
         return new DatadogSerilogLogger(internalLogger, rateLimiter, config.File);
     }
 
-    [TestingAndPrivateOnly]
+    [TestingOnly]
     internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
         => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
 
-    private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    [TestingAndPrivateOnly]
+    internal static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
@@ -213,7 +214,8 @@ internal static class DatadogLoggingFactory
         return Path.GetTempPath();
     }
 
-    private static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    [TestingAndPrivateOnly]
+    internal static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
@@ -238,7 +240,8 @@ internal static class DatadogLoggingFactory
         return logDirectory;
     }
 
-    private static string GetProgramDataDirectory()
+    [TestingAndPrivateOnly]
+    internal static string GetProgramDataDirectory()
     {
         // On Nano Server, this returns "", so we fall back to reading from the env var set in the base image instead
         // - https://github.com/dotnet/runtime/issues/22690
@@ -262,7 +265,8 @@ internal static class DatadogLoggingFactory
         return programData;
     }
 
-    private static bool TryCreateLogDirectory(string logDirectory)
+    [TestingAndPrivateOnly]
+    internal static bool TryCreateLogDirectory(string logDirectory)
     {
         try
         {
