@@ -214,7 +214,7 @@ void HeapSnapshotManager::OnBulkNodes(
 {
 #ifndef NDEBUG
     // for debugging purpose only
-    std::cout << "OnBulkNodes #" << index << " x" << count  << std::endl;
+    //std::cout << "OnBulkNodes #" << index << " x" << count  << std::endl;
 #endif
 
     std::lock_guard lock(_histogramLock);
@@ -255,7 +255,7 @@ void HeapSnapshotManager::OnBulkEdges(
 {
 #ifndef NDEBUG
     // for debugging purpose only
-    std::cout << "OnBulkEdges #" << index << " x" << count << std::endl;
+    //std::cout << "OnBulkEdges #" << index << " x" << count << std::endl;
 #endif
 
     // TODO: should be used to rebuild the reference chain. For more details,
@@ -316,7 +316,7 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
         {
 #ifndef NDEBUG
             // for debugging purpose only
-            std::cout << "OnGarbageCollectionEnd" << std::endl;
+            //std::cout << "OnGarbageCollectionEnd" << std::endl;
 #endif
 
             // the induced GC triggered to generate the heap snapshot has ended
