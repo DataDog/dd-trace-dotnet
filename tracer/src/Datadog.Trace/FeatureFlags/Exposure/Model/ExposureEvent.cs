@@ -11,15 +11,4 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal class ExposureEvent(long timeStamp, Allocation allocation, Flag flag, Variant variant, Subject subject)
-{
-    public long TimeStamp { get; } = timeStamp;
-
-    public Allocation Allocation { get; } = allocation;
-
-    public Flag Flag { get; } = flag;
-
-    public Variant Variant { get; } = variant;
-
-    public Subject Subject { get; } = subject;
-}
+internal sealed record ExposureEvent(long TimeStamp, Allocation Allocation, Flag Flag, Variant Variant, Subject Subject);

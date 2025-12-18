@@ -11,7 +11,4 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal class Flag(string key)
-{
-    public string Key { get; } = key;
-}
+internal sealed record Flag(string Key);

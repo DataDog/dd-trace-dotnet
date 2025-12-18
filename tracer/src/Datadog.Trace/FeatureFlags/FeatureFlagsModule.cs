@@ -135,7 +135,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void ReportExposure(ExposureEvent exposure)
+        private void ReportExposure(in ExposureEvent exposure)
         {
             _exposureApi?.SendExposure(exposure);
         }

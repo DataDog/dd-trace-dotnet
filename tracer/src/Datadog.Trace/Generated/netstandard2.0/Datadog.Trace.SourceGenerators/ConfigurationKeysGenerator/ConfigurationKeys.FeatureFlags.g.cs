@@ -19,6 +19,7 @@ internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Enables Feature Flags Provider (Experimental).
+        /// Default value is <c>false</c> (disabled).
         /// </summary>
         public const string FlaggingProviderEnabled = "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED";
 
@@ -83,7 +84,7 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
-        /// Default value is <c>false</c> (enabled).
+        /// Default value is <c>false</c> (disabled).
         /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
         /// <ul>
         ///   <li>The database is Microsoft SQL Server and <see cref="TracerSettings.DbmPropagationMode"/> is set to 

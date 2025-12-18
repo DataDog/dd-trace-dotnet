@@ -6,17 +6,12 @@
 #nullable enable
 
 using System;
-using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -40,11 +35,11 @@ namespace Datadog.Trace.FeatureFlags
             "MM-dd-yyyy'T'HH:mm:ss'Z'",
         };
 
-        private readonly Action<Exposure.Model.ExposureEvent>? _onExposureEvent;
+        private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
         private readonly long _timeoutMs;
 
-        public FeatureFlagsEvaluator(Action<Exposure.Model.ExposureEvent>? onExposureEvent, ServerConfiguration? config, long timeoutMs = 1000)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, long timeoutMs = 1000)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
@@ -681,5 +676,9 @@ namespace Datadog.Trace.FeatureFlags
 
             public object? Value { get; } = value;
         }
+
+#pragma warning disable SA1201 // Elements should appear in the correct order
+        internal delegate void ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
+#pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }

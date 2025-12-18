@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using OpenFeature.Model;
 
 namespace Samples.OpenFeature_2_9;
@@ -8,7 +9,6 @@ class Program
 
     private static void Main(string[] args)
     {
-        // See https://aka.ms/new-console-template for more information
         Console.WriteLine("OpenFeature 2.9 FeatureFlags SDK Sample");
 
         OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
@@ -30,7 +30,7 @@ class Program
 
 
         int configUpdates = 0;
-        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => configUpdates++);
+        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
         int attempts = 5;
         while (configUpdates == 0)
