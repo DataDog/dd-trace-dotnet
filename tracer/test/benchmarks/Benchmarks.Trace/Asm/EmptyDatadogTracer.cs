@@ -3,14 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-
-// <copyright file="EmptyDatadogTracer.cs" company="Datadog">
-// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
-// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
-// </copyright>
-
 using Datadog.Trace;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Benchmarks.Trace.Asm
@@ -26,7 +20,7 @@ namespace Benchmarks.Trace.Asm
         {
             Settings = new(new NullConfigurationSource());
             _gitMetadata = new NullGitMetadataProvider();
-            _perTraceSettings = new PerTraceSettings(null, null, null, Settings.InitialMutableSettings);
+            _perTraceSettings = new PerTraceSettings(null, null, null, Settings.Manager.InitialMutableSettings);
         }
 
         public string DefaultServiceName => "My Service Name";
@@ -37,7 +31,7 @@ namespace Benchmarks.Trace.Asm
 
         PerTraceSettings IDatadogTracer.PerTraceSettings => _perTraceSettings;
 
-        void IDatadogTracer.Write(ArraySegment<Span> span)
+        void IDatadogTracer.Write(in SpanCollection span)
         {
            
         }

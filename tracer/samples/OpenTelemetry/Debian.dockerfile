@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Download the Datadog .NET Tracer
-ARG TRACER_VERSION=3.31.0
+ARG TRACER_VERSION=3.33.0
 RUN mkdir -p /var/log/datadog
 RUN mkdir -p /opt/datadog
 RUN curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb

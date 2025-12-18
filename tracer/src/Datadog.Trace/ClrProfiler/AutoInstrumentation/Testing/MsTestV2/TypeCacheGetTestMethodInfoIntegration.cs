@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TypeCacheGetTestMethodInfoIntegration
+public sealed class TypeCacheGetTestMethodInfoIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext, ref bool captureDebugTraces)
         => TypeCacheGetTestMethodInfoIntegrationV3_9.OnMethodBegin(instance, ref testMethod, ref testContext);
@@ -57,7 +57,7 @@ public class TypeCacheGetTestMethodInfoIntegration
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public class TypeCacheGetTestMethodInfoIntegrationV3_9
+public sealed class TypeCacheGetTestMethodInfoIntegrationV3_9
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext)

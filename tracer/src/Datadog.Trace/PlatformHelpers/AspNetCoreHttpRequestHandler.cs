@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
+﻿// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -98,7 +98,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -144,8 +144,7 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            var iastInstance = Iast.Iast.Instance;
-            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();
@@ -250,7 +249,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        internal class RequestTrackingFeature
+        internal sealed class RequestTrackingFeature
         {
             public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
             {

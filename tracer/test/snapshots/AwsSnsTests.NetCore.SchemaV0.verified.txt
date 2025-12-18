@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -64,10 +64,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTopic,
       runtime-id: Guid_1,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.peer.service.source: topicname
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -95,10 +97,12 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyTopic,
       runtime-id: Guid_1,
       span.kind: producer,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.peer.service.source: topicname
     },
     Metrics: {
       _dd.top_level: 1.0

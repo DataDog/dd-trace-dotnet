@@ -52,7 +52,7 @@ internal static class CiUtils
         }
 
         // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
-        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        var testOptimization = new TestOptimization();
         var testOptimizationSettings = testOptimization.Settings;
         TestOptimization.Instance = testOptimization;
 
@@ -269,6 +269,11 @@ internal static class CiUtils
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled] = "1";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.RateLimitSeconds] = "0";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.UploadFlushInterval] = "1000";
+
+            if (agentless)
+            {
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled] = "1";
+            }
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled

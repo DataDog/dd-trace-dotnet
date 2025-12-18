@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         internal async Task ValidateSingleValue(object local)
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(local);
+            var snapshot = SnapshotHelper.GenerateSnapshot(local, withProcessTags: true);
 
             output.WriteLine("Snapshot: " + snapshot);
             var verifierSettings = new VerifySettings();

@@ -41,7 +41,7 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded-for: 86.242.244.246,
-      http.response.headers.content-length: 167,
+      http.response.headers.content-length: 225,
       http.response.headers.content-type: application/json; charset=utf-8,
       http.route: api/home/api-security/{id},
       http.status_code: 403,
@@ -51,7 +51,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-932-160","name":"Remote Command Execution: Unix Shell Code Found","tags":{"category":"attack_attempt","type":"command_injection"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dev/zero"],"key_path":["model","Dog2"],"value":"dev/zero"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-932-160","name":"Remote Command Execution: Unix Shell Code Found","tags":{"category":"attack_attempt","type":"command_injection"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dev/zero"],"key_path":["model","Dog2"],"value":"dev/zero"}]}],"security_response_id":"Guid_2"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },

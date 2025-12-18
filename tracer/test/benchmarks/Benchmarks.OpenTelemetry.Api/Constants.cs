@@ -7,4 +7,7 @@ namespace Benchmarks.OpenTelemetry.Api;
 public class Constants
 {
     public const string TracerCategory = "tracer";
+
+    public const string RunOnMaster = "master";
+    public const string RunOnPrs = "prs";
 }

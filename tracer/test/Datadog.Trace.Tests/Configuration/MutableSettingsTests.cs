@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
@@ -183,7 +183,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-            _writerMock.Verify(w => w.WriteTrace(It.IsAny<ArraySegment<Span>>()), assertion);
+            _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
         }
 
         [Theory]

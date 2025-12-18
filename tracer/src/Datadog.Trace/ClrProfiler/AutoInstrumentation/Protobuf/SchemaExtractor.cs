@@ -1,4 +1,4 @@
-// <copyright file="SchemaExtractor.cs" company="Datadog">
+﻿// <copyright file="SchemaExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,11 +19,11 @@ using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
-internal class SchemaExtractor
+internal static class SchemaExtractor
 {
     private const int MaxProtobufSchemas = 100;
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SchemaExtractor>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SchemaExtractor));
 
     private static readonly SmallCacheOrNoCache<string, Schema> SchemaCache = new(MaxProtobufSchemas, "protobuf schema names");
 
@@ -79,7 +79,7 @@ internal class SchemaExtractor
         activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
-    private class Extractor
+    private sealed class Extractor
     {
         // those two properties need to be consistent across tracers to ensure consistent hashes when proto messages cross language boundaries.
         // take extra care if modifying them.
@@ -291,7 +291,7 @@ internal class SchemaExtractor
         }
     }
 
-    private class Schema
+    private sealed class Schema
     {
         public Schema(OpenApiDocument openApiDoc, ulong hash)
         {

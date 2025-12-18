@@ -1,4 +1,4 @@
-// <copyright file="ExceptionReplaySnapshotCreator.cs" company="Datadog">
+﻿// <copyright file="ExceptionReplaySnapshotCreator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,15 +12,15 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplaySnapshotCreator : DebuggerSnapshotCreator
+    internal sealed class ExceptionReplaySnapshotCreator : DebuggerSnapshotCreator
     {
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
-            : base(isFullSnapshot, location, hasCondition, tags, limitInfo)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags)
+            : base(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags)
         {
         }
 
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
-            : base(isFullSnapshot, location, hasCondition, tags, methodScopeMembers, limitInfo)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags)
+            : base(isFullSnapshot, location, hasCondition, tags, methodScopeMembers, limitInfo, withProcessTags)
         {
         }
 

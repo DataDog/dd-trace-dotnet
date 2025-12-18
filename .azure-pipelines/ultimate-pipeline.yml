@@ -135,7 +135,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.32.0
+  ToolVersion: 3.34.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -6401,8 +6401,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |
@@ -6455,8 +6461,14 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - script: docker pull $(runtimeImage)
-          displayName: Pull dockerfile
+        - script: |
+            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
+              echo "Image already exists locally, skipping pull"
+            else
+              echo "Image not found — pulling"
+              docker pull "$(runtimeImage)"
+            fi
+          displayName: Pull missing images
           retryCountOnTaskFailure: 3
 
         - script: |

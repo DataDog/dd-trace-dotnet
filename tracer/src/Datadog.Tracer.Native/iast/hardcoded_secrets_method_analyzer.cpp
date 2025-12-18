@@ -66,7 +66,7 @@ int HardcodedSecretsMethodAnalyzer::GetUserStrings(int arrSize, UserStringIntero
 {
     CSGUARD(_cs);
     _deliveredUserStrings.clear();
-    _deliveredUserStrings.reserve(fmin(arrSize, _userStrings.size()));
+    _deliveredUserStrings.reserve((size_t)fmin(arrSize, _userStrings.size()));
     int x = 0;
     while (x < arrSize && _userStrings.size() > 0)
     {

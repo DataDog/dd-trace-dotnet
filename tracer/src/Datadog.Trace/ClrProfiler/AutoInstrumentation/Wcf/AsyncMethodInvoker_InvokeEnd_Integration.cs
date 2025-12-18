@@ -9,7 +9,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -27,8 +26,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncMethodInvoker_InvokeEnd_Integration
+    public sealed class AsyncMethodInvoker_InvokeEnd_Integration
     {
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? instanceArg, object[]? outputs, IAsyncResult? result)
+        {
+            var tracer = Tracer.Instance;
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            return WcfCommon.ActivateScopeFromContext();
+        }
+
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
@@ -39,27 +49,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
-            if (exception is not null)
+            if (state.Scope is not null && exception is not null)
             {
-                var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
-
-                if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
-                {
-                    var requestContext = operationContextProxy.RequestContext;
-
-                    // Retrieve the scope that we saved during InvokeBegin
-                    if (((IDuckType?)requestContext)?.Instance is object requestContextInstance
-                        && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
-                    {
-                        // Add the exception but do not dispose the span.
-                        // BeforeSendReplyIntegration is responsible for closing the span.
-                        scope.Span?.SetException(exception);
-                    }
-                }
+                // Add the exception but do not dispose the scope.
+                // BeforeSendReplyIntegration is responsible for closing the span.
+                state.Scope.Span.SetException(exception);
             }
 
+            WcfCommon.RestorePreviousScope(in state);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

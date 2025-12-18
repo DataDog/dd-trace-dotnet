@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Text;
 [AspectClass("mscorlib,netstandard,System.Runtime")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class StringBuilderAspects
+public sealed class StringBuilderAspects
 {
     /// <summary> StringBuildr ctor aspect </summary>
     /// <param name="value"> Init string </param>

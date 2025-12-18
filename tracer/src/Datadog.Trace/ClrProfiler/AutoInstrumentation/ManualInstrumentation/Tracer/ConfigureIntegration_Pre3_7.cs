@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigureIntegration_Pre3_7.cs" company="Datadog">
+// <copyright file="ConfigureIntegration_Pre3_7.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ConfigureIntegration_Pre3_7
+public sealed class ConfigureIntegration_Pre3_7
 {
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values)
     {

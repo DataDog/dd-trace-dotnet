@@ -27,6 +27,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsGcThreadsCpuTimeEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsThreadLifetimeEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHeapSnapshotEnabled()).WillRepeatedly(Return(false));
 
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
@@ -40,6 +41,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::CpuGc));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::ThreadsLifetime));
+    ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::HeapSnapshot));
 }
 
 TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
@@ -56,6 +58,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsGcThreadsCpuTimeEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsThreadLifetimeEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsHeapSnapshotEnabled()).WillRepeatedly(Return(true));
 
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
@@ -69,6 +72,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::CpuGc));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::ThreadsLifetime));
+    ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::HeapSnapshot));
 }
 
 TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
@@ -92,6 +96,7 @@ TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::Exceptions));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::CpuGc));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::ThreadsLifetime));
+    ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::HeapSnapshot));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::WallTime));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Allocations));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::LockContention));

@@ -1,4 +1,4 @@
-// <copyright file="AvoidCoverageAttribute.cs" company="Datadog">
+﻿// <copyright file="AvoidCoverageAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,6 @@ namespace Datadog.Trace.Ci.Coverage.Attributes;
 /// Avoid coverage attribute
 /// Used to ignore processing an assembly
 /// </summary>
-public class AvoidCoverageAttribute : Attribute
+public sealed class AvoidCoverageAttribute : Attribute
 {
 }

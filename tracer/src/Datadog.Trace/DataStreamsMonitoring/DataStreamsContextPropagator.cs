@@ -1,4 +1,4 @@
-// <copyright file="DataStreamsContextPropagator.cs" company="Datadog">
+﻿// <copyright file="DataStreamsContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// <summary>
 /// Used for injecting the data streams pipeline context into headers
 /// </summary>
-internal class DataStreamsContextPropagator
+internal sealed class DataStreamsContextPropagator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsContextPropagator>();
 
@@ -29,12 +29,8 @@ internal class DataStreamsContextPropagator
     /// </summary>
     /// <param name="context">A <see cref="PathwayContext"/> value that will be propagated into <paramref name="headers"/>.</param>
     /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
+    /// <param name="isDataStreamsLegacyHeadersEnabled">Are legacy DSM headers enabled</param>
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
-    public void Inject<TCarrier>(PathwayContext context, TCarrier headers)
-        where TCarrier : IBinaryHeadersCollection
-        => Inject(context, headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
-
-    [TestingAndPrivateOnly]
     internal void Inject<TCarrier>(PathwayContext context, TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
         where TCarrier : IBinaryHeadersCollection
     {

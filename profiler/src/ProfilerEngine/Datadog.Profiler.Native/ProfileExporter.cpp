@@ -25,6 +25,7 @@
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
+#include "IHeapSnapshotManager.h"
 
 #include <cassert>
 #include <fstream>
@@ -69,6 +70,8 @@ std::string const ProfileExporter::MetricsFilename = "metrics.json";
 
 std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
+std::string const ProfileExporter::ClassHistogramFilename = "histogram.json";
+
 ProfileExporter::ProfileExporter(
     std::vector<SampleValueType> sampleTypeDefinitions,
     IConfiguration* configuration,
@@ -78,7 +81,8 @@ ProfileExporter::ProfileExporter(
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
     ISsiManager* ssiManager,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    IHeapSnapshotManager* heapSnapshotManager) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
@@ -86,7 +90,8 @@ ProfileExporter::ProfileExporter(
     _metadataProvider{metadataProvider},
     _configuration{configuration},
     _runtimeInfo{runtimeInfo},
-    _ssiManager{ssiManager}
+    _ssiManager{ssiManager},
+    _heapSnapshotManager{heapSnapshotManager}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -303,6 +308,16 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
             buffer << separator;
         }
         buffer << "threadsLifetime";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::HeapSnapshot))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "heapsnapshot";
         emptyList = false;
     }
 
@@ -577,6 +592,10 @@ bool ProfileExporter::Export(bool lastCall)
     // Process-level samples
     auto processSamples = GetProcessSamples();
 
+    // additional content to be sent along the .pprof
+    auto metricsFileContent = CreateMetricsFileContent();
+    auto classHistogramContent = CreateClassHistogramContent();
+
     for (auto& runtimeId : keys)
     {
         std::unique_ptr<libdatadog::Profile> profile;
@@ -652,10 +671,14 @@ bool ProfileExporter::Export(bool lastCall)
 
         auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
 
-        auto metricsFileContent = CreateMetricsFileContent();
         if (!metricsFileContent.empty())
         {
             filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
+        }
+
+        if (!classHistogramContent.empty())
+        {
+            filesToSend.emplace_back(ClassHistogramFilename, std::move(classHistogramContent));
         }
 
         std::string metadataJson = GetMetadata();
@@ -702,6 +725,27 @@ std::string ProfileExporter::CreateMetricsFileContent() const
         builder << "]";
     }
     return builder.str();
+}
+
+std::string ProfileExporter::CreateClassHistogramContent() const
+{
+    if (_heapSnapshotManager == nullptr)
+    {
+        return "";
+    }
+
+    // TODO: is it a problem to have the manager responsible for the serialization format?
+    // Otherwhise, we would need to return the map while clearing it
+    auto heapSnapshot = _heapSnapshotManager->GetAndClearHeapSnapshotText();
+    if (!heapSnapshot.empty())
+    {
+        // prepare class histogram to be sent
+        std::stringstream builder;
+        builder << heapSnapshot;
+        return builder.str();
+    }
+
+    return "";
 }
 
 std::string ProfileExporter::GetMetadata() const

@@ -1,4 +1,4 @@
-// <copyright file="Obfuscator.cs" company="Datadog">
+﻿// <copyright file="Obfuscator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
-    internal class Obfuscator : ObfuscatorBase
+    internal sealed class Obfuscator : ObfuscatorBase
     {
         private const string ReplacementString = "<redacted>";
         private readonly Regex _regex;

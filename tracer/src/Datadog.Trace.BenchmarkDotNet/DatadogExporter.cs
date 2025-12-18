@@ -63,7 +63,7 @@ internal class DatadogExporter : IExporter
     {
         var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
         Exception? exception = null;
-        if (summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
+        if (summary.HostEnvironmentInfo is { Cpu.Value: { } cpuInfo, Os.Value: { } osInfo } hostEnvironmentInfo)
         {
             var groupedReports = summary.Reports
                                         .Where(r => r?.BenchmarkCase?.Descriptor?.Type is not null)
@@ -134,12 +134,12 @@ internal class DatadogExporter : IExporter
                             test.SetBenchmarkMetadata(
                                 new BenchmarkHostInfo
                                 {
-                                    ProcessorName = ProcessorBrandStringHelper.Prettify(cpuInfo),
+                                    ProcessorName = cpuInfo.GetDisplay(),
                                     ProcessorCount = cpuInfo.PhysicalProcessorCount,
                                     PhysicalCoreCount = cpuInfo.PhysicalCoreCount,
                                     LogicalCoreCount = cpuInfo.LogicalCoreCount,
-                                    ProcessorMaxFrequencyHertz = cpuInfo.MaxFrequency?.Hertz,
-                                    OsVersion = hostEnvironmentInfo.OsVersion?.Value,
+                                    ProcessorMaxFrequencyHertz = cpuInfo.MaxFrequencyHz,
+                                    OsVersion = osInfo.Version,
                                     RuntimeVersion = hostEnvironmentInfo.RuntimeVersion,
                                     ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
                                     ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
@@ -201,27 +201,27 @@ internal class DatadogExporter : IExporter
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.GarbageCollectorGen0,
                                     "Garbage collector Gen0 count",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen0Collections }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.Gen0Collections]));
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.GarbageCollectorGen1,
                                     "Garbage collector Gen1 count",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen1Collections }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.Gen1Collections]));
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.GarbageCollectorGen2,
                                     "Garbage collector Gen2 count",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen2Collections }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.Gen2Collections]));
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.MemoryTotalOperations,
                                     "Memory total operations count",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.TotalOperations }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.TotalOperations]));
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.MeanHeapAllocations,
                                     "Bytes allocated per operation",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.GetBytesAllocatedPerOperation(benchmarkCase) }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.GetBytesAllocatedPerOperation(benchmarkCase) ?? 0]));
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.TotalHeapAllocations,
                                     "Total Bytes allocated",
-                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.GetTotalAllocatedBytes(true) }));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.GetTotalAllocatedBytes(true) ?? 0]));
                             }
 
                             test.Close(benchmarkTest.Success ? TestStatus.Pass : TestStatus.Fail, testEndTime - testStartTime);
@@ -240,10 +240,10 @@ internal class DatadogExporter : IExporter
 
         if (exception is not null)
         {
-            return new[] { "Datadog Exporter error: " + exception };
+            return ["Datadog Exporter error: " + exception];
         }
 
-        return new[] { $"Datadog Exporter ran successfully." };
+        return [$"Datadog Exporter ran successfully."];
     }
 
     internal async Task DisposeTestSessionAndModules()

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 
-internal class AutoUserInstrum
+internal sealed class AutoUserInstrum
 {
     public string? Mode { get; set; }
 }

@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Vendors.Datadog.Sketches;
@@ -15,16 +17,13 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
-    internal class DataStreamsMessagePackFormatter
+    internal sealed class DataStreamsMessagePackFormatter
     {
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
-        private readonly byte[] _environmentValueBytes;
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
         private readonly long _productMask;
         private readonly bool _isInDefaultState;
         private readonly bool _writeProcessTags;
-
-        private readonly byte[] _serviceValueBytes;
 
         // private readonly byte[] _primaryTagBytes = StringEncoding.UTF8.GetBytes("PrimaryTag");
         // private readonly byte[] _primaryTagValueBytes;
@@ -54,18 +53,37 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _processTagsBytes = StringEncoding.UTF8.GetBytes("ProcessTags");
         private readonly byte[] _isInDefaultStateBytes = StringEncoding.UTF8.GetBytes("IsInDefaultState");
 
-        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings, string defaultServiceName)
+        private byte[] _environmentValueBytes;
+        private byte[] _serviceValueBytes;
+
+        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
-            var env = tracerSettings.Environment;
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
-            _environmentValueBytes = string.IsNullOrEmpty(env)
-                                         ? []
-                                         : StringEncoding.UTF8.GetBytes(env);
-            _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
+            UpdateSettings(tracerSettings.Manager.InitialMutableSettings);
+            // Not disposing the subscription on the basis this is never cleaned up
+            tracerSettings.Manager.SubscribeToChanges(changes =>
+            {
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdateSettings(mutable);
+                }
+            });
+
             _productMask = GetProductsMask(tracerSettings, profilerSettings);
             _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
             _writeProcessTags = tracerSettings.PropagateProcessTags;
+
+            [MemberNotNull(nameof(_environmentValueBytes))]
+            [MemberNotNull(nameof(_serviceValueBytes))]
+            void UpdateSettings(MutableSettings settings)
+            {
+                var env = StringUtil.IsNullOrEmpty(settings.Environment) ? [] : StringEncoding.UTF8.GetBytes(settings.Environment);
+                Interlocked.Exchange(ref _environmentValueBytes!, env);
+
+                var service = StringUtil.IsNullOrEmpty(settings.DefaultServiceName) ? [] : StringEncoding.UTF8.GetBytes(settings.DefaultServiceName);
+                Interlocked.Exchange(ref _serviceValueBytes!, service);
+            }
         }
 
         // should be the same across all languages

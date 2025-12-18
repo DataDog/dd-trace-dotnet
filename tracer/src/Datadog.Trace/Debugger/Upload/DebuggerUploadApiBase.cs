@@ -61,6 +61,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     protected Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
     {
         var request = _apiRequestFactory.Create(new Uri(uri));
+        request.AddHeader("DD-REQUEST-ID", Guid.NewGuid().ToString());
         var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
 
         return this is DiagnosticsUploadApi && !isDebuggerV1
@@ -74,13 +75,16 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 
         try
         {
-            var environment = TraceUtil.NormalizeTag(Tracer.Instance.Settings.Environment);
+            // TODO: this only gets the original values, before any updates from remote config or config in code
+            // this should be refactored to subscribe to changes instead
+            var mutableSettings = Tracer.Instance.Settings.Manager.InitialMutableSettings;
+            var environment = TraceUtil.NormalizeTag(mutableSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 sb.Append($"env:{environment},");
             }
 
-            var version = Tracer.Instance.Settings.ServiceVersion;
+            var version = mutableSettings.ServiceVersion;
             if (!string.IsNullOrEmpty(version))
             {
                 sb.Append($"version:{version},");
@@ -106,7 +110,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
                 sb.Append($"{CommonTags.GitCommit}:{gitMetadata.CommitSha},");
             }
 
-            foreach (var kvp in Tracer.Instance.Settings.GlobalTags)
+            foreach (var kvp in mutableSettings.GlobalTags)
             {
                 sb.Append($"{kvp.Key}:{kvp.Value},");
             }

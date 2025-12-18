@@ -11,9 +11,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -34,7 +36,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             _output = output;
             _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
+            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
 
         [Fact]
@@ -42,11 +44,8 @@ namespace Datadog.Trace.Tests.Agent
         {
             var api = new Mock<IApi>();
             var settings = SpanSamplingRule("*", "*", 0.0f); // don't sample any rule
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
+            var agent = new AgentWriter(api.Object, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
@@ -56,7 +55,7 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
             span.Finish(); // triggers the span sampler to run
-            var traceChunk = new ArraySegment<Span>([span]);
+            var traceChunk = new SpanCollection([span]);
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -70,12 +69,9 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_SingleMatchedSpan_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+            var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
             var settings = SpanSamplingRule("*", "*");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -84,7 +80,7 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
             span.Finish();
-            var traceChunk = new ArraySegment<Span>([span]);
+            var traceChunk = new SpanCollection([span]);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -101,12 +97,9 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+            var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
             var settings = SpanSamplingRule("*", "*");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -120,7 +113,7 @@ namespace Datadog.Trace.Tests.Agent
             rootSpan.Finish();
             keptChildSpan.Finish();
 
-            var expectedChunk = new ArraySegment<Span>([rootSpan, keptChildSpan]);
+            var expectedChunk = new SpanCollection([rootSpan, keptChildSpan]);
             // var size = ComputeSize(expectedChunk);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
@@ -137,13 +130,10 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
         {
             var api = new MockApi();
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+            var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
 
             var settings = SpanSamplingRule("*", "operation");
-            var agentWriter = new AgentWriter(api, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -162,14 +152,8 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(rootSpan);
             traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(keptChildSpan);
 
-            // create a trace chunk so that our array has an offset
-            var unusedSpans = CreateTraceChunk(5, 10);
-            var spanList = new List<Span>();
-            spanList.AddRange(unusedSpans.Array!);
-            spanList.AddRange(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
-            var spans = spanList.ToArray();
-
-            var traceChunk = new ArraySegment<Span>(spans, 5, 4);
+            var spans = new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan };
+            var traceChunk = new SpanCollection(spans);
             agentWriter.WriteTrace(traceChunk);
             await agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
@@ -186,16 +170,13 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void PushStats()
         {
-            var statsAggregator = new Mock<IStatsAggregator>();
             var spans = CreateTraceChunk(1);
-            statsAggregator.Setup(x => x.ProcessTrace(spans)).Returns(spans);
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
+            var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => spans);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             agent.WriteTrace(spans);
 
-            statsAggregator.Verify(s => s.AddRange(It.Is<ArraySegment<Span>>(x => x.Offset == 0 && x.Count == 1)), Times.Once);
+            statsAggregator.AddedSpans.Should().Contain(spans).Which.Count.Should().Be(1);
         }
 
         [Fact]
@@ -227,7 +208,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
+            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }
@@ -238,7 +219,7 @@ namespace Datadog.Trace.Tests.Agent
             // The flush thread should be able to recover from an error when calling the API
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
                .Returns(() => throw new InvalidOperationException());
@@ -259,7 +240,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             // Make sure that the agent is able to switch to the secondary buffer when the primary is full/busy
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
 
             var barrier = new Barrier(2);
 
@@ -317,7 +298,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
             agent.WriteTrace(CreateTraceChunk(1));
             agent.WriteTrace(CreateTraceChunk(1));
@@ -347,7 +328,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd.Object, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, new TestStatsdManager(statsd.Object), automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, initialTracerMetricsEnabled: true);
 
             // Fill the two buffers
             agent.WriteTrace(CreateTraceChunk(1));
@@ -397,7 +378,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public Task WakeUpSerializationTask()
         {
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: null, batchInterval: 0);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: TestStatsdManager.NoOp, batchInterval: 0);
 
             // To reduce flakiness, first we make sure the serialization thread is started
             WaitForDequeue(agent);
@@ -426,19 +407,19 @@ namespace Datadog.Trace.Tests.Agent
 
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            tracer.Setup(x => x.PerTraceSettings).Returns(new PerTraceSettings(null, null, null!, MutableSettings.CreateWithoutDefaultSources(new(NullConfigurationSource.Instance))));
+            tracer.Setup(x => x.PerTraceSettings).Returns(new PerTraceSettings(null, null, null!, MutableSettings.CreateWithoutDefaultSources(new(NullConfigurationSource.Instance), new ConfigurationTelemetry())));
             var traceContext = new TraceContext(tracer.Object);
             var rootSpanContext = new SpanContext(null, traceContext, null);
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
             var childSpan = new Span(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(rootSpan);
             traceContext.AddSpan(childSpan);
-            var spans = new ArraySegment<Span>(new[] { rootSpan, childSpan });
+            var spans = new SpanCollection([rootSpan, childSpan]);
             var sizeOfTrace = ComputeSize(spans);
 
             // Make the buffer size big enough for a single trace
             var api = new MockApi();
-            var agent = new AgentWriter(api, statsAggregator: null, statsd: null, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true);
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
 
             // Fill both buffers
             agent.WriteTrace(spans);
@@ -470,7 +451,7 @@ namespace Datadog.Trace.Tests.Agent
         public void AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();
-            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             var flushTcs = new TaskCompletionSource<bool>();
             int invocation = 0;
 
@@ -525,13 +506,13 @@ namespace Datadog.Trace.Tests.Agent
             return equals;
         }
 
-        private static int ComputeSize(ArraySegment<Span> spans)
+        private static int ComputeSize(SpanCollection spans)
         {
             var traceChunk = new TraceChunkModel(spans);
             return Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance).Length;
         }
 
-        private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)
+        private static SpanCollection CreateTraceChunk(int spanCount, ulong startingId = 1)
         {
             var spans = new Span[spanCount];
 
@@ -541,7 +522,7 @@ namespace Datadog.Trace.Tests.Agent
                 spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
             }
 
-            return new ArraySegment<Span>(spans);
+            return new SpanCollection(spans);
         }
 
         private static TracerSettings SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
@@ -559,24 +540,24 @@ namespace Datadog.Trace.Tests.Agent
             return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
         }
 
-        private bool EqualSegments(ArraySegment<byte> expected, ArraySegment<byte> actual)
+        internal class StubStatsAggregator(bool shouldKeepTrace, Func<SpanCollection, SpanCollection> processTrace) : IStatsAggregator
         {
-            if (expected.Count != actual.Count)
+            public List<SpanCollection> AddedSpans { get; } = new();
+
+            public bool? CanComputeStats => true;
+
+            public void Add(params Span[] spans) => AddRange(new SpanCollection(spans));
+
+            public void AddRange(in SpanCollection spans)
             {
-                _output.WriteLine($"Segment count mismatch, Expected {expected.Count}, Actual {actual.Count}");
-                return false;
+                AddedSpans.Add(spans);
             }
 
-            for (var ele = 0; ele < expected.Count; ele++)
-            {
-                if (expected.Array![expected.Offset + ele] != actual.Array![actual.Offset + ele])
-                {
-                    _output.WriteLine($"Element mismatch at entry {ele}, Expected {expected.Count}, Actual {actual.Count}");
-                    return false;
-                }
-            }
+            public bool ShouldKeepTrace(in SpanCollection spans) => shouldKeepTrace;
 
-            return true;
+            public SpanCollection ProcessTrace(in SpanCollection trace) => processTrace(trace);
+
+            public Task DisposeAsync() => Task.CompletedTask;
         }
     }
 }
