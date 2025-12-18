@@ -207,7 +207,7 @@ benchmark-serverless-trigger:
 
 macrobenchmarks:
   stage: benchmarks
-  needs: [ ]
+  needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -220,7 +220,7 @@ macrobenchmarks:
 
 microbenchmarks:
   stage: benchmarks
-  needs: [ ]
+  needs: []
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true

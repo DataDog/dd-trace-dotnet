@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.Net;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
@@ -35,18 +36,18 @@ internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
         return request;
     }
 
-    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, object state, bool isError)
+    WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(CallTargetState stateObject, bool isError)
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";
         request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
 
-        if (state != null)
+        if (stateObject.State is string state)
         {
-            request.Headers.Set("lambda-runtime-aws-request-id", (string)state);
+            request.Headers.Set("lambda-runtime-aws-request-id", state);
         }
 
-        if (scope is { Span: var span })
+        if (stateObject.Scope is { Span: var span })
         {
             // TODO: add support for 128-bit trace ids in serverless
             request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
