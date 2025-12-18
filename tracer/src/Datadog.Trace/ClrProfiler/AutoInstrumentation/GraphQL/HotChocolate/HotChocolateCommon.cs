@@ -198,10 +198,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
                     }
 
-                    var pathObject = executionError.Path;
-                    if (pathObject != null && pathObject.TryDuckCast<IPath>(out var pathProxy))
+                    var path = executionError.Path;
+                    if (path != null)
                     {
-                        var pathList = pathProxy.ToList();
+                        var pathList = path.ToList();
                         if (pathList is { Count: > 0 })
                         {
                             var pathArray = new string[pathList.Count];
