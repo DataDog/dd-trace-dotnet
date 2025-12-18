@@ -11,7 +11,7 @@ steps:
 - ${{ if eq(parameters.isLinux, true) }}:
   - bash: |
       sudo mkdir -p "$(dirname "${{ parameters.dockerComposePath }}")"
-      sudo curl -SL --retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120 \
+      sudo curl -SL $(CURL_RETRY_FLAGS) \
         https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-x86_64 \
         -o ${{ parameters.dockerComposePath }}
       sudo chmod 755 ${{ parameters.dockerComposePath }}
@@ -25,7 +25,7 @@ steps:
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
       Invoke-WebRequest -Uri "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" `
         -OutFile "${{ parameters.dockerComposePath }}" `
-        -MaximumRetryCount 5 `
-        -RetryIntervalSec 2 `
-        -TimeoutSec 120
+        -MaximumRetryCount $(PWSH_MAX_RETRY_COUNT) `
+        -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) `
+        -TimeoutSec $(PWSH_TIMEOUT_SEC)
     displayName: Download docker-compose

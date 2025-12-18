@@ -24,7 +24,7 @@ steps:
       $url = "${{ parameters.url }}";
       $file = "$(Agent.TempDirectory)\${{ parameters.filename }}"
       Write-Host "Downloading from $url to $file";
-      Invoke-WebRequest -Uri $url -OutFile $file -MaximumRetryCount 5 -RetryIntervalSec 2 -TimeoutSec 120
+      Invoke-WebRequest -Uri $url -OutFile $file -MaximumRetryCount $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
       
       $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
       Write-Host "Installing using msiexec $installArgs";

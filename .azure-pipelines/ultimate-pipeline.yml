@@ -98,6 +98,15 @@ variables:
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
+  # Retry parameters for network operations to improve CI resilency
+  CURL_RETRY_FLAGS: '--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120'
+  GIT_RETRY_CONFIG: '-c http.retry=5 -c http.retryDelay=2'
+  GIT_HTTP_RETRY: 5
+  GIT_HTTP_RETRY_DELAY: 2
+  PWSH_MAX_RETRY_COUNT: 5
+  PWSH_RETRY_INTERVAL_SEC: 2
+  PWSH_TIMEOUT_SEC: 120
+  PIP_RETRY_PARAMS: '--retries 5 --timeout 120'
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   NUKE_TELEMETRY_OPTOUT: 1
@@ -198,7 +207,7 @@ stages:
         echo "Using target branch $TARGET_BRANCH"
 
         rm -rf ./s
-        git -c http.retry=5 -c http.retryDelay=2 clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
+        git $(GIT_RETRY_CONFIG) clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
         cd s
         TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
         rm -rf ./s
@@ -4258,7 +4267,7 @@ stages:
           REF=$(Build.SourceBranch)
           BRANCH_NAME="latest_snapshot"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
-            LABELS=$(curl -s --retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120 \
+            LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
             -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
             | jq -r '.labels[].name')
@@ -4278,7 +4287,7 @@ stages:
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$REF and azdo_build_id=$(Build.BuildId) and is_release_version=False"
           curl \
-            --retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 30 --max-time 120 \
+            $(CURL_RETRY_FLAGS) \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $GITHUB_TOKEN"\
@@ -4737,7 +4746,7 @@ stages:
           displayName: Install python 3.12
 
         - bash: |
-            git -c http.retry=5 -c http.retryDelay=2 clone --depth 1 https://github.com/DataDog/system-tests.git
+            git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
 
         - script: |
@@ -4839,7 +4848,7 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git -c http.retry=5 -c http.retryDelay=2 clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - template: steps/download-artifact.yml
@@ -6287,7 +6296,7 @@ stages:
 
         - script: |
             python --version
-            pip install --retries 5 --timeout 120 ddapm-test-agent
+            pip install $(PIP_RETRY_PARAMS) ddapm-test-agent
 
             # copied from run-snapshot-test
             echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
