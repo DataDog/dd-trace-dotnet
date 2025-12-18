@@ -157,6 +157,7 @@ run-benchmarks:
       when: always
     - interruptible: true
       when: always
+  allow_failure: true  # Allowed to fail since we don't want it to block PRs yet
   artifacts:
     name: "artifacts"
     when: always
@@ -193,6 +194,5 @@ check-big-regressions:
 # unstable has been made
 check-big-regressions-no-ignored-benchmarks:
   extends: .check-big-regressions
-  allow_failure: true  # Allowed to fail since we do not want it to block PRs 
   variables:
     IGNORED_BENCHMARKS_REGEX: ""
