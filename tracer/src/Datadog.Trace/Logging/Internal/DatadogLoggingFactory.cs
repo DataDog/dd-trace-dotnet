@@ -202,7 +202,7 @@ internal static class DatadogLoggingFactory
             return logDirectory;
         }
 
-        // Last effort at writing logs
+        // fallback #3: use the temp path
         return Path.GetTempPath();
     }
 
