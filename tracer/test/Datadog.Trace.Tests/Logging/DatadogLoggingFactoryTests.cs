@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -195,6 +196,162 @@ public class DatadogLoggingFactoryTests
 
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
             config.Console.Should().BeNull();
+        }
+    }
+
+    public class GetDefaultLogDirectoryTests
+    {
+        [Fact]
+        public void WithNoEnvironmentVariables_ReturnsDefaultDirectory()
+        {
+            var source = new NameValueConfigurationSource(new());
+            var result = DatadogLoggingFactory.GetDefaultLogDirectory(source, NullConfigurationTelemetry.Instance);
+
+            result.Should().NotBeNullOrEmpty();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                result.Should().EndWith(@"Datadog .NET Tracer\logs");
+            }
+            else
+            {
+                result.Should().Be("/var/log/datadog/dotnet");
+            }
+        }
+
+        [Fact]
+        public void WithAzureAppServices_ReturnsAzureLogDirectory()
+        {
+            var source = new NameValueConfigurationSource(
+                new()
+                {
+                    { "WEBSITE_SITE_NAME", "my-site-name" }
+                });
+
+            var result = DatadogLoggingFactory.GetDefaultLogDirectory(source, NullConfigurationTelemetry.Instance);
+            result.Should().NotBeNullOrEmpty();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                result.Should().Be(@"C:\home\LogFiles\datadog");
+            }
+            else
+            {
+                result.Should().Be("/home/LogFiles/datadog");
+            }
+        }
+    }
+
+    public class GetProgramDataDirectoryTests
+    {
+        [Fact]
+        public void ReturnsNonEmptyDirectory()
+        {
+            // Skip on non-Windows platforms since this method is only called on Windows
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = DatadogLoggingFactory.GetProgramDataDirectory();
+
+            result.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public void OnWindows_ReturnsValidProgramDataPath()
+        {
+            // Skip on non-Windows platforms
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = DatadogLoggingFactory.GetProgramDataDirectory();
+
+            // Should be a rooted path (e.g., C:\ProgramData)
+            Path.IsPathRooted(result).Should().BeTrue();
+
+            // Should contain "ProgramData" or "Program Data" (for localized versions)
+            // or be the fallback C:\ProgramData
+            (result.Contains("ProgramData", StringComparison.OrdinalIgnoreCase) ||
+             result.Contains("Program Data", StringComparison.OrdinalIgnoreCase) ||
+             result.Equals(@"C:\ProgramData", StringComparison.OrdinalIgnoreCase))
+                .Should().BeTrue();
+        }
+    }
+
+    public class TryCreateLogDirectoryTests
+    {
+        [Fact]
+        public void WithValidPath_CreatesDirectoryAndReturnsTrue()
+        {
+            var logDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.Exists(logDirectory).Should().BeFalse();
+
+            var result = DatadogLoggingFactory.TryCreateLogDirectory(logDirectory);
+
+            result.Should().BeTrue();
+            Directory.Exists(logDirectory).Should().BeTrue();
+
+            // Cleanup
+            try
+            {
+                Directory.Delete(logDirectory);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
+
+        [Fact]
+        public void WithExistingDirectory_ReturnsTrue()
+        {
+            var logDirectory = Path.GetTempPath();
+            Directory.Exists(logDirectory).Should().BeTrue();
+
+            var result = DatadogLoggingFactory.TryCreateLogDirectory(logDirectory);
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public void WithInvalidPath_ReturnsFalse()
+        {
+            // Use an invalid path that cannot be created
+            var logDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? @"Z:\nonexistent\invalid\path\that\cannot\be\created"
+                : "/root/nonexistent/invalid/path/that/cannot/be/created";
+
+            var result = DatadogLoggingFactory.TryCreateLogDirectory(logDirectory);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void WithNestedPath_CreatesAllDirectories()
+        {
+            var parentDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var logDirectory = Path.Combine(parentDir, "nested", "log", "directory");
+            Directory.Exists(logDirectory).Should().BeFalse();
+            Directory.Exists(parentDir).Should().BeFalse();
+
+            var result = DatadogLoggingFactory.TryCreateLogDirectory(logDirectory);
+
+            result.Should().BeTrue();
+            Directory.Exists(logDirectory).Should().BeTrue();
+            Directory.Exists(parentDir).Should().BeTrue();
+
+            // Cleanup
+            try
+            {
+                Directory.Delete(parentDir, recursive: true);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
     }
 }
