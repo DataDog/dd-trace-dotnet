@@ -26,7 +26,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IContainerMetadata _containerMetadata;
+        private readonly ContainerMetadata _containerMetadata;
         private string? _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)

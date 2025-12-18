@@ -30,12 +30,12 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
-        private readonly IContainerMetadata _containerMetadata;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly bool _enableDebug;
         private readonly bool _telemetryGzipCompressionEnabled;
         private readonly string _telemetryCompressionMethod;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, IContainerMetadata containerMetadata)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;

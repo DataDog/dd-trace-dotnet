@@ -25,9 +25,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
         [CombinatorialData]
         public async Task ShouldContainRequiredHeaders(bool debugEnabled, [CombinatorialValues("", "gzip")] string compression, bool agentless)
         {
-            var containerMetadata = new Mock<IContainerMetadata>();
-            containerMetadata.Setup(c => c.ContainerId).Returns("my-container-id");
-            containerMetadata.Setup(c => c.EntityId).Returns("my-entity-id");
+            var containerMetadata = new ContainerMetadata("my-container-id", "my-entity-id");
 
             // set up the response returned by the request
             var responseMock = new Mock<IApiResponse>();
@@ -47,11 +45,11 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             // this actually doesn't change anything, but better test both
             if (agentless)
             {
-                telemetryTransport = new AgentlessTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata.Object);
+                telemetryTransport = new AgentlessTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata);
             }
             else
             {
-                telemetryTransport = new AgentTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata.Object);
+                telemetryTransport = new AgentTelemetryTransport(requestFactoryMock.Object, debugEnabled, compression, containerMetadata);
             }
 
             var data = new TelemetryData(

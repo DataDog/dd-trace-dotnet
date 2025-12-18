@@ -35,7 +35,7 @@ namespace Datadog.Trace.Agent
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsdManager _statsd;
-        private readonly IContainerMetadata _containerMetadata;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Agent
         public Api(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
-            IContainerMetadata containerMetadata,
+            ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,

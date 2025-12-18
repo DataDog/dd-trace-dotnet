@@ -21,7 +21,7 @@ namespace Datadog.Trace.PlatformHelpers
     /// <summary>
     /// Utility class with methods to interact with container hosts.
     /// </summary>
-    internal sealed class ContainerMetadata : IContainerMetadata
+    internal sealed class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
         private const string ControlGroupsNamespacesFilePath = "/proc/self/ns/cgroup";
@@ -41,7 +41,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
-        public static readonly IContainerMetadata Instance = new ContainerMetadata();
+        public static readonly ContainerMetadata Instance = new();
 
         private readonly Lazy<string> _containerId;
         private readonly Lazy<string> _entityId;
@@ -52,13 +52,34 @@ namespace Datadog.Trace.PlatformHelpers
             _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
-        /// <inheritdoc/>
+        // For use in tests only
+        public ContainerMetadata(string containerId, string entityId)
+        {
+            _containerId = new Lazy<string>(() => containerId);
+            _entityId = new Lazy<string>(() => entityId);
+        }
+
+        /// <summary>
+        /// Gets the id of the container executing the code.
+        /// Return <c>null</c> if code is not executing inside a supported container.
+        /// </summary>
+        /// <value>The container id or <c>null</c>.</value>
         public string ContainerId
         {
             get => _containerId.Value;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the unique identifier of the container executing the code.
+        /// Return values may be:
+        /// <list type="bullet">
+        /// <item>"ci-&lt;containerID&gt;" if the container id is available.</item>
+        /// <item>"in-&lt;inode&gt;" if the cgroup node controller's inode is available.
+        ///        We use the memory controller on cgroupv1 and the root cgroup on cgroupv2.</item>
+        /// <item><c>null</c> if neither are available.</item>
+        /// </list>
+        /// </summary>
+        /// <value>The entity id or <c>null</c>.</value>
         public string EntityId
         {
             get => _entityId.Value;
