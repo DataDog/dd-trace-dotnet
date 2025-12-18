@@ -4,16 +4,18 @@
 #pragma once
 
 
-typedef enum
+enum class GCMode
 {
     UnknownMode,
     Server,
     Workstation
-} GCMode;
+};
 
 
 class IGcSettingsProvider
 {
 public:
+    virtual ~IGcSettingsProvider() = default;
+
     virtual GCMode GetMode() = 0;
 };
