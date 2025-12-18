@@ -12,6 +12,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
@@ -28,13 +29,12 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             var containerMetadata = new ContainerMetadata("my-container-id", "my-entity-id");
 
             // set up the response returned by the request
-            var responseMock = new Mock<IApiResponse>();
-            responseMock.Setup(x => x.StatusCode).Returns(200);
+            var fakeResponse = new TestApiResponse(statusCode: 200, body: null, contentType: null);
 
             // set up the request returned by the factory
             var savedHeaders = new Dictionary<string, string>();
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(fakeResponse);
             requestMock.Setup(x => x.AddHeader(It.IsAny<string>(), It.IsAny<string>())).Callback((string k, string v) => savedHeaders.Add(k, v));
 
             // set up the factory passed to the transport
