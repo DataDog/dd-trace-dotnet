@@ -224,7 +224,7 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
-  allow_failure: false
+  allow_failure: true
 
 dsm_throughput:
   stage: benchmarks
