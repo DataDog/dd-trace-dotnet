@@ -18,13 +18,13 @@ parameters:
     default: 3
 
 steps:
-  - powershell: |
+  - pwsh: |
       $ErrorActionPreference = 'Stop'
 
       $url = "${{ parameters.url }}";
       $file = "$(Agent.TempDirectory)\${{ parameters.filename }}"
       Write-Host "Downloading from $url to $file";
-      Invoke-WebRequest -Uri $url -OutFile $file
+      Invoke-WebRequest -Uri $url -OutFile $file -MaximumRetryCount 5 -RetryIntervalSec 2 -TimeoutSec 120
       
       $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
       Write-Host "Installing using msiexec $installArgs";
