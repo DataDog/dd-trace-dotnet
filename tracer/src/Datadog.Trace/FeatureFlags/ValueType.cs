@@ -5,9 +5,13 @@
 
 #nullable enable
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.FeatureFlags;
 
 /// <summary> Evaluation result reason </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
+[Browsable(false)]
 public enum ValueType
 {
     /// <summary> Integer numeric value </summary>

@@ -6,10 +6,13 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.FeatureFlags;
 
 /// <summary>FeatureFlag Evaluation result.</summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
+[Browsable(false)]
 public partial interface IEvaluationContext
 {
     /// <summary> Gets the tareting key.</summary>

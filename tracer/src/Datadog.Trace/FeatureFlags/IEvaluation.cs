@@ -5,16 +5,14 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
+using System.ComponentModel;
 
 namespace Datadog.Trace.FeatureFlags;
 
 /// <summary>FeatureFlag Evaluation result.</summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
+[Browsable(false)]
 public partial interface IEvaluation
 {
     /// <summary> Gets the flag key being evaluate </summary>

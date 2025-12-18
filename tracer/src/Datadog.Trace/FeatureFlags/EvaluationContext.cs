@@ -7,12 +7,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.FeatureFlags
 {
     /// <summary> Standard implementation of a EvaluationContext </summary>
     /// <param name="key"> Targeting Key </param>
     /// <param name="values"> Context optional parameters </param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Browsable(false)]
     public class EvaluationContext(string key, IDictionary<string, object?>? values = null)
         : IEvaluationContext
     {
