@@ -2,3 +2,7 @@
 
 [*.{cs,vb}]
 dotnet_diagnostic.DDSEAL001.severity = error # types should be sealed
+
+# Microsoft performance analyzers
+dotnet_diagnostic.CA1802.severity = error #Use Literals Where Appropriate - A field is declared static and read-only (Shared and ReadOnly in Visual Basic), and is initialized with a value that is computable at compile time. Because the value that is assigned to the targeted field is computable at compile time, change the declaration to a const (Const in Visual Basic) field so that the value is computed at compile time instead of at runtime.
+
