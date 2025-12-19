@@ -21,9 +21,28 @@ steps:
 
       echo "Downloading dotnet-install.ps1"
 
-      # Load retry function
-      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
-      Invoke-WebRequestWithRetry -Uri "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -OutFile "dotnet-install.ps1" -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
+      # Download with retry logic (inlined to avoid file dependency issues)
+      $uri = "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1"
+      $outFile = "dotnet-install.ps1"
+      $maxRetries = $(PWSH_MAX_RETRY_COUNT)
+      $retryIntervalSec = $(PWSH_RETRY_INTERVAL_SEC)
+      $timeoutSec = $(PWSH_TIMEOUT_SEC)
+
+      for ($i = 0; $i -le $maxRetries; $i++) {
+          try {
+              Write-Host "Attempt $($i + 1) of $($maxRetries + 1): Downloading from $uri"
+              Invoke-WebRequest -Uri $uri -OutFile $outFile -TimeoutSec $timeoutSec
+              Write-Host "Download successful"
+              break
+          } catch {
+              if ($i -eq $maxRetries) {
+                  Write-Host "All retry attempts failed"
+                  throw
+              }
+              Write-Host "Download failed: $($_.Exception.Message). Retrying in $retryIntervalSec seconds..."
+              Start-Sleep -Seconds $retryIntervalSec
+          }
+      }
 
       $dotnetInstall = "./dotnet-install.ps1"
       echo "Downloaded dotnet-install.ps1 to $dotnetInstall"

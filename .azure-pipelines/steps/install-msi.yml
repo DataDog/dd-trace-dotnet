@@ -25,9 +25,26 @@ steps:
       $file = "$(Agent.TempDirectory)\${{ parameters.filename }}"
       Write-Host "Downloading from $url to $file";
 
-      # Load retry function
-      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
-      Invoke-WebRequestWithRetry -Uri $url -OutFile $file -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
+      # Download with retry logic (inlined to avoid file dependency issues)
+      $maxRetries = $(PWSH_MAX_RETRY_COUNT)
+      $retryIntervalSec = $(PWSH_RETRY_INTERVAL_SEC)
+      $timeoutSec = $(PWSH_TIMEOUT_SEC)
+
+      for ($i = 0; $i -le $maxRetries; $i++) {
+          try {
+              Write-Host "Attempt $($i + 1) of $($maxRetries + 1): Downloading from $url"
+              Invoke-WebRequest -Uri $url -OutFile $file -TimeoutSec $timeoutSec
+              Write-Host "Download successful"
+              break
+          } catch {
+              if ($i -eq $maxRetries) {
+                  Write-Host "All retry attempts failed"
+                  throw
+              }
+              Write-Host "Download failed: $($_.Exception.Message). Retrying in $retryIntervalSec seconds..."
+              Start-Sleep -Seconds $retryIntervalSec
+          }
+      }
 
       $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
       Write-Host "Installing using msiexec $installArgs";

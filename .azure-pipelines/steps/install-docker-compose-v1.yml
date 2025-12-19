@@ -24,7 +24,26 @@ steps:
       # GitHub now requires TLS1.2. In PowerShell, run the following
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-      # Load retry function
-      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
-      Invoke-WebRequestWithRetry -Uri "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" -OutFile "${{ parameters.dockerComposePath }}" -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
+      # Download with retry logic (inlined to avoid file dependency issues)
+      $uri = "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe"
+      $outFile = "${{ parameters.dockerComposePath }}"
+      $maxRetries = $(PWSH_MAX_RETRY_COUNT)
+      $retryIntervalSec = $(PWSH_RETRY_INTERVAL_SEC)
+      $timeoutSec = $(PWSH_TIMEOUT_SEC)
+
+      for ($i = 0; $i -le $maxRetries; $i++) {
+          try {
+              Write-Host "Attempt $($i + 1) of $($maxRetries + 1): Downloading from $uri"
+              Invoke-WebRequest -Uri $uri -OutFile $outFile -TimeoutSec $timeoutSec
+              Write-Host "Download successful"
+              break
+          } catch {
+              if ($i -eq $maxRetries) {
+                  Write-Host "All retry attempts failed"
+                  throw
+              }
+              Write-Host "Download failed: $($_.Exception.Message). Retrying in $retryIntervalSec seconds..."
+              Start-Sleep -Seconds $retryIntervalSec
+          }
+      }
     displayName: Download docker-compose
