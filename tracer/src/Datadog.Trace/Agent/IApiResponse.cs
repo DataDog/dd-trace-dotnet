@@ -54,11 +54,16 @@ namespace Datadog.Trace.Agent
 
         public static async Task<T?> ReadAsTypeAsync<T>(this IApiResponse apiResponse)
         {
+            var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
+            return apiResponse.ReadAsType<T>(stream);
+        }
+
+        public static T? ReadAsType<T>(this IApiResponse apiResponse, Stream responseStream)
+        {
             InitiallyBufferedStream? bufferedStream = null;
             try
             {
-                var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
-                bufferedStream = new InitiallyBufferedStream(stream);
+                bufferedStream = new InitiallyBufferedStream(responseStream);
                 // wrap the stream in an "initially buffering" stream, so that if deserialization fails completely, we can get some details
                 using var sr = GetStreamReader(apiResponse, bufferedStream);
                 using var jsonTextReader = new JsonTextReader(sr);

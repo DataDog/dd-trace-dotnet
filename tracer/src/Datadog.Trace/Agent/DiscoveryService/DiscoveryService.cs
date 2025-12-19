@@ -8,11 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Agent.DiscoveryService
@@ -45,6 +48,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly IDisposable? _settingSubscription;
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
+        private string? _configurationHash;
 
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
@@ -101,6 +105,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTelemetryProxyEndpoint,
                 SupportedTracerFlareEndpoint,
             };
+
+        [TestingOnly]
+        internal string? ConfigStateHash => Volatile.Read(ref _configurationHash);
 
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
@@ -254,7 +261,28 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
-            var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);
+            // Grab the original stream
+            var stream = await response.GetStreamAsync().ConfigureAwait(false);
+
+            // Create a hash of the utf-8 bytes while also deserializing
+            JObject? jObject;
+            using var sha256 = SHA256.Create();
+            using (var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Read))
+            {
+                jObject = response.ReadAsType<JObject>(cryptoStream);
+
+                // Newtonsoft.JSON doesn't technically read to the end of the stream, it stops as soon
+                // as it has something parseable, but for the sha256 we need to read to the end so that
+                // it finalizes correctly, so just drain it down
+#if NETCOREAPP3_1_OR_GREATER
+                Span<byte> buffer = stackalloc byte[10];
+                while (cryptoStream.Read(buffer) > 0) { }
+#else
+                var buffer = new byte[10];
+                while (cryptoStream.Read(buffer, 0, 10) > 0) { }
+#endif
+            }
+
             if (jObject is null)
             {
                 throw new Exception("Error deserializing discovery response: response was null");
@@ -352,6 +380,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents);
+
+            // Save the hash, whether the details we care about changed or not
+            _configurationHash = HexString.ToHexString(sha256.Hash);
 
             // AgentConfiguration is a record, so this compares by value
             if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))
