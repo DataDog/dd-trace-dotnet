@@ -57,10 +57,7 @@ public class ClientWorker
                     meta.Add("client-value1", "some-client-value");
                     meta.Add("client-value2", "other-client-value");
 
-                    // Pre-populate W3C trace headers to trigger the bug
-                    // When dd-trace tries to inject its own headers, it will call Set()
-                    // which calls Remove() with a string instead of the entry object
-                    _logger.LogInformation("Adding pre-existing W3C trace headers to trigger Remove() bug");
+                    _logger.LogInformation("Adding pre-existing W3C trace headers to ensure we can replace them correctly");
                     meta.Add("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
                     meta.Add("tracestate", "dd=s:1");
 
