@@ -56,33 +56,32 @@ namespace Datadog.Trace.Exposure
             return new ExposureApi(apiRequestFactory, tracerSettings);
         }
 
-        public void Start()
+        public void TryToStartSendLoopIfNotStarted()
         {
-            _ = Task.Run(StartSendLoopAsync)
-               .ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-
-        private async Task StartSendLoopAsync()
-        {
-            if (Interlocked.Exchange(ref _started, 1) != 0)
+            if (_started == 1 || Interlocked.Exchange(ref _started, 1) != 0)
             {
                 return;
             }
 
-            var uri = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{ExposurePath}");
+            _ = Task.Run(SendLoopAsync)
+               .ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+        }
 
+        private async Task SendLoopAsync()
+        {
             while (!_processExit.Task.IsCompleted)
             {
-                if (_exposures.Count > 0)
+                try
                 {
-                    try
+                    var uri = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{ExposurePath}");
+                    if (_exposures.Count > 0)
                     {
                         await SendBatchAsync(uri).ConfigureAwait(false);
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
                 }
 
                 try
@@ -98,10 +97,17 @@ namespace Datadog.Trace.Exposure
 
         private async Task SendBatchAsync(Uri uri)
         {
-            var request = _apiRequestFactory.Create(uri);
-            var payload = GetPayload();
-            using var response = await request.PostAsync(payload, MimeTypes.Json)
-                                    .ConfigureAwait(false);
+            try
+            {
+                var request = _apiRequestFactory.Create(uri);
+                var payload = GetPayload();
+                using var response = await request.PostAsync(payload, MimeTypes.Json)
+                                        .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in Feature Flags exposures reporting loop");
+            }
         }
 
         private ArraySegment<byte> GetPayload()
@@ -123,7 +129,7 @@ namespace Datadog.Trace.Exposure
             lock (_exposures)
             {
                 _exposures.Enqueue(exposure);
-                Start();
+                TryToStartSendLoopIfNotStarted();
             }
         }
 
