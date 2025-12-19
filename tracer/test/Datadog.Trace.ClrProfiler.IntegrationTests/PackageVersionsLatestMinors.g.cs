@@ -7589,7 +7589,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.67.0" },
                 new object[] { "2.70.0" },
                 new object[] { "2.71.0" },
-                new object[] { "2.76.0" },
 #endif
 #if NET7_0
                 new object[] { "2.23.2" },
@@ -7639,7 +7638,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.67.0" },
                 new object[] { "2.70.0" },
                 new object[] { "2.71.0" },
-                new object[] { "2.76.0" },
 #endif
 #if NET8_0
                 new object[] { "2.23.2" },

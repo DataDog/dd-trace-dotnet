@@ -2769,12 +2769,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.76.0" },
+                new object[] { "2.71.0" },
 #endif
 #if NET7_0
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.76.0" },
+                new object[] { "2.71.0" },
 #endif
 #if NET8_0
                 new object[] { "2.29.0" },
