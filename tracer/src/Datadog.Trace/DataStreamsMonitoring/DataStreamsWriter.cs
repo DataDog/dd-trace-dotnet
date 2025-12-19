@@ -184,7 +184,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
         if (completedTask != allTasks)
         {
-            Log.Error("Could not flush all data streams stats before process exit");
+            Log.Warning("Could not flush all data streams stats before process exit");
         }
 
         await FlushAsync().ConfigureAwait(false);
