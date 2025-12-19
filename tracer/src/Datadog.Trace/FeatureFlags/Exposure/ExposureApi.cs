@@ -44,7 +44,7 @@ internal sealed class ExposureApi : IDisposable
     private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
     private IApiRequestFactory _apiRequestFactory;
     private Dictionary<string, string> _context;
-    private int _started = 0;
+    private int _started;
 
     internal ExposureApi(TracerSettings tracerSettings)
     {

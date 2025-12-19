@@ -4,5 +4,6 @@
 dotnet_diagnostic.DDSEAL001.severity = error # types should be sealed
 
 # Microsoft performance analyzers
-dotnet_diagnostic.CA1802.severity = error #Use Literals Where Appropriate
+dotnet_diagnostic.CA1802.severity = error # Use Literals Where Appropriate
+dotnet_diagnostic.CA1805.severity = error # Do not initialize unnecessarily
 
