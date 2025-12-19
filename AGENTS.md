@@ -323,7 +323,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 ## Commit & Pull Request Guidelines
 
 **Commits:**
-- Imperative mood; optional scope tag (e.g., `fix(telemetry): …` 1utf5ircvb6md08776ap5d70fj47h7f5gkxo05qaasor `[Debugger] …`)
+- Imperative mood; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`)
 - Reference issues when applicable
 - Keep messages concise - avoid full diffs or extensive details
 
