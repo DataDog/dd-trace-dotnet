@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -798,7 +799,18 @@ namespace Foo
         private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson, string injectResult, string injectResultReason, string injectResultClass)
         {
             using var s = new AssertionScope();
-            File.Exists(echoLogFileName).Should().BeTrue();
+
+            // Wait for the telemetry echo file to be written (with timeout)
+            // The telemetry forwarder may write the file asynchronously after process exit
+            var fileWaitTimeout = TimeSpan.FromSeconds(10);
+            var fileWaitStart = DateTime.UtcNow;
+            while (!File.Exists(echoLogFileName) && (DateTime.UtcNow - fileWaitStart) < fileWaitTimeout)
+            {
+                Thread.Sleep(100);
+            }
+
+            File.Exists(echoLogFileName).Should().BeTrue($"Telemetry echo file should exist at {echoLogFileName} within {fileWaitTimeout.TotalSeconds} seconds");
+
             var echoLogContent = File.ReadAllText(echoLogFileName);
             s.AddReportable(echoLogFileName, echoLogContent);
 
