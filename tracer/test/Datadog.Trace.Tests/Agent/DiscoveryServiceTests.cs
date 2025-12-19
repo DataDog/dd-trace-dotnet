@@ -339,6 +339,25 @@ public class DiscoveryServiceTests
         config1.Equals(config3).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(null, null, 0, true)] // first loop
+    [InlineData("abc", null, 0, true)] // no update yet
+    [InlineData(null, "123", 10, true)] // recent update, but never polled
+    [InlineData("abc", "123", 10, true)] // recent update, but wrong hash
+    [InlineData("abc", "abc", 60_000, true)] // same hash, but old
+    [InlineData("abc", "abc", 10_000, false)] // recent update, matches
+    public async Task RequireRefresh(string originalHash, string agentHash, int timeElapsed, bool refreshRequired)
+    {
+        var recheckIntervalMs = 30_000;
+        var factory = new TestRequestFactory();
+        await using var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+
+        var now = DateTimeOffset.UtcNow;
+        ds.SetCurrentConfigStateHash(agentHash);
+
+        ds.RequireRefresh(originalHash, now.AddMilliseconds(timeElapsed)).Should().Be(refreshRequired);
+    }
+
     [Fact]
     [Flaky("This is an inherently flaky test as it relies on time periods")]
     public async Task HandlesFailuresInApiWithBackoff()

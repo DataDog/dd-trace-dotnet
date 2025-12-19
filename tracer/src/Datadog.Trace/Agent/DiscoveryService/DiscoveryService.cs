@@ -49,6 +49,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
         private string? _configurationHash;
+        private string _agentConfigStateHash = string.Empty;
+        private long _agentConfigStateHashUnixTime;
 
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
@@ -180,6 +182,16 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
         }
 
+        /// <inheritdoc />
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+            // record the new hash and the time we got the hash update
+            // It would be nice to make these atomic, but given that we're going to call this a lot,
+            // we don't really want to create a new object every time
+            Interlocked.Exchange(ref _agentConfigStateHash, configStateHash);
+            Interlocked.Exchange(ref _agentConfigStateHashUnixTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        }
+
         private void NotifySubscribers(AgentConfiguration newConfig)
         {
             List<Action<AgentConfiguration>> subscribers;
@@ -210,43 +222,53 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var requestFactory = _apiRequestFactory;
             var uri = requestFactory.GetEndpoint("info");
 
-            int? sleepDuration = null;
+            var sleepDuration = _recheckIntervalMs;
 
             while (!_processExit.Task.IsCompleted)
             {
-                try
+                // do we already have an update from the agent? If so, we can skip the loop
+                if (RequireRefresh(_configurationHash, DateTimeOffset.UtcNow))
                 {
-                    // If the exporter settings have been updated, refresh the endpoint
-                    var updatedFactory = Volatile.Read(ref _apiRequestFactory);
-                    if (requestFactory != updatedFactory)
+                    try
                     {
-                        requestFactory = updatedFactory;
-                        uri = requestFactory.GetEndpoint("info");
-                    }
+                        Log.Debug("Agent features discovery refresh required, contacting agent");
+                        // If the exporter settings have been updated, refresh the endpoint
+                        var updatedFactory = Volatile.Read(ref _apiRequestFactory);
+                        if (requestFactory != updatedFactory)
+                        {
+                            requestFactory = updatedFactory;
+                            uri = requestFactory.GetEndpoint("info");
+                        }
 
-                    var api = requestFactory.Create(uri);
+                        var api = requestFactory.Create(uri);
 
-                    using var response = await api.GetAsync().ConfigureAwait(false);
-                    if (response.StatusCode is >= 200 and < 300)
-                    {
-                        await ProcessDiscoveryResponse(response).ConfigureAwait(false);
-                        sleepDuration = null;
+                        using var response = await api.GetAsync().ConfigureAwait(false);
+                        if (response.StatusCode is >= 200 and < 300)
+                        {
+                            await ProcessDiscoveryResponse(response).ConfigureAwait(false);
+                            sleepDuration = _recheckIntervalMs;
+                        }
+                        else
+                        {
+                            Log.Warning("Error discovering available agent services");
+                            sleepDuration = GetNextSleepDuration(sleepDuration);
+                        }
                     }
-                    else
+                    catch (Exception exception)
                     {
-                        Log.Warning("Error discovering available agent services");
+                        Log.Warning(exception, "Error discovering available agent services");
                         sleepDuration = GetNextSleepDuration(sleepDuration);
                     }
                 }
-                catch (Exception exception)
+                else
                 {
-                    Log.Warning(exception, "Error discovering available agent services");
-                    sleepDuration = GetNextSleepDuration(sleepDuration);
+                    // no need to re-check, so reset the check interval
+                    sleepDuration = _recheckIntervalMs;
                 }
 
                 try
                 {
-                    await Task.WhenAny(_processExit.Task, Task.Delay(sleepDuration ?? _recheckIntervalMs)).ConfigureAwait(false);
+                    await Task.WhenAny(_processExit.Task, Task.Delay(sleepDuration)).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -257,6 +279,20 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             int GetNextSleepDuration(int? previousDuration) =>
                 previousDuration is null ? _initialRetryDelayMs : Math.Min(previousDuration.Value * 2, _maxRetryDelayMs);
+        }
+
+        [TestingAndPrivateOnly]
+        internal bool RequireRefresh(string? currentHash, DateTimeOffset utcNow)
+        {
+            var agentVersion = Volatile.Read(ref _agentConfigStateHash);
+            if (currentHash is null || agentVersion is null || currentHash != agentVersion)
+            {
+                // Either we don't have a current state, we haven't received any updates, or the config has changed
+                return true;
+            }
+
+            // agent hash matches our current hash, but is it up to date enough?
+            return Volatile.Read(ref _agentConfigStateHashUnixTime) + _recheckIntervalMs < utcNow.ToUnixTimeMilliseconds();
         }
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
