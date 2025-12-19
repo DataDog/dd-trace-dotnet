@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Rule(List<ConditionConfiguration>? conditions)
+internal sealed class Rule(List<ConditionConfiguration>? conditions)
 {
     public List<ConditionConfiguration>? Conditions { get; set; } = conditions;
 }

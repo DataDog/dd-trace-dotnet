@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Environment
+internal sealed class Environment
 {
     public string? Name { get; set; }
 }

@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Variant(string? key, string? value)
+internal sealed class Variant(string? key, string? value)
 {
     public Variant()
         : this(null, null)

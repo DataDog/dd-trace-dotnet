@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class FfeProduct
+internal sealed class FfeProduct
 {
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FfeProduct));
 

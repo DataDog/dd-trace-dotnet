@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Split
+internal sealed class Split
 {
     public List<Shard>? Shards { get; set; }
 

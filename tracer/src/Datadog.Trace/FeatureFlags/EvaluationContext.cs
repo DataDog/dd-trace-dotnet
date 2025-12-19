@@ -16,7 +16,7 @@ namespace Datadog.Trace.FeatureFlags
     /// <param name="values"> Context optional parameters </param>
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Browsable(false)]
-    public class EvaluationContext(string key, IDictionary<string, object?>? values = null)
+    public sealed class EvaluationContext(string key, IDictionary<string, object?>? values = null)
         : IEvaluationContext
     {
         /// <summary> Gets the Context Targeting Key </summary>

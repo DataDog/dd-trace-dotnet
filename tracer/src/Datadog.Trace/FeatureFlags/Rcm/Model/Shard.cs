@@ -11,7 +11,7 @@ using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Shard
+internal sealed class Shard
 {
     public string? Salt { get; set; }
 

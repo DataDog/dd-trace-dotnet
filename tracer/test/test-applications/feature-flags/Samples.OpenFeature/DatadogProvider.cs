@@ -130,7 +130,17 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
 
     private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
     {
-        if (evaluation == null) { return default!; }
+        if (evaluation == null) 
+        {
+            return new ResolutionDetails<T>(
+                        null,
+                        default,
+                        ErrorType.ProviderNotReady,
+                        default,
+                        default,
+                        "FeatureFlagsSdk is disabled",
+                        null);
+        }
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)(evaluation.Value ?? default(T)!),

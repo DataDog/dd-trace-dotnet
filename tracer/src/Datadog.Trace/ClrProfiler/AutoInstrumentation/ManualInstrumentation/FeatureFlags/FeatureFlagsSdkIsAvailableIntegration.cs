@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class FeatureFlagsSdkIsAvailableIntegration
+public sealed class FeatureFlagsSdkIsAvailableIntegration
 {
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {

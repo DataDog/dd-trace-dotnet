@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
@@ -61,7 +62,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
-                spanEventsManager: null);
+                spanEventsManager: null,
+                featureFlags: null);
 
             tracer.Settings.Manager.SubscribeToChanges(changes =>
             {
@@ -105,7 +107,8 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlags)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -186,6 +189,8 @@ namespace Datadog.Trace
                 }
             }
 
+            featureFlags = FeatureFlagsModule.Create(settings);
+
             return CreateTracerManagerFrom(
                 settings,
                 agentWriter,
@@ -202,7 +207,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager);
+                spanEventsManager,
+                featureFlags);
         }
 
         protected virtual TelemetrySettings CreateTelemetrySettings(TracerSettings settings) =>
@@ -242,8 +248,9 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlagsModule)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {

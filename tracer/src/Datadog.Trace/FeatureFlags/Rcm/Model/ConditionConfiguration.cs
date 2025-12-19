@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class ConditionConfiguration
+internal sealed class ConditionConfiguration
 {
     public ConditionOperator? Operator { get; set; }
 

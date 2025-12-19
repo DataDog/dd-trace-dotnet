@@ -9,7 +9,7 @@ class Program
 
     private static void Main(string[] args)
     {
-        Console.WriteLine("FeatureFlags SDK Sample");
+        Evaluator.Init();
 
         if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
         {
@@ -19,8 +19,8 @@ class Program
 
         Console.WriteLine($"<INSTRUMENTED>");
 
-        var ev = Evaluate("nonexistent");
-        if (ev != null && ev.Error is "FeatureFlagsSdk is disabled")
+        var ev = Evaluator.Evaluate("nonexistent");
+        if (ev == null || ev.Value.Error is "FeatureFlagsSdk is disabled")
         {
             return;
         }
@@ -41,32 +41,12 @@ class Program
             System.Threading.Thread.Sleep(1000);
         }
 
-        Evaluate("exposure-flag");
-        Evaluate("simple-string");
-        Evaluate("rule-based-flag");
-        Evaluate("numeric-rule-flag");
-        Evaluate("time-based-flag");
-
-        IEvaluation? Evaluate(string key)
-        {
-            var context = new EvaluationContext(key);
-            var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, Datadog.Trace.FeatureFlags.ValueType.STRING, "Not found", context);
-
-            if (evaluation is null)
-            {
-                Console.WriteLine($"Eval ({key}) : <NULL>");
-           }
-            else if (evaluation.Error is not null)
-            {
-                Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.Error}>");
-            }
-            else
-            {
-                Console.WriteLine($"Eval ({key}) : <OK: {evaluation.Value ?? "<NULL>"}>");
-            }
-
-            return evaluation;
-        }
-
+        Evaluator.Evaluate("exposure-flag");
+        Evaluator.Evaluate("simple-string");
+        Evaluator.Evaluate("rule-based-flag");
+        Evaluator.Evaluate("numeric-rule-flag");
+        Evaluator.Evaluate("time-based-flag");
     }
+
+
 }

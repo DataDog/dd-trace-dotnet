@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Allocation
+internal sealed class Allocation
 {
     public string? Key { get; set; }
 

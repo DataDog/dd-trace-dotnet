@@ -324,16 +324,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-            try
-            {
-                Log.Debug("Initializing Feature Flags singleton instance.");
-                _ = FeatureFlagsModule.Instance;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing Feature Flags Module");
-            }
-
 #if !NETFRAMEWORK
             try
             {

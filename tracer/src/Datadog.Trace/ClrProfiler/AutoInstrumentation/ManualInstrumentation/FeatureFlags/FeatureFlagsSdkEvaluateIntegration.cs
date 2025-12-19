@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class FeatureFlagsSdkEvaluateIntegration
+public sealed class FeatureFlagsSdkEvaluateIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTargetType, TContext>(ref string? key, ref TTargetType targetType, ref object? defaultValue, ref TContext? context)
     {
@@ -39,7 +39,7 @@ public class FeatureFlagsSdkEvaluateIntegration
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var parameters = (State)state.State!;
-        var res = FeatureFlagsModule.Instance.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>()!);
+        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>()!);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
