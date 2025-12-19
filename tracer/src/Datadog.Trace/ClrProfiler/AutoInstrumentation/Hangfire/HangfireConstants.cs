@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// Class to contain reused strings for Hangfire Instrumentation
 /// </summary>
-internal class HangfireConstants
+internal static class HangfireConstants
 {
     internal const string OnPerformOperation = "hangfire.perform";
     internal const string DatadogScopeKey = "datadog_scope_key";
