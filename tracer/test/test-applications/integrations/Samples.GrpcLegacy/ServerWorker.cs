@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -82,7 +83,8 @@ public class ServerWorker
 
             // Check if we received the traceparent header that dd-trace should have injected
             // If the bug triggers, dd-trace fails to inject headers, so we'll receive the pre-populated one
-            var traceparent = context.RequestHeaders.Get("traceparent");
+            var traceparent = context.RequestHeaders
+                .FirstOrDefault(e => e.Key == "traceparent");
             if (traceparent != null)
             {
                 var receivedValue = traceparent.Value;
