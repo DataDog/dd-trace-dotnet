@@ -28,7 +28,7 @@ internal sealed class ManagedApi : IApi
         TracerSettings.SettingsManager settings,
         IStatsdManager statsd,
         Action<Dictionary<string, float>> updateSampleRates,
-        Action<string> updateConfigState,
+        Action<string>? updateConfigState,
         bool partialFlushEnabled)
     {
         UpdateApi(settings.InitialExporterSettings, settings.InitialMutableSettings.TracerMetricsEnabled);
