@@ -25,13 +25,17 @@ internal sealed class ApmAgentWriter : IEventWriter
 
     private readonly AgentWriter _agentWriter;
 
-    public ApmAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
+    public ApmAgentWriter(
+        TracerSettings settings,
+        Action<Dictionary<string, float>> updateSampleRates,
+        IDiscoveryService discoveryService,
+        int maxBufferSize = DefaultMaxBufferSize)
     {
         var partialFlushEnabled = settings.PartialFlushEnabled;
         // CI Vis doesn't allow reconfiguration, so don't need to subscribe to changes
         var apiRequestFactory = TracesTransportStrategy.Get(settings.Manager.InitialExporterSettings);
         var statsdManager = new StatsdManager(settings);
-        var api = new Api(apiRequestFactory, statsdManager, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled: false);
+        var api = new Api(apiRequestFactory, statsdManager, ContainerMetadata.Instance, updateSampleRates, discoveryService.SetCurrentConfigStateHash, partialFlushEnabled, healthMetricsEnabled: false);
         var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
         _agentWriter = new AgentWriter(api, statsAggregator, statsdManager, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled);

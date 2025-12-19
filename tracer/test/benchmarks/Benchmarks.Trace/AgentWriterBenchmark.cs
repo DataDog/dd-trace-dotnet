@@ -56,6 +56,7 @@ namespace Benchmarks.Trace
                 new StatsdManager(settings, (_, _) => null!),
                 ContainerMetadata.Instance,
                 updateSampleRates: null,
+                updateConfigState: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
