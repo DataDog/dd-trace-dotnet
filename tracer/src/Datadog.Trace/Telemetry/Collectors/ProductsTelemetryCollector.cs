@@ -13,7 +13,7 @@ internal sealed class ProductsTelemetryCollector
 {
     private readonly ProductDetail?[] _allTime;
     private readonly ProductDetail?[] _productsByType;
-    private int _hasChangesFlag = 0;
+    private int _hasChangesFlag;
 
     public ProductsTelemetryCollector()
     {

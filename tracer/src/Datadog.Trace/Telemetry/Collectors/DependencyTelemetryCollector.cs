@@ -18,7 +18,7 @@ namespace Datadog.Trace.Telemetry
     {
         // value is true when sent to the backend
         private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
-        private int _hasChangesFlag = 0;
+        private int _hasChangesFlag;
 
         /// <summary>
         /// Called when an assembly is loaded

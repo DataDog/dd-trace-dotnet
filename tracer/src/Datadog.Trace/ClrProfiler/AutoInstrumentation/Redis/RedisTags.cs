@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
     internal sealed partial class RedisV1Tags : RedisTags
     {
-        private string? _peerServiceOverride = null;
+        private string? _peerServiceOverride;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the

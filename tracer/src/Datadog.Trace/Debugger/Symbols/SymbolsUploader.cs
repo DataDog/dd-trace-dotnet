@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly ISubscription _subscription;
         private readonly object _disposeLock = new();
         private readonly IDiscoveryService _discoveryService;
-        private volatile bool _disposed = false;
+        private volatile bool _disposed;
         private byte[]? _payload;
         private string? _symDbEndpoint;
         private bool _isSymDbEnabled;

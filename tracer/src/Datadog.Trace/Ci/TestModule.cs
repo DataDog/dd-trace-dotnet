@@ -43,7 +43,7 @@ public sealed class TestModule
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
-    private IpcClient? _ipcClient = null;
+    private IpcClient? _ipcClient;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)

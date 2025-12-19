@@ -20,7 +20,7 @@ internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDel
 {
     internal const int MaxInitialBufferSize = 128;
 
-    private ArraySegment<byte>? _buffer = null;
+    private ArraySegment<byte>? _buffer;
 
     public string? GetBufferedContent()
     {
