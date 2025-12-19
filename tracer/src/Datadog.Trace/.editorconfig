@@ -9,4 +9,5 @@ dotnet_diagnostic.CA1805.severity = error # Do not initialize unnecessarily
 dotnet_diagnostic.CA1806.severity = error # Do not ignore method results
 # dotnet_diagnostic.CA1810.severity = error # Initialize reference type static fields inline
 dotnet_diagnostic.CA1812.severity = error # Avoid uninstantiated internal classes
+# dotnet_diagnostic.CA1813.severity = error # Avoid unsealed attributes
 
