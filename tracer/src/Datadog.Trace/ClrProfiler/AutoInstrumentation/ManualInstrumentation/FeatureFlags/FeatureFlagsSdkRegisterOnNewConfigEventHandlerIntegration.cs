@@ -28,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration
+public sealed class FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref Action? onNewConfig)
     {
-        FeatureFlagsModule.Instance.RegisterOnNewConfigEventHandler(onNewConfig);
+        TracerManager.Instance.FeatureFlags?.RegisterOnNewConfigEventHandler(onNewConfig);
         return CallTargetState.GetDefault();
     }
 }

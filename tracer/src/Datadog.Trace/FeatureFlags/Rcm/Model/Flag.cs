@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class Flag
+internal sealed class Flag
 {
     public string? Key { get; set; }
 

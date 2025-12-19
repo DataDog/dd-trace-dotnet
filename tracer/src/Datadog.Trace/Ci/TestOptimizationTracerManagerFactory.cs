@@ -1,4 +1,4 @@
-﻿// <copyright file="TestOptimizationTracerManagerFactory.cs" company="Datadog">
+// <copyright file="TestOptimizationTracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -54,15 +55,16 @@ namespace Datadog.Trace.Ci
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlags)
         {
             telemetry.RecordTestOptimizationSettings(_settings);
             if (_testOptimizationTracerManagement.UseLockedTracerManager)
             {
-                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags);
             }
 
-            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags);
         }
 
         protected override TelemetrySettings CreateTelemetrySettings(TracerSettings settings)

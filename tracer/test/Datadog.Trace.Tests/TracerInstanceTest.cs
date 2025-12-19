@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(new TracerSettings(), null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>(), Mock.Of<ISpanEventsManager>())
+                : base(new TracerSettings(), null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>(), Mock.Of<ISpanEventsManager>(), null)
             {
             }
         }

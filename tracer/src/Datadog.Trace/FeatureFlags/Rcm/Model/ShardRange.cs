@@ -11,7 +11,7 @@ using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal class ShardRange
+internal sealed class ShardRange
 {
     public int Start { get; set; }
 

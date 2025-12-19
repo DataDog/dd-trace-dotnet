@@ -19,7 +19,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags
 {
-    internal class FeatureFlagsEvaluator
+    internal sealed class FeatureFlagsEvaluator
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
@@ -660,6 +660,7 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
+            Log.Debug("FeatureFlagsEvaluator::DispatchExposure -> FlagKey: {FlagKey}", flagKey);
             var evt = new Exposure.Model.ExposureEvent(
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 new Exposure.Model.Allocation(allocationKey),
@@ -667,7 +668,7 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Variant(variantKey),
                 new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)));
 
-            _onExposureEvent?.Invoke(evt);
+            _onExposureEvent?.Invoke(in evt);
         }
 
         private sealed class FlattenEntry(string key, object? value)

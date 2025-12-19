@@ -80,7 +80,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         {
             if (e.Value.PathAndQuery.EndsWith("api/v2/exposure"))
             {
-                eventsReceived++;
+                Interlocked.Increment(ref eventsReceived);
                 e.Value.Headers["Content-Encoding"].Should().Be(MimeTypes.Json);
                 var payload = JsonConvert.DeserializeObject(e.Value.BodyInJson);
                 return;

@@ -453,7 +453,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.FeatureFlags", "tracer\test\test-applications\feature-flags\Samples.FeatureFlags\Samples.FeatureFlags.csproj", "{D5A8ABB9-CB23-974E-F338-5D9172D96CD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OpenFeature-2.9", "tracer\test\test-applications\feature-flags\Samples.OpenFeature-2.9\Samples.OpenFeature-2.9.csproj", "{021D714E-1764-D76B-15B5-C9114FE934C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OpenFeature", "tracer\test\test-applications\feature-flags\Samples.OpenFeature\Samples.OpenFeature.csproj", "{021D714E-1764-D76B-15B5-C9114FE934C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
