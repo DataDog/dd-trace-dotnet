@@ -277,7 +277,7 @@ namespace Datadog.Trace
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
                            ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, settings.PartialFlushEnabled);
+                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, discoveryService.SetCurrentConfigStateHash, settings.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 

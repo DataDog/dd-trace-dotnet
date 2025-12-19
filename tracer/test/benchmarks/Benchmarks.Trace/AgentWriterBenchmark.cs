@@ -53,6 +53,7 @@ namespace Benchmarks.Trace
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
                 statsd: new StatsdManager(settings, (_, _) => null!),
                 updateSampleRates: null,
+                updateConfigState: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 

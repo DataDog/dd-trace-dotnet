@@ -40,6 +40,7 @@ namespace Datadog.Trace.Agent
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
+        private readonly Action<string> _updateConfigState;
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Agent
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
             Action<Dictionary<string, float>> updateSampleRates,
+            Action<string> updateConfigState,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
             IDatadogLogger log = null)
@@ -61,6 +63,7 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
+            _updateConfigState = updateConfigState;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
             _containerId = ContainerMetadata.GetContainerId();
@@ -390,6 +393,11 @@ namespace Datadog.Trace.Agent
 
                             _cachedResponse = responseContent;
                         }
+                    }
+
+                    if (_updateConfigState is not null && response.GetHeader(AgentHttpHeaderNames.AgentState) is { } configState)
+                    {
+                        _updateConfigState.Invoke(configState);
                     }
                 }
                 catch (Exception ex)
