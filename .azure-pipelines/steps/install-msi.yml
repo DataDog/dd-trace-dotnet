@@ -18,14 +18,17 @@ parameters:
     default: 3
 
 steps:
-  - pwsh: |
+  - powershell: |
       $ErrorActionPreference = 'Stop'
 
       $url = "${{ parameters.url }}";
       $file = "$(Agent.TempDirectory)\${{ parameters.filename }}"
       Write-Host "Downloading from $url to $file";
-      Invoke-WebRequest -Uri $url -OutFile $file -MaximumRetryCount $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
-      
+
+      # Load retry function
+      . $(Build.SourcesDirectory)/.azure-pipelines/scripts/Invoke-WebRequestWithRetry.ps1
+      Invoke-WebRequestWithRetry -Uri $url -OutFile $file -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
+
       $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
       Write-Host "Installing using msiexec $installArgs";
       Start-Process msiexec $installArgs -Wait
@@ -35,10 +38,10 @@ steps:
         Write-Host "Adding to PATH";
         Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};${{ parameters.addToPath }}";
       }
-      
+
       Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
       refreshenv
     displayName: Installing ${{ parameters.filename }}
-    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT')) # TODO: error on non-windows? 
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT')) # TODO: error on non-windows?
     retryCountOnTaskFailure: ${{ parameters.retries }}
     timeoutInMinutes: 10

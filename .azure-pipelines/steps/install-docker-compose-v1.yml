@@ -17,15 +17,14 @@ steps:
       sudo chmod 755 ${{ parameters.dockerComposePath }}
     displayName: Download docker-compose
 - ${{ else }}:
-  - pwsh: |
+  - powershell: |
       $dir= (Split-Path -parent "${{ parameters.dockerComposePath }}")
       mkdir -f -p $dir
 
       # GitHub now requires TLS1.2. In PowerShell, run the following
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest -Uri "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" `
-        -OutFile "${{ parameters.dockerComposePath }}" `
-        -MaximumRetryCount $(PWSH_MAX_RETRY_COUNT) `
-        -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) `
-        -TimeoutSec $(PWSH_TIMEOUT_SEC)
+
+      # Load retry function
+      . $(Build.SourcesDirectory)/.azure-pipelines/scripts/Invoke-WebRequestWithRetry.ps1
+      Invoke-WebRequestWithRetry -Uri "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" -OutFile "${{ parameters.dockerComposePath }}" -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
     displayName: Download docker-compose
