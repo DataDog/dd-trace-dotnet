@@ -4745,8 +4745,7 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - bash: |
-            git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
+        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
 
         - script: |
