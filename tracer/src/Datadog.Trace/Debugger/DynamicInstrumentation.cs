@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger
 
                                 case ProbeLocationType.Method:
                                     {
-                                        SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
+                                        var signature = SignatureParser.TryParse(addedProbe.Where.Signature, out var s) ? s : null;
 
                                         fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                         if (addedProbe is SpanProbe)
