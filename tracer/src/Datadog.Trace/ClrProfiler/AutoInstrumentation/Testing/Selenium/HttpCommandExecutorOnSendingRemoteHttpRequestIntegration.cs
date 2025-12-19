@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
     IntegrationName = SeleniumCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class HttpCommandExecutorOnSendingRemoteHttpRequestIntegration
+internal sealed class HttpCommandExecutorOnSendingRemoteHttpRequestIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TEventArgs>(TTarget instance, TEventArgs eventArgs)
     {

@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ConnectionMultiplexerExecuteSyncImplIntegration
+    internal sealed class ConnectionMultiplexerExecuteSyncImplIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

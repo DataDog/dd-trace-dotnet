@@ -18,7 +18,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("System.Data,System.Data.Common", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class DbCommandAspect
+internal sealed class DbCommandAspect
 {
     /// <summary>
     /// DbCommandAspect aspect

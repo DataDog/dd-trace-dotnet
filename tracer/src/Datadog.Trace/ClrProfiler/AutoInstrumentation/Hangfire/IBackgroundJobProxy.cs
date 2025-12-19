@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <remarks>
 /// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/BackgroundJob.cs
 /// </remarks>
-public interface IBackgroundJobProxy : IDuckType
+internal interface IBackgroundJobProxy : IDuckType
 {
     /// <summary>
     /// Gets a value of System.DateTime

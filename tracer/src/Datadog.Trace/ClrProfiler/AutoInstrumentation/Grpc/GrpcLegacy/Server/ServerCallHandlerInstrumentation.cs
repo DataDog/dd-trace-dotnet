@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class ServerCallHandlerInstrumentation
+    internal static class ServerCallHandlerInstrumentation
     {
         internal static CallTargetState OnMethodBegin<TTarget, TServerRpc, TCompletionQueue>(TTarget instance, TServerRpc serverRpc, in TCompletionQueue completionQueue)
             where TServerRpc : IServerRpcNew

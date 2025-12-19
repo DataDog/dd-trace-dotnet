@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class PutRecordsV3_7Integration
+    internal sealed class PutRecordsV3_7Integration
     {
         private const string Operation = "PutRecords";
 

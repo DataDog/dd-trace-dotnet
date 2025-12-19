@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class ExecutorExecuteIntegration
+internal sealed class ExecutorExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref string[]? args)
     {

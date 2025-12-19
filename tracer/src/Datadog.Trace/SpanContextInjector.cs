@@ -16,7 +16,7 @@ namespace Datadog.Trace
     /// The SpanContextInjector is responsible for injecting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
     /// This can happen for instance when we don't support a specific library
     /// </summary>
-    public static class SpanContextInjector
+    internal static class SpanContextInjector
     {
         internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {

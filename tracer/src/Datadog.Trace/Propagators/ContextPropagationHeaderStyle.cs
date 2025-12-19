@@ -51,7 +51,7 @@ internal static class ContextPropagationHeaderStyle
     /// <summary>
     /// Deprecated values used to indicate propagation header styles.
     /// </summary>
-    public static class Deprecated
+    internal static class Deprecated
     {
         /// <summary>
         /// Deprecated value for the W3C tracecontext propagation header style.

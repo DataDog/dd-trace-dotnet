@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains global datadog settings.
     /// </summary>
-    public sealed class GlobalSettings
+    internal sealed class GlobalSettings
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class

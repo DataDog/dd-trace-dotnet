@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class KafkaProduceSyncDeliveryHandlerIntegration
+    internal sealed class KafkaProduceSyncDeliveryHandlerIntegration
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(KafkaProduceSyncDeliveryHandlerIntegration));
 

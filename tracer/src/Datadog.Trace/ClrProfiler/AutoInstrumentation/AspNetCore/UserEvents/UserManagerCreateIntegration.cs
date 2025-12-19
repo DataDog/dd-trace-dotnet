@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class UserManagerCreateIntegration
+internal static class UserManagerCreateIntegration
 {
     private const string AssemblyName = "Microsoft.Extensions.Identity.Core";
 

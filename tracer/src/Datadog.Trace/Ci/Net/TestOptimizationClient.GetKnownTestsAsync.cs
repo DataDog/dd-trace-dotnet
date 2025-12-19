@@ -134,16 +134,16 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct KnownTestsResponse
+    internal readonly struct KnownTestsResponse
     {
         [JsonProperty("tests")]
         public readonly KnownTestsModules? Tests;
 
-        public sealed class KnownTestsSuites : Dictionary<string, string[]?>
+        internal sealed class KnownTestsSuites : Dictionary<string, string[]?>
         {
         }
 
-        public sealed class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
+        internal sealed class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
         {
         }
     }

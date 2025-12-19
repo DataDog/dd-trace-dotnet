@@ -269,7 +269,7 @@ public sealed partial record TracerSettings
             }
         }
 
-        public sealed class SettingChanges(MutableSettings? updatedMutable, ExporterSettings? updatedExporter, MutableSettings previousMutable, ExporterSettings previousExporter)
+        internal sealed class SettingChanges(MutableSettings? updatedMutable, ExporterSettings? updatedExporter, MutableSettings previousMutable, ExporterSettings previousExporter)
         {
             /// <summary>
             /// Gets the new <see cref="MutableSettings"/>, if they have changed.

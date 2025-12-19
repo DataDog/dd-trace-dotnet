@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         InstrumentationCategory = InstrumentationCategory.AppSec)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class HttpContextSetUser
+    internal static class HttpContextSetUser
     {
         private const string Major2 = "2";
         private const string AssemblyName = "Microsoft.AspNetCore.Http";

@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
     IntegrationName = AwsEventBridgeCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class PutEventsIntegration
+internal sealed class PutEventsIntegration
 {
     private const string Operation = "PutEvents";
     private const string SpanKind = SpanKinds.Producer;

@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class HashAlgorithmIntegrationTer
+internal sealed class HashAlgorithmIntegrationTer
 {
     /// <summary>
     /// OnMethodBegin callback

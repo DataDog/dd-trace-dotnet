@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ClusterNodeIntegration
+    internal sealed class ClusterNodeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

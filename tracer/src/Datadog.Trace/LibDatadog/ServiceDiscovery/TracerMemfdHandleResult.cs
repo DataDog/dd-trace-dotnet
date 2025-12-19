@@ -22,7 +22,7 @@ internal struct TracerMemfdHandleResult
     public ResultUnion Result;
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct ResultUnion
+    internal struct ResultUnion
     {
         [FieldOffset(0)]
         public int TracerMemfdHandle;

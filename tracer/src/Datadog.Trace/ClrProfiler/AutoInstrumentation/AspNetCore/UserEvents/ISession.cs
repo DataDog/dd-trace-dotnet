@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface ISession
+internal interface ISession
 {
     /// <summary>
     /// Gets a value indicating whether the session is available

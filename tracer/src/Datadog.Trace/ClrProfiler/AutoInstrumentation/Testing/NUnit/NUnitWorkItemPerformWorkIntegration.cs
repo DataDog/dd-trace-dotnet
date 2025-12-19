@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class NUnitWorkItemPerformWorkIntegration
+internal static class NUnitWorkItemPerformWorkIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

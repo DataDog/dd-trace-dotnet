@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public sealed class SoapSerializeResponseIntegration
+    internal sealed class SoapSerializeResponseIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

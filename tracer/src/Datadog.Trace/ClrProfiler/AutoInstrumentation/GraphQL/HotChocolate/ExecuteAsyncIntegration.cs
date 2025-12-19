@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         MaximumVersion = "12.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ExecuteAsyncIntegration
+    internal sealed class ExecuteAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

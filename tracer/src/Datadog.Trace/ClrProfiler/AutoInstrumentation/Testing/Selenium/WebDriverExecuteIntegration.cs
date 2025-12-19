@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
     IntegrationName = SeleniumCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class WebDriverExecuteIntegration
+internal sealed class WebDriverExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref string? driverCommandToExecute, ref Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy

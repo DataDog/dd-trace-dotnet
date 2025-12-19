@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
     IntegrationName = nameof(IntegrationId.AzureEventHubs))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class InstrumentMessageIntegration
+internal sealed class InstrumentMessageIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

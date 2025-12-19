@@ -12,7 +12,7 @@ namespace Datadog.Trace.Ci
     /// <summary>
     /// Test parameters
     /// </summary>
-    public sealed class TestParameters
+    internal sealed class TestParameters
     {
         /// <summary>
         /// Gets or sets the test parameters metadata

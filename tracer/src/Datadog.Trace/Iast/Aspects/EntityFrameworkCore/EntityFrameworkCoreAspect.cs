@@ -18,7 +18,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("Microsoft.EntityFrameworkCore.Relational", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class EntityFrameworkCoreAspect
+internal sealed class EntityFrameworkCoreAspect
 {
     /// <summary>
     /// EntityFrameworkCoreAspect aspect

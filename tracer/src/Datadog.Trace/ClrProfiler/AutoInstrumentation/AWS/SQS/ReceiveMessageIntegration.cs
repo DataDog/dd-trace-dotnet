@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         IntegrationName = AwsSqsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ReceiveMessageIntegration
+    internal sealed class ReceiveMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

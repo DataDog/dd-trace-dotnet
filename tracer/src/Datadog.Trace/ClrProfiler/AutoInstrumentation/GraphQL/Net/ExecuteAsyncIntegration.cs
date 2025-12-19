@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         MaximumVersion = GraphQLCommon.Major4)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ExecuteAsyncIntegration
+    internal sealed class ExecuteAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

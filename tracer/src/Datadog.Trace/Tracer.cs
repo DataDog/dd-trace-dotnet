@@ -31,7 +31,7 @@ namespace Datadog.Trace
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
 #pragma  warning disable DDSEAL001 // We derive from this in tests
-    public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
+    internal class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
 #pragma warning restore DDSEAL001
     {
         private static readonly object GlobalInstanceLock = new();

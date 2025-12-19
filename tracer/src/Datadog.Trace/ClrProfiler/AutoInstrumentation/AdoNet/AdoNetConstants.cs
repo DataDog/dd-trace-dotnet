@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal static class AdoNetConstants
     {
-        public static class TypeNames
+        internal static class TypeNames
         {
             public const string CommandBehavior = "System.Data.CommandBehavior";
 
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public const string ObjectTaskType = "System.Threading.Tasks.Task`1[System.Object]";
         }
 
-        public static class MethodNames
+        internal static class MethodNames
         {
             public const string ExecuteNonQuery = "ExecuteNonQuery";
             public const string ExecuteNonQueryAsync = "ExecuteNonQueryAsync";

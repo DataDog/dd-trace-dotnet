@@ -618,7 +618,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        public static class FieldNumbers
+        internal static class FieldNumbers
         {
             public const int ResourceMetrics = 1;
 

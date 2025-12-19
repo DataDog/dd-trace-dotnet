@@ -68,7 +68,7 @@ internal sealed class AwsSnsHandlerCommon
         return new CallTargetState(scope);
     }
 
-    public sealed class SendType
+    internal sealed class SendType
     {
         public static readonly SendType SingleMessage = new("Publish");
 

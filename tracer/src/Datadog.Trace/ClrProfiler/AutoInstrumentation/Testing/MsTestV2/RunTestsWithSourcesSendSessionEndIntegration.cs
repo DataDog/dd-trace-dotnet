@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class RunTestsWithSourcesSendSessionEndIntegration
+internal static class RunTestsWithSourcesSendSessionEndIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {

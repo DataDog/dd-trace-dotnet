@@ -12,7 +12,7 @@ namespace Datadog.Trace
     /// <summary>
     /// An API to access identifying values of the service and the active span
     /// </summary>
-    public static class CorrelationIdentifier
+    internal static class CorrelationIdentifier
     {
         internal const string ServiceKey = "dd.service";
         internal const string VersionKey = "dd.version";

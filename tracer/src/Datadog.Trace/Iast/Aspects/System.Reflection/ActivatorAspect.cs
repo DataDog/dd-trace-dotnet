@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib,netstandard,System.Runtime", AspectType.Sink, VulnerabilityType.ReflectionInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class ActivatorAspect
+internal sealed class ActivatorAspect
 {
     /// <summary>
     /// System.Activator aspects

@@ -14,7 +14,7 @@ namespace Datadog.Trace;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class AgentProcessManagerLoader
+internal sealed class AgentProcessManagerLoader
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="AgentProcessManagerLoader"/> class.

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         IntegrationName = GraphQLCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ValidateIntegration
+    internal sealed class ValidateIntegration
     {
         private const string ErrorType = "GraphQL.Validation.ValidationError";
 

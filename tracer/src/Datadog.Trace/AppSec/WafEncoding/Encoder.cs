@@ -682,7 +682,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
         }
 
-        public sealed class EncodeResult : IEncodeResult
+        internal sealed class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
             private readonly UnmanagedMemoryPool _innerPool;

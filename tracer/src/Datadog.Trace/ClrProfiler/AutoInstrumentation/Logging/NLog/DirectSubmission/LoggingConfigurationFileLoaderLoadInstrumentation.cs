@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     IntegrationName = NLogConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class LoggingConfigurationFileLoaderLoadInstrumentation
+internal sealed class LoggingConfigurationFileLoaderLoadInstrumentation
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LoggingConfigurationFileLoaderLoadInstrumentation));
 

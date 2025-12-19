@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public readonly struct CallTargetState
+internal readonly struct CallTargetState
 {
     private readonly Scope? _previousScope;
     private readonly Scope? _scope;

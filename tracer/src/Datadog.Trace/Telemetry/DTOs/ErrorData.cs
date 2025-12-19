@@ -10,7 +10,7 @@ namespace Datadog.Trace.Telemetry;
 /// <summary>
 /// An error object for configuration (and other) errors in telemetry
 /// </summary>
-public readonly record struct ErrorData
+internal readonly record struct ErrorData
 {
     internal ErrorData(TelemetryErrorCode error)
         : this(error, error.ToStringFast())

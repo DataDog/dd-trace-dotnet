@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         IntegrationName = LoggerIntegrationCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LoggerFactoryScopeProviderForEachScopeIntegration
+    internal sealed class LoggerFactoryScopeProviderForEachScopeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

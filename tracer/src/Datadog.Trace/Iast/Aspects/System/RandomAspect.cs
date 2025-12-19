@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib,System.Runtime.Extensions,System.Runtime", AspectType.Sink, VulnerabilityType.WeakRandomness)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class RandomAspect
+internal sealed class RandomAspect
 {
     private const string _evidenceValue = "System.Random";
 

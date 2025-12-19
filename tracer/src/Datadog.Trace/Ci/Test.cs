@@ -24,7 +24,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test
 /// </summary>
-public sealed class Test
+internal sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();

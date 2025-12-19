@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class HttpContextServerCallContextLogCallEndIntegration
+    internal sealed class HttpContextServerCallContextLogCallEndIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

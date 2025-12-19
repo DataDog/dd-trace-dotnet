@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class SymmetricAlgorithmAspect
+internal sealed class SymmetricAlgorithmAspect
 {
     private static void ProcessCipherClassCreation(SymmetricAlgorithm target)
     {

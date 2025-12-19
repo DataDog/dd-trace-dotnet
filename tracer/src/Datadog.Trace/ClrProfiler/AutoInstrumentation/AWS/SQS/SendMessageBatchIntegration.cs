@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         IntegrationName = AwsSqsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class SendMessageBatchIntegration
+    internal sealed class SendMessageBatchIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

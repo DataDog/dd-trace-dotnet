@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class SocketsHttpHandlerIntegration
+    internal sealed class SocketsHttpHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;

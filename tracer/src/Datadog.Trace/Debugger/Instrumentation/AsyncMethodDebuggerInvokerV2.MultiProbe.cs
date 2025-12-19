@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// resulting in TypeLoadException. To avoid that, we inject `System.Object` as the field instead.
     /// In this case, even if we end up not loading Datadog.Trace, nothing bad will happen.
     /// </summary>
-    public static class AsyncMethodDebuggerInvokerV2
+    internal static class AsyncMethodDebuggerInvokerV2
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncMethodDebuggerInvokerV2));
 

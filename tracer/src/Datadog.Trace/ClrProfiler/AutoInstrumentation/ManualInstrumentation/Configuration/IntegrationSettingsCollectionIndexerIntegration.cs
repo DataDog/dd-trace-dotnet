@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class IntegrationSettingsCollectionIndexerIntegration
+internal sealed class IntegrationSettingsCollectionIndexerIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref string integrationName)
     {

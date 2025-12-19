@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class TestExtensionsSetParametersIntegration
+internal sealed class TestExtensionsSetParametersIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTest, TParameters>(TTest test, in TParameters parameters)
         where TParameters : ITestParameters

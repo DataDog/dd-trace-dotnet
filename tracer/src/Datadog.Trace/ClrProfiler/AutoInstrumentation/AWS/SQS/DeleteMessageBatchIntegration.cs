@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         IntegrationName = AwsSqsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class DeleteMessageBatchIntegration
+    internal sealed class DeleteMessageBatchIntegration
     {
         private const string Operation = "DeleteMessageBatch";
 

@@ -8,7 +8,7 @@ namespace Datadog.Trace;
 /// <summary>
 /// Standard AppSec span tags used by integrations.
 /// </summary>
-public static partial class Tags
+internal static partial class Tags
 {
     internal static class AppSec
     {

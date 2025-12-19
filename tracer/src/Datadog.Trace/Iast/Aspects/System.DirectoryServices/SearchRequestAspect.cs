@@ -12,7 +12,7 @@ namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 
-public static partial class SearchRequestAspect
+internal static partial class SearchRequestAspect
 {
     /// <summary>
     /// SearchRequest instrumentated method

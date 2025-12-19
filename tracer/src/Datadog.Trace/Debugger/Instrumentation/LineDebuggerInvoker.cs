@@ -18,7 +18,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class LineDebuggerInvoker
+    internal static class LineDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
 

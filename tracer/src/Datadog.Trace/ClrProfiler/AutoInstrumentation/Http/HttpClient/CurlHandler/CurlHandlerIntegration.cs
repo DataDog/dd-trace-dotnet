@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class CurlHandlerIntegration
+    internal sealed class CurlHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;

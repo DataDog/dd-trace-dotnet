@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class GlobalSettingsSetDebugEnabledIntegration
+internal sealed class GlobalSettingsSetDebugEnabledIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(bool enabled)
     {

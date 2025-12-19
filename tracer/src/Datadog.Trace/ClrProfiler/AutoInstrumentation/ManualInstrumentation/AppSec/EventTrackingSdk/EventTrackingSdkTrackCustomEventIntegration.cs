@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class EventTrackingSdkTrackCustomEventIntegration
+internal sealed class EventTrackingSdkTrackCustomEventIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(string eventName)
     {

@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         IntegrationName = "Serilog")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LoggerDispatchInstrumentation
+    internal sealed class LoggerDispatchInstrumentation
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class IIOServiceExecuteAsyncIntegration
+    internal sealed class IIOServiceExecuteAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

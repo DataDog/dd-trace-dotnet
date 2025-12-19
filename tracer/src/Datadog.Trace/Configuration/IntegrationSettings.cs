@@ -14,7 +14,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
-    public sealed class IntegrationSettings : IEquatable<IntegrationSettings>
+    internal sealed class IntegrationSettings : IEquatable<IntegrationSettings>
     {
         /// <summary>
         /// Configuration key pattern for enabling or disabling an integration.

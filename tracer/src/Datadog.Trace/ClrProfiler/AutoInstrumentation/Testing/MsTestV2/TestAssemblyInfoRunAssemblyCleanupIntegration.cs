@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestAssemblyInfoRunAssemblyCleanupIntegration
+internal static class TestAssemblyInfoRunAssemblyCleanupIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

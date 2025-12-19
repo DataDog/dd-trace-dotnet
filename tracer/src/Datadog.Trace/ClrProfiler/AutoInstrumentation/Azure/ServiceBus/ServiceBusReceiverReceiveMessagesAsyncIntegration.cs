@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
     IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
+internal sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
     private const string OperationName = "azure_servicebus.receive";
 

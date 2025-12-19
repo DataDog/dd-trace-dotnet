@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// Contains information about the detected base branch.
 /// <see cref="GitCommandHelper.DetectBaseBranch"/>
 /// </summary>
-public sealed class BaseBranchInfo
+internal sealed class BaseBranchInfo
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseBranchInfo"/> class.

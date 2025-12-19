@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         MaximumVersion = "11.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ExecuteAsyncIntegrationExtra
+    internal sealed class ExecuteAsyncIntegrationExtra
     {
         internal static CallTargetState OnMethodBegin<TTarget, TOperationContext>(TTarget instance, TOperationContext operationContext)
             where TOperationContext : IOperationContext

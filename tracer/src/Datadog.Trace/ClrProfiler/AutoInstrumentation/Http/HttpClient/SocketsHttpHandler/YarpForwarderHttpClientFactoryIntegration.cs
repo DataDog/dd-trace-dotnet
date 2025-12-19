@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class YarpForwarderHttpClientFactoryIntegration
+internal sealed class YarpForwarderHttpClientFactoryIntegration
 {
     private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
     private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;

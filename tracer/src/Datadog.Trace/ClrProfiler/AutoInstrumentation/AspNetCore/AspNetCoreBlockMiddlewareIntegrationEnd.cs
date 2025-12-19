@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AspNetCoreBlockMiddlewareIntegrationEnd
+    internal static class AspNetCoreBlockMiddlewareIntegrationEnd
     {
         private const string Major2 = "2";
         private const string Major3 = "3";

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class SpanContextExtractorConstructorIntegration
+internal sealed class SpanContextExtractorConstructorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {

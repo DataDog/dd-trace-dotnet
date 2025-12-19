@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public sealed class RedisNativeClientSendReceiveIntegration_6_2_0
+    internal sealed class RedisNativeClientSendReceiveIntegration_6_2_0
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.ServiceStackRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.ServiceStackRedis;

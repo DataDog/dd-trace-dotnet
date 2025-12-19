@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <remarks>
 /// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Server/PerformingContext.cs
 /// </remarks>
-public interface IPerformingContextProxy : IPerformContextProxy
+internal interface IPerformingContextProxy : IPerformContextProxy
 {
     /// <summary>
     /// Gets or sets a value indicating whether it gets or sets a value of System.Boolean

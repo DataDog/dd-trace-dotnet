@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class PopulateBasicPropertiesHeadersIntegration
+internal sealed class PopulateBasicPropertiesHeadersIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PopulateBasicPropertiesHeadersIntegration));
 

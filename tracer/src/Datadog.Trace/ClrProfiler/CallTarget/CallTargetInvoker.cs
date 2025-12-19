@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class CallTargetInvoker
+internal static class CallTargetInvoker
 {
     // NOTE: Do not add a reference to IDatadogLogger or Tracer.Instance etc here.
     // On .NET FX, this class may be called _before_ Instrumentation.Initialize, if

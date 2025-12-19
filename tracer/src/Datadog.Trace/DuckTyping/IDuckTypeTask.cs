@@ -10,7 +10,7 @@ namespace Datadog.Trace.DuckTyping;
 /// Duck type task interface
 /// </summary>
 /// <typeparam name="T">Type of the result</typeparam>
-public interface IDuckTypeTask<out T> : IDuckType
+internal interface IDuckTypeTask<out T> : IDuckType
 {
     /// <summary>
     /// Gets a value indicating whether if the task is completed
@@ -32,7 +32,7 @@ public interface IDuckTypeTask<out T> : IDuckType
 /// <summary>
 /// Duck type task interface
 /// </summary>
-public interface IDuckTypeTask : IDuckType
+internal interface IDuckTypeTask : IDuckType
 {
     /// <summary>
     /// Gets a value indicating whether if the task is completed

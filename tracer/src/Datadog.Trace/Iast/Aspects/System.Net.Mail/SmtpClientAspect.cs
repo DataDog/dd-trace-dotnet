@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("System,System.Net.Mail", AspectType.Sink, VulnerabilityType.EmailHtmlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class SmtpClientAspect
+internal sealed class SmtpClientAspect
 {
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.

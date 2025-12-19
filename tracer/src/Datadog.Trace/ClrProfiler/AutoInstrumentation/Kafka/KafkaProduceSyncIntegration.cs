@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class KafkaProduceSyncIntegration
+    internal sealed class KafkaProduceSyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

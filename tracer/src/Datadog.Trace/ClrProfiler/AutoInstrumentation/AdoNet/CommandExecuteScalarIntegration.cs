@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class CommandExecuteScalarIntegration
+    internal sealed class CommandExecuteScalarIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

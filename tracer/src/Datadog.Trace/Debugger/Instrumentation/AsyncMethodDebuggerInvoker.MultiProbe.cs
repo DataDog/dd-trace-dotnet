@@ -12,7 +12,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// <summary>
     /// AsyncMethodDebuggerInvoker for multiple probes scenario (where there are more than one _method_ probe).
     /// </summary>
-    public static partial class AsyncMethodDebuggerInvoker
+    internal static partial class AsyncMethodDebuggerInvoker
     {
         /// <summary>
         /// Begin Method Invoker

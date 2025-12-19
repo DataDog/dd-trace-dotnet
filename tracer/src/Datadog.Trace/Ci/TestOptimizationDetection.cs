@@ -78,7 +78,7 @@ internal static class TestOptimizationDetection
         }
     }
 
-    public readonly record struct Enablement(bool? ExplicitEnabled, bool InferredEnabled)
+    internal readonly record struct Enablement(bool? ExplicitEnabled, bool InferredEnabled)
     {
         public bool IsEnabled => ExplicitEnabled ?? InferredEnabled;
     }

@@ -34,7 +34,7 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static partial class DuckType
+    internal static partial class DuckType
     {
         /// <summary>
         /// Create duck type proxy using a base type
@@ -1190,7 +1190,7 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Struct to store the result of creating a proxy type
         /// </summary>
-        public readonly struct CreateTypeResult
+        internal readonly struct CreateTypeResult
         {
             /// <summary>
             /// Gets if the proxy type creation was successful
@@ -1315,7 +1315,7 @@ namespace Datadog.Trace.DuckTyping
         /// Generics Create Cache FastPath
         /// </summary>
         /// <typeparam name="T">Type of proxy definition</typeparam>
-        public static class CreateCache<T>
+        internal static class CreateCache<T>
         {
             // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
             private static StrongBox<CreateTypeResult>? _fastPath;

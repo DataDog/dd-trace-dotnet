@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class HashAlgorithmIntegrationBis
+internal sealed class HashAlgorithmIntegrationBis
 {
     /// <summary>
     /// OnMethodBegin callback

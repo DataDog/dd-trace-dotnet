@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class NUnitCommandBuilderMakeTestCommandIntegration
+internal sealed class NUnitCommandBuilderMakeTestCommandIntegration
 {
     /// <summary>
     /// OnMethodEnd callback

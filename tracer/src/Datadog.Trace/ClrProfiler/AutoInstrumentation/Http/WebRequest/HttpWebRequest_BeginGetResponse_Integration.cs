@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class HttpWebRequest_BeginGetResponse_Integration
+    internal sealed class HttpWebRequest_BeginGetResponse_Integration
     {
         private const string MethodName = "BeginGetResponse";
 

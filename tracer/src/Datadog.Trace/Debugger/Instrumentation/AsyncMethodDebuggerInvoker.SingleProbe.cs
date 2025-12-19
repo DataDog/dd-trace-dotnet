@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static partial class AsyncMethodDebuggerInvoker
+    internal static partial class AsyncMethodDebuggerInvoker
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncMethodDebuggerInvoker));
 

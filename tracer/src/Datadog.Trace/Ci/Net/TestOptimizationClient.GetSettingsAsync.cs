@@ -171,7 +171,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct SettingsResponse
+    internal readonly struct SettingsResponse
     {
         [JsonProperty("code_coverage")]
         public readonly bool? CodeCoverage;
@@ -221,7 +221,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct EarlyFlakeDetectionSettingsResponse
+    internal readonly struct EarlyFlakeDetectionSettingsResponse
     {
         [JsonProperty("enabled")]
         public readonly bool? Enabled;
@@ -244,7 +244,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct SlowTestRetriesSettingsResponse
+    internal readonly struct SlowTestRetriesSettingsResponse
     {
         [JsonProperty("5s")]
         public readonly int? FiveSeconds;
@@ -271,7 +271,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct TestManagementSettingsResponse
+    internal readonly struct TestManagementSettingsResponse
     {
         [JsonProperty("enabled")]
         public readonly bool? Enabled;

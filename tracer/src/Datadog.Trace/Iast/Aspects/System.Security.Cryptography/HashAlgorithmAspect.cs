@@ -20,7 +20,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class HashAlgorithmAspect
+internal sealed class HashAlgorithmAspect
 {
     /// <summary>
     /// ComputeHash not static

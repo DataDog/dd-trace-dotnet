@@ -479,7 +479,7 @@ internal sealed class TelemetryController : ITelemetryController
             _tasks[LogQueueSizeTaskIndex] = _logQueueTaskGenerator();
         }
 
-        public interface IDelayFactory
+        internal interface IDelayFactory
         {
             Task Delay(TimeSpan delay);
         }

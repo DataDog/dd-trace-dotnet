@@ -20,7 +20,7 @@ namespace Datadog.Trace
     /// layer above the instrumented ones (eg consuming Kafka messages and enqueuing them prior to generate a span).
     /// When messageType and target are specified, also used to set data streams monitoring checkpoints (if enabled).
     /// </summary>
-    public static class SpanContextExtractor
+    internal static class SpanContextExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanContextExtractor));
 

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestAssemblyRunnerRunV3Integration
+internal static class XUnitTestAssemblyRunnerRunV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
         where TContext : ITestAssemblyRunnerContextV3, IDuckType

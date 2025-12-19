@@ -69,7 +69,7 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
     /// </summary>
     internal ConcurrentQueue<ConfigurationTelemetryEntry> GetQueueForTesting() => _entries;
 
-    public sealed class ConfigurationTelemetryEntry
+    internal sealed class ConfigurationTelemetryEntry
     {
         private ConfigurationTelemetryEntry(string key, ConfigurationOrigins origin, ConfigurationTelemetryEntryType type, TelemetryErrorCode? error, string? stringValue = null, bool? boolValue = null, int? intValue = null, double? doubleValue = null)
         {

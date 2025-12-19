@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         IntegrationName = RabbitMQConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ExchangeDeclareIntegration
+    internal sealed class ExchangeDeclareIntegration
     {
         private const string Command = "exchange.declare";
 

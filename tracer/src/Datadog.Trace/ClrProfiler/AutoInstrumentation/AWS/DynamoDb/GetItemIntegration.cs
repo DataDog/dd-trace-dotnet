@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class GetItemIntegration
+    internal sealed class GetItemIntegration
     {
         private const string Operation = "GetItem";
 

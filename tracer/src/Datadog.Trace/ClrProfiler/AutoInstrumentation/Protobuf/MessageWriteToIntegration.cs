@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 // Can't be static because referenced in Helper.cs
-public sealed class MessageWriteToIntegration
+internal sealed class MessageWriteToIntegration
 {
     // For performance reasons, we want to do the actual instrumentation work with a Duck constraint,
     // but to be able to disable the instrumentation we need the raw type

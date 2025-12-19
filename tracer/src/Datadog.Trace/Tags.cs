@@ -10,7 +10,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Standard Datadog span tags.
     /// </summary>
-    public static partial class Tags
+    internal static partial class Tags
     {
         /// <summary>
         /// The name of the instrumented service. Its value is usually constant for the lifetime of a process,

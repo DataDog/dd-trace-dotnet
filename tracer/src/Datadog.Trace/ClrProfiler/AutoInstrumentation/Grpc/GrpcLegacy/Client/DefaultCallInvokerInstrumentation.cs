@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class DefaultCallInvokerInstrumentation
+    internal static class DefaultCallInvokerInstrumentation
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -683,9 +683,9 @@ internal static class GitCommandHelper
 
     private readonly record struct BranchMetrics(string Branch, string MergeBaseSha, int Behind, int Ahead);
 
-    public readonly record struct VersionInfo(int Major, int Minor, int Patch);
+    internal readonly record struct VersionInfo(int Major, int Minor, int Patch);
 
-    public readonly record struct CommitData(
+    internal readonly record struct CommitData(
         string CommitSha,
         DateTimeOffset AuthorDate,
         string AuthorName,

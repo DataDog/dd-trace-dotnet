@@ -10,7 +10,7 @@ namespace Datadog.Trace.Telemetry;
 /// <summary>
 /// V2 implementation of <c>conf_key_value</c>
 /// </summary>
-public readonly struct ConfigurationKeyValue
+internal readonly struct ConfigurationKeyValue
 {
     internal ConfigurationKeyValue(string name, object? value, string origin, long seqId, TelemetryErrorCode? error)
         : this(name, value, origin, seqId, error is { } err ? new ErrorData(err) : null)

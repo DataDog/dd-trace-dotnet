@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class HttpWebRequest_EndGetResponse_Integration
+    internal sealed class HttpWebRequest_EndGetResponse_Integration
     {
         private const string MethodName = "EndGetResponse";
 

@@ -15,7 +15,7 @@ namespace Datadog.Trace.FaultTolerant
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class FaultTolerantInvoker
+    internal static class FaultTolerantInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FaultTolerantInvoker));
 

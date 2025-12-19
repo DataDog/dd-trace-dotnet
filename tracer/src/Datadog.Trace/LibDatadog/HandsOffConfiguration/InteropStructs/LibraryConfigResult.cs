@@ -17,7 +17,7 @@ internal struct LibraryConfigResult
 
     // Manual union overlay
     [StructLayout(LayoutKind.Explicit)]
-    public struct ResultUnion
+    internal struct ResultUnion
     {
         [FieldOffset(0)]
         public LibraryConfigs Ok;

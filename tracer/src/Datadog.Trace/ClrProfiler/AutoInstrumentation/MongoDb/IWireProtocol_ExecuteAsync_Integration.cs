@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class IWireProtocol_ExecuteAsync_Integration
+    internal sealed class IWireProtocol_ExecuteAsync_Integration
     {
         /// <summary>
         /// OnMethodBegin callback

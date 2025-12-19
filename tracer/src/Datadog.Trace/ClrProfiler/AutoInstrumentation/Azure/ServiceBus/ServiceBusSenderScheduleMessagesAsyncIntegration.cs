@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
     IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
+internal sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
 {
     private const string OperationName = "send";
 

@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public sealed class DatabaseQueryIteratorsIntegrations
+    internal sealed class DatabaseQueryIteratorsIntegrations
     {
         /// <summary>
         /// OnMethodBegin callback

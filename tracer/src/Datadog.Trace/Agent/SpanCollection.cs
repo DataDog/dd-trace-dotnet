@@ -209,7 +209,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
     /// <summary>
     /// Enumerates the Span values of a <see cref="SpanCollection" />.
     /// </summary>
-    public struct Enumerator : IEnumerator<Span>
+    internal struct Enumerator : IEnumerator<Span>
     {
         private readonly Span[]? _values;
         private readonly int _count;

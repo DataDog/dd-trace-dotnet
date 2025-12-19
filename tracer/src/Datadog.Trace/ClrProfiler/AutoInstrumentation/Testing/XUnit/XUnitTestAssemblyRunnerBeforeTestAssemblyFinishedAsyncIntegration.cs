@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegration
+internal static class XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegration
 {
     /// <summary>
     /// OnAsyncMethodEnd callback

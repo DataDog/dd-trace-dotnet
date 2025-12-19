@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct SpanDebuggerState
+    internal struct SpanDebuggerState
     {
         private readonly Scope _previousScope;
         private readonly Scope _scope;

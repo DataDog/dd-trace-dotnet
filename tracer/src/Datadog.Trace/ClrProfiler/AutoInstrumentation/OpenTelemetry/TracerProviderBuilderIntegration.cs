@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class TracerProviderBuilderIntegration
+    internal static class TracerProviderBuilderIntegration
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;

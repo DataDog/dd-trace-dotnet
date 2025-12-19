@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class SyncMethodInvokerIntegration
+    internal sealed class SyncMethodInvokerIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

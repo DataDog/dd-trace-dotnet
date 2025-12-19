@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public sealed class HttpProcessAndSendIntegration
+    internal sealed class HttpProcessAndSendIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

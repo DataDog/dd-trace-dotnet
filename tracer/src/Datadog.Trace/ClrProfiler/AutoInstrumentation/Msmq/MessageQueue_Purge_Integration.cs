@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = MsmqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class MessageQueue_Purge_Integration
+    internal sealed class MessageQueue_Purge_Integration
     {
         private const string Command = MsmqConstants.MsmqPurgeCommand;
 

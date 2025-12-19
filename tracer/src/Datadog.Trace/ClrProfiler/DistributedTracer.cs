@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class DistributedTracer
+    internal static class DistributedTracer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
 

@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class HttpResponseIntegration
+internal static class HttpResponseIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

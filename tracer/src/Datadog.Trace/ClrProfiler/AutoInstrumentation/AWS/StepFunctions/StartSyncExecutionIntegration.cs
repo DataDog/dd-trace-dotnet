@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         IntegrationName = AwsStepFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class StartSyncExecutionIntegration
+    internal sealed class StartSyncExecutionIntegration
     {
         private const string Operation = "StartSyncExecution";
 

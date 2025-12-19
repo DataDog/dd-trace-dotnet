@@ -174,7 +174,7 @@ internal sealed class AwsSqsHandlerCommon
         return response;
     }
 
-    public sealed class SendType
+    internal sealed class SendType
     {
         public static readonly SendType SingleMessage = new("SendMessage");
 

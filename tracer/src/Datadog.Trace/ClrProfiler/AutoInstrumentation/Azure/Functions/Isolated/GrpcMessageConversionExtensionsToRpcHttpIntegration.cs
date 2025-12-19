@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     IntegrationName = AzureFunctionsCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class GrpcMessageConversionExtensionsToRpcHttpIntegration
+internal sealed class GrpcMessageConversionExtensionsToRpcHttpIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TLogger, TGrpcCapabilities>(TTarget nullInstance, HttpRequest request, TLogger logger, TGrpcCapabilities capabilities)
     {

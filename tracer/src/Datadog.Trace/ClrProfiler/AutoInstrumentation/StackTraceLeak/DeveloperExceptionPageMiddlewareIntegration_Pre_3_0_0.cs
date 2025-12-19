@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class DeveloperExceptionPageMiddlewareIntegration_Pre_3_0_0
+internal static class DeveloperExceptionPageMiddlewareIntegration_Pre_3_0_0
 {
     internal interface IErrorContext
     {

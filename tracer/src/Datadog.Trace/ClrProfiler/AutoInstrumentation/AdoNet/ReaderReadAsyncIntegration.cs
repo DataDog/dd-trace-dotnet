@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class ReaderReadAsyncIntegration
+    internal sealed class ReaderReadAsyncIntegration
     {
         private static bool errorLogged = false;
 

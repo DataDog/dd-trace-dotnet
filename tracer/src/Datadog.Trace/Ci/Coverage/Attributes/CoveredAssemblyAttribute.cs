@@ -12,6 +12,6 @@ namespace Datadog.Trace.Ci.Coverage.Attributes;
 /// Covered assembly attribute
 /// This attributes marks an assembly as a processed.
 /// </summary>
-public sealed class CoveredAssemblyAttribute : Attribute
+internal sealed class CoveredAssemblyAttribute : Attribute
 {
 }

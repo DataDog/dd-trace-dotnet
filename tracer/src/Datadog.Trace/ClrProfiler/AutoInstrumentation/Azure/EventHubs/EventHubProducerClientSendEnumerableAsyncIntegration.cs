@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
     IntegrationName = nameof(IntegrationId.AzureEventHubs))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class EventHubProducerClientSendEnumerableAsyncIntegration
+internal sealed class EventHubProducerClientSendEnumerableAsyncIntegration
 {
     private const string OperationName = "send";
 

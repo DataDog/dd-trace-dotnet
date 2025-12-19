@@ -63,7 +63,7 @@ namespace Datadog.Trace.ContinuousProfiler
         // TODO: do the same for native tracer
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct SharedConfig
+        internal struct SharedConfig
         {
             public ProfilingEnabled ProfilingEnabled;
             [MarshalAs(UnmanagedType.I1)]

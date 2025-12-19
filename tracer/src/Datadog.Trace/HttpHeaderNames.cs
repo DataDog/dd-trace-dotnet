@@ -10,7 +10,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Names of HTTP headers that can be used tracing inbound or outbound HTTP requests.
     /// </summary>
-    public static class HttpHeaderNames
+    internal static class HttpHeaderNames
     {
         /// <summary>
         /// ID of a distributed trace.

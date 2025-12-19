@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         IntegrationName = nameof(Grpc))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class MetadataArraySafeHandleCreateInstrumentation
+    internal sealed class MetadataArraySafeHandleCreateInstrumentation
     {
         /// <summary>
         /// OnMethodBegin callback

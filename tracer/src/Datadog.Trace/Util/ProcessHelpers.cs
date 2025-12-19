@@ -251,7 +251,7 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public readonly struct Command
+        internal readonly struct Command
         {
             public readonly string Cmd;
             public readonly string? Arguments;
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public sealed class CommandOutput
+        internal sealed class CommandOutput
         {
             public CommandOutput(string output, string error, int exitCode, bool timedOut)
             {

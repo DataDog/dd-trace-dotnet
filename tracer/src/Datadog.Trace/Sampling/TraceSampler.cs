@@ -100,7 +100,7 @@ namespace Datadog.Trace.Sampling
             return new SamplingDecision(priority, mechanism, rate, limiterRate);
         }
 
-        public sealed class Builder(IRateLimiter limiter)
+        internal sealed class Builder(IRateLimiter limiter)
         {
             private readonly IRateLimiter _limiter = limiter;
             private readonly List<ISamplingRule> _rules = [];

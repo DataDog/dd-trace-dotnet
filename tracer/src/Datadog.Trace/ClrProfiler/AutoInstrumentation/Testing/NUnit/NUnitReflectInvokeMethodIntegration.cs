@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class NUnitReflectInvokeMethodIntegration
+internal static class NUnitReflectInvokeMethodIntegration
 {
     internal static CallTargetReturn<object> OnMethodEnd<TTarget>(object returnValue, Exception? exception, in CallTargetState state)
     {

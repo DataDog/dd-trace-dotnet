@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         CallTargetIntegrationKind = CallTargetKind.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class BasicDeliverAsyncIntegration
+    internal sealed class BasicDeliverAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

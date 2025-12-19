@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     IntegrationName = LoggerIntegrationCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class LoggerFactoryConstructorNet7Integration
+internal sealed class LoggerFactoryConstructorNet7Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProvider, TFilterOptions, TFactoryOptions, TScopeProvider>(TTarget instance, TProvider logProviders, TFilterOptions filterOptions, TFactoryOptions factoryOptions, TScopeProvider scopeProvider)
     {

@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 [AspectClass("System.DirectoryServices", [AspectFilter.StringOptimization])]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static partial class DirectoryEntryAspect
+internal static partial class DirectoryEntryAspect
 {
     /// <summary>
     /// DirectoryEntry instrumentated method

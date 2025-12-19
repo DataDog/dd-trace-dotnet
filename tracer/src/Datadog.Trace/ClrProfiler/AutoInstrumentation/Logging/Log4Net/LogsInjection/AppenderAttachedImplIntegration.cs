@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         IntegrationName = "Log4Net")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class AppenderAttachedImplIntegration
+    internal sealed class AppenderAttachedImplIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

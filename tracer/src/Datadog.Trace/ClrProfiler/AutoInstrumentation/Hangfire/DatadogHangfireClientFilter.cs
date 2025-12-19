@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// <summary>
     /// The Datadog client-side Hangfire job filter.
     /// </summary>
-    public sealed class DatadogHangfireClientFilter
+    internal sealed class DatadogHangfireClientFilter
     {
         /// <summary>
         /// Called before the job is created.

@@ -23,7 +23,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 [AspectClass("System.Net.Http", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public sealed class HttpClientAspect
+internal sealed class HttpClientAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url string is tainted

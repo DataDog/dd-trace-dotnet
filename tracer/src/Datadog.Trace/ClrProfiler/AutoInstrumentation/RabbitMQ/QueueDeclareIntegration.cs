@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         IntegrationName = RabbitMQConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class QueueDeclareIntegration
+    internal sealed class QueueDeclareIntegration
     {
         private const string Command = "queue.declare";
 

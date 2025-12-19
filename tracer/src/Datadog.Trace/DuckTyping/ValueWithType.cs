@@ -15,7 +15,7 @@ namespace Datadog.Trace.DuckTyping;
 /// <typeparam name="TProxy">Type of ducktype proxy</typeparam>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public readonly struct ValueWithType<TProxy>
+internal readonly struct ValueWithType<TProxy>
 {
     /// <summary>
     /// Gets the value

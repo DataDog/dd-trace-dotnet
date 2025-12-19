@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class RedisExecuteAsyncIntegration
+    internal sealed class RedisExecuteAsyncIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;

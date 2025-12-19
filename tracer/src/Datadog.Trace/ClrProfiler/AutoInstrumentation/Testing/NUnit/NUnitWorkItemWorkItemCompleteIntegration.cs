@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class NUnitWorkItemWorkItemCompleteIntegration
+internal static class NUnitWorkItemWorkItemCompleteIntegration
 {
     /// <summary>
     /// OnMethodBegin callback

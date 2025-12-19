@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class SpanContextInjectorConstructorIntegration
+internal sealed class SpanContextInjectorConstructorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
