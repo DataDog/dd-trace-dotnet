@@ -25,6 +25,6 @@ steps:
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
       # Load retry function
-      . $(Build.SourcesDirectory)/.azure-pipelines/scripts/Invoke-WebRequestWithRetry.ps1
+      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
       Invoke-WebRequestWithRetry -Uri "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" -OutFile "${{ parameters.dockerComposePath }}" -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
     displayName: Download docker-compose

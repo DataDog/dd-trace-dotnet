@@ -22,7 +22,7 @@ steps:
       echo "Downloading dotnet-install.ps1"
 
       # Load retry function
-      . $(Build.SourcesDirectory)/.azure-pipelines/scripts/Invoke-WebRequestWithRetry.ps1
+      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
       Invoke-WebRequestWithRetry -Uri "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -OutFile "dotnet-install.ps1" -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
 
       $dotnetInstall = "./dotnet-install.ps1"

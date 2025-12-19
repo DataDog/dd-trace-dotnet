@@ -26,7 +26,7 @@ steps:
       Write-Host "Downloading from $url to $file";
 
       # Load retry function
-      . $(Build.SourcesDirectory)/.azure-pipelines/scripts/Invoke-WebRequestWithRetry.ps1
+      . $(Build.SourcesDirectory)\.azure-pipelines\scripts\Invoke-WebRequestWithRetry.ps1
       Invoke-WebRequestWithRetry -Uri $url -OutFile $file -MaxRetries $(PWSH_MAX_RETRY_COUNT) -RetryIntervalSec $(PWSH_RETRY_INTERVAL_SEC) -TimeoutSec $(PWSH_TIMEOUT_SEC)
 
       $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
