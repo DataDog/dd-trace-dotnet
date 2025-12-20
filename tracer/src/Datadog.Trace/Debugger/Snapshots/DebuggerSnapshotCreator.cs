@@ -44,6 +44,17 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
+        // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
+        // This class is on the hot path, so these flags should stay extremely cheap.
+        private bool _debuggerOpen;
+        private bool _snapshotOpen;
+        private bool _capturesOpen;
+        private bool _entryOpen;
+        private bool _returnOpen;
+        private bool _linesOpen;
+        private bool _lineNumberOpen;
+        private LocalsOrArgsContainer _localsOrArgsOpen;
+
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
         {
             _isFullSnapshot = isFullSnapshot;
@@ -68,6 +79,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags, serviceNameProvider)
         {
             MethodScopeMembers = methodScopeMembers;
+        }
+
+        private enum LocalsOrArgsContainer : byte
+        {
+            None = 0,
+            Arguments = 1,
+            Locals = 2,
         }
 
         internal virtual string DebuggerProduct => DebuggerTags.DebuggerProduct.DI;
@@ -247,91 +265,176 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             JsonWriter.WritePropertyName("debugger");
             JsonWriter.WriteStartObject();
+            _debuggerOpen = true;
         }
 
         internal void StartSnapshot()
         {
             JsonWriter.WritePropertyName("snapshot");
             JsonWriter.WriteStartObject();
+            _snapshotOpen = true;
         }
 
         internal void StartCaptures()
         {
             JsonWriter.WritePropertyName("captures");
             JsonWriter.WriteStartObject();
+            _capturesOpen = true;
         }
 
         internal void StartEntry()
         {
             JsonWriter.WritePropertyName("entry");
             JsonWriter.WriteStartObject();
+            _entryOpen = true;
         }
 
         internal void StartLines(int lineNumber)
         {
-            JsonWriter.WritePropertyName("lines");
-            JsonWriter.WriteStartObject();
-
-            JsonWriter.WritePropertyName(lineNumber.ToString());
-            JsonWriter.WriteStartObject();
-        }
-
-        internal void EndEntry(bool hasArgumentsOrLocals)
-        {
-            if (hasArgumentsOrLocals)
-            {
-                // end arguments or locals
-                JsonWriter.WriteEndObject();
-            }
-
-            // end entry
-            JsonWriter.WriteEndObject();
-        }
-
-        internal void StartReturn()
-        {
-            if (!_isFullSnapshot)
+            // For non-full snapshots we still want "captures", but it might not have been started yet.
+            if (!_isFullSnapshot && !_capturesOpen)
             {
                 StartCaptures();
             }
 
-            JsonWriter.WritePropertyName("return");
+            JsonWriter.WritePropertyName("lines");
             JsonWriter.WriteStartObject();
+            _linesOpen = true;
+
+            JsonWriter.WritePropertyName(lineNumber.ToString());
+            JsonWriter.WriteStartObject();
+            _lineNumberOpen = true;
         }
 
-        internal void EndReturn(bool hasArgumentsOrLocals)
+        internal void EndEntry()
         {
-            if (hasArgumentsOrLocals)
+            // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
+            // and closing a non-open container corrupts the JsonWriter state ("No token to close").
+            CloseLocalsOrArgsIfOpen();
+
+            if (_entryOpen)
             {
-                // end arguments or locals
                 JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+        }
+
+        internal void StartReturn()
+        {
+            // StartCaptures is done during Initialize() for full snapshots. For non-full snapshots, we need it here,
+            // but only once.
+            if (!_isFullSnapshot && !_capturesOpen)
+            {
+                StartCaptures();
             }
 
-            // end line number or method return
-            JsonWriter.WriteEndObject();
+            // Defensive: depending on capture behaviour and delayed snapshots, StartReturn can be called more than once.
+            // Ensure we do not start nested "return".
+            if (_returnOpen)
+            {
+                return;
+            }
+
+            // Close any open locals/arguments container, then close "entry" if it's still open.
+            CloseLocalsOrArgsIfOpen();
+            if (_entryOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+
+            JsonWriter.WritePropertyName("return");
+            JsonWriter.WriteStartObject();
+            _returnOpen = true;
+        }
+
+        internal void EndReturn()
+        {
+            // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
+            // and closing a non-open container corrupts the JsonWriter state ("No token to close").
+            CloseLocalsOrArgsIfOpen();
+
+            // Close the innermost container for this phase:
+            // - method probes: close "return"
+            // - line probes: close the line number object (lines.<n>)
+            if (_returnOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _returnOpen = false;
+            }
+            else if (_lineNumberOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _lineNumberOpen = false;
+            }
+
             if (_probeLocation == ProbeLocation.Line)
             {
-                // end lines
-                JsonWriter.WriteEndObject();
+                if (_linesOpen)
+                {
+                    JsonWriter.WriteEndObject();
+                    _linesOpen = false;
+                }
             }
 
-            // end captures
             EndCapture();
         }
 
         internal void EndCapture()
         {
-            JsonWriter.WriteEndObject();
+            if (_capturesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _capturesOpen = false;
+            }
         }
 
         internal DebuggerSnapshotCreator EndDebugger()
         {
-            JsonWriter.WriteEndObject();
+            if (_debuggerOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _debuggerOpen = false;
+            }
+
             return this;
         }
 
         internal virtual DebuggerSnapshotCreator EndSnapshot()
         {
+            // If any capture containers are still open for any reason, close them first (do not over-close).
+            CloseLocalsOrArgsIfOpen();
+
+            if (_entryOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+
+            if (_returnOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _returnOpen = false;
+            }
+
+            if (_lineNumberOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _lineNumberOpen = false;
+            }
+
+            if (_linesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _linesOpen = false;
+            }
+
+            if (_capturesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _capturesOpen = false;
+            }
+
             JsonWriter.WritePropertyName("id");
             JsonWriter.WriteValue(SnapshotId);
 
@@ -344,8 +447,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WritePropertyName("language");
             JsonWriter.WriteValue(TracerConstants.Language);
 
-            JsonWriter.WriteEndObject();
+            if (_snapshotOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _snapshotOpen = false;
+            }
+
             return this;
+        }
+
+        private void CloseLocalsOrArgsIfOpen()
+        {
+            if (_localsOrArgsOpen != LocalsOrArgsContainer.None)
+            {
+                JsonWriter.WriteEndObject();
+                _localsOrArgsOpen = LocalsOrArgsContainer.None;
+            }
         }
 
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
@@ -405,10 +522,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureStaticFields(ref info);
         }
 
-        internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type, bool hasArgumentsOrLocal)
+        internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type)
         {
             CaptureInstance(value, type);
-            EndEntry(hasArgumentsOrLocal || value != null);
+            EndEntry();
         }
 
         internal void CaptureExitMethodStartMarker<TReturnOrException>(ref CaptureInfo<TReturnOrException> info)
@@ -474,14 +591,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                 CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             }
 
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         internal void CaptureEntryAsyncMethod<T>(ref CaptureInfo<T> info)
         {
             CaptureEntryMethodStartMarker(ref info);
             bool hasArgument = CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
-            CaptureEntryMethodEndMarker(info.Value, info.Type, hasArgument);
+            CaptureEntryMethodEndMarker(info.Value, info.Type);
         }
 
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
@@ -560,7 +677,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private void EndLine<TTarget>(ref CaptureInfo<TTarget> info)
         {
             CaptureInstance(info.Value, info.Type);
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         private void EndAsyncLine<TTarget>(ref CaptureInfo<TTarget> info)
@@ -568,7 +685,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureAsyncMethodLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             CaptureInstance(info.AsyncCaptureInfo.KickoffInvocationTarget, info.AsyncCaptureInfo.KickoffInvocationTargetType);
             CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         internal bool ProcessDelayedSnapshot<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
@@ -647,23 +764,23 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private void StartLocalsOrArgsIfNeeded(string newParent)
         {
-            var currentParent = JsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
-            if (currentParent == newParent)
+            var desired =
+                newParent == "arguments"
+                    ? LocalsOrArgsContainer.Arguments
+                    : LocalsOrArgsContainer.Locals;
+
+            if (_localsOrArgsOpen == desired)
             {
                 // We're already there!
                 return;
             }
 
             // "locals" should always come after "arguments"
-            if ((currentParent == "locals" && newParent == "arguments") ||
-                (currentParent == "arguments" && newParent == "locals"))
-            {
-                // We need to close the previous node first.
-                JsonWriter.WriteEndObject();
-            }
+            CloseLocalsOrArgsIfOpen();
 
             JsonWriter.WritePropertyName(newParent);
             JsonWriter.WriteStartObject();
+            _localsOrArgsOpen = desired;
         }
 
         // Finalize snapshot
@@ -910,8 +1027,58 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator Complete()
         {
-            JsonWriter.WriteEndObject();
-            return this;
+            // Finalization must be resilient: depending on the capture flow (delayed snapshots, skipped sections, etc.)
+            // we may already be at the root/start state. In that case, attempting to close again throws JsonWriterException.
+            // We still need to ensure the payload is a complete JSON document before GetSnapshotJson() is called
+            try
+            {
+                if (JsonWriter is null)
+                {
+                    return this;
+                }
+
+                // Close *all* open containers, not just the innermost one.
+                // WriteState only reflects the current writer position; if we're inside an array, closing it once
+                // can still leave us inside one or more outer objects.
+                // Cap the number of iterations.
+                for (var i = 0; i < 32; i++)
+                {
+                    switch (JsonWriter.WriteState)
+                    {
+                        case WriteState.Start:
+                        case WriteState.Closed:
+                            // Nothing open to close (already completed)
+                            return this;
+
+                        case WriteState.Property:
+                            // If we ended up mid-property, write a null value to complete it and continue closing.
+                            JsonWriter.WriteNull();
+                            break;
+
+                        case WriteState.Object:
+                            JsonWriter.WriteEndObject();
+                            break;
+
+                        case WriteState.Array:
+                            JsonWriter.WriteEndArray();
+                            break;
+
+                        default:
+                            // Fallback to Close(), which will attempt to auto-complete the JSON.
+                            JsonWriter.Close();
+                            return this;
+                    }
+                }
+
+                // Best-effort: if we still haven't reached Start/Closed, let Json.NET try to auto-complete.
+                JsonWriter.Close();
+                return this;
+            }
+            catch (JsonWriterException)
+            {
+                // Best-effort: never fail probe processing due to a close mismatch.
+                return this;
+            }
         }
 
         internal string GetSnapshotJson()
