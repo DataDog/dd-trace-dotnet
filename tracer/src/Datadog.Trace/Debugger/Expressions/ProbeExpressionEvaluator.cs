@@ -1,13 +1,13 @@
-﻿// <copyright file="ProbeExpressionEvaluator.cs" company="Datadog">
+// <copyright file="ProbeExpressionEvaluator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -20,15 +20,14 @@ internal sealed class ProbeExpressionEvaluator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
 
-    private Lazy<CompiledExpression<string>[]?>? _compiledTemplates;
-
-    private Lazy<CompiledExpression<bool>?>? _compiledCondition;
-
-    private Lazy<CompiledExpression<double>?>? _compiledMetric;
-
-    private Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>? _compiledDecorations;
-
-    private int _expressionsCompiled;
+    // Per-type caching using ConcurrentDictionary.
+    // Cache key includes thisType AND member types to handle polymorphic args/locals.
+    // When same method is called with different arg types (e.g., Stream declared but sometimes LimitedInputStream, sometimes MemoryStream),
+    // each combination gets its own compiled expression.
+    private readonly ConcurrentDictionary<ExpressionCacheKey, CompiledExpression<string>[]?> _compiledTemplatesByType = new();
+    private readonly ConcurrentDictionary<ExpressionCacheKey, CompiledExpression<bool>?> _compiledConditionByType = new();
+    private readonly ConcurrentDictionary<ExpressionCacheKey, CompiledExpression<double>?> _compiledMetricByType = new();
+    private readonly ConcurrentDictionary<ExpressionCacheKey, KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?> _compiledDecorationsByType = new();
 
     internal ProbeExpressionEvaluator(
         DebuggerExpression?[]? templates,
@@ -43,24 +42,34 @@ internal sealed class ProbeExpressionEvaluator
     }
 
     /// <summary>
-    /// Gets CompiledTemplates, for use in "DebuggerExpressionLanguageTests"
+    /// Gets CompiledTemplates for the first cached type, for use in "DebuggerExpressionLanguageTests"
     /// </summary>
     internal CompiledExpression<string>[]? CompiledTemplates
     {
         get
         {
-            return _compiledTemplates?.Value;
+            foreach (var kvp in _compiledTemplatesByType)
+            {
+                return kvp.Value;
+            }
+
+            return null;
         }
     }
 
     /// <summary>
-    /// Gets CompiledCondition, for use in "DebuggerExpressionLanguageTests"
+    /// Gets CompiledCondition for the first cached type, for use in "DebuggerExpressionLanguageTests"
     /// </summary>
     internal CompiledExpression<bool>? CompiledCondition
     {
         get
         {
-            return _compiledCondition?.Value;
+            foreach (var kvp in _compiledConditionByType)
+            {
+                return kvp.Value;
+            }
+
+            return null;
         }
     }
 
@@ -68,7 +77,12 @@ internal sealed class ProbeExpressionEvaluator
     {
         get
         {
-            return _compiledMetric?.Value;
+            foreach (var kvp in _compiledMetricByType)
+            {
+                return kvp.Value;
+            }
+
+            return null;
         }
     }
 
@@ -76,7 +90,12 @@ internal sealed class ProbeExpressionEvaluator
     {
         get
         {
-            return _compiledDecorations?.Value;
+            foreach (var kvp in _compiledDecorationsByType)
+            {
+                return kvp.Value;
+            }
+
+            return null;
         }
     }
 
@@ -90,31 +109,63 @@ internal sealed class ProbeExpressionEvaluator
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
-        if (Interlocked.CompareExchange(ref _expressionsCompiled, 1, 0) == 0)
-        {
-            Interlocked.CompareExchange(ref _compiledTemplates, new Lazy<CompiledExpression<string>[]?>(() => CompileTemplates(scopeMembers)), null);
-            Interlocked.CompareExchange(ref _compiledCondition, new Lazy<CompiledExpression<bool>?>(() => CompileCondition(scopeMembers)), null);
-            Interlocked.CompareExchange(ref _compiledMetric, new Lazy<CompiledExpression<double>?>(() => CompileMetric(scopeMembers)), null);
-            Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>(() => CompileDecorations(scopeMembers)), null);
-        }
+        // Use the RUNTIME type (Value.GetType()) for per-type caching, not the declared type (Type).
+        // The declared type can differ from runtime type when:
+        // - Method is on a base class/interface but called on derived type
+        // - Parameter is declared as base type but actual value is derived
+        // Without this, expressions compiled for declared type would fail to cast actual values.
+        var invocationTarget = scopeMembers.InvocationTarget;
+
+        // CRITICAL: Always use Value.GetType() for runtime type. If Value is null,
+        // we use the declared Type, but this can cause cache collisions when different
+        // runtime types share the same declared type (e.g., all inherit from Object).
+        var thisRuntimeType = invocationTarget.Value?.GetType();
+        var thisDeclaredType = invocationTarget.Type;
+        var thisType = thisRuntimeType ?? thisDeclaredType ?? typeof(object);
+
+        // Also get return runtime type - critical for methods returning different types
+        var returnValue = scopeMembers.Return;
+        var returnRuntimeType = returnValue.Value?.GetType() ?? returnValue.Type;
+
+        // Cache key includes thisType, returnType, AND member RUNTIME types to handle polymorphic scenarios.
+        // This ensures we recompile when any type changes between invocations.
+        var cacheKey = new ExpressionCacheKey(thisType, returnRuntimeType, scopeMembers.Members);
 
         ExpressionEvaluationResult result = default;
-        EvaluateTemplates(ref result, scopeMembers);
-        EvaluateCondition(ref result, scopeMembers);
-        EvaluateMetric(ref result, scopeMembers);
-        EvaluateSpanDecorations(ref result, scopeMembers);
+        EvaluateTemplates(ref result, scopeMembers, cacheKey);
+        EvaluateCondition(ref result, scopeMembers, cacheKey);
+        EvaluateMetric(ref result, scopeMembers, cacheKey);
+        EvaluateSpanDecorations(ref result, scopeMembers, cacheKey);
         return result;
     }
 
-    private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ExpressionCacheKey cacheKey)
     {
         var resultBuilder = StringBuilderCache.Acquire();
         try
         {
-            EnsureNotNull(_compiledTemplates);
+            if (Templates == null || cacheKey.ThisType == null)
+            {
+                return;
+            }
 
-            var compiledExpressions = _compiledTemplates?.Value;
-            if (compiledExpressions == null || Templates == null)
+            // Get or create compiled expressions for this specific type combination
+            if (!_compiledTemplatesByType.TryGetValue(cacheKey, out var compiledExpressions))
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "Template cache MISS. Compiling for ThisType={ThisType}, Hash={Hash}, CacheSize={CacheSize}",
+                    property0: cacheKey.ThisType.FullName,
+                    property1: cacheKey.GetHashCode(),
+                    property2: _compiledConditionByType.Count);
+                }
+
+                compiledExpressions = CompileTemplates(scopeMembers, cacheKey.ThisType);
+                _compiledTemplatesByType.TryAdd(cacheKey, compiledExpressions);
+            }
+
+            if (compiledExpressions == null)
             {
                 return;
             }
@@ -165,19 +216,40 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ExpressionCacheKey cacheKey)
     {
+        if (Condition == null || cacheKey.ThisType == null)
+        {
+            return;
+        }
+
         CompiledExpression<bool> compiledExpression = default;
+
         try
         {
-            EnsureNotNull(_compiledCondition);
+            // Get or create compiled condition for this specific type combination.
+            if (!_compiledConditionByType.TryGetValue(cacheKey, out var cached))
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "Condition cache MISS. Compiling for ThisType={ThisType}, Hash={Hash}, CacheSize={CacheSize}",
+                    property0: cacheKey.ThisType.FullName,
+                    property1: cacheKey.GetHashCode(),
+                    property2: _compiledConditionByType.Count);
+                }
 
-            if (_compiledCondition?.Value == null)
+                var compiled = CompileCondition(scopeMembers, cacheKey.ThisType);
+                _compiledConditionByType.TryAdd(cacheKey, compiled);
+                cached = compiled;
+            }
+
+            if (!cached.HasValue)
             {
                 return;
             }
 
-            compiledExpression = _compiledCondition.Value.Value;
+            compiledExpression = cached.Value;
             var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
@@ -192,19 +264,39 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateMetric(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    private void EvaluateMetric(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ExpressionCacheKey cacheKey)
     {
+        if (Metric == null || cacheKey.ThisType == null)
+        {
+            return;
+        }
+
         CompiledExpression<double> compiledExpression = default;
         try
         {
-            EnsureNotNull(_compiledMetric);
+            // Get or create compiled metric for this specific type combination
+            if (!_compiledMetricByType.TryGetValue(cacheKey, out var cached))
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "Metric cache MISS. Compiling for ThisType={ThisType}, Hash={Hash}, CacheSize={CacheSize}",
+                    property0: cacheKey.ThisType.FullName,
+                    property1: cacheKey.GetHashCode(),
+                    property2: _compiledConditionByType.Count);
+                }
 
-            if (_compiledMetric?.Value == null)
+                var compiled = CompileMetric(scopeMembers, cacheKey.ThisType);
+                _compiledMetricByType.TryAdd(cacheKey, compiled);
+                cached = compiled;
+            }
+
+            if (!cached.HasValue)
             {
                 return;
             }
 
-            compiledExpression = _compiledMetric.Value.Value;
+            compiledExpression = cached.Value;
             var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
@@ -218,17 +310,26 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ExpressionCacheKey cacheKey)
     {
+        if (SpanDecorations == null || cacheKey.ThisType == null)
+        {
+            return;
+        }
+
         var decorations = new List<ExpressionEvaluationResult.DecorationResult>();
         try
         {
-            EnsureNotNull(_compiledDecorations);
+            // Get or create compiled decorations for this specific type combination
+            if (!_compiledDecorationsByType.TryGetValue(cacheKey, out var compiledDecorations))
+            {
+                compiledDecorations = CompileDecorations(scopeMembers, cacheKey.ThisType);
+                _compiledDecorationsByType.TryAdd(cacheKey, compiledDecorations);
+            }
 
-            var compiledDecorations = _compiledDecorations?.Value;
             if (compiledDecorations == null)
             {
-                Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: {nameof(_compiledDecorations.Value)} is null");
+                Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: compiled decorations is null");
                 return;
             }
 
@@ -342,7 +443,7 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
+    private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (Templates == null)
         {
@@ -371,7 +472,7 @@ internal sealed class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
-    private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers)
+    private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (!Condition.HasValue)
         {
@@ -381,7 +482,7 @@ internal sealed class ProbeExpressionEvaluator
         return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, scopeMembers);
     }
 
-    private CompiledExpression<double>? CompileMetric(MethodScopeMembers scopeMembers)
+    private CompiledExpression<double>? CompileMetric(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (!Metric.HasValue)
         {
@@ -391,7 +492,7 @@ internal sealed class ProbeExpressionEvaluator
         return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers);
     }
 
-    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers)
+    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (SpanDecorations == null)
         {
@@ -460,21 +561,6 @@ internal sealed class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
-    private void EnsureNotNull<T>(T? value)
-        where T : class
-    {
-        if (value != null)
-        {
-            return;
-        }
-
-        var sw = new SpinWait();
-        while (Volatile.Read(ref value) == null)
-        {
-            sw.SpinOnce();
-        }
-    }
-
     private bool? IsLiteral(DebuggerExpression? expression)
     {
         if (expression is null)
@@ -507,7 +593,6 @@ internal sealed class ProbeExpressionEvaluator
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
-        Log.Information(e, "Failed to parse probe expression: {Expression}", compiledExpression.RawExpression);
         result.Errors ??= new List<EvaluationError>();
         if (compiledExpression.Errors != null)
         {
