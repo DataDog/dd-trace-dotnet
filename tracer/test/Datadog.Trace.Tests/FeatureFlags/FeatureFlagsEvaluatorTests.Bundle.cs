@@ -38,9 +38,6 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, _config);
         var ctx = new EvaluationContext(testCase.TargetingKey ?? string.Empty, testCase.Attributes);
 
-        // Not supported format
-        // Skip.If(testCase.VariationType == "JSON", "JSON result format not supported");
-
         var type = GetVariationType(testCase.VariationType);
 
         var result = evaluator.Evaluate(testCase.Flag, type, testCase.DefaultValue, ctx);
