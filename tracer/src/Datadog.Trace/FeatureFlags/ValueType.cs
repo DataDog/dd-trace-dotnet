@@ -15,17 +15,17 @@ namespace Datadog.Trace.FeatureFlags;
 public enum ValueType
 {
     /// <summary> Integer numeric value </summary>
-    INTEGER,
+    Integer,
 
     /// <summary> Float numeric value </summary>
-    NUMERIC,
+    Numeric,
 
     /// <summary> Simple string </summary>
-    STRING,
+    String,
 
     /// <summary> Bool value </summary>
-    BOOLEAN,
+    Boolean,
 
     /// <summary> Json string value </summary>
-    JSON
+    Json
 }

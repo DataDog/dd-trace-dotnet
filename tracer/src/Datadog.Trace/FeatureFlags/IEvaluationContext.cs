@@ -15,7 +15,7 @@ namespace Datadog.Trace.FeatureFlags;
 [Browsable(false)]
 public partial interface IEvaluationContext
 {
-    /// <summary> Gets the tareting key.</summary>
+    /// <summary> Gets the targeting key.</summary>
     string TargetingKey { get; }
 
     /// <summary> Gets context attributes.</summary>
