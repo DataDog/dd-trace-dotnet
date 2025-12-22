@@ -58,7 +58,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
     /// </summary>
     /// <param name="o">The object that raised the callback event.</param>
     /// <param name="context">The streaming context.</param>
-    internal delegate void SerializationCallback(object o, StreamingContext context);
+    public delegate void SerializationCallback(object o, StreamingContext context);
 
     /// <summary>
     /// Handles <see cref="JsonSerializer"/> serialization error callback events.
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
     /// <param name="o">The object that raised the callback event.</param>
     /// <param name="context">The streaming context.</param>
     /// <param name="errorContext">The error context.</param>
-    internal delegate void SerializationErrorCallback(object o, StreamingContext context, ErrorContext errorContext);
+    public delegate void SerializationErrorCallback(object o, StreamingContext context, ErrorContext errorContext);
 
     /// <summary>
     /// Sets extension data for an object during deserialization.
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
     /// <summary>
     /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
-    internal abstract class JsonContract
+    public abstract class JsonContract
     {
         internal bool IsNullable;
         internal bool IsConvertable;

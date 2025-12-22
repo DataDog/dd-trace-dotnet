@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Specifies the type of JSON token.
     /// </summary>
-    internal enum JsonToken
+    public enum JsonToken
     {
         /// <summary>
         /// This is returned by the <see cref="JsonReader"/> if a read method has not been called.

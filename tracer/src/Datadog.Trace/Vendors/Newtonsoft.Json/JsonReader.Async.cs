@@ -40,7 +40,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Vendors.Newtonsoft.Json
 {
-    internal abstract partial class JsonReader
+    public abstract partial class JsonReader
 #if HAVE_ASYNC_DISPOSABLE
         : IAsyncDisposable
 #endif

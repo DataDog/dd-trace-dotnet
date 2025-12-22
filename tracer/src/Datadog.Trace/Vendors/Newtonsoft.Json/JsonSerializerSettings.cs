@@ -50,7 +50,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Specifies the settings on a <see cref="JsonSerializer"/> object.
     /// </summary>
-    internal class JsonSerializerSettings
+    public class JsonSerializerSettings
     {
         internal const ReferenceLoopHandling DefaultReferenceLoopHandling = ReferenceLoopHandling.Error;
         internal const MissingMemberHandling DefaultMissingMemberHandling = MissingMemberHandling.Ignore;

@@ -35,7 +35,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Indicating whether a property is required.
     /// </summary>
-    internal enum Required
+    public enum Required
     {
         /// <summary>
         /// The property is not required. The default state.

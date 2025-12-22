@@ -43,7 +43,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Vendors.Newtonsoft.Json
 {
-    internal abstract partial class JsonWriter
+    public abstract partial class JsonWriter
 #if HAVE_ASYNC_DISPOSABLE
         : IAsyncDisposable
 #endif

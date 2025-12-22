@@ -9,7 +9,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// The advanced configuration options for DogStatsdService.
     /// </summary>
-    internal class AdvancedStatsConfig
+    public class AdvancedStatsConfig
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AdvancedStatsConfig"/> class.

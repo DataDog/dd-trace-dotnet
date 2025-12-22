@@ -41,7 +41,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Converts an object to and from JSON.
     /// </summary>
-    internal abstract class JsonConverter
+    public abstract class JsonConverter
     {
         /// <summary>
         /// Writes the JSON representation of the object.

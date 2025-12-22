@@ -9,7 +9,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// IDogStatsd is an interface over DogStatsdService.
     /// </summary>
-    internal interface IDogStatsd : IDisposable
+    public interface IDogStatsd : IDisposable
     {
         /// <summary>
         /// Gets the telemetry counters

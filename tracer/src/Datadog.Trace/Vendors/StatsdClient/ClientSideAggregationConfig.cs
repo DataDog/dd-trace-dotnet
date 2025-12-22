@@ -9,7 +9,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// Define the configuration for the client side aggregation.
     /// </summary>
-    internal class ClientSideAggregationConfig
+    public class ClientSideAggregationConfig
     {
         /// <summary>
         /// Gets or sets the maximum number of unique stats before flushing.

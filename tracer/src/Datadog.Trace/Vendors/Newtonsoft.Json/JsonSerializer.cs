@@ -51,7 +51,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// Serializes and deserializes objects into and from the JSON format.
     /// The <see cref="JsonSerializer"/> enables you to control how objects are encoded into JSON.
     /// </summary>
-    internal class JsonSerializer
+    public class JsonSerializer
     {
         internal TypeNameHandling _typeNameHandling;
         internal TypeNameAssemblyFormatHandling _typeNameAssemblyFormatHandling;

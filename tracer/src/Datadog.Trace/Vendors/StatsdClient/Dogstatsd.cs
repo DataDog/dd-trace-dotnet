@@ -13,7 +13,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// The status of the service check.
     /// </summary>
-    internal enum Status
+    public enum Status
     {
         /// <summary>
         /// Status OK

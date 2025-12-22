@@ -41,10 +41,10 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// Note that references cannot be preserved when a value is set via a non-default constructor such as types that implement <see cref="T:System.Runtime.Serialization.ISerializable"/>.
     /// </summary>
     /// <example>
-    ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="PreservingObjectReferencesOn" title="Preserve Object References" />       
+    ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="PreservingObjectReferencesOn" title="Preserve Object References" />
     /// </example>
     [Flags]
-    internal enum PreserveReferencesHandling
+    public enum PreserveReferencesHandling
     {
         /// <summary>
         /// Do not preserve references when serializing types.

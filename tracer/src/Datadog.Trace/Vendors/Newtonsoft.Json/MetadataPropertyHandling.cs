@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Specifies metadata property handling options for the <see cref="JsonSerializer"/>.
     /// </summary>
-    internal enum MetadataPropertyHandling
+    public enum MetadataPropertyHandling
     {
         /// <summary>
         /// Read metadata properties located at the start of a JSON object.

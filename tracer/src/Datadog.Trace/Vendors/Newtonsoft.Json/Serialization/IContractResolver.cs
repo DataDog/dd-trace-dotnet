@@ -41,7 +41,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
     ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="ReducingSerializedJsonSizeContractResolverObject" title="IContractResolver Class" />
     ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="ReducingSerializedJsonSizeContractResolverExample" title="IContractResolver Example" />
     /// </example>
-    internal interface IContractResolver
+    public interface IContractResolver
     {
         /// <summary>
         /// Resolves the contract for a given type.

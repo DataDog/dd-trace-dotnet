@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="ReducingSerializedJsonSizeNullValueHandlingObject" title="NullValueHandling Class" />
     ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="ReducingSerializedJsonSizeNullValueHandlingExample" title="NullValueHandling Ignore Example" />
     /// </example>
-    internal enum NullValueHandling
+    public enum NullValueHandling
     {
         /// <summary>
         /// Include null values when serializing and deserializing objects.

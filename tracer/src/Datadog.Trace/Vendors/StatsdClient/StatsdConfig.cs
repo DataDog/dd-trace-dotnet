@@ -7,7 +7,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// The configuration options for DogStatsdService.
     /// </summary>
-    internal class StatsdConfig
+    public class StatsdConfig
     {
         /// <summary>
         /// The default port for UDP.

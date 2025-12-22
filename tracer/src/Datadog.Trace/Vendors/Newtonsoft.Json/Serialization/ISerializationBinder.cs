@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
     /// <summary>
     /// Allows users to control class loading and mandate what class to load.
     /// </summary>
-    internal interface ISerializationBinder
+    public interface ISerializationBinder
     {
         /// <summary>
         /// When implemented, controls the binding of a serialized object to a type.

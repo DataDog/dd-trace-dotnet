@@ -7,7 +7,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// DogStatsdEndPoint is a DogStatsd endpoint (UDP or UDS).
     /// </summary>
-    internal class DogStatsdEndPoint
+    public class DogStatsdEndPoint
     {
         /// <summary>
         /// Gets or sets a value defining the name of the endpoint

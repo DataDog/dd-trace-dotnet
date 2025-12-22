@@ -7,7 +7,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// <summary>
     /// ITelemetryCounters contains the telemetry counters.
     /// </summary>
-    internal interface ITelemetryCounters
+    public interface ITelemetryCounters
     {
         /// <summary>
         /// Gets the number of metrics sent.

@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json
     /// <summary>
     /// Specifies missing member handling options for the <see cref="JsonSerializer"/>.
     /// </summary>
-    internal enum MissingMemberHandling
+    public enum MissingMemberHandling
     {
         /// <summary>
         /// Ignore a missing member and do not attempt to deserialize it.
