@@ -1799,11 +1799,15 @@ partial class Build : NukeBuild
                         new (publishFramework: TargetFramework.NET7_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET8_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET9_0, "macos-14", "macos", "14"),
-                        new (publishFramework: TargetFramework.NET10_0, "macos-14", "macos-14_net10.0", "14"),
+                        new (publishFramework: TargetFramework.NET10_0, "macos-14", "macos", "14"),
                         new (publishFramework: TargetFramework.NET6_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET8_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET9_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET10_0, "macos-15", "macos", "15"),
+                        new (publishFramework: TargetFramework.NET6_0, "macOS-15-arm64", "macos", "15"),
+                        new (publishFramework: TargetFramework.NET8_0, "macOS-15-arm64", "macos", "15"),
+                        new (publishFramework: TargetFramework.NET9_0, "macOS-15-arm64", "macos", "15"),
+                        new (publishFramework: TargetFramework.NET10_0, "macOS-15-arm64", "macos", "15"),
                     };
 
                     var matrix = images.ToDictionary(
