@@ -10,6 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
+/// <summary> Rule operator. Capitalized for json deserialization support </summary>
 internal enum ConditionOperator
 {
     LT,

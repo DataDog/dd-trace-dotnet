@@ -12,21 +12,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace Datadog.Trace.FeatureFlags
+namespace Datadog.Trace.FeatureFlags;
+
+internal sealed class Evaluation(string flagKey, object? value, EvaluationReason reason, string? variant = null, string? error = null, IDictionary<string, string>? metadata = null)
+    : IEvaluation
 {
-    internal sealed class Evaluation(string flagKey, object? value, EvaluationReason reason, string? variant = null, string? error = null, IDictionary<string, string>? metadata = null)
-        : IEvaluation
-    {
-        public string FlagKey { get; } = flagKey;
+    public string FlagKey { get; } = flagKey;
 
-        public object? Value { get; } = value;
+    public object? Value { get; } = value;
 
-        public EvaluationReason Reason { get; } = reason;
+    public EvaluationReason Reason { get; } = reason;
 
-        public string? Variant { get; } = variant;
+    public string? Variant { get; } = variant;
 
-        public string? Error { get; } = error;
+    public string? Error { get; } = error;
 
-        public IDictionary<string, string>? FlagMetadata { get; } = metadata;
-    }
+    public IDictionary<string, string>? FlagMetadata { get; } = metadata;
 }

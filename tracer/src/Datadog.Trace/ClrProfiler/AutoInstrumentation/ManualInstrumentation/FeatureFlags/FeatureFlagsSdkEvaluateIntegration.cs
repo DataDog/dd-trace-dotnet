@@ -43,7 +43,7 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
-    private record struct State(string? Key, FeatureFlags.ValueType TargetType, object? DefaultValue, object? Context)
+    private sealed record State(string? Key, FeatureFlags.ValueType TargetType, object? DefaultValue, object? Context)
     {
     }
 }
