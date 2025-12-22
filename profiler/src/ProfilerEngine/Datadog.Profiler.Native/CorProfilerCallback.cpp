@@ -56,7 +56,6 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
-#include "Backtrace2Unwinder.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
@@ -564,7 +563,6 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
-        _pUnwinder = std::make_unique<Backtrace2Unwinder>();
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -572,8 +570,7 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuSampleProvider,
-            _metricsRegistry,
-            _pUnwinder.get());
+            _metricsRegistry);
     }
 #endif
 
@@ -1323,6 +1320,9 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 {
     // TODO: add more env vars values
     // --> should we dump the important ones to ensure that we get them during support investigations?
+
+    Log::Info("Environment variables:");
+    PRINT_ENV_VAR_IF_SET(EnvironmentVariables::UseBacktrace2);
 }
 
 // CLR event verbosity definition

@@ -678,6 +678,26 @@ TEST_F(ConfigurationTest, CheckHeapProfilingIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsHeapProfilingEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckBacktrace2IsUsedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST_F(ConfigurationTest, CheckBacktrace2IsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), false);
+}
+
+TEST_F(ConfigurationTest, CheckBacktrace2IsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
 TEST_F(ConfigurationTest, CheckDebugInfoIsDisabledByDefault)
 {
     auto configuration = Configuration{};

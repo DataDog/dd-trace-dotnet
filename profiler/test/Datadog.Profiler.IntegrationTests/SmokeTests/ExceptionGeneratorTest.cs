@@ -33,5 +33,19 @@ namespace Datadog.Profiler.SmokeTests
 
             runner.RunAndCheck();
         }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            if (framework == "net48")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
+            runner.RunAndCheck();
+        }
     }
 }

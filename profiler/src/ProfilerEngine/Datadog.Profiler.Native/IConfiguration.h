@@ -56,6 +56,7 @@ public:
     virtual int32_t CodeHotspotsThreadsThreshold() const = 0;
     virtual bool IsGarbageCollectionProfilingEnabled() const = 0;
     virtual bool IsHeapProfilingEnabled() const = 0;
+    virtual bool UseBacktrace2() const = 0;
     virtual bool IsAllocationRecorderEnabled() const = 0;
     virtual bool IsDebugInfoEnabled() const = 0;
     virtual bool IsGcThreadsCpuTimeEnabled() const = 0;

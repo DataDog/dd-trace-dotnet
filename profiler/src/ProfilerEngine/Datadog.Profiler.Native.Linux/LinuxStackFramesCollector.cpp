@@ -15,7 +15,6 @@
 #include "CallstackProvider.h"
 #include "DiscardMetrics.h"
 #include "IConfiguration.h"
-#include "IUnwinder.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
@@ -32,15 +31,14 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
     CallstackProvider* callstackProvider,
-    MetricsRegistry& metricsRegistry,
-    IUnwinder* pUnwinder) :
+    MetricsRegistry& metricsRegistry) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _pUnwinder{pUnwinder}
+    _useBacktrace2{configuration->UseBacktrace2()}
 {
     if (_signalManager != nullptr)
     {
@@ -209,7 +207,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        return CollectStack(ctx);
+        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
@@ -217,10 +215,72 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     }
 }
 
-inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
+std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
 {
+    std::int32_t resultErrorCode;
+
+    // if we are in the signal handler, ctx won't be null, so we will use the context
+    // This will allow us to skip the syscall frame and start from the frame before the syscall.
+    auto flag = UNW_INIT_SIGNAL_FRAME;
+    unw_context_t context;
+    if (ctx != nullptr)
+    {
+        context = *reinterpret_cast<unw_context_t*>(ctx);
+    }
+    else
+    {
+        // not in signal handler. Get the context and initialize the cursor form here
+        resultErrorCode = unw_getcontext(&context);
+        if (resultErrorCode != 0)
+        {
+            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
+        }
+
+        flag = static_cast<unw_init_local2_flags_t>(0);
+    }
+
+    unw_cursor_t cursor;
+    resultErrorCode = unw_init_local2(&cursor, &context, flag);
+
+    if (resultErrorCode < 0)
+    {
+        return resultErrorCode;
+    }
+
+    do
+    {
+        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+        if (IsCurrentCollectionAbortRequested())
+        {
+            AddFakeFrame();
+            return E_ABORT;
+        }
+
+        unw_word_t ip;
+        resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (resultErrorCode != 0)
+        {
+            return resultErrorCode;
+        }
+
+        if (!AddFrame(ip))
+        {
+            return S_FALSE;
+        }
+
+        resultErrorCode = unw_step(&cursor);
+    } while (resultErrorCode > 0);
+
+    return resultErrorCode;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
+{
+    auto* context = reinterpret_cast<unw_context_t*>(ctx);
+
+    // Now walk the stack:
     auto buffer = Data();
-    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size());
+    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
 
     if (count == 0)
     {
