@@ -31,9 +31,9 @@ bool Succeeded(T value)
     {
         return value == DDOG_CRASHT_STACK_TRACE_NEW_RESULT_OK;
     }
-    else if constexpr (std::is_same_v<T, ddog_crasht_Result_HandleCrashInfo_Tag>)
+    else if constexpr (std::is_same_v<T, ddog_crasht_CrashInfo_NewResult_Tag>)
     {
-        return value == DDOG_CRASHT_RESULT_HANDLE_CRASH_INFO_OK_HANDLE_CRASH_INFO;
+        return value == DDOG_CRASHT_CRASH_INFO_NEW_RESULT_OK;
     }
     else if constexpr (std::is_same_v<T, ddog_Vec_Tag_PushResult_Tag>)
     {
