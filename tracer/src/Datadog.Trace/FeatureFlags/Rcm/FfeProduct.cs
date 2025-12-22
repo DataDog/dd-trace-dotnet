@@ -14,7 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.Rcm;
+namespace Datadog.Trace.FeatureFlags.Rcm;
 
 internal sealed class FfeProduct
 {
@@ -34,26 +34,33 @@ internal sealed class FfeProduct
         List<ApplyDetails> res = new List<ApplyDetails>();
         bool apply = false;
 
-        if (removedConfigsByProduct is not null && removedConfigsByProduct.TryGetValue(RcmProducts.FfeFlags, out var removedConfigs))
+        try
         {
-            foreach (var removedConfig in removedConfigs)
+            if (removedConfigsByProduct is not null && removedConfigsByProduct.TryGetValue(RcmProducts.FfeFlags, out var removedConfigs))
             {
-                apply |= (_serverConfigurations.RemoveAll((x) => x.Key == removedConfig.Path) > 0);
-            }
-        }
-
-        if (configsByProduct.TryGetValue(RcmProducts.FfeFlags, out var ffeConfigs))
-        {
-            foreach (var ffeConfig in ffeConfigs)
-            {
-                var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
-                if (serverConfigFile.TypedFile is not null)
+                foreach (var removedConfig in removedConfigs)
                 {
-                    _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
-                    res.Insert(0, ApplyDetails.FromOk(ffeConfig.Path.Path));
-                    apply = true;
+                    apply |= (_serverConfigurations.RemoveAll((x) => x.Key == removedConfig.Path) > 0);
                 }
             }
+
+            if (configsByProduct.TryGetValue(RcmProducts.FfeFlags, out var ffeConfigs))
+            {
+                foreach (var ffeConfig in ffeConfigs)
+                {
+                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
+                    if (serverConfigFile.TypedFile is not null)
+                    {
+                        _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
+                        res.Insert(0, ApplyDetails.FromOk(ffeConfig.Path.Path));
+                        apply = true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while updating FFE RCM config");
         }
 
         if (apply)
