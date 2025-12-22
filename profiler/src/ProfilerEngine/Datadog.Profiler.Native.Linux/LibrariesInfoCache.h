@@ -51,7 +51,7 @@ private:
 #endif
     void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
-    static std::atomic<LibrariesInfoCache*> s_instance;
+    static LibrariesInfoCache* s_instance;
 
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> _librariesInfo;

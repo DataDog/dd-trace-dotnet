@@ -113,7 +113,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = true, AgentConfiguration agentConfiguration = null)
+        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
             => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER

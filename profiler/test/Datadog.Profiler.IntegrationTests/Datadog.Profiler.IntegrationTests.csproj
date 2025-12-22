@@ -86,7 +86,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-     <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
   </ItemGroup>
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <PackageReference Include="DatadogTestLogger" Version="0.0.38" ExcludeAssets="compile" />
