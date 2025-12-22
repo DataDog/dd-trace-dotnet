@@ -10,7 +10,7 @@ using System;
 namespace Datadog.Trace.DogStatsd;
 
 [Flags]
-internal enum StatsdConsumer
+public enum StatsdConsumer
 {
     // None = 0, Must not use this
     // Define bits per consumer:

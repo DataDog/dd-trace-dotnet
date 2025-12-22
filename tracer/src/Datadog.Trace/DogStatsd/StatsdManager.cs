@@ -18,7 +18,7 @@ namespace Datadog.Trace.DogStatsd;
 /// This acts as a wrapper around a "real" <see cref="DogStatsdService"/> service or a <see cref="NoOpStatsd"/> client,
 /// but which responds to changes in settings caused by remote config or configuration in code.
 /// </summary>
-internal sealed class StatsdManager : IStatsdManager
+public sealed class StatsdManager : IStatsdManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsdManager>();
     private readonly object _lock = new();
@@ -196,7 +196,7 @@ internal sealed class StatsdManager : IStatsdManager
         previous?.MarkClosing(); // will dispose when last lease releases
     }
 
-    internal readonly struct StatsdClientLease(StatsdClientHolder? holder) : IDisposable
+    public readonly struct StatsdClientLease(StatsdClientHolder? holder) : IDisposable
     {
         private readonly StatsdClientHolder? _holder = holder;
 
@@ -205,7 +205,7 @@ internal sealed class StatsdManager : IStatsdManager
         public void Dispose() => _holder?.Release();
     }
 
-    internal sealed class StatsdClientHolder(IDogStatsd client)
+    public sealed class StatsdClientHolder(IDogStatsd client)
     {
         private const int ClosingBit = 1 << 31;  // sign bit = closing
 

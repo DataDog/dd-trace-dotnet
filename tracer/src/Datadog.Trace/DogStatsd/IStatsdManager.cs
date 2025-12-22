@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd;
 
-internal interface IStatsdManager : IDisposable
+public interface IStatsdManager : IDisposable
 {
     /// <summary>
     /// Obtain a <see cref="StatsdManager.StatsdClientLease"/> for accessing a <see cref="IDogStatsd"/> instance.

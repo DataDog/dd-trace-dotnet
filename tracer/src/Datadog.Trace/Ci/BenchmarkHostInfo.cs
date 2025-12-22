@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Benchmark host info
 /// </summary>
-internal struct BenchmarkHostInfo
+public struct BenchmarkHostInfo
 {
     /// <summary>
     /// Processor Name

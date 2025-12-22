@@ -12,7 +12,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Benchmark measurement discrete stats
 /// </summary>
-internal readonly struct BenchmarkDiscreteStats
+public readonly struct BenchmarkDiscreteStats
 {
     /// <summary>
     /// Number of samples

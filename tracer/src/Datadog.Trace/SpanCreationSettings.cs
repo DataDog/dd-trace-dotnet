@@ -12,7 +12,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Settings to use when creating a new <see cref="IScope"/> and <see cref="ISpan"/>.
     /// </summary>
-    internal struct SpanCreationSettings
+    public struct SpanCreationSettings
     {
         /// <summary>
         /// Gets or sets an explicit start time for the new span. If not set, uses the current time.

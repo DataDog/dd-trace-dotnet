@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Agent.Transports;
 
-internal enum MultipartCompression
+public enum MultipartCompression
 {
     None,
     GZip
