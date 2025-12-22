@@ -6306,6 +6306,7 @@ stages:
         - script: |
             dotnet --info
             dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version $(ToolVersion)
+            $(smokeTestAppDir)/publish/dd-trace dotnet --info
             $(smokeTestAppDir)/publish/dd-trace run -- dotnet --info
           displayName: Install tracer
 
