@@ -1804,6 +1804,7 @@ partial class Build : NukeBuild
                         new (publishFramework: TargetFramework.NET8_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET9_0, "macos-15", "macos", "15"),
                         new (publishFramework: TargetFramework.NET10_0, "macos-15", "macos", "15"),
+                        new (publishFramework: TargetFramework.NET6_0, "macOS-15-arm64", "macos", "15"),
                         new (publishFramework: TargetFramework.NET10_0, "macOS-15-arm64", "macos", "15"),
                     };
 
