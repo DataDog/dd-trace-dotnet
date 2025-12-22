@@ -135,7 +135,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.33.0
+  ToolVersion: 3.34.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1

@@ -23,7 +23,7 @@ internal sealed class ApplicationTelemetryCollector
         if (tracerSettings.PropagateProcessTags)
         {
             var pTags = ProcessTags.SerializedTags;
-            if (!string.IsNullOrEmpty(processTags))
+            if (!string.IsNullOrEmpty(pTags))
             {
                 processTags = pTags;
             }

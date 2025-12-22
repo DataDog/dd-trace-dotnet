@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/10.0.0 -->
-    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="10.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/10.1.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="10.1.0" />
   </ItemGroup>
 
 </Project>

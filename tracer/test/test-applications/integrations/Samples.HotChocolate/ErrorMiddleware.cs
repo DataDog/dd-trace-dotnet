@@ -28,6 +28,15 @@ namespace Samples.HotChocolate
                 { "not_captured", "This should not be captured" }
             };
 
+            // For testing IndexerPathSegment: if this is the throwException error,
+            // modify the path so the error is directly at an array index
+            // This creates a path ["books", 1] where the error's Path property IS an IndexerPathSegment
+            if (error.Path != null && error.Message.Equals("Invalid index Exception", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var modifiedPath = Path.Root.Append("books").Append(1);
+                error = error.WithPath(modifiedPath);
+            }
+
             // Add the extensions to the error
             return error.WithExtensions(extensions);
         }

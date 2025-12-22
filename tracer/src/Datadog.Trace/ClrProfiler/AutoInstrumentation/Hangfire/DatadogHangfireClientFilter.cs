@@ -14,10 +14,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// <summary>
     /// The Datadog client-side Hangfire job filter.
     /// </summary>
-    public class DatadogHangfireClientFilter
+    public sealed class DatadogHangfireClientFilter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogHangfireClientFilter>();
-
         /// <summary>
         /// Called before the job is created.
         /// </summary>

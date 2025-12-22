@@ -190,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public abstract class GrpcTestsBase : TracingIntegrationTest
     {
-        private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
+        private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta,x-dd-propagation-failed";
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
             "clientmeta",

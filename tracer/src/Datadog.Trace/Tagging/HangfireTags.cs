@@ -12,7 +12,7 @@ using Datadog.Trace.SourceGenerators;
 #pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Tagging
 {
-    internal partial class HangfireTags : InstrumentationTags
+    internal sealed partial class HangfireTags : InstrumentationTags
     {
         public HangfireTags()
         {

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
     IntegrationName = nameof(IntegrationId.Hangfire))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class JobFilterCollectionCtorIntegration
+public sealed class JobFilterCollectionCtorIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionCtorIntegration));
     private static int _filtersRegistered = 1;
