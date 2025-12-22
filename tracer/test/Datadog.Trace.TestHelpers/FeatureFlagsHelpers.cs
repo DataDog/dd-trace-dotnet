@@ -21,7 +21,7 @@ internal static class FeatureFlagsHelpers
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.STRING, "test-value", "on"),
+            ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on"),
             ["rule-based-flag"] = CreateRuleBasedFlag(),
             ["numeric-rule-flag"] = CreateNumericRuleFlag(),
             ["time-based-flag"] = CreateTimeBasedFlag(),
@@ -71,7 +71,7 @@ internal static class FeatureFlagsHelpers
         var basicSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "basic" } };
         var basicAlloc = new Allocation { Key = "basic-alloc", Splits = basicSplits, DoLog = false };
 
-        return new Flag { Key = "rule-based-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { premiumAlloc, basicAlloc } };
+        return new Flag { Key = "rule-based-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { premiumAlloc, basicAlloc } };
     }
 
     internal static Flag CreateNumericRuleFlag()
@@ -94,7 +94,7 @@ internal static class FeatureFlagsHelpers
         var regularSplits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "regular" } };
         var regularAlloc = new Allocation { Key = "regular-alloc", Splits = regularSplits, DoLog = false };
 
-        return new Flag { Key = "numeric-rule-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { vipAlloc, regularAlloc } };
+        return new Flag { Key = "numeric-rule-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { vipAlloc, regularAlloc } };
     }
 
     internal static Flag CreateTimeBasedFlag()
@@ -105,9 +105,9 @@ internal static class FeatureFlagsHelpers
         };
 
         var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "time-limited" } };
-        var alloc = new Allocation { Key = "time-alloc", StartAt = "2022-01-01T00:00:00Z", EndAt = "2022-12-31T23:59:59Z", Splits = splits, DoLog = false };
+        var alloc = new Allocation { Key = "time-alloc", StartAt = "2022-01-01T00:00:00.000Z", EndAt = "2022-12-31T23:59:59.000Z", Splits = splits, DoLog = false };
 
-        return new Flag { Key = "time-based-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        return new Flag { Key = "time-based-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
     }
 
     internal static Flag CreateExposureFlag()
@@ -120,6 +120,6 @@ internal static class FeatureFlagsHelpers
         var splits = new List<Split> { new Split { VariationKey = "tracked", Shards = new List<Shard>() } };
         var alloc = new Allocation { Key = "exposure-alloc", Splits = splits, DoLog = true };
 
-        return new Flag { Key = "exposure-flag", Enabled = true, VariationType = ValueType.STRING, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        return new Flag { Key = "exposure-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
     }
 }

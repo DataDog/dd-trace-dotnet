@@ -29,13 +29,6 @@ namespace Datadog.Trace.FeatureFlags
         /// <param name="key"> Value key </param>
         /// <returns> Returns Context Value or null </returns>
         public object? GetAttribute(string key)
-        {
-            if (Attributes is null || !Attributes.TryGetValue(key, out var res))
-            {
-                return null;
-            }
-
-            return res;
-        }
+            => Attributes.TryGetValue(key, out var res) ? res : null;
     }
 }

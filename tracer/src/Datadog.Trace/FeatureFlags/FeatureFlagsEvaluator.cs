@@ -23,17 +23,7 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
-        private static readonly string[] DateFormats =
-        {
-            "MM-dd-yyyy HH:mm:ss",
-            "MM/dd/yyyy HH:mm:ss",
-            "yyyy-MM-dd HH:mm:ss",
-            "yyyy/MM/dd HH:mm:ss",
-            "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",
-            "MM-dd-yyyy'T'HH:mm:ss.fff'Z'",
-            "MM-dd-yyyy'T'HH:mm:ss'Z'",
-        };
+        internal static readonly string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
@@ -66,7 +56,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.ERROR,
+                        EvaluationReason.Error,
                         error: "PROVIDER_NOT_READY",
                         metadata: new Dictionary<string, string>
                         {
@@ -79,7 +69,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.ERROR,
+                        EvaluationReason.Error,
                         error: "TARGETING_KEY_MISSING",
                         metadata: new Dictionary<string, string>
                         {
@@ -92,7 +82,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.ERROR,
+                        EvaluationReason.Error,
                         error: "FLAG_NOT_FOUND",
                         metadata: new Dictionary<string, string>
                         {
@@ -105,7 +95,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.DISABLED);
+                        EvaluationReason.Disabled);
                 }
 
                 if (flag.VariationType != resultType)
@@ -113,7 +103,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.ERROR,
+                        EvaluationReason.Error,
                         error: "TYPE_MISMATCH",
                         metadata: new Dictionary<string, string>
                         {
@@ -126,13 +116,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.ERROR,
-                        error: "Missing allocations",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "GENERAL",
-                            ["message"] = $"Missing allocations for flag {flag.Key}"
-                        });
+                        EvaluationReason.Default);
                 }
 
                 var now = DateTime.UtcNow;
@@ -157,18 +141,16 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         foreach (var split in allocation.Splits)
                         {
-                            if (split.Shards is { Count: 0 })
-                            {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
-                            }
-
                             var allShardsMatch = true;
-                            foreach (var shard in split.Shards!)
+                            if (split.Shards is { Count: > 0 })
                             {
-                                if (!MatchesShard(shard, targetingKey))
+                                foreach (var shard in split.Shards!)
                                 {
-                                    allShardsMatch = false;
-                                    break;
+                                    if (!MatchesShard(shard, targetingKey))
+                                    {
+                                        allShardsMatch = false;
+                                        break;
+                                    }
                                 }
                             }
 
@@ -184,7 +166,7 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.DEFAULT);
+                    EvaluationReason.Default);
             }
             catch (FormatException ex)
             {
@@ -192,7 +174,7 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.ERROR,
+                    EvaluationReason.Error,
                     error: "TYPE_MISMATCH",
                     metadata: new Dictionary<string, string>
                     {
@@ -205,7 +187,7 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.ERROR,
+                    EvaluationReason.Error,
                     error: ex.Message,
                     metadata: new Dictionary<string, string>
                     {
@@ -226,7 +208,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var endDate = ParseDate(allocation.EndAt);
-            if (endDate.HasValue && now > endDate.Value)
+            if (endDate.HasValue && now >= endDate.Value)
             {
                 return false;
             }
@@ -436,17 +418,14 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            foreach (var fmt in DateFormats)
+            if (DateTime.TryParseExact(
+                    dateString,
+                    DateFormat,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal,
+                    out var dt))
             {
-                if (DateTime.TryParseExact(
-                        dateString,
-                        fmt,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.AdjustToUniversal,
-                        out var dt))
-                {
-                    return dt;
-                }
+                return dt;
             }
 
             return null;
@@ -475,12 +454,12 @@ namespace Datadog.Trace.FeatureFlags
                 return default!;
             }
 
-            if (target == ValueType.STRING)
+            if (target == ValueType.String)
             {
                 return Convert.ToString(value, CultureInfo.InvariantCulture);
             }
 
-            if (target == ValueType.BOOLEAN)
+            if (target == ValueType.Boolean)
             {
                 if (value is IConvertible)
                 {
@@ -495,19 +474,19 @@ namespace Datadog.Trace.FeatureFlags
                 return bool.Parse(value.ToString()!);
             }
 
-            if (target == ValueType.INTEGER)
+            if (target == ValueType.Integer)
             {
                 var number = ParseDouble(value);
                 return (int)number;
             }
 
-            if (target == ValueType.NUMERIC)
+            if (target == ValueType.Numeric)
             {
                 var number = ParseDouble(value);
                 return (double)number;
             }
 
-            if (target == ValueType.JSON)
+            if (target == ValueType.Json)
             {
                 if (value is JObject)
                 {
@@ -613,7 +592,7 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.ERROR,
+                    EvaluationReason.Error,
                     error: $"Variant not found for: {variationKey}",
                     metadata: new Dictionary<string, string>
                     {
@@ -634,7 +613,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
-                EvaluationReason.TARGETING_MATCH,
+                EvaluationReason.TargetingMatch,
                 variant: variant.Key,
                 metadata: metadata);
 

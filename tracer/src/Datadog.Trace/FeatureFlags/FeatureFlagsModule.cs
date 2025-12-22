@@ -70,7 +70,7 @@ namespace Datadog.Trace.FeatureFlags
             if (_evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, null, EvaluationReason.ERROR, null, "No config loaded");
+                return new Evaluation(flagKey, null, EvaluationReason.Error, null, "No config loaded");
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");

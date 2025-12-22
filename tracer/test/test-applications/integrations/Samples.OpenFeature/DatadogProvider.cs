@@ -37,7 +37,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.Run(
             () =>
             {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.BOOLEAN, defaultValue, GetContext(context));
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, GetContext(context));
                 return GetResolutionDetails<bool>(res);
             },
             cancellationToken);
@@ -54,7 +54,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.Run(
             () =>
             {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.NUMERIC, defaultValue, GetContext(context));
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, GetContext(context));
                 return GetResolutionDetails<double>(res);
             },
             cancellationToken);
@@ -71,7 +71,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.Run(
             () =>
             {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.INTEGER, defaultValue, GetContext(context));
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, GetContext(context));
                 return GetResolutionDetails<int>(res);
             },
             cancellationToken);
@@ -88,7 +88,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.Run(
             () =>
             {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.STRING, defaultValue, GetContext(context));
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, GetContext(context));
                 return GetResolutionDetails<string>(res);
             },
             cancellationToken);
@@ -105,7 +105,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.Run(
             () =>
             {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.JSON, defaultValue, GetContext(context));
+                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, GetContext(context));
                 return GetResolutionDetails<Value>(res);
             },
             cancellationToken);

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
@@ -57,11 +58,11 @@ public partial class FeatureFlagsEvaluatorTests
 
         void AssertEqual(object? expected, object? obj)
         {
-            if (type == Trace.FeatureFlags.ValueType.INTEGER && obj is int intObj)
+            if (type == Trace.FeatureFlags.ValueType.Integer && obj is int intObj)
             {
                 Assert.Equal(Convert.ToInt32(expected), intObj);
             }
-            else if (type == Trace.FeatureFlags.ValueType.JSON)
+            else if (type == Trace.FeatureFlags.ValueType.Json)
             {
                 if (obj is string jsonTxt)
                 {
@@ -83,11 +84,11 @@ public partial class FeatureFlagsEvaluatorTests
     {
         return variationType switch
         {
-            "INTEGER" => Trace.FeatureFlags.ValueType.INTEGER,
-            "NUMERIC" => Trace.FeatureFlags.ValueType.NUMERIC,
-            "STRING" => Trace.FeatureFlags.ValueType.STRING,
-            "BOOLEAN" => Trace.FeatureFlags.ValueType.BOOLEAN,
-            "JSON" => Trace.FeatureFlags.ValueType.JSON,
+            "INTEGER" => Trace.FeatureFlags.ValueType.Integer,
+            "NUMERIC" => Trace.FeatureFlags.ValueType.Numeric,
+            "STRING" => Trace.FeatureFlags.ValueType.String,
+            "BOOLEAN" => Trace.FeatureFlags.ValueType.Boolean,
+            "JSON" => Trace.FeatureFlags.ValueType.Json,
             _ => throw new NotImplementedException(),
         };
     }
@@ -106,6 +107,9 @@ public partial class FeatureFlagsEvaluatorTests
             if (flag.Value.Allocations is null) { continue; }
             foreach (var allocation in flag.Value.Allocations)
             {
+                allocation.StartAt = FixDateString(allocation.StartAt);
+                allocation.EndAt = FixDateString(allocation.EndAt);
+
                 if (allocation.Rules is null) { continue; }
                 foreach (var rule in allocation.Rules)
                 {
@@ -118,6 +122,23 @@ public partial class FeatureFlagsEvaluatorTests
                     }
                 }
             }
+        }
+
+        static string? FixDateString(string? dateString)
+        {
+            if (string.IsNullOrEmpty(dateString)) { return null; }
+
+            if (DateTime.TryParseExact(
+                dateString!,
+                "MM/dd/yyyy HH:mm:ss",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal,
+                out var dt))
+            {
+                return dt.ToString(FeatureFlagsEvaluator.DateFormat);
+            }
+
+            return dateString;
         }
 
         var config = new ServerConfiguration { Flags = flags };

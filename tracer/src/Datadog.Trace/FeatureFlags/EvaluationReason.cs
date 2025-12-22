@@ -15,26 +15,26 @@ namespace Datadog.Trace.FeatureFlags;
 public enum EvaluationReason
 {
     /// <summary> Default value </summary>
-    DEFAULT,
+    Default,
 
     /// <summary> Static value </summary>
-    STATIC,
+    Static,
 
     /// <summary> Targeting match </summary>
-    TARGETING_MATCH,
+    TargetingMatch,
 
     /// <summary> Split match </summary>
-    SPLIT,
+    Split,
 
     /// <summary> Target disabled </summary>
-    DISABLED,
+    Disabled,
 
     /// <summary> Cached result </summary>
-    CACHED,
+    Cached,
 
     /// <summary> Unknown reason </summary>
-    UNKNOWN,
+    Unknown,
 
     /// <summary> Error </summary>
-    ERROR
+    Error
 }
