@@ -9,7 +9,7 @@
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
     <!-- Latest package https://www.nuget.org/packages/IBMMQDotnetClient/9.4.4 -->
-    <PackageReference Include="IBMMQDotnetClient" Version="9.4.4" />
+    <PackageReference Include="IBMMQDotnetClient" Version="9.4.4.1" />
   </ItemGroup>
 
 </Project>
