@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             this.fixture = fixture;
             _testName = testName;
 
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled, singleSpan.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, singleSpan.ToString());
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
