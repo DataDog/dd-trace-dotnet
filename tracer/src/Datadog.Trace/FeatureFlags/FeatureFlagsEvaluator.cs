@@ -175,10 +175,10 @@ namespace Datadog.Trace.FeatureFlags
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
-                    error: "TYPE_MISMATCH",
+                    error: "PARSE_ERROR",
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "TYPE_MISMATCH"
+                        ["errorCode"] = "PARSE_ERROR"
                     });
             }
             catch (Exception ex)
@@ -248,14 +248,14 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (condition.Operator is null)
             {
-                return false;
+                throw new FormatException("Condition operator can not be null");
             }
 
             if (condition.Operator == ConditionOperator.IS_NULL)
             {
                 var value = ResolveAttribute(condition.Attribute, context);
                 var isNull = value == null;
-                var expectedNull = condition.Value is bool b ? b : true;
+                var expectedNull = condition.Value is bool b ? b : throw new FormatException("Bool value expected");
                 return isNull == expectedNull;
             }
 
@@ -292,7 +292,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (conditionValue is null)
             {
-                return false;
+                throw new FormatException("Condition value can not be null");
             }
 
             try
@@ -323,7 +323,7 @@ namespace Datadog.Trace.FeatureFlags
 
             foreach (var value in enumerable)
             {
-                if (ValuesEqual(attributeValue, value))
+                if (CompareString(attributeValue, value))
                 {
                     return true;
                 }
@@ -332,7 +332,7 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static bool ValuesEqual(object a, object? b)
+        private static bool CompareString(object a, object? b)
         {
             if (b is null)
             {
@@ -349,19 +349,28 @@ namespace Datadog.Trace.FeatureFlags
                 return aTxt.Equals(bTxt);
             }
 
-            if (a is IConvertible || b is IConvertible)
-            {
-                return CompareNumber(a, b, (first, second) => Math.Abs(first - second) < double.Epsilon);
-            }
+            return string.Equals(ToString(a), ToString(b), StringComparison.Ordinal);
 
-            return string.Equals(Convert.ToString(a), Convert.ToString(b), StringComparison.Ordinal);
+            static string? ToString(object obj)
+            {
+                if (obj is bool boolObj)
+                {
+                    return boolObj switch
+                    {
+                        true => "true",
+                        _ => "false",
+                    };
+                }
+
+                return Convert.ToString(obj);
+            }
         }
 
         private static bool CompareNumber(object attributeValue, object? conditionValue, NumberEquality comparator)
         {
             if (conditionValue is null)
             {
-                return false;
+                throw new FormatException("Condition value must not be null");
             }
 
             var a = ParseDouble(attributeValue);
@@ -428,7 +437,7 @@ namespace Datadog.Trace.FeatureFlags
                 return dt;
             }
 
-            return null;
+            throw new FormatException("Wrong date format");
         }
 
         private static object? ResolveAttribute(string? name, IEvaluationContext? context)
@@ -596,7 +605,7 @@ namespace Datadog.Trace.FeatureFlags
                     error: $"Variant not found for: {variationKey}",
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "GENERAL",
+                        ["errorCode"] = "PARSE_ERROR",
                         ["message"] = $"Variant not found for: {variationKey}"
                     });
             }
