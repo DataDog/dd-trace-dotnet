@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -470,29 +471,65 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
-            var observers = new List<DiagnosticObserver>();
+            var observers = new List<DiagnosticObserver>
+                            {
+                                new QuartzDiagnosticObserver()
+                            };
 
-            // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
-
-            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
-            {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
-                // This is because user code is loaded within the functions host in a separate context.
-                // Even in isolated functions, we don't want the AspNetCore spans to be created.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
-            }
-            else
+            // we need to handle AspNetCoreDiagnosticObserver differently in Azure Functions
+            if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(new AspNetCoreDiagnosticObserver());
-                observers.Add(new QuartzDiagnosticObserver());
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
             DiagnosticManager.Instance = diagnosticManager;
+        }
+
+        [Pure]
+        private static bool SkipAspNetCoreDiagnosticObserver()
+        {
+            // Skip AspNetCoreDiagnosticObserver in Azure Functions:
+            // - In-process functions (due to separate Assembly Load Context issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // - Isolated functions worker process with extension v1
+
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - Isolated functions worker processes with extension v4 (to create aspnet_core.request spans that azure_functions.invoke can parent to)
+            // - outside Azure Functions
+
+            if (!EnvironmentHelpers.IsAzureFunctions())
+            {
+                // only skip in Azure Functions
+                return false;
+            }
+
+            if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+            {
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions host processes
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function host process.");
+                return true;
+            }
+
+            if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
+            {
+                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in in-process Azure Function.");
+                return true;
+            }
+
+            // FUNCTIONS_EXTENSION_VERSION
+            var azureFunctionsExtensionVersion = EnvironmentHelpers.GetAzureFunctionsExtensionVersion();
+
+            if (azureFunctionsExtensionVersion != "~4")
+            {
+                // Skip AspNetCoreDiagnosticObserver in v1 functions (v2 and v3 are not supported at all)
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Function extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
+                return true;
+            }
+
+            return false;
         }
 #endif
 
