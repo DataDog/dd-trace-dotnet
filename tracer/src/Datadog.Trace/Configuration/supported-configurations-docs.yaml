@@ -1038,8 +1038,9 @@ DD_TRACE_SERVICE_MAPPING: |
   <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceNameMappings"/>
 
 DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: |
-  Feature Flag: enables single-span ASP.NET Core traces, by only creating `aspnet_core.request` spans, without
-  creating handler spans or tracking specific route values. Defaults to <c>false</c>. Not compatible with
+  Feature Flag: Enables generating only a single span in the ASP.NET Core integration,
+  by only creating `aspnet_core.request` spans, without creating handler spans or tracking
+  specific route values. Defaults to <c>false</c>. Not compatible with
   DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED (that value is ignored), but may be used
   with DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED. Only supported on .NET 6+.
   <seealso cref="Datadog.Trace.Configuration.TracerSettings.SingleSpanAspNetCoreEnabled"/>
