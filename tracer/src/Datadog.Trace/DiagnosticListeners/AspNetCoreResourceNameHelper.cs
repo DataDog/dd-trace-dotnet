@@ -47,9 +47,8 @@ internal static class AspNetCoreResourceNameHelper
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
                     var parameterName = parameter.Name;
-                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
-                        || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
-                        || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                    if (!parameter.IsOptional || haveParameter)
                     {
                         if (!addedPart)
                         {
@@ -57,63 +56,44 @@ internal static class AspNetCoreResourceNameHelper
                             addedPart = true;
                         }
 
-                        if (routeValueDictionary.TryGetValue(parameterName, out var value)
-                            && value is string name)
+                        // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+                        // so never expand them. This avoids an allocating ToString() call, but means that
+                        // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+                        if (haveParameter
+                         && (expandRouteParameters
+                          || parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+                          || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+                          || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                         && (value is null ||
+                             (value is string valueAsString
+                           && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
                         {
-                            sb.AppendAsLowerInvariant(name);
+                            // write the expanded parameter value
+                            sb.AppendAsLowerInvariant(value as string);
                         }
                         else
                         {
-                            sb.Append(parameterName);
-                        }
-                    }
-                    else
-                    {
-                        var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
-                        if (!parameter.IsOptional || haveParameter)
-                        {
-                            if (!addedPart)
+                            // write the route template value
+                            sb.Append('{');
+                            if (parameter.IsCatchAll)
                             {
-                                sb.Append('/');
-                                addedPart = true;
-                            }
-
-                            // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
-                            // so never expand them. This avoids an allocating ToString() call, but means that
-                            // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
-                            if (expandRouteParameters
-                             && haveParameter
-                             && (value is null ||
-                                 (value is string valueAsString
-                               && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
-                            {
-                                // write the expanded parameter value
-                                sb.AppendAsLowerInvariant(value as string);
-                            }
-                            else
-                            {
-                                // write the route template value
-                                sb.Append('{');
-                                if (parameter.IsCatchAll)
+                                if (parameter.EncodeSlashes)
                                 {
-                                    if (parameter.EncodeSlashes)
-                                    {
-                                        sb.Append("**");
-                                    }
-                                    else
-                                    {
-                                        sb.Append('*');
-                                    }
+                                    sb.Append("**");
                                 }
-
-                                sb.AppendAsLowerInvariant(parameterName);
-                                if (parameter.IsOptional)
+                                else
                                 {
-                                    sb.Append('?');
+                                    sb.Append('*');
                                 }
-
-                                sb.Append('}');
                             }
+
+                            sb.AppendAsLowerInvariant(parameterName);
+                            if (parameter.IsOptional)
+                            {
+                                sb.Append('?');
+                            }
+
+                            sb.Append('}');
                         }
                     }
                 }
@@ -167,30 +147,48 @@ internal static class AspNetCoreResourceNameHelper
                     var parameterName = parameter.Name;
                     if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
+                        if (areaName is null && parameter.IsOptional)
+                        {
+                            // don't append optional suffixes when no value is provided
+                            continue;
+                        }
+
                         if (parts == 1)
                         {
                             sb.Append('/');
                         }
 
-                        sb.Append(areaName);
+                        sb.Append(areaName ?? "{area}");
                     }
                     else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                     {
+                        if (controllerName is null && parameter.IsOptional)
+                        {
+                            // don't append optional suffixes when no value is provided
+                            continue;
+                        }
+
                         if (parts == 1)
                         {
                             sb.Append('/');
                         }
 
-                        sb.Append(controllerName);
+                        sb.Append(controllerName ?? "{controller}");
                     }
                     else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
+                        if (actionName is null && parameter.IsOptional)
+                        {
+                            // don't append optional suffixes when no value is provided
+                            continue;
+                        }
+
                         if (parts == 1)
                         {
                             sb.Append('/');
                         }
 
-                        sb.Append(actionName);
+                        sb.Append(actionName ?? "{action}");
                     }
                     else
                     {
@@ -277,30 +275,48 @@ internal static class AspNetCoreResourceNameHelper
                 }
                 else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (areaName is null && part.IsOptional)
+                    {
+                        // don't append optional suffixes when no value is provided
+                        continue;
+                    }
+
                     if (parts == 1)
                     {
                         sb.Append('/');
                     }
 
-                    sb.Append(areaName);
+                    sb.Append(areaName ?? "{area}");
                 }
                 else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (controllerName is null && part.IsOptional)
+                    {
+                        // don't append optional suffixes when no value is provided
+                        continue;
+                    }
+
                     if (parts == 1)
                     {
                         sb.Append('/');
                     }
 
-                    sb.Append(controllerName);
+                    sb.Append(controllerName ?? "{controller}");
                 }
                 else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (actionName is null && part.IsOptional)
+                    {
+                        // don't append optional suffixes when no value is provided
+                        continue;
+                    }
+
                     if (parts == 1)
                     {
                         sb.Append('/');
                     }
 
-                    sb.Append(actionName);
+                    sb.Append(actionName ?? "{action}");
                 }
                 else
                 {
