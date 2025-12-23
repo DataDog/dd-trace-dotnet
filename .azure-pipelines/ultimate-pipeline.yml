@@ -106,7 +106,6 @@ variables:
   PWSH_MAX_RETRY_COUNT: 5
   PWSH_RETRY_INTERVAL_SEC: 2
   PWSH_TIMEOUT_SEC: 120
-  PIP_RETRY_PARAMS: '--retries 5 --timeout 120'
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   NUKE_TELEMETRY_OPTOUT: 1
@@ -6295,7 +6294,7 @@ stages:
 
         - script: |
             python --version
-            pip install $(PIP_RETRY_PARAMS) ddapm-test-agent
+            pip install --retries 5 --timeout 120 ddapm-test-agent
 
             # copied from run-snapshot-test
             echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
