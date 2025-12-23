@@ -71,7 +71,7 @@ internal static class CoverageUtils
             var jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
             if (jsonFiles.Length == 0)
             {
-                Log.Error("'{InputFolder}' doesn't contain any json file.", inputFolder);
+                Log.ErrorSkipTelemetry("'{InputFolder}' doesn't contain any json file.", inputFolder);
                 return false;
             }
 
