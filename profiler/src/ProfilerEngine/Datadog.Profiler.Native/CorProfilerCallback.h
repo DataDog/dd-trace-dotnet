@@ -64,6 +64,7 @@ class RuntimeIdStore;
 class CpuSampleProvider;
 class NetworkProvider;
 class IUnwinder;
+class StackFramesCollectorFactory;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -298,6 +299,7 @@ private :
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
+    std::unique_ptr<StackFramesCollectorFactory> _pStackFramesCollectorFactory = nullptr;
 
 private:
     static void ConfigureDebugLog();

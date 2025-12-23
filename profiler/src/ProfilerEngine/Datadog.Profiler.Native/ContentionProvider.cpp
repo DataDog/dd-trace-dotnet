@@ -3,6 +3,7 @@
 
 #include "ContentionProvider.h"
 
+#include "StackFramesCollectorFactory.h"
 #include "COMHelpers.h"
 #include "FrameStore.h"
 #include "FrameworkThreadInfo.h"
@@ -38,6 +39,7 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory,
     shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
@@ -49,7 +51,7 @@ ContentionProvider::ContentionProvider(
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration},
     _callstackProvider{std::move(callstackProvider)},
-    _metricsRegistry{metricsRegistry}
+    _pStackFramesCollectorFactory{pStackFramesCollectorFactory}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
@@ -202,8 +204,7 @@ void ContentionProvider::AddContentionSample(
             return;
         }
 
-        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-            _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+        const auto pStackFramesCollector = _pStackFramesCollectorFactory->Create(&_callstackProvider);
         pStackFramesCollector->PrepareForNextCollection();
 
         uint32_t hrCollectStack = E_FAIL;
