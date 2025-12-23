@@ -92,7 +92,6 @@ src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
-src/Datadog.Trace/DiagnosticListeners/DiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
 src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
