@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -697,7 +698,7 @@ public class MetricsTelemetryCollectorTests
             count++;
         }
 
-        mutex.Wait(TimeSpan.FromSeconds(60)).Should().BeTrue();
+        mutex.WaitOrDump(TimeSpan.FromSeconds(60)).Should().BeTrue();
         var metrics = collector.GetMetrics();
         metrics.Metrics.Should()
                .ContainSingle(x => x.Metric == Count.SpanFinished.GetName())
