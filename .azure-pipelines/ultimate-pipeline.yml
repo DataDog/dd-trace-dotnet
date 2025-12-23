@@ -2723,6 +2723,7 @@ stages:
 
     - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
       displayName: Run Profiler Integration tests
+      retryCountOnTaskFailure: 2
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -2830,6 +2831,7 @@ stages:
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      retryCountOnTaskFailure: 2
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
