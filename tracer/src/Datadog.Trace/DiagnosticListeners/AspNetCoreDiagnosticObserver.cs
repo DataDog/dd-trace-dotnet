@@ -412,10 +412,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var shouldTrace = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = _security.AppsecEnabled;
+            var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var appsecEnabled = _security.AppsecEnabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!integrationEnabled && !appsecEnabled)
             {
                 return;
             }
@@ -423,7 +423,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 var httpContext = requestStruct.HttpContext;
-                if (shouldTrace)
+                if (integrationEnabled)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
@@ -431,7 +431,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // away, so force that by using null.
                     var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(_tracer, _security, _iast, httpContext, resourceName);
-                    if (shouldSecure)
+                    if (appsecEnabled)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
@@ -589,12 +589,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var shouldTrace = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = _security.AppsecEnabled;
-            var shouldUseIast = _iast.Settings.Enabled;
+            var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var appsecEnabled = _security.AppsecEnabled;
+            var iastEnabled = _iast.Settings.Enabled;
             var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-            if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
+            if (!integrationEnabled && !appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
                 return;
             }
@@ -608,7 +608,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 Span span = null;
-                if (shouldTrace)
+                if (integrationEnabled)
                 {
                     if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
@@ -638,7 +638,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
-                if (shouldUseIast)
+                if (iastEnabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
