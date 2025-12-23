@@ -387,8 +387,8 @@ namespace Datadog.Trace.Configuration
             {
                 SingleSpanAspNetCoreEnabled = false;
                 Log.Warning(
-                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set, but is only supported in .NET 6+");
-                _telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
+                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set to true, but is only supported in .NET 6+. Using false instead.");
+                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
             }
 #endif
 
