@@ -123,7 +123,7 @@ namespace Datadog.Trace.PlatformHelpers
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
 
             var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
-            if (!headerTagsInternal.IsNullOrEmpty())
+            if (headerTagsInternal.Count != 0)
             {
                 AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
             }
