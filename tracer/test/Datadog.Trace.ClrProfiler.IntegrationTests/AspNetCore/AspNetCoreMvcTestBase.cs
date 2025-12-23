@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             SetServiceVersion("1.0.0");
 
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
 
             Fixture = fixture;
             Fixture.SetOutput(output);
