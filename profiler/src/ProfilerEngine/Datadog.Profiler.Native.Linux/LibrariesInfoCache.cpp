@@ -61,6 +61,12 @@ bool LibrariesInfoCache::StartImpl()
     // Note: unw_set_iterate_phdr_function will call tdep_init() if needed,
     // which has once-initialization semantics, so this is thread-safe.
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+    auto fn = unw_get_iterate_phdr_function(unw_local_addr_space);
+    if (fn != LibrariesInfoCache::DlIteratePhdr)
+    {
+        Log::Error("Failed to register custom iterate_phdr_function with libunwind.");
+        return false;
+    }
 
     // CRITICAL: Force a memory barrier to ensure the write to iterate_phdr_function
     // is visible to all CPU cores. libunwind's unw_set_iterate_phdr_function does
@@ -69,7 +75,7 @@ bool LibrariesInfoCache::StartImpl()
     // This atomic fence with seq_cst ordering ensures all previous writes are visible.
     std::atomic_thread_fence(std::memory_order_seq_cst);
 
-    Log::Info("LibrariesInfoCache: Registered custom iterate_phdr_function with libunwind.");
+    Log::Info("LibrariesInfoCache: Registered custom iterate_phdr_function with libunwind on unw_local_addr_space: 0x", std::hex, &unw_local_addr_space);
 
     return true;
 }
