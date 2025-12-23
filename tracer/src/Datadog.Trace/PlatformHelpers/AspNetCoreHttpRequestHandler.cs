@@ -181,18 +181,21 @@ namespace Datadog.Trace.PlatformHelpers
                         span.ResourceName = GetDefaultResourceName(httpContext.Request);
                     }
 
-                    if (isMissingHttpStatusCode)
+                    if (isMissingHttpStatusCode && httpContext.Response != null)
                     {
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
                     }
                 }
 
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-
-                if (proxyScope?.Span != null)
+                if (httpContext.Response != null)
                 {
-                    proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
-                    proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+
+                    if (proxyScope?.Span != null)
+                    {
+                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
+                        proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
                 }
 
                 if (security.AppsecEnabled)

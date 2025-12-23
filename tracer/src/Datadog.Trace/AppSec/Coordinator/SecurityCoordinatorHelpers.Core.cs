@@ -44,7 +44,7 @@ internal static class SecurityCoordinatorHelpers
             if (security.AppsecEnabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
             {
                 var transport = new SecurityCoordinator.HttpTransport(httpContext);
-                if (!transport.IsBlocked)
+                if (!transport.IsBlocked && httpContext.Response is not null)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
 
