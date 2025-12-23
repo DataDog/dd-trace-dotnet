@@ -43,8 +43,6 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        public long Timeout { get; set; } = 1000;
-
         public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
             if (settings.IsFlaggingProviderEnabled)
@@ -85,7 +83,7 @@ namespace Datadog.Trace.FeatureFlags
                 // Feed configs to the rules evaluator
                 if (list.Count > 0)
                 {
-                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, list[0].Value, Timeout));
+                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, list[0].Value));
                     _onNewConfigEventHander?.Invoke();
                 }
             }

@@ -108,7 +108,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void EvaluateWithoutConfigReturnsProviderNotReadyAndDefault()
     {
-        var evaluator = new FeatureFlagsEvaluator(null, null, 1000);
+        var evaluator = new FeatureFlagsEvaluator(null, null);
         var ctx = new EvaluationContext("target");
 
         var result = evaluator.Evaluate("test", Trace.FeatureFlags.ValueType.Integer, 23, ctx);
@@ -121,7 +121,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void EvaluateWithMissingTargetingKeyReturnsTargetingKeyMissing()
     {
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration(), 1000);
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
         var ctx = new EvaluationContext(string.Empty); // no targetingKey
 
         var result = evaluator.Evaluate("flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
@@ -134,7 +134,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void EvaluateWithUnknownFlagReturnsFlagNotFound()
     {
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration(), 1000);
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
         var ctx = new EvaluationContext("user-123");
         var result = evaluator.Evaluate("unknown", Trace.FeatureFlags.ValueType.String, "default", ctx);
 

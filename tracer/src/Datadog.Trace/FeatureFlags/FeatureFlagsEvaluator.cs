@@ -27,13 +27,11 @@ namespace Datadog.Trace.FeatureFlags
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
-        private readonly long _timeoutMs;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, long timeoutMs = 1000)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
-            _timeoutMs = timeoutMs;
             if (_config is null)
             {
                 Log.Debug("Creating Evaluator without config");
@@ -156,7 +154,7 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, now, context);
                             }
                         }
                     }
@@ -170,7 +168,6 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (FormatException ex)
             {
-                Log.Debug(ex, "Evaluation failed for key {Key}", flagKey);
                 return new Evaluation(
                     flagKey,
                     defaultValue,
@@ -178,12 +175,12 @@ namespace Datadog.Trace.FeatureFlags
                     error: "PARSE_ERROR",
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "PARSE_ERROR"
+                        ["errorCode"] = "PARSE_ERROR",
+                        ["message"] = ex.Message
                     });
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Evaluation failed for key {Key}", flagKey);
                 return new Evaluation(
                     flagKey,
                     defaultValue,
@@ -548,7 +545,7 @@ namespace Datadog.Trace.FeatureFlags
                 foreach (var key in keys)
                 {
                     var stack = new Stack<FlattenEntry>();
-                    stack.Push(new FlattenEntry(key, context.GetAttribute(key)));
+                    stack.Push(new FlattenEntry(key, context.GetAttribute(key), 1));
 
                     while (stack.Count > 0)
                     {
@@ -565,19 +562,23 @@ namespace Datadog.Trace.FeatureFlags
                             {
                                 for (var i = 0; i < list.Count; i++)
                                 {
-                                    stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i]));
+                                    stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i], entry.Level + 1));
                                 }
                             }
                             else if (value is IDictionary dict)
                             {
                                 foreach (var pairKey in dict.Keys)
                                 {
-                                    stack.Push(new FlattenEntry($"{entry.Key}.{pairKey}", dict[pairKey!]));
+                                    stack.Push(new FlattenEntry($"{entry.Key}.{pairKey}", dict[pairKey!], entry.Level + 1));
                                 }
                             }
                             else
                             {
-                                result[entry.Key] = value;
+                                // Do not overwrite existing keys
+                                if (!result.ContainsKey(entry.Key))
+                                {
+                                    result[entry.Key] = value;
+                                }
                             }
                         }
                     }
@@ -594,6 +595,7 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
+            DateTime evalTime,
             IEvaluationContext? context)
         {
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
@@ -629,7 +631,7 @@ namespace Datadog.Trace.FeatureFlags
             var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             if (doLog)
             {
-                DispatchExposure(flagKey, evaluation, context);
+                DispatchExposure(flagKey, evaluation, evalTime, context);
             }
 
             return evaluation;
@@ -638,6 +640,7 @@ namespace Datadog.Trace.FeatureFlags
         private void DispatchExposure(
             string flagKey,
             Evaluation evaluation,
+            DateTime evalTime,
             IEvaluationContext? context)
         {
             var allocationKey = AllocationKey(evaluation);
@@ -648,9 +651,8 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
-            Log.Debug("FeatureFlagsEvaluator::DispatchExposure -> FlagKey: {FlagKey}", flagKey);
             var evt = new Exposure.Model.ExposureEvent(
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                new DateTimeOffset(evalTime).ToUnixTimeMilliseconds(),
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
@@ -659,11 +661,8 @@ namespace Datadog.Trace.FeatureFlags
             _onExposureEvent?.Invoke(in evt);
         }
 
-        private sealed class FlattenEntry(string key, object? value)
+        private record struct FlattenEntry(string Key, object? Value, int Level)
         {
-            public string Key { get; } = key;
-
-            public object? Value { get; } = value;
         }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
