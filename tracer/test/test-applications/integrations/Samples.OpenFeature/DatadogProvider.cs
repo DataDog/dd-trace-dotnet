@@ -34,13 +34,9 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     /// <returns> Returns the evaluation result </returns>
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Task.Run(
-            () =>
-            {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, GetContext(context));
-                return GetResolutionDetails<bool>(res);
-            },
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, GetContext(context));
+        return Task.FromResult(GetResolutionDetails<bool>(res));
     }
 
     /// <summary> Resolve flag as double </summary>
@@ -51,13 +47,9 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     /// <returns> Returns the evaluation result </returns>
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Task.Run(
-            () =>
-            {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, GetContext(context));
-                return GetResolutionDetails<double>(res);
-            },
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, GetContext(context));
+        return Task.FromResult(GetResolutionDetails<double>(res));
     }
 
     /// <summary> Resolve flag as integer </summary>
@@ -68,13 +60,9 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     /// <returns> Returns the evaluation result </returns>
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Task.Run(
-            () =>
-            {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, GetContext(context));
-                return GetResolutionDetails<int>(res);
-            },
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, GetContext(context));
+        return Task.FromResult(GetResolutionDetails<int>(res));
     }
 
     /// <summary> Resolve flag as string </summary>
@@ -85,13 +73,9 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     /// <returns> Returns the evaluation result </returns>
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Task.Run(
-            () =>
-            {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, GetContext(context));
-                return GetResolutionDetails<string>(res);
-            },
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, GetContext(context));
+        return Task.FromResult(GetResolutionDetails<string>(res));
     }
 
     /// <summary> Resolve flag as Value </summary>
@@ -102,35 +86,35 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     /// <returns> Returns the evaluation result </returns>
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Task.Run(
-            () =>
-            {
-                var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, GetContext(context));
-                return GetResolutionDetails<Value>(res);
-            },
-            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, GetContext(context));
+        return Task.FromResult(GetResolutionDetails<Value>(res));
     }
 
     private static Datadog.Trace.FeatureFlags.IEvaluationContext? GetContext(EvaluationContext? context)
     {
-        if (context == null) { return new Datadog.Trace.FeatureFlags.EvaluationContext(string.Empty); }
+        if (context == null) 
+        {
+            return null; 
+        }
+
         var values = context.AsDictionary().Select(p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(p => p.Key, p => p.Value);
-        var res = new Datadog.Trace.FeatureFlags.EvaluationContext(context.TargetingKey!, values);
+        var res = new Datadog.Trace.FeatureFlags.EvaluationContext(context.TargetingKey ?? string.Empty, values);
         return res;
     }
 
-    private static object? ToObject(Value value)
+    private static object? ToObject(Value value) => value switch
     {
-        if (value == null) { return null; }
-        else if (value.IsBoolean) { return value.AsBoolean; }
-        else if (value.IsString) { return value.AsString; }
-        else if (value.IsNumber) { return value.AsDouble; }
-        else { return value.AsObject; }
-    }
+        null => null,
+        { IsBoolean: true } => value.AsBoolean,
+        { IsString: true } => value.AsString,
+        { IsNumber: true } => value.AsDouble,
+        _ => value.AsObject,
+    };
 
     private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
     {
-        if (evaluation == null) 
+        if (evaluation is null) 
         {
             return new ResolutionDetails<T>(
                         null,
@@ -141,24 +125,37 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
                         "FeatureFlagsSdk is disabled",
                         null);
         }
+
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
-            (T)(evaluation.Value ?? default(T)!),
-            ToErrorType(evaluation.Reason),
+            (T)(evaluation.Value!),
+            ToErrorType(evaluation.Reason, evaluation.Error),
             evaluation.Reason.ToString(),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata!));
+            ToMetadata(evaluation.FlagMetadata));
         return res;
     }
 
-    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason)
+    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)
     {
-        return ErrorType.None; // TODO: Map error types properly
+        return errorMessage switch
+        {
+            "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
+            "INVALID_CONTEXT" => ErrorType.InvalidContext,
+            "PARSE_ERROR" => ErrorType.ParseError,
+            "PROVIDER_FATAL" => ErrorType.ProviderFatal,
+            "PROVIDER_NOT_READY" => ErrorType.ProviderNotReady,
+            "TARGETING_KEY_MISSING" => ErrorType.TargetingKeyMissing,
+            "TYPE_MISMATCH" => ErrorType.TypeMismatch,
+            "GENERAL" => ErrorType.General,
+            _ => ErrorType.None,
+        };
     }
 
-    private static ImmutableMetadata ToMetadata(IDictionary<string, string> metadata)
+    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
     {
-        return default!; // TODO: Map metadata properly
+        var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p =>  p.Key, p => (object)p.Value);
+        return new ImmutableMetadata(dic);
     }
 }

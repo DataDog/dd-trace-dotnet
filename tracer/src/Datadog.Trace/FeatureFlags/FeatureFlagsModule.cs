@@ -65,7 +65,7 @@ namespace Datadog.Trace.FeatureFlags
             _onNewConfigEventHander = onNewConfig;
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext context)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext? context)
         {
             if (_evaluator is null)
             {

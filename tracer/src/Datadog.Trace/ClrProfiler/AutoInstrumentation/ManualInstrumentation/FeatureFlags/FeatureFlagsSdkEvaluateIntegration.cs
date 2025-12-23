@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FeatureFlagsSdkEvaluateIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTargetType, TContext>(ref string? key, ref TTargetType targetType, ref object? defaultValue, ref TContext? context)
+    internal static CallTargetState OnMethodBegin<TTarget, TTargetType, TContext>(ref string key, ref TTargetType targetType, ref object? defaultValue, ref TContext? context)
     {
         return new CallTargetState(null, new State(key, (FeatureFlags.ValueType)(Convert.ToInt32(targetType)), defaultValue, context));
     }
@@ -39,11 +39,11 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var parameters = (State)state.State!;
-        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.Key!, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>()!);
+        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.Key, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>());
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
-    private sealed record State(string? Key, FeatureFlags.ValueType TargetType, object? DefaultValue, object? Context)
+    private sealed record State(string Key, FeatureFlags.ValueType TargetType, object? DefaultValue, object? Context)
     {
     }
 }
