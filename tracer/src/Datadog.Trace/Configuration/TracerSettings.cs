@@ -389,7 +389,7 @@ namespace Datadog.Trace.Configuration
                                                .AsBool(defaultValue: true);
 
             SingleSpanAspNetCoreEnabled = config
-                                         .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled)
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
                                          .AsBool(defaultValue: false);
 #if !NET6_0_OR_GREATER
             // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
@@ -397,8 +397,8 @@ namespace Datadog.Trace.Configuration
             {
                 SingleSpanAspNetCoreEnabled = false;
                 Log.Warning(
-                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled} is set, but is only supported in .NET 6+");
-                _telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled, false, ConfigurationOrigins.Calculated);
+                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set, but is only supported in .NET 6+");
+                _telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
             }
 #endif
 
@@ -1129,7 +1129,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether single-span ASP.NET Core instrumentation should be used.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspnetcoreEnabled"/>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled"/>
         internal bool SingleSpanAspNetCoreEnabled { get; }
 
         /// <summary>

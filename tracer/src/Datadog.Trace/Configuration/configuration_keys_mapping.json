@@ -606,7 +606,7 @@
     },
     {
       "env_var": "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED",
-      "const_name": "SingleSpanAspnetcoreEnabled"
+      "const_name": "SingleSpanAspNetCoreEnabled"
     },
     {
       "env_var": "DD_SPAN_SAMPLING_RULES",
