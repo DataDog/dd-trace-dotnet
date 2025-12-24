@@ -61,7 +61,7 @@ namespace Datadog.Trace.FeatureFlags
             _onNewConfigEventHander = onNewConfig;
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext? context)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -71,7 +71,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return evaluator.Evaluate(flagKey, resultType, defaultValue, context);
+            return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
         }
 
         private void UpdateRemoteConfig(List<KeyValuePair<string, ServerConfiguration>> list)

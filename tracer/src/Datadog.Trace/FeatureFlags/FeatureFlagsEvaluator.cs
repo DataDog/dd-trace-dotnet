@@ -44,7 +44,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
-        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext? context)
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
             try
             {
@@ -211,7 +211,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(List<Rule> rules, IEvaluationContext? context)
+        private static bool EvaluateRules(List<Rule> rules, EvaluationContext? context)
         {
             foreach (var rule in rules)
             {
@@ -239,7 +239,7 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static bool EvaluateCondition(ConditionConfiguration condition, IEvaluationContext? context)
+        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext? context)
         {
             if (condition.Operator is null)
             {
@@ -435,7 +435,7 @@ namespace Datadog.Trace.FeatureFlags
             throw new FormatException("Wrong date format");
         }
 
-        private static object? ResolveAttribute(string? name, IEvaluationContext? context)
+        private static object? ResolveAttribute(string? name, EvaluationContext? context)
         {
             if (name == null || context is null)
             {
@@ -533,7 +533,7 @@ namespace Datadog.Trace.FeatureFlags
             return evaluation.FlagMetadata.TryGetValue("allocationKey", out var key) ? key : null;
         }
 
-        internal static IDictionary<string, object?> FlattenContext(IEvaluationContext? context)
+        internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
         {
             var result = new Dictionary<string, object?>();
             if (context is not null)
@@ -594,7 +594,7 @@ namespace Datadog.Trace.FeatureFlags
             string variationKey,
             Allocation allocation,
             DateTime evalTime,
-            IEvaluationContext? context)
+            EvaluationContext? context)
         {
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
             {
@@ -639,7 +639,7 @@ namespace Datadog.Trace.FeatureFlags
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
-            IEvaluationContext? context)
+            EvaluationContext? context)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;

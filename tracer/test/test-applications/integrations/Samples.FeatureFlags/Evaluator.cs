@@ -14,8 +14,7 @@ class Evaluator
 
     public static (string? Value, string? Error)? Evaluate(string key)
     {
-        var context = new EvaluationContext(key);
-        var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, Datadog.Trace.FeatureFlags.ValueType.String, "Not found", context);
+        var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, Datadog.Trace.FeatureFlags.ValueType.String, "Not found", key, null);
 
         if (evaluation is null)
         {
@@ -33,16 +32,5 @@ class Evaluator
         }
 
         return (evaluation.Value as string, evaluation.Error);
-    }
-
-    class EvaluationContext(string key, IDictionary<string, object?>? values = null)
-        : IEvaluationContext
-    {
-        public string TargetingKey { get; } = key;
-
-        public IDictionary<string, object?> Attributes { get; } = values ?? new Dictionary<string, object?>();
-
-        public object? GetAttribute(string key)
-            => Attributes.TryGetValue(key, out var res) ? res : null;
     }
 }

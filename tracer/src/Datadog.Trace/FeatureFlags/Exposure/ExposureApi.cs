@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +16,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.dnlib;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Exposure
