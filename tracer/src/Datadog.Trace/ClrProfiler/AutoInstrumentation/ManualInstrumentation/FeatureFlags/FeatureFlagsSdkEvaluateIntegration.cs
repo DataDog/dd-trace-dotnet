@@ -32,13 +32,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FeatureFlagsSdkEvaluateIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTargetType>(ref string flagKey, ref TTargetType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
+    internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
-        return new CallTargetState(null, new State(flagKey, (FeatureFlags.ValueType)(Convert.ToInt32(targetType)), defaultValue, targetingKey, attributes));
+        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        if (exception is not null)
+        {
+            // invalid call to the API e.g. non-null args were null. Just let it bubble up.
+            return new CallTargetReturn<TReturn?>(returnValue);
+        }
+
         var parameters = (State)state.State!;
         var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
