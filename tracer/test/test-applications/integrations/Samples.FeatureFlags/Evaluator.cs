@@ -14,7 +14,7 @@ class Evaluator
 
     public static (string? Value, string? Error)? Evaluate(string key)
     {
-        var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, Datadog.Trace.FeatureFlags.ValueType.String, "Not found", key, null);
+        var evaluation = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(key, Datadog.Trace.FeatureFlags.ValueType.String, "Not found", new EvaluationContext(key));
 
         if (evaluation is null)
         {

@@ -38,12 +38,19 @@ public static class FeatureFlagsSdk
     /// <param name="flagKey">The feature flag key to evaluate</param>
     /// <param name="targetType">The desired result type</param>
     /// <param name="defaultValue">The default value</param>
-    /// <param name="targetingKey">The context targetting key</param>
-    /// <param name="attributes">The context attributes</param>
+    /// <param name="context">The evaluation context</param>
+    public static IEvaluation? Evaluate(string flagKey, ValueType targetType, object? defaultValue, EvaluationContext? context)
+        => Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, context?.Attributes);
+
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static IEvaluation? Evaluate(string flagKey, ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+    private static IEvaluation? Evaluate(string flagKey, ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
     {
+        if (flagKey is null)
+        {
+            throw new ArgumentNullException(nameof(flagKey));
+        }
+
         return null;
     }
 }

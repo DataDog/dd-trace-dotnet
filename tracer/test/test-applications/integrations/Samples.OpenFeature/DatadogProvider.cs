@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.FeatureFlags;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -36,7 +35,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, ToContext(context));
         return Task.FromResult(GetResolutionDetails<bool>(res));
     }
 
@@ -49,7 +48,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, ToContext(context));
         return Task.FromResult(GetResolutionDetails<double>(res));
     }
 
@@ -62,7 +61,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, ToContext(context));
         return Task.FromResult(GetResolutionDetails<int>(res));
     }
 
@@ -75,7 +74,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, ToContext(context));
         return Task.FromResult(GetResolutionDetails<string>(res));
     }
 
@@ -88,7 +87,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var res = Datadog.Trace.FeatureFlags.FeatureFlagsSdk.Evaluate(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, ToContext(context));
         return Task.FromResult(GetResolutionDetails<Value>(res));
     }
 
@@ -156,5 +155,11 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     {
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p =>  p.Key, p => (object)p.Value);
         return new ImmutableMetadata(dic);
+    }
+
+    private static Datadog.Trace.FeatureFlags.EvaluationContext? ToContext(EvaluationContext? context)
+    {
+        return context is null ? null : new(context.TargetingKey, GetContextAttributes(context));
+
     }
 }
