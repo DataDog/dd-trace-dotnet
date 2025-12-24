@@ -21,11 +21,5 @@ namespace Datadog.Trace.FeatureFlags
 
         /// <summary> Gets the Context optional Values </summary>
         public IDictionary<string, object?> Attributes { get; } = values ?? new Dictionary<string, object?>();
-
-        /// <summary> Get the Context value if existent </summary>
-        /// <param name="key"> Value key </param>
-        /// <returns> Returns Context Value or null </returns>
-        public object? GetAttribute(string key)
-            => Attributes.TryGetValue(key, out var res) ? res : null;
     }
 }
