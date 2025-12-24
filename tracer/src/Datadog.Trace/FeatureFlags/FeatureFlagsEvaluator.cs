@@ -62,7 +62,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (string.IsNullOrEmpty(context?.TargetingKey))
+                if (StringUtil.IsNullOrEmpty(context?.TargetingKey))
                 {
                     return new Evaluation(
                         flagKey,
@@ -109,7 +109,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (flag.Allocations is { Count: 0 })
+                if (flag.Allocations is null or { Count: 0 })
                 {
                     return new Evaluation(
                         flagKey,
@@ -120,16 +120,16 @@ namespace Datadog.Trace.FeatureFlags
                 var now = DateTime.UtcNow;
                 var targetingKey = context?.TargetingKey ?? string.Empty;
 
-                foreach (var allocation in flag.Allocations!)
+                foreach (var allocation in flag.Allocations)
                 {
                     if (!IsAllocationActive(allocation, now))
                     {
                         continue;
                     }
 
-                    if (allocation.Rules is { Count: > 0 })
+                    if (allocation.Rules is { Count: > 0 } allocationRules)
                     {
-                        if (!EvaluateRules(allocation.Rules!, context))
+                        if (!EvaluateRules(allocationRules, context))
                         {
                             continue;
                         }
@@ -140,9 +140,9 @@ namespace Datadog.Trace.FeatureFlags
                         foreach (var split in allocation.Splits)
                         {
                             var allShardsMatch = true;
-                            if (split.Shards is { Count: > 0 })
+                            if (split.Shards is { Count: > 0 } splitShards)
                             {
-                                foreach (var shard in split.Shards!)
+                                foreach (var shard in splitShards)
                                 {
                                     if (!MatchesShard(shard, targetingKey))
                                     {
@@ -194,8 +194,6 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        // --------- helpers ----------
-
         private static bool IsAllocationActive(Allocation allocation, DateTime now)
         {
             var startDate = ParseDate(allocation.StartAt);
@@ -213,7 +211,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(IEnumerable<Rule> rules, IEvaluationContext? context)
+        private static bool EvaluateRules(List<Rule> rules, IEvaluationContext? context)
         {
             foreach (var rule in rules)
             {

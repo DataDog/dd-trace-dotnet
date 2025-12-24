@@ -16,6 +16,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Vendors.dnlib;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Exposure
@@ -24,55 +26,69 @@ namespace Datadog.Trace.Exposure
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
 
-        public const string ExposurePath = "api/v2/exposure";
+        public const string ExposurePath = "evp_proxy/v2/api/v2/exposure";
         private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
         private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
-        private IApiRequestFactory? _apiRequestFactory = null;
-        private Dictionary<string, string> _context = new Dictionary<string, string>();
+
+        private IApiRequestFactory? _apiRequestFactory;
+        private Dictionary<string, string>? _context;
         private int _started = 0;
 
-        private ExposureApi(TracerSettings tracerSettings)
+        internal ExposureApi(TracerSettings tracerSettings)
         {
-            UpdateSettings(tracerSettings.Manager.InitialExporterSettings, tracerSettings.Manager.InitialMutableSettings);
-            tracerSettings.Manager.SubscribeToChanges(settingChanges => UpdateSettings(settingChanges.UpdatedExporter ?? settingChanges.PreviousExporter, settingChanges.UpdatedMutable ?? settingChanges.PreviousMutable));
-        }
+            UpdateApi(tracerSettings.Manager.InitialExporterSettings);
+            UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
-        private void UpdateSettings(ExporterSettings exporterSettings, MutableSettings settings)
-        {
-            Log.Debug("ExposureApi::UpdateSettings -> Applyting settings");
-            var apiRequestFactory = AgentTransportStrategy.Get(
-                exporterSettings,
-                productName: "FeatureFlags exposure",
-                tcpTimeout: TimeSpan.FromSeconds(5),
-                AgentHttpHeaderNames.MinimalHeaders,
-                () => new MinimalAgentHeaderHelper(),
-                uri => uri);
-            Interlocked.Exchange(ref _apiRequestFactory, apiRequestFactory);
-
-            var context = new Dictionary<string, string>
+            tracerSettings.Manager.SubscribeToChanges(changes =>
             {
-                { "service", settings.ServiceName ?? "unknown" },
-                { "env", settings.Environment ?? "unknown" },
-                { "version", settings.ServiceVersion ?? "unknown" }
-            };
-            Interlocked.Exchange(ref _context, context);
-        }
+                if (changes.UpdatedExporter is { } exporter)
+                {
+                    UpdateApi(exporter);
+                }
 
-        public static ExposureApi Create(TracerSettings tracerSettings)
-        {
-            return new ExposureApi(tracerSettings);
+                if (changes.UpdatedMutable is { } mutable)
+                {
+                    UpdateContext(mutable);
+                }
+            });
+
+            [MemberNotNull(nameof(_apiRequestFactory))]
+            void UpdateApi(ExporterSettings exporterSettings)
+            {
+                Log.Debug("ExposureApi::UpdateApi-> Applying settings");
+                var apiRequestFactory = AgentTransportStrategy.Get(
+                    exporterSettings,
+                    productName: "FeatureFlags exposure",
+                    tcpTimeout: TimeSpan.FromSeconds(5),
+                    AgentHttpHeaderNames.MinimalHeaders,
+                    () => new MinimalAgentHeaderHelper(),
+                    uri => uri);
+                Interlocked.Exchange(ref _apiRequestFactory, apiRequestFactory);
+            }
+
+            [MemberNotNull(nameof(_context))]
+            void UpdateContext(MutableSettings settings)
+            {
+                Log.Debug("ExposureApi::UpdateContext -> Applying settings");
+                var context = new Dictionary<string, string>
+                {
+                    { "service", settings.DefaultServiceName },
+                    { "env", settings.Environment ?? "unknown" },
+                    { "version", settings.ServiceVersion ?? "unknown" }
+                };
+                Interlocked.Exchange(ref _context, context);
+            }
         }
 
         public void Dispose()
         {
-            try { _processExit.TrySetResult(true); }
-            catch { }
+            _processExit.TrySetResult(true);
         }
 
         public void TryToStartSendLoopIfNotStarted()
         {
-            if (_started != 0 || Interlocked.Exchange(ref _started, 1) != 0)
+            if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
             {
                 return;
             }
@@ -90,10 +106,12 @@ namespace Datadog.Trace.Exposure
                     var apiRequestFactory = _apiRequestFactory;
                     if (apiRequestFactory is not null)
                     {
-                        var uri = apiRequestFactory.GetEndpoint($"evp_proxy/v2/{ExposurePath}");
+                        var uri = apiRequestFactory.GetEndpoint(ExposurePath);
                         if (_exposures.Count > 0)
                         {
-                            await SendBatchAsync(apiRequestFactory, uri).ConfigureAwait(false);
+                            var request = apiRequestFactory.Create(uri);
+                            var payload = GetPayload();
+                            using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
                         }
                     }
                 }
@@ -115,29 +133,14 @@ namespace Datadog.Trace.Exposure
             }
         }
 
-        private async Task SendBatchAsync(IApiRequestFactory apiRequestFactory, Uri uri)
-        {
-            try
-            {
-                var request = apiRequestFactory.Create(uri);
-                var payload = GetPayload();
-                using var response = await request.PostAsync(payload, MimeTypes.Json)
-                                        .ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error in Feature Flags exposures reporting loop");
-            }
-        }
-
         private ArraySegment<byte> GetPayload()
         {
             ExposuresRequest request;
             lock (_exposures)
             {
-                var exposures = _exposures.ToList();
+                List<ExposureEvent> exposures = [.. _exposures];
                 _exposures.Clear();
-                request = new ExposuresRequest(_context, exposures);
+                request = new ExposuresRequest(_context!, exposures);
             }
 
             string json = JsonConvert.SerializeObject(request);

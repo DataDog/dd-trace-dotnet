@@ -37,12 +37,15 @@ public sealed class FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(Exception? exception, in CallTargetState state)
     {
-        if (state.State is not Action onNewConfig)
+        if (state.State is Action onNewConfig)
         {
-            throw new ArgumentNullException();
+            TracerManager.Instance.FeatureFlags?.RegisterOnNewConfigEventHandler(onNewConfig);
+        }
+        else
+        {
+            exception = new ArgumentException();
         }
 
-        TracerManager.Instance.FeatureFlags?.RegisterOnNewConfigEventHandler(onNewConfig);
         return CallTargetReturn.GetDefault();
     }
 }

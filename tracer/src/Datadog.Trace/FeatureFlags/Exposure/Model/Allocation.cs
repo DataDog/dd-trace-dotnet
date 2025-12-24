@@ -11,4 +11,4 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal sealed record Allocation(string Key);
+internal readonly record struct Allocation(string Key);

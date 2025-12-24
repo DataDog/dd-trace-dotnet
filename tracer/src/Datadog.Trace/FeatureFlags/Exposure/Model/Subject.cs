@@ -11,4 +11,4 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal sealed record Subject(string Id, IDictionary<string, object?> Attributes);
+internal readonly record struct Subject(string Id, IDictionary<string, object?> Attributes);

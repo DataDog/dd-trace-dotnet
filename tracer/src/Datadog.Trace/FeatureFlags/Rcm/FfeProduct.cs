@@ -57,15 +57,15 @@ internal sealed class FfeProduct
                     }
                 }
             }
+
+            if (apply)
+            {
+                _onNewConfig?.Invoke(_serverConfigurations);
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error while updating FFE RCM config");
-        }
-
-        if (apply)
-        {
-            _onNewConfig?.Invoke(_serverConfigurations);
         }
 
         return [.. res];
