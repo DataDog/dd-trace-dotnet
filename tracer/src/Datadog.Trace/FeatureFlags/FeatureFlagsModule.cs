@@ -23,31 +23,29 @@ namespace Datadog.Trace.FeatureFlags
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
-        private ISubscription? _rcmSubscription = null;
-        private FfeProduct? _ffeProduct = null;
-        private Action? _onNewConfigEventHander = null;
-        private ExposureApi? _exposureApi = null;
+        private readonly ISubscription _rcmSubscription;
+        private readonly FfeProduct _ffeProduct;
+        private readonly ExposureApi _exposureApi;
 
+        private Action? _onNewConfigEventHander = null;
         private FeatureFlagsEvaluator? _evaluator = null;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
             Log.Debug("FeatureFlagsModule ENABLED");
-            _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
-            _exposureApi = ExposureApi.Create(settings);
+            _rcmSubscriptionManager = rcmSubscriptionManager;
+            _exposureApi = new ExposureApi(settings);
             _ffeProduct = new FfeProduct(UpdateRemoteConfig);
-            if (Interlocked.Exchange(ref _rcmSubscription, new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags)) == null)
-            {
-                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
-                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
-            }
+            _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
+            _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
+            _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
         }
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
             if (settings.IsFlaggingProviderEnabled)
             {
-                return new FeatureFlagsModule(settings, rcmSubscriptionManager ?? RcmSubscriptionManager.Instance);
+                return new FeatureFlagsModule(settings, rcmSubscriptionManager);
             }
 
             return null;
@@ -55,7 +53,7 @@ namespace Datadog.Trace.FeatureFlags
 
         public void Dispose()
         {
-            _exposureApi?.Dispose();
+            _exposureApi.Dispose();
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
@@ -65,14 +63,15 @@ namespace Datadog.Trace.FeatureFlags
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, IEvaluationContext? context)
         {
-            if (_evaluator is null)
+            var evaluator = Volatile.Read(ref _evaluator);
+            if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
                 return new Evaluation(flagKey, null, EvaluationReason.Error, null, "No config loaded");
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return _evaluator.Evaluate(flagKey, resultType, defaultValue, context);
+            return evaluator.Evaluate(flagKey, resultType, defaultValue, context);
         }
 
         private void UpdateRemoteConfig(List<KeyValuePair<string, ServerConfiguration>> list)

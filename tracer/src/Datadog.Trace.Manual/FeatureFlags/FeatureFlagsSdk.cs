@@ -32,16 +32,16 @@ public static class FeatureFlagsSdk
     }
 
     /// <summary>
-    /// Sets the details of a successful login on the local root span
+    /// Returns the evaluation of the requested flag key
     /// </summary>
     /// <returns> Returns the evaluation result </returns>
-    /// <param name="key">The feature flag key to evaluate</param>
+    /// <param name="flagKey">The feature flag key to evaluate</param>
     /// <param name="targetType">The desired result type</param>
     /// <param name="defaultValue">The default value</param>
     /// <param name="context">The evaluation context</param>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static IEvaluation? Evaluate(string key, ValueType targetType, object? defaultValue, IEvaluationContext? context)
+    public static IEvaluation? Evaluate(string flagKey, ValueType targetType, object? defaultValue, IEvaluationContext? context)
     {
         return null;
     }

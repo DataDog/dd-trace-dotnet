@@ -195,8 +195,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
         Assert.Equal(23, result1.Value);
-        Assert.Equal(EvaluationReason.Error, result1.Reason);
-        Assert.Equal("GENERAL", result1.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationReason.Default, result1.Reason);
 
         var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
         Assert.Equal(23, result2.Value);

@@ -5,7 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <Nullable>enable</Nullable>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.9.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.0</ApiVersion>
   </PropertyGroup>
 
   <ItemGroup>

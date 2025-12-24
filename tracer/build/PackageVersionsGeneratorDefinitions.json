@@ -968,10 +968,9 @@
     "IntegrationName": "OpenFeature",
     "SampleProjectName": "Samples.OpenFeature",
     "NugetPackageSearchName": "OpenFeature",
-    "MinVersion": "1.0.0",
+    "MinVersion": "2.0.0",
     "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
-      "1.0.*",
       "2.0.*",
       "2.10.*"
     ]
