@@ -1702,12 +1702,25 @@ stages:
         SampleName: $(IntegrationTestSampleName)
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: Run integration tests
+      displayName: Run integration tests (Tracer)
+      condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
+
+    - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
 
 #    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
 #    - script: docker compose -f docker-compose.windows.yml down
@@ -1839,11 +1852,23 @@ stages:
         SampleName: $(IntegrationTestSampleName)
 
     - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: RunWindowsIisTracerIntegrationTests
+      displayName: RunWindowsIisTracerIntegrationTests (Tracer)
+      condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
+
+    - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: RunWindowsIisTracerIntegrationTests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2264,7 +2289,26 @@ stages:
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
-      displayName: docker-compose run IntegrationTests
+      displayName: docker-compose run IntegrationTests (Tracer)
+      condition: ne(variables['area'], 'ASM')
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --no-deps --rm \
+          -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          -e IncludeTestsRequiringDocker=false  \
+          -e Filter=$(IntegrationTestFilter) \
+          -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
+          IntegrationTests
+      displayName: docker-compose run IntegrationTests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
