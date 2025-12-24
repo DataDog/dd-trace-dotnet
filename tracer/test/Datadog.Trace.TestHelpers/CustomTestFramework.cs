@@ -181,15 +181,16 @@ namespace Datadog.Trace.TestHelpers
 
             private static bool IsParallelizationDisabled(ITestCollection collection)
             {
-                var attr = collection.CollectionDefinition?.GetCustomAttributes(typeof(CollectionDefinitionAttribute)).SingleOrDefault();
-                var isIntegrationTest = collection.DisplayName.Contains("Datadog.Trace.ClrProfiler.IntegrationTests");
+                return true;
+                // var attr = collection.CollectionDefinition?.GetCustomAttributes(typeof(CollectionDefinitionAttribute)).SingleOrDefault();
+                // var isIntegrationTest = collection.DisplayName.Contains("Datadog.Trace.ClrProfiler.IntegrationTests");
 
-                if (isIntegrationTest)
-                {
-                    return true;
-                }
+                // if (isIntegrationTest)
+                // {
+                //     return true;
+                // }
 
-                return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
+                // return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
             }
 
             private static void Shuffle<T>(IList<T> list, Random rng)
