@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,7 +17,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.dnlib;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -31,8 +31,8 @@ namespace Datadog.Trace.Exposure
         private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
         private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
-        private IApiRequestFactory? _apiRequestFactory;
-        private Dictionary<string, string>? _context;
+        private IApiRequestFactory _apiRequestFactory;
+        private Dictionary<string, string> _context;
         private int _started = 0;
 
         internal ExposureApi(TracerSettings tracerSettings)
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Exposure
                     AgentHttpHeaderNames.MinimalHeaders,
                     () => new MinimalAgentHeaderHelper(),
                     uri => uri);
-                Interlocked.Exchange(ref _apiRequestFactory, apiRequestFactory);
+                Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
             }
 
             [MemberNotNull(nameof(_context))]
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Exposure
                     { "env", settings.Environment ?? "unknown" },
                     { "version", settings.ServiceVersion ?? "unknown" }
                 };
-                Interlocked.Exchange(ref _context, context);
+                Interlocked.Exchange(ref _context!, context);
             }
         }
 
@@ -104,15 +104,12 @@ namespace Datadog.Trace.Exposure
                 try
                 {
                     var apiRequestFactory = _apiRequestFactory;
-                    if (apiRequestFactory is not null)
+                    var uri = apiRequestFactory.GetEndpoint(ExposurePath);
+                    if (_exposures.Count > 0)
                     {
-                        var uri = apiRequestFactory.GetEndpoint(ExposurePath);
-                        if (_exposures.Count > 0)
-                        {
-                            var request = apiRequestFactory.Create(uri);
-                            var payload = GetPayload();
-                            using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
-                        }
+                        var request = apiRequestFactory.Create(uri);
+                        var payload = GetPayload();
+                        using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
