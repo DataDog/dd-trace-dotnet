@@ -36,6 +36,50 @@
 
 
 
+
+## [Release 3.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.34.0)
+
+## Summary
+
+- [Tracing] Fix missing traces when using .NET Core 2.1 (#7955)
+- [Tracing] Don't inject into EventBridge when injection is disabled (#7919)
+- [Tracing] Bug fix for missing traces with some HotChocolate and Grpc integrations
+
+## Changes
+
+### Tracer
+* Don't use global statics where possible (#7939)
+* Don't use `System.Runtime.CompilerServices.Unsafe` in .NET Core 2.1 (#7955)
+
+### Continuous Profiler
+* [profiler] Refactor linux unwinder and remove unused one (#7917)
+
+### Fixes
+* Fix `System.InvalidCastException` in Grpc during Header Removal (#7975)
+* Fix HotChocolate duck typing error (#7930)
+* Restore null scope check to stop EventBridge injection (#7919)
+* fix(DSM): Fix race condition on DataStreamsWriter disposal (#7968)
+
+### Miscellaneous
+* [Profiler/Tracer] Bump to libdatadog v24.0.2 (#7560)
+* bump libdatadog version to v25 (#7971)
+* Downgrade DSM flush shutdown log from Error to Warning (#7984)
+* fix bug where process tags were never initialized for telemetry (#7954)
+
+### Build / Test
+* Add some documentation on updating Windows GitLab image for CI (#7782)
+* [Test Package Versions Bump] Updating package versions (#7942)
+* Update microbenchmarks to enable standard BP PR comments (#7952)
+* Pre-cache reference assemblies as package references in analyzers tests (#7959)
+* Add PR-level performance quality gates (#7967)
+* [Github] Add permission for the apm-sdks-benchmarks repo (#7972)
+* Fix sealed analyzer, and fix regressions (#7973)
+* Bump memory limit slightly (#7977)
+* [Test Package Versions Bump] Updating package versions (#7983)
+
+
+[Changes since 3.33.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.33.0...v3.34.0)
+
 ## [Release 3.33.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.33.0)
 
 ## Summary

@@ -16,6 +16,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public void SinkBatchesMultipleLogs()
         {
             using var mutex = new ManualResetEventSlim();

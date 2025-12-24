@@ -30,6 +30,8 @@ steps:
       echo "Adding remote $BUILD_REPOSITORY_URI ..."
       git remote add origin "$BUILD_REPOSITORY_URI"
       git config gc.auto 0
+      git config http.retry $(GIT_HTTP_RETRY)
+      git config http.retryDelay $(GIT_HTTP_RETRY_DELAY)
       git config --get-all http.$BUILD_REPOSITORY_URI.extraheader
       git config --get-all http.extraheader
       git config --get-regexp .*extraheader
@@ -104,6 +106,8 @@ steps:
       git remote add origin "$repoUri"
 
       git config gc.auto 0
+      git config http.retry $(GIT_HTTP_RETRY)
+      git config http.retryDelay $(GIT_HTTP_RETRY_DELAY)
       git config --get-all http.$repoUri.extraheader
       git config --get-all http.extraheader
       git config --get-regexp .*extraheader

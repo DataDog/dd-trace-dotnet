@@ -6,6 +6,7 @@ parameters:
 steps:
 - task: UseDotNet@2
   displayName: install dotnet core ${{ parameters.packageType }} 2.1
+  condition: not(and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['Agent.OSArchitecture'], 'ARM64'))) # not available on macos ARM64
   inputs:
     packageType: ${{ parameters.packageType }}
     version: 2.1.x
@@ -13,6 +14,7 @@ steps:
 
 - task: UseDotNet@2
   displayName: install dotnet core ${{ parameters.packageType }} 3.0
+  condition: not(and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['Agent.OSArchitecture'], 'ARM64'))) # not available on macos ARM64
   inputs:
     packageType: ${{ parameters.packageType }}
     version: 3.0.x
@@ -20,6 +22,7 @@ steps:
 
 - task: UseDotNet@2
   displayName: install dotnet core ${{ parameters.packageType }} 3.1
+  condition: not(and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['Agent.OSArchitecture'], 'ARM64'))) # not available on macos ARM64
   inputs:
     packageType: ${{ parameters.packageType }}
     version: 3.1.x
@@ -27,6 +30,7 @@ steps:
 
 - task: UseDotNet@2
   displayName: install dotnet core ${{ parameters.packageType }} 5.0
+  condition: not(and(eq(variables['Agent.OS'], 'Darwin'), eq(variables['Agent.OSArchitecture'], 'ARM64'))) # not available on macos ARM64
   inputs:
     packageType: ${{ parameters.packageType }}
     version: 5.0.x
