@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.FeatureFlags;
@@ -32,5 +33,16 @@ class Evaluator
         }
 
         return (evaluation.Value as string, evaluation.Error);
+    }
+
+    class EvaluationContext(string key, IDictionary<string, object?>? values = null)
+        : IEvaluationContext
+    {
+        public string TargetingKey { get; } = key;
+
+        public IDictionary<string, object?> Attributes { get; } = values ?? new Dictionary<string, object?>();
+
+        public object? GetAttribute(string key)
+            => Attributes.TryGetValue(key, out var res) ? res : null;
     }
 }

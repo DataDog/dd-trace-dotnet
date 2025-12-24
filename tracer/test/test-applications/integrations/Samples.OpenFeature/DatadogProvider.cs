@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.FeatureFlags;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -91,7 +92,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         return Task.FromResult(GetResolutionDetails<Value>(res));
     }
 
-    private static Datadog.Trace.FeatureFlags.IEvaluationContext? GetContext(EvaluationContext? context)
+    private static IEvaluationContext? GetContext(EvaluationContext? context)
     {
         if (context == null) 
         {
@@ -99,7 +100,7 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
         }
 
         var values = context.AsDictionary().Select(p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(p => p.Key, p => p.Value);
-        var res = new Datadog.Trace.FeatureFlags.EvaluationContext(context.TargetingKey ?? string.Empty, values);
+        var res = new Context(context.TargetingKey ?? string.Empty, values);
         return res;
     }
 
@@ -157,5 +158,16 @@ public class DatadogProvider : global::OpenFeature.FeatureProvider
     {
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p =>  p.Key, p => (object)p.Value);
         return new ImmutableMetadata(dic);
+    }
+
+    class Context(string key, IDictionary<string, object?>? values = null)
+        : IEvaluationContext
+    {
+        public string TargetingKey { get; } = key;
+
+        public IDictionary<string, object?> Attributes { get; } = values ?? new Dictionary<string, object?>();
+
+        public object? GetAttribute(string key)
+            => Attributes.TryGetValue(key, out var res) ? res : null;
     }
 }
