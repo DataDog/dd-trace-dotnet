@@ -105,10 +105,10 @@ namespace Datadog.Trace.Exposure
                 {
                     var apiRequestFactory = _apiRequestFactory;
                     var uri = apiRequestFactory.GetEndpoint(ExposurePath);
-                    if (_exposures.Count > 0)
+                    var payload = TryGetPayload();
+                    if (payload.Count != 0)
                     {
                         var request = apiRequestFactory.Create(uri);
-                        var payload = GetPayload();
                         using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
                     }
                 }
@@ -130,17 +130,23 @@ namespace Datadog.Trace.Exposure
             }
         }
 
-        private ArraySegment<byte> GetPayload()
+        private ArraySegment<byte> TryGetPayload()
         {
-            ExposuresRequest request;
+            List<ExposureEvent> exposures;
             lock (_exposures)
             {
-                List<ExposureEvent> exposures = [.. _exposures];
+                if (_exposures.Count == 0)
+                {
+                    // nothing to do, skip send
+                    return default;
+                }
+
+                exposures = [.. _exposures];
                 _exposures.Clear();
-                request = new ExposuresRequest(_context!, exposures);
             }
 
-            string json = JsonConvert.SerializeObject(request);
+            var request = new ExposuresRequest(_context, exposures);
+            var json = JsonConvert.SerializeObject(request);
             return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
         }
 
@@ -149,8 +155,9 @@ namespace Datadog.Trace.Exposure
             lock (_exposures)
             {
                 _exposures.Enqueue(exposure);
-                TryToStartSendLoopIfNotStarted();
             }
+
+            TryToStartSendLoopIfNotStarted();
         }
 
         private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)
