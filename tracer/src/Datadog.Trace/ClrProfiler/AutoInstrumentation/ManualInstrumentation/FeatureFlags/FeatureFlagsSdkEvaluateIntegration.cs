@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     TypeName = "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
     MethodName = "Evaluate",
     ReturnTypeName = "Datadog.Trace.FeatureFlags.IEvaluation",
-    ParameterTypeNames = [ClrNames.String, "Datadog.Trace.FeatureFlags.ValueType", ClrNames.Object, "Datadog.Trace.FeatureFlags.IEvaluationContext"],
+    ParameterTypeNames = [ClrNames.String, "Datadog.Trace.FeatureFlags.ValueType", ClrNames.Object, ClrNames.String, "System.Collections.Generic.IDictionary`2[System.String,System.Object]"],
     MinimumVersion = "3.31.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
@@ -31,19 +32,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FeatureFlagsSdkEvaluateIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTargetType, TContext>(ref string key, ref TTargetType targetType, ref object? defaultValue, ref TContext? context)
+    internal static CallTargetState OnMethodBegin<TTarget, TTargetType>(ref string flagKey, ref TTargetType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
-        return new CallTargetState(null, new State(key, (FeatureFlags.ValueType)(Convert.ToInt32(targetType)), defaultValue, context));
+        return new CallTargetState(null, new State(flagKey, (FeatureFlags.ValueType)(Convert.ToInt32(targetType)), defaultValue, targetingKey, attributes));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         var parameters = (State)state.State!;
-        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.Key, parameters.TargetType, parameters.DefaultValue, parameters.Context.DuckCast<IEvaluationContext>());
+        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
-    private sealed record State(string Key, FeatureFlags.ValueType TargetType, object? DefaultValue, object? Context)
+    private sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)
     {
     }
 }

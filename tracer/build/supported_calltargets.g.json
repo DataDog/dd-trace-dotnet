@@ -6692,7 +6692,8 @@
       "System.String",
       "Datadog.Trace.FeatureFlags.ValueType",
       "System.Object",
-      "Datadog.Trace.FeatureFlags.IEvaluationContext"
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,

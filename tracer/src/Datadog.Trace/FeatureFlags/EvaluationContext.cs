@@ -14,10 +14,7 @@ namespace Datadog.Trace.FeatureFlags
     /// <summary> Standard implementation of a EvaluationContext </summary>
     /// <param name="key"> Targeting Key </param>
     /// <param name="values"> Context optional parameters </param>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [Browsable(false)]
     internal sealed class EvaluationContext(string key, IDictionary<string, object?>? values = null)
-        : IEvaluationContext
     {
         /// <summary> Gets the Context Targeting Key </summary>
         public string TargetingKey { get; } = key;
