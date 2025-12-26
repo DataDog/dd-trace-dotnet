@@ -3,11 +3,14 @@
 #ifdef _WIN32
 #include <windows.h>
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define HINST_THISCOMPONENT ((HINSTANCE) &__ImageBase)
+#define HINST_THISCOMPONENT ((HINSTANCE) & __ImageBase)
 #else
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #endif
+
+#include <algorithm>
+#include <optional>
 
 #include "../../../shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
@@ -26,13 +29,26 @@ static fs::path GetCurrentModuleFolderPath()
     }
 #else
     Dl_info info;
-    if (dladdr((void*)GetCurrentModuleFolderPath, &info))
+    if (dladdr((void*) GetCurrentModuleFolderPath, &info))
     {
         return fs::path(info.dli_fname).remove_filename();
     }
 #endif
     return {};
 }
+#ifdef _WIN32
+static fs::path GetPoliciesPath()
+{
+    fs::path program_data_path = shared::GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    return program_data_path / "Datadog" / "user-wls-policy.bin";
+}
+#endif
 
 static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 {
@@ -78,10 +94,42 @@ static fs::path GetConfigurationFilePath()
     return GetCurrentModuleFolderPath() / conf_filename;
 }
 
+inline bool IsSingleStepInstrumentation()
+{
+    const auto isSingleStepVariable = ::shared::GetEnvironmentValue(environment::single_step_instrumentation_enabled);
+    return !isSingleStepVariable.empty();
+}
+
 inline bool IsRunningOnIIS()
 {
     const auto& process_name = ::shared::GetCurrentProcessName();
     return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
+}
+
+inline std::optional<::shared::WSTRING> GetApplicationPool()
+{
+    if (const auto& app_pool_id = ::shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id);
+        !app_pool_id.empty())
+    {
+        return app_pool_id;
+    }
+
+    // Try to infer the Application Pool from the command line. w3wp.exe (IIS Worker Process)
+    // can be started with an Application Pool by using `-ap` argument.
+    const auto [_, argv] = ::shared::GetCurrentProcessCommandLine();
+    auto it = std::find(argv.cbegin(), argv.cend(), WStr("-ap"));
+    if (it == argv.cend())
+    {
+        return std::nullopt;
+    }
+
+    it = std::next(it);
+    if (it == argv.cend() || it->empty())
+    {
+        return std::nullopt;
+    }
+
+    return *it;
 }
 
 inline std::string GetCurrentOsArch(bool isRunningOnAlpine)
