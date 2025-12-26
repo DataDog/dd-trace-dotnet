@@ -56,7 +56,7 @@ namespace Datadog.Trace.Configuration
 
             if (string.IsNullOrEmpty(apiKey))
             {
-                Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
+                Log.ErrorSkipTelemetry("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
                 IsUnsafeToTrace = true;
             }
 
