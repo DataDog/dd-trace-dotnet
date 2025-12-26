@@ -963,5 +963,16 @@
       "4.20.*",
       "4.*.*"
     ]
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "SampleProjectName": "Samples.OpenFeature",
+    "NugetPackageSearchName": "OpenFeature",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "2.0.*",
+      "2.10.*"
+    ]
   }
 ]

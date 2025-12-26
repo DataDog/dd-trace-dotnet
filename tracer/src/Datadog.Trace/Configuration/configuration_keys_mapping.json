@@ -833,6 +833,10 @@
       "const_name": "InjectContextIntoStoredProceduresEnabled"
     },
     {
+      "env_var": "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED",
+      "const_name": "FlaggingProviderEnabled"
+    },
+    {
       "env_var": "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED",
       "const_name": "KafkaCreateConsumerScopeEnabled"
     },

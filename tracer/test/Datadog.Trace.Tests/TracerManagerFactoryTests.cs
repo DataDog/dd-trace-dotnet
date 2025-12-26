@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
+// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -143,7 +143,8 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
-            spanEventsManager: null);
+            spanEventsManager: null,
+            featureFlags: null);
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(

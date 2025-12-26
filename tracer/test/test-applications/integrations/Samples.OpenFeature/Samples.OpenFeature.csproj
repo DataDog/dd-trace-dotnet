@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Nullable>enable</Nullable>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.0</ApiVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Samples.FeatureFlags\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenFeature" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+  </ItemGroup>
+
+</Project>
