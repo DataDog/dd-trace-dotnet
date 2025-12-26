@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -429,7 +430,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Core 3.0 or lower", "incompatible_runtime");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson,  "abort", ".NET Core 3.0 or lower", "incompatible_runtime");
         }
 
         [SkippableFact]
@@ -460,7 +461,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET Core 3.0 or lower", "success_forced");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET Core 3.0 or lower", "success_forced");
         }
 
 #endif
@@ -499,7 +500,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
         }
 
         [SkippableFact]
@@ -532,7 +533,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
         }
 
         [SkippableFact]
@@ -589,7 +590,7 @@ namespace Foo
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured automatic instrumentation", "success");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Successfully configured automatic instrumentation", "success");
         }
 
         [SkippableFact]
@@ -792,10 +793,21 @@ namespace Foo
             nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
         }
 
-        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson, string injectResult, string injectResultReason, string injectResultClass)
+        private async Task AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson, string injectResult, string injectResultReason, string injectResultClass)
         {
             using var s = new AssertionScope();
-            File.Exists(echoLogFileName).Should().BeTrue();
+
+            // Wait for the telemetry echo file to be written (with timeout)
+            // The telemetry forwarder may write the file asynchronously after process exit
+            var fileWaitTimeout = TimeSpan.FromSeconds(10);
+            var fileWaitStart = DateTime.UtcNow;
+            while (!File.Exists(echoLogFileName) && (DateTime.UtcNow - fileWaitStart) < fileWaitTimeout)
+            {
+                await Task.Delay(100);
+            }
+
+            File.Exists(echoLogFileName).Should().BeTrue($"Telemetry echo file should exist at {echoLogFileName} within {fileWaitTimeout.TotalSeconds} seconds");
+
             var echoLogContent = File.ReadAllText(echoLogFileName);
             s.AddReportable(echoLogFileName, echoLogContent);
 
