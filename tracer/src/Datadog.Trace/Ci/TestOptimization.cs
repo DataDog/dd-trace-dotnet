@@ -75,10 +75,7 @@ internal sealed class TestOptimization : ITestOptimization
         }
     }
 
-    public string RunId
-    {
-        get => _runId ??= EnsureRunId();
-    }
+    public string RunId => EnsureRunId();
 
     public bool Enabled => _enablement.IsEnabled;
 
@@ -285,7 +282,7 @@ internal sealed class TestOptimization : ITestOptimization
         // We can use the intelligent test runner
         if (settings.Agentless || eventPlatformProxyEnabled)
         {
-            var additionalFeaturesTask = InitializeAdditionalFeaturesAsync();
+            var additionalFeaturesTask = Task.Run(() => InitializeAdditionalFeaturesAsync());
             _additionalFeaturesTask = additionalFeaturesTask;
             LifetimeManager.Instance.AddAsyncShutdownTask(_ => additionalFeaturesTask);
         }
@@ -456,8 +453,13 @@ internal sealed class TestOptimization : ITestOptimization
     private static TestOptimizationDetection.Enablement InternalEnabled(IDatadogLogger log)
         => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log);
 
-    private string EnsureRunId()
+    internal string EnsureRunId(string? baseDirectory = null)
     {
+        if (_runId is not null)
+        {
+            return _runId;
+        }
+
         const string testOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
         if (EnvironmentHelpers.GetEnvironmentVariable(testOptimizationRunId) is not { } runId)
         {
@@ -466,7 +468,7 @@ internal sealed class TestOptimization : ITestOptimization
 
             try
             {
-                var cacheFolder = Path.Combine(CIValues.WorkspacePath ?? Environment.CurrentDirectory, ".dd", runId);
+                var cacheFolder = Path.Combine(baseDirectory ?? CIValues.WorkspacePath ?? Environment.CurrentDirectory, ".dd", runId);
                 Log.Debug("TestOptimization: Creating cache folder: {Folder}", cacheFolder);
                 if (!Directory.Exists(cacheFolder))
                 {
@@ -495,7 +497,7 @@ internal sealed class TestOptimization : ITestOptimization
             }
         }
 
-        return runId;
+        return _runId = runId;
     }
 
     private async Task ShutdownAsync(Exception? exception)

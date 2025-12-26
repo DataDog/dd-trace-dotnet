@@ -42,10 +42,20 @@ internal static class GitCommandHelper
     {
         using var cd = CodeDurationRef.Create();
         string? cacheKey = null;
-        workingDirectory ??= CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory ?? Environment.CurrentDirectory;
+        workingDirectory ??= CIEnvironmentValues.Instance.SourceRoot ?? Environment.CurrentDirectory;
         if (useCache && string.IsNullOrEmpty(input))
         {
-            var cacheFolder = Path.Combine(CIEnvironmentValues.Instance.WorkspacePath ?? workingDirectory, ".dd", TestOptimization.Instance.RunId, "git");
+            string runId;
+            if (TestOptimization.Instance is TestOptimization { } tOpt)
+            {
+                runId = tOpt.EnsureRunId(workingDirectory);
+            }
+            else
+            {
+                runId = TestOptimization.Instance.RunId;
+            }
+
+            var cacheFolder = Path.Combine(workingDirectory, ".dd", runId, "git");
             try
             {
                 if (!Directory.Exists(cacheFolder))

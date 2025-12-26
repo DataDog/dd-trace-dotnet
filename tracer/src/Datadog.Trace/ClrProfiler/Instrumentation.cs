@@ -121,6 +121,8 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
+            using var cd = CodeDurationRef.Create();
+
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
@@ -131,10 +133,10 @@ namespace Datadog.Trace.ClrProfiler
             {
                 TracerDebugger.WaitForDebugger();
 
-                var swTotal = Stopwatch.StartNew();
+                var swTotal = RefStopwatch.Create();
                 Log.Debug("Initialization started.");
 
-                var sw = Stopwatch.StartNew();
+                var sw = RefStopwatch.Create();
 
                 bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
                 if (versionMismatch)
@@ -143,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    InitializeNoNativeParts(sw);
+                    InitializeNoNativeParts(ref sw);
 
                     try
                     {
@@ -194,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler
                     TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
                     sw.Restart();
 
-                    InitializeTracer(sw);
+                    InitializeTracer(ref sw);
                 }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
@@ -261,7 +263,7 @@ namespace Datadog.Trace.ClrProfiler
             NativeCallTargetUnmanagedMemoryHelper.Free();
         }
 
-        internal static void InitializeNoNativeParts(Stopwatch sw = null)
+        internal static void InitializeNoNativeParts(ref RefStopwatch sw)
         {
             if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
             {
@@ -421,14 +423,11 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
             }
 
-            if (sw != null)
-            {
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
-                sw.Restart();
-            }
+            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
+            sw.Restart();
         }
 
-        private static void InitializeTracer(Stopwatch sw)
+        private static void InitializeTracer(ref RefStopwatch sw)
         {
             var tracer = Tracer.Instance;
             if (tracer is null)

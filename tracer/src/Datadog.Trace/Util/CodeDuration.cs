@@ -42,6 +42,15 @@ internal readonly struct CodeDuration : IDisposable
         return new(memberName, sourceFilePath, sourceLineNumber);
     }
 
+    public void Debug(string message)
+    {
+        if (_started > 0)
+        {
+            var value = $"[CodeDuration - Message: {message} | {StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds}ms | {_memberName} | {_sourceFilePath}:{_sourceLineNumber}]";
+            Log.Debug("{Value}", value);
+        }
+    }
+
     public void Dispose()
     {
         if (_started > 0)
@@ -83,6 +92,15 @@ internal readonly ref struct CodeDurationRef
     public static CodeDurationRef Create([CallerMemberName] string memberName = "", [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
     {
         return new(memberName, sourceFilePath, sourceLineNumber);
+    }
+
+    public void Debug(string message)
+    {
+        if (_started > 0)
+        {
+            var value = $"[CodeDuration - Message: {message} | {StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds}ms | {_memberName} | {_sourceFilePath}:{_sourceLineNumber}]";
+            Log.Debug("{Value}", value);
+        }
     }
 
     public void Dispose()

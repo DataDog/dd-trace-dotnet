@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -23,6 +24,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
     protected override bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
+        using var cd = CodeDurationRef.Create();
         var localGitInfo = new GitInfo
         {
             SourceRoot = gitDirectory.Parent?.FullName
@@ -33,12 +35,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
         try
         {
             // Ensure we have permissions to read the git directory
-            var safeDirectory = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: $"config --global --add safe.directory {gitDirectory.FullName}",
-                    workingDirectory: gitDirectory.FullName,
-                    useWhereIsIfFileNotFound: true));
+            var safeDirectory = GitCommandHelper.RunGitCommand(
+                localGitInfo.SourceRoot,
+                $"config --global --add safe.directory {gitDirectory.FullName}",
+                MetricTags.CIVisibilityCommands.SafeDirectory);
             if (safeDirectory?.ExitCode != 0)
             {
                 localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory?.Error}");
@@ -46,12 +46,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
             if (gitDirectory.Parent is not null)
             {
-                var safeDirectory2 = ProcessHelpers.RunCommand(
-                    new ProcessHelpers.Command(
-                        cmd: "git",
-                        arguments: $"config --global --add safe.directory {gitDirectory.Parent.FullName}",
-                        workingDirectory: gitDirectory.FullName,
-                        useWhereIsIfFileNotFound: true));
+                var safeDirectory2 = GitCommandHelper.RunGitCommand(
+                    localGitInfo.SourceRoot,
+                    $"config --global --add safe.directory {gitDirectory.Parent.FullName}",
+                    MetricTags.CIVisibilityCommands.SafeDirectory);
                 if (safeDirectory2?.ExitCode != 0)
                 {
                     localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory2?.Error}");
@@ -59,12 +57,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Get the repository URL
-            var repositoryOutput = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: "ls-remote --get-url",
-                    workingDirectory: gitDirectory.FullName,
-                    useWhereIsIfFileNotFound: true));
+            var repositoryOutput = GitCommandHelper.RunGitCommand(
+                localGitInfo.SourceRoot,
+                "ls-remote --get-url",
+                MetricTags.CIVisibilityCommands.GetRepository);
             if (repositoryOutput?.ExitCode == 0)
             {
                 localGitInfo.Repository = repositoryOutput.Output.Trim();
@@ -75,12 +71,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Get the branch name
-            var branchOutput = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: "rev-parse --abbrev-ref HEAD",
-                    workingDirectory: gitDirectory.FullName,
-                    useWhereIsIfFileNotFound: true));
+            var branchOutput = GitCommandHelper.RunGitCommand(
+                localGitInfo.SourceRoot,
+                "rev-parse --abbrev-ref HEAD",
+                MetricTags.CIVisibilityCommands.GetBranch);
             if (branchOutput?.ExitCode == 0 && branchOutput.Output.Trim() is { Length: > 0 } branchName && branchName != "HEAD")
             {
                 localGitInfo.Branch = branchName;
@@ -91,12 +85,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Get the remaining data from the log -1
-            var gitLogOutput = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: """log -1 --pretty='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""",
-                    workingDirectory: gitDirectory.FullName,
-                    useWhereIsIfFileNotFound: true));
+            var gitLogOutput = GitCommandHelper.RunGitCommand(
+                localGitInfo.SourceRoot,
+                """log -1 --pretty='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""",
+                MetricTags.CIVisibilityCommands.Fetch);
             if (gitLogOutput?.ExitCode != 0)
             {
                 localGitInfo.Errors.Add($"Error getting git log: {gitLogOutput?.Error}");
