@@ -14,7 +14,7 @@ internal sealed class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimiza
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationEarlyFlakeDetectionFeature));
 
-    private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
     {
         EarlyFlakeDetectionSettings = clientSettingsResponse.EarlyFlakeDetection;
 
@@ -36,6 +36,6 @@ internal sealed class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimiza
 
     public TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
-    public static ITestOptimizationEarlyFlakeDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
-        => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
+    public static ITestOptimizationEarlyFlakeDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
+        => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse);
 }

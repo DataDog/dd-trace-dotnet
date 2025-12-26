@@ -98,7 +98,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
             _buffersArray[i].SetFlushTask(tskFlush);
         }
 
-        Log.Information<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
+        Log.Debug<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
     }
 
     public void WriteEvent(IEvent @event)

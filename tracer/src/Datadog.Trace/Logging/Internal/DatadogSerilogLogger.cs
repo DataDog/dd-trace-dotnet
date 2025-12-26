@@ -11,6 +11,7 @@ using System.Threading;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Context;
 using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
@@ -24,6 +25,11 @@ namespace Datadog.Trace.Logging
         private static readonly object[] NoPropertyValues = Array.Empty<object>();
         private readonly ILogRateLimiter _rateLimiter;
         private ILogger _logger;
+        private FixedSizeArrayPool<object?>? _onePropertyBuffer;
+        private FixedSizeArrayPool<object?>? _twoPropertiesBuffer;
+        private FixedSizeArrayPool<object?>? _threePropertiesBuffer;
+        private FixedSizeArrayPool<object?>? _fourPropertiesBuffer;
+        private FixedSizeArrayPool<object?>? _fivePropertiesBuffer;
 
         public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter, FileLoggingConfiguration? fileLoggingConfiguration)
         {
@@ -52,6 +58,9 @@ namespace Datadog.Trace.Logging
 
         public void Debug<T0, T1, T2, T3>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Debug, exception: null, messageTemplate, property0, property1, property2, property3, sourceLine, sourceFile, skipTelemetry: false);
+
+        public void Debug<T0, T1, T2, T3, T4>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Debug, exception: null, messageTemplate, property0, property1, property2, property3, property4, sourceLine, sourceFile, skipTelemetry: false);
 
         public void Debug(string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Debug, exception: null, messageTemplate, args, sourceLine, sourceFile, skipTelemetry: false);
@@ -82,6 +91,12 @@ namespace Datadog.Trace.Logging
 
         public void Information<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, sourceLine, sourceFile, skipTelemetry: false);
+
+        public void Information<T0, T1, T2, T3>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, property3, sourceLine, sourceFile, skipTelemetry: false);
+
+        public void Information<T0, T1, T2, T3, T4>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, property3, property4, sourceLine, sourceFile, skipTelemetry: false);
 
         public void Information(string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Information, exception: null, messageTemplate, args, sourceLine, sourceFile, skipTelemetry: false);
@@ -202,8 +217,11 @@ namespace Datadog.Trace.Logging
         {
             if (_logger.IsEnabled(level))
             {
+                _onePropertyBuffer ??= new(1);
+                using var array = _onePropertyBuffer.Get();
+                array.Array[0] = property;
                 // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, [property], sourceLine, sourceFile, skipTelemetry);
+                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
             }
         }
 
@@ -211,8 +229,12 @@ namespace Datadog.Trace.Logging
         {
             if (_logger.IsEnabled(level))
             {
+                _twoPropertiesBuffer ??= new(2);
+                using var array = _twoPropertiesBuffer.Get();
+                array.Array[0] = property0;
+                array.Array[1] = property1;
                 // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1], sourceLine, sourceFile, skipTelemetry);
+                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
             }
         }
 
@@ -220,8 +242,13 @@ namespace Datadog.Trace.Logging
         {
             if (_logger.IsEnabled(level))
             {
+                _threePropertiesBuffer ??= new(3);
+                using var array = _threePropertiesBuffer.Get();
+                array.Array[0] = property0;
+                array.Array[1] = property1;
+                array.Array[2] = property2;
                 // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1, property2], sourceLine, sourceFile, skipTelemetry);
+                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
             }
         }
 
@@ -229,8 +256,30 @@ namespace Datadog.Trace.Logging
         {
             if (_logger.IsEnabled(level))
             {
+                _fourPropertiesBuffer ??= new(4);
+                using var array = _fourPropertiesBuffer.Get();
+                array.Array[0] = property0;
+                array.Array[1] = property1;
+                array.Array[2] = property2;
+                array.Array[3] = property3;
                 // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1, property2, property3], sourceLine, sourceFile, skipTelemetry);
+                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+            }
+        }
+
+        private void Write<T0, T1, T2, T3, T4>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, int sourceLine, string sourceFile, bool skipTelemetry)
+        {
+            if (_logger.IsEnabled(level))
+            {
+                _fivePropertiesBuffer ??= new(5);
+                using var array = _fivePropertiesBuffer.Get();
+                array.Array[0] = property0;
+                array.Array[1] = property1;
+                array.Array[2] = property2;
+                array.Array[3] = property3;
+                array.Array[4] = property4;
+                // Avoid boxing + array allocation if disabled
+                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
             }
         }
 

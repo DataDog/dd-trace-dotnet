@@ -84,8 +84,11 @@ namespace Datadog.Trace.Tools.Runner
                 processInfo.ArgumentList.Add(arg);
             }
 
+            Log.Debug("RunCiCommand.FileName: '{FileName}'", processInfo.FileName);
+            Log.Debug("RunCiCommand.Arguments: '{Arguments}'", string.Join(" ", processInfo.ArgumentList));
+            Log.Debug("RunCiCommand.WorkingDirectory: '{WorkingDirectory}'", processInfo.WorkingDirectory);
             var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
-            Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
+            Log.Debug<int>("RunCiCommand.ExitCode: {Value}", exitCode);
 
             if (!initResults.TestSkippingEnabled)
             {

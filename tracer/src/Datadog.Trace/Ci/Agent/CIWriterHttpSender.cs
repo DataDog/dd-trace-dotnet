@@ -34,7 +34,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     {
         _apiRequestFactory = apiRequestFactory;
         _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
-        Log.Information("CIWriterHttpSender Initialized.");
+        Log.Debug("CIWriterHttpSender Initialized.");
     }
 
     public Task SendPayloadAsync(EventPlatformPayload payload)
