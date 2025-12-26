@@ -53,6 +53,9 @@ namespace Datadog.Trace.Logging
         public void Debug<T0, T1, T2, T3>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Debug, exception: null, messageTemplate, property0, property1, property2, property3, sourceLine, sourceFile, skipTelemetry: false);
 
+        public void Debug<T0, T1, T2, T3, T4>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Debug, exception: null, messageTemplate, property0, property1, property2, property3, property4, sourceLine, sourceFile, skipTelemetry: false);
+
         public void Debug(string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Debug, exception: null, messageTemplate, args, sourceLine, sourceFile, skipTelemetry: false);
 
@@ -82,6 +85,12 @@ namespace Datadog.Trace.Logging
 
         public void Information<T0, T1, T2>(string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, sourceLine, sourceFile, skipTelemetry: false);
+
+        public void Information<T0, T1, T2, T3>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, property3, sourceLine, sourceFile, skipTelemetry: false);
+
+        public void Information<T0, T1, T2, T3, T4>(string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+            => Write(LogEventLevel.Information, exception: null, messageTemplate, property0, property1, property2, property3, property4, sourceLine, sourceFile, skipTelemetry: false);
 
         public void Information(string messageTemplate, object?[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Information, exception: null, messageTemplate, args, sourceLine, sourceFile, skipTelemetry: false);
@@ -231,6 +240,15 @@ namespace Datadog.Trace.Logging
             {
                 // Avoid boxing + array allocation if disabled
                 WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1, property2, property3], sourceLine, sourceFile, skipTelemetry);
+            }
+        }
+
+        private void Write<T0, T1, T2, T3, T4>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, int sourceLine, string sourceFile, bool skipTelemetry)
+        {
+            if (_logger.IsEnabled(level))
+            {
+                // Avoid boxing + array allocation if disabled
+                WriteIfNotRateLimited(level, exception, messageTemplate, [property0, property1, property2, property3, property4], sourceLine, sourceFile, skipTelemetry);
             }
         }
 

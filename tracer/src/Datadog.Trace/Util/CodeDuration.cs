@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -17,22 +18,20 @@ internal readonly struct CodeDuration : IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CodeDuration));
     private readonly long _started;
+    private readonly string? _prefix;
     private readonly string? _memberName;
     private readonly string? _sourceFilePath;
     private readonly int _sourceLineNumber;
 
     private CodeDuration(string memberName, string sourceFilePath, int sourceLineNumber)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (Log.IsEnabled(LogEventLevel.Information))
         {
+            _prefix = new string(' ', (Interlocked.Increment(ref CodeDurationBase.Count) - 1) * 4);
             _memberName = memberName;
             _sourceFilePath = sourceFilePath;
             _sourceLineNumber = sourceLineNumber;
-            Log.Debug<string?, string?, int>(
-                "[CodeDuration - Start: {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
-                _memberName,
-                _sourceFilePath,
-                _sourceLineNumber);
+            Log.Information<string?, string?, string?, int>("{Prefix}[CodeDuration - Start: {MemberName} | {SourceFilePath}:{SourceLineNumber}]", _prefix, _memberName, _sourceFilePath, _sourceLineNumber);
             _started = Stopwatch.GetTimestamp();
         }
     }
@@ -46,8 +45,12 @@ internal readonly struct CodeDuration : IDisposable
     {
         if (_started > 0)
         {
-            var value = $"[CodeDuration - Message: {message} | {StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds}ms | {_memberName} | {_sourceFilePath}:{_sourceLineNumber}]";
-            Log.Debug("{Value}", value);
+            Log.Information<string?, string?, double, string?>(
+                "{Prefix}[CodeDuration - Message: {Message} | {Duration}ms | {MemberName}]",
+                _prefix,
+                message,
+                StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds,
+                _memberName);
         }
     }
 
@@ -55,12 +58,14 @@ internal readonly struct CodeDuration : IDisposable
     {
         if (_started > 0)
         {
-            Log.Debug<double, string?, string?, int>(
-                "[CodeDuration - End: {Milliseconds}ms | {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
+            Log.Information<string?, double, string?, string?, int>(
+                "{Prefix}[CodeDuration - End: {Duration}ms | {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
+                _prefix,
                 StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds,
                 _memberName,
                 _sourceFilePath,
                 _sourceLineNumber);
+            Interlocked.Decrement(ref CodeDurationBase.Count);
         }
     }
 }
@@ -69,22 +74,20 @@ internal readonly ref struct CodeDurationRef
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CodeDurationRef));
     private readonly long _started;
+    private readonly string? _prefix;
     private readonly string? _memberName;
     private readonly string? _sourceFilePath;
     private readonly int _sourceLineNumber;
 
     private CodeDurationRef(string memberName, string sourceFilePath, int sourceLineNumber)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (Log.IsEnabled(LogEventLevel.Information))
         {
+            _prefix = new string(' ', (Interlocked.Increment(ref CodeDurationBase.Count) - 1) * 4);
             _memberName = memberName;
             _sourceFilePath = sourceFilePath;
             _sourceLineNumber = sourceLineNumber;
-            Log.Debug<string?, string?, int>(
-                "[CodeDuration - Start: {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
-                _memberName,
-                _sourceFilePath,
-                _sourceLineNumber);
+            Log.Information<string?, string?, string?, int>("{Prefix}[CodeDuration - Start: {MemberName} | {SourceFilePath}:{SourceLineNumber}]", _prefix, _memberName, _sourceFilePath, _sourceLineNumber);
             _started = Stopwatch.GetTimestamp();
         }
     }
@@ -98,8 +101,12 @@ internal readonly ref struct CodeDurationRef
     {
         if (_started > 0)
         {
-            var value = $"[CodeDuration - Message: {message} | {StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds}ms | {_memberName} | {_sourceFilePath}:{_sourceLineNumber}]";
-            Log.Debug("{Value}", value);
+            Log.Information<string?, string?, double, string?>(
+                "{Prefix}[CodeDuration - Message: {Message} | {Duration}ms | {MemberName}]",
+                _prefix,
+                message,
+                StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds,
+                _memberName);
         }
     }
 
@@ -107,12 +114,21 @@ internal readonly ref struct CodeDurationRef
     {
         if (_started > 0)
         {
-            Log.Debug<double, string?, string?, int>(
-                "[CodeDuration - End: {Milliseconds}ms | {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
+            Log.Information<string?, double, string?, string?, int>(
+                "{Prefix}[CodeDuration - End: {Duration}ms | {MemberName} | {SourceFilePath}:{SourceLineNumber}]",
+                _prefix,
                 StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started).TotalMilliseconds,
                 _memberName,
                 _sourceFilePath,
                 _sourceLineNumber);
+            Interlocked.Decrement(ref CodeDurationBase.Count);
         }
     }
+}
+
+internal static class CodeDurationBase
+{
+#pragma warning disable SA1401
+    public static int Count;
+#pragma warning restore SA1401
 }

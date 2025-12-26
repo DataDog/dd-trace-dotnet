@@ -253,6 +253,8 @@ internal sealed class TestOptimization : ITestOptimization
                 recheckIntervalMs: int.MaxValue),
             useLockedTracerManager: DefaultUseLockedTracerManager);
 
+        cd.Debug("TracerManagement created");
+
         var eventPlatformProxyEnabled = TracerManagement.EventPlatformProxySupport != EventPlatformProxySupport.None;
         if (eventPlatformProxyEnabled)
         {
@@ -260,6 +262,7 @@ internal sealed class TestOptimization : ITestOptimization
         }
 
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
@@ -273,10 +276,14 @@ internal sealed class TestOptimization : ITestOptimization
                 settings: settings,
                 testOptimizationTracerManagement: TracerManagement,
                 enabledEventPlatformProxy: eventPlatformProxyEnabled));
+        cd.Debug("Replace Global Manager");
+
         _ = Tracer.Instance;
+        cd.Debug("Tracer initialization");
 
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
+        cd.Debug("FrameworkDescription initialization");
 
         // If we are running in agentless mode or the agent support the event platform proxy endpoint.
         // We can use the intelligent test runner
@@ -298,6 +305,8 @@ internal sealed class TestOptimization : ITestOptimization
             Client = new NoopTestOptimizationClient();
             InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
         }
+
+        cd.Debug("Additional features initialization");
 
         static void PropagateCiVisibilityEnvironmentVariable()
         {
