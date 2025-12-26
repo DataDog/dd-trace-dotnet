@@ -83,6 +83,13 @@ public sealed class HandlerWrapperSetHandlerIntegration
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
                 requestId = proxyInstance.LambdaContext?.AwsRequestId;
+
+                // Set Lambda request ID as a span tag if available
+                if (scope?.Span != null && requestId != null)
+                {
+                    scope.Span.SetTag("request_id", (string)requestId);
+                    LambdaCommon.Log($"Set request_id tag: {requestId}");
+                }
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateBegin");
