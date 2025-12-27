@@ -31,6 +31,6 @@ private:
     std::unique_ptr<FileSaver> _fileSaver;
 
 public:
-    Success Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info);
+    Success Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info, std::string processTags);
 };
 } // namespace libdatadog

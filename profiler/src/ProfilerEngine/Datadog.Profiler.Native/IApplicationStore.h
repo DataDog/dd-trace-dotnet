@@ -12,6 +12,6 @@ class IApplicationStore
 public:
     virtual ApplicationInfo GetApplicationInfo(const std::string& runtimeId) = 0;
 
-    virtual void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) = 0;
+    virtual void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version, const std::string& processTags) = 0;
     virtual void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) = 0;
 };
