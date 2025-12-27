@@ -10,7 +10,6 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 
@@ -213,6 +212,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+            {
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
+                    property0: asyncState.ProbeData.ProbeId,
+                    property1: index,
+                    property2: typeof(TLocal).FullName);
+                }
+
+                return;
+            }
+
             var localVariableNames = asyncState.MethodMetadataInfo.LocalVariableNames;
             if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
             {
@@ -364,7 +377,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                Log.Warning(exception, "Error caused by our instrumentation");
+                Log.Warning(
+                    exception,
+                    "Error caused by our instrumentation. probeId={ProbeId}, Method={TypeName}.{MethodName}",
+                    property0: asyncState.ProbeId,
+                    property1: asyncState.MethodMetadataInfo.DeclaringType?.Name,
+                    property2: asyncState.MethodMetadataInfo.Method.Name);
                 asyncState.ProbeData.Processor.LogException(exception, asyncState.SnapshotCreator);
             }
             catch

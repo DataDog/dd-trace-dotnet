@@ -9,9 +9,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -150,6 +148,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref arg))
+            {
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "LogArg: Skipping null byref argument. probeId={ProbeId}, Index={Index}, TArg={TArg}",
+                    property0: state.ProbeData.ProbeId,
+                    property1: index,
+                    property2: typeof(TArg).FullName);
+                }
+
+                return;
+            }
+
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
             var captureInfo = new CaptureInfo<TArg>(state.MethodMetadataIndex, value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
             var probeData = state.ProbeData;
@@ -174,6 +186,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             if (!state.IsActive)
             {
+                return;
+            }
+
+            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+            {
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
+                    property0: state.ProbeData.ProbeId,
+                    property1: index,
+                    property2: typeof(TLocal).FullName);
+                }
+
                 return;
             }
 
@@ -338,7 +364,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                Log.Warning(exception, "Error caused by our instrumentation");
+                Log.Warning(
+                    exception,
+                    "Error caused by our instrumentation. probeId={ProbeId}, Method={TypeName}.{MethodName}",
+                    property0: state.ProbeId,
+                    property1: state.MethodMetadataInfo.DeclaringType?.Name,
+                    property2: state.MethodMetadataInfo.Method.Name);
                 state.IsActive = false;
                 state.ProbeData.Processor.LogException(exception, state.SnapshotCreator);
             }
