@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -18,19 +19,19 @@ internal sealed class DroneEnvironmentValues<TValueProvider>(TValueProvider valu
         IsCI = true;
         Provider = "drone";
         MetricTag = MetricTags.CIVisibilityTestSessionProvider.Drone;
-        Branch = ValueProvider.GetValue(Constants.DroneBranch);
-        PipelineUrl = ValueProvider.GetValue(Constants.DroneBuildLink);
-        PipelineNumber = ValueProvider.GetValue(Constants.DroneBuildNumber);
-        AuthorEmail = ValueProvider.GetValue(Constants.DroneCommitAuthorEmail);
-        AuthorName = ValueProvider.GetValue(Constants.DroneCommitAuthorName);
-        Message = ValueProvider.GetValue(Constants.DroneCommitMessage);
-        Commit = ValueProvider.GetValue(Constants.DroneCommitSha);
-        Repository = ValueProvider.GetValue(Constants.DroneGitHttpUrl);
-        StageName = ValueProvider.GetValue(Constants.DroneStageName);
-        JobName = ValueProvider.GetValue(Constants.DroneStepName);
-        Tag = ValueProvider.GetValue(Constants.DroneTag);
-        WorkspacePath = ValueProvider.GetValue(Constants.DroneWorkspace);
-        PrNumber = ValueProvider.GetValue(Constants.DronePullRequest);
-        PrBaseBranch = ValueProvider.GetValue(Constants.DroneTargetBranch);
+        Branch = ValueProvider.GetValue(PlatformKeys.Ci.Drone.Branch);
+        PipelineUrl = ValueProvider.GetValue(PlatformKeys.Ci.Drone.BuildLink);
+        PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Drone.BuildNumber);
+        AuthorEmail = ValueProvider.GetValue(PlatformKeys.Ci.Drone.CommitAuthorEmail);
+        AuthorName = ValueProvider.GetValue(PlatformKeys.Ci.Drone.CommitAuthorName);
+        Message = ValueProvider.GetValue(PlatformKeys.Ci.Drone.CommitMessage);
+        Commit = ValueProvider.GetValue(PlatformKeys.Ci.Drone.CommitSha);
+        Repository = ValueProvider.GetValue(PlatformKeys.Ci.Drone.GitHttpUrl);
+        StageName = ValueProvider.GetValue(PlatformKeys.Ci.Drone.StageName);
+        JobName = ValueProvider.GetValue(PlatformKeys.Ci.Drone.StepName);
+        Tag = ValueProvider.GetValue(PlatformKeys.Ci.Drone.Tag);
+        WorkspacePath = ValueProvider.GetValue(PlatformKeys.Ci.Drone.Workspace);
+        PrNumber = ValueProvider.GetValue(PlatformKeys.Ci.Drone.PullRequest);
+        PrBaseBranch = ValueProvider.GetValue(PlatformKeys.Ci.Drone.TargetBranch);
     }
 }

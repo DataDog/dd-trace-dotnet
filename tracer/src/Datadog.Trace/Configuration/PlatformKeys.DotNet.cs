@@ -13,9 +13,24 @@ internal static partial class PlatformKeys
     /// Platform key indicating the path to the .NET Core CLR profiler path
     /// </summary>
     public const string DotNetCoreClrProfiler = "CORECLR_PROFILER_PATH";
+    public const string DotNetCoreClrProfiler64 = "CORECLR_PROFILER_PATH_64";
+    public const string DotNetCoreClrProfiler32 = "CORECLR_PROFILER_PATH_32";
 
     /// <summary>
     /// Platform key indicating the path to the .NET Framework CLR profiler path
     /// </summary>
     public const string DotNetClrProfiler = "COR_PROFILER_PATH";
+    public const string DotNetClrProfiler64 = "COR_PROFILER_PATH_64";
+    public const string DotNetClrProfiler32 = "COR_PROFILER_PATH_32";
+
+    /// <summary>
+    /// COMPlus_ForceEnc is a .NET runtime environment variable that forces the CLR to enable
+    /// Edit and Continue (EnC) support even in scenarios where it would normally be disabled.
+    /// </summary>
+    public const string ForceEnc = "COMPLUS_ForceEnc";
+
+    /// <summary>
+    /// Program data folder
+    /// </summary>
+    public const string ProgramData = "ProgramData";
 }

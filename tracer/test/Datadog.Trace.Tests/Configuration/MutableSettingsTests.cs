@@ -242,7 +242,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitCommitSha(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitCommitSha, value));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitRepositoryUrl(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitRepositoryUrl, value));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -667,8 +667,8 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.HttpServerErrorStatusCodes, nameof(MutableSettings.HttpServerErrorStatusCodes), "400-499", "400-599"),
                 (ConfigurationKeys.HttpClientErrorStatusCodes, nameof(MutableSettings.HttpClientErrorStatusCodes), "400-499", "400-599"),
                 (ConfigurationKeys.ServiceNameMappings, nameof(MutableSettings.ServiceNameMappings), "a:b", "c:d"),
-                (ConfigurationKeys.GitRepositoryUrl, nameof(MutableSettings.GitRepositoryUrl), "a", "b"),
-                (ConfigurationKeys.GitCommitSha, nameof(MutableSettings.GitCommitSha), "a", "b"),
+                (ConfigurationKeys.CIVisibility.GitRepositoryUrl, nameof(MutableSettings.GitRepositoryUrl), "a", "b"),
+                (ConfigurationKeys.CIVisibility.GitCommitSha, nameof(MutableSettings.GitCommitSha), "a", "b"),
             ];
 
         private static MutableSettings GetSettings(string key, object value)
