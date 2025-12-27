@@ -212,6 +212,11 @@ namespace Datadog.Trace
         internal const string HttpUserAgent = "http.useragent";
 
         /// <summary>
+        /// The original user agent string. Used for SDK clients such as Azure SDK.
+        /// </summary>
+        internal const string UserAgentOriginal = "user_agent.original";
+
+        /// <summary>
         /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
         /// </summary>
         internal const string HttpClientIp = "http.client_ip";
@@ -629,6 +634,21 @@ namespace Datadog.Trace
         /// A CosmosDb container name.
         /// </summary>
         internal const string CosmosDbContainer = "cosmosdb.container";
+
+        /// <summary>
+        /// The HTTP status code of the database response.
+        /// </summary>
+        internal const string DbResponseStatusCode = "db.response.status_code";
+
+        /// <summary>
+        /// The CosmosDb sub-status code of the response.
+        /// </summary>
+        internal const string CosmosDbResponseSubStatusCode = "cosmosdb.response.sub_status_code";
+
+        /// <summary>
+        /// The CosmosDb connection mode.
+        /// </summary>
+        internal const string CosmosDbConnectionMode = "cosmosdb.connection.mode";
 
         /// <summary>
         /// If a span was involved with an application security event
