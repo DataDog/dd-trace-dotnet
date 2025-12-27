@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,11 +15,13 @@ namespace Datadog.Trace.TestHelpers.TransportHelpers;
 internal class TestApiResponse : IApiResponse
 {
     private readonly string _body;
+    private readonly Dictionary<string, string> _headers;
 
-    public TestApiResponse(int statusCode, string body, string contentType)
+    public TestApiResponse(int statusCode, string body, string contentType, Dictionary<string, string> headers = null)
     {
         StatusCode = statusCode;
         _body = body;
+        _headers = headers;
         ContentTypeHeader = contentType;
     }
 
@@ -38,7 +41,8 @@ internal class TestApiResponse : IApiResponse
     {
     }
 
-    public string GetHeader(string headerName) => throw new NotImplementedException();
+    public string GetHeader(string headerName)
+        => _headers?.TryGetValue(headerName, out var headerValue) == true ? headerValue : null;
 
     public Task<Stream> GetStreamAsync()
     {

@@ -8,11 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Agent.DiscoveryService
@@ -45,6 +48,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly IDisposable? _settingSubscription;
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
+        private string? _configurationHash;
+        private string _agentConfigStateHash = string.Empty;
+        private long _agentConfigStateHashUnixTime;
 
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
@@ -101,6 +107,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTelemetryProxyEndpoint,
                 SupportedTracerFlareEndpoint,
             };
+
+        [TestingOnly]
+        internal string? ConfigStateHash => Volatile.Read(ref _configurationHash);
 
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
@@ -173,6 +182,16 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
         }
 
+        /// <inheritdoc />
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+            // record the new hash and the time we got the hash update
+            // It would be nice to make these atomic, but given that we're going to call this a lot,
+            // we don't really want to create a new object every time
+            Interlocked.Exchange(ref _agentConfigStateHash, configStateHash);
+            Interlocked.Exchange(ref _agentConfigStateHashUnixTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        }
+
         private void NotifySubscribers(AgentConfiguration newConfig)
         {
             List<Action<AgentConfiguration>> subscribers;
@@ -203,43 +222,53 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var requestFactory = _apiRequestFactory;
             var uri = requestFactory.GetEndpoint("info");
 
-            int? sleepDuration = null;
+            var sleepDuration = _recheckIntervalMs;
 
             while (!_processExit.Task.IsCompleted)
             {
-                try
+                // do we already have an update from the agent? If so, we can skip the loop
+                if (RequireRefresh(_configurationHash, DateTimeOffset.UtcNow))
                 {
-                    // If the exporter settings have been updated, refresh the endpoint
-                    var updatedFactory = Volatile.Read(ref _apiRequestFactory);
-                    if (requestFactory != updatedFactory)
+                    try
                     {
-                        requestFactory = updatedFactory;
-                        uri = requestFactory.GetEndpoint("info");
-                    }
+                        Log.Debug("Agent features discovery refresh required, contacting agent");
+                        // If the exporter settings have been updated, refresh the endpoint
+                        var updatedFactory = Volatile.Read(ref _apiRequestFactory);
+                        if (requestFactory != updatedFactory)
+                        {
+                            requestFactory = updatedFactory;
+                            uri = requestFactory.GetEndpoint("info");
+                        }
 
-                    var api = requestFactory.Create(uri);
+                        var api = requestFactory.Create(uri);
 
-                    using var response = await api.GetAsync().ConfigureAwait(false);
-                    if (response.StatusCode is >= 200 and < 300)
-                    {
-                        await ProcessDiscoveryResponse(response).ConfigureAwait(false);
-                        sleepDuration = null;
+                        using var response = await api.GetAsync().ConfigureAwait(false);
+                        if (response.StatusCode is >= 200 and < 300)
+                        {
+                            await ProcessDiscoveryResponse(response).ConfigureAwait(false);
+                            sleepDuration = _recheckIntervalMs;
+                        }
+                        else
+                        {
+                            Log.Warning("Error discovering available agent services");
+                            sleepDuration = GetNextSleepDuration(sleepDuration);
+                        }
                     }
-                    else
+                    catch (Exception exception)
                     {
-                        Log.Warning("Error discovering available agent services");
+                        Log.Warning(exception, "Error discovering available agent services");
                         sleepDuration = GetNextSleepDuration(sleepDuration);
                     }
                 }
-                catch (Exception exception)
+                else
                 {
-                    Log.Warning(exception, "Error discovering available agent services");
-                    sleepDuration = GetNextSleepDuration(sleepDuration);
+                    // no need to re-check, so reset the check interval
+                    sleepDuration = _recheckIntervalMs;
                 }
 
                 try
                 {
-                    await Task.WhenAny(_processExit.Task, Task.Delay(sleepDuration ?? _recheckIntervalMs)).ConfigureAwait(false);
+                    await Task.WhenAny(_processExit.Task, Task.Delay(sleepDuration)).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -252,9 +281,44 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 previousDuration is null ? _initialRetryDelayMs : Math.Min(previousDuration.Value * 2, _maxRetryDelayMs);
         }
 
+        [TestingAndPrivateOnly]
+        internal bool RequireRefresh(string? currentHash, DateTimeOffset utcNow)
+        {
+            var agentVersion = Volatile.Read(ref _agentConfigStateHash);
+            if (currentHash is null || agentVersion is null || currentHash != agentVersion)
+            {
+                // Either we don't have a current state, we haven't received any updates, or the config has changed
+                return true;
+            }
+
+            // agent hash matches our current hash, but is it up to date enough?
+            return Volatile.Read(ref _agentConfigStateHashUnixTime) + _recheckIntervalMs < utcNow.ToUnixTimeMilliseconds();
+        }
+
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
-            var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);
+            // Grab the original stream
+            var stream = await response.GetStreamAsync().ConfigureAwait(false);
+
+            // Create a hash of the utf-8 bytes while also deserializing
+            JObject? jObject;
+            using var sha256 = SHA256.Create();
+            using (var cryptoStream = new CryptoStream(stream, sha256, CryptoStreamMode.Read))
+            {
+                jObject = response.ReadAsType<JObject>(cryptoStream);
+
+                // Newtonsoft.JSON doesn't technically read to the end of the stream, it stops as soon
+                // as it has something parseable, but for the sha256 we need to read to the end so that
+                // it finalizes correctly, so just drain it down
+#if NETCOREAPP3_1_OR_GREATER
+                Span<byte> buffer = stackalloc byte[10];
+                while (cryptoStream.Read(buffer) > 0) { }
+#else
+                var buffer = new byte[10];
+                while (cryptoStream.Read(buffer, 0, 10) > 0) { }
+#endif
+            }
+
             if (jObject is null)
             {
                 throw new Exception("Error deserializing discovery response: response was null");
@@ -352,6 +416,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents);
+
+            // Save the hash, whether the details we care about changed or not
+            _configurationHash = HexString.ToHexString(sha256.Hash);
 
             // AgentConfiguration is a record, so this compares by value
             if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))

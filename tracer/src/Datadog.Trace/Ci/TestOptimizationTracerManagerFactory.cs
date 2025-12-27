@@ -88,7 +88,7 @@ namespace Datadog.Trace.Ci
 
         protected override bool ShouldEnableRemoteConfiguration(TracerSettings settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Ci
             // Event platform proxy not found
             // Set the tracer buffer size to the max
             var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-            return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
+            return new ApmAgentWriter(settings, updateSampleRates, updateConfigHash, discoveryService, traceBufferSize);
         }
 
         internal override IDiscoveryService GetDiscoveryService(TracerSettings settings)

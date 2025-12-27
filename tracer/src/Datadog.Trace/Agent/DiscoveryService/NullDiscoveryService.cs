@@ -25,5 +25,9 @@ internal sealed class NullDiscoveryService : IDiscoveryService
     {
     }
 
+    public void SetCurrentConfigStateHash(string configStateHash)
+    {
+    }
+
     public Task DisposeAsync() => Task.CompletedTask;
 }
