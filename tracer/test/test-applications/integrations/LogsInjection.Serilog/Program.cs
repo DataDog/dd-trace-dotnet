@@ -15,6 +15,42 @@ using LogEventLevel = Serilog.Events.LogEventLevel;
 
 namespace LogsInjection.Serilog
 {
+    /// <summary>
+    /// Custom LogEventPropertyValue that doesn't match any of the duck types
+    /// (ScalarValueDuck, SequenceValueDuck, StructureValueDuck, DictionaryValueDuck).
+    /// This reproduces the bug where FormatLogEventPropertyValue doesn't write a value
+    /// when debug logging is disabled.
+    /// </summary>
+    public class CustomPropertyValue : LogEventPropertyValue
+    {
+        private readonly object _value;
+
+        public CustomPropertyValue(object value)
+        {
+            _value = value;
+        }
+
+        public override void Render(TextWriter output, string format = null, IFormatProvider formatProvider = null)
+        {
+            output.Write(_value?.ToString() ?? "null");
+        }
+    }
+
+    /// <summary>
+    /// Custom enricher that adds a property with our custom value type.
+    /// This will trigger the bug in SerilogLogFormatter.FormatLogEventPropertyValue
+    /// when debug logging is disabled.
+    /// </summary>
+    public class CustomPropertyEnricher : ILogEventEnricher
+    {
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            // This creates a property with our custom value type
+            var customProperty = new LogEventProperty("CustomField", new CustomPropertyValue("test-value"));
+            logEvent.AddPropertyIfAbsent(customProperty);
+        }
+    }
+
     public static class Program
     {
         public static int Main(string[] args)
@@ -79,6 +115,17 @@ namespace LogsInjection.Serilog
                                     jsonFilePath)
 #endif
                                .WriteTo.Logger(lc => lc.WriteTo.Console());
+            }
+
+            // Only enable the custom enricher when direct log submission is active
+            // This tests handling of unknown Serilog property types in SerilogLogFormatter
+            // without breaking regular Serilog file sinks (which can't serialize custom types)
+            var directLogSubmissionEnabled = !string.IsNullOrEmpty(
+                Environment.GetEnvironmentVariable("DD_DIRECT_LOG_SUBMISSION_ENABLED_INTEGRATIONS"));
+
+            if (directLogSubmissionEnabled)
+            {
+                configuration = configuration.Enrich.With(new CustomPropertyEnricher());
             }
 
             var log = configuration.CreateLogger();
