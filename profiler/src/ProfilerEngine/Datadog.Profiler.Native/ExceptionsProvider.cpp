@@ -3,6 +3,7 @@
 
 #include "ExceptionsProvider.h"
 
+#include "StackFramesCollectorFactory.h"
 #include "COMHelpers.h"
 #include "FrameStore.h"
 #include "HResultConverter.h"
@@ -30,6 +31,7 @@ ExceptionsProvider::ExceptionsProvider(
     RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory,
     shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
@@ -45,7 +47,7 @@ ExceptionsProvider::ExceptionsProvider(
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
     _pConfiguration(pConfiguration),
     _callstackProvider{std::move(callstackProvider)},
-    _metricsRegistry{metricsRegistry}
+    _pStackFramesCollectorFactory{pStackFramesCollectorFactory}
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
@@ -145,10 +147,9 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
-    uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+    const auto pStackFramesCollector = _pStackFramesCollectorFactory->Create(&_callstackProvider);
 
+    uint32_t hrCollectStack = E_FAIL;
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
