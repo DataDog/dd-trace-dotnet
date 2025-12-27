@@ -20,8 +20,6 @@ namespace Datadog.Trace.Telemetry
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
         public const string ClientLibraryLanguageHeader = "DD-Client-Library-Language";
         public const string ClientLibraryVersionHeader = "DD-Client-Library-Version";
-        public const string ContainerIdHeader = Datadog.Trace.AgentHttpHeaderNames.ContainerId;
-        public const string EntityIdHeader = Datadog.Trace.AgentHttpHeaderNames.EntityId;
 
         public const string CloudProviderHeader = "DD-Cloud-Provider";
         public const string CloudResourceTypeHeader = "DD-Cloud-Resource-Type";
