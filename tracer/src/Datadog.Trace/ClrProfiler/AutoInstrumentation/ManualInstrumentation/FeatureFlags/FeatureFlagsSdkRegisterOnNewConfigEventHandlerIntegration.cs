@@ -32,20 +32,7 @@ public sealed class FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref Action? onNewConfig)
     {
-        return new CallTargetState(null, onNewConfig);
-    }
-
-    internal static CallTargetReturn OnMethodEnd<TTarget>(Exception? exception, in CallTargetState state)
-    {
-        if (state.State is Action onNewConfig)
-        {
-            TracerManager.Instance.FeatureFlags?.RegisterOnNewConfigEventHandler(onNewConfig);
-        }
-        else
-        {
-            exception = new ArgumentException();
-        }
-
-        return CallTargetReturn.GetDefault();
+        TracerManager.Instance.FeatureFlags?.RegisterOnNewConfigEventHandler(onNewConfig);
+        return CallTargetState.GetDefault();
     }
 }
