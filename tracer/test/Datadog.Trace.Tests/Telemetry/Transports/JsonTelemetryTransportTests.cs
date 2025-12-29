@@ -9,6 +9,7 @@ using System.IO;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -74,7 +75,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 NamingSchemaVersion = "1"
             };
 
-            var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
+            var serialized = SerializeTelemetry(data);
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                         },
                     }));
 
-            var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
+            var serialized = SerializeTelemetry(data);
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
@@ -213,7 +214,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                         },
                     }));
 
-            var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
+            var serialized = SerializeTelemetry(data);
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
@@ -284,7 +285,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 NamingSchemaVersion = "1"
             };
 
-            var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
+            var serialized = SerializeTelemetry(data);
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
@@ -310,5 +311,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             using var streamReader = new StreamReader(stream);
             return streamReader.ReadToEnd();
         }
+
+        private static string SerializeTelemetry<T>(T data) => JsonConvert.SerializeObject(data, Formatting.None, JsonTelemetryTransport.SerializerSettings);
     }
 }
