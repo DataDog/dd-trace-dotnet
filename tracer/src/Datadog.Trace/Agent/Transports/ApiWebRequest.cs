@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports
@@ -53,6 +55,42 @@ namespace Datadog.Trace.Agent.Transports
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+            }
+
+            return await FinishAndGetResponse().ConfigureAwait(false);
+        }
+
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+            => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
+
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Sending {Type} data as JSON with compression '{Compression}'", typeof(T).FullName, contentEncoding ?? "none");
+            }
+
+            ResetRequest(method: "POST", contentType: MimeTypes.Json, contentEncoding: contentEncoding);
+
+            using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                // wrap in gzip if requested
+                using Stream gzip = (compression == MultipartCompression.GZip
+                                      ? new GZipStream(reqStream, CompressionMode.Compress, leaveOpen: true)
+                                      : null);
+                var streamToWriteTo = gzip ?? reqStream;
+
+                using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+                using var jsonWriter = new JsonTextWriter(streamWriter)
+                {
+                    CloseOutput = false
+                };
+                var serializer = JsonSerializer.Create(settings);
+                serializer.Serialize(jsonWriter, payload);
+                await streamWriter.FlushAsync().ConfigureAwait(false);
+                await streamToWriteTo.FlushAsync().ConfigureAwait(false);
+                await reqStream.FlushAsync().ConfigureAwait(false);
             }
 
             return await FinishAndGetResponse().ConfigureAwait(false);
