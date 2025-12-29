@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util;
 
-internal class ActivatorHelper
+internal sealed class ActivatorHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ActivatorHelper>();
 

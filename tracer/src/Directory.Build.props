@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.32.0</Version>
+    <Version>3.35.0</Version>
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
@@ -44,6 +44,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExceptionHandlerExtensions_HandleAsync_Integration
+    public sealed class ExceptionHandlerExtensions_HandleAsync_Integration
     {
         private const string Major5Minor1 = "5.1";
         private const string Major5MinorX = "5";

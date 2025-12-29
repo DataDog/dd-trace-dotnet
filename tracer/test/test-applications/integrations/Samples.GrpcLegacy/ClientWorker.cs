@@ -56,6 +56,11 @@ public class ClientWorker
                 {
                     meta.Add("client-value1", "some-client-value");
                     meta.Add("client-value2", "other-client-value");
+
+                    _logger.LogInformation("Adding pre-existing W3C trace headers to ensure we can replace them correctly");
+                    meta.Add("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
+                    meta.Add("tracestate", "dd=s:1");
+
                     return meta;
                 });
 

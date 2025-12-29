@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.54.1 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.54.1" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.56.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.56.0" />
   </ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Caching;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Moq;
 using Xunit;
@@ -285,6 +286,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task AdaptiveCleanupAsync_Should_Handle_Cancellation_Gracefully()
         {
             // Setup

@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
     IntegrationName = nameof(IntegrationId.AzureServiceBus))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ServiceBusReceiverReceiveMessagesAsyncIntegration
+public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
     private const string OperationName = "azure_servicebus.receive";
 
@@ -101,9 +101,9 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
                     serviceBusMessage.ApplicationProperties != null)
                 {
                     var extractedContext = AzureMessagingCommon.ExtractContext(serviceBusMessage.ApplicationProperties);
-                    if (extractedContext != null)
+                    if (extractedContext.SpanContext != null)
                     {
-                        extractedContexts.Add(extractedContext);
+                        extractedContexts.Add(extractedContext.SpanContext);
                     }
                 }
             }
@@ -138,7 +138,6 @@ public class ServiceBusReceiverReceiveMessagesAsyncIntegration
         tags.MessagingDestinationName = entityPath;
         tags.MessagingOperation = "receive";
         tags.MessagingSystem = "servicebus";
-        tags.InstrumentationName = "AzureServiceBus";
 
         string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
         var scope = tracer.StartActiveInternal(

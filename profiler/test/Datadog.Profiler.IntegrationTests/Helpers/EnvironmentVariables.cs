@@ -22,7 +22,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string NamedPipeName = "DD_TRACE_PIPE_NAME";
         public const string TimestampsAsLabelEnabled = "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED";
         public const string GarbageCollectionProfilerEnabled = "DD_PROFILING_GC_ENABLED";
-        public const string UseBacktrace2 = "DD_INTERNAL_USE_BACKTRACE2";
         public const string DebugInfoEnabled = "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED";
         public const string GcThreadsCpuTimeEnabled = "DD_GC_THREADS_CPUTIME_ENABLED";
         public const string ThreadLifetimeEnabled = "DD_THREAD_LIFETIME_ENABLED";
@@ -41,5 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
         public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
         public const string ManagedActivationEnabled = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
+        public const string HeapSnapshotEnabled = "DD_PROFILING_HEAPSNAPSHOT_ENABLED";
+        public const string HeapSnapshotMemoryPressureThreshold = "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD";
     }
 }

@@ -57,14 +57,13 @@ public class DataStreamsMonitoringTransportTests
         // That ensures we only get a single payload
         var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
         var tracerSettings = GetSettings(agent);
-        var api = new DataStreamsApi(
-            DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Exporter));
+        var api = new DataStreamsApi(tracerSettings.Manager, DataStreamsTransportStrategy.GetAgentIntakeFactory);
 
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(
             tracerSettings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(tracerSettings, new ProfilerSettings(ProfilerState.Disabled), "service"),
+                new DataStreamsMessagePackFormatter(tracerSettings, new ProfilerSettings(ProfilerState.Disabled)),
                 bucketDurationMs),
             api,
             bucketDurationMs: bucketDurationMs,
@@ -130,10 +129,10 @@ public class DataStreamsMonitoringTransportTests
     private TracerSettings GetSettings(MockTracerAgent agent)
         => agent switch
         {
-            MockTracerAgent.TcpUdpAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, $"http://localhost:{x.Port}" }, { ConfigurationKeys.Environment, "env" } }),
-            MockTracerAgent.NamedPipeAgent x => TracerSettings.Create(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName }, { ConfigurationKeys.Environment, "env" } }),
+            MockTracerAgent.TcpUdpAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, $"http://localhost:{x.Port}" }, { ConfigurationKeys.Environment, "env" }, { ConfigurationKeys.ServiceName, "service" } }),
+            MockTracerAgent.NamedPipeAgent x => TracerSettings.Create(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName }, { ConfigurationKeys.Environment, "env" }, { ConfigurationKeys.ServiceName, "service" } }),
 #if NETCOREAPP3_1_OR_GREATER
-            MockTracerAgent.UdsAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath }, { ConfigurationKeys.Environment, "env" } }),
+            MockTracerAgent.UdsAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath }, { ConfigurationKeys.Environment, "env" }, { ConfigurationKeys.ServiceName, "service" } }),
 #endif
             _ => throw new InvalidOperationException("Unknown agent type " + agent.GetType()),
         };

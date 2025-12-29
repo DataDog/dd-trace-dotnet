@@ -84,6 +84,8 @@ namespace Datadog.Trace.ClrProfiler
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;
+            var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
+
             NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
@@ -93,14 +95,14 @@ namespace Datadog.Trace.ClrProfiler
                     _ => NativeInterop.ProfilingEnabled.Disabled
                 },
 
-                TracingEnabled = tracerSettings.TraceEnabled,
+                TracingEnabled = mutableSettings.TraceEnabled,
                 IastEnabled = Iast.Iast.Instance.Settings.Enabled,
                 RaspEnabled = Security.Instance.Settings.RaspEnabled,
                 DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
                 RuntimeId = RuntimeId.Get(),
-                Environment = tracerSettings.Environment,
-                ServiceName = tracer.DefaultServiceName,
-                Version = tracerSettings.ServiceVersion
+                Environment = mutableSettings.Environment,
+                ServiceName = mutableSettings.DefaultServiceName,
+                Version = mutableSettings.ServiceVersion
             };
 
             // Make sure nothing bubbles up, even if there are issues
@@ -484,7 +486,11 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                observers.Add(new AspNetCoreDiagnosticObserver());
+                // Tracer, Security, should both have been initialized by now.
+                // Iast hasn't yet, but doing it now is fine
+                // span origins is _not_ initialized yet, and we can't guarantee it will be
+                // so just be lazy instead
+                observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
                 observers.Add(new QuartzDiagnosticObserver());
             }
 

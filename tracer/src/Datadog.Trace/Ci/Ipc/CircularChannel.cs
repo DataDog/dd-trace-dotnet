@@ -1,4 +1,4 @@
-// <copyright file="CircularChannel.cs" company="Datadog">
+﻿// <copyright file="CircularChannel.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.Ipc;
 
-internal partial class CircularChannel : IChannel
+internal sealed partial class CircularChannel : IChannel
 {
     private const int HeaderSize = 2 * sizeof(ushort); // 1 read pointer + 1 write pointer
 
@@ -104,7 +104,7 @@ internal partial class CircularChannel : IChannel
         }
     }
 
-    protected int BufferSize => _settings.BufferSize;
+    private int BufferSize => _settings.BufferSize;
 
     public int BufferBodySize => _settings.BufferSize - HeaderSize;
 

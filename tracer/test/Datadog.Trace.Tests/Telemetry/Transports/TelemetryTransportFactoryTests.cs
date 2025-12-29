@@ -34,12 +34,12 @@ public class TelemetryTransportFactoryTests
 
         var exporterSettings = new ExporterSettings();
 
-        var transports = TelemetryTransportFactory.Create(telemetrySettings, exporterSettings);
+        var transports = new TelemetryTransportFactory(telemetrySettings);
 
         using var s = new AssertionScope();
         if (agentProxyEnabled)
         {
-            transports.AgentTransport.Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
+            transports.AgentTransportFactory?.Invoke(exporterSettings).Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
         }
 
         if (agentlessEnabled)

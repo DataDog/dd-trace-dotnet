@@ -16,7 +16,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry.Collectors;
 
-internal class RedactedErrorLogCollector
+internal sealed class RedactedErrorLogCollector
 {
     private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 

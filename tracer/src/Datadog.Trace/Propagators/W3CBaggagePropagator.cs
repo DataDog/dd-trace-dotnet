@@ -1,4 +1,4 @@
-// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
+﻿// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 namespace Datadog.Trace.Propagators;
 
 // https://www.w3.org/TR/baggage/
-internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
+internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
 {
     public const string BaggageHeaderName = "baggage";
     public const int DefaultMaximumBaggageItems = 64;

@@ -1,4 +1,4 @@
-// <copyright file="ApmTracingConfig.cs" company="Datadog">
+﻿// <copyright file="ApmTracingConfig.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Represents an APM_TRACING configuration with targeting information
     /// </summary>
-    internal class ApmTracingConfig
+    internal sealed class ApmTracingConfig
     {
         public ApmTracingConfig(string configId, LibConfig libConfig, ServiceTarget? serviceTarget, K8sTargetV2? clusterTarget)
         {
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Configuration
         }
     }
 
-    internal class ApmTracingConfigDto
+    internal sealed class ApmTracingConfigDto
     {
         [JsonProperty("lib_config")]
         public LibConfig? LibConfig { get; set; }
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Configuration
         public K8sTargetV2? K8sTargetV2 { get; set; }
     }
 
-    internal class ServiceTarget
+    internal sealed class ServiceTarget
     {
         [JsonProperty("service")]
         public string? Service { get; set; }
@@ -132,13 +132,13 @@ namespace Datadog.Trace.Configuration
         public string? Env { get; set; }
     }
 
-    internal class K8sTargetV2
+    internal sealed class K8sTargetV2
     {
         [JsonProperty("cluster_targets")]
         public List<ClusterTarget>? ClusterTargets { get; set; }
     }
 
-    internal class ClusterTarget
+    internal sealed class ClusterTarget
     {
         [JsonProperty("cluster_name")]
         public string? ClusterName { get; set; }
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Configuration
         public List<string>? EnabledNamespaces { get; set; }
     }
 
-    internal class LibConfig
+    internal sealed class LibConfig
     {
         [JsonProperty("tracing_enabled")]
         public bool? TracingEnabled { get; set; }

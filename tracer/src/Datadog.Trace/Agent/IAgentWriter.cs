@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 
@@ -10,7 +12,7 @@ namespace Datadog.Trace.Agent
 {
     internal interface IAgentWriter
     {
-        void WriteTrace(ArraySegment<Span> trace);
+        void WriteTrace(in SpanCollection trace);
 
         Task<bool> Ping();
 

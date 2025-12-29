@@ -12,10 +12,13 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -73,18 +76,18 @@ public class TraceExporterTests
 
         var sampleRateResponses = new ConcurrentQueue<Dictionary<string, float>>();
 
-        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
+        var discovery = DiscoveryService.CreateUnmanaged(tracerSettings.Manager.InitialExporterSettings);
         var statsd = new NoOpStatsd();
 
         // We have to replace the agent writer so that we can intercept the sample rate responses
-        var exporter = TracerManagerFactory.GetApi(
+        ManagedTraceExporter.TryCreateTraceExporter(
             tracerSettings,
-            statsd,
             rates => sampleRateResponses.Enqueue(rates),
-            new Mock<IApiRequestFactory>().Object);
-        exporter.Should().BeOfType<TraceExporter>();
+            TelemetrySettings.FromSource(NullConfigurationSource.Instance, new ConfigurationTelemetry(), tracerSettings, isAgentAvailable: null),
+            out var exporter).Should().BeTrue();
+        exporter.Should().NotBeNull();
 
-        var agentWriter = new AgentWriter(exporter, new NullStatsAggregator(), statsd, tracerSettings);
+        var agentWriter = new AgentWriter(exporter, new NullStatsAggregator(), new TestStatsdManager(statsd), tracerSettings);
 
         await using (var tracer = TracerHelper.Create(tracerSettings, agentWriter: agentWriter, statsd: statsd, discoveryService: discovery))
         {

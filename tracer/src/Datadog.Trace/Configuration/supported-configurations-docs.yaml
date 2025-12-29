@@ -16,6 +16,11 @@ DD_AGENT_HOST: |
   Default value is "localhost".
   <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
 
+DD_AGENT_FEATURE_POLLING_ENABLED: |
+  Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
+  Default value is true (polling enabled).
+  <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+
 DD_API_KEY: |
   Configuration key for setting the API key, used by the Agent.
 
@@ -234,7 +239,7 @@ DD_DISABLED_INTEGRATIONS: |
   Configuration key for a list of integrations to disable. All other integrations remain enabled.
   Default is empty (all integrations are enabled).
   Supports multiple values separated with semi-colons.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.DisabledIntegrationNames"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.DisabledIntegrationNames"/>
 
 DD_DOGSTATSD_ARGS: |
   Configuration key for arguments to pass to the DogStatsD process.
@@ -300,7 +305,7 @@ DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL: |
 
 DD_ENV: |
   Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.Environment"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
 
 DD_EXCEPTION_DEBUGGING_ENABLED: |
   The old configuration key for enabling or disabling Exception Replay.
@@ -317,6 +322,14 @@ DD_EXCEPTION_REPLAY_ENABLED: |
   Configuration key for enabling or disabling Exception Replay.
   Default value is false (disabled).
 
+DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED: |
+  Configuration key for enabling or disabling agentless Exception Replay uploads.
+  Default value is false.
+
+DD_EXCEPTION_REPLAY_AGENTLESS_URL: |
+  Configuration key for overriding the agentless Exception Replay intake URL.
+  Default value is derived from DD_SITE (https://debugger-intake.{site}/api/v2/debugger).
+
 DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT: |
   Configuration key for setting the maximum number of exceptions to be analyzed by Exception Replay within a 1-second time interval.
   Default value is <c>100</c>.
@@ -327,19 +340,19 @@ DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS: |
 
 DD_GIT_COMMIT_SHA: |
   Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitCommitSha"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
 
 DD_GIT_REPOSITORY_URL: |
   Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitRepositoryUrl"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
 
 DD_HTTP_CLIENT_ERROR_STATUSES: |
   Configuration key for the application's client http statuses to set spans as errors by.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientErrorStatusCodes"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
 
 DD_HTTP_SERVER_ERROR_STATUSES: |
   Configuration key for the application's server http statuses to set spans as errors by.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpServerErrorStatusCodes"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
 
 DD_HTTP_SERVER_TAG_QUERY_STRING: |
   Configuration key for enabling/disabling reporting query string
@@ -427,6 +440,10 @@ DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED: |
   via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
   is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
 
+DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD: |
+  Configuration key to allow telemetry compression.
+  <see cref="Datadog.Trace.Telemetry.TelemetrySettings.CompressionMethod"/>
+
 DD_INSTRUMENTATION_TELEMETRY_ENABLED: |
   Configuration key for enabling or disabling internal telemetry.
   Default value is <c>true</c> (enabled).
@@ -497,7 +514,7 @@ DD_LOGS_DIRECT_SUBMISSION_URL: |
 DD_LOGS_INJECTION: |
   Configuration key for enabling or disabling the automatic injection
   of correlation identifiers into the logging context.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.LogsInjectionEnabled"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.LogsInjectionEnabled"/>
 
 DD_MAX_LOGFILE_SIZE: |
   Configuration key for setting the approximate maximum size,
@@ -507,7 +524,7 @@ DD_MAX_LOGFILE_SIZE: |
 DD_MAX_TRACES_PER_SECOND: |
   Configuration key for setting the number of traces allowed
   to be submitted per second.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.MaxTracesSubmittedPerSecond"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
 
 DD_METRICS_OTEL_ENABLED: |
   Enables experimental support for exporting OTLP metrics generated by the OpenTelemetry Metrics API.
@@ -542,7 +559,7 @@ DD_SERVICE: |
   Configuration key for the application's default service name.
   Used as the service name for top-level spans,
   and used to determine service name of some child spans.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceName"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceName"/>
 
 DD_SITE: |
   Configuration key for setting the default Datadog destination site.
@@ -601,7 +618,7 @@ DD_TAGS: |
   Configuration key for a list of tags to be applied globally to spans.
   Supports multiple key key-value pairs which are comma-separated, and for which the key and
   value are colon-separated. For example Key1:Value1, Key2:Value2
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.GlobalTags"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.GlobalTags"/>
 
 DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED: |
   Configuration key for whether dependency data is sent via telemetry.
@@ -675,7 +692,7 @@ DD_TRACE_AGENT_URL: |
 
 DD_TRACE_ANALYTICS_ENABLED: |
   Configuration key for enabling or disabling default Analytics.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.AnalyticsEnabled"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.AnalyticsEnabled"/>
 
 DD_TRACE_AWS_ADD_SPAN_POINTERS: |
   Configuration key for toggling span pointers on AWS requests.
@@ -799,7 +816,7 @@ DD_TRACE_DISABLED_ADONET_COMMAND_TYPES: |
 DD_TRACE_ENABLED: |
   Configuration key for enabling or disabling the Tracer.
   Default value is true (enabled).
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.TraceEnabled"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.TraceEnabled"/>
 
 DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED: |
   Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
@@ -823,12 +840,12 @@ DD_TRACE_GRAPHQL_ERROR_EXTENSIONS: |
 DD_TRACE_GRPC_TAGS: |
   Configuration key for a map of metadata keys to tag names.
   Automatically apply GRPC metadata values as tags on traces.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HeaderTags"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
 
 DD_TRACE_HEADER_TAGS: |
   Configuration key for a map of header keys to tag names.
   Automatically apply header values as tags on traces.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HeaderTags"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
 
 DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED: |
   Enables a fix for header tags normalization.
@@ -837,7 +854,7 @@ DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED: |
 
 DD_TRACE_HTTP_CLIENT_ERROR_STATUSES: |
   Configuration key for the application's client http statuses to set spans as errors by.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientErrorStatusCodes"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
 
 DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS: |
   Configuration key for overriding which URLs are skipped by the tracer.
@@ -845,7 +862,7 @@ DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS: |
 
 DD_TRACE_HTTP_SERVER_ERROR_STATUSES: |
   Configuration key for the application's server http statuses to set spans as errors by.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpServerErrorStatusCodes"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
 
 DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED: |
   Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
@@ -862,7 +879,7 @@ DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED: |
   Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
   Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
   Default value is <c>true</c> (enabled).
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.KafkaCreateConsumerScopeEnabled"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.KafkaCreateConsumerScopeEnabled"/>
 
 DD_TRACE_LOGFILE_RETENTION_DAYS: |
   Configuration key for setting in number of days when to delete log files based on their last writetime date.
@@ -966,7 +983,7 @@ DD_TRACE_PROPAGATION_STYLE_INJECT: |
 DD_TRACE_RATE_LIMIT: |
   Configuration key for setting the number of traces allowed
   to be submitted per second.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.MaxTracesSubmittedPerSecond"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
 
 DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED: |
   Configuration key for unifying client service names when the span
@@ -1009,16 +1026,16 @@ DD_TRACE_SAMPLING_RULES: |
     '[{"sample_rate":0.5, "service":"cart.*"}, {"sample_rate":0.2, "name":"http.request"}, {"sample_rate":1.0, "service":"background", "name":"sql.query"}, {"sample_rate":0.1}]'
 
   If no rules are specified, or none match, default internal sampling logic will be used.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.CustomSamplingRules"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>
 
 DD_TRACE_SAMPLING_RULES_FORMAT: |
-  Configuration key for setting the format of <see cref="Datadog.Trace.Configuration.TracerSettings.CustomSamplingRules"/>.
+  Configuration key for setting the format of <see cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>.
   Valid values are <c>regex</c> or <c>glob</c>.
   If the value is not recognized, trace sampling rules are disabled.
 
 DD_TRACE_SERVICE_MAPPING: |
   Configuration key for a map of services to rename.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceNameMappings"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceNameMappings"/>
 
 DD_TRACE_SPAN_ATTRIBUTE_SCHEMA: |
   Configuration key for setting the schema version for service naming and span attributes
@@ -1027,7 +1044,7 @@ DD_TRACE_SPAN_ATTRIBUTE_SCHEMA: |
 
 DD_TRACE_STARTUP_LOGS: |
   Configuration key for enabling or disabling the diagnostic log at startup
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.StartupDiagnosticLogEnabled"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.StartupDiagnosticLogEnabled"/>
 
 DD_TRACE_STATS_COMPUTATION_ENABLED: |
   Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
@@ -1053,7 +1070,7 @@ DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH: |
 
 DD_VERSION: |
   Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.ServiceVersion"/>
+  <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceVersion"/>
 
 OTEL_EXPORTER_OTLP_ENDPOINT: |
   Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).

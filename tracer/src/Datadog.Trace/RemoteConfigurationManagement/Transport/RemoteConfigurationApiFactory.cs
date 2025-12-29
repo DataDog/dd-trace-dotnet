@@ -1,4 +1,4 @@
-// <copyright file="RemoteConfigurationApiFactory.cs" company="Datadog">
+﻿// <copyright file="RemoteConfigurationApiFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,9 +12,9 @@ using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    internal class RemoteConfigurationApiFactory
+    internal static class RemoteConfigurationApiFactory
     {
-        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings, RemoteConfigurationSettings remoteConfigurationSettings, IDiscoveryService discoveryService)
+        public static IRemoteConfigurationApi Create(ExporterSettings exporterSettings, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = AgentTransportStrategy.Get(
                 exporterSettings,

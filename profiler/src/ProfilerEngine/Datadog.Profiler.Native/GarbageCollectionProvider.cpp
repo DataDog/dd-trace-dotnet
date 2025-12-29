@@ -52,7 +52,8 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,  // end of GC
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize)
+    uint64_t pohSize,
+    uint32_t memPressure)
 {
     _suspensionDurationMetric->Add((double_t)pauseDuration.count());
     if (generation == 0)

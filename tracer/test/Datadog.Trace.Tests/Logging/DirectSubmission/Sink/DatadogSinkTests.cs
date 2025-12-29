@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogSinkTests.cs" company="Datadog">
+// <copyright file="DatadogSinkTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,6 +28,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(50);
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public void SinkSendsMessagesToLogsApi()
         {
             using var mutex = new ManualResetEventSlim();
@@ -49,6 +50,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public void SinkRejectsGiantMessages()
         {
             using var mutex = new ManualResetEventSlim();
@@ -269,17 +271,21 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             public int NumberOfLogs { get; }
         }
 
-        internal class TestSink : DirectSubmissionLogSink
+        internal class TestSink
         {
+            private readonly DirectSubmissionLogSink _sink;
+
             public TestSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
-                : base(api, formatter, sinkOptions)
             {
+                _sink = new(api, formatter, sinkOptions);
             }
 
             public Task<bool> CallEmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
-                return EmitBatch(events);
+                return _sink.EmitBatchForTesting(events);
             }
+
+            public void Start() => _sink.Start();
         }
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="GlobalConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="GlobalConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,21 +20,14 @@ namespace Datadog.Trace.Configuration;
 /// <summary>
 /// Contains global datadog configuration.
 /// </summary>
-internal class GlobalConfigurationSource
+internal static class GlobalConfigurationSource
 {
-    private static IConfigurationSource _dynamicConfigConfigurationSource = NullConfigurationSource.Instance;
-    private static ManualInstrumentationConfigurationSourceBase _manualConfigurationSource = new ManualInstrumentationConfigurationSource(new Dictionary<string, object?>(), useDefaultSources: true);
-
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
     internal static IConfigurationSource Instance => CreationResult.ConfigurationSource;
 
     internal static GlobalConfigurationSourceResult CreationResult { get; private set; } = CreateDefaultConfigurationSource();
-
-    internal static IConfigurationSource DynamicConfigurationSource => _dynamicConfigConfigurationSource;
-
-    internal static ManualInstrumentationConfigurationSourceBase ManualConfigurationSource => _manualConfigurationSource;
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
@@ -106,7 +99,7 @@ internal class GlobalConfigurationSource
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
-                                       .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
+                                       .WithKeys(ConfigurationKeys.ConfigurationFileName)
                                        .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);
@@ -141,15 +134,5 @@ internal class GlobalConfigurationSource
     private static string GetCurrentDirectory()
     {
         return AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
-    }
-
-    public static void UpdateDynamicConfigConfigurationSource(IConfigurationSource dynamic)
-    {
-        Interlocked.Exchange(ref _dynamicConfigConfigurationSource, dynamic);
-    }
-
-    public static void UpdateManualConfigurationSource(ManualInstrumentationConfigurationSourceBase manual)
-    {
-        Interlocked.Exchange(ref _manualConfigurationSource, manual);
     }
 }

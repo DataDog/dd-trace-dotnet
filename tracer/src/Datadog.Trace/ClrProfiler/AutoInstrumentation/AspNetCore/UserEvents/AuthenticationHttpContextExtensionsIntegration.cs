@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AuthenticationHttpContextExtensionsIntegration
+    public sealed class AuthenticationHttpContextExtensionsIntegration
     {
         private const string Major2 = "2";
         private const string AssemblyName = "Microsoft.AspNetCore.Authentication.Abstractions";
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             return returnValue;
         }
 
-        private record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
+        private sealed record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
     }
 }
 #endif

@@ -198,7 +198,7 @@ public class ConfigurationTelemetryCollectorTests
         {
             { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
             { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
-            { ConfigurationKeys.PropagationStyle, propagationStyle },
+            { "DD_TRACE_PROPAGATION_STYLE", propagationStyle },
             { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
         };
 
@@ -210,14 +210,14 @@ public class ConfigurationTelemetryCollectorTests
         var (extractKey, extractValue) = (propagationStyleExtract, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract),
-            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, not null) => ("DD_TRACE_PROPAGATION_STYLE", propagationStyle),
             (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage"),
         };
 
         var (injectKey, injectValue) = (propagationStyleInject, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleInject, propagationStyleInject),
-            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, not null) => ("DD_TRACE_PROPAGATION_STYLE", propagationStyle),
             (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage"),
         };
 

@@ -1,4 +1,4 @@
-// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
+﻿// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.Propagators
 {
     // https://www.w3.org/TR/trace-context/
-    internal class W3CTraceContextPropagator : IContextInjector, IContextExtractor
+    internal sealed class W3CTraceContextPropagator : IContextInjector, IContextExtractor
     {
         // the standard W3C separator between top-level key/value pairs
         // "key1=value1,key2=value2"

@@ -1,4 +1,4 @@
-// <copyright file="AzureServiceBusTags.cs" company="Datadog">
+﻿// <copyright file="AzureServiceBusTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         private string _spanKind;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public string InstrumentationName => nameof(Configuration.IntegrationId.AzureServiceBus);
 
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tagging
         public double? MessageQueueTimeMs { get; set; }
     }
 
-    internal partial class AzureServiceBusV1Tags : AzureServiceBusTags
+    internal sealed partial class AzureServiceBusV1Tags : AzureServiceBusTags
     {
         private string _peerServiceOverride = null;
 

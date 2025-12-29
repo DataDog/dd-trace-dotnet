@@ -1,4 +1,4 @@
-// <copyright file="DelegateInstrumentation.cs" company="Datadog">
+﻿// <copyright file="DelegateInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -183,7 +183,7 @@ internal static class DelegateInstrumentation
         return wrapper.Handler;
     }
 
-    private class ActivatorHelper<TCallbacks>
+    private sealed class ActivatorHelper<TCallbacks>
         where TCallbacks : struct, ICallbacks
     {
         private static readonly ConcurrentDictionary<Type, ActivatorHelper<TCallbacks>> WrapperTypesCache = new();
@@ -433,7 +433,7 @@ internal static class DelegateInstrumentation
 
 #region Action 0 Argument
 
-    private class Action0Wrapper<TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action0Wrapper<TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin0Callbacks, IVoidReturnCallback
     {
         private readonly Action? _invokeDelegate;
@@ -488,7 +488,7 @@ internal static class DelegateInstrumentation
 
 #region Action 1 Argument
 
-    private class Action1Wrapper<TArg, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action1Wrapper<TArg, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin1Callbacks, IVoidReturnCallback
     {
         private readonly Action<TArg>? _invokeDelegate;
@@ -546,7 +546,7 @@ internal static class DelegateInstrumentation
 
 #region Action 2 Arguments
 
-    private class Action2Wrapper<TArg, TArg2, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action2Wrapper<TArg, TArg2, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin2Callbacks, IVoidReturnCallback
     {
         private readonly Action<TArg, TArg2>? _invokeDelegate;
@@ -605,7 +605,7 @@ internal static class DelegateInstrumentation
 
 #region Action 3 Arguments
 
-    private class Action3Wrapper<TArg, TArg2, TArg3, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action3Wrapper<TArg, TArg2, TArg3, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin3Callbacks, IVoidReturnCallback
     {
         private readonly Action<TArg, TArg2, TArg3>? _invokeDelegate;
@@ -665,7 +665,7 @@ internal static class DelegateInstrumentation
 
 #region Action 4 Arguments
 
-    private class Action4Wrapper<TArg, TArg2, TArg3, TArg4, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action4Wrapper<TArg, TArg2, TArg3, TArg4, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin4Callbacks, IVoidReturnCallback
     {
         private readonly Action<TArg, TArg2, TArg3, TArg4>? _invokeDelegate;
@@ -726,7 +726,7 @@ internal static class DelegateInstrumentation
 
 #region Action 5 Arguments
 
-    private class Action5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
+    private sealed class Action5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin5Callbacks, IVoidReturnCallback
     {
         private readonly Action<TArg, TArg2, TArg3, TArg4, TArg5>? _invokeDelegate;
@@ -788,7 +788,7 @@ internal static class DelegateInstrumentation
 
 #region Func 0 Arguments
 
-    private class Func0Wrapper<TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func0Wrapper<TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin0Callbacks, IReturnCallback
     {
         private readonly Func<TReturn>? _invokeDelegate;
@@ -857,7 +857,7 @@ internal static class DelegateInstrumentation
 
 #region Func 1 Arguments
 
-    private class Func1Wrapper<TArg, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func1Wrapper<TArg, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin1Callbacks, IReturnCallback
     {
         private readonly Func<TArg, TReturn>? _invokeDelegate;
@@ -927,7 +927,7 @@ internal static class DelegateInstrumentation
 
 #region Func 2 Arguments
 
-    private class Func2Wrapper<TArg, TArg2, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func2Wrapper<TArg, TArg2, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin2Callbacks, IReturnCallback
     {
         private readonly Func<TArg, TArg2, TReturn>? _invokeDelegate;
@@ -998,7 +998,7 @@ internal static class DelegateInstrumentation
 
 #region Func 3 Arguments
 
-    private class Func3Wrapper<TArg, TArg2, TArg3, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func3Wrapper<TArg, TArg2, TArg3, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin3Callbacks, IReturnCallback
     {
         private readonly Func<TArg, TArg2, TArg3, TReturn>? _invokeDelegate;
@@ -1070,7 +1070,7 @@ internal static class DelegateInstrumentation
 
 #region Func 4 Arguments
 
-    private class Func4Wrapper<TArg, TArg2, TArg3, TArg4, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func4Wrapper<TArg, TArg2, TArg3, TArg4, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin4Callbacks, IReturnCallback
     {
         private readonly Func<TArg, TArg2, TArg3, TArg4, TReturn>? _invokeDelegate;
@@ -1143,7 +1143,7 @@ internal static class DelegateInstrumentation
 
 #region Func 5 Arguments
 
-    private class Func5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
+    private sealed class Func5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin5Callbacks, IReturnCallback
     {
         private readonly Func<TArg, TArg2, TArg3, TArg4, TArg5, TReturn>? _invokeDelegate;

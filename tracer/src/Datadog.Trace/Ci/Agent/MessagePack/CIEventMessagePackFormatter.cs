@@ -1,4 +1,4 @@
-// <copyright file="CIEventMessagePackFormatter.cs" company="Datadog">
+﻿// <copyright file="CIEventMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack;
 
-internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
+internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
 {
     private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
 
@@ -40,9 +40,10 @@ internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibil
 
     public CIEventMessagePackFormatter(TracerSettings tracerSettings)
     {
-        if (!string.IsNullOrEmpty(tracerSettings.Environment))
+        // we don't subscribe, because we assume this _can't_ change in CI Visibility
+        if (!string.IsNullOrEmpty(tracerSettings.Manager.InitialMutableSettings.Environment))
         {
-            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
+            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Manager.InitialMutableSettings.Environment);
         }
 
         var testOptimization = TestOptimization.Instance;

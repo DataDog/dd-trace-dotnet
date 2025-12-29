@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IntegrationName = nameof(IntegrationId.AspNet))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class HttpModule_Integration
+    public sealed class HttpModule_Integration
     {
         // WARNING: Do not add a static reference to `IDatadogLogger` or reference
         // anything related to Tracer.Instance etc. This method is called at application

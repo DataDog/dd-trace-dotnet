@@ -397,6 +397,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(SpanDecorationMemberData))]
+    [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
     public async Task SpanDecorationTest(Type testType)
     {
         var method = testType.FullName + "[Annotate]";

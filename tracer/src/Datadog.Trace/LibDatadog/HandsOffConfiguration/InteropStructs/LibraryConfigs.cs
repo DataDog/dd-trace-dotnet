@@ -14,4 +14,5 @@ internal struct LibraryConfigs
     public nint Ptr;       // const LibraryConfig*
     public nuint Length;
     public nuint Capacity;
+    public CString Logs; // ffi::CString
 }

@@ -29,7 +29,7 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
-      docker run --rm -m 8192M `
+      docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
@@ -92,6 +92,10 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+      # If we got here, all retries failed – fail the job:
+      Write-Error "Failed to upload artifacts to S3 after $i attempts."
+      exit 1
+
 
 download-single-step-artifacts:
   stage: package
@@ -203,7 +207,7 @@ benchmark-serverless-trigger:
 
 macrobenchmarks:
   stage: benchmarks
-  needs: [ ]
+  needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -216,9 +220,10 @@ macrobenchmarks:
 
 microbenchmarks:
   stage: benchmarks
-  needs: [ ]
+  needs: []
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
+    strategy: depend
   allow_failure: true
 
 dsm_throughput:

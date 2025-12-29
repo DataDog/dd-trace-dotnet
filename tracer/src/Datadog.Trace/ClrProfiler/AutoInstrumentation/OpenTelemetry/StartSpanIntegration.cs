@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class StartSpanIntegration
+    public sealed class StartSpanIntegration
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;

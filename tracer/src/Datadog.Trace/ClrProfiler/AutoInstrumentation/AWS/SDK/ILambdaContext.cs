@@ -12,12 +12,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// </summary>
 internal interface ILambdaContext
 {
-    // /// <summary>
-    // /// Gets the AWS request ID associated with the request.
-    // /// This is the same ID returned to the client that called invoke().
-    // /// This ID is reused for retries on the same request.
-    // /// </summary>
-    // string AwsRequestId { get; }
+    /// <summary>
+    /// Gets the AWS request ID associated with the request.
+    /// This is the same ID returned to the client that called invoke().
+    /// This ID is reused for retries on the same request.
+    /// </summary>
+    string AwsRequestId { get; }
 
     /// <summary>
     /// Gets information about the client application and device when invoked

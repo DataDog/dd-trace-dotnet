@@ -1,4 +1,4 @@
-// <copyright file="MethodSymbolResolver.cs" company="Datadog">
+﻿// <copyright file="MethodSymbolResolver.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Pdb
 {
-    internal class MethodSymbolResolver
+    internal sealed class MethodSymbolResolver
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodSymbolResolver));
         private static readonly Lazy<MethodSymbolResolver> _instance = new(() => new MethodSymbolResolver());
@@ -266,7 +266,7 @@ namespace Datadog.Trace.Pdb
                 return ctx;
             }
 
-            private class ThreadSafeAssemblyResolver : IAssemblyResolver
+            private sealed class ThreadSafeAssemblyResolver : IAssemblyResolver
             {
                 private readonly AssemblyResolver _assemblyResolver;
 
@@ -291,7 +291,7 @@ namespace Datadog.Trace.Pdb
                 }
             }
 
-            private class ThreadSafeResolver : IResolver
+            private sealed class ThreadSafeResolver : IResolver
             {
                 private readonly Resolver _resolver;
 

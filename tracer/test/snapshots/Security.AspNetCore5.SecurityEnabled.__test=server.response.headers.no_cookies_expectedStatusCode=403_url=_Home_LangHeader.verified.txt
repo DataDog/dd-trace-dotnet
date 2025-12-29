@@ -33,7 +33,7 @@
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}],"security_response_id":"Guid_2"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -81,7 +81,7 @@
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}],"security_response_id":"Guid_3"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -129,7 +129,7 @@
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}],"security_response_id":"Guid_4"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -177,7 +177,7 @@
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}],"security_response_id":"Guid_5"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -225,7 +225,7 @@
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.fp.session: ssn----<SessionFp>,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language"],"value":"krypton"}]}],"security_response_id":"Guid_6"}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
