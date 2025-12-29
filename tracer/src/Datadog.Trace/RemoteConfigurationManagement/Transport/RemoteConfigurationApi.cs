@@ -60,11 +60,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
             var apiRequest = _apiRequestFactory.Create(uri);
 
-            var requestContent = JsonConvert.SerializeObject(request);
-            Log.Debug("Sending Remote Configuration Request: {Content}", requestContent);
-            var bytes = Encoding.UTF8.GetBytes(requestContent);
-            var payload = new ArraySegment<byte>(bytes);
-
             if (_containerId != null)
             {
                 apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
@@ -75,7 +70,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 apiRequest.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
             }
 
-            using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+            using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;
             if (isRcmDisabled)
             {
