@@ -138,7 +138,11 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
-            var dictAsString = string.Join($"{separator}", value.Select(x => $"{key}:{value}"));
+#if NETCOREAPP
+            var dictAsString = string.Join(separator, value.Select(x => $"{x.Key}:{x.Value}"));
+#else
+            var dictAsString = string.Join($"{separator}", value.Select(x => $"{x.Key}:{x.Value}"));
+#endif
             if (validator is null || validator(value))
             {
                 telemetry.Record(key, dictAsString, recordValue: true, Origin);
