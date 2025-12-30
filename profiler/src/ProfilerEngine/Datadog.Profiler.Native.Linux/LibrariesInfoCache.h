@@ -2,6 +2,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 #pragma once
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
@@ -11,8 +14,6 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>
 #include <link.h>
 #include <memory>
 #include <shared_mutex>
@@ -45,6 +46,7 @@ private:
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
 #ifdef DD_TEST
 public:
+    static void* GetLocalAddressSpace();
 #endif
     void NotifyCacheUpdateImpl();
 #ifdef DD_TEST

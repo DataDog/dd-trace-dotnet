@@ -6,6 +6,8 @@
 #include "MemoryResourceManager.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LibrariesInfoCache.h"
 
+#include "Backtrace2Unwinder.h"
+
 // This test is mainly for ASAN & UBSAN.
 // I want to be checked if we leak memory or we failed at implemented it correctly
 // For that we need to use the default memory resource (new/delete)
@@ -22,4 +24,11 @@ TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
     }
 
     cache.Stop();
+}
+
+TEST(LibrariesInfoCacheTests, MakeSureWeUseTheCorrectAddressSpace)
+{
+    auto addressSpace = Backtrace2Unwinder::GetLocalAddressSpace();
+    auto addressSpace2 = LibrariesInfoCache::GetLocalAddressSpace();
+    ASSERT_EQ(addressSpace, addressSpace2);
 }

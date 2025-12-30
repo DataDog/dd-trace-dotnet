@@ -15,3 +15,10 @@ std::int32_t Backtrace2Unwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::
 
     return unw_backtrace2(reinterpret_cast<void**>(buffer), bufferSize, context, UNW_INIT_SIGNAL_FRAME);
 }
+
+#ifdef DD_TEST
+void* Backtrace2Unwinder::GetLocalAddressSpace()
+{
+    return unw_local_addr_space;
+}
+#endif
