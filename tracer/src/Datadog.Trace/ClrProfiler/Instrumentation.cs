@@ -484,7 +484,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-#if !NETFRAMEWORK                
+#if !NETFRAMEWORK
                 // Tracer, Security, should both have been initialized by now.
                 // Iast hasn't yet, but doing it now is fine
                 // span origins is _not_ initialized yet, and we can't guarantee it will be
