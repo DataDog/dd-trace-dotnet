@@ -11,6 +11,7 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
+#define UNW_LOCAL_ONLY
 #include <libunwind.h>
 #include <link.h>
 #include <memory>
