@@ -237,7 +237,8 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                // there should always be a telemetry override by convention, so just record a sentinel for now if there's not for some reason
+                telemetry.Record(key, result.TelemetryOverride ?? "<MISSING>", recordValue: true, origin);
             }
 
             return result;
