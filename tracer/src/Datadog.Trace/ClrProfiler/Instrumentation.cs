@@ -484,8 +484,12 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-#if !NETFRAMEWORK
-                observers.Add(new AspNetCoreDiagnosticObserver());
+#if !NETFRAMEWORK                
+                // Tracer, Security, should both have been initialized by now.
+                // Iast hasn't yet, but doing it now is fine
+                // span origins is _not_ initialized yet, and we can't guarantee it will be
+                // so just be lazy instead
+                observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
 #endif
                 observers.Add(new QuartzDiagnosticObserver());
             }

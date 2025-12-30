@@ -6,12 +6,12 @@
 #include "CpuSampleProvider.h"
 #include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
+#include "IUnwinder.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
 
-#include <libunwind.h>
 #include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <sys/types.h>
 #include <ucontext.h>
@@ -24,13 +24,15 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
-    MetricsRegistry& metricsRegistry) noexcept
+    MetricsRegistry& metricsRegistry,
+    IUnwinder* pUnwinder) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
-    _nbThreadsInSignalHandler{0}
+    _nbThreadsInSignalHandler{0},
+    _pUnwinder{pUnwinder}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -253,8 +255,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     }
 
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
-    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
+    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)
