@@ -21,9 +21,10 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
+        internal const string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+        internal const string MetadataAllocationKey = "dd_allocationKey";
 
-        internal static readonly string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
@@ -59,19 +60,6 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PROVIDER_NOT_READY"
-                        });
-                }
-
-                if (StringUtil.IsNullOrEmpty(context?.TargetingKey))
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "TARGETING_KEY_MISSING",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "TARGETING_KEY_MISSING"
                         });
                 }
 
@@ -118,7 +106,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 var now = DateTime.UtcNow;
-                var targetingKey = context?.TargetingKey ?? string.Empty;
+                var targetingKey = context?.TargetingKey;
 
                 foreach (var allocation in flag.Allocations)
                 {
@@ -139,6 +127,11 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         foreach (var split in allocation.Splits)
                         {
+                            if (StringUtil.IsNullOrEmpty(split.VariationKey))
+                            {
+                                throw new FormatException($"Empty variation key in allocation {allocation.Key}");
+                            }
+
                             var allShardsMatch = true;
                             if (split.Shards is { Count: > 0 } splitShards)
                             {
@@ -154,7 +147,7 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey ?? string.Empty, allocation, now, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context);
                             }
                         }
                     }
@@ -177,6 +170,18 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         ["errorCode"] = "PARSE_ERROR",
                         ["message"] = ex.Message
+                    });
+            }
+            catch (MissingTargetingKeyException)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "TARGETING_KEY_MISSING",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "TARGETING_KEY_MISSING"
                     });
             }
             catch (Exception ex)
@@ -279,7 +284,7 @@ namespace Datadog.Trace.FeatureFlags
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
                 default:
-                    return false;
+                    throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
         }
 
@@ -313,7 +318,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (conditionValue is not IEnumerable enumerable)
             {
-                return false;
+                throw new FormatException($"Condition value is not an array {Convert.ToString(conditionValue ?? "<NULL>")}");
             }
 
             foreach (var value in enumerable)
@@ -373,7 +378,7 @@ namespace Datadog.Trace.FeatureFlags
             return comparator(a, b);
         }
 
-        private static bool MatchesShard(Shard shard, string targetingKey)
+        private static bool MatchesShard(Shard shard, string? targetingKey)
         {
             if (shard.Ranges is null)
             {
@@ -392,8 +397,13 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static int GetShard(string salt, string targetingKey, int totalShards)
+        private static int GetShard(string salt, string? targetingKey, int totalShards)
         {
+            if (StringUtil.IsNullOrEmpty(targetingKey))
+            {
+                throw new MissingTargetingKeyException();
+            }
+
             var hashKey = $"{salt}-{targetingKey}";
             var md5Hash = GetMd5Hash(hashKey);
             var first8Chars = md5Hash.Substring(0, Math.Min(8, md5Hash.Length));
@@ -445,6 +455,11 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
+                if (StringUtil.IsNullOrEmpty(context.TargetingKey))
+                {
+                    throw new MissingTargetingKeyException();
+                }
+
                 return context.TargetingKey;
             }
 
@@ -480,7 +495,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (target == ValueType.Integer)
             {
-                var number = ParseDouble(value);
+                var number = ParseInteger(value);
                 return (int)number;
             }
 
@@ -508,12 +523,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (value is string txt)
             {
-                return txt.ToLower() switch
-                {
-                    "true" => 1.0,
-                    "false" => 0.0,
-                    _ => double.Parse(txt, CultureInfo.InvariantCulture)
-                };
+                return double.Parse(txt, CultureInfo.InvariantCulture);
             }
             else if (value is IConvertible)
             {
@@ -523,6 +533,20 @@ namespace Datadog.Trace.FeatureFlags
             return double.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
+        private static double ParseInteger(object value)
+        {
+            if (value is string txt)
+            {
+                return int.Parse(txt, CultureInfo.InvariantCulture);
+            }
+            else if (value is IConvertible)
+            {
+                return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+            }
+
+            return int.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
+        }
+
         private static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.FlagMetadata == null)
@@ -530,7 +554,7 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            return evaluation.FlagMetadata.TryGetValue("allocationKey", out var key) ? key : null;
+            return evaluation.FlagMetadata.TryGetValue(MetadataAllocationKey, out var key) ? key : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
@@ -549,6 +573,12 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         var entry = stack.Pop();
                         var value = entry.Value;
+
+                        // For now only return first level entries
+                        if (entry.Level > 1)
+                        {
+                            continue;
+                        }
 
                         if (value == null || seen.Add(value))
                         {
@@ -596,27 +626,25 @@ namespace Datadog.Trace.FeatureFlags
             DateTime evalTime,
             EvaluationContext? context)
         {
+            if (StringUtil.IsNullOrEmpty(flag.Key))
+            {
+                return ParseError($"Variant not found for: {variationKey}");
+            }
+
+            if (StringUtil.IsNullOrEmpty(allocation.Key))
+            {
+                return ParseError($"Allocation key is null for {flagKey}");
+            }
+
             if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
             {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: $"Variant not found for: {variationKey}",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = $"Variant not found for: {variationKey}"
-                    });
+                return ParseError($"Variant not found for: {variationKey}");
             }
 
             var mappedValue = MapValue(resultType, variant.Value);
-
             var metadata = new Dictionary<string, string>
             {
-                ["flagKey"] = flag.Key ?? string.Empty,
-                ["variationType"] = flag.VariationType?.ToString() ?? string.Empty,
-                ["allocationKey"] = allocation.Key ?? string.Empty
+                [MetadataAllocationKey] = allocation.Key
             };
 
             var evaluation = new Evaluation(
@@ -633,6 +661,20 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return evaluation;
+
+            Evaluation ParseError(string error)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: error,
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "PARSE_ERROR",
+                        ["message"] = error
+                    });
+            }
         }
 
         private void DispatchExposure(
@@ -660,6 +702,10 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         private record struct FlattenEntry(string Key, object? Value, int Level)
+        {
+        }
+
+        private sealed class MissingTargetingKeyException : Exception
         {
         }
 

@@ -9,7 +9,7 @@ using System.ComponentModel;
 
 namespace Datadog.Trace.FeatureFlags;
 
-/// <summary> Evaluation result reason </summary>
+/// <summary> Evaluation result type </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [Browsable(false)]
 public enum ValueType
@@ -26,6 +26,6 @@ public enum ValueType
     /// <summary> Bool value </summary>
     Boolean,
 
-    /// <summary> Json string value </summary>
+    /// <summary> Json value </summary>
     Json
 }

@@ -27,48 +27,57 @@ public partial class FeatureFlagsEvaluatorTests
 
     public static IEnumerable<object?[]> MapValueCases()
     {
-        // targetType, value, expected (or typeof(Exception))
+        // targetType, value, expected, typeof(Exception)
+        yield return new object?[] { null, null, null };
+
         // String
-        yield return new object?[] { "hello", "hello" };
-        yield return new object?[] { 123, "123" };
-        yield return new object?[] { true, "True" };
-        yield return new object?[] { 3.14, "3.14" };
-        yield return new object?[] { null, null };
+        yield return new object?[] { "hello", "hello", null };
+        yield return new object?[] { 123, "123", null };
+        yield return new object?[] { true, "True", null };
+        yield return new object?[] { 3.14, "3.14", null };
 
         // Bool
-        yield return new object?[] { true, true };
-        yield return new object?[] { false, false };
-        yield return new object?[] { "true", true };
-        yield return new object?[] { "false", false };
-        yield return new object?[] { "TRUE", true };
-        yield return new object?[] { "FALSE", false };
-        yield return new object?[] { 1, true };
-        yield return new object?[] { 0, false };
-        yield return new object?[] { null, null };
+        yield return new object?[] { true, true, null };
+        yield return new object?[] { false, false, null };
+        yield return new object?[] { "true", true, null };
+        yield return new object?[] { "false", false, null };
+        yield return new object?[] { "TRUE", true, null };
+        yield return new object?[] { "FALSE", false, null };
+        yield return new object?[] { 1, true, null };
+        yield return new object?[] { 0, false, null };
 
         // Int
-        yield return new object?[] { 42, (int)42 };
-        yield return new object?[] { "42", (int)42 };
-        yield return new object?[] { 3.14, (int)3 };
-        yield return new object?[] { "3.14", (int)3 };
-        yield return new object?[] { null, null };
+        yield return new object?[] { 42, (int)42, null };
+        yield return new object?[] { "42", (int)42, null };
 
         // Double
-        yield return new object?[] { 3.14, 3.14 };
-        yield return new object?[] { "3.14", 3.14 };
-        yield return new object?[] { 42, 42d };
-        yield return new object?[] { "42", 42d };
-        yield return new object?[] { null, null };
+        yield return new object?[] { 3.14, 3.14, null };
+        yield return new object?[] { "3.14", 3.14, null };
+        yield return new object?[] { 42, 42d, null };
+        yield return new object?[] { "42", 42d, null };
 
         // Unsupported
-        yield return new object?[] { new DateTime(2023, 12, 21), typeof(ArgumentException) };
+        yield return new object?[] { new DateTime(2023, 12, 21), null, typeof(ArgumentException) };
+        yield return new object?[] { "3.14", (int)3, typeof(FormatException) };
+        yield return new object?[] { 3.14, (int)3, typeof(FormatException) };
     }
 
     [Theory]
     [MemberData(nameof(MapValueCases))]
-    public void MapValueTests(object? input, object? expected)
+    public void MapValueTests(object? input, object? expected, Type? expectedExceptionType)
     {
-        if (expected is null || expected is string)
+        if (expectedExceptionType is not null)
+        {
+            try
+            {
+                _ = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.String, input);
+            }
+            catch (Exception res)
+            {
+                Assert.Equal(expectedExceptionType, res.GetType());
+            }
+        }
+        else if (expected is null || expected is string)
         {
             var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.String, input);
             Assert.Equal(expected, res);
@@ -87,17 +96,6 @@ public partial class FeatureFlagsEvaluatorTests
         {
             var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.Boolean, input);
             Assert.Equal(expected, res);
-        }
-        else if (expected is System.Type)
-        {
-            try
-            {
-                _ = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.String, input);
-            }
-            catch (Exception res)
-            {
-                Assert.Equal(expected, res.GetType());
-            }
         }
         else
         {
@@ -121,10 +119,21 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void EvaluateWithMissingTargetingKeyReturnsTargetingKeyMissing()
     {
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
-        var ctx = new EvaluationContext(string.Empty); // no targetingKey
+        var flags = new Dictionary<string, Flag>
+        {
+            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
+        };
 
-        var result = evaluator.Evaluate("flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+
+        var ctx = new EvaluationContext("user-123");
+        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal("on", result.Variant);
+
+        var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
+        result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", noTargettingKeyCtx);
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
@@ -225,15 +234,15 @@ public partial class FeatureFlagsEvaluatorTests
         // list: [1,2,[4]]
         yield return new object[]
         {
-            new Dictionary<string, object?> { { "list", new List<object?> { 1, 2, new List<object?> { 4 } } } },
-            new Dictionary<string, object?> { { "list[0]", 1 }, { "list[1]", 2 }, { "list[2][0]", 4 } },
+            new Dictionary<string, object?> { { "integer", 1 }, { "list", new List<object?> { 1, 2, new List<object?> { 4 } } } },
+            new Dictionary<string, object?> { { "integer", 1 } },
         };
 
         // nested map
         yield return new object[]
         {
-            new Dictionary<string, object?> { { "map", new Dictionary<string, object?> { { "key1", 1 }, { "key2", 2 }, { "key3", new Dictionary<string, object?> { { "key4", 4 } } } } } },
-            new Dictionary<string, object?> { { "map.key1", 1 }, { "map.key2", 2 }, { "map.key3.key4", 4 } },
+            new Dictionary<string, object?> { { "integer", 1 }, { "map", new Dictionary<string, object?> { { "key1", 1 }, { "key2", 2 }, { "key3", new Dictionary<string, object?> { { "key4", 4 } } } } } },
+            new Dictionary<string, object?> { { "integer", 1 } },
         };
     }
 

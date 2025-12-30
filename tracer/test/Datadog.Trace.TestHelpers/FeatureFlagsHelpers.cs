@@ -38,9 +38,14 @@ internal static class FeatureFlagsHelpers
             [variantKey] = new Variant { Key = variantKey, Value = (string)value },
         };
 
+        var shards = new List<Shard>()
+        {
+            new Shard() { Salt = ".", TotalShards = 5000, Ranges = new List<ShardRange> { new ShardRange() { Start = 0, End = 5000 } } }
+        };
+
         var splits = new List<Split>
         {
-            new Split { Shards = new List<Shard>(), VariationKey = variantKey }
+            new Split { Shards = shards, VariationKey = variantKey }
         };
 
         var allocations = new List<Allocation>
