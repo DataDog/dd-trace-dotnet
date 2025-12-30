@@ -80,7 +80,6 @@ namespace Datadog.Trace.IntegrationTests
             {
                 { "DD-Telemetry-API-Version", TelemetryConstants.ApiVersionV2 },
                 { "Content-Type", "application/json" },
-                { "Content-Length", null },
                 { "DD-Telemetry-Request-Type", "app-heartbeat" },
                 { "DD-Client-Library-Language", "dotnet" },
                 { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
@@ -118,6 +117,12 @@ namespace Datadog.Trace.IntegrationTests
                         headers[header.Key].Should().Be(header.Value);
                     }
                 }
+
+                // should have either content-length or chunked encoding
+                headers.AllKeys.Should()
+                       .Contain(s => s.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)
+                                  || (s.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
+                                   && headers[s] == "chunked"));
             }
         }
 
