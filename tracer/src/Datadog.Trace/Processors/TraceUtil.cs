@@ -54,7 +54,7 @@ namespace Datadog.Trace.Processors
             return false;
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize/normalize.go#L152
+        // https://github.com/DataDog/datadog-agent/blob/5e576f16449f2cc003d231ad50d54c920fdee08f/pkg/trace/traceutil/normalize/normalize.go#L152
         public static string NormalizeTag(string value)
         {
             if (IsNormalizedAsciiTag(value))
