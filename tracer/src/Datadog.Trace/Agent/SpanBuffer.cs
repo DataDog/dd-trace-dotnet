@@ -1,4 +1,4 @@
-// <copyright file="SpanBuffer.cs" company="Datadog">
+﻿// <copyright file="SpanBuffer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent
 {
-    internal class SpanBuffer
+    internal sealed class SpanBuffer
     {
         internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public WriteStatus TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
+        public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
             bool lockTaken = false;
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceChunk = new TraceChunkModel(spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0);
+                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first

@@ -8,7 +8,7 @@ using System;
 
 namespace Datadog.Trace;
 
-internal class TaggingUtils
+internal static class TaggingUtils
 {
     internal static Action<string, string> GetSpanSetter(ISpan span)
     {

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Configuration;
 
-internal class NullDynamicConfigurationManager : IDynamicConfigurationManager
+internal sealed class NullDynamicConfigurationManager : IDynamicConfigurationManager
 {
     public void Dispose()
     {

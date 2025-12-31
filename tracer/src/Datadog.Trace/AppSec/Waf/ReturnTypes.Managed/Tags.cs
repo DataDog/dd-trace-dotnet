@@ -7,7 +7,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class Tags
+    internal sealed class Tags
     {
         [JsonProperty("type")]
         public string Type { get; set; }

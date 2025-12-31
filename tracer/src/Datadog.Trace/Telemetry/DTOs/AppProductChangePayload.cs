@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Telemetry;
 
-internal class AppProductChangePayload : IPayload
+internal sealed class AppProductChangePayload : IPayload
 {
     public AppProductChangePayload(ProductsData products)
     {

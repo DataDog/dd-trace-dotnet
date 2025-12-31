@@ -55,13 +55,26 @@ updates:
 
   # Src libraries
   - package-ecosystem: "nuget"
-    directory: "/tracer/src/Datadog.Trace"
+    directory: "/tracer/src"
+    # This is a hacky way to get Dependabot to care primarily about
+    # - Datadog.Trace
+    # - Datadog.Trace.OpenTracing
+    # - Datadog.Trace.BenchmarkDotNet
+    exclude-paths:
+      - "Datadog.AutoInstrumentation.Generator/**"
+      - "Datadog.AzureFunctions/**"
+      - "Datadog.InstrumentedAssemblyGenerator/**"
+      - "Datadog.InstrumentedAssemblyVerification/**"
+      - "Datadog.Trace.Bundle/**"
+      - "Datadog.Trace.SourceGenerators/**"
+      - "Datadog.Trace.Tools.Analyzers/**"
+      - "Datadog.Trace.Tools.Analyzers.CodeFixes/**"
+      - "Datadog.Trace.Tools.dd_dotnet.SourceGenerators/**"
     registries: "*"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-      - "area:tracer"
     ignore:
       ### Start Datadog.Trace.csproj ignored dependencies
       # DiagnosticSource is kept at the lowest supported version for widest compatibility
@@ -79,52 +92,6 @@ updates:
 
       # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
       - dependency-name: "Microsoft.Build.Framework"
-
-  - package-ecosystem: "nuget"
-    directory: "/tracer/src/Datadog.Trace.OpenTracing"
-    registries: "*"
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependencies"
-      - "area:opentracing"
-    ignore:
-      ### Start Datadog.Trace.csproj ignored dependencies
-      # DiagnosticSource is kept at the lowest supported version for widest compatibility
-      - dependency-name: "System.Diagnostics.DiagnosticSource"
-
-      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Routing"
-
-      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "System.Reflection.Emit"
-      - dependency-name: "System.Reflection.Emit.Lightweight"
-      ### End Datadog.Trace.csproj ignored dependencies
-
-  - package-ecosystem: "nuget"
-    directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
-    registries: "*"
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependencies"
-      - "area:benchmarks"
-    ignore:
-      ### Start Datadog.Trace.csproj ignored dependencies
-      # DiagnosticSource is kept at the lowest supported version for widest compatibility
-      - dependency-name: "System.Diagnostics.DiagnosticSource"
-
-      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Routing"
-
-      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "System.Reflection.Emit"
-      - dependency-name: "System.Reflection.Emit.Lightweight"
-      ### End Datadog.Trace.csproj ignored dependencies
 
   - package-ecosystem: "github-actions"
     directories:

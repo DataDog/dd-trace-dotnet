@@ -27,6 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.$(Namespace);
     IntegrationName = $(IntegrationValue)$(IntegrationKind))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class $(IntegrationClassName)Integration
+public sealed class $(IntegrationClassName)Integration
 {$(OnMethodBegin)$(OnMethodEnd)$(OnAsyncMethodEnd)}
 $(DuckTypeDefinitions)

@@ -1,4 +1,4 @@
-// <copyright file="SessionCodeCoverageMessage.cs" company="Datadog">
+﻿// <copyright file="SessionCodeCoverageMessage.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Ipc.Messages;
 
-internal class SessionCodeCoverageMessage
+internal sealed class SessionCodeCoverageMessage
 {
     public SessionCodeCoverageMessage()
     {

@@ -1,4 +1,4 @@
-// <copyright file="RemoteConfigurationManager.cs" company="Datadog">
+﻿// <copyright file="RemoteConfigurationManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ using Datadog.Trace.RemoteConfigurationManagement.Transport;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal class RemoteConfigurationManager : IRemoteConfigurationManager
+    internal sealed class RemoteConfigurationManager : IRemoteConfigurationManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
 

@@ -14,7 +14,6 @@ namespace Datadog.Trace.BenchmarkDotNet
         public BenchmarkDotNet.Diagnosers.RunMode GetRunMode(BenchmarkDotNet.Running.BenchmarkCase benchmarkCase) { }
         public void Handle(BenchmarkDotNet.Engines.HostSignal signal, BenchmarkDotNet.Diagnosers.DiagnoserActionParameters parameters) { }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Reports.Metric> ProcessResults(BenchmarkDotNet.Diagnosers.DiagnoserResults results) { }
-        public bool RequiresBlockingAcknowledgments(BenchmarkDotNet.Running.BenchmarkCase benchmarkCase) { }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Validators.ValidationError> Validate(BenchmarkDotNet.Validators.ValidationParameters validationParameters) { }
     }
     public class DatadogDiagnoserAttribute : System.Attribute, BenchmarkDotNet.Configs.IConfigSource

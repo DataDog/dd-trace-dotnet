@@ -1,4 +1,4 @@
-// <copyright file="NativeInterop.cs" company="Datadog">
+﻿// <copyright file="NativeInterop.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
 
-internal class NativeInterop
+internal static class NativeInterop
 {
     private const string DllName = "LibDatadog";
 
@@ -116,16 +116,17 @@ internal class NativeInterop
 
     internal static class LibraryConfig
     {
-        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
-        internal static extern TracerMemfdHandleResult StoreTracerMetadata(
-            byte schemaVersion,
-            CharSlice runtimeId,
-            CharSlice tracerLanguage,
-            CharSlice tracerVersion,
-            CharSlice hostname,
-            CharSlice serviceName,
-            CharSlice serviceEnv,
-            CharSlice serviceVersion);
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_new")]
+        internal static extern IntPtr TracerMetadataNew();
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_free")]
+        internal static extern void TracerMetadataFree(IntPtr metadata);
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_set")]
+        internal static extern void TracerMetadataSet(IntPtr metadata, MetadataKind kind, CString value);
+
+        [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_store")]
+        internal static extern TracerMemfdHandleResult StoreTracerMetadata(IntPtr metadata);
 
         [DllImport(DllName, EntryPoint = "ddog_library_configurator_new")]
         internal static extern IntPtr ConfiguratorNew(byte debugLogs, CharSlice language);
@@ -143,6 +144,6 @@ internal class NativeInterop
         internal static extern void ConfiguratorDrop(IntPtr configurator);
 
         [DllImport(DllName, EntryPoint = "ddog_library_config_drop")]
-        internal static extern void LibraryConfigDrop(LibraryConfigs configs);
+        internal static extern void LibraryConfigDrop(LibraryConfigResult configs);
     }
 }

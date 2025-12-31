@@ -1,4 +1,4 @@
-// <copyright file="ManualParserGitInfoProvider.cs" company="Datadog">
+﻿// <copyright file="ManualParserGitInfoProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -535,7 +535,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
         }
     }
 
-    internal class ConfigItem
+    internal sealed class ConfigItem
     {
         public string? Type { get; set; }
 
@@ -548,7 +548,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
         public string? Merge { get; set; }
     }
 
-    internal class BigEndianBinaryReader(Stream stream) : BinaryReader(stream)
+    internal sealed class BigEndianBinaryReader(Stream stream) : BinaryReader(stream)
     {
         public override int ReadInt32()
         {

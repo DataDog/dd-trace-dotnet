@@ -1,4 +1,4 @@
-// <copyright file="EvidenceConverterHelper.cs" company="Datadog">
+﻿// <copyright file="EvidenceConverterHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// Helper class to convert Evidence objects
 /// </summary>
-internal class EvidenceConverterHelper
+internal static class EvidenceConverterHelper
 {
     internal static string Substring(string value, Range range)
     {
@@ -143,7 +143,7 @@ internal class EvidenceConverterHelper
         }
     }
 
-    internal class ValuePartIterator : IEnumerable<ValuePart?>
+    internal sealed class ValuePartIterator : IEnumerable<ValuePart?>
     {
         // private Context ctx;
         private string value;
@@ -169,7 +169,7 @@ internal class EvidenceConverterHelper
             return new Enumerator(this);
         }
 
-        private class Enumerator : IEnumerator<ValuePart?>
+        private sealed class Enumerator : IEnumerator<ValuePart?>
         {
             private ValuePartIterator iterator;
 

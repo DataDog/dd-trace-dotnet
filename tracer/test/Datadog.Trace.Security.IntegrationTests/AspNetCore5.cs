@@ -8,10 +8,16 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -106,6 +112,39 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
             var spans = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty);
             await VerifySpans(spans, settings, testName: Prefix + "AspNetCore5.SecurityEnabled.MetaStruct", forceMetaStruct: true);
+        }
+
+        [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public async Task BlockingResponseSecurityIdMatchesAppSecEvent()
+        {
+            await TryStartApp();
+
+            var agent = Fixture.Agent;
+
+            if (agent.Configuration.SpanMetaStructs)
+            {
+                await agent.WaitForConfigSentAsync();
+            }
+
+            var minDateTime = DateTime.UtcNow;
+            var (statusCode, responseText) = await SubmitRequest("/", body: null, contentType: null, userAgent: "Hello/V", accept: "application/json");
+
+            statusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            var responseSecurityId = JObject.Parse(responseText)["security_response_id"]?.Value<string>();
+            responseSecurityId.Should().NotBeNullOrEmpty("blocking response should include a security_response_id");
+
+            var spans = await WaitForSpansAsync(agent, expectedSpans: 1, phase: string.Empty, minDateTime, "/");
+            var appsecSpan = spans.FirstOrDefault(s => s.MetaStruct.ContainsKey("appsec"));
+            appsecSpan.Should().NotBeNull("blocking request should produce an AppSec span");
+
+            var appsecMetaStruct = appsecSpan!.MetaStruct["appsec"];
+            var metaStructJson = MetaStructToJson(appsecMetaStruct);
+            var spanSecurityId = JToken.Parse(metaStructJson)["triggers"]?.FirstOrDefault()?["security_response_id"]?.Value<string>();
+
+            spanSecurityId.Should().NotBeNullOrEmpty("AppSec event should include a security_response_id");
+            spanSecurityId.Should().BeEquivalentTo(responseSecurityId);
         }
     }
 

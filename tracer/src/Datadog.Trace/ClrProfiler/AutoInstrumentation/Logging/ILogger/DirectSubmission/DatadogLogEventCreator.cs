@@ -1,4 +1,4 @@
-// <copyright file="DatadogLogEventCreator.cs" company="Datadog">
+﻿// <copyright file="DatadogLogEventCreator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 /// <summary>
 /// Creates log events in Datadog format
 /// </summary>
-internal class DatadogLogEventCreator : ILogEventCreator
+internal sealed class DatadogLogEventCreator : ILogEventCreator
 {
     private readonly LogFormatter _logFormatter;
     private readonly IExternalScopeProvider? _scopeProvider;
@@ -51,7 +51,7 @@ internal class DatadogLogEventCreator : ILogEventCreator
         return _scopeProvider?.Push(state) ?? NullDisposable.Instance;
     }
 
-    private class NullDisposable : IDisposable
+    private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
 

@@ -29,8 +29,7 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
     private static readonly Type _locationType = Type.GetType("Datadog.Trace.Iast.Location, Datadog.Trace");
     private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-    private static readonly Type _arrayBuilderType = Type.GetType("Datadog.Trace.Util.ArrayBuilder`1, Datadog.Trace");
-    private static readonly Type _arrayBuilderOfSpanType = _arrayBuilderType.MakeGenericType(new Type[] { _spanType });
+    private static readonly Type _spanCollectionType = Type.GetType("Datadog.Trace.Agent.SpanCollection, Datadog.Trace");
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
@@ -58,9 +57,9 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
-    private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _spanCollectionValuesField = _spanCollectionType.GetField("_values", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceRangesField = _evidenceType.GetField("_ranges", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -259,15 +258,14 @@ public class InstrumentationTestsBase : IDisposable
     private List<object> GetGeneratedSpans(object context)
     {
         var spans = new List<object>();
-        var spansArray = _spansField.GetValue(context);
-        var contextSpans = _getArrayMethod.Invoke(spansArray, Array.Empty<object>()) as IEnumerable<object>;
-
-        foreach (var span in contextSpans)
+        var spanCollection = _spansField.GetValue(context);
+        var spanCollectionValues = _spanCollectionValuesField.GetValue(spanCollection);
+        return spanCollectionValues switch
         {
-            spans.Add(span);
-        }
-
-        return spans;
+            null => [],
+            IEnumerable<object> array => [..array],
+            { } span => [span],
+        };
     }
 
     protected object AssertTaintedFormat(object expected, object instrumented)
