@@ -22,6 +22,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
 {
     public class JsonTelemetryTransportTests
     {
+#if !NETFRAMEWORK
         [Theory]
         [CombinatorialData]
         public async Task ShouldContainRequiredHeaders(bool debugEnabled, [CombinatorialValues("", "gzip")] string compression, bool agentless)
@@ -83,6 +84,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             var expectedEncoding = compression == "gzip" ? "gzip" : null;
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/json", expectedEncoding), Times.Once);
         }
+
+#endif
 
         [Fact]
         public void SerializedAppStartedShouldProduceJsonWithExpectedFormat()

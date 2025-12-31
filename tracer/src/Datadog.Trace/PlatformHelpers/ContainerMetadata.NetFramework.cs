@@ -16,6 +16,16 @@ internal sealed class ContainerMetadata
 {
     public static readonly ContainerMetadata Instance = new();
 
+    private ContainerMetadata()
+    {
+    }
+
+    // For use in tests only
+    public ContainerMetadata(string containerId, string entityId)
+    {
+        // nothing to do, just to match the other version
+    }
+
     /// <summary>
     /// Gets the id of the container executing the code.
     /// Return <c>null</c> if code is not executing inside a supported container.

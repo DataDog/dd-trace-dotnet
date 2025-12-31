@@ -47,6 +47,7 @@ namespace Datadog.Trace.Tests.Agent
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
+#if !NETFRAMEWORK
         [Theory]
         [CombinatorialData]
         public async Task SendWithContainerMetadata(
@@ -93,6 +94,7 @@ namespace Datadog.Trace.Tests.Agent
                 savedHeaders.Should().NotContainKey(AgentHttpHeaderNames.EntityId);
             }
         }
+#endif
 
         [Theory]
         [InlineData(429)]
