@@ -21,22 +21,18 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticsMetricsRuntimeMetricsListener>();
 
     // Note that we don't currently record Pinned Object Heap sizes
-    private static readonly string[] GcGenMetricNames = [MetricsNames.Gen0HeapSize, MetricsNames.Gen1HeapSize, MetricsNames.Gen2HeapSize, MetricsNames.LohSize];
+    private static readonly string[] GcGenSizeMetricNames = [MetricsNames.Gen0HeapSize, MetricsNames.Gen1HeapSize, MetricsNames.Gen2HeapSize, MetricsNames.LohSize];
+    private static readonly string[] GcGenCountMetricNames = [MetricsNames.Gen0CollectionsCount, MetricsNames.Gen1CollectionsCount, MetricsNames.Gen2CollectionsCount];
 
-    private static readonly int MaxGcGenerations = Math.Min(GC.GetGCMemoryInfo().GenerationInfo.Length, GcGenMetricNames.Length);
+    private static readonly int MaxGcSizeGenerations = Math.Min(GC.GetGCMemoryInfo().GenerationInfo.Length, GcGenSizeMetricNames.Length);
+    private static readonly int MaxGcCountGeneration = Math.Min(GC.MaxGeneration, GcGenCountMetricNames.Length - 1);
 
     private readonly IStatsdManager _statsd;
     private readonly MeterListener _listener;
     private readonly bool _systemRuntimeMetricsAvailable;
     private readonly bool _aspnetcoreMetricsAvailable;
+    private readonly long?[] _previousGenCounts = [null, null, null];
 
-    private long _gen0Size;
-    private long _gen1Size;
-    private long _gen2Size;
-    private long _lohSize;
-    private long _gen0Count;
-    private long _gen1Count;
-    private long _gen2Count;
     private double _gcPauseTimeSeconds;
 
     private long _activeRequests;
@@ -47,9 +43,6 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
     private long _queuedConnections;
     private long _totalConnections;
 
-    private long? _previousGen0Count;
-    private long? _previousGen1Count;
-    private long? _previousGen2Count;
     private double? _previousGcPauseTime;
 
     private long? _previousContentionCount;
@@ -91,16 +84,57 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         using var lease = _statsd.TryGetClientLease();
         var statsd = lease.Client ?? NoOpStatsd.Instance;
 
-        // These we can grab directly using existing APIs, without needing the metrics API
+        // There are many stats that we can grab directly, without needing to use the metrics APIs (which just wrap these calls anyway)
         statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
+        Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.ThreadPoolWorkersCount}");
 
         var contentionCount = Monitor.LockContentionCount;
         if (_previousContentionCount.HasValue)
         {
             statsd.Counter(MetricsNames.ContentionCount, contentionCount - _previousContentionCount.Value);
+            Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.ContentionCount}");
         }
 
         _previousContentionCount = contentionCount;
+
+        // GC Heap Size based on "dotnet.gc.last_collection.heap.size" metric
+        // from https://github.com/dotnet/runtime/blob/v10.0.1/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Metrics/RuntimeMetrics.cs#L185
+        // If we call this API before _any_ GCs happen, we'll get 0s for the heap size, so check for that and bail skip emitting if so
+        var gcInfo = GC.GetGCMemoryInfo();
+        if (gcInfo.Index != 0)
+        {
+            for (var i = 0; i < MaxGcSizeGenerations; ++i)
+            {
+                statsd.Gauge(GcGenSizeMetricNames[i], gcInfo.GenerationInfo[i].SizeAfterBytes);
+            }
+        }
+        else
+        {
+            Log.Debug("No GC collections yet, skipping heap size metrics");
+        }
+
+        // GC Collection counts based on "dotnet.gc.collections" metric
+        // from https://github.com/dotnet/runtime/blob/v10.0.1/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Metrics/RuntimeMetrics.cs#L159
+        long collectionsFromHigherGeneration = 0;
+
+        for (var gen = MaxGcCountGeneration; gen >= 0; --gen)
+        {
+            long collectionsFromThisGeneration = GC.CollectionCount(gen);
+            var thisCount = collectionsFromThisGeneration - collectionsFromHigherGeneration;
+            collectionsFromHigherGeneration = collectionsFromThisGeneration;
+
+            var previous = _previousGenCounts[gen];
+            _previousGenCounts[gen] = thisCount;
+
+            if (previous.HasValue)
+            {
+                var increment = (int)Math.Min(thisCount - previous.Value, int.MaxValue);
+                statsd.Increment(GcGenCountMetricNames[gen], increment);
+            }
+        }
+
+        // This isn't strictly true, due to the "previous counts" behavior, but it's good enough, and what we in other listeners
+        Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}");
 
         // aspnetcore metrics
         if (_aspnetcoreMetricsAvailable)
@@ -113,43 +147,17 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             statsd.Gauge(MetricsNames.AspNetCoreCurrentConnections, Interlocked.Read(ref _activeConnections));
             statsd.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, Interlocked.Read(ref _queuedConnections));
             statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, Interlocked.Exchange(ref _totalConnections, 0));
+            Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.AspNetCoreCurrentRequests}, {MetricsNames.AspNetCoreFailedRequests}, {MetricsNames.AspNetCoreTotalRequests}, {MetricsNames.AspNetCoreRequestQueueLength}, {MetricsNames.AspNetCoreCurrentConnections}, {MetricsNames.AspNetCoreConnectionQueueLength}, {MetricsNames.AspNetCoreTotalConnections}");
         }
 
         if (_systemRuntimeMetricsAvailable)
         {
-            statsd.Gauge(MetricsNames.Gen0HeapSize, Interlocked.Exchange(ref _gen0Size, 0));
-            statsd.Gauge(MetricsNames.Gen1HeapSize, Interlocked.Exchange(ref _gen1Size, 0));
-            statsd.Gauge(MetricsNames.Gen2HeapSize, Interlocked.Exchange(ref _gen2Size, 0));
-            statsd.Gauge(MetricsNames.LohSize, Interlocked.Exchange(ref _lohSize, 0));
-
-            var gen0Count = Interlocked.Exchange(ref _gen0Count, 0);
-            var gen1Count = Interlocked.Exchange(ref _gen1Count, 0);
-            var gen2Count = Interlocked.Exchange(ref _gen2Count, 0);
-
-            if (_previousGen0Count.HasValue)
-            {
-                statsd.Increment(MetricsNames.Gen0CollectionsCount, (int)Math.Min(gen0Count - _previousGen0Count.Value, int.MaxValue));
-            }
-
-            if (_previousGen1Count.HasValue)
-            {
-                statsd.Increment(MetricsNames.Gen1CollectionsCount, (int)Math.Min(gen1Count - _previousGen1Count.Value, int.MaxValue));
-            }
-
-            if (_previousGen2Count.HasValue)
-            {
-                statsd.Increment(MetricsNames.Gen2CollectionsCount, (int)Math.Min(gen2Count - _previousGen2Count.Value, int.MaxValue));
-            }
-
-            _previousGen0Count = gen0Count;
-            _previousGen1Count = gen1Count;
-            _previousGen2Count = gen2Count;
-
             var gcPauseTimeSeconds = Interlocked.Exchange(ref _gcPauseTimeSeconds, 0);
             if (_previousGcPauseTime.HasValue)
             {
                 var extraPauseTimeMilliseconds = (gcPauseTimeSeconds * 1_000) - (_previousGcPauseTime.Value * 1000);
                 statsd.Timer(MetricsNames.GcPauseTime, extraPauseTimeMilliseconds);
+                Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.GcPauseTime}");
             }
 
             _previousGcPauseTime = gcPauseTimeSeconds;
@@ -210,57 +218,6 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             case "kestrel.queued_requests":
                 Interlocked.Add(ref handler._queuedRequests, measurement);
                 break;
-
-            case "dotnet.gc.collections":
-                foreach (var tagPair in tags)
-                {
-                    if (tagPair is { Key: "gc.heap.generation", Value: string tag })
-                    {
-                        switch (tag)
-                        {
-                            case "gen0":
-                                Interlocked.Exchange(ref handler._gen0Count, measurement);
-                                break;
-                            case "gen1":
-                                Interlocked.Exchange(ref handler._gen1Count, measurement);
-                                break;
-                            case "gen2":
-                                Interlocked.Exchange(ref handler._gen2Count, measurement);
-                                break;
-                        }
-
-                        return;
-                    }
-                }
-
-                break;
-
-            case "dotnet.gc.last_collection.heap.size":
-                foreach (var tagPair in tags)
-                {
-                    if (tagPair is { Key: "gc.heap.generation", Value: string tag })
-                    {
-                        switch (tag)
-                        {
-                            case "gen0":
-                                Interlocked.Exchange(ref handler._gen0Size, measurement);
-                                break;
-                            case "gen1":
-                                Interlocked.Exchange(ref handler._gen1Size, measurement);
-                                break;
-                            case "gen2":
-                                Interlocked.Exchange(ref handler._gen2Size, measurement);
-                                break;
-                            case "loh":
-                                Interlocked.Exchange(ref handler._lohSize, measurement);
-                                break;
-                        }
-
-                        return;
-                    }
-                }
-
-                break;
         }
     }
 
@@ -286,13 +243,9 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         // - kestrel.queued_requests: MetricsNames.AspNetCoreRequestQueueLength
         var meterName = instrument.Meter.Name;
         var instrumentName = instrument.Name;
-        if ((string.Equals(meterName, "System.Runtime", StringComparison.Ordinal) && instrumentName is
-                 "dotnet.gc.collections" or
-                 "dotnet.gc.pause.time" or
-                 "dotnet.gc.last_collection.heap.size")
-         || (string.Equals(meterName, "Microsoft.AspNetCore.Hosting", StringComparison.Ordinal) && instrumentName is
-                 "http.server.active_requests" or
-                 "http.server.request.duration")
+        if ((string.Equals(meterName, "Microsoft.AspNetCore.Hosting", StringComparison.Ordinal) && instrumentName is
+                    "http.server.active_requests" or
+                    "http.server.request.duration")
          || (string.Equals(meterName, "Microsoft.AspNetCore.Server.Kestrel", StringComparison.Ordinal) && instrumentName is
                  "kestrel.active_connections" or
                  "kestrel.queued_connections" or
