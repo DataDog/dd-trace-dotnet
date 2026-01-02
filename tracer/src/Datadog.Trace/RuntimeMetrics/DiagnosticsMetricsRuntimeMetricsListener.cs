@@ -155,7 +155,6 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
 
             if (availableBytes > 0)
             {
-                // This can return a value > 1 (for values I don't _entirely_ understand), so clamp it to 1.0
                 statsd.Gauge(MetricsNames.GcMemoryLoad, (double)gcInfo.MemoryLoadBytes * 100.0 / availableBytes);
             }
         }
