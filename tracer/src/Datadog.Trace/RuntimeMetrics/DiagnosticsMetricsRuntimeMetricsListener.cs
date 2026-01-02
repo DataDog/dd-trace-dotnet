@@ -42,7 +42,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
     private long _queuedRequests;
     private long _activeConnections;
     private long _queuedConnections;
-    private long _totalConnections;
+    private long _totalClosedConnections;
 
     private double? _previousGcPauseTime;
 
@@ -165,7 +165,10 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         }
 
         var gcPauseTimeMilliSeconds = _getGcPauseTimeFunc(this);
-        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
+        // We don't record 0-length pauses, so that we match RuntimeEventListener behaviour
+        // We don't worry about the floating point comparison, as reporting close to zero is fine
+        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue
+                                             && gcPauseTimeMilliSeconds.Value != _previousGcPauseTime.Value)
         {
             statsd.Timer(MetricsNames.GcPauseTime, gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
         }
@@ -188,7 +191,11 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             if (previous.HasValue)
             {
                 var increment = (int)Math.Min(thisCount - previous.Value, int.MaxValue);
-                statsd.Increment(GcGenCountMetricNames[gen], increment);
+                // don't need to report zero increments
+                if (increment != 0)
+                {
+                    statsd.Increment(GcGenCountMetricNames[gen], increment);
+                }
             }
         }
 
@@ -199,13 +206,20 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         if (_aspnetcoreMetricsAvailable)
         {
             statsd.Gauge(MetricsNames.AspNetCoreCurrentRequests, Interlocked.Read(ref _activeRequests));
-            var failed = Interlocked.Exchange(ref _failedRequests, 0);
+            // Recording these as never-reset gauges seems a bit strange to me as it could easily overflow
+            // but it's what the event listener already does, so I guess it's required (changing it would be problematic I think)
+            var failed = Interlocked.Read(ref _failedRequests);
             statsd.Gauge(MetricsNames.AspNetCoreFailedRequests, failed);
-            statsd.Gauge(MetricsNames.AspNetCoreTotalRequests, failed + Interlocked.Exchange(ref _successRequests, 0));
+            statsd.Gauge(MetricsNames.AspNetCoreTotalRequests, failed + Interlocked.Read(ref _successRequests));
             statsd.Gauge(MetricsNames.AspNetCoreRequestQueueLength, Interlocked.Read(ref _queuedRequests));
-            statsd.Gauge(MetricsNames.AspNetCoreCurrentConnections, Interlocked.Read(ref _activeConnections));
+
+            var currentConnections = Interlocked.Read(ref _activeConnections);
+            statsd.Gauge(MetricsNames.AspNetCoreCurrentConnections, currentConnections);
             statsd.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, Interlocked.Read(ref _queuedConnections));
-            statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, Interlocked.Exchange(ref _totalConnections, 0));
+
+            // Same here, seems risky to have this as a gauge, but I think that ship has sailed
+            // Note also that as _totalClosedConnections doesn't include _current_ connections, we add that in
+            statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, Interlocked.Read(ref _totalClosedConnections) + currentConnections);
             Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.AspNetCoreCurrentRequests}, {MetricsNames.AspNetCoreFailedRequests}, {MetricsNames.AspNetCoreTotalRequests}, {MetricsNames.AspNetCoreRequestQueueLength}, {MetricsNames.AspNetCoreCurrentConnections}, {MetricsNames.AspNetCoreConnectionQueueLength}, {MetricsNames.AspNetCoreTotalConnections}");
         }
     }
@@ -219,7 +233,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
                 Interlocked.Exchange(ref handler._gcPauseTimeSeconds, measurement);
                 break;
             case "kestrel.connection.duration":
-                Interlocked.Increment(ref handler._totalConnections);
+                Interlocked.Increment(ref handler._totalClosedConnections);
                 break;
             case "http.server.request.duration":
                 foreach (var tagPair in tags)
