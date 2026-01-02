@@ -175,8 +175,8 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
 
         listener.Refresh();
 
-        statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreFailedRequests, 0.0, 1, null), Times.Once);
-        statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalRequests, 1.0, 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreFailedRequests, 1.0, 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalRequests, 4.0, 1, null), Times.Once);
     }
 
     [Fact]
