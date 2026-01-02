@@ -179,6 +179,16 @@ namespace Datadog.Trace.Configuration
 
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+
+#if !NET6_0_OR_GREATER
+            if (RuntimeMetricsDiagnosticsMetricsApiEnabled)
+            {
+                Log.Warning(
+                    $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -1052,6 +1062,15 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         internal bool RuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the experimental runtime metrics collector which uses the
+        /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
+        /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
+        /// when using .NET 8+.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
+        internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline
