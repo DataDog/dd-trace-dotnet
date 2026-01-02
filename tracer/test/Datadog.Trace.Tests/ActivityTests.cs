@@ -207,12 +207,12 @@ namespace Datadog.Trace.Tests
 
             public ActivityFixture()
             {
-                Activity.ActivityListener.Initialize();
+                Datadog.Trace.Activity.ActivityListener.Initialize();
             }
 
             public void Dispose()
             {
-                Activity.ActivityListener.StopListeners();
+                Datadog.Trace.Activity.ActivityListener.StopListeners();
             }
 
             public void StartActivity(SD.Activity activity)
