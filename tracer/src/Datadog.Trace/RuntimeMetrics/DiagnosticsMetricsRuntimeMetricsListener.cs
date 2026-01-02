@@ -205,21 +205,27 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         // aspnetcore metrics
         if (_aspnetcoreMetricsAvailable)
         {
-            statsd.Gauge(MetricsNames.AspNetCoreCurrentRequests, Interlocked.Read(ref _activeRequests));
+            var activeRequests = Interlocked.Read(ref _activeRequests);
+            var failedRequests = Interlocked.Read(ref _failedRequests);
+            var successRequests = Interlocked.Read(ref _successRequests);
+            var queuedRequests = Interlocked.Read(ref _queuedRequests);
+            var currentConnections = Interlocked.Read(ref _activeConnections);
+            var queuedConnections = Interlocked.Read(ref _queuedConnections);
+            var totalClosedConnections = Interlocked.Read(ref _totalClosedConnections);
+
+            statsd.Gauge(MetricsNames.AspNetCoreCurrentRequests, activeRequests);
             // Recording these as never-reset gauges seems a bit strange to me as it could easily overflow
             // but it's what the event listener already does, so I guess it's required (changing it would be problematic I think)
-            var failed = Interlocked.Read(ref _failedRequests);
-            statsd.Gauge(MetricsNames.AspNetCoreFailedRequests, failed);
-            statsd.Gauge(MetricsNames.AspNetCoreTotalRequests, failed + Interlocked.Read(ref _successRequests));
-            statsd.Gauge(MetricsNames.AspNetCoreRequestQueueLength, Interlocked.Read(ref _queuedRequests));
+            statsd.Gauge(MetricsNames.AspNetCoreFailedRequests, failedRequests);
+            statsd.Gauge(MetricsNames.AspNetCoreTotalRequests, failedRequests + successRequests);
+            statsd.Gauge(MetricsNames.AspNetCoreRequestQueueLength, queuedRequests);
 
-            var currentConnections = Interlocked.Read(ref _activeConnections);
             statsd.Gauge(MetricsNames.AspNetCoreCurrentConnections, currentConnections);
-            statsd.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, Interlocked.Read(ref _queuedConnections));
+            statsd.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, queuedConnections);
 
             // Same here, seems risky to have this as a gauge, but I think that ship has sailed
             // Note also that as _totalClosedConnections doesn't include _current_ connections, we add that in
-            statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, Interlocked.Read(ref _totalClosedConnections) + currentConnections);
+            statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, totalClosedConnections + currentConnections);
             Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.AspNetCoreCurrentRequests}, {MetricsNames.AspNetCoreFailedRequests}, {MetricsNames.AspNetCoreTotalRequests}, {MetricsNames.AspNetCoreRequestQueueLength}, {MetricsNames.AspNetCoreCurrentConnections}, {MetricsNames.AspNetCoreConnectionQueueLength}, {MetricsNames.AspNetCoreTotalConnections}");
         }
     }
@@ -324,7 +330,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Enabled measurement events for instrument: {MeterName}/{InstrumentName} ", instrumentName, meterName);
+                Log.Debug("Enabled measurement events for instrument: {MeterName}/{InstrumentName} ", meterName, instrumentName);
             }
 
             listener.EnableMeasurementEvents(instrument, state: this);
