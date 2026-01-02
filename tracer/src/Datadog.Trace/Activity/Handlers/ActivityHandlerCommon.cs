@@ -21,7 +21,7 @@ namespace Datadog.Trace.Activity.Handlers
     internal sealed class ActivityHandlerCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityHandlerCommon));
-        internal static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
+        internal static readonly ConcurrentDictionary<ActivityKey, ActivityMapping> ActivityMappingById = new();
         private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
 
         /// <summary>
@@ -48,10 +48,10 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
-            // for non-IW3CActivity interfaces we'll use Activity.Id as the key as they don't have a guaranteed TraceId+SpanId
+            // for non-IW3CActivity interfaces we'll use Activity.Id and string.Empty as the key as they don't have a guaranteed TraceId+SpanId
             // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
             // have to also validate that the TraceId and SpanId actually exist and aren't null - as they can be in some cases
-            string? activityKey = null;
+            ActivityKey? activityKey = null;
 
             if (activity is IW3CActivity w3cActivity)
             {
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Activity.Handlers
                     // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
                     if (activityTraceId != null!)
                     {
-                        if (ActivityMappingById.TryGetValue(activityTraceId + parentSpanId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(new ActivityKey(activityTraceId, parentSpanId), out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
-                        if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                 if (activityTraceId != null! && activitySpanId != null!)
                 {
-                    activityKey = activityTraceId + activitySpanId;
+                    activityKey = new(traceId: activityTraceId, spanId: activitySpanId);
                 }
             }
 
@@ -164,9 +164,9 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                activityKey ??= activity.Id;
+                activityKey ??= new(activity.Id);
 
-                if (activityKey is null)
+                if (!activityKey.Value.IsValid())
                 {
                     // identified by Error Tracking
                     // unsure how exactly this occurs after reading through the Activity source code
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                activityMapping = ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {
@@ -213,17 +213,20 @@ namespace Datadog.Trace.Activity.Handlers
                         return;
                     }
 
-                    string key;
-                    if (activity is IW3CActivity w3cActivity)
+                    // Non-w3c activities will have null trace/span IDs, even though they implement IW3CActivity
+                    ActivityKey key;
+                    if (activity is IW3CActivity w3cActivity
+                     && w3cActivity.TraceId != null!
+                     && w3cActivity.SpanId != null!)
                     {
-                        key = w3cActivity.TraceId + w3cActivity.SpanId;
+                        key = new(w3cActivity.TraceId, w3cActivity.SpanId);
                     }
                     else
                     {
-                        key = activity.Id;
+                        key = new(activity.Id);
                     }
 
-                    if (key is null)
+                    if (!key.IsValid())
                     {
                         // Adding this as a protective measure as Error Tracking identified
                         // instances where StartActivity had an Activity with null Id, SpanId, TraceId
@@ -259,9 +262,11 @@ namespace Datadog.Trace.Activity.Handlers
                     Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
                 }
 
-                List<string>? toDelete = null;
-                foreach (var (activityId, item) in ActivityMappingById)
+                List<ActivityKey>? toDelete = null;
+                foreach (var kvp in ActivityMappingById)
                 {
+                    var activityId = kvp.Key;
+                    var item = kvp.Value;
                     var activityObject = item.Activity;
                     var scope = item.Scope;
                     var hasClosed = false;
@@ -293,7 +298,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                     if (hasClosed)
                     {
-                        toDelete ??= new List<string>();
+                        toDelete ??= new List<ActivityKey>();
                         toDelete.Add(activityId);
                     }
                 }
