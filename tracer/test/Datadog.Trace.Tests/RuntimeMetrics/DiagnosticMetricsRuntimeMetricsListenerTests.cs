@@ -43,6 +43,7 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
 
         // some metrics are only recorded the _second_ time this is called, to avoid skewing the results at the start, so we just check for a couple
         statsd.Verify(s => s.Gauge(MetricsNames.Gen0HeapSize, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -62,9 +63,8 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
         statsd.Verify(s => s.Gauge(MetricsNames.Gen1HeapSize,  It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.Gen2HeapSize,  It.IsInRange(0d, long.MaxValue, Range.Exclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.LohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-#if NET9_0_OR_GREATER
+        statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-#endif
         statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), null), Times.AtLeastOnce);
     }
 

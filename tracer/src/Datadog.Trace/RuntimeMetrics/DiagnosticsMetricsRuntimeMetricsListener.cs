@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -29,9 +30,9 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
 
     private readonly IStatsdManager _statsd;
     private readonly MeterListener _listener;
-    private readonly bool _systemRuntimeMetricsAvailable;
     private readonly bool _aspnetcoreMetricsAvailable;
     private readonly long?[] _previousGenCounts = [null, null, null];
+    private readonly Func<DiagnosticsMetricsRuntimeMetricsListener, double?> _getGcPauseTimeFunc;
 
     private double _gcPauseTimeSeconds;
 
@@ -58,8 +59,35 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         // ASP.NET Core metrics are only available on .NET 8+
         _aspnetcoreMetricsAvailable = Environment.Version.Major >= 8;
 
-        // System.Runtime metrics are only available on .NET 9+
-        _systemRuntimeMetricsAvailable = Environment.Version.Major >= 9;
+        if (Environment.Version.Major >= 9)
+        {
+            // System.Runtime metrics are only available on .NET 9+, but the only one we need it for is GC pause time
+            _getGcPauseTimeFunc = GetGcPauseTime_RuntimeMetrics;
+        }
+        else if (Environment.Version.Major > 6
+                 || Environment.Version is { Major: 6, Build: >= 21 })
+        {
+            // .NET 6.0.21 introduced the GC.GetTotalPauseDuration() method https://github.com/dotnet/runtime/pull/87143
+            // Which is what OTel uses where required: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/5aa6d868/src/OpenTelemetry.Instrumentation.Runtime/RuntimeMetrics.cs#L105C40-L107
+            // We could use ducktyping instead of reflection, but this is such a simple case that it's kind of easier
+            // to just go with the delegate approach
+            var methodInfo = typeof(GC).GetMethod("GetTotalPauseDuration", BindingFlags.Public | BindingFlags.Static);
+            if (methodInfo is null)
+            {
+                // strange, but we failed to get the delegate
+                _getGcPauseTimeFunc = GetGcPauseTime_Noop;
+            }
+            else
+            {
+                var getTotalPauseDuration = methodInfo.CreateDelegate<Func<TimeSpan>>();
+                _getGcPauseTimeFunc = _ => getTotalPauseDuration().TotalMilliseconds;
+            }
+        }
+        else
+        {
+            // can't get pause time
+            _getGcPauseTimeFunc = GetGcPauseTime_Noop;
+        }
 
         // The .NET runtime instruments we listen to only produce long or double values
         // so that's all we listen for here
@@ -79,8 +107,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         // This triggers the observable metrics to go and read the values, then calls the OnMeasurement values to send them to us
         _listener.RecordObservableInstruments();
 
-        // now we send the values to statsd.
-        // This avoids taking a lease for each individual measurement, which keeps that part fast, like it should be
+        // Now we calculate and send the values to statsd.
         using var lease = _statsd.TryGetClientLease();
         var statsd = lease.Client ?? NoOpStatsd.Instance;
 
@@ -103,15 +130,47 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         var gcInfo = GC.GetGCMemoryInfo();
         if (gcInfo.Index != 0)
         {
+            // Heap sizes
             for (var i = 0; i < MaxGcSizeGenerations; ++i)
             {
                 statsd.Gauge(GcGenSizeMetricNames[i], gcInfo.GenerationInfo[i].SizeAfterBytes);
+            }
+
+            // memory load
+            // This is attempting to emulate the GcGlobalHeapHistory.MemoryLoad event details
+            // That value is calculated using
+            // - `current_gc_data_global->mem_pressure` (src/coreclr/gc/gc.cpp#L3288)
+            // - which fetches the value set via `history->mem_pressure = entry_memory_load` (src/coreclr/gc/gc.cpp#L7912)
+            // - which is set by calling `gc_heap::get_memory_info()` (src/coreclr/gc/gc.cpp#L29438)
+            // - which then calls GCToOSInterface::GetMemoryStatus(...) which has platform-specific implementations
+            // - On linux, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.unix.cpp#L1191)
+            //   - Physical Memory Used / Limit
+            //   - (g_totalPhysicalMemSize - GetAvailablePhysicalMemory()) / total
+            // - On Windows, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.windows.cpp#L1000)
+            //   - Working Set Size / Limit
+            //   - GlobalMemoryStatusEx -> (ullTotalVirtual - ullAvailVirtual) * 100.0 / (float)ms.ullTotalVirtual
+            //
+            // We try to roughly emulate that using the info in gcInfo:
+            var availableBytes = gcInfo.TotalAvailableMemoryBytes;
+
+            if (availableBytes > 0)
+            {
+                // This can return a value > 1 (for values I don't _entirely_ understand), so clamp it to 1.0
+                statsd.Gauge(MetricsNames.GcMemoryLoad, (double)gcInfo.MemoryLoadBytes * 100.0 / availableBytes);
             }
         }
         else
         {
             Log.Debug("No GC collections yet, skipping heap size metrics");
         }
+
+        var gcPauseTimeMilliSeconds = _getGcPauseTimeFunc(this);
+        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
+        {
+            statsd.Timer(MetricsNames.GcPauseTime, gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+        }
+
+        _previousGcPauseTime = gcPauseTimeMilliSeconds;
 
         // GC Collection counts based on "dotnet.gc.collections" metric
         // from https://github.com/dotnet/runtime/blob/v10.0.1/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Metrics/RuntimeMetrics.cs#L159
@@ -134,7 +193,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         }
 
         // This isn't strictly true, due to the "previous counts" behavior, but it's good enough, and what we in other listeners
-        Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}");
+        Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}, {MetricsNames.GcPauseTime}, {MetricsNames.GcMemoryLoad}");
 
         // aspnetcore metrics
         if (_aspnetcoreMetricsAvailable)
@@ -148,19 +207,6 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             statsd.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, Interlocked.Read(ref _queuedConnections));
             statsd.Gauge(MetricsNames.AspNetCoreTotalConnections, Interlocked.Exchange(ref _totalConnections, 0));
             Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.AspNetCoreCurrentRequests}, {MetricsNames.AspNetCoreFailedRequests}, {MetricsNames.AspNetCoreTotalRequests}, {MetricsNames.AspNetCoreRequestQueueLength}, {MetricsNames.AspNetCoreCurrentConnections}, {MetricsNames.AspNetCoreConnectionQueueLength}, {MetricsNames.AspNetCoreTotalConnections}");
-        }
-
-        if (_systemRuntimeMetricsAvailable)
-        {
-            var gcPauseTimeSeconds = Interlocked.Exchange(ref _gcPauseTimeSeconds, 0);
-            if (_previousGcPauseTime.HasValue)
-            {
-                var extraPauseTimeMilliseconds = (gcPauseTimeSeconds * 1_000) - (_previousGcPauseTime.Value * 1000);
-                statsd.Timer(MetricsNames.GcPauseTime, extraPauseTimeMilliseconds);
-                Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.GcPauseTime}");
-            }
-
-            _previousGcPauseTime = gcPauseTimeSeconds;
         }
     }
 
@@ -221,36 +267,46 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         }
     }
 
+    private static double? GetGcPauseTime_RuntimeMetrics(DiagnosticsMetricsRuntimeMetricsListener listener)
+    {
+        var gcPauseTimeSeconds = Interlocked.Exchange(ref listener._gcPauseTimeSeconds, 0);
+        return gcPauseTimeSeconds * 1_000;
+    }
+
+    private static double? GetGcPauseTime_Noop(DiagnosticsMetricsRuntimeMetricsListener listener) => null;
+
     private void OnInstrumentPublished(Instrument instrument, MeterListener listener)
     {
-        // Can't do these two:
-        // _ = MetricsNames.ContentionTime;
-        // _ = MetricsNames.GcMemoryLoad;
-
-        // We want the following Meter/instruments
+        // We want the following Meter/instruments:
+        //
         // System.Runtime
-        // - dotnet.gc.collections (tagged by gc.heap.generation=gen0): MetricsNames.Gen0CollectionsCount etc
-        // - dotnet.gc.pause.time: MetricsNames.GcPauseTime
-        // - dotnet.gc.last_collection.heap.size (gc.heap.generation=gen0/gen1/gen2/loh/poh): MetricsNames.Gen0HeapSize etc
+        // - dotnet.gc.pause.time: MetricsNames.GcPauseTime (where possible)
+        // - [dotnet.gc.collections (tagged by gc.heap.generation=gen0)] - we get these via built-in APIs which are functionally identical
+        // - [dotnet.gc.last_collection.heap.size (gc.heap.generation=gen0/gen1/gen2/loh/poh)]  - we get these via built-in APIs which are functionally identical
         //
         // Microsoft.AspNetCore.Hosting
         // - http.server.active_requests: MetricsNames.AspNetCoreCurrentRequests
         // - http.server.request.duration: MetricsNames.AspNetCoreTotalRequests, MetricsNames.AspNetCoreFailedRequests
+        //
         // Microsoft.AspNetCore.Server.Kestrel
         // - kestrel.active_connections: MetricsNames.AspNetCoreCurrentConnections,
         // - kestrel.queued_connections: MetricsNames.AspNetCoreConnectionQueueLength,
         // - kestrel.connection.duration: MetricsNames.AspNetCoreTotalConnections,
         // - kestrel.queued_requests: MetricsNames.AspNetCoreRequestQueueLength
+        //
+        // We have no way to get these:
+        // - MetricsNames.ContentionTime. Only available using EventListener
         var meterName = instrument.Meter.Name;
         var instrumentName = instrument.Name;
-        if ((string.Equals(meterName, "Microsoft.AspNetCore.Hosting", StringComparison.Ordinal) && instrumentName is
-                    "http.server.active_requests" or
-                    "http.server.request.duration")
-         || (string.Equals(meterName, "Microsoft.AspNetCore.Server.Kestrel", StringComparison.Ordinal) && instrumentName is
-                 "kestrel.active_connections" or
-                 "kestrel.queued_connections" or
-                 "kestrel.connection.duration" or
-                 "kestrel.queued_requests"))
+        if ((string.Equals(meterName, "System.Runtime", StringComparison.Ordinal) && instrumentName is "dotnet.gc.pause.time")
+           || (string.Equals(meterName, "Microsoft.AspNetCore.Hosting", StringComparison.Ordinal) && instrumentName is
+                  "http.server.active_requests" or
+                  "http.server.request.duration")
+          || (string.Equals(meterName, "Microsoft.AspNetCore.Server.Kestrel", StringComparison.Ordinal) && instrumentName is
+                  "kestrel.active_connections" or
+                  "kestrel.queued_connections" or
+                  "kestrel.connection.duration" or
+                  "kestrel.queued_requests"))
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
