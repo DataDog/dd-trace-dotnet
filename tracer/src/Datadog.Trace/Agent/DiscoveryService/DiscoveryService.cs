@@ -409,13 +409,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, string? containerId, TimeSpan tcpTimeout)
         {
-            var headers = BuildHeaders(containerId);
-
             return AgentTransportStrategy.Get(
                 exporterSettings,
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
-                headers,
+                BuildHeaders(containerId),
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
         }
