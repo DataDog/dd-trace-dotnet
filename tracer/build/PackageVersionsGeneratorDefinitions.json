@@ -861,6 +861,9 @@
     }, {
       "MinVersion": "2.57.0",
       "ExcludeTargetFrameworks": ["netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    }, {
+      "MinVersion": "2.76.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     }]
   },
   {

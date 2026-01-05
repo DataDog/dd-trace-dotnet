@@ -1,4 +1,4 @@
-﻿// <copyright file="SerilogLogFormatter.cs" company="Datadog">
+// <copyright file="SerilogLogFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -107,10 +107,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                 return;
             }
 
+            // Always write null for unknown types to maintain valid JSON
+            LogFormatter.WriteValue(writer, value: null);
+
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Unknown Serilog LogEventPropertyValue '{Type}': skipping in log message", value.GetType());
-                LogFormatter.WriteValue(writer, value: null);
+                Log.Debug("Unknown Serilog LogEventPropertyValue '{Type}': writing null value", value.GetType());
             }
         }
 

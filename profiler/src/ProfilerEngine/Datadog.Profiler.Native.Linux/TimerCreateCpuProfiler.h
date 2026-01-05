@@ -22,6 +22,7 @@ class IThreadInfo;
 class IManagedThreadList;
 class ProfilerSignalManager;
 class CpuSampleProvider;
+class IUnwinder;
 
 class TimerCreateCpuProfiler : public ServiceBase
 {
@@ -31,7 +32,8 @@ public:
         ProfilerSignalManager* pSignalManager,
         IManagedThreadList* pManagedThreadsList,
         CpuSampleProvider* pProvider,
-        MetricsRegistry& metricsRegistry) noexcept;
+        MetricsRegistry& metricsRegistry,
+        IUnwinder* pUnwinder) noexcept;
 
     ~TimerCreateCpuProfiler();
 
@@ -60,4 +62,5 @@ private:
     std::shared_ptr<CounterMetric> _totalSampling;
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
+    std::unique_ptr<IUnwinder> _pUnwinder;
 };

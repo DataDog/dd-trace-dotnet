@@ -192,19 +192,20 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         }
 
         // nothing else to do, since the writer was not fully initialized
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        if (!Volatile.Read(ref _isInitialized) || _processTask == null || _flushTask == null)
         {
             return;
         }
 
+        var allTasks = Task.WhenAll(_processTask, _flushTask);
         var completedTask = await Task.WhenAny(
-                                           _processTask,
+                                           allTasks,
                                            Task.Delay(TimeSpan.FromSeconds(1)))
                                       .ConfigureAwait(false);
 
-        if (completedTask != _processTask)
+        if (completedTask != allTasks)
         {
-            Log.Error("Could not flush all data streams stats before process exit");
+            Log.Warning("Could not flush all data streams stats before process exit");
         }
 
         await FlushAsync().ConfigureAwait(false);
