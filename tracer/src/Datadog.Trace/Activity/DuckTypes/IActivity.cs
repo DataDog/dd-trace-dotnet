@@ -19,6 +19,11 @@ namespace Datadog.Trace.Activity.DuckTypes
         // as never having a null value.
         string Id { get; }
 
+        /// <summary>
+        /// Gets the ParentId, as a string calculated from <see cref="Parent"/> or, if an <see cref="IW3CActivity"/>,
+        /// from the <see cref="IW3CActivity.ParentSpanId"/>.
+        /// </summary>
+        /// <remarks>NOTE: this property allocates, and so should generally not be called unless the specific returned value is required</remarks>
         string? ParentId { get; }
 
         // The corresponding property on the Activity object is nullable,
