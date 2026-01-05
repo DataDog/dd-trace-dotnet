@@ -469,7 +469,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             foreach (var productName in productNames)
             {
                 if (pascalName.Length > productName.Length &&
-                    pascalName.StartsWith(productName, StringComparison.InvariantCulture))
+                    pascalName.StartsWith(productName, StringComparison.Ordinal))
                 {
                     pascalName = pascalName.Substring(productName.Length);
                     break;

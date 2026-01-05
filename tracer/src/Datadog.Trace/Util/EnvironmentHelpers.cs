@@ -59,6 +59,7 @@ internal static class EnvironmentHelpers
 
     /// <summary>
     /// Safe wrapper around Environment.GetEnvironmentVariable
+    /// -> Don't rename unless you adapt EnvironmentGetEnvironmentVariableAnalyzer
     /// </summary>
     /// <param name="key">Name of the environment variable to fetch</param>
     /// <param name="defaultValue">Value to return in case of error</param>
