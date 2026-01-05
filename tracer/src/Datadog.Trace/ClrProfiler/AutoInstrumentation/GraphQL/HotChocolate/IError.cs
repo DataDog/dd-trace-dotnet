@@ -30,9 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         string Message { get; }
 
         /// <summary>
-        /// Gets the path in the document where the error applies
+        /// Gets the path in the document where the error applies.
+        /// Returns the HotChocolate.Path object which has a ToList() method.
         /// </summary>
-        PathStruct Path { get; }
+        IPath Path { get; }
 
         /// <summary>
         /// Gets the StackTrace of the error.
