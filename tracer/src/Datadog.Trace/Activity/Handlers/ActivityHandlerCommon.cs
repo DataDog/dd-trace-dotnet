@@ -181,7 +181,15 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
+#if NETCOREAPP
+                // Avoid closure allocation if we can
+                activityMapping = ActivityMappingById.GetOrAdd(
+                    activityKey.Value,
+                    static (_, details) => new(details.activity.Instance!, CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
+                    (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
+#else
                 activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+#endif
             }
             catch (Exception ex)
             {
