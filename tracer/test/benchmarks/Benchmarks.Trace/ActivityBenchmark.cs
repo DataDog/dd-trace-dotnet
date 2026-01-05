@@ -34,6 +34,7 @@ public class ActivityBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
+        TracerHelper.SetGlobalTracer();
         _source = new ActivitySource(SourceName);
 
         _activityListener = new ActivityListener { ShouldListenTo = _ => true, Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData };
@@ -48,6 +49,7 @@ public class ActivityBenchmark
     {
         _source.Dispose();
         _activityListener.Dispose();
+        TracerHelper.CleanupGlobalTracer();
     }
 
     [Benchmark]
