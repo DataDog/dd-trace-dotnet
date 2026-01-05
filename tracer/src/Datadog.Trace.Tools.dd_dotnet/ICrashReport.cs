@@ -31,14 +31,14 @@ internal unsafe interface ICrashReport : IUnknown
 
     int Send();
 
-    int SendPing();
-
     int WriteToFile(IntPtr url);
-
-    int WritePingToFile(IntPtr url);
 
     [Obsolete("You're aware it's going to crash the process, right?")]
     int CrashProcess();
+
+    int SendPing();
+
+    int WritePingToFile(IntPtr url);
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct Tag

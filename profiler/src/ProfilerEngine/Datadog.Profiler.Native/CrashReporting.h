@@ -109,10 +109,10 @@ public:
     virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
     virtual int32_t STDMETHODCALLTYPE Send() = 0;
-    virtual int32_t STDMETHODCALLTYPE SendPing() = 0;
     virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
-    virtual int32_t STDMETHODCALLTYPE WritePingToFile(const char* url) = 0;
     virtual int32_t STDMETHODCALLTYPE CrashProcess() = 0;
+    virtual int32_t STDMETHODCALLTYPE SendPing() = 0;
+    virtual int32_t STDMETHODCALLTYPE WritePingToFile(const char* url) = 0;
 };
 
 class CrashReporting : public ICrashReporting 

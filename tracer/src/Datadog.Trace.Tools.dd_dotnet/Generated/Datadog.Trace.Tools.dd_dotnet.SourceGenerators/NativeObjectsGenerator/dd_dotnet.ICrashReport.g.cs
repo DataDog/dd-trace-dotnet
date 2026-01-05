@@ -126,29 +126,9 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
         }
         return returnvalue;
     }
-    public int SendPing()
-    {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 10);
-        var result = func(_implementation, out var returnvalue);
-        if (result != 0)
-        {
-            throw new System.ComponentModel.Win32Exception(result);
-        }
-        return returnvalue;
-    }
     public int WriteToFile(nint a0)
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, out int, int>)*(VTable + 11);
-        var result = func(_implementation, a0, out var returnvalue);
-        if (result != 0)
-        {
-            throw new System.ComponentModel.Win32Exception(result);
-        }
-        return returnvalue;
-    }
-    public int WritePingToFile(nint a0)
-    {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, out int, int>)*(VTable + 12);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, out int, int>)*(VTable + 10);
         var result = func(_implementation, a0, out var returnvalue);
         if (result != 0)
         {
@@ -158,8 +138,28 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
     }
     public int CrashProcess()
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 13);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 11);
         var result = func(_implementation, out var returnvalue);
+        if (result != 0)
+        {
+            throw new System.ComponentModel.Win32Exception(result);
+        }
+        return returnvalue;
+    }
+    public int SendPing()
+    {
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 12);
+        var result = func(_implementation, out var returnvalue);
+        if (result != 0)
+        {
+            throw new System.ComponentModel.Win32Exception(result);
+        }
+        return returnvalue;
+    }
+    public int WritePingToFile(nint a0)
+    {
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, out int, int>)*(VTable + 13);
+        var result = func(_implementation, a0, out var returnvalue);
         if (result != 0)
         {
             throw new System.ComponentModel.Win32Exception(result);
