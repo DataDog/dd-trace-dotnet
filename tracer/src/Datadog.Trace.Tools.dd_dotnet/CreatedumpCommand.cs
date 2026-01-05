@@ -602,14 +602,7 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        // Set signal information early to include it in the ping
-        if (signal.HasValue)
-        {
-            DebugPrint("Adding signal information to the crash report");
-            _ = SetSignal(crashReport, signal.Value);
-        }
-
-        _ = SendPing(crashReport, _runtime);
+        // _ = SendPing(crashReport, _runtime);
 
         if (crashThread == null)
         {
@@ -714,6 +707,13 @@ internal class CreatedumpCommand : Command
         else
         {
             AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
+        }
+
+        // Set signal information early to include it in the ping
+        if (signal.HasValue)
+        {
+            DebugPrint("Adding signal information to the crash report");
+            _ = SetSignal(crashReport, signal.Value);
         }
 
         DebugPrint("Setting crash report metadata");

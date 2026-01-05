@@ -503,6 +503,7 @@ public class CreatedumpTests : ConsoleTestHelper
               .And.EndWith("Crashing...\n"); // Making sure there is no additional output
         }
 
+        // TODO check for ping file
         File.Exists(reportFile.Path).Should().BeFalse();
     }
 
