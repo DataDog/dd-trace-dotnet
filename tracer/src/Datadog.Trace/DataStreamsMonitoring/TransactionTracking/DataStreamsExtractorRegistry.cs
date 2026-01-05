@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
-internal class DataStreamsExtractorRegistry
+internal sealed class DataStreamsExtractorRegistry
 {
     private readonly Dictionary<DataStreamsTransactionExtractor.Type, List<DataStreamsTransactionExtractor>> _extractors = new();
 

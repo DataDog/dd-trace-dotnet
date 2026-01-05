@@ -8,7 +8,7 @@ using System;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
-internal class DataStreamsTransactionContainer
+internal sealed class DataStreamsTransactionContainer
 {
     private readonly object _lock = new();
     private readonly int _initialByteSize;

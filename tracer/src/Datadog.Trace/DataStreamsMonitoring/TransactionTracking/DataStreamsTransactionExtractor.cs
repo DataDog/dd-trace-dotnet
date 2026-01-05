@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 [Serializable]
-internal class DataStreamsTransactionExtractor
+internal sealed class DataStreamsTransactionExtractor
 {
     public enum Type
     {
