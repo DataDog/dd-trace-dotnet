@@ -64,6 +64,7 @@ class RawSampleTransformer;
 class RuntimeIdStore;
 class CpuSampleProvider;
 class NetworkProvider;
+class IUnwinder;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -268,6 +269,7 @@ private :
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
+    std::unique_ptr<IUnwinder> _pUnwinder = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
     std::unique_ptr<RingBuffer> _pCpuProfilerRb = nullptr;
 #endif
