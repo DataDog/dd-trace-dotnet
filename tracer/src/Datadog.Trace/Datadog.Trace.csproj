@@ -62,10 +62,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -188,6 +184,6 @@
     <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
-    <AdditionalFiles Include="..\Datadog.Trace.Tools.Analyzers\ConfigurationAnalyzers\BannedSymbols.txt" />
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 </Project>
