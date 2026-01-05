@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
+﻿// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -27,6 +28,7 @@ namespace Datadog.Trace.PlatformHelpers
 {
     internal sealed class AspNetCoreHttpRequestHandler
     {
+        internal const string HttpContextItemsKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
@@ -73,32 +75,27 @@ namespace Datadog.Trace.PlatformHelpers
             return default;
         }
 
-        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer, ReadOnlyDictionary<string, string> headerTagsInternal)
         {
-            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
-
-            if (!headerTagsInternal.IsNullOrEmpty())
+            try
             {
-                try
+                // extract propagation details from http headers
+                if (request.Headers is { } requestHeaders)
                 {
-                    // extract propagation details from http headers
-                    if (request.Headers is { } requestHeaders)
-                    {
-                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
-                            span,
-                            new HeadersCollectionAdapter(requestHeaders),
-                            headerTagsInternal,
-                            defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                    }
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
+                        span,
+                        new HeadersCollectionAdapter(requestHeaders),
+                        headerTagsInternal,
+                        defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error extracting propagated HTTP headers.");
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -124,7 +121,13 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
-            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
+            if (headerTagsInternal.Count != 0)
+            {
+                AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
+            }
+
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
@@ -135,7 +138,7 @@ namespace Datadog.Trace.PlatformHelpers
                 requestTrackingFeature.ProxyScope = proxyScope;
             }
 
-            httpContext.Features.Set(requestTrackingFeature);
+            httpContext.Items[HttpContextItemsKey] = requestTrackingFeature;
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
@@ -144,8 +147,7 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            var iastInstance = Iast.Iast.Instance;
-            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();
@@ -161,7 +163,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             if (rootScope != null)
             {
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
                 var proxyScope = requestFeature?.ProxyScope;
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
@@ -227,7 +229,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
 
-                var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
                 var proxyScope = requestFeature?.ProxyScope;
                 if (proxyScope?.Span != null)
                 {
@@ -250,7 +252,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        internal class RequestTrackingFeature
+        internal sealed class RequestTrackingFeature
         {
             public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
             {

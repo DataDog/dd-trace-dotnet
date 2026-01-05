@@ -1,4 +1,4 @@
-// <copyright file="GlobalConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="GlobalConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration;
 /// <summary>
 /// Contains global datadog configuration.
 /// </summary>
-internal class GlobalConfigurationSource
+internal static class GlobalConfigurationSource
 {
     /// <summary>
     /// Gets the configuration source instance.
@@ -99,7 +99,7 @@ internal class GlobalConfigurationSource
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
-                                       .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
+                                       .WithKeys(ConfigurationKeys.ConfigurationFileName)
                                        .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);

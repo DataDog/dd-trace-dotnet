@@ -7,10 +7,11 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
-    internal class TelemetryTransportFactory
+    internal sealed class TelemetryTransportFactory
     {
         public TelemetryTransportFactory(TelemetrySettings telemetrySettings)
         {
@@ -44,12 +45,14 @@ namespace Datadog.Trace.Telemetry.Transports
             => new AgentTelemetryTransport(
                 TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
-                telemetryCompressionMethod: telemetrySettings.CompressionMethod);
+                telemetrySettings.CompressionMethod,
+                ContainerMetadata.Instance);
 
         private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, TelemetrySettings telemetrySettings)
             => new AgentlessTelemetryTransport(
                 TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
-                telemetryCompressionMethod: telemetrySettings.CompressionMethod);
+                telemetrySettings.CompressionMethod,
+                ContainerMetadata.Instance);
     }
 }

@@ -6,9 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -64,13 +66,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://example.com/path/4294967294", "GET", "GET example.com/path/" + Id)]
         [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
         [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
-        public void CleanUri_ResourceName(string uri, string method, string expected)
+        public async Task CleanUri_ResourceName(string uri, string method, string expected)
         {
             // Set up Tracer
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), IntegrationId.HttpMessageHandler, out _))
             {
@@ -79,13 +81,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        public void CreateOutboundHttpScope_Null_ResourceUri()
+        public async Task CreateOutboundHttpScope_Null_ResourceUri()
         {
             // Set up Tracer
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, "GET", null, IntegrationId.HttpMessageHandler, out _))
             {
@@ -116,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://example.com/path/123,123", "https://example.com/path/123,123", false)]
         [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", false)]
         [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", false)]
-        public void CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
+        public async Task CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
         {
             // Set up Tracer
             var dictionary = new Dictionary<string, object>
@@ -135,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var settings = TracerSettings.Create(dictionary);
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             const string method = "GET";
 
@@ -149,13 +151,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Theory]
         [InlineData((int)IntegrationId.HttpMessageHandler, (int)IntegrationId.HttpMessageHandler)] // This scenario may occur on any .NET runtime with nested HttpMessageHandler's and HttpSocketHandler's
         [InlineData((int)IntegrationId.WebRequest, (int)IntegrationId.HttpMessageHandler)] // This scenario may occur on .NET Core where the underlying transport for WebRequest is HttpMessageHandler
-        public void CreateOutboundHttpScope_AlwaysCreatesOneAutomaticInstrumentationScope(int integration1, int integration2)
+        public async Task CreateOutboundHttpScope_AlwaysCreatesOneAutomaticInstrumentationScope(int integration1, int integration2)
         {
             // Set up Tracer
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             const string method = "GET";
             const string url = "http://www.contoso.com";

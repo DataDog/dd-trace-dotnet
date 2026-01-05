@@ -21,7 +21,7 @@ namespace Datadog.Trace.LibDatadog.DataPipeline;
 /// <summary>
 /// A "managed" version of <see cref="TraceExporter"/> that responds to changes in settings by replacing the trace exporter
 /// </summary>
-internal class ManagedTraceExporter : IApi, IDisposable
+internal sealed class ManagedTraceExporter : IApi, IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ManagedTraceExporter>();
     private readonly IDisposable _settingSubscription;

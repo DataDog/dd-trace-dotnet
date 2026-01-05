@@ -1,4 +1,4 @@
-// <copyright file="Api.cs" company="Datadog">
+﻿// <copyright file="Api.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal class Api : IApi
+    internal sealed class Api : IApi
     {
         private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
@@ -49,6 +49,7 @@ namespace Datadog.Trace.Agent
         public Api(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
+            ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,

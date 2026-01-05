@@ -17,7 +17,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
-    internal class DataStreamsMessagePackFormatter
+    internal sealed class DataStreamsMessagePackFormatter
     {
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");

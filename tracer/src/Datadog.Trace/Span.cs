@@ -1,4 +1,4 @@
-// <copyright file="Span.cs" company="Datadog">
+﻿// <copyright file="Span.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    internal partial class Span : ISpan
+    internal sealed partial class Span : ISpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -47,10 +47,8 @@ namespace Datadog.Trace
 
             if (links is not null)
             {
-                foreach (var link in links)
-                {
-                    AddLink(link);
-                }
+                // We're in the constructor, so doing a direct replace allows optimizations vs using AddLink()
+                SpanLinks = [..links];
             }
 
             if (IsLogLevelDebugEnabled)

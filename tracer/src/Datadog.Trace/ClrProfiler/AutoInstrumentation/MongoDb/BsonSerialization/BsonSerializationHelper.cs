@@ -99,7 +99,7 @@ internal static class BsonSerializationHelper
         stringWriter.Flush();
     }
 
-    private class BsonHelper
+    private sealed class BsonHelper
     {
 #pragma warning disable SA1401 // Field should be private - avoiding copying of struct proxies
         internal readonly IBsonSerializationContextProxy BsonSerializationContextProxy;

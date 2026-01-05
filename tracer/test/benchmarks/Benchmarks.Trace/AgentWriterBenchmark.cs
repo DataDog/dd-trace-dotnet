@@ -9,6 +9,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -21,7 +22,7 @@ namespace Benchmarks.Trace
 
         private IAgentWriter _agentWriter;
         private IAgentWriter _agentWriterNoOpFlush;
-        private ArraySegment<Span> _enrichedSpans;
+        private SpanCollection _enrichedSpans;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -43,7 +44,7 @@ namespace Benchmarks.Trace
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
-            _enrichedSpans = new ArraySegment<Span>(enrichedSpans);
+            _enrichedSpans = new SpanCollection(enrichedSpans, SpanCount);
 
             var config = TracerHelper.DefaultConfig;
             config.Add(ConfigurationKeys.TraceEnabled, false);
@@ -51,7 +52,8 @@ namespace Benchmarks.Trace
 
             var api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
-                statsd: new StatsdManager(settings, (_, _) => null!),
+                new StatsdManager(settings, (_, _) => null!),
+                ContainerMetadata.Instance,
                 updateSampleRates: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);

@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Amazon.DynamoDBv2.Model;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
@@ -12,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -23,9 +25,9 @@ public class AwsDynamoDbCommonTests
     private const string TableName = "MyTableName";
 
     [Fact]
-    public void TagTableNameAndResourceName_TagsProperly()
+    public async Task TagTableNameAndResourceName_TagsProperly()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
 
         AwsDynamoDbCommon.TagTableNameAndResourceName(TableName, tags, scope);
@@ -37,9 +39,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagTableNameAndResourceName_WithNullTags_SkipsTagging()
+    public async Task TagTableNameAndResourceName_WithNullTags_SkipsTagging()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest { TableName = TableName };
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
@@ -52,9 +54,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagTableNameAndResourceName_WithNullScope_SkipsTagging()
+    public async Task TagTableNameAndResourceName_WithNullScope_SkipsTagging()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest { TableName = TableName };
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
@@ -66,9 +68,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagTableNameAndResourceName_WithEmptyRequest_SkipsTagging()
+    public async Task TagTableNameAndResourceName_WithEmptyRequest_SkipsTagging()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
         var request = new GetItemRequest();
         var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
@@ -82,9 +84,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagBatchRequest_WithOneTable_TagsTableNameAndResourceName()
+    public async Task TagBatchRequest_WithOneTable_TagsTableNameAndResourceName()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
         var request = new BatchGetItemRequest
         {
@@ -104,9 +106,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagBatchRequest_WithMultipleTables_SkipsTagging()
+    public async Task TagBatchRequest_WithMultipleTables_SkipsTagging()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
         var request = new BatchGetItemRequest
         {
@@ -127,9 +129,9 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagBatchRequest_WithEmptyRequest_SkipsTagging()
+    public async Task TagBatchRequest_WithEmptyRequest_SkipsTagging()
     {
-        var tracer = GetTracer();
+        await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchWriteItem", out AwsDynamoDbTags tags);
         var request = new BatchWriteItemRequest
         {
@@ -145,7 +147,7 @@ public class AwsDynamoDbCommonTests
         span.ResourceName.Should().Be("DynamoDB.BatchWriteItem");
     }
 
-    private static Tracer GetTracer(string schemaVersion = "v1")
+    private static ScopedTracer GetTracer(string schemaVersion = "v1")
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -153,6 +155,6 @@ public class AwsDynamoDbCommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }

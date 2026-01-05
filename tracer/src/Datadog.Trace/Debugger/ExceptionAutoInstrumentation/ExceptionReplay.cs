@@ -1,4 +1,4 @@
-// <copyright file="ExceptionReplay.cs" company="Datadog">
+﻿// <copyright file="ExceptionReplay.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,18 +7,16 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplay : IDisposable
+    internal sealed class ExceptionReplay : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
         private bool _isDisabled;
@@ -66,23 +64,31 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
             _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
             // TODO: respond to changes in exporter settings
-            var apiFactory = AgentTransportStrategy.Get(
-                tracer.Settings.Manager.InitialExporterSettings,
-                productName: "debugger",
-                tcpTimeout: TimeSpan.FromSeconds(15),
-                AgentHttpHeaderNames.MinimalHeaders,
-                () => new MinimalAgentHeaderHelper(),
-                uri => uri);
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
 
-            var snapshotUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+            if (ExceptionReplayTransportFactory.Create(tracer.Settings, Settings, discoveryService) is not { } transportInfo)
+            {
+                _isDisabled = true;
+                return;
+            }
+
+            var snapshotUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(
+                transportInfo.ApiRequestFactory,
+                transportInfo.DiscoveryService,
+                gitMetadataTagsProvider,
+                transportInfo.StaticEndpoint);
             var snapshotBatchUploader = BatchUploader.Create(snapshotUploadApi);
 
             _uploader = SnapshotUploader.Create(
                 snapshotSink: _snapshotSink,
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
+
+            if (transportInfo.IsAgentless)
+            {
+                Log.Information("Exception Replay agentless uploads enabled. Symbol uploads remain unavailable without the Datadog Agent.");
+            }
 
             _ = Task.Run(() => _uploader.StartFlushingAsync())
                     .ContinueWith(

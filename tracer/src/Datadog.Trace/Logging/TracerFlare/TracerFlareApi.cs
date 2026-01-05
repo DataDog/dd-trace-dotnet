@@ -18,7 +18,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareApi
+internal sealed class TracerFlareApi
 {
     internal const string TracerFlareSentLog = "Tracer flare sent successfully";
     private const string TracerFlareEndpoint = "tracer_flare/v1";
@@ -106,5 +106,5 @@ internal class TracerFlareApi
         return requestFactory;
     }
 
-    private record Api(IApiRequestFactory RequestFactory, Uri Endpoint);
+    private sealed record Api(IApiRequestFactory RequestFactory, Uri Endpoint);
 }

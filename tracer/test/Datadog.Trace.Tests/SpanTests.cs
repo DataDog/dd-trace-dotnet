@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
@@ -21,11 +22,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
-    public class SpanTests
+    public class SpanTests : IAsyncLifetime
     {
         private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
-        private readonly Tracer _tracer;
+        private readonly ScopedTracer _tracer;
 
         public SpanTests(ITestOutputHelper output)
         {
@@ -40,8 +41,12 @@ namespace Datadog.Trace.Tests
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = TracerHelper.Create(settings, _writerMock.Object, samplerMock.Object);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
         public void SetTag_KeyValue_KeyValueSet()
@@ -53,7 +58,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(key, value);
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(key).Should().Be(value);
         }
 
@@ -65,7 +70,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(Tags.PeerService, "a-peer-service");
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<SpanCollection>()), Times.Never);
             span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
             span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
         }
@@ -121,7 +126,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Once);
+            _writerMock.Verify(x => x.WriteTrace(in It.Ref<SpanCollection>.IsAny), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 

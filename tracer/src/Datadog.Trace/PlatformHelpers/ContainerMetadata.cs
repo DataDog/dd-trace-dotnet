@@ -21,7 +21,7 @@ namespace Datadog.Trace.PlatformHelpers
     /// <summary>
     /// Utility class with methods to interact with container hosts.
     /// </summary>
-    internal class ContainerMetadata
+    internal sealed class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
         private const string ControlGroupsNamespacesFilePath = "/proc/self/ns/cgroup";
@@ -39,17 +39,30 @@ namespace Datadog.Trace.PlatformHelpers
         // if we're running in host namespace or not (does not work when running in DinD)
         private const long HostCgroupNamespaceInode = 0xEFFFFFFB;
 
-        private static readonly Lazy<string> LazyContainerId = new(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-        private static readonly Lazy<string> LazyEntityId = new(GetEntityIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
 
         public static readonly ContainerMetadata Instance = new();
 
+        private readonly Lazy<string> _containerId;
+        private readonly Lazy<string> _entityId;
+
+        private ContainerMetadata()
+        {
+            _containerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+            _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
+        }
+
+        // For use in tests only
+        public ContainerMetadata(string containerId, string entityId)
+        {
+            _containerId = new Lazy<string>(() => containerId);
+            _entityId = new Lazy<string>(() => entityId);
+        }
+
         /// <summary>
         /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
         /// </summary>
-        public static string ContainerTagsHash { get; set; }
+        public string ContainerTagsHash { get; set; }
 
         /// <summary>
         /// Gets the id of the container executing the code.
@@ -58,7 +71,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <value>The container id or <c>null</c>.</value>
         public string ContainerId
         {
-            get => LazyContainerId.Value;
+            get => _containerId.Value;
         }
 
         /// <summary>
@@ -74,7 +87,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <value>The entity id or <c>null</c>.</value>
         public string EntityId
         {
-            get => LazyEntityId.Value;
+            get => _entityId.Value;
         }
 
         /// <summary>
@@ -228,9 +241,9 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private static string GetEntityIdInternal()
+        private static string GetEntityIdInternal(Lazy<string> lazyContainerId)
         {
-            if (LazyContainerId.Value is string containerId)
+            if (lazyContainerId.Value is string containerId)
             {
                 return $"ci-{containerId}";
             }

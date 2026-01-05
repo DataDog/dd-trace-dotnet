@@ -35,7 +35,7 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly bool _telemetryGzipCompressionEnabled;
         private readonly string _telemetryCompressionMethod;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;

@@ -1,4 +1,4 @@
-﻿// <copyright file="EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration.cs" company="Datadog">
+// <copyright file="EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration
+public sealed class EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TUserDetails>(ref string userLogin, TUserDetails userDetails, ref IDictionary<string, string>? metadata)
         where TUserDetails : IUserDetails

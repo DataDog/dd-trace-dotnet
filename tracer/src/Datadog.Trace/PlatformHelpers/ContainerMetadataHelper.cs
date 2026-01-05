@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-
 using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.PlatformHelpers;

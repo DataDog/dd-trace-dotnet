@@ -61,6 +61,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     protected Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
     {
         var request = _apiRequestFactory.Create(new Uri(uri));
+        request.AddHeader("DD-REQUEST-ID", Guid.NewGuid().ToString());
         var isDebuggerV1 = uri.Contains(DebuggerV1Endpoint);
 
         return this is DiagnosticsUploadApi && !isDebuggerV1

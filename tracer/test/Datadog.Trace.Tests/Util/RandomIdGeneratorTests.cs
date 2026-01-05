@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -13,6 +14,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -153,14 +155,14 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Default_Is_128Bit_TraceId()
+    public async Task Default_Is_128Bit_TraceId()
     {
-        var tracer = new Tracer(
+        await using var tracer = TracerHelper.Create(
             new TracerSettings(),
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            new TestStatsdManager(Mock.Of<IDogStatsd>()),
+            Mock.Of<IDogStatsd>(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 
@@ -171,16 +173,16 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Configure_128Bit_TraceId_Disabled()
+    public async Task Configure_128Bit_TraceId_Disabled()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
 
-        var tracer = new Tracer(
+        await using var tracer = TracerHelper.Create(
             settings,
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            new TestStatsdManager(Mock.Of<IDogStatsd>()),
+            Mock.Of<IDogStatsd>(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 
@@ -191,16 +193,16 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Configure_128Bit_TraceId_Enabled()
+    public async Task Configure_128Bit_TraceId_Enabled()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, true } });
 
-        var tracer = new Tracer(
+        await using var tracer = TracerHelper.Create(
             settings,
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             new AsyncLocalScopeManager(),
-            new TestStatsdManager(Mock.Of<IDogStatsd>()),
+            Mock.Of<IDogStatsd>(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>());
 
