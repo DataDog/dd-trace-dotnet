@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Immutable;
+using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -17,13 +18,11 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
     ///
     /// Currently checks:
     /// - EnvironmentHelpers.GetEnvironmentVariable
-    /// - EnvironmentHelpers.EnvironmentVariableExists
     /// - EnvironmentHelpersNoLogging.GetEnvironmentVariable
-    /// - EnvironmentHelpersNoLogging.TryCheckEnvVar
+    /// - EnvironmentHelpers.EnvironmentVariableExists
+    /// - EnvironmentHelpersNoLogging.EnvironmentVariableExists
     /// - EnvironmentVariablesProvider.GetValue
     /// - Any type implementing IValueProvider.GetValue (including through generics)
-    ///
-    /// To add more methods, add them to the TargetMethods list.
     ///
     /// Valid:   EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ApiKey)
     /// Valid:   EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.SomeKey)
@@ -38,7 +37,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// <summary>
         /// Diagnostic descriptor for when GetEnvironmentVariable is called with a hardcoded string.
         /// </summary>
-        public static readonly DiagnosticDescriptor UseConfigurationKeysRule = new(
+        private static readonly DiagnosticDescriptor UseConfigurationKeysRule = new(
             id: "DD0011",
             title: "Use ConfigurationKeys or PlatformKeys constants in Environment.GetEnvironmentVariable calls",
             messageFormat: "Environment.GetEnvironmentVariable must use a constant from ConfigurationKeys or PlatformKeys class, not hardcoded string '{0}'",
@@ -50,7 +49,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// <summary>
         /// Diagnostic descriptor for when GetEnvironmentVariable is called with anything other than a ConfigurationKeys or PlatformKeys constant.
         /// </summary>
-        public static readonly DiagnosticDescriptor UseConfigurationKeysNotVariablesRule = new(
+        private static readonly DiagnosticDescriptor UseConfigurationKeysNotVariablesRule = new(
             id: "DD0012",
             title: "Use ConfigurationKeys or PlatformKeys constants in Environment.GetEnvironmentVariable calls",
             messageFormat: "Environment.GetEnvironmentVariable must use a constant from ConfigurationKeys or PlatformKeys class, not '{0}'",
@@ -58,19 +57,6 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "Use ConfigurationKeys.* or PlatformKeys.* constants directly. Variables, parameters, and expressions are not allowed.");
-
-        /// <summary>
-        /// List of methods to check. Add new entries here to extend the analyzer.
-        /// Format: ("Fully.Qualified.TypeName", "MethodName")
-        /// </summary>
-        private static readonly (string TypeName, string MethodName)[] TargetMethods =
-        {
-            ("Datadog.Trace.Util.EnvironmentHelpers", "GetEnvironmentVariable"),
-            ("Datadog.Trace.Util.EnvironmentHelpers", "EnvironmentVariableExists"),
-            ("Datadog.Trace.Util.EnvironmentHelpersNoLogging", "GetEnvironmentVariable"),
-            ("Datadog.Trace.Util.EnvironmentHelpersNoLogging", "TryCheckEnvVar"),
-            ("Datadog.Trace.Ci.CiEnvironment.IValueProvider", "GetValue"),
-        };
 
         /// <summary>
         /// Gets the supported diagnostics
@@ -86,14 +72,38 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeInvocationExpression, SyntaxKind.InvocationExpression);
+            context.RegisterCompilationStartAction(compilationContext =>
+            {
+                var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
+                var targetTypes = new TargetTypeSymbols(
+                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpers),
+                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpersNoLogging),
+                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.IValueProvider),
+                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys),
+                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys));
+
+                compilationContext.RegisterSyntaxNodeAction(
+                    c => AnalyzeInvocationExpression(c, targetTypes),
+                    SyntaxKind.InvocationExpression);
+            });
         }
 
-        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, TargetTypeSymbols targetTypes)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 
-            // Get the method being called
+            // Bail out early: check if this is a member access with one of our target method names and has arguments
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+             || memberAccess.Name.Identifier.Text is not ("GetEnvironmentVariable" or "EnvironmentVariableExists" or "GetValue")
+             || invocation.ArgumentList?.Arguments.Count == 0
+             || invocation.ArgumentList?.Arguments.Count >= 4)
+            {
+                return;
+            }
+
+            var argumentList = invocation.ArgumentList;
+
+            // Now get the semantic model (expensive operation)
             var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is not IMethodSymbol calledMethod)
             {
@@ -101,59 +111,55 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
 
             // Check if this is one of our target methods
-            if (!IsTargetMethod(calledMethod))
+            if (!IsTargetMethod(calledMethod, targetTypes))
             {
                 return;
             }
 
             // Check the first argument (the environment variable name)
-            var argumentList = invocation.ArgumentList;
-            if (argumentList?.Arguments.Count > 0)
+            if (argumentList.Arguments.Count > 0)
             {
                 var argument = argumentList.Arguments[0];
-                AnalyzeEnvironmentVariableArgument(context, argument);
+                AnalyzeEnvironmentVariableArgument(context, argument, targetTypes);
             }
         }
 
         /// <summary>
         /// Checks if a method is one of our target methods to analyze.
         /// </summary>
-        private static bool IsTargetMethod(IMethodSymbol method)
+        private static bool IsTargetMethod(IMethodSymbol method, TargetTypeSymbols targetTypes)
         {
-            var methodName = method.Name;
-
-            foreach (var (targetType, targetMethod) in TargetMethods)
+            if (method.ContainingType == null)
             {
-                if (methodName != targetMethod)
-                {
-                    continue;
-                }
-
-                // Check if the containing type matches directly
-                var containingType = method.ContainingType?.ToDisplayString();
-                if (containingType == targetType)
-                {
-                    return true;
-                }
-
-                // Check if the containing type implements the target interface
-                if (method.ContainingType != null && ImplementsInterface(method.ContainingType, targetType))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            var containingType = method.ContainingType;
+
+            return method.Name switch
+            {
+                "GetEnvironmentVariable" => SymbolEqualityComparer.Default.Equals(containingType, targetTypes.EnvironmentHelpers)
+                                         || SymbolEqualityComparer.Default.Equals(containingType, targetTypes.EnvironmentHelpersNoLogging),
+                "EnvironmentVariableExists" => SymbolEqualityComparer.Default.Equals(containingType, targetTypes.EnvironmentHelpers) || SymbolEqualityComparer.Default.Equals(containingType, targetTypes.EnvironmentHelpersNoLogging),
+                "GetValue" => SymbolEqualityComparer.Default.Equals(containingType, targetTypes.IValueProvider)
+                           || ImplementsInterface(containingType, targetTypes.IValueProvider),
+                _ => false
+            };
         }
 
         /// <summary>
         /// Checks if a type implements a specific interface.
         /// </summary>
-        private static bool ImplementsInterface(ITypeSymbol type, string interfaceName)
+        private static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol targetInterface)
         {
+            if (targetInterface == null)
+            {
+                return false;
+            }
+
             foreach (var iface in type.AllInterfaces)
             {
-                if (iface.ToDisplayString() == interfaceName)
+                if (SymbolEqualityComparer.Default.Equals(iface, targetInterface))
                 {
                     return true;
                 }
@@ -164,7 +170,8 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
         private static void AnalyzeEnvironmentVariableArgument(
             SyntaxNodeAnalysisContext context,
-            ArgumentSyntax argument)
+            ArgumentSyntax argument,
+            TargetTypeSymbols targetTypes)
         {
             var expression = argument.Expression;
 
@@ -172,7 +179,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             // Example: ConfigurationKeys.ApiKey, ConfigurationKeys.CIVisibility.Enabled, PlatformKeys.SomeKey
             if (expression is MemberAccessExpressionSyntax memberAccess)
             {
-                if (IsValidConfigurationConstant(memberAccess, context.SemanticModel))
+                if (IsValidConfigurationConstant(memberAccess, context.SemanticModel, targetTypes))
                 {
                     // Valid: This is a ConfigurationKeys or PlatformKeys constant
                     return;
@@ -215,7 +222,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// Checks if a member access expression is a constant from ConfigurationKeys or PlatformKeys class.
         /// Accepts: ConfigurationKeys.ApiKey, ConfigurationKeys.CIVisibility.Enabled, PlatformKeys.*, etc.
         /// </summary>
-        private static bool IsValidConfigurationConstant(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+        private static bool IsValidConfigurationConstant(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel, TargetTypeSymbols targetTypes)
         {
             var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
             if (symbolInfo.Symbol is IFieldSymbol field)
@@ -230,17 +237,10 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var containingType = field.ContainingType;
                 while (containingType != null)
                 {
-                    var fullTypeName = containingType.ToDisplayString();
-                    const string configKeys = "Datadog.Trace.Configuration.ConfigurationKeys";
-                    // Check if this is ConfigurationKeys or a nested class within ConfigurationKeys
-                    if (fullTypeName == configKeys || fullTypeName.StartsWith(configKeys))
-                    {
-                        return true;
-                    }
-
-                    const string platformKeys = "Datadog.Trace.Configuration.PlatformKeys";
-                    // Check if this is PlatformKeys or a nested class within PlatformKeys
-                    if (fullTypeName == platformKeys || fullTypeName.StartsWith(platformKeys))
+                    if (SymbolEqualityComparer.Default.Equals(containingType, targetTypes.ConfigurationKeys)
+                     || SymbolEqualityComparer.Default.Equals(containingType, targetTypes.PlatformKeys)
+                     || IsNestedWithin(containingType, targetTypes.ConfigurationKeys)
+                     || IsNestedWithin(containingType, targetTypes.PlatformKeys))
                     {
                         return true;
                     }
@@ -250,6 +250,56 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Checks if a type is nested within a parent type.
+        /// </summary>
+        private static bool IsNestedWithin(INamedTypeSymbol type, INamedTypeSymbol parentType)
+        {
+            if (parentType == null)
+            {
+                return false;
+            }
+
+            var current = type.ContainingType;
+            while (current != null)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, parentType))
+                {
+                    return true;
+                }
+
+                current = current.ContainingType;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Holds references to the target type symbols to avoid repeated lookups and string allocations.
+        /// </summary>
+        private readonly struct TargetTypeSymbols
+        {
+            public readonly INamedTypeSymbol EnvironmentHelpers;
+            public readonly INamedTypeSymbol EnvironmentHelpersNoLogging;
+            public readonly INamedTypeSymbol IValueProvider;
+            public readonly INamedTypeSymbol ConfigurationKeys;
+            public readonly INamedTypeSymbol PlatformKeys;
+
+            public TargetTypeSymbols(
+                INamedTypeSymbol environmentHelpers,
+                INamedTypeSymbol environmentHelpersNoLogging,
+                INamedTypeSymbol iValueProvider,
+                INamedTypeSymbol configurationKeys,
+                INamedTypeSymbol platformKeys)
+            {
+                EnvironmentHelpers = environmentHelpers;
+                EnvironmentHelpersNoLogging = environmentHelpersNoLogging;
+                IValueProvider = iValueProvider;
+                ConfigurationKeys = configurationKeys;
+                PlatformKeys = platformKeys;
+            }
         }
     }
 }

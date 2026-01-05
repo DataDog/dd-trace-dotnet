@@ -16,8 +16,8 @@ namespace Datadog.Trace.Tools.Analyzers.Tests.ConfigurationAnalyzers;
 
 public class ConfigurationBuilderWithKeysAnalyzerTests
 {
-    private const string DD0007 = "DD0007"; // Hardcoded string literal
-    private const string DD0008 = "DD0008"; // Variable or expression
+    private const string Dd0007 = "DD0007"; // Hardcoded string literal
+    private const string Dd0008 = "DD0008"; // Variable or expression
 
     [Fact]
     public async Task ValidWithKeysUsingConfigurationKeys_ShouldHaveNoDiagnostics()
@@ -39,7 +39,6 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
                     public struct HasKeys
                     {
-                        public HasKeys Or(string key) => default;
                     }
                     """,
                     """
@@ -62,8 +61,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                         {
                             var builder = new Telemetry.ConfigurationBuilder();
                             builder.WithKeys(ConfigurationKeys.TraceEnabled);
-                            builder.WithKeys(ConfigurationKeys.ServiceName)
-                                   .Or(ConfigurationKeys.TraceEnabled);
+                            builder.WithKeys(ConfigurationKeys.ServiceName);
                         }
                     }
                     """
@@ -94,7 +92,6 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
                     public struct HasKeys
                     {
-                        public HasKeys Or(string key) => default;
                     }
                     """,
                     """
@@ -117,8 +114,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                         {
                             var builder = new Telemetry.ConfigurationBuilder();
                             builder.WithKeys(PlatformKeys.CorProfilerPath);
-                            builder.WithKeys(PlatformKeys.AwsLambdaFunctionName)
-                                   .Or(PlatformKeys.CorProfilerPath);
+                            builder.WithKeys(PlatformKeys.AwsLambdaFunctionName);
                         }
                     }
                     """
@@ -149,7 +145,6 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
                     public struct HasKeys
                     {
-                        public HasKeys Or(string key) => default;
                     }
                     """,
                     """
@@ -210,70 +205,11 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        var expected = new DiagnosticResult(DD0007, DiagnosticSeverity.Error)
+        var expected = new DiagnosticResult(Dd0007, DiagnosticSeverity.Error)
                       .WithLocation(0)
                       .WithArguments("WithKeys", "DD_TRACE_ENABLED");
 
         await Verifier.VerifyAnalyzerAsync(code, expected);
-    }
-
-    [Fact]
-    public async Task OrMethodUsingHardcodedString_ShouldReportDD0007()
-    {
-        var test = new Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerTest<ConfigurationBuilderWithKeysAnalyzer, DefaultVerifier>
-        {
-            TestState =
-            {
-                Sources =
-                {
-                    """
-                    #nullable enable
-                    namespace Datadog.Trace.Configuration.Telemetry;
-
-                    public struct ConfigurationBuilder
-                    {
-                        public HasKeys WithKeys(string key) => default;
-                    }
-
-                    public struct HasKeys
-                    {
-                        public HasKeys Or(string key) => default;
-                    }
-                    """,
-                    """
-                    #nullable enable
-                    namespace Datadog.Trace.Configuration;
-
-                    public static class ConfigurationKeys
-                    {
-                        public const string TraceEnabled = "DD_TRACE_ENABLED";
-                    }
-                    """,
-                    """
-                    #nullable enable
-                    namespace Datadog.Trace.Configuration;
-
-                    public class TestClass
-                    {
-                        public void TestMethod()
-                        {
-                            var builder = new Telemetry.ConfigurationBuilder();
-                            builder.WithKeys(ConfigurationKeys.TraceEnabled)
-                                   .Or({|#0:"DD_SERVICE"|});
-                        }
-                    }
-                    """
-                },
-                ExpectedDiagnostics =
-                {
-                    new DiagnosticResult(DD0007, DiagnosticSeverity.Error)
-                        .WithLocation(0)
-                        .WithArguments("Or", "DD_SERVICE")
-                }
-            }
-        };
-
-        await test.RunAsync();
     }
 
     [Fact]
@@ -303,7 +239,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        var expected = new DiagnosticResult(DD0008, DiagnosticSeverity.Error)
+        var expected = new DiagnosticResult(Dd0008, DiagnosticSeverity.Error)
                       .WithLocation(0)
                       .WithArguments("WithKeys", "myKey");
 
@@ -338,7 +274,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        var expected = new DiagnosticResult(DD0008, DiagnosticSeverity.Error)
+        var expected = new DiagnosticResult(Dd0008, DiagnosticSeverity.Error)
                       .WithLocation(0)
                       .WithArguments("WithKeys", "GetKey()");
 
@@ -372,7 +308,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        var expected = new DiagnosticResult(DD0008, DiagnosticSeverity.Error)
+        var expected = new DiagnosticResult(Dd0008, DiagnosticSeverity.Error)
                       .WithLocation(0)
                       .WithArguments("WithKeys", "$\"{prefix}TRACE_ENABLED\"");
 
@@ -426,7 +362,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                 },
                 ExpectedDiagnostics =
                 {
-                    new DiagnosticResult(DD0008, DiagnosticSeverity.Error)
+                    new DiagnosticResult(Dd0008, DiagnosticSeverity.Error)
                         .WithLocation(0)
                         .WithArguments("WithKeys", "SomeOther.Namespace.MyKeys.TraceEnabled")
                 }
@@ -456,7 +392,6 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
                     public struct HasKeys
                     {
-                        public HasKeys Or(string key) => default;
                     }
                     """,
                     """
@@ -481,23 +416,19 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                             
                             builder.WithKeys({|#0:"DD_ENV"|});
                             builder.WithKeys({|#1:myKey|});
-                            builder.WithKeys(ConfigurationKeys.TraceEnabled)
-                                   .Or({|#2:"DD_VERSION"|});
+                            builder.WithKeys(ConfigurationKeys.TraceEnabled);
                         }
                     }
                     """
                 },
                 ExpectedDiagnostics =
                 {
-                    new DiagnosticResult(DD0007, DiagnosticSeverity.Error)
+                    new DiagnosticResult(Dd0007, DiagnosticSeverity.Error)
                         .WithLocation(0)
                         .WithArguments("WithKeys", "DD_ENV"),
-                    new DiagnosticResult(DD0008, DiagnosticSeverity.Error)
+                    new DiagnosticResult(Dd0008, DiagnosticSeverity.Error)
                         .WithLocation(1)
-                        .WithArguments("WithKeys", "myKey"),
-                    new DiagnosticResult(DD0007, DiagnosticSeverity.Error)
-                        .WithLocation(2)
-                        .WithArguments("Or", "DD_VERSION")
+                        .WithArguments("WithKeys", "myKey")
                 }
             }
         };
@@ -519,7 +450,6 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
                    public struct HasKeys
                    {
-                       public HasKeys Or(string key) => default;
                    }
 
                    public class TestClass
@@ -528,7 +458,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                        {
                            var builder = new ConfigurationBuilder();
                            builder.WithKeys("DD_TRACE_ENABLED");
-                           builder.WithKeys("DD_SERVICE").Or("DD_ENV");
+                           builder.WithKeys("DD_SERVICE");
                        }
                    }
                    """;
