@@ -44,6 +44,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
         private readonly IDisposable? _settingSubscription;
+        private readonly ContainerMetadata _containerMetadata;
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
 
@@ -54,7 +55,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
-            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), containerMetadata, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
         {
             // Create as a "managed" service that can update the request factory
             _settingSubscription = settings.SubscribeToChanges(changes =>
@@ -73,11 +74,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         public DiscoveryService(
             IApiRequestFactory apiRequestFactory,
+            ContainerMetadata containerMetadata,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
         {
             _apiRequestFactory = apiRequestFactory;
+            _containerMetadata = containerMetadata;
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
             _recheckIntervalMs = recheckIntervalMs;
@@ -140,6 +143,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             int recheckIntervalMs)
             => new(
                 CreateApiRequestFactory(exporterSettings, containerMetadata.ContainerId, tcpTimeout),
+                containerMetadata,
                 initialRetryDelayMs,
                 maxRetryDelayMs,
                 recheckIntervalMs);
@@ -263,7 +267,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
             if (containerTagsHash != null)
             {
-                ContainerMetadata.ContainerTagsHash = containerTagsHash;
+                _containerMetadata.ContainerTagsHash = containerTagsHash;
             }
 
             var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);

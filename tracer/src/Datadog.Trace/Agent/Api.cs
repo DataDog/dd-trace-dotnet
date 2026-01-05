@@ -63,7 +63,7 @@ namespace Datadog.Trace.Agent
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
-            _containerMetadata = ContainerMetadata.Instance;
+            _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _healthMetricsEnabled = healthMetricsEnabled;
