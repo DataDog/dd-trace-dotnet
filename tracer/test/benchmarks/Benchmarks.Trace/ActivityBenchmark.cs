@@ -20,7 +20,6 @@ using ActivityStatusCode = Datadog.Trace.Activity.DuckTypes.ActivityStatusCode;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 public class ActivityBenchmark
 {
     private const string SourceName = "BenchmarkSource";
@@ -52,10 +51,21 @@ public class ActivityBenchmark
         TracerHelper.CleanupGlobalTracer();
     }
 
+    [Benchmark(Baseline = true)]
+    public void StartStopWithChild_Baseline()
+    {
+        using var parent = CreateActivity();
+        using (var child = CreateActivity(parent))
+        {
+            child.Stop();
+        }
+        parent.Stop();
+    }
+
     [Benchmark]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public void StartStopWithChild()
     {
-        // unfortunately this tests some creation/setup for activity themselves
         using var parent = CreateActivity();
         using var child = CreateActivity(parent);
         var parentMock = new MockActivity6(parent, null, _duckSource);
