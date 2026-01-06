@@ -214,6 +214,182 @@ namespace Datadog.Trace.Activity.Handlers
             }
         }
 
+        public static void ActivityStarted6<T>(string sourceName, T activity, OpenTelemetryTags? tags, out ActivityMapping activityMapping)
+            where T : IActivity6
+        {
+            Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
+            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
+
+            // Propagate Trace and Parent Span ids
+            SpanContext? parent = null;
+            TraceId traceId = default;
+            ulong spanId = 0;
+            string? rawTraceId = null;
+            string? rawSpanId = null;
+
+            // for non-IW3CActivity interfaces we'll use Activity.Id and string.Empty as the key as they don't have a guaranteed TraceId+SpanId
+            // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
+            // have to also validate that the TraceId and SpanId actually exist and aren't null - as they can be in some cases
+            ActivityKey? activityKey = null;
+
+            var activityTraceId = activity.TraceId;
+            var activitySpanId = activity.SpanId;
+
+            // If the user has specified a parent context, get the parent Datadog SpanContext
+            // We avoid calling ParentId until we know we need it, as that will perform an expensive allocation
+            // Instead, we use ParentSpanId (which looks at the private string property) and Parent (which is a linked object).
+            // If either of these are non-null, then we have a parent
+            if (!string.IsNullOrEmpty(activityTraceId) && activity is { ParentSpanId: { } parentSpanId })
+            {
+                // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
+                // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
+                // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
+                // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
+                if (ActivityMappingById.TryGetValue(new ActivityKey(activityTraceId, parentSpanId), out ActivityMapping mapping))
+                {
+                    parent = mapping.Scope.Span.Context;
+                }
+                else
+                {
+                    // create a new parent span context for the ActivityContext
+                    _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
+                    _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
+
+                    parent = Tracer.Instance.CreateSpanContext(
+                        SpanContext.None,
+                        traceId: newActivityTraceId,
+                        spanId: newActivitySpanId,
+                        rawTraceId: activityTraceId,
+                        rawSpanId: parentSpanId);
+                }
+            }
+            else if ((string.IsNullOrEmpty(activityTraceId) && activity is { ParentSpanId: not null })
+                  || activity is { Parent: not null })
+            {
+                // We know we have a parent context, but also that the traceID is (weirdly) null, so we fallback
+                // to calling ParentId (which allocates) instead.
+                var parentId = activity.ParentId;
+
+                // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
+                if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
+                {
+                    parent = mapping.Scope.Span.Context;
+                }
+            }
+
+            if (parent is null && activeSpan is not null)
+            {
+                // We ensure the activity follows the same TraceId as the span
+                // And marks the ParentId the current spanId
+                if ((activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime)
+                    && activitySpanId is not null
+                    && activityTraceId is not null)
+                {
+                    // TraceId (always 32 chars long even when using 64-bit ids)
+                    activity.TraceId = activeSpan.Context.RawTraceId;
+                    activityTraceId = activity.TraceId;
+
+                    // SpanId (always 16 chars long)
+                    activity.ParentSpanId = activeSpan.Context.RawSpanId;
+
+                    // We clear internals Id and ParentId values to force recalculation.
+                    activity.RawId = null;
+                    activity.RawParentId = null;
+
+                    // Avoid recalculation of the traceId.
+                    traceId = activeSpan.TraceId128;
+                }
+            }
+
+            // if there's an existing Activity we try to use its TraceId and SpanId,
+            // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
+            if (activityTraceId != null! && activitySpanId != null!)
+            {
+                if (traceId == TraceId.Zero)
+                {
+                    _ = HexString.TryParseTraceId(activityTraceId, out traceId);
+                }
+
+                _ = HexString.TryParseUInt64(activitySpanId, out spanId);
+
+                rawTraceId = activityTraceId;
+                rawSpanId = activitySpanId;
+            }
+
+            if (activityTraceId != null! && activitySpanId != null!)
+            {
+                activityKey = new(traceId: activityTraceId, spanId: activitySpanId);
+            }
+
+            try
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]",
+                        new object[]
+                        {
+                            sourceName,
+                            activity.Id,
+                            activity.RootId,
+                            activity.OperationName!,
+                            activity.StartTimeUtc,
+                            activity.Duration
+                        });
+                }
+
+                // We check if we have to ignore the activity by the operation name value
+                if (IgnoreActivityHandler.IgnoreByOperationName(activity, activeSpan))
+                {
+                    activityMapping = default;
+                    return;
+                }
+
+                activityKey ??= new(activity.Id);
+
+                if (activityKey is null || !activityKey.Value.IsValid())
+                {
+                    // identified by Error Tracking
+                    // unsure how exactly this occurs after reading through the Activity source code
+                    // Activity.Id, Activity.SpanId and/or Activity.TraceId were null
+                    // if this is the case, just ignore the Activity
+                    activityMapping = default;
+                    return;
+                }
+
+#if NETCOREAPP
+                // Avoid closure allocation if we can
+                activityMapping = ActivityMappingById.GetOrAdd(
+                    activityKey.Value,
+                    static (_, details) => new(details.activity.Instance!, CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
+                    (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
+#else
+                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+#endif
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error processing the OnActivityStarted callback");
+                activityMapping = default;
+            }
+
+            static Scope CreateScopeFromActivity(T activity, ITags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
+            {
+                var span = Tracer.Instance.StartSpan(
+                    activity.OperationName,
+                    tags: tags,
+                    parent: parent,
+                    startTime: activity.StartTimeUtc,
+                    traceId: traceId,
+                    spanId: spanId,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId);
+
+                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
+            }
+        }
+
         public static void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
@@ -333,7 +509,7 @@ namespace Datadog.Trace.Activity.Handlers
                 where TInner : IActivity
             {
                 var span = scope.Span;
-                OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
+                // OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
 
                 // OpenTelemtry SDK / OTLP Fixups
                 // TODO

@@ -13,10 +13,28 @@ namespace Datadog.Trace.Activity.Handlers
     {
         bool ShouldListenTo(string sourceName, string? version);
 
-        void ActivityStarted<T>(string sourceName, T activity)
+        void ActivityStartedBasic<T>(string sourceName, T activity)
             where T : IActivity;
 
-        void ActivityStopped<T>(string sourceName, T activity)
+        void ActivityStoppedBasic<T>(string sourceName, T activity)
             where T : IActivity;
+
+        void ActivityStartedW3C<T>(string sourceName, T activity)
+            where T : IW3CActivity;
+
+        void ActivityStoppedW3C<T>(string sourceName, T activity)
+            where T : IW3CActivity;
+
+        void ActivityStarted5<T>(string sourceName, T activity)
+            where T : IActivity5;
+
+        void ActivityStopped5<T>(string sourceName, T activity)
+            where T : IActivity5;
+
+        void ActivityStarted6<T>(string sourceName, T activity)
+            where T : IActivity6;
+
+        void ActivityStopped6<T>(string sourceName, T activity)
+            where T : IActivity6;
     }
 }
