@@ -157,7 +157,7 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 // We check if we have to ignore the activity by the operation name value
-                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity))
+                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
                 {
                     IgnoreActivityHandler.IgnoreActivity(activity, Tracer.Instance.ActiveScope?.Span as Span);
                     activityMapping = default;
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 if (activity.Instance is not null)
                 {
-                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity))
+                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
                     {
                         return;
                     }
