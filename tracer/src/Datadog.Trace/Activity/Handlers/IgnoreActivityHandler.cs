@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Util;
 
@@ -30,24 +31,13 @@ namespace Datadog.Trace.Activity.Handlers
             "Experimental.System.Net.Sockets",
         };
 
-        private static readonly string[] IgnoreOperationNamesStartingWith =
+        public static bool ShouldIgnoreByOperationName(string? operationName)
         {
-            "System.Net.Http.",
-            "Microsoft.AspNetCore.",
-        };
-
-        public static bool ShouldIgnoreByOperationName<T>(T activity)
-            where T : IActivity
-        {
-            foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
-            {
-                if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            // We only have two ignored operation names for now, if we get more, we can be more
+            // generalized, but this is called twice in hot path creation
+            return operationName is not null
+                && (operationName.StartsWith("System.Net.Http.", StringComparison.Ordinal)
+                 || operationName.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal));
         }
 
         public static void IgnoreActivity<T>(T activity, Span? span)
