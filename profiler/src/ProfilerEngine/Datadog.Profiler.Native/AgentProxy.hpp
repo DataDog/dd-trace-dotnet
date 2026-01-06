@@ -159,7 +159,7 @@ private:
                 &_exporter, encodedProfile,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                pMetadata, pInfo, pProcessTags);
+                pProcessTags, pMetadata, pInfo);
 
         if (requestResult.tag == DDOG_PROF_REQUEST_RESULT_ERR_HANDLE_REQUEST)
         {

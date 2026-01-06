@@ -20,7 +20,7 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
     public class ProcessTagsTest
     {
         private const string Scenario = "--scenario 2";
-        private static readonly Regex ProcessTagsPattern = new("process_tags:(?<process_tags>[^\\r\\n\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        private static readonly Regex ProcessTagsPattern = new("\"process_tags\":\"(?<process_tags>[^\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
         private readonly ITestOutputHelper _output;
 
