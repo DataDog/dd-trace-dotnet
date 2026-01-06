@@ -4,9 +4,20 @@
 #include "gtest/gtest.h"
 
 #include "MemoryResourceManager.h"
-#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LibrariesInfoCache.h"
+#include "LibrariesInfoCache.h"
 
 #include "Backtrace2Unwinder.h"
+
+struct ServiceWrapper
+{
+    ServiceWrapper(ServiceBase* service) : _service(service) {
+        _service->Start();
+    }
+    ~ServiceWrapper() {
+        _service->Stop();
+    }
+    ServiceBase* _service;
+};
 
 // This test is mainly for ASAN & UBSAN.
 // I want to be checked if we leak memory or we failed at implemented it correctly
@@ -14,16 +25,13 @@
 TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
 {
     auto cache = LibrariesInfoCache(MemoryResourceManager::GetDefault());
-
-    cache.Start();
+    ServiceWrapper serviceWrapper(&cache);
 
     for(auto i = 0; i < 10; i++)
     {
         cache.NotifyCacheUpdateImpl();
         std::this_thread::sleep_for(100ms);
     }
-
-    cache.Stop();
 }
 
 TEST(LibrariesInfoCacheTests, MakeSureWeUseTheCorrectAddressSpace)
@@ -36,20 +44,8 @@ TEST(LibrariesInfoCacheTests, MakeSureWeUseTheCorrectAddressSpace)
     ASSERT_EQ(local_addr_space, LibrariesInfoCache::GetLocalAddressSpace());
 }
 
-
 TEST(LibrariesInfoCacheTests, CheckBehaviorAgainstDlIteratePhdr)
 {
-    struct ServiceWrapper
-    {
-        ServiceWrapper(ServiceBase* service) : _service(service) {
-            _service->Start();
-        }
-        ~ServiceWrapper() {
-            _service->Stop();
-        }
-        ServiceBase* _service;
-    };
-
     struct Info{
         std::uintptr_t addr_base;
         std::size_t size;
