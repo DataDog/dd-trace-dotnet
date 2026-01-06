@@ -10,8 +10,8 @@
     <!--    Assembly: Grpc.AspNetCore.Server -->
     <!-- Integration: Grpc.Net.Client -->
     <!--    Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.71.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.76.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.76.0" />
   </ItemGroup>
 
 </Project>

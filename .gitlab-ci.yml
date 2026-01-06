@@ -7,7 +7,7 @@ stages:
   - benchmarks
 
 include:
-  - local: .gitlab/one-pipeline.locked.yaml
+  - local: .gitlab/one-pipeline.locked.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
@@ -29,7 +29,7 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
-      docker run --rm -m 8192M `
+      docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
@@ -223,6 +223,7 @@ microbenchmarks:
   needs: []
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
+    strategy: depend
   allow_failure: true
 
 dsm_throughput:
