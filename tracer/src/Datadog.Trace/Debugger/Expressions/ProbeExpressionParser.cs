@@ -441,7 +441,15 @@ internal partial class ProbeExpressionParser<T>
     {
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
-            return finalExpr;
+            // If the expression type is already exactly T, return as-is.
+            if (finalExpr.Type == typeof(T))
+            {
+                return finalExpr;
+            }
+
+            // When the expression type is assignable to T but different (e.g., value type -> object),
+            // we need an explicit conversion.
+            return Expression.Convert(finalExpr, typeof(T));
         }
 
         if (typeof(T).IsNumeric()

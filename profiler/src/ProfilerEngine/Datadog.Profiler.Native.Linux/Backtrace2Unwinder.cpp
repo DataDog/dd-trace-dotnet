@@ -3,6 +3,7 @@
 
 #include "Backtrace2Unwinder.h"
 
+#define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
 Backtrace2Unwinder::Backtrace2Unwinder() = default;
