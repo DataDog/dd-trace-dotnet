@@ -270,16 +270,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = context.FunctionDefinition.Name;
 
-                var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionName,
-                    FullName = context.FunctionDefinition.EntryPoint,
-                };
+                // Check if there's an APIM proxy span that we shouldn't overwrite
+                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("azure.", StringComparison.OrdinalIgnoreCase) == true;
 
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
+                    var tags = new AzureFunctionsTags
+                    {
+                        TriggerType = triggerType,
+                        ShortName = functionName,
+                        FullName = context.FunctionDefinition.EntryPoint,
+                    };
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
@@ -287,18 +289,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // shouldn't be hit, but better safe than sorry
                     scope = tracer.StartActiveInternal(OperationName);
-                    var rootSpan = scope.Root.Span;
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: functionName,
-                        fullName: context.FunctionDefinition.EntryPoint,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        var rootSpan = scope.Root.Span;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan,
+                            shortName: functionName,
+                            fullName: context.FunctionDefinition.EntryPoint,
+                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: triggerType);
+                    }
                 }
 
-                scope.Root.Span.Type = SpanType;
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    scope.Root.Span.Type = SpanType;
+                    scope.Span.ResourceName = $"{triggerType} {functionName}";
+                    scope.Span.Type = SpanType;
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
