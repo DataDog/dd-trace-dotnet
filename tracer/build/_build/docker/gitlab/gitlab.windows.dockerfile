@@ -40,6 +40,9 @@ ENV DOTNET_VERSION="10.0.100" \
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
 
+# Copy the CI Identities GitLab Job Client
+COPY ci-identities-gitlab-job-client-windows-amd64.exe c:/devtools/ci-identities-gitlab-job-client.exe
+
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "17.0.8"
 ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
@@ -58,7 +61,7 @@ RUN powershell -Command .\install_python_packages.ps1
 COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
-# Install 
+# Install
 COPY install_winsign.ps1 .
 RUN powershell -Command .\install_winsign.ps1
 

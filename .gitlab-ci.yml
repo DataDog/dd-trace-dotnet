@@ -38,6 +38,7 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITY_GITLAB_JWT `
         registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:dotnet10 `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
@@ -49,6 +50,9 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts-out
+  id_tokens:
+    CI_IDENTITY_GITLAB_JWT:
+      aud: ci-identities
 
 publish:
   only:
@@ -68,6 +72,8 @@ publish:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
+    # TODO remove the aws s3 cp command
+    # when the client is installed in the Windows runner image
     - aws s3 cp --only-show-errors ${CI_IDENTITIES_CLIENT_URL} ./ci-identities-gitlab-job-client.exe
     - ./ci-identities-gitlab-job-client.exe assume-role
     - |
@@ -96,7 +102,7 @@ publish:
     AWS_SHARED_CREDENTIALS_FILE: ${CI_PROJECT_DIR}\.aws\credentials-by-job-id\${CI_JOB_ID}
   id_tokens:
     CI_IDENTITY_GITLAB_JWT:
-      aud: https://vault.us1.ddbuild.io
+      aud: ci-identities
 
 
 download-single-step-artifacts:
