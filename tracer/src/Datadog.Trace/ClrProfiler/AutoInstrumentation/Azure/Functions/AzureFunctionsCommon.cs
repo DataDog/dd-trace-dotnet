@@ -119,6 +119,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
 
+                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
+                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("azure.", StringComparison.OrdinalIgnoreCase) == true ||
+                                  tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("aws.", StringComparison.OrdinalIgnoreCase) == true;
+
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -128,17 +132,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
                     var rootSpan = activeScope.Root.Span;
-                    // The shortname is prefixed with "Functions.", so strip that off
-                    var remoteFunctionName = functionName?.StartsWith("Functions.") == true
-                                                 ? functionName.Substring(10)
-                                                 : functionName;
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: remoteFunctionName,
-                        fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
-                    rootSpan.Type = SpanType;
+
+                    if (!isProxySpan)
+                    {
+                        // The shortname is prefixed with "Functions.", so strip that off
+                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                                                     ? functionName.Substring(10)
+                                                     : functionName;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan,
+                            shortName: remoteFunctionName,
+                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                        rootSpan.Type = SpanType;
+                    }
+
                     return null;
                 }
 
@@ -159,17 +168,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    AzureFunctionsTags.SetRootSpanTags(
-                        scope.Root.Span,
-                        shortName: functionName,
-                        fullName: instanceParam.FunctionDescriptor.FullName,
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        AzureFunctionsTags.SetRootSpanTags(
+                            scope.Root.Span,
+                            shortName: functionName,
+                            fullName: instanceParam.FunctionDescriptor.FullName,
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                    }
                 }
 
-                scope.Root.Span.Type = SpanType;
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    scope.Root.Span.Type = SpanType;
+                    scope.Span.ResourceName = $"{triggerType} {functionName}";
+                    scope.Span.Type = SpanType;
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
