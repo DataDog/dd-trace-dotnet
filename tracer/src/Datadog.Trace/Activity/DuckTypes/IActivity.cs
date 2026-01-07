@@ -35,9 +35,9 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         DateTime StartTimeUtc { get; }
 
-        IEnumerable<KeyValuePair<string, string>> Baggage { get; }
+        IEnumerable<KeyValuePair<string, string?>> Baggage { get; }
 
-        IEnumerable<KeyValuePair<string, string>> Tags { get; }
+        IEnumerable<KeyValuePair<string, string?>> Tags { get; }
 
         object AddBaggage(string key, string value);
 
