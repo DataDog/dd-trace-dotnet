@@ -375,7 +375,10 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
         }
 
+        using var pingFile = reportFile.GetPingFile();
+        Output.WriteLine(pingFile.Url);
         File.Exists(reportFile.Path).Should().BeTrue();
+        File.Exists(pingFile.Path).Should().BeTrue();
     }
 
     [SkippableFact]
@@ -426,6 +429,9 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
         }
 
+        using var pingFile = reportFile.GetPingFile();
+        Output.WriteLine(pingFile.Url);
+        File.Exists(pingFile.Path).Should().BeTrue();
         File.Exists(reportFile.Path).Should().BeTrue();
     }
 
@@ -496,6 +502,9 @@ public class CreatedumpTests : ConsoleTestHelper
 
         await helper.Task;
 
+        using var pingFile = reportFile.GetPingFile();
+        Output.WriteLine(pingFile.Url);
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             helper.StandardOutput.Should()
@@ -503,7 +512,9 @@ public class CreatedumpTests : ConsoleTestHelper
               .And.EndWith("Crashing...\n"); // Making sure there is no additional output
         }
 
-        // TODO check for ping file
+        // Ping should always be present, even if the crash is not reported
+        File.Exists(pingFile.Path).Should().BeTrue();
+        pingFile.GetContent().Should().BeEmpty();
         File.Exists(reportFile.Path).Should().BeFalse();
     }
 
@@ -527,6 +538,8 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
         }
 
+        using var pingFile = reportFile.GetPingFile();
+        File.Exists(pingFile.Path).Should().BeTrue();
         File.Exists(reportFile.Path).Should().BeTrue();
     }
 
@@ -550,6 +563,9 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
         }
 
+        using var pingFile = reportFile.GetPingFile();
+        Output.WriteLine(pingFile.Url);
+        File.Exists(pingFile.Path).Should().BeTrue();
         File.Exists(reportFile.Path).Should().BeTrue();
     }
 
@@ -568,10 +584,12 @@ public class CreatedumpTests : ConsoleTestHelper
 
         await helper.Task;
 
+        using var pingFile = reportFile.GetPingFile();
+        Output.WriteLine(pingFile.Url);
         File.Exists(reportFile.Path).Should().BeTrue();
+        File.Exists(pingFile.Path).Should().BeTrue();
 
         var reader = new StringReader(helper.StandardOutput);
-
         int? mainThreadId = null;
         var expectedCallstack = new List<string>();
 
@@ -597,11 +615,18 @@ public class CreatedumpTests : ConsoleTestHelper
         expectedCallstack.Should().HaveCountGreaterOrEqualTo(2);
 
         var report = JObject.Parse(reportFile.GetContent());
-
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("Report", report.ToString());
-
+        using var reportAssertionScope = new AssertionScope();
+        reportAssertionScope.AddReportable("Report", report.ToString());
         ValidateStacktrace(report["error"]["stack"]);
+
+        using var pingAssertionScope = new AssertionScope();
+        pingAssertionScope.AddReportable("Ping", pingFile.GetContent());
+        var pingFileContent = pingFile.GetContent();
+        var ping = JObject.Parse(pingFileContent);
+        ping["type"].Value<string>().Should().Be("Crash ping");
+        ping["crash_uuid"].Value<string>().Should().NotBeNull();
+
+        pingFileContent.Should().BeEmpty();
 
         void ValidateStacktrace(JToken callstack)
         {
@@ -744,6 +769,11 @@ public class CreatedumpTests : ConsoleTestHelper
             File.Delete(Path);
         }
 
+        private TemporaryFile(string filePath)
+        {
+            Path = filePath;
+        }
+
         public string Path { get; }
 
         public string Url => $"file://{Path}";
@@ -755,6 +785,20 @@ public class CreatedumpTests : ConsoleTestHelper
         public void Dispose()
         {
             File.Delete(Path);
+        }
+
+        public TemporaryFile GetPingFile()
+        {
+            var filename = System.IO.Path.GetFileNameWithoutExtension(Path);
+            var directory = System.IO.Path.GetDirectoryName(Path);
+            var pingFile = $"{filename}-ping.json";
+
+            if (directory == null)
+            {
+                return new TemporaryFile(pingFile);
+            }
+
+            return new TemporaryFile(System.IO.Path.Combine(directory, pingFile));
         }
     }
 }

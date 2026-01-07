@@ -832,17 +832,17 @@ internal class CreatedumpCommand : Command
 
                 try
                 {
-                    var filename = Path.GetFileNameWithoutExtension(outputFile);
-                    var directory = Path.GetDirectoryName(outputFile);
-                    var pingFile = $"{filename}-ping.json";
-                    if (directory == null)
-                    {
-                        outputFile = pingFile;
-                    }
-                    else
-                    {
-                        outputFile = Path.Combine(directory, pingFile);
-                    }
+                    Uri? uri;
+                    var hasScheme = Uri.TryCreate(outputFile, UriKind.Absolute, out uri);
+                    var pathToModify = hasScheme ? uri!.LocalPath : outputFile;
+
+                    var directory = Path.GetDirectoryName(pathToModify);
+                    var filename = Path.GetFileNameWithoutExtension(pathToModify);
+                    var pingPath = Path.Combine(directory ?? string.Empty, $"{filename}-ping.json");
+
+                    outputFile = hasScheme
+                        ? new UriBuilder(uri!) { Path = pingPath }.Uri.AbsoluteUri
+                        : pingPath;
 
                     DebugPrint($"Writing crash ping to {outputFile}...");
                     path = Marshal.StringToHGlobalAnsi(outputFile);
