@@ -196,7 +196,7 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 var span = Tracer.Instance.StartSpan(
                     activity.OperationName,
-                    tags: tags,
+                    tags: tags ?? new OpenTelemetryTags(),
                     parent: parent,
                     startTime: activity.StartTimeUtc,
                     traceId: traceId,
