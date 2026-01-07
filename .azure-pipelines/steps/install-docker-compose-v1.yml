@@ -10,15 +10,40 @@ parameters:
 steps:
 - ${{ if eq(parameters.isLinux, true) }}:
   - bash: |
-      sudo mkdir -p "$(dirname "${{ parameters.dockerComposePath }}")" 
-      sudo curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-x86_64 -o ${{ parameters.dockerComposePath }}
+      sudo mkdir -p "$(dirname "${{ parameters.dockerComposePath }}")"
+      sudo curl -SL $(CURL_RETRY_FLAGS) \
+        https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-x86_64 \
+        -o ${{ parameters.dockerComposePath }}
       sudo chmod 755 ${{ parameters.dockerComposePath }}
     displayName: Download docker-compose
 - ${{ else }}:
   - powershell: |
       $dir= (Split-Path -parent "${{ parameters.dockerComposePath }}")
       mkdir -f -p $dir
+
       # GitHub now requires TLS1.2. In PowerShell, run the following
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" -OutFile "${{ parameters.dockerComposePath }}"
+
+      # Download with retry logic (inlined to avoid file dependency issues)
+      $uri = "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe"
+      $outFile = "${{ parameters.dockerComposePath }}"
+      $maxRetries = $(PWSH_MAX_RETRY_COUNT)
+      $retryIntervalSec = $(PWSH_RETRY_INTERVAL_SEC)
+      $timeoutSec = $(PWSH_TIMEOUT_SEC)
+
+      for ($i = 0; $i -le $maxRetries; $i++) {
+          try {
+              Write-Host "Attempt $($i + 1) of $($maxRetries + 1): Downloading from $uri"
+              Invoke-WebRequest -Uri $uri -OutFile $outFile -TimeoutSec $timeoutSec
+              Write-Host "Download successful"
+              break
+          } catch {
+              if ($i -eq $maxRetries) {
+                  Write-Host "All retry attempts failed"
+                  throw
+              }
+              Write-Host "Download failed: $($_.Exception.Message). Retrying in $retryIntervalSec seconds..."
+              Start-Sleep -Seconds $retryIntervalSec
+          }
+      }
     displayName: Download docker-compose

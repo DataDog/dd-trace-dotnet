@@ -34,7 +34,7 @@ Expression: (
     var BooleanValue = (bool)scopeMemberArray[11].Value;
     var Char = (char)scopeMemberArray[12].Value;
     var AnotherChar = (char)scopeMemberArray[13].Value;
-    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[14].Value;
+    var NullableNotNullValueLocal = (Guid)scopeMemberArray[14].Value;
     var NullableNullValueLocal = (Guid?)scopeMemberArray[15].Value;
     var IntArg = (int)scopeMemberArray[16].Value;
     var DoubleArg = (double)scopeMemberArray[17].Value;
