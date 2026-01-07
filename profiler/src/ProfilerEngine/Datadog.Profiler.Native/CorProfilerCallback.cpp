@@ -806,7 +806,8 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
             config.runtimeId,
             config.serviceName ? config.serviceName : std::string(),
             config.environment ? config.environment : std::string(),
-            config.version ? config.version : std::string());
+            config.version ? config.version : std::string(),
+            config.processTags ? config.processTags : std::string());
     }
     else
     {
