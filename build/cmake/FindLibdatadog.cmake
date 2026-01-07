@@ -79,8 +79,8 @@ else()
     endif()
 
     FetchContent_Declare(libdatadog-install
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
-        URL_HASH SHA256=${SHA256_LIBDATADOG}
+        URL /project/temp/libdatadog_v22.1.0.tar.gz
+        URL_HASH SHA256=16f76a575f19218941f0bd35c3b128d13b26b6f5c1fc2164fc87d4ed308aabf1
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
     )
     if(NOT libdatadog-install_POPULATED)

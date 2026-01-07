@@ -8,6 +8,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
+#include "SymbolsStore.h"
 
 #include <chrono>
 
@@ -25,13 +26,15 @@ NetworkProvider::NetworkProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     CollectorBase<RawNetworkSample>(
         "NetworkProvider",
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         rawSampleTransformer,
-        memoryResource),
+        memoryResource,
+        symbolsStore),
     _pCorProfilerInfo{ pCorProfilerInfo },
     _pManagedThreadList{ pManagedThreadList },
     _pConfiguration{ pConfiguration },

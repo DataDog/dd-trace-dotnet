@@ -5,6 +5,7 @@
 
 #include "RawSample.h"
 #include "Sample.h"
+#include "SymbolsStore.h"
 
 class GCBaseRawSample : public RawSample
 {
@@ -35,20 +36,20 @@ public:
     // This base class is in charge of storing garbage collection number and generation as labels
     // and fill up the callstack based on generation.
     // The default value is the Duration field; derived class could override by implementing GetValue()
-    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* symbolsStore) const override
     {
         assert(valueOffsets.size() == 1);
         auto durationIndex = valueOffsets[0];
 
         sample->AddValue(GetValue(), durationIndex);
 
-        sample->AddLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
-        AddGenerationLabel(sample, Generation);
+        sample->AddLabel(NumericLabel(symbolsStore->GetGarbageCollectionNumber(), Number));
+        AddGenerationLabel(sample, Generation, symbolsStore);
 
-        BuildCallStack(sample, Generation);
+        //BuildCallStack(sample, Generation);
 
         // let child classes transform additional fields if needed
-        DoAdditionalTransform(sample, valueOffsets);
+        DoAdditionalTransform(sample, valueOffsets, symbolsStore);
     }
 
     // Each derived class provides the duration to store as the value for this sample
@@ -59,7 +60,7 @@ public:
     }
 
     // Derived classes are expected to set the event type + any additional field as label
-    virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const = 0;
+    virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset, libdatadog::SymbolsStore* symbolsStore) const = 0;
 
 public:
     int32_t Number;
@@ -67,52 +68,26 @@ public:
     std::chrono::nanoseconds Duration;
 
 private:
-    inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
+    inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation, libdatadog::SymbolsStore* symbolsStore)
     {
         // we currently don't store the generation as a numeric label because there is no way to
         // make the difference between a 0 value and a 0 string index (i.e. empty string)
         switch (generation)
         {
             case 0:
-                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen0Value));
+                sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionGeneration(), Gen0Value));
                 break;
 
             case 1:
-                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen1Value));
+                sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionGeneration(), Gen1Value));
                 break;
 
             case 2:
-                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen2Value));
+                sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionGeneration(), Gen2Value));
                 break;
 
             default: // this should never happen (only gen0, gen1 or gen2 collections)
-                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
-                break;
-        }
-    }
-
-    inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
-    {
-        // add same root frame
-        sample->AddFrame({EmptyModule, RootFrame, "", 0});
-
-        // add generation based frame
-        switch (generation)
-        {
-            case 0:
-                sample->AddFrame({EmptyModule, Gen0Frame, "", 0});
-                break;
-
-            case 1:
-                sample->AddFrame({EmptyModule, Gen1Frame, "", 0});
-                break;
-
-            case 2:
-                sample->AddFrame({EmptyModule, Gen2Frame, "", 0});
-                break;
-
-            default:
-                sample->AddFrame({EmptyModule, UnknownGenerationFrame, "", 0});
+                sample->AddLabel(StringLabel(symbolsStore->GetGarbageCollectionGeneration(), std::to_string(generation)));
                 break;
         }
     }

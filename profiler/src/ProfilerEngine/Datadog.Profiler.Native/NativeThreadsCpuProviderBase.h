@@ -10,6 +10,7 @@
 #include "IThreadInfo.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
+#include "SymbolsStore.h"
 
 #include <vector>
 
@@ -18,7 +19,7 @@ class RawSampleTransformer;
 class NativeThreadsCpuProviderBase : public ISamplesProvider
 {
 public:
-    NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer);
+    NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer, libdatadog::SymbolsStore* symbolsStore);
 
 protected:
     virtual void OnCpuDuration(std::chrono::milliseconds cpuTime);
@@ -34,4 +35,7 @@ private:
     RawSampleTransformer* _sampleTransformer;
     std::chrono::milliseconds _previousTotalCpuTime;
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
+
+protected:
+    libdatadog::SymbolsStore* _symbolsStore = nullptr;
 };

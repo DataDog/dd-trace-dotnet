@@ -12,13 +12,15 @@
 #include "RawSampleTransformer.h"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
+#include "SymbolsStore.h"
 
 using namespace std::chrono_literals;
 
-NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer) :
+NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer, libdatadog::SymbolsStore* symbolsStore) :
     _sampleTransformer{sampleTransformer},
     _previousTotalCpuTime{0},
-    _valueOffsets{valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions)}
+    _valueOffsets{valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions)},
+    _symbolsStore{symbolsStore}
 {
 }
 
@@ -89,7 +91,7 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 
     // Cpu Time provider knows the offset of the Cpu value
     // So leave the transformation to it
-    auto sample = _sampleTransformer->Transform(rawSample, _valueOffsets);
+    auto sample = _sampleTransformer->Transform(rawSample, _valueOffsets, _symbolsStore);
 
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample

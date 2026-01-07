@@ -8,10 +8,17 @@
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OpSysTools.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
+
+extern "C"
+{
+    #include "datadog/common.h"
+    #include "datadog/profiling.h"
+}
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -22,10 +29,11 @@ void FixGenericSyntax(char* name);
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore, libdatadog::SymbolsStore* pSymbolsStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
+    _pSymbolsStore{pSymbolsStore}
 {
 }
 
@@ -63,31 +71,47 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
-    static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
-    static const std::string UnloadedModuleName("UnloadedModule");
-    static const std::string FakeModuleName("FakeModule");
-
-    static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
-    static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
-
-
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
     {
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
-            return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+            return { true, FrameInfo{_pSymbolsStore->GetFakeModuleId(), _pSymbolsStore->GetFakeContentionFrameId(), 0} };
         }
         else
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
-            return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+            return { true, FrameInfo{_pSymbolsStore->GetFakeModuleId(), _pSymbolsStore->GetFakeAllocationFrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::ClrModule)
+        {
+            // wrong functionID, need to fix this
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetGen0FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen0Frame)
+        {
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetGen0FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen1Frame)
+        {
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetGen1FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::Gen2Frame)
+        {
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetGen2FrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::GCRootFrame)
+        {
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetGCRootFrameId(), 0} };
+        }
+        else if (instructionPointer == FrameStore::DotNetRootFrame)
+        {
+            return { true, FrameInfo{_pSymbolsStore->GetClrModuleId(), _pSymbolsStore->GetDotNetRootFrameId(), 0} };
         }
         else
         {
-            return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
+            return { true, FrameInfo{_pSymbolsStore->GetFakeModuleId(), _pSymbolsStore->GetUnknownManagedFrameId(), 0} };
         }
     }
 
@@ -96,7 +120,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     if (!result.has_value())
     {
         // we still want a frame to display a good'ish callstack shape
-        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
+        return {true, {_pSymbolsStore->GetNotResolvedModuleId(), _pSymbolsStore->GetNotResolvedFrameId(), 0}};
     }
 
     auto const& [hr, functionId] = result.value();
@@ -110,11 +134,11 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     {
         if (!_resolveNativeFrames)
         {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            return {false, {_pSymbolsStore->GetNotResolvedModuleId(), _pSymbolsStore->GetNotResolvedFrameId(), 0}};
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, {moduleName, frame, "", 0}};
+        return {true, {moduleName, frame, 0}};
     }
 }
 
@@ -122,21 +146,27 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<ddog_prof_MappingId2, ddog_prof_FunctionId2> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
-    static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
-    static const std::string UnknowNativeModule = "Unknown-Native-Module";
-
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
     if (moduleName.empty())
     {
-        return {UnknowNativeModule, UnknownNativeFrame};
+        return {_pSymbolsStore->GetUnknownNativeModuleId(), _pSymbolsStore->GetUnknownNativeFrameId()};
+    }
+
+    // TO CHECK:
+    // ddog_prof_MappingId is a void*. Does it always returns the same address for the same module name?
+    // a bit weird to have this assumption :grimacing:
+    auto moduleId = _pSymbolsStore->InternMapping(moduleName);
+    if (!moduleId)
+    {
+        return {_pSymbolsStore->GetUnknownNativeModuleId(), _pSymbolsStore->GetUnknownNativeFrameId()};
     }
 
     {
         std::lock_guard<std::mutex> lock(_nativeLock);
 
-        auto it = _framePerNativeModule.find(moduleName);
+        auto it = _framePerNativeModule.find(*moduleId);
         if (it != _framePerNativeModule.cend())
         {
             return {it->first, it->second};
@@ -149,10 +179,16 @@ std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr
     builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
 
     {
+        auto functionId = _pSymbolsStore->InternFunction(builder.str(), "");
+        if (!functionId)
+        {
+            return {_pSymbolsStore->GetUnknownNativeModuleId(), _pSymbolsStore->GetUnknownNativeFrameId()};
+        }
+
         std::lock_guard<std::mutex> lock(_nativeLock);
         // emplace returns a pair<iterator, bool>. It returns false if the element was already there
         // we use the iterator (first element of the pair) to get a reference to the key and the value
-        auto [it, _] = _framePerNativeModule.emplace(std::move(moduleName), builder.str());
+        auto [it, _] = _framePerNativeModule.emplace(*moduleId, *functionId);
         return {it->first, it->second};
     }
 }
@@ -180,21 +216,21 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {_pSymbolsStore->GetUnknownManagedAssemblyId(), _pSymbolsStore->GetUnknownManagedFrameId(), 0};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {_pSymbolsStore->GetUnknownManagedAssemblyId(), _pSymbolsStore->GetUnknownManagedFrameId(), 0};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {_pSymbolsStore->GetUnknownManagedAssemblyId(), _pSymbolsStore->GetUnknownManagedFrameId(), 0};
     }
 
     // get the method signature
@@ -221,7 +257,9 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             auto& value = _methods[functionId];
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
-            value = {UnknownManagedAssembly, builder.str(), "", 0};
+            auto functionId = _pSymbolsStore->InternFunction(builder.str(), "").value_or(_pSymbolsStore->GetUnknownManagedFrameId());
+            // TODO maybe we should log that InternFunction failed
+            value = FrameInfo{_pSymbolsStore->GetUnknownManagedAssemblyId(), functionId, 0};
             return value;
         }
 
@@ -244,12 +282,20 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
     std::string managedFrame = builder.str();
+    auto fnId = _pSymbolsStore->InternFunction(managedFrame, debugInfo.File);
+    auto mappingId = _pSymbolsStore->InternMapping(pTypeDesc->Assembly);
+
+    if (!fnId || !mappingId)
+    {
+        // TODO log error
+        return {_pSymbolsStore->GetUnknownManagedAssemblyId(), _pSymbolsStore->GetUnknownManagedFrameId(), 0};
+    }
 
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+        auto [it, _] = _methods.emplace(functionId, FrameInfo{*mappingId, *fnId, debugInfo.StartLine});
         // first is the key, second is the associated value
         return it->second;
     }

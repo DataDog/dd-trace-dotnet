@@ -14,6 +14,7 @@
 #include "ProfilerMockedInterface.h"
 #include "RuntimeInfoHelper.h"
 #include "SamplesEnumerator.h"
+#include "ServiceWrapper.hpp"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
@@ -81,28 +82,58 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
-    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 
     // Add samples to only one application
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
+    auto frame1Id = symbolsStore->InternFunction("frame1", "");
+    if (!frame1Id)
+    {
+        ASSERT_TRUE(false) << "Failed to intern frame1";
+    }
+    auto frame2Id = symbolsStore->InternFunction("frame2", "");
+    if (!frame2Id)
+    {
+        ASSERT_TRUE(false) << "Failed to intern frame2";
+    }
+    auto frame3Id = symbolsStore->InternFunction("frame3", "");
+    if (!frame3Id)
+    {
+        ASSERT_TRUE(false) << "Failed to intern frame3";
+    }
+    auto moduleId = symbolsStore->InternMapping("module");
+    if (!moduleId)
+    {
+        ASSERT_TRUE(false) << "Failed to intern moduleId";
+    }
+    auto callstack1 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{frame1Id.value(), moduleId.value()}, {frame2Id.value(), moduleId.value()}, {frame3Id.value(), moduleId.value()}});
+    auto labels1 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}};
 
-    auto sample1 = CreateSample(firstRid,
+    auto sample1 = CreateSample(symbolsStore, firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
-    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
-    auto sample2 = CreateSample(firstRid,
+    auto frame4Id = symbolsStore->InternFunction("frame4", "");
+    if (!frame4Id)
+    {
+        ASSERT_TRUE(false) << "Failed to intern frame4";
+    }
+    auto callstack2 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{frame1Id.value(), moduleId.value()}, {frame2Id.value(), moduleId.value()}, {frame3Id.value(), moduleId.value()}, {frame4Id.value(), moduleId.value()}});
+    auto labels2 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}, {symbolsStore->InternString("label3").value(), "value3"}};
+    auto sample2 = CreateSample(symbolsStore, firstRid,
                                 callstack2,
                                 labels2,
                                 42);
 
-    auto callstack3 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
-    auto labels3 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
-    auto sample3 = CreateSample(firstRid,
+    auto frame5Id = symbolsStore->InternFunction("frame5", "");
+    if (!frame5Id)
+    {
+        ASSERT_TRUE(false) << "Failed to intern frame5";
+    }
+    auto callstack3 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{frame1Id.value(), moduleId.value()}, {frame2Id.value(), moduleId.value()}, {frame5Id.value(), moduleId.value()}});
+    auto labels3 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}};
+    auto sample3 = CreateSample(symbolsStore, firstRid,
                                 callstack3,
                                 labels3,
                                 84);
@@ -197,19 +228,19 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
-    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
-    auto sample1 = CreateSample(firstRid,
+    auto callstack1 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{symbolsStore->InternFunction("frame1", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame2", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame3", "").value(), symbolsStore->InternMapping("module").value()}});
+    auto labels1 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}};
+    auto sample1 = CreateSample(symbolsStore, firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
-    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
-    auto sample2 = CreateSample(secondRid,
+    auto callstack2 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{symbolsStore->InternFunction("frame1", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame2", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame3", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame4", "").value(), symbolsStore->InternMapping("module").value()}});
+    auto labels2 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}, {symbolsStore->InternString("label3").value(), "value3"}};
+    auto sample2 = CreateSample(symbolsStore, secondRid,
                                 callstack2,
                                 labels2,
                                 42);
@@ -305,19 +336,19 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
-    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
-    auto sample1 = CreateSample(firstRid,
+    auto callstack1 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{symbolsStore->InternFunction("frame1", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame2", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame3", "").value(), symbolsStore->InternMapping("module").value()}});
+    auto labels1 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}};
+    auto sample1 = CreateSample(symbolsStore, firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
-    auto sample2 = CreateSample(secondRid,
+    auto callstack2 = std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>({{symbolsStore->InternFunction("frame1", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame2", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame3", "").value(), symbolsStore->InternMapping("module").value()}, {symbolsStore->InternFunction("frame4", "").value(), symbolsStore->InternMapping("module").value()}});
+    auto labels2 = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}, {symbolsStore->InternString("label3").value(), "value3"}};
+    auto sample2 = CreateSample(symbolsStore, secondRid,
                                 callstack2,
                                 labels2,
                                 42);
@@ -398,8 +429,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -444,8 +476,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -483,8 +516,9 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -524,8 +558,9 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IMetadataProvider* metadataProvider = nullptr;
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -568,13 +603,14 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, symbolsStore);
 
     std::string runtimeId = "MyRid";
-    auto callstack = CreateCallstack(2048);
-    auto labels = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
-    auto sample1 = CreateSample(runtimeId, callstack, labels, 42);
+    auto callstack = CreateCallstack(2048, symbolsStore);
+    auto labels = std::vector<std::pair<ddog_prof_StringId2, std::string>>{{symbolsStore->InternString("label1").value(), "value1"}, {symbolsStore->InternString("label2").value(), "value2"}};
+    auto sample1 = CreateSample(symbolsStore, runtimeId, callstack, labels, 42);
 
     EXPECT_NO_THROW(exporter.Add(sample1));
 }

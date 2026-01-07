@@ -8,14 +8,15 @@
 #include "Profile.h"
 #include "ProfilerMockedInterface.h"
 #include "Tags.h"
-
+#include "SymbolsStore.h"
 #include "shared/src/native-src/dd_filesystem.hpp"
+#include "ServiceWrapper.hpp"
 
 namespace libdatadog {
 
-Profile CreateEmptyProfile(std::unique_ptr<IConfiguration> const& configuration)
+Profile CreateEmptyProfile(std::unique_ptr<IConfiguration> const& configuration, libdatadog::SymbolsStore* symbolsStore)
 {
-    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
+    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app", symbolsStore);
 }
 
 TEST(ExporterTest, EnsureCrashOnDebug)
@@ -100,7 +101,8 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
     ASSERT_NE(exporter, nullptr);
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto profile = CreateEmptyProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto profile = CreateEmptyProfile(configuration, symbolsStore);
 
     auto tags = Tags();
     ASSERT_NO_FATAL_FAILURE(exporter->Send(&profile, std::move(tags), {}, std::string(), std::string())) << "sending the profile crashed";

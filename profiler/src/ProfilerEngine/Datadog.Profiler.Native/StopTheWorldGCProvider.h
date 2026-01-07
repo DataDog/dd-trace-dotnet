@@ -6,6 +6,7 @@
 #include "CollectorBase.h"
 #include "IGCSuspensionsListener.h"
 #include "RawStopTheWorldSample.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -26,7 +27,8 @@ public:
     StopTheWorldGCProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via IGCSuspensionsListener
     void OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration) override;

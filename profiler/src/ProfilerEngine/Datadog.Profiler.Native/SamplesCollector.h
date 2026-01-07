@@ -12,11 +12,15 @@
 #include "ServiceBase.h"
 
 #include <forward_list>
-#include <mutex>
+#include <mutex>    
 #include <thread>
 #include <future>
 
 using namespace std::chrono_literals;
+
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class SamplesCollector
     :
@@ -24,7 +28,7 @@ class SamplesCollector
     public ServiceBase
 {
 public:
-    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender, libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via IService
     const char* GetName() override;

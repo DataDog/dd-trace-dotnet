@@ -21,7 +21,7 @@ public:
 
 public:
     // Inherited via RawSample
-    void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const override;
+    void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset, libdatadog::SymbolsStore* symbolsStore) const override;
 
 private:
     // each thread lifetime event will share the same root frame and the second one will show the collected generation

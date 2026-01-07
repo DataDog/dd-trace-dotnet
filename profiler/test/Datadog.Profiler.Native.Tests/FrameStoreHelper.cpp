@@ -3,9 +3,11 @@
 
 #include <sstream>
 #include "FrameStoreHelper.h"
+#include "SymbolsStore.h"
 
-FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t count)
+FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t count, libdatadog::SymbolsStore* symbolsStore)
 {
+    _symbolsStore = symbolsStore;
     // build automatically a mapping
     //    number --> { isManaged, "module #number", "prefix #number" }
     // with number going from 1 to count
@@ -17,22 +19,26 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
         std::stringstream moduleBuilder;
         moduleBuilder << "module #" << i;
 
-        _mapping[i] = {isManaged, {moduleBuilder.str(), frameBuilder.str(), "", 0}};
+        auto functionId = _symbolsStore->InternFunction(frameBuilder.str(), "");
+        auto moduleId = _symbolsStore->InternMapping(moduleBuilder.str());
+        _mapping[i] = {isManaged, {functionId.value(), moduleId.value(), 0}};
     }
+}
+
+FrameStoreHelper::~FrameStoreHelper()
+{
 }
 
 std::pair<bool, FrameInfoView> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
-    static std::string UnknownModuleName = "module???";
-    static std::string UnknownFunctionName = "frame???";
-
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
     {
         return item->second;
     }
 
-    return {true, {UnknownModuleName, UnknownFunctionName, "", 0}};
+    // should return MyFrameInfo
+    return {true, FrameInfo{_symbolsStore->GetUnknownManagedFrameId(), _symbolsStore->GetUnknownManagedAssemblyId(), 0}};
 }
 
 

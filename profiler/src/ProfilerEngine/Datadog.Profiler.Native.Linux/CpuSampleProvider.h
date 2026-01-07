@@ -15,6 +15,10 @@
 class SampleValueTypeProvider;
 class RawSampleTransformer;
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 class CpuSampleProvider
     :
     public RawSampleCollectorBase<RawCpuSample>
@@ -24,5 +28,6 @@ public:
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
         RingBuffer* ringBuffer,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        libdatadog::SymbolsStore* symbolsStore);
 };

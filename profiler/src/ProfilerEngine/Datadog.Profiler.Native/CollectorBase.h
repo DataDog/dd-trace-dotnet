@@ -18,6 +18,7 @@
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 #include "ServiceBase.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 #include "shared/src/native-src/string.h"
@@ -56,12 +57,14 @@ public:
         const char* name,
         std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource)
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore)
         :
         ProviderBase(name),
         _valueOffsets{std::move(valueOffsets)},
         _rawSampleTransformer{rawSampleTransformer},
-        _collectedSamples{memoryResource}
+        _collectedSamples{memoryResource},
+        _symbolsStore{symbolsStore}
     {
     }
 
@@ -79,7 +82,7 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), _rawSampleTransformer, _valueOffsets);
+        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), _rawSampleTransformer, _valueOffsets, _symbolsStore);
     }
 
 protected:
@@ -99,12 +102,14 @@ private:
     public:
         SamplesEnumeratorImpl(RawSamples<TRawSample> rawSamples,
             RawSampleTransformer* rawSampleTransformer,
-            std::vector<SampleValueTypeProvider::Offset> const & valueOffsets)
+            std::vector<SampleValueTypeProvider::Offset> const & valueOffsets,
+            libdatadog::SymbolsStore* symbolsStore)
             :
             _rawSamples{std::move(rawSamples)},
             _rawSampleTransformer{rawSampleTransformer},
             _currentRawSample{_rawSamples.begin()},
-            _valueOffsets{valueOffsets}
+            _valueOffsets{valueOffsets},
+            _symbolsStore{symbolsStore}
         {
         }
 
@@ -119,7 +124,7 @@ private:
             if (_currentRawSample == _rawSamples.end())
                 return false;
 
-            _rawSampleTransformer->Transform(*_currentRawSample, sample, _valueOffsets);
+            _rawSampleTransformer->Transform(*_currentRawSample, sample, _valueOffsets, _symbolsStore);
             _currentRawSample++;
 
             return true;
@@ -130,6 +135,7 @@ private:
         RawSampleTransformer* _rawSampleTransformer;
         typename RawSamples<TRawSample>::iterator _currentRawSample;
         std::vector<SampleValueTypeProvider::Offset> const & _valueOffsets;
+        libdatadog::SymbolsStore* _symbolsStore;
     };
 
     bool StartImpl() override
@@ -146,4 +152,5 @@ private:
     std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
     RawSamples<TRawSample> _collectedSamples;
     RawSampleTransformer* _rawSampleTransformer;
+    libdatadog::SymbolsStore* _symbolsStore;
 };

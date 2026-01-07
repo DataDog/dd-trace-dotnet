@@ -52,8 +52,8 @@ const std::string Sample::RequestResponseThreadNameLabel = "response.thread_name
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
 
 
-Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount) :
-    Sample(runtimeId)
+Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount, libdatadog::SymbolsStore* symbolsStore) :
+    Sample(runtimeId, symbolsStore)
 {
     _timestamp = timestamp;
     _runtimeId = runtimeId;
@@ -61,12 +61,13 @@ Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, s
     _allLabels.reserve(10);
 }
 
-Sample::Sample(std::string_view runtimeId) :
+Sample::Sample(std::string_view runtimeId, libdatadog::SymbolsStore* symbolsStore) :
     _values(ValuesCount),
     _timestamp{0},
     _allLabels{},
     _callstack{},
-    _runtimeId{runtimeId}
+    _runtimeId{runtimeId},
+    _symbolsStore{symbolsStore}
 {
 }
 

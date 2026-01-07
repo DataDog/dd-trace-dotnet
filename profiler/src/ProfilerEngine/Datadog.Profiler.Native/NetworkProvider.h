@@ -12,6 +12,7 @@
 #include "NetworkActivity.h"
 #include "NetworkRequestInfo.h"
 #include "RawNetworkSample.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -38,7 +39,8 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
 public:
     // Inherited via INetworkListener

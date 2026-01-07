@@ -8,7 +8,7 @@
 #include "CollectorBase.h"
 #include "IThreadLifetimeListener.h"
 #include "RawThreadLifetimeSample.h"
-
+#include "SymbolsStore.h"
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 class IThreadsCpuManager;
@@ -22,7 +22,8 @@ public:
     ThreadLifetimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via IThreadLifetimeListener
     void OnThreadStart(std::shared_ptr<ManagedThreadInfo> threadInfo) override;

@@ -6,6 +6,7 @@
 #include "CollectorBase.h"
 #include "RawSampleTransformer.h"
 #include "RawWallTimeSample.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -21,7 +22,8 @@ public:
     WallTimeProvider(
         SampleValueTypeProvider& sampleTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore
         );
 
 private:

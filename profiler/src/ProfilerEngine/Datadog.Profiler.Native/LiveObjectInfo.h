@@ -11,11 +11,12 @@
 #include "corprof.h"
 
 #include "Sample.h"
+#include "SymbolsStore.h"
 
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp);
+    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp, libdatadog::SymbolsStore* symbolsStore);
 
     // accessors
     void SetHandle(ObjectHandleID handle);

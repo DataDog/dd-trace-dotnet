@@ -13,6 +13,7 @@
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -49,7 +50,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -61,7 +63,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,

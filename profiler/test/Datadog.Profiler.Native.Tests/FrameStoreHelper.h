@@ -5,10 +5,15 @@
 #include <unordered_map>
 #include "IFrameStore.h"
 
+namespace libdatadog {
+    class SymbolsStore;
+}
+
 class FrameStoreHelper : public IFrameStore
 {
 public:
-    FrameStoreHelper(bool isManaged, std::string prefix, size_t count);
+    FrameStoreHelper(bool isManaged, std::string prefix, size_t count, libdatadog::SymbolsStore* symbolsStore);
+    ~FrameStoreHelper();
 
 public:
     // Inherited via IFrameStore
@@ -20,17 +25,17 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
-        std::string Frame;
-        std::string_view Filename;
+        ddog_prof_FunctionId2 FunctionId;
+        ddog_prof_MappingId2 ModuleId;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const
         {
-            return {ModuleName, Frame, Filename, StartLine};
+            return {ModuleId,FunctionId,  StartLine};
         }
     };
     std::unordered_map<uintptr_t, std::pair<bool, FrameInfo>> _mapping;
 
+    libdatadog::SymbolsStore* _symbolsStore;
     // Inherited via IFrameStore
 };

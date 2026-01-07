@@ -43,6 +43,19 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
                         return (l.Name == "thread name");
                     }).Value;
 
+                    // thread name must always be set
+                    if (string.IsNullOrEmpty(threadName))
+                    {
+                        var threadId = labels.FirstOrDefault((l) =>
+                        {
+                            return (l.Name == "thread id");
+                        }).Value;
+                        // thread id is always set
+                        Assert.Fail($"Thread name is null or empty for thread {threadId}");
+                        return;
+                    }
+
+                    // only care about nameless threads
                     if (threadName.Contains("Managed thread (name unknown) ["))
                     {
                         var stackTrace = sample.StackTrace(profile);
@@ -51,14 +64,6 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
                             Assert.Fail("No call stack for thread without name");
                             return;
                         }
-                    }
-                    else if (threadName.Contains(".NET Long Running Task ["))
-                    {
-                        // expected task that is waiting for nameless threads to join
-                    }
-                    else
-                    {
-                        threadWithNameFound = true;
                     }
                 }
             }

@@ -12,15 +12,16 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "SymbolsStore.h"
 
-std::shared_ptr<Sample> RawSampleTransformer::Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets)
+std::shared_ptr<Sample> RawSampleTransformer::Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets, libdatadog::SymbolsStore* symbolsStore)
 {
-    auto sample = std::make_shared<Sample>(rawSample.Timestamp, std::string_view(), rawSample.Stack.Size());
-    Transform(rawSample, sample, offsets);
+    auto sample = std::make_shared<Sample>(rawSample.Timestamp, std::string_view(), rawSample.Stack.Size(), symbolsStore);
+    Transform(rawSample, sample, offsets, symbolsStore);
     return sample;
 }
 
-void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets)
+void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets, libdatadog::SymbolsStore* symbolsStore)
 {
     sample->Reset();
 
@@ -31,8 +32,8 @@ void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr
 
     if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
     {
-        sample->AddLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
-        sample->AddLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
+        sample->AddLabel(NumericLabel{symbolsStore->GetLocalRootSpanId(), rawSample.LocalRootSpanId});
+        sample->AddLabel(NumericLabel{symbolsStore->GetSpanId(), rawSample.SpanId});
     }
 
     // compute thread/appdomain details
@@ -43,7 +44,7 @@ void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr
     SetStack(rawSample, sample);
 
     // allow inherited classes to add values and specific labels
-    rawSample.OnTransform(sample, offsets);
+    rawSample.OnTransform(sample, offsets, symbolsStore);
 }
 
 void RawSampleTransformer::SetAppDomainDetails(const RawSample& rawSample, std::shared_ptr<Sample>& sample)

@@ -13,6 +13,7 @@
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
+#include "SymbolsStore.h"
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 {
@@ -29,11 +30,13 @@ LiveObjectsProvider::LiveObjectsProvider(
     ICorProfilerInfo13* pCorProfilerInfo,
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
     _rawSampleTransformer{rawSampleTransformer},
-    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
+    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)},
+    _symbolsStore{symbolsStore}
 {
 }
 
@@ -136,8 +139,8 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
-        sample->ReplaceLabel(StringLabel{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+        sample->ReplaceLabel(StringLabel{_symbolsStore->GetObjectLifetime(), std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
+        sample->ReplaceLabel(StringLabel{_symbolsStore->GetObjectGeneration(), info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);
     }
@@ -161,9 +164,10 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         if (handle != nullptr)
         {
             LiveObjectInfo info(
-                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
+                _rawSampleTransformer->Transform(rawSample, _valueOffsets, _symbolsStore),
                 rawSample.Address,
-                rawSample.Timestamp);
+                rawSample.Timestamp,
+                _symbolsStore);
             info.SetHandle(handle);
             _monitoredObjects.push_back(std::move(info));
         }

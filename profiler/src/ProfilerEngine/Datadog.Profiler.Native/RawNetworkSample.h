@@ -7,6 +7,7 @@
 
 #include "RawSample.h"
 #include "Sample.h"
+#include "SymbolsStore.h"
 
 class RawNetworkSample : public RawSample
 {
@@ -62,52 +63,52 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* symbolsStore) const override
     {
         auto networkCountIndex = valueOffsets[0];
         sample->AddValue((Timestamp - StartTimestamp).count(), networkCountIndex);
         // Note: we don't need to add the start timestamp as a label because it is computed
         // by the backend from the end timestamp and the duration; i.e. the value of this sample
 
-        sample->AddLabel(StringLabel(Sample::RequestUrlLabel, Url));
-        sample->AddLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
+        sample->AddLabel(StringLabel(symbolsStore->GetRequestUrl(), Url));
+        sample->AddLabel(NumericLabel(symbolsStore->GetRequestStatusCode(), StatusCode));
         if (!Error.empty())
         {
-            sample->AddLabel(StringLabel(Sample::RequestErrorLabel, Error));
+            sample->AddLabel(StringLabel(symbolsStore->GetRequestError(), Error));
         }
         if (HasBeenRedirected)
         {
-            sample->AddLabel(StringLabel(Sample::RequestRedirectUrlLabel, RedirectUrl));
+            sample->AddLabel(StringLabel(symbolsStore->GetRequestRedirectUrl(), RedirectUrl));
         }
         if (DnsDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddLabel(NumericLabel(Sample::RequestDnsWaitLabel, DnsWait.count()));
-            sample->AddLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration.count()));
-            sample->AddLabel(StringLabel(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestDnsWait(), DnsWait.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestDnsDuration(), DnsDuration.count()));
+            sample->AddLabel(StringLabel(symbolsStore->GetRequestDnsSuccess(), DnsSuccess ? "true" : "false"));
         }
         if (HandshakeDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddLabel(NumericLabel(Sample::RequestHandshakeWaitLabel, HandshakeWait.count()));
-            sample->AddLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestHandshakeWait(), HandshakeWait.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestHandshakeDuration(), HandshakeDuration.count()));
         }
         if (!HandshakeError.empty())
         {
-            sample->AddLabel(StringLabel(Sample::RequestHandshakeErrorLabel, HandshakeError));
+            sample->AddLabel(StringLabel(symbolsStore->GetRequestHandshakeError(), HandshakeError));
         }
         if (SocketConnectDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestSocketDuration(), SocketConnectDuration.count()));
         }
         if (RequestDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of connection/handshake error
         {
-            sample->AddLabel(NumericLabel(Sample::RequestDurationLabel, RequestDuration.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetRequestDuration(), RequestDuration.count()));
         }
         if (ResponseDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of error
         {
-            sample->AddLabel(NumericLabel(Sample::ResponseContentDurationLabel, ResponseDuration.count()));
+            sample->AddLabel(NumericLabel(symbolsStore->GetResponseContentDuration(), ResponseDuration.count()));
         }
-        sample->AddLabel(StringLabel(Sample::RequestResponseThreadIdLabel, EndThreadId));
-        sample->AddLabel(StringLabel(Sample::RequestResponseThreadNameLabel, EndThreadName));
+        sample->AddLabel(StringLabel(symbolsStore->GetRequestResponseThreadId(), EndThreadId));
+        sample->AddLabel(StringLabel(symbolsStore->GetRequestResponseThreadName(), EndThreadName));
     }
 
     std::string Url;

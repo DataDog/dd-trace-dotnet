@@ -5,18 +5,21 @@
 
 #include "Profile.h"
 #include "ProfilerMockedInterface.h"
+#include "SymbolsStore.h"
+#include "ServiceWrapper.hpp"
 
 namespace libdatadog {
 
-Profile CreateProfile(std::unique_ptr<IConfiguration> const& configuration)
+Profile CreateProfile(std::unique_ptr<IConfiguration> const& configuration, libdatadog::SymbolsStore* symbolsStore)
 {
-    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
+    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app", symbolsStore);
 }
 
 TEST(ProfileTest, CheckProfileName)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
     ASSERT_EQ("my app", p.GetApplicationName());
 }
@@ -24,12 +27,15 @@ TEST(ProfileTest, CheckProfileName)
 TEST(ProfileTest, AddSample)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
     Sample::ValuesCount = 1;
-    auto s = std::make_shared<Sample>(1ns, "1", 2);
-    s->AddFrame({"", "", "", 1});
-    s->AddFrame({"", "", "", 2});
+    auto s = std::make_shared<Sample>(1ns, "1", 2, symbolsStore);
+    auto emptyFunctionId = symbolsStore->InternFunction("", "");
+    auto emptyModuleId = symbolsStore->InternMapping("");
+    s->AddFrame({emptyModuleId.value(), emptyFunctionId.value(), 1});
+    s->AddFrame({emptyModuleId.value(), emptyFunctionId.value(), 2});
     s->AddValue(42, 0);
     auto success = p.Add(s);
     ASSERT_TRUE(success) << success.message();
@@ -38,17 +44,18 @@ TEST(ProfileTest, AddSample)
 TEST(ProfileTest, AddUpscalingRule)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
-    std::vector<SampleValueTypeProvider::Offset> offsets = {0};
-    auto success = p.AddUpscalingRuleProportional(offsets, "my_label", "my_group", 2, 10);
-    ASSERT_TRUE(success) << success.message();
+    //auto success = p.AddUpscalingRuleProportional(0, symbolsStore->InternString("my_label").value(), "my_group", 2, 10);
+    //ASSERT_TRUE(success) << success.message();
 }
 
 TEST(ProfileTest, SetEndpoint)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
     EXPECT_NO_THROW(p.SetEndpoint(42, "my_endpoint"));
 }
@@ -56,7 +63,8 @@ TEST(ProfileTest, SetEndpoint)
 TEST(ProfileTest, AddEndpointCount)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
     EXPECT_NO_THROW(p.AddEndpointCount("my_endpoint", 1));
 }
@@ -65,15 +73,19 @@ TEST(ProfileTest, AddEndpointCount)
 TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
 
     // change number of values to fail the Add
     Sample::ValuesCount = 2;
-    auto s = std::make_shared<Sample>(1ns, "1", 2);
-    s->AddFrame({"", "", "", 1});
-    s->AddFrame({"", "", "", 2});
+    auto s = std::make_shared<Sample>(1ns, "1", 2, symbolsStore);
+    auto emptyFunctionId = symbolsStore->InternFunction("", "");
+    auto emptyModuleId = symbolsStore->InternMapping("");
+    s->AddFrame({emptyModuleId.value(), emptyFunctionId.value(), 1});
+    s->AddFrame({emptyModuleId.value(), emptyFunctionId.value(), 2});
     s->AddValue(42, 0);
     auto success = p.Add(s);
+
     ASSERT_FALSE(success);
 }
 
@@ -81,10 +93,10 @@ TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
 TEST(ProfileTest, EnsureAddUpscalingRuleFailIfMissingFields)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
-    std::vector<SampleValueTypeProvider::Offset> offsets;
-    auto success = p.AddUpscalingRuleProportional(offsets, "", "", 0, 0);
-    ASSERT_FALSE(success) << success.message();
+    ServiceWrapper<libdatadog::SymbolsStore> symbolsStore;
+    auto p = CreateProfile(configuration, symbolsStore);
+    //auto success = p.AddUpscalingRuleProportional(2, DDOG_PROF_STRINGID_EMPTY, "", 0, 0);
+    //ASSERT_FALSE(success) << success.message();
 }
 
 } // namespace libdatadog

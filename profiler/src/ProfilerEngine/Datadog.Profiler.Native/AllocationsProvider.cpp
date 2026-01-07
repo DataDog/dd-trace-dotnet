@@ -48,7 +48,8 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore)
     :
     AllocationsProvider(
         isFramework
@@ -60,7 +61,8 @@ AllocationsProvider::AllocationsProvider(
         pListener,
         metricsRegistry,
         std::move(pool),
-        memoryResource)
+        memoryResource,
+        symbolsStore)
 {
 }
 
@@ -74,8 +76,9 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
-    shared::pmr::memory_resource* memoryResource) :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), rawSampleTransformer, memoryResource),
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore) :
+    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), rawSampleTransformer, memoryResource, symbolsStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

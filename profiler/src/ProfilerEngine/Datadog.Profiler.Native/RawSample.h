@@ -15,7 +15,9 @@
 #include "SampleValueTypeProvider.h"
 
 class Sample;
-
+namespace libdatadog {
+    class SymbolsStore;
+}
 class RawSample
 {
 public:
@@ -29,7 +31,7 @@ public:
     RawSample& operator=(RawSample&& other) noexcept;
 
     // set values and additional labels on target sample
-    virtual void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const = 0;
+    virtual void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset, libdatadog::SymbolsStore* symbolsStore) const = 0;
 
 public:
     std::chrono::nanoseconds Timestamp;

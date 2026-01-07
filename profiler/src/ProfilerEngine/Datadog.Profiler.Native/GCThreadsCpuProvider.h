@@ -9,13 +9,14 @@
 #include "NativeThreadsCpuProviderBase.h"
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
+#include "SymbolsStore.h"
 
 class RawSampleTransformer;
 
 class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
 {
 public:
-    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
+    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry, libdatadog::SymbolsStore* symbolsStore);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;

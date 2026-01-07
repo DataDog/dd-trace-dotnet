@@ -17,6 +17,7 @@
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -40,7 +41,8 @@ public:
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         CallstackProvider pool,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);

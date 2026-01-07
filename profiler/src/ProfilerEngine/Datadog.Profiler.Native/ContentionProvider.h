@@ -17,6 +17,7 @@
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawContentionSample.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -45,7 +46,8 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     // IContentionListener implementation
     void OnContention(std::chrono::nanoseconds contentionDuration) override;

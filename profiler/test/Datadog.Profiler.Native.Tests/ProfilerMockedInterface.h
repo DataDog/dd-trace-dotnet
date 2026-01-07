@@ -27,6 +27,15 @@
 #include <chrono>
 #include <memory>
 
+namespace libdatadog {
+    class SymbolsStore;
+}
+
+extern "C" {
+    #include "datadog/profiling.h"
+    #include "datadog/common.h"
+}
+
 class MockConfiguration : public IConfiguration
 {
 public:
@@ -262,6 +271,6 @@ std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
 
-std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
+std::shared_ptr<Sample> CreateSample(libdatadog::SymbolsStore* symbolsStore, std::string_view runtimeId, const std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>>& callstack, const std::vector<std::pair<ddog_prof_StringId2, std::string>>& labels, std::int64_t value);
 
-std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);
+std::vector<std::pair<ddog_prof_FunctionId2, ddog_prof_MappingId2>> CreateCallstack(int depth, libdatadog::SymbolsStore* symbolsStore);

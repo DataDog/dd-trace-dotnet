@@ -5,6 +5,7 @@
 
 #include "CollectorBase.h"
 #include "RawCpuSample.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -21,7 +22,8 @@ public:
     CpuTimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* symbolsStore);
 
     static std::vector<SampleValueType> SampleTypeDefinitions;
 };

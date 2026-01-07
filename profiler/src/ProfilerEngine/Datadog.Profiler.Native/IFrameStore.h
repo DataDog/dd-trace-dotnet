@@ -7,14 +7,15 @@
 
 #include <string>
 #include <cstdint>
-
+extern "C" {
+    #include "datadog/common.h"
+}
 struct FrameInfoView
 {
 public:
-    std::string_view ModuleName;
-    std::string_view Frame;
-    std::string_view Filename;
-    std::uint32_t StartLine;
+    ddog_prof_MappingId2 ModuleId;
+    ddog_prof_FunctionId2  FunctionId;
+    std::uint32_t       StartLine;
 };
 
 class IFrameStore

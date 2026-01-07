@@ -8,6 +8,7 @@
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
 #include "RawWallTimeSample.h"
+#include "SymbolsStore.h"
 
 class SampleValueTypeProvider;
 
@@ -20,9 +21,10 @@ std::vector<SampleValueType> WallTimeProvider::SampleTypeDefinitions(
 WallTimeProvider::WallTimeProvider(
     SampleValueTypeProvider& sampleValueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* symbolsStore
     )
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", sampleValueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", sampleValueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, symbolsStore)
 {
 }

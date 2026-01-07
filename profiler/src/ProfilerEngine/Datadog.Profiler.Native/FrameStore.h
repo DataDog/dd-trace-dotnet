@@ -13,6 +13,14 @@
 
 #include "shared/src/native-src/com_ptr.h"
 
+extern "C" {
+    #include "datadog/common.h"
+}
+
+namespace libdatadog {
+    class SymbolsStore;
+}
+
 class IConfiguration;
 
 class FrameStore : public IFrameStore
@@ -39,11 +47,18 @@ public:
     static const uintptr_t FakeUnknownIP = 0;
     static const uintptr_t FakeLockContentionIP = 1;
     static const uintptr_t FakeAllocationIP = 2;
+    static const uintptr_t ClrModule = 3;
+    static const uintptr_t Gen0Frame = 4;
+    static const uintptr_t Gen1Frame = 5;
+    static const uintptr_t Gen2Frame = 6;
+    static const uintptr_t GCRootFrame = 7;
+    static const uintptr_t UnknownGenerationFrame = 8;
+    static const uintptr_t DotNetRootFrame = 9;
     // !!  If you add more fake IPs, update this and add new strings in FrameStore.cpp  !!
-    static const uintptr_t MaxFakeIP = 2;
+    static const uintptr_t MaxFakeIP = 9;
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore, libdatadog::SymbolsStore* pSymbolsStore);
 
 public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
@@ -80,7 +95,7 @@ private:
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     FrameInfoView GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair<ddog_prof_MappingId2, ddog_prof_FunctionId2> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
@@ -130,19 +145,19 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
-        std::string Frame;
-        std::string_view Filename;
+        ddog_prof_MappingId2 ModuleId;
+        ddog_prof_FunctionId2  FunctionId;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const
         {
-            return {ModuleName, Frame, Filename, StartLine};
+            return {ModuleId, FunctionId, StartLine};
         }
     };
 
     ICorProfilerInfo4* _pCorProfilerInfo;
     IDebugInfoStore* _pDebugInfoStore;
+    libdatadog::SymbolsStore* _pSymbolsStore;
 
     std::mutex _methodsLock;
     std::mutex _nativeLock;
@@ -151,7 +166,7 @@ private:
     std::unordered_map<FunctionID, FrameInfo> _methods;
     std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;
-    std::unordered_map<std::string, std::string> _framePerNativeModule;
+    std::unordered_map<ddog_prof_MappingId2, ddog_prof_FunctionId2> _framePerNativeModule;
 
     // for allocation recorder
     std::mutex _fullTypeNamesLock;

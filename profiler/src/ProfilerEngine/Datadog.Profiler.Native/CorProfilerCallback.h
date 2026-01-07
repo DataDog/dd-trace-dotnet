@@ -44,6 +44,8 @@
 #include "ISsiLifetime.h"
 #include "PInvoke.h"
 
+#include "SymbolsStore.h"
+
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
@@ -61,7 +63,6 @@ class RawSampleTransformer;
 class RuntimeIdStore;
 class CpuSampleProvider;
 class NetworkProvider;
-
 #ifdef LINUX
 class SystemCallsShield;
 #endif
@@ -259,6 +260,7 @@ private :
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
     NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
+    std::unique_ptr<libdatadog::SymbolsStore> _pSymbolsStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
