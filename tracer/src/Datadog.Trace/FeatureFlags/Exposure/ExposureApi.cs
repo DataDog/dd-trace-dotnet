@@ -18,151 +18,155 @@ using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Exposure
+namespace Datadog.Trace.FeatureFlags.Exposure;
+
+internal sealed class ExposureApi : IDisposable
 {
-    internal sealed class ExposureApi : IDisposable
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
+
+    private const int DefaultCapacity = 1 << 16; // 65536 elements
+    public const string ExposurePath = "evp_proxy/v2/api/v2/exposure";
+    private readonly TaskCompletionSource<bool> _processExit = new();
+    private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
+    private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
+
+    private ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
+    private IApiRequestFactory _apiRequestFactory;
+    private Dictionary<string, string> _context;
+    private int _started = 0;
+
+    internal ExposureApi(TracerSettings tracerSettings)
     {
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
+        UpdateApi(tracerSettings.Manager.InitialExporterSettings);
+        UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
-        public const string ExposurePath = "evp_proxy/v2/api/v2/exposure";
-        private readonly TaskCompletionSource<bool> _processExit = new();
-        private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
-        private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
-
-        private IApiRequestFactory _apiRequestFactory;
-        private Dictionary<string, string> _context;
-        private int _started = 0;
-
-        internal ExposureApi(TracerSettings tracerSettings)
+        tracerSettings.Manager.SubscribeToChanges(changes =>
         {
-            UpdateApi(tracerSettings.Manager.InitialExporterSettings);
-            UpdateContext(tracerSettings.Manager.InitialMutableSettings);
-
-            tracerSettings.Manager.SubscribeToChanges(changes =>
+            if (changes.UpdatedExporter is { } exporter)
             {
-                if (changes.UpdatedExporter is { } exporter)
-                {
-                    UpdateApi(exporter);
-                }
-
-                if (changes.UpdatedMutable is { } mutable)
-                {
-                    UpdateContext(mutable);
-                }
-            });
-
-            [MemberNotNull(nameof(_apiRequestFactory))]
-            void UpdateApi(ExporterSettings exporterSettings)
-            {
-                Log.Debug("ExposureApi::UpdateApi-> Applying settings");
-                var apiRequestFactory = AgentTransportStrategy.Get(
-                    exporterSettings,
-                    productName: "FeatureFlags exposure",
-                    tcpTimeout: TimeSpan.FromSeconds(5),
-                    AgentHttpHeaderNames.MinimalHeaders,
-                    () => new MinimalAgentHeaderHelper(),
-                    uri => uri);
-                Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
+                UpdateApi(exporter);
             }
 
-            [MemberNotNull(nameof(_context))]
-            void UpdateContext(MutableSettings settings)
+            if (changes.UpdatedMutable is { } mutable)
             {
-                Log.Debug("ExposureApi::UpdateContext -> Applying settings");
-                var context = new Dictionary<string, string>
-                {
-                    { "service", settings.DefaultServiceName },
-                    { "env", settings.Environment ?? "unknown" },
-                    { "version", settings.ServiceVersion ?? "unknown" }
-                };
-                Interlocked.Exchange(ref _context!, context);
+                UpdateContext(mutable);
             }
+        });
+
+        [MemberNotNull(nameof(_apiRequestFactory))]
+        void UpdateApi(ExporterSettings exporterSettings)
+        {
+            Log.Debug("ExposureApi::UpdateApi-> Applying settings");
+            var apiRequestFactory = AgentTransportStrategy.Get(
+                exporterSettings,
+                productName: "FeatureFlags exposure",
+                tcpTimeout: TimeSpan.FromSeconds(5),
+                AgentHttpHeaderNames.MinimalHeaders,
+                () => new MinimalAgentHeaderHelper(),
+                uri => uri);
+            Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
         }
 
-        public void Dispose()
+        [MemberNotNull(nameof(_context))]
+        void UpdateContext(MutableSettings settings)
         {
-            _processExit.TrySetResult(true);
-        }
-
-        public void TryToStartSendLoopIfNotStarted()
-        {
-            if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
+            Log.Debug("ExposureApi::UpdateContext -> Applying settings");
+            var context = new Dictionary<string, string>
             {
-                return;
+                { "service", settings.DefaultServiceName },
+                { "env", settings.Environment ?? "unknown" },
+                { "version", settings.ServiceVersion ?? "unknown" }
+            };
+            Interlocked.Exchange(ref _context!, context);
+        }
+    }
+
+    public void Dispose()
+    {
+        _processExit.TrySetResult(true);
+    }
+
+    public void TryToStartSendLoopIfNotStarted()
+    {
+        if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(SendLoopAsync).ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+    }
+
+    private async Task SendLoopAsync()
+    {
+        Log.Debug("ExposureApi::SendLoopAsync -> Enter");
+        while (!_processExit.Task.IsCompleted)
+        {
+            try
+            {
+                var apiRequestFactory = _apiRequestFactory;
+                var uri = apiRequestFactory.GetEndpoint(ExposurePath);
+                var payload = TryGetPayload();
+                if (payload.Count != 0)
+                {
+                    var request = apiRequestFactory.Create(uri);
+                    using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+                }
             }
-
-            _ = Task.Run(SendLoopAsync).ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-
-        private async Task SendLoopAsync()
-        {
-            Log.Debug("ExposureApi::SendLoopAsync -> Enter");
-            while (!_processExit.Task.IsCompleted)
+            catch (Exception ex)
             {
-                try
-                {
-                    var apiRequestFactory = _apiRequestFactory;
-                    var uri = apiRequestFactory.GetEndpoint(ExposurePath);
-                    var payload = TryGetPayload();
-                    if (payload.Count != 0)
-                    {
-                        var request = apiRequestFactory.Create(uri);
-                        using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
-                }
-
-                try
-                {
-                    await Task.WhenAny(_processExit.Task, Task.Delay(_sendInterval)).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // We are shutting down, so don't do anything about it
-                }
-
-                Log.Debug("ExposureApi::SendLoopAsync -> Exit");
-            }
-        }
-
-        private ArraySegment<byte> TryGetPayload()
-        {
-            List<ExposureEvent> exposures;
-            lock (_exposures)
-            {
-                if (_exposures.Count == 0)
-                {
-                    // nothing to do, skip send
-                    return default;
-                }
-
-                exposures = [.. _exposures];
-                _exposures.Clear();
+                Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
             }
 
-            var request = new ExposuresRequest(_context, exposures);
-            var json = JsonConvert.SerializeObject(request);
-            return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+            try
+            {
+                await Task.WhenAny(_processExit.Task, Task.Delay(_sendInterval)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // We are shutting down, so don't do anything about it
+            }
+
+            Log.Debug("ExposureApi::SendLoopAsync -> Exit");
+        }
+    }
+
+    private ArraySegment<byte> TryGetPayload()
+    {
+        List<ExposureEvent> exposures;
+        lock (_exposures)
+        {
+            if (_exposures.Count == 0)
+            {
+                // nothing to do, skip send
+                return default;
+            }
+
+            exposures = [.. _exposures];
+            _exposures.Clear();
         }
 
-        public void SendExposure(in ExposureEvent exposure)
+        var request = new ExposuresRequest(_context, exposures);
+        var json = JsonConvert.SerializeObject(request);
+        return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+    }
+
+    public void SendExposure(in ExposureEvent exposure)
+    {
+        if (_exposureCache.Add(exposure))
         {
             lock (_exposures)
             {
                 _exposures.Enqueue(exposure);
             }
-
-            TryToStartSendLoopIfNotStarted();
         }
 
-        private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)
-        {
-            public Dictionary<string, string> Context { get; } = context;
+        TryToStartSendLoopIfNotStarted();
+    }
 
-            public List<ExposureEvent> Exposures { get; } = exposures;
-        }
+    private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)
+    {
+        public Dictionary<string, string> Context { get; } = context;
+
+        public List<ExposureEvent> Exposures { get; } = exposures;
     }
 }
