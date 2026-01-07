@@ -88,7 +88,15 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
-        const string validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
+        // See list of certificates
+        // in https://datadoghq.atlassian.net/wiki/spaces/SECENG/pages/3217261499/Certificates+for+Windows+Code+Signing
+        List<string> expectedCertificateThumbprints =
+        [
+            "A0FB7BEE153FE31431062731306903B3A5CB1824",
+            // TODO remove this one when the new certificate is deployed;
+            // see https://github.com/DataDog/windows-code-signing-cert/blob/main/current-certs.toml
+            "59063C826DAA5B628B5CE8A2B32015019F164BF0",
+        ];
 
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
@@ -132,7 +140,7 @@ partial class Build
 
                 var printValue = print.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
 
-                if (!string.Equals(printValue, validSignature, StringComparison.OrdinalIgnoreCase))
+                if (!expectedCertificateThumbprints.Contains(printValue, StringComparer.OrdinalIgnoreCase))
                 {
                     throw new Exception($"Signature verification failed for {binaryPath}. Signature: {printValue ?? "Empty"}");
                 }
