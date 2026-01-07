@@ -99,7 +99,7 @@ partial class Build
             Logger.Information("Signing {BinaryPath}", binaryPath);
 
             var signProcess = ProcessTasks.StartProcess(
-                    "dd-wcs",
+                    "c:/devtools/windows-code-signer.exe",
                     $"sign {binaryPath}",
                     logOutput: false,
                     logInvocation: false);
@@ -108,13 +108,7 @@ partial class Build
             var output = signProcess.Output.Select(o => o.Text);
             foreach (var line in output)
             {
-                Logger.Information("[dd-wcs] {Line}", line);
-
-                // dd-wcs will return 0 even if there are errors
-                if (line.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception($"Error found when signing {binaryPath}: {line}");
-                }
+                Logger.Information("[windows-code-signer] {Line}", line);
             }
 
             if (signProcess.ExitCode == 0)

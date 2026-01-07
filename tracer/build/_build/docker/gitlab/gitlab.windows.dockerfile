@@ -46,24 +46,14 @@ COPY ci-identities-gitlab-job-client-windows-amd64.exe c:/devtools/ci-identities
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "17.0.8"
 ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
-ENV WINSIGN_VERSION "0.3.5"
-ENV WINSIGN_SHA256 "b2ba5127a5c5141e04d42444ca115af4c95cc053a743caaa9b33c68dd6b13f68"
-ENV PYTHON_VERSION "3.8.2"
-
-# Install Python
-COPY install_python3.ps1 .
-RUN powershell -Command .\install_python3.ps1 -Version $ENV:PYTHON_VERSION
-
-COPY requirements.txt constraints.txt install_python_packages.ps1 ./
-RUN powershell -Command .\install_python_packages.ps1
+ENV WINSIGN_VERSION "v0.5.0"
 
 # Install JAVA
 COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
-# Install
-COPY install_winsign.ps1 .
-RUN powershell -Command .\install_winsign.ps1
+# Install Windows Code Signer
+COPY --from=registry.ddbuild.io/windows-code-signer/go:$WINSIGN_VERSION c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
 
 # Copy everything else
 COPY . .

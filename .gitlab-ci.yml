@@ -39,6 +39,7 @@ build:
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e CI_IDENTITY_GITLAB_JWT `
+        -e CI_PROJECT_NAME `
         registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:dotnet10 `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
