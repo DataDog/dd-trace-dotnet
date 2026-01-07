@@ -76,7 +76,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (!flag.Enabled is true)
+                if (flag.Enabled != true)
                 {
                     return new Evaluation(
                         flagKey,

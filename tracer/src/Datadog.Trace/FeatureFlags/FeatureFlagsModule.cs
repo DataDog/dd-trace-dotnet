@@ -79,10 +79,11 @@ namespace Datadog.Trace.FeatureFlags
             Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
             try
             {
-                // Feed configs to the rules evaluator
+                // Feed configs to the rules evaluator (take only the last one)
                 if (list.Count > 0)
                 {
-                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, list[0].Value));
+                    var selectedConfig = list[list.Count - 1].Value;
+                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig));
                     _onNewConfigEventHander?.Invoke();
                 }
             }

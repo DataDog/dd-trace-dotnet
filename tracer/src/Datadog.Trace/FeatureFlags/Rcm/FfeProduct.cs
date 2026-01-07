@@ -52,7 +52,7 @@ internal sealed class FfeProduct
                     if (serverConfigFile.TypedFile is not null)
                     {
                         _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
-                        res.Insert(0, ApplyDetails.FromOk(ffeConfig.Path.Path));
+                        res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
                         apply = true;
                     }
                 }
