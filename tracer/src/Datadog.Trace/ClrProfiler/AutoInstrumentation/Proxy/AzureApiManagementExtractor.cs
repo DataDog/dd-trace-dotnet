@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// <summary>
 /// Extracts proxy metadata from Azure API Management headers.
 /// </summary>
-internal class AzureApiManagementExtractor : IInferredProxyExtractor
+internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
 {
     // This is the expected value of the x-dd-proxy header
     private const string ProxyName = "azure-apim";

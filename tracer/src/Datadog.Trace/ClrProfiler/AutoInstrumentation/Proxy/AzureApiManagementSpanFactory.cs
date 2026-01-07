@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// <summary>
 /// Creates spans representing requests handled by Azure API Management.
 /// </summary>
-internal class AzureApiManagementSpanFactory : IInferredSpanFactory
+internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
 {
     private const string OperationName = "azure.apim";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementSpanFactory>();
