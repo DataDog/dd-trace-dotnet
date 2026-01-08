@@ -255,6 +255,16 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                 }
 
+                StopActivitySlow(sourceName, activity);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
+            }
+
+            static void StopActivitySlow<TInner>(string sourceName, TInner activity)
+                where TInner : IActivity
+            {
                 // The listener didn't send us the Activity or the scope instance was not found
                 // In this case we are going go through the dictionary to check if we have an activity that
                 // has been closed and then close the associated scope.
@@ -318,10 +328,6 @@ namespace Datadog.Trace.Activity.Handlers
                         ActivityMappingById.TryRemove(item, out _);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
             }
 
             static void CloseActivityScope<TInner>(string sourceName, TInner activity, Scope scope)
