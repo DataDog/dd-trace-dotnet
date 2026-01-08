@@ -1,4 +1,4 @@
-// <copyright file="SnapshotPruner.cs" company="Datadog">
+﻿// <copyright file="SnapshotPruner.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace DatadogDebugger.Util
         Escape
     }
 
-    internal class SnapshotPruner
+    internal sealed class SnapshotPruner
     {
         private const string NotCapturedReason = "notCapturedReason";
         private const string Depth = "depth";
@@ -248,7 +248,7 @@ namespace DatadogDebugger.Util
             return State.String;
         }
 
-        private class NodeComparer : IComparer<Node>
+        private sealed class NodeComparer : IComparer<Node>
         {
             public int Compare(Node x, Node y)
             {
@@ -280,7 +280,7 @@ namespace DatadogDebugger.Util
             }
         }
 
-        internal class Node : IComparable<Node>
+        internal sealed class Node : IComparable<Node>
         {
             public Node(int start, int level)
             {

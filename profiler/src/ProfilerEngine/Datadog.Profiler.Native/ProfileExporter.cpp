@@ -679,8 +679,9 @@ bool ProfileExporter::Export(bool lastCall)
 
         std::string metadataJson = GetMetadata();
         std::string infoJson = GetInfo();
+        std::string processTags = applicationInfo.ProcessTags;
 
-        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson));
+        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson), std::move(processTags));
         if (!error_code)
         {
             Log::Error(error_code.message());

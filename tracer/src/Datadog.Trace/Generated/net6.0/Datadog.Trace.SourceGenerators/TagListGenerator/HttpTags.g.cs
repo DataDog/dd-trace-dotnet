@@ -15,19 +15,47 @@ namespace Datadog.Trace.Tagging
     partial class HttpTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // HttpMethodBytes = MessagePack.Serialize("http.method");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+#else
+        private static readonly byte[] HttpMethodBytes = new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+#endif
         // HttpUrlBytes = MessagePack.Serialize("http.url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpUrlBytes => new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] HttpUrlBytes = new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
+#endif
         // HttpClientHandlerTypeBytes = MessagePack.Serialize("http-client-handler-type");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpClientHandlerTypeBytes => new byte[] { 184, 104, 116, 116, 112, 45, 99, 108, 105, 101, 110, 116, 45, 104, 97, 110, 100, 108, 101, 114, 45, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] HttpClientHandlerTypeBytes = new byte[] { 184, 104, 116, 116, 112, 45, 99, 108, 105, 101, 110, 116, 45, 104, 97, 110, 100, 108, 101, 114, 45, 116, 121, 112, 101 };
+#endif
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+#else
+        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+#endif
         // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

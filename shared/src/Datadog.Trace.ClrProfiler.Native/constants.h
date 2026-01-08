@@ -25,11 +25,17 @@ const shared::WSTRING default_exclude_processes[]{
     WStr("Microsoft.ServiceHub.Controller.exe"),
     WStr("MSBuild.exe"),
     WStr("MsDtsSrvr.exe"),
+    WStr("MsSense.exe"), // Defender: https://learn.microsoft.com/en-us/defender-endpoint/switch-to-mde-troubleshooting
     WStr("msvsmon.exe"),
     WStr("PerfWatson2.exe"),
     WStr("powershell.exe"),
     WStr("pwsh.exe"),
     WStr("pwsh"),
+    WStr("SenseCE.exe"),             // 
+    WStr("SenseCM.exe"),             // Defender processes
+    WStr("SenseCnCProxy.exe"),       // https://learn.microsoft.com/en-us/defender-endpoint/switch-to-mde-troubleshooting
+    WStr("SenseIR.exe"),             // 
+    WStr("SenseSampleUploader.exe"), // 
     WStr("ServiceHub.DataWarehouseHost.exe"),
     WStr("ServiceHub.Host.CLR.exe"),
     WStr("ServiceHub.Host.CLR.x86.exe"),

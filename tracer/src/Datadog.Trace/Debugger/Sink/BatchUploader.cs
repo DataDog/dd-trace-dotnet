@@ -1,4 +1,4 @@
-// <copyright file="BatchUploader.cs" company="Datadog">
+﻿// <copyright file="BatchUploader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Sink
 {
-    internal class BatchUploader : IBatchUploader
+    internal sealed class BatchUploader : IBatchUploader
     {
         private const int MaxSinglePayloadSize = 1 * 1024 * 1024;
         private const int MaxTotalPayloadSize = 5 * 1024 * 1024;

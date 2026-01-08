@@ -1,4 +1,4 @@
-// <copyright file="SymbolsUploader.cs" company="Datadog">
+﻿// <copyright file="SymbolsUploader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ using OperationCanceledException = System.OperationCanceledException;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal class SymbolsUploader : IDebuggerUploader
+    internal sealed class SymbolsUploader : IDebuggerUploader
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
@@ -344,7 +344,15 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
-            return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            try
+            {
+                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Log.ErrorSkipTelemetry(e, "Error uploading symbol database");
+                return false;
+            }
         }
 
         private bool TrySerializeClass(Model.Scope classScope, StringBuilder sb, int currentBytes, out int newTotalBytes)

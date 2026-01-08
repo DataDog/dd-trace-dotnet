@@ -15,9 +15,17 @@ namespace Datadog.Trace.Tagging
     partial class AwsKinesisTags
     {
         // StreamNameBytes = MessagePack.Serialize("streamname");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> StreamNameBytes => new byte[] { 170, 115, 116, 114, 101, 97, 109, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] StreamNameBytes = new byte[] { 170, 115, 116, 114, 101, 97, 109, 110, 97, 109, 101 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {

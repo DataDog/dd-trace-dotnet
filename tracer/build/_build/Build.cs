@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.33.0";
+    readonly string Version = "3.35.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -142,6 +142,11 @@ partial class Build : NukeBuild
         .Description("Cleans all build output")
         .Executes(() =>
         {
+            if (FastDevLoop)
+            {
+                return;
+            }
+
             if (IsWin)
             {
                 // These are created as part of the CreatePlatformlessSymlinks target and cause havok
@@ -568,20 +573,32 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
-                new(Projects.BenchmarksTrace, s => s),
+            var benchmarkProjectsWithSettings = new List<(string Project, Func<DotNetRunSettings, DotNetRunSettings> Configure)>
+            {
+                (Projects.BenchmarksTrace, s => s),
                 // new(Projects.BenchmarksOpenTelemetryApi, s => s),
-                new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
+                (Projects.BenchmarksOpenTelemetryInstrumentedApi,
                     s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
                           .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                           .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
                           .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
             };
 
+            var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var _);
+            // We don't run the base Otel benchmarks on PRs as nothing we do should change them.
+            // We _do_ run them on master, so we have up-to-date comparison data
+            // We can't easily use the benchmark "category" approach that we use below, because the BenchmarksOpenTelemetryApi
+            // project shares the same tests as BenchmarksOpenTelemetryInstrumentedApi.
+            if (!isPr)
+            {
+                benchmarkProjectsWithSettings.Add((Projects.BenchmarksOpenTelemetryApi, s => s));
+            }
+
+
             foreach (var tuple in benchmarkProjectsWithSettings)
             {
-                var benchmarkProjectName = tuple.Item1;
-                var configureDotNetRunSettings = tuple.Item2;
+                var benchmarkProjectName = tuple.Project;
+                var configureDotNetRunSettings = tuple.Configure;
 
                 var benchmarksProject = Solution.GetProject(benchmarkProjectName);
                 var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
@@ -602,13 +619,21 @@ partial class Build : NukeBuild
                         false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                     };
 
+                    // We could choose to not run asm on non-ASM PRs (for example) but for now we just run all categories
+                    var categories = (BenchmarkCategory, isPr) switch
+                    {
+                        ({ Length: > 0 }, _) => BenchmarkCategory,
+                        (_, true) => "prs",
+                        (_, false) => "master",
+                    };
+
                     DotNetRun(s => s
                         .SetProjectFile(benchmarksProject)
                         .SetConfiguration(BuildConfiguration)
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --allCategories {categories} --iterationTime 200")
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

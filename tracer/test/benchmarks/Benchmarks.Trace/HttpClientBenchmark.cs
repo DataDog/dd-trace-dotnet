@@ -10,8 +10,7 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent3]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class HttpClientBenchmark
     {
         private HttpRequestMessage _httpRequest;
@@ -20,11 +19,15 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
+            TracerHelper.SetGlobalTracer();
             _httpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
+            _httpRequest.Dispose();
         }
 
         [Benchmark]

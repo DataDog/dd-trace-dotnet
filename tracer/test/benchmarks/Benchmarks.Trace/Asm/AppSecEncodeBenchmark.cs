@@ -17,8 +17,7 @@ using Datadog.Trace.AppSec.WafEncoding;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
-[BenchmarkAgent7]
-[BenchmarkCategory(Constants.AppSecCategory)]
+[BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 public class AppSecEncoderBenchmark
 {
     private Encoder _encoder;
@@ -34,6 +33,17 @@ public class AppSecEncoderBenchmark
         _encoderLegacy = new EncoderLegacy(wafLibraryInvoker);
 
         _args = MakeNestedMap(20);
+    }
+
+    [GlobalCleanup]
+    public void GlobalCleanup()
+    {
+        AppSecBenchmarkUtils.CleanupDummyAgent();
+        AppSecBenchmarkUtils.CleanupWafLibraryInvoker();
+        if (Encoder.Pool is { IsDisposed: false } pool)
+        {
+            pool.Dispose();
+        }
     }
 
     /// <summary>

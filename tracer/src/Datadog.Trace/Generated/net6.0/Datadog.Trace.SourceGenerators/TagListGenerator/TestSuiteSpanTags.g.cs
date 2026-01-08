@@ -15,11 +15,23 @@ namespace Datadog.Trace.Ci.Tagging
     partial class TestSuiteSpanTags
     {
         // SuiteBytes = MessagePack.Serialize("test.suite");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SuiteBytes => new byte[] { 170, 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+#else
+        private static readonly byte[] SuiteBytes = new byte[] { 170, 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+#endif
         // SourceFileBytes = MessagePack.Serialize("test.source.file");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SourceFileBytes => new byte[] { 176, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
+#else
+        private static readonly byte[] SourceFileBytes = new byte[] { 176, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
+#endif
         // CodeOwnersBytes = MessagePack.Serialize("test.codeowners");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CodeOwnersBytes => new byte[] { 175, 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
+#else
+        private static readonly byte[] CodeOwnersBytes = new byte[] { 175, 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
+#endif
 
         public override string? GetTag(string key)
         {

@@ -1,4 +1,4 @@
-// <copyright file="ProcessHelpers.cs" company="Datadog">
+﻿// <copyright file="ProcessHelpers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public class CommandOutput
+        public sealed class CommandOutput
         {
             public CommandOutput(string output, string error, int exitCode, bool timedOut)
             {

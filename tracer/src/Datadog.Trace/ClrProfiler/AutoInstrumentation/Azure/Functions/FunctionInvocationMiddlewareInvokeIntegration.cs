@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         IntegrationName = AzureFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class FunctionInvocationMiddlewareInvokeIntegration
+    public sealed class FunctionInvocationMiddlewareInvokeIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FunctionInvocationMiddlewareInvokeIntegration));
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, AzureFunctionsCommon.OperationName, AzureFunctionsCommon.IntegrationId);
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId))
             {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, httpContext, resourceName: null);
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, Iast.Iast.Instance, httpContext, resourceName: null);
 
                 if (scope != null)
                 {

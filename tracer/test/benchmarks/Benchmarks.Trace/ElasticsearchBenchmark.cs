@@ -10,8 +10,7 @@ using Elasticsearch.Net;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent5]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class ElasticsearchBenchmark
     {
         private RequestPipeline _pipeline;
@@ -20,9 +19,7 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+            TracerHelper.SetGlobalTracer();
 
             _pipeline = new RequestPipeline();
             _data = new RequestData
@@ -31,6 +28,12 @@ namespace Benchmarks.Trace
                 Uri = new Uri("http://localhost/"),
                 PathAndQuery = "PathAndQuery"
             };
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]

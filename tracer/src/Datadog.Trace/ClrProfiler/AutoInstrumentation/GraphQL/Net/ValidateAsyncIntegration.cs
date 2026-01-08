@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         IntegrationName = GraphQLCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ValidateAsyncIntegration
+    public sealed class ValidateAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

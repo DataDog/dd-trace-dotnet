@@ -13,26 +13,19 @@ using log4net.Repository.Hierarchy;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent4]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class Log4netBenchmark
     {
-        private Tracer _logInjectionTracer;
         private log4net.ILog _logger;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            _logInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(_logInjectionTracer);
+            var config = TracerHelper.DefaultConfig;
+            config[ConfigurationKeys.LogsInjectionEnabled] = true;
+            config[ConfigurationKeys.Environment] = "env";
+            config[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(config);
 
             var repository = (Hierarchy)log4net.LogManager.GetRepository();
             var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
@@ -55,12 +48,18 @@ namespace Benchmarks.Trace
             _logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
         }
 
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
+        }
+
         [Benchmark]
         public void EnrichedLog()
         {
-            using (_logInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (_logInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
                     _logger.Info("Hello");
                 }

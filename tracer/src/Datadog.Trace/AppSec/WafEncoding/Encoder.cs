@@ -1,4 +1,4 @@
-// <copyright file="Encoder.cs" company="Datadog">
+﻿// <copyright file="Encoder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,7 +22,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
-    internal class Encoder : IEncoder
+    internal sealed class Encoder : IEncoder
     {
         private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
@@ -44,6 +44,22 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize);
                 _pool = instance;
                 return instance;
+            }
+        }
+
+        internal static void Dispose()
+        {
+            try
+            {
+                if (_pool is { IsDisposed: false })
+                {
+                    _pool.Dispose();
+                    _pool = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "WafEncoder Crashed on shutdown.");
             }
         }
 
@@ -666,7 +682,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
         }
 
-        public class EncodeResult : IEncodeResult
+        public sealed class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
             private readonly UnmanagedMemoryPool _innerPool;

@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Agent;
 /// <summary>
 /// A managed version of <see cref="Api"/> that is rebuilt whenever the exporter settings change
 /// </summary>
-internal class ManagedApi : IApi
+internal sealed class ManagedApi : IApi
 {
     private Api _api;
 
@@ -48,7 +49,7 @@ internal class ManagedApi : IApi
         void UpdateApi(ExporterSettings exporterSettings, bool healthMetricsEnabled)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
+            var api = new Api(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
             Interlocked.Exchange(ref _api!, api);
         }
     }

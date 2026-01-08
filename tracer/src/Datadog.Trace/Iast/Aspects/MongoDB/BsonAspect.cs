@@ -15,7 +15,7 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [AspectClass("MongoDB.Bson", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class BsonAspect
+public sealed class BsonAspect
 {
     /// <summary>
     ///     MongoDB Bson Parse aspect

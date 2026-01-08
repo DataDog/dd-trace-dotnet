@@ -1,4 +1,4 @@
-// <copyright file="Api.cs" company="Datadog">
+﻿// <copyright file="Api.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal class Api : IApi
+    internal sealed class Api : IApi
     {
         private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
@@ -35,8 +35,7 @@ namespace Datadog.Trace.Agent
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsdManager _statsd;
-        private readonly string _containerId;
-        private readonly string _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
@@ -50,6 +49,7 @@ namespace Datadog.Trace.Agent
         public Api(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
+            ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
@@ -63,8 +63,7 @@ namespace Datadog.Trace.Agent
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _healthMetricsEnabled = healthMetricsEnabled;
@@ -208,16 +207,7 @@ namespace Datadog.Trace.Agent
             bool success = false;
             IApiResponse response = null;
 
-            // Set additional headers
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
@@ -288,16 +278,7 @@ namespace Datadog.Trace.Agent
 
             // Set additional headers
             request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             if (statsComputationEnabled)
             {

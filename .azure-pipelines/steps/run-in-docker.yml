@@ -60,6 +60,7 @@ steps:
     echo "Using SDK version $sdkVersion"
 
     docker run --rm \
+        --cap-add=SYS_PTRACE \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
         --env artifacts=/project/$(relativeArtifacts) \

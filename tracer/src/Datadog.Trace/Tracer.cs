@@ -1,4 +1,4 @@
-// <copyright file="Tracer.cs" company="Datadog">
+﻿// <copyright file="Tracer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,9 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
+#pragma  warning disable DDSEAL001 // We derive from this in tests
     public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
+#pragma warning restore DDSEAL001
     {
         private static readonly object GlobalInstanceLock = new();
 
@@ -274,11 +276,11 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(ArraySegment<Span> trace)
+        void IDatadogTracer.Write(in SpanCollection trace)
         {
             if (CurrentTraceSettings.Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
             {
-                TracerManager.WriteTrace(trace);
+                TracerManager.WriteTrace(in trace);
             }
         }
 

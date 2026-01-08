@@ -6,7 +6,7 @@
       error_output=$({ dd-octo-sts token --scope $DDOCTOSTS_SCOPE --policy $DDOCTOSTS_POLICY > "/tmp/github-token"; } 2>&1)
       exit_code=$?
       if [ $exit_code -ne 0 ]; then
-        echo "ERROR: Failed to retrieve GitHub token."
+        echo "Error: Failed to retrieve GitHub token."
         echo "Original error: $error_output"
         echo "Continuing execution anyway..."
       fi
@@ -15,6 +15,11 @@
 stages:
   - build
   - benchmarks
+  - gate
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
 
 build-dd-trace-dotnet-microbenchmarks-ami:
   stage: build
@@ -79,13 +84,16 @@ run-benchmarks:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   rules:
-    - when: on_success
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts
-      - artifacts
+      - reports/
     expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform
@@ -102,16 +110,21 @@ run-benchmarks:
     # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
+    # Whether to mock benchmark execution by simply copying the latest 
+    # master results. Useful for testing the after_script steps
+    BP_INFRA_TEST: "false"
+
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
     # Where to look for benchmarking artifacts for uploading to the BP UI
-    ARTIFACTS_DIR: "platform/artifacts"
+    ARTIFACTS_DIR: "reports"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - mkdir -p reports
     - ./platform/steps/run-windows-benchmarks.sh
   after_script:
     - |
@@ -122,5 +135,64 @@ run-benchmarks:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+    - ./platform/steps/fetch-results.sh
+    - ./platform/steps/analyze-results.sh
     - ./platform/steps/post-pr-comment.sh
     - ./platform/steps/upload-to-bp-ui.sh
+
+# This repository is using PR-level performance quality gates.
+# Verify that the check-big-regressions CI job has passed. If any regression happened, merging this PR will be blocked.
+# If bypassing is necessary, see https://datadoghq.atlassian.net/wiki/x/8YFzMwE for more details.
+.check-big-regressions:
+  stage: gate
+  tags: ["arch:amd64"]
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  needs: ["run-benchmarks"]
+  # We set when: always when applicable to ensure the job runs even if the run-benchmarks job fails.
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+      interruptible: false
+      when: always
+    - interruptible: true
+      when: always
+  allow_failure: true  # Allowed to fail since we don't want it to block PRs yet
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - reports/
+    expire_in: "30 days"
+  variables:
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
+
+    # Regex to ignore benchmarks identified as unstable
+    IGNORED_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.CIVisibilityProtocolWriterBenchmark"
+  script: |
+    export ARTIFACTS_DIR="$(pwd)/reports"
+
+    if [ -n "${IGNORED_BENCHMARKS_REGEX}" ]; then
+      echo "Adding the 'ignored.' prefix to benchmarks matching IGNORED_BENCHMARKS_REGEX:"
+      echo "    ${IGNORED_BENCHMARKS_REGEX}"
+      for file in "${ARTIFACTS_DIR}"/*.converted.json; do
+        file_basename=$(basename "${file}")
+        if [[ "${file_basename}" =~ ${IGNORED_BENCHMARKS_REGEX} ]]; then
+          echo "    ${file_basename} -> ignored.${file_basename}"
+          mv "${file}" "${ARTIFACTS_DIR}/ignored.${file_basename}"
+        fi
+      done
+    fi
+
+    git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform
+    bp-runner /platform/bp-runner.fail-on-regression.yml --debug
+
+check-big-regressions:
+  extends: .check-big-regressions
+
+# TODO: Remove once the decision to consider or ignore benchmarks identified as 
+# unstable has been made
+check-big-regressions-no-ignored-benchmarks:
+  extends: .check-big-regressions
+  variables:
+    IGNORED_BENCHMARKS_REGEX: ""

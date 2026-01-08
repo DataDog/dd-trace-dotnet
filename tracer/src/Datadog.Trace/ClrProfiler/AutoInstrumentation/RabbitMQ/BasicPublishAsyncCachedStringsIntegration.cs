@@ -1,4 +1,4 @@
-﻿// <copyright file="BasicPublishAsyncCachedStringsIntegration.cs" company="Datadog">
+// <copyright file="BasicPublishAsyncCachedStringsIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
     IntegrationName = RabbitMQConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BasicPublishAsyncCachedStringsIntegration
+public sealed class BasicPublishAsyncCachedStringsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TExchange, TRoutingKey, TBasicProperties, TBody>(TTarget instance, TExchange exchange, TRoutingKey routingKey, bool mandatory, TBasicProperties basicProperties, TBody body, in CancellationToken cancellationToken)
         where TBasicProperties : IReadOnlyBasicProperties, IDuckType
@@ -55,8 +55,8 @@ public class BasicPublishAsyncCachedStringsIntegration
 internal interface ICachedStringProxy : IDuckType
 {
     /// <summary>
-    /// Gets or sets a value of System.String
+    /// Gets the value of System.String
     /// </summary>
     [DuckField(Name = "Value")]
-    string Value { get; set; }
+    string Value { get; }
 }

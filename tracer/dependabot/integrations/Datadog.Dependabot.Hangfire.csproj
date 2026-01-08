@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Hangfire.Core -->
+    <!--    Assembly: Hangfire.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Hangfire/1.8.22 -->
+    <PackageReference Include="Hangfire" Version="1.8.22" />
+  </ItemGroup>
+
+</Project>

@@ -15,11 +15,23 @@ namespace Datadog.Trace.Tagging
     partial class AwsS3Tags
     {
         // BucketNameBytes = MessagePack.Serialize("bucketname");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BucketNameBytes => new byte[] { 170, 98, 117, 99, 107, 101, 116, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] BucketNameBytes = new byte[] { 170, 98, 117, 99, 107, 101, 116, 110, 97, 109, 101 };
+#endif
         // ObjectKeyBytes = MessagePack.Serialize("objectkey");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ObjectKeyBytes => new byte[] { 169, 111, 98, 106, 101, 99, 116, 107, 101, 121 };
+#else
+        private static readonly byte[] ObjectKeyBytes = new byte[] { 169, 111, 98, 106, 101, 99, 116, 107, 101, 121 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {

@@ -60,7 +60,6 @@ public:
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
     bool IsHeapProfilingEnabled() const override;
-    bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
@@ -89,7 +88,7 @@ public:
     std::chrono::minutes GetHeapSnapshotInterval() const override;
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
-
+    uint32_t GetHeapHandleLimit() const override;
 
 private:
     static tags ExtractUserTags();
@@ -118,6 +117,8 @@ private:
     std::chrono::minutes ExtractHeapSnapshotInterval() const;
     std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
+    int32_t ExtractHeapHandleLimit() const;
+
 
 private:
     static std::string const DefaultProdSite;
@@ -168,7 +169,7 @@ private:
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
     int32_t _codeHotspotsThreadsThreshold;
-    bool _useBacktrace2;
+    uint32_t _heapHandleLimit;
     bool _isAllocationRecorderEnabled;
     bool _isGcThreadsCpuTimeEnabled;
     std::string _gitRepositoryUrl;

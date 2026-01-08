@@ -441,6 +441,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.S3", "tracer\te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.GoogleProtobuf", "tracer\test\test-applications\integrations\Samples.GoogleProtobuf\Samples.GoogleProtobuf.csproj", "{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Hangfire", "tracer\test\test-applications\integrations\Samples.Hangfire\Samples.Hangfire.csproj", "{59A9EDCD-6892-4817-8957-54DE84BDCAFB}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Quartz", "tracer\test\test-applications\integrations\Samples.Quartz\Samples.Quartz.csproj", "{CF69BC17-1527-425A-9B02-8E223BC31DB8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.HostLogsDisabled", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.HostLogsDisabled\Samples.AzureFunctions.V4Isolated.HostLogsDisabled.csproj", "{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C}"
@@ -1059,6 +1061,10 @@ Global
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59A9EDCD-6892-4817-8957-54DE84BDCAFB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF69BC17-1527-425A-9B02-8E223BC31DB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1243,6 +1249,7 @@ Global
 		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0C0578CB-3B67-4F95-8547-206CD2A560CD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{59A9EDCD-6892-4817-8957-54DE84BDCAFB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{CF69BC17-1527-425A-9B02-8E223BC31DB8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection

@@ -72,7 +72,6 @@ Configuration::Configuration()
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, true);
-    _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled,
@@ -124,6 +123,7 @@ Configuration::Configuration()
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
+    _heapHandleLimit = ExtractHeapHandleLimit();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -312,11 +312,6 @@ std::string const& Configuration::GetApiKey() const
 std::string const& Configuration::GetServiceName() const
 {
     return _serviceName;
-}
-
-bool Configuration::UseBacktrace2() const
-{
-    return _useBacktrace2;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const
@@ -871,4 +866,19 @@ std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
 uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const
 {
     return _heapSnapshotMemoryPressureThreshold;
+}
+
+int32_t Configuration::ExtractHeapHandleLimit() const
+{
+    // default handle count limit is 4096; could be changed via env vars from 1024 to 16000
+    int32_t limit =
+        std::min(
+            std::max(GetEnvironmentValue(EnvironmentVariables::HeapHandleLimit, 4096), 1024),
+            16000);
+    return limit;
+}
+
+uint32_t Configuration::GetHeapHandleLimit() const
+{
+    return _heapHandleLimit;
 }

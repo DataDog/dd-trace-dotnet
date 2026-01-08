@@ -510,6 +510,18 @@
       ],
       "product": "Debugger"
     },
+    "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "Debugger"
+    },
+    "DD_EXCEPTION_REPLAY_AGENTLESS_URL": {
+      "version": [
+        "A"
+      ],
+      "product": "Debugger"
+    },
     "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT": {
       "version": [
         "A"
@@ -527,6 +539,11 @@
         "A"
       ],
       "product": "AppSec"
+    },
+    "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": {
+      "version": [
+        "A"
+      ]
     },
     "DD_GIT_COMMIT_SHA": {
       "version": [

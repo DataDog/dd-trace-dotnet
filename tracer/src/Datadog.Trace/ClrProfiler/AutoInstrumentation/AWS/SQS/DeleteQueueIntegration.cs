@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         IntegrationName = AwsSqsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DeleteQueueIntegration
+    public sealed class DeleteQueueIntegration
     {
         private const string Operation = "DeleteQueue";
 
