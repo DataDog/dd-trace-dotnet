@@ -6,22 +6,28 @@
 #nullable enable
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Util;
 
-internal ref struct RefStopwatch()
+internal ref struct RefStopwatch
 {
-    private long _started = Stopwatch.GetTimestamp();
+    private long _started;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public RefStopwatch()
+    {
+        _started = Stopwatch.GetTimestamp();
+    }
 
     public TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started);
 
-    public double ElapsedMilliseconds => Elapsed.TotalMilliseconds;
+    public double ElapsedMilliseconds => StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp() - _started);
 
-    public static RefStopwatch Create()
-    {
-        return new RefStopwatch();
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static RefStopwatch Create() => new();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Restart()
     {
         _started = Stopwatch.GetTimestamp();
