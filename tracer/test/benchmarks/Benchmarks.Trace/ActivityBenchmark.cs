@@ -22,6 +22,7 @@ public class ActivityBenchmark
     private Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
     private ActivitySource _source;
     private ActivityListener _activityListener;
+    private DefaultActivityHandler _handler;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -34,6 +35,7 @@ public class ActivityBenchmark
         ActivitySource.AddActivityListener(_activityListener);
 
         _duckSource = new Datadog.Trace.Activity.DuckTypes.ActivitySource { Name = _source.Name, Version = _source.Version ?? string.Empty };
+        _handler = new();
     }
 
     [GlobalCleanup]
@@ -63,13 +65,12 @@ public class ActivityBenchmark
         using var child = CreateActivity(parent);
         var parentMock = parent.DuckAs<IActivity6>()!;
         var childMock = child.DuckAs<IActivity6>()!;
-        var handler = new DefaultActivityHandler();
-        handler.ActivityStarted(SourceName, parentMock);
-        handler.ActivityStarted(SourceName, childMock);
+        _handler.ActivityStarted(SourceName, parentMock);
+        _handler.ActivityStarted(SourceName, childMock);
         child.Stop();
-        handler.ActivityStopped(SourceName, childMock);
+        _handler.ActivityStopped(SourceName, childMock);
         parent.Stop();
-        handler.ActivityStopped(SourceName, parentMock);
+        _handler.ActivityStopped(SourceName, parentMock);
     }
 
     private Activity CreateActivity(Activity? parent = null)
