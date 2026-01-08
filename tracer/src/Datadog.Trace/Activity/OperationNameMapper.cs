@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity
@@ -14,14 +15,13 @@ namespace Datadog.Trace.Activity
     /// </summary>
     internal static class OperationNameMapper
     {
+        [TestingOnly]
         internal static void MapToOperationName(Span span)
         {
             if (!string.IsNullOrEmpty(span.OperationName))
             {
                 return; // if OperationName has a value it means there was an "operation.name" tag
             }
-
-            string operationName;
 
             if (span.Tags is not OpenTelemetryTags tags)
             {
@@ -32,127 +32,99 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            if (tags.IsHttpServer())
-            {
-                operationName = "http.server.request";
-            }
-            else if (tags.IsHttpClient())
-            {
-                operationName = "http.client.request";
-            }
-            else if (tags.IsDatabase())
-            {
-                operationName = $"{tags.DbSystem}.query";
-            }
-            else if (tags.IsMessaging())
-            {
-                operationName = $"{tags.MessagingSystem}.{tags.MessagingOperation}";
-            }
-            else if (tags.IsAwsClient())
-            {
-                operationName = !string.IsNullOrEmpty(tags.RpcService) ? $"aws.{tags.RpcService}.request" : "aws.client.request";
-            }
-            else if (tags.IsRpcClient())
-            {
-                operationName = $"{tags.RpcSystem}.client.request";
-            }
-            else if (tags.IsRpcServer())
-            {
-                operationName = $"{tags.RpcSystem}.server.request";
-            }
-            else if (tags.IsFaasServer())
-            {
-                operationName = $"{tags.FaasTrigger}.invoke";
-            }
-            else if (tags.IsFaasClient())
-            {
-                operationName = $"{tags.FaasInvokedProvider}.{tags.FaasInvokedName}.invoke";
-            }
-            else if (tags.IsGraphQLServer())
-            {
-                operationName = "graphql.server.request";
-            }
-            else if (tags.IsGenericServer())
-            {
-                operationName = !string.IsNullOrEmpty(tags.NetworkProtocolName) ? $"{tags.NetworkProtocolName}.server.request" : "server.request";
-            }
-            else if (tags.IsGenericClient())
-            {
-                operationName = !string.IsNullOrEmpty(tags.NetworkProtocolName) ? $"{tags.NetworkProtocolName}.client.request" : "client.request";
-            }
-            else
-            {
-                // when there is no SpanKind defined (possible on Activity objects without "Kind")
-                // fallback to using "internal" for the name.
-                operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : SpanKinds.Internal;
-            }
-
-            span.OperationName = operationName.ToLowerInvariant();
+            span.OperationName = GetOperationName(tags);
         }
 
-        private static bool IsHttpServer(this OpenTelemetryTags tags)
+        internal static string GetOperationName(OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.HttpRequestMethod);
-        }
+            var httpRequestMethod = tags.GetTag("http.request.method");
+            if (tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(httpRequestMethod))
+            {
+                // IsHttpServer
+                return "http.server.request";
+            }
 
-        private static bool IsHttpClient(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.HttpRequestMethod);
-        }
+            if (tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(httpRequestMethod))
+            {
+                // IsHttpClient
+                return "http.client.request";
+            }
 
-        private static bool IsDatabase(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.DbSystem);
-        }
+            var dbSystem = tags.GetTag("db.system");
+            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(dbSystem))
+            {
+                // IsDatabase
+                return $"{dbSystem.ToLowerInvariant()}.query";
+            }
 
-        private static bool IsMessaging(this OpenTelemetryTags tags)
-        {
-            return (tags.SpanKind == SpanKinds.Client ||
-                    tags.SpanKind == SpanKinds.Server ||
-                    tags.SpanKind == SpanKinds.Producer ||
-                    tags.SpanKind == SpanKinds.Consumer)
-                && !string.IsNullOrEmpty(tags.MessagingSystem) &&
-                   !string.IsNullOrEmpty(tags.MessagingOperation);
-        }
+            var messagingSystem = tags.GetTag(Tags.MessagingSystem);
+            var messagingOperation = tags.GetTag(Tags.MessagingOperation);
+            if (tags.SpanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer
+                  && !StringUtil.IsNullOrEmpty(messagingSystem) &&
+                     !StringUtil.IsNullOrEmpty(messagingOperation))
+            {
+                // IsMessaging
+                return $"{messagingSystem}.{messagingOperation}".ToLowerInvariant();
+            }
 
-        private static bool IsAwsClient(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client && string.Equals(tags.RpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase);
-        }
+            var rpcSystem = tags.GetTag(Tags.RpcSystem);
+            if (tags.SpanKind == SpanKinds.Client && string.Equals(rpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase))
+            {
+                // IsAwsClient
+                var service = tags.GetTag(Tags.RpcService)?.ToLowerInvariant();
+                return !StringUtil.IsNullOrEmpty(service) ? $"aws.{service}.request" : "aws.client.request";
+            }
 
-        private static bool IsRpcClient(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.RpcSystem);
-        }
+            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(rpcSystem))
+            {
+                // IsRpcClient
+                return $"{rpcSystem.ToLowerInvariant()}.client.request";
+            }
 
-        private static bool IsRpcServer(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.RpcSystem);
-        }
+            if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(rpcSystem))
+            {
+                // IsRpcServer
+                return $"{rpcSystem.ToLowerInvariant()}.server.request";
+            }
 
-        private static bool IsFaasServer(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.FaasTrigger);
-        }
+            var faasTrigger = tags.GetTag("faas.trigger");
+            if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(faasTrigger))
+            {
+                // IsFaasServer
+                return $"{faasTrigger.ToLowerInvariant()}.invoke";
+            }
 
-        private static bool IsFaasClient(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.FaasInvokedProvider) && !string.IsNullOrEmpty(tags.FaasInvokedName);
-        }
+            var faasInvokedProvider = tags.GetTag("faas.invoked_provider");
+            var faasInvokedName = tags.GetTag("faas.invoked_name");
+            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(faasInvokedProvider) && !StringUtil.IsNullOrEmpty(faasInvokedName))
+            {
+                // IsFaasClient
+                return $"{faasInvokedProvider}.{faasInvokedName}.invoke".ToLowerInvariant();
+            }
 
-        private static bool IsGraphQLServer(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.GraphQlOperationType);
-        }
+            if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(tags.GetTag("graphql.operation.type")))
+            {
+                // IsGraphQLServer
+                return "graphql.server.request";
+            }
 
-        private static bool IsGenericServer(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Server;
-        }
+            if (tags.SpanKind == SpanKinds.Server)
+            {
+                // IsGenericServer
+                var name = tags.GetTag("network.protocol.name");
+                return !StringUtil.IsNullOrEmpty(name) ? $"{name.ToLowerInvariant()}.server.request" : "server.request";
+            }
 
-        private static bool IsGenericClient(this OpenTelemetryTags tags)
-        {
-            return tags.SpanKind == SpanKinds.Client;
+            if (tags.SpanKind == SpanKinds.Client)
+            {
+                // IsGenericClient
+                var name = tags.GetTag("network.protocol.name");
+                return !StringUtil.IsNullOrEmpty(name) ? $"{name.ToLowerInvariant()}.client.request" : "client.request";
+            }
+
+            // when there is no SpanKind defined (possible on Activity objects without "Kind")
+            // fallback to using "internal" for the name.
+            return !StringUtil.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind.ToLowerInvariant() : SpanKinds.Internal;
         }
     }
 }
