@@ -238,186 +238,78 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private class CustomTestMethodRunner : XunitTestMethodRunner
+        private class CustomTestMethodRunner : FlakyTestMethodRunner
         {
-            private readonly IMessageSink _diagnosticMessageSink;
-            private readonly object[] _constructorArguments;
-
-            public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments)
+            public CustomTestMethodRunner(
+                ITestMethod testMethod,
+                IReflectionTypeInfo @class,
+                IReflectionMethodInfo method,
+                IEnumerable<IXunitTestCase> testCases,
+                IMessageSink diagnosticMessageSink,
+                IMessageBus messageBus,
+                ExceptionAggregator aggregator,
+                CancellationTokenSource cancellationTokenSource,
+                object[] constructorArguments)
                 : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
             {
-                _diagnosticMessageSink = diagnosticMessageSink;
-                _constructorArguments = constructorArguments;
             }
 
-            protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
+            protected override async Task OnTestRetryAsync(IMessageSink diagnosticMessageSink, string testFullName, string retryReason)
             {
-                var parameters = string.Empty;
-
-                if (testCase.TestMethodArguments != null)
-                {
-                    // We replace ##vso to avoid sending "commands" via the log output when we're testing CI Visibility stuff
-                    // We should redact other CI's command prefixes as well in the future, but for now this is enough
-                    parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString()?.Replace("##vso", "#####") ?? "null"));
-                }
-
-                var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
-
-                var attemptsRemaining = 1;
-                var retryReason = string.Empty;
-                try
-                {
-                    var flakyAttribute = Method.MethodInfo.GetCustomAttribute<FlakyAttribute>();
-                    if (flakyAttribute != null)
-                    {
-                        attemptsRemaining = flakyAttribute.MaxRetries + 1;
-                        retryReason = flakyAttribute.Reason;
-                    }
-                }
-                catch (Exception e)
-                {
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: Looking for FlakyAttribute {e}"));
-                }
-
-                DelayedMessageBus messageBus = null;
-                try
-                {
-                    while (true)
-                    {
-                        attemptsRemaining--;
-                        messageBus = new DelayedMessageBus(MessageBus);
-
-                        // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
-                        var summary = await RunTest(messageBus);
-                        if (summary.Failed == 0 || attemptsRemaining <= 0)
-                        {
-                            // No failures, or not allowed to retry
-                            return summary;
-                        }
-
-                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
-                        var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
-                        await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
-                    }
-                }
-                finally
-                {
-                    // need to dispose of the message bus to flush any messages
-                    messageBus?.Dispose();
-                }
-
-                async Task<RunSummary> RunTest(DelayedMessageBus messageBus)
-                {
-                    using var timer = new Timer(
-                        _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
-                        null,
-                        TimeSpan.FromMinutes(15),
-                        Timeout.InfiniteTimeSpan);
-
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
-
-                    try
-                    {
-                        var result = await testCase.RunAsync(_diagnosticMessageSink, messageBus, _constructorArguments, new ExceptionAggregator(Aggregator), CancellationTokenSource);
-
-                        var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
-
-                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
-
-                        return result;
-                    }
-                    catch (Exception ex)
-                    {
-                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
-                        throw;
-                    }
-                }
-
-                async Task SendMetric(IMessageSink outputHelper, string metricName, string testFullName, string reason)
-                {
-                    var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
-                    if (string.IsNullOrEmpty(envKey))
-                    {
-                        // We're probably not in CI
-                        outputHelper.OnMessage(new DiagnosticMessage($"No CI API Key found, skipping {metricName} metric submission"));
-                        return;
-                    }
-
-                    using var client = new HttpClient();
-                    client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
-
-                    var tags = $$"""
-                                     "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
-                                     "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                                     "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
-                                     "test.name:{{SanitizeTagValue(testFullName)}}",
-                                     "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                                     "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
-                                 """;
-
-                    var payload = $$"""
-                                        {
-                                            "series": [{
-                                                "metric": "{{metricName}}",
-                                                "type": 1,
-                                                "points": [{
-                                                    "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
-                                                    "value": 1
-                                                    }],
-                                                "tags": [
-                                                    {{tags}}
-                                                ]
-                                            }]
-                                        }
-                                    """;
-
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                    var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    var result = response.IsSuccessStatusCode
-                                     ? "Successfully submitted metric"
-                                     : "Failed to submit metric";
-                    outputHelper.OnMessage(new DiagnosticMessage($"{result} {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\""));
-
-                    string SanitizeTagValue(string tag)
-                    {
-                        SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
-                        return normalizedTag;
-                    }
-                }
+                await SendMetric(diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
             }
 
-            /// <summary>
-            /// Used to capture messages to potentially be forwarded later. Messages are forwarded by
-            /// disposing of the message bus.
-            /// Based on https://github.com/xunit/samples.xunit/blob/main/v2/RetryFactExample/DelayedMessageBus.cs
-            /// </summary>
-            public class DelayedMessageBus : IMessageBus
+            private static async Task SendMetric(IMessageSink outputHelper, string metricName, string testFullName, string reason)
             {
-                private readonly IMessageBus _innerBus;
-                private readonly ConcurrentQueue<IMessageSinkMessage> _messages = new();
-
-                public DelayedMessageBus(IMessageBus innerBus)
+                var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
+                if (string.IsNullOrEmpty(envKey))
                 {
-                    _innerBus = innerBus;
+                    // We're probably not in CI
+                    outputHelper.OnMessage(new DiagnosticMessage($"No CI API Key found, skipping {metricName} metric submission"));
+                    return;
                 }
 
-                public bool QueueMessage(IMessageSinkMessage message)
-                {
-                    _messages.Enqueue(message);
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
 
-                    // No way to ask the inner bus if they want to cancel without sending them the message, so
-                    // we just go ahead and continue always.
-                    return true;
-                }
+                var tags = $$"""
+                                 "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                                 "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
+                                 "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
+                                 "test.name:{{SanitizeTagValue(testFullName)}}",
+                                 "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
+                                 "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
+                             """;
 
-                public void Dispose()
+                var payload = $$"""
+                                    {
+                                        "series": [{
+                                            "metric": "{{metricName}}",
+                                            "type": 1,
+                                            "points": [{
+                                                "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                                                "value": 1
+                                                }],
+                                            "tags": [
+                                                {{tags}}
+                                            ]
+                                        }]
+                                    }
+                                """;
+
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                var result = response.IsSuccessStatusCode
+                                 ? "Successfully submitted metric"
+                                 : "Failed to submit metric";
+                outputHelper.OnMessage(new DiagnosticMessage($"{result} {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\""));
+
+                string SanitizeTagValue(string tag)
                 {
-                    while (_messages.TryDequeue(out var message))
-                    {
-                        _innerBus.QueueMessage(message);
-                    }
+                    SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
+                    return normalizedTag;
                 }
             }
         }

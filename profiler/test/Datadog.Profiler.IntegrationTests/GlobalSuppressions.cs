@@ -9,5 +9,7 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 using System.Diagnostics.CodeAnalysis;
+using Xunit;
 
 [assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1636:File header copyright text should match", Justification = "Different templates between tracer and profiler", Scope = "namespace", Target = "~N:Datadog.Trace")]
+[assembly: TestFramework("Datadog.Profiler.IntegrationTests.Xunit.ProfilerCustomTestFramework", "Datadog.Profiler.IntegrationTests")]
