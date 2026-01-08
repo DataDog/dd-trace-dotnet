@@ -20,25 +20,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 internal abstract class LambdaCommon
 {
-    private const string PlaceholderServiceName = "placeholder-service";
-    private const string PlaceholderOperationName = "placeholder-operation";
+    // Name of the placeholder span to be filtered out by the Lambda Extension
+    private const string InvocationSpanName = "dd-tracer-serverless-span";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
     private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
     {
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
-            PlaceholderOperationName,
+            operationName: InvocationSpanName,
             tags: null,
             parent: context.SpanContext,
-            serviceName: PlaceholderServiceName,
-            addToTraceContext: false);
+            serviceName: InvocationSpanName,
+            addToTraceContext: true);
+
+        // The Lambda extension uses the resource name to identify placeholder span
+        span.ResourceName = InvocationSpanName;
+
+        // Need to set request_id to copy tracer tags to the aws.lambda span
+        if (awsRequestId != null)
+        {
+            span.SetTag("request_id", awsRequestId);
+        }
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-        return tracer.TracerManager.ScopeManager.Activate(span, false);
+        return tracer.TracerManager.ScopeManager.Activate(span, finishOnClose: true);
     }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
@@ -46,9 +55,10 @@ internal abstract class LambdaCommon
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context?.ClientContext?.Custom);
-        if (context?.AwsRequestId != null)
+        var awsRequestId = context?.AwsRequestId;
+        if (awsRequestId != null)
         {
-            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, context.AwsRequestId);
+            request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, awsRequestId);
         }
 
         using var response = (HttpWebResponse)request.GetResponse();
@@ -60,7 +70,7 @@ internal abstract class LambdaCommon
         }
 
         var tracer = Tracer.Instance;
-        return CreatePlaceholderScope(tracer, headers);
+        return CreatePlaceholderScope(tracer, headers, awsRequestId);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, CallTargetState stateObject, bool isError, string data)
@@ -78,6 +88,13 @@ internal abstract class LambdaCommon
     internal static async Task EndInvocationAsync(string returnValue, Exception exception, CallTargetState stateObject, ILambdaExtensionRequest requestBuilder)
     {
         var scope = stateObject.Scope;
+
+        if (exception != null && scope is { Span: var span })
+        {
+            span.SetException(exception);
+        }
+        scope?.Dispose();
+
         try
         {
             await Task.WhenAll(
@@ -94,19 +111,12 @@ internal abstract class LambdaCommon
 
         try
         {
-            if (exception != null && scope is { Span: var span })
-            {
-                span.SetException(exception);
-            }
-
             SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
         }
         catch (Exception ex)
         {
             Log("Could not send payload to the extension", ex, false);
         }
-
-        scope?.Dispose();
     }
 
     private static bool ValidateOkStatus(HttpWebResponse response)
