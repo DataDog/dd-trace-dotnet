@@ -41,7 +41,7 @@ COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
 
 # Copy the CI Identities GitLab Job Client
-COPY ci-identities-gitlab-job-client-windows-amd64.exe c:/devtools/ci-identities-gitlab-job-client.exe
+COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0.2.0-windows-amd64 C:/ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
 
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "17.0.8"

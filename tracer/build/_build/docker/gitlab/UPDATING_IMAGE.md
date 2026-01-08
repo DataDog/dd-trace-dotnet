@@ -21,13 +21,7 @@ Tag format: `dotnet<VERSION>-<STAGE>` (e.g., `dotnet10-rc2`)
 - **Major .NET version updates:** Use the .NET version (e.g., `dotnet10-rc1`, `dotnet10-rc2`)
 - **Minor tooling updates:** Append `.1`, `.2`, etc. (e.g., `dotnet10-rc2.1`)
 
-### 3. Download the CI Identities GitLab Job Client
-
-```
-aws-vault exec sso-build-stable-developer -- aws s3 cp s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe .
-```
-
-### 4. Build and Push to DockerHub
+### 3. Build and Push to DockerHub
 
 ```powershell
 $tag="<TAG>"
@@ -37,15 +31,15 @@ docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-b
 docker push datadog/dd-trace-dotnet-docker-build:$tag
 ```
 
-### 5. Test the Image in GitLab CI
+### 4. Test the Image in GitLab CI
 
 Update `.gitlab-ci.yml` to use the DockerHub image: `datadog/dd-trace-dotnet-docker-build:<TAG>`
 
 Create a PR and verify the GitLab CI build passes.
 
-### 6. Get the Image Digest
+### 5. Get the Image Digest
 
-This is displayed when running the `docker push` from step 4. Alternatively, you can find the hash for an image using:
+This is displayed when running the `docker push` from step 3. Alternatively, you can find the hash for an image using:
 ```powershell
 echo "Finding format for $tag"
 docker pull datadog/dd-trace-dotnet-docker-build:$tag
@@ -61,7 +55,7 @@ $ crane digest datadog/dd-trace-dotnet-docker-build:dotnet10-rc1
 sha256:180cb096b25d9c53e24b23d0324cd403cc7fe4e99c88ec2c20e851dc37d359ef
 ```
 
-### 7. Create Mirror PR
+### 6. Create Mirror PR
 
 In the `DataDog/images` repository, add entries to two files:
 
@@ -79,14 +73,14 @@ In the `DataDog/images` repository, add entries to two files:
 **`mirror.lock.yaml`:**
 ```yaml
 - source: docker.io/datadog/dd-trace-dotnet-docker-build:<TAG>
-  digest: sha256:<DIGEST_FROM_STEP_6>
+  digest: sha256:<DIGEST_FROM_STEP_5>
 ```
 
 > [!TIP]
 > You can clean up and delete "old" tags from these files, as long as they're no long in use in any pipelines.
 Create PR and wait for merge. Mirror sync completes within a few minutes.
 
-### 8. Update GitLab CI to Use Mirror
+### 7. Update GitLab CI to Use Mirror
 
 Update `.gitlab-ci.yml` to use the mirror URL: `registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:<TAG>`
 
