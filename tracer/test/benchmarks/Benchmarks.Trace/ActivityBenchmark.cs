@@ -73,7 +73,22 @@ public class ActivityBenchmark
         _handler.ActivityStopped(SourceName, parentMock);
     }
 
-    private Activity CreateActivity(Activity? parent = null)
+    [Benchmark]
+    public void StartStopWithChild_Hierarchical()
+    {
+        using var parent = CreateActivity(idFormat: ActivityIdFormat.Hierarchical);
+        using var child = CreateActivity(parent, idFormat: ActivityIdFormat.Hierarchical);
+        var parentMock = parent.DuckAs<IActivity6>()!;
+        var childMock = child.DuckAs<IActivity6>()!;
+        _handler.ActivityStarted(SourceName, parentMock);
+        _handler.ActivityStarted(SourceName, childMock);
+        child.Stop();
+        _handler.ActivityStopped(SourceName, childMock);
+        parent.Stop();
+        _handler.ActivityStopped(SourceName, parentMock);
+    }
+
+    private Activity CreateActivity(Activity? parent = null, ActivityIdFormat idFormat = ActivityIdFormat.W3C)
     {
         var activity = parent is null
                            ? _source.CreateActivity("parent", System.Diagnostics.ActivityKind.Internal)
@@ -85,7 +100,7 @@ public class ActivityBenchmark
         }
 
         activity.SetStartTime(_startTime);
-        activity.SetIdFormat(ActivityIdFormat.W3C); // we have more logic for TraceId/SpanId activities
+        activity.SetIdFormat(idFormat); // we have more logic for TraceId/SpanId activities
 
         activity.Start(); // creates necessary TraceId/SpanId that we need
 
