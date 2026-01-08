@@ -39,7 +39,6 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
-            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
@@ -101,9 +100,9 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 if (parent is null
-                 && activeSpan is not null
                  && activitySpanId is not null
                  && activityTraceId is not null
+                 && Tracer.Instance.ActiveScope?.Span is Span activeSpan
                  && (activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime))
                 {
                     // We ensure the activity follows the same TraceId as the span
@@ -158,8 +157,9 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 // We check if we have to ignore the activity by the operation name value
-                if (IgnoreActivityHandler.IgnoreByOperationName(activity, activeSpan))
+                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity))
                 {
+                    IgnoreActivityHandler.IgnoreActivity(activity, Tracer.Instance.ActiveScope?.Span as Span);
                     activityMapping = default;
                     return;
                 }

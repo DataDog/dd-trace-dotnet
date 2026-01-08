@@ -50,16 +50,34 @@ namespace Datadog.Trace.Activity.Handlers
             return false;
         }
 
-        public static bool IgnoreByOperationName<T>(T activity, Span? span)
+        public static void IgnoreActivity<T>(T activity, Span? span)
             where T : IActivity
         {
-            if (ShouldIgnoreByOperationName(activity))
+            if (span is not null && activity is IW3CActivity w3cActivity)
             {
-                IgnoreActivity(activity, span);
-                return true;
-            }
+#pragma warning disable DDDUCK001 // Checking IDuckType for null
+                if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
+                 && w3cActivity.SpanId is not null
+                 && w3cActivity.TraceId is not null)
+                {
+                    // If we ignore the activity and there's an existing active span
+                    // We modify the activity spanId with the one in the span
+                    // The reason for that is in case this ignored activity is used
+                    // for propagation then the current active span will appear as parentId
+                    // in the context propagation, and we will keep the entire trace.
 
-            return false;
+                    // TraceId (always 32 chars long even when using 64-bit ids)
+                    w3cActivity.TraceId = span.Context.RawTraceId;
+
+                    // SpanId (always 16 chars long)
+                    w3cActivity.ParentSpanId = span.Context.RawSpanId;
+
+                    // We clear internals Id and ParentId values to force recalculation.
+                    w3cActivity.RawId = null;
+                    w3cActivity.RawParentId = null;
+                }
+#pragma warning restore DDDUCK001 // Checking IDuckType for null
+            }
         }
 
         public bool ShouldListenTo(string sourceName, string? version)
@@ -86,36 +104,6 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Do nothing
-        }
-
-        private static void IgnoreActivity<T>(T activity, Span? span)
-            where T : IActivity
-        {
-            if (span is not null && activity is IW3CActivity w3cActivity)
-            {
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
-                    && w3cActivity.SpanId is not null
-                    && w3cActivity.TraceId is not null)
-                {
-                    // If we ignore the activity and there's an existing active span
-                    // We modify the activity spanId with the one in the span
-                    // The reason for that is in case this ignored activity is used
-                    // for propagation then the current active span will appear as parentId
-                    // in the context propagation, and we will keep the entire trace.
-
-                    // TraceId (always 32 chars long even when using 64-bit ids)
-                    w3cActivity.TraceId = span.Context.RawTraceId;
-
-                    // SpanId (always 16 chars long)
-                    w3cActivity.ParentSpanId = span.Context.RawSpanId;
-
-                    // We clear internals Id and ParentId values to force recalculation.
-                    w3cActivity.RawId = null;
-                    w3cActivity.RawParentId = null;
-                }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-            }
         }
     }
 }
