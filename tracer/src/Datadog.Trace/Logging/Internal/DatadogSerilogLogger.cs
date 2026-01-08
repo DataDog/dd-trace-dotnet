@@ -22,14 +22,9 @@ namespace Datadog.Trace.Logging
     internal sealed class DatadogSerilogLogger : IDatadogLogger
     {
         internal const string SkipTelemetryProperty = "SkipTelemetry";
-        private static readonly object[] NoPropertyValues = Array.Empty<object>();
+        private static readonly object[] NoPropertyValues = [];
         private readonly ILogRateLimiter _rateLimiter;
         private ILogger _logger;
-        private FixedSizeArrayPool<object?>? _onePropertyBuffer;
-        private FixedSizeArrayPool<object?>? _twoPropertiesBuffer;
-        private FixedSizeArrayPool<object?>? _threePropertiesBuffer;
-        private FixedSizeArrayPool<object?>? _fourPropertiesBuffer;
-        private FixedSizeArrayPool<object?>? _fivePropertiesBuffer;
 
         public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter, FileLoggingConfiguration? fileLoggingConfiguration)
         {
@@ -215,72 +210,77 @@ namespace Datadog.Trace.Logging
 
         private void Write<T>(LogEventLevel level, Exception? exception, string messageTemplate, T property, int sourceLine, string sourceFile, bool skipTelemetry)
         {
-            if (_logger.IsEnabled(level))
+            // Avoid boxing + array allocation if disabled
+            if (!_logger.IsEnabled(level))
             {
-                _onePropertyBuffer ??= new(1);
-                using var array = _onePropertyBuffer.Get();
-                array.Array[0] = property;
-                // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+                return;
             }
+
+            using var array = FixedSizeArrayPool<object?>.OneItemPool.Get();
+            array.Array[0] = property;
+            WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
         }
 
         private void Write<T0, T1>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, int sourceLine, string sourceFile, bool skipTelemetry)
         {
-            if (_logger.IsEnabled(level))
+            // Avoid boxing + array allocation if disabled
+            if (!_logger.IsEnabled(level))
             {
-                _twoPropertiesBuffer ??= new(2);
-                using var array = _twoPropertiesBuffer.Get();
-                array.Array[0] = property0;
-                array.Array[1] = property1;
-                // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+                return;
             }
+
+            using var array = FixedSizeArrayPool<object?>.TwoItemPool.Get();
+            array.Array[0] = property0;
+            array.Array[1] = property1;
+            WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
         }
 
         private void Write<T0, T1, T2>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine, string sourceFile, bool skipTelemetry)
         {
-            if (_logger.IsEnabled(level))
+            // Avoid boxing + array allocation if disabled
+            if (!_logger.IsEnabled(level))
             {
-                _threePropertiesBuffer ??= new(3);
-                using var array = _threePropertiesBuffer.Get();
-                array.Array[0] = property0;
-                array.Array[1] = property1;
-                array.Array[2] = property2;
-                // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+                return;
             }
+
+            using var array = FixedSizeArrayPool<object?>.ThreeItemPool.Get();
+            array.Array[0] = property0;
+            array.Array[1] = property1;
+            array.Array[2] = property2;
+            WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
         }
 
         private void Write<T0, T1, T2, T3>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, int sourceLine, string sourceFile, bool skipTelemetry)
         {
-            if (_logger.IsEnabled(level))
+            // Avoid boxing + array allocation if disabled
+            if (!_logger.IsEnabled(level))
             {
-                _fourPropertiesBuffer ??= new(4);
-                using var array = _fourPropertiesBuffer.Get();
-                array.Array[0] = property0;
-                array.Array[1] = property1;
-                array.Array[2] = property2;
-                array.Array[3] = property3;
-                // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+                return;
             }
+
+            using var array = FixedSizeArrayPool<object?>.FourItemPool.Get();
+            array.Array[0] = property0;
+            array.Array[1] = property1;
+            array.Array[2] = property2;
+            array.Array[3] = property3;
+            WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
         }
 
         private void Write<T0, T1, T2, T3, T4>(LogEventLevel level, Exception? exception, string messageTemplate, T0 property0, T1 property1, T2 property2, T3 property3, T4 property4, int sourceLine, string sourceFile, bool skipTelemetry)
         {
-            if (_logger.IsEnabled(level))
+            // Avoid boxing + array allocation if disabled
+            if (!_logger.IsEnabled(level))
             {
-                _fivePropertiesBuffer ??= new(5);
-                using var array = _fivePropertiesBuffer.Get();
-                array.Array[0] = property0;
-                array.Array[1] = property1;
-                array.Array[2] = property2;
-                array.Array[3] = property3;
-                array.Array[4] = property4;
-                // Avoid boxing + array allocation if disabled
-                WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
+                return;
             }
+
+            using var array = FixedSizeArrayPool<object?>.FiveItemPool.Get();
+            array.Array[0] = property0;
+            array.Array[1] = property1;
+            array.Array[2] = property2;
+            array.Array[3] = property3;
+            array.Array[4] = property4;
+            WriteIfNotRateLimited(level, exception, messageTemplate, array.Array, sourceLine, sourceFile, skipTelemetry);
         }
 
         private void Write(LogEventLevel level, Exception? exception, string messageTemplate, object?[] args, int sourceLine, string sourceFile, bool skipTelemetry)
