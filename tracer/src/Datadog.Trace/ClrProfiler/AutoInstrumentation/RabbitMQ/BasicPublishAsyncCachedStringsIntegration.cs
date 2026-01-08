@@ -55,8 +55,8 @@ public sealed class BasicPublishAsyncCachedStringsIntegration
 internal interface ICachedStringProxy : IDuckType
 {
     /// <summary>
-    /// Gets or sets a value of System.String
+    /// Gets the value of System.String
     /// </summary>
     [DuckField(Name = "Value")]
-    string Value { get; set; }
+    string Value { get; }
 }

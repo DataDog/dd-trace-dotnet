@@ -24,6 +24,7 @@ namespace shared
             const char* environment;
             const char* serviceName;
             const char* version;
+            const char* processTags;
         };
     }
 }

@@ -26,8 +26,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly string? _containerId;
-        private readonly string? _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private string? _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -39,8 +38,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                     _configEndpoint = config.ConfigurationEndpoint;
                 });
 
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = ContainerMetadata.Instance;
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -65,15 +63,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var bytes = Encoding.UTF8.GetBytes(requestContent);
             var payload = new ArraySegment<byte>(bytes);
 
-            if (_containerId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            apiRequest.AddContainerMetadataHeaders(_containerMetadata);
 
             using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;

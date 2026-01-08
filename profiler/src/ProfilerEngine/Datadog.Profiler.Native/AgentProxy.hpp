@@ -36,9 +36,9 @@ public:
         ddog_prof_Exporter_drop(&_exporter);
     }
 
-    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
+    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info, std::string processTags)
     {
-        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata), std::move(info));
+        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata), std::move(info), std::move(processTags));
         if (!ec)
         {
             return std::move(ec); // ?? really ?? otherwise it calls the copy constructor :sad:
@@ -111,7 +111,7 @@ private:
         ddog_prof_Request _inner;
     };
 
-    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
+    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info, std::string processTags)
     {
         std::string const profile_filename = "auto.pprof";
 
@@ -146,12 +146,20 @@ private:
             pInfo = &ffi_info;
         }
 
+        ddog_CharSlice* pProcessTags = nullptr;
+        ddog_CharSlice ffi_processTags{};
+        if (!processTags.empty())
+        {
+            ffi_processTags = to_char_slice(processTags);
+            pProcessTags = &ffi_processTags;
+        }
+
         auto requestResult =
             ddog_prof_Exporter_Request_build(
                 &_exporter, encodedProfile,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                pMetadata, pInfo);
+                pProcessTags, pMetadata, pInfo);
 
         if (requestResult.tag == DDOG_PROF_REQUEST_RESULT_ERR_HANDLE_REQUEST)
         {
