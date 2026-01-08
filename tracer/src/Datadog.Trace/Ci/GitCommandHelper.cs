@@ -88,7 +88,7 @@ internal static class GitCommandHelper
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var sw = RefStopwatch.Create();
             var gitOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     "git",
@@ -100,7 +100,7 @@ internal static class GitCommandHelper
                     useWhereIsIfFileNotFound: true,
                     timeout: TimeSpan.FromMinutes(5)),
                 input);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.ElapsedMilliseconds);
             if (gitOutput is null)
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
@@ -118,6 +118,7 @@ internal static class GitCommandHelper
                 sb.AppendLine($"  command : git {arguments}");
                 sb.AppendLine($"       wd : {workingDirectory}");
                 sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
+                sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds}ms");
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
                 {

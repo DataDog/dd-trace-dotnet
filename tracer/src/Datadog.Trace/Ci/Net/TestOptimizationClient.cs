@@ -337,7 +337,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                            }
                            finally
                            {
-                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
+                               callbacks.OnAfterSend(sw.GetElapsedMilliseconds());
                            }
                        },
                        new UriAndBodyState<TCallbacks>(this, uri, body, callbacks),
@@ -397,7 +397,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                            }
                            finally
                            {
-                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
+                               callbacks.OnAfterSend(sw.GetElapsedMilliseconds());
                            }
                        },
                        new UriAndMultipartFormBodyState<TCallbacks>(this, uri, items, callbacks),

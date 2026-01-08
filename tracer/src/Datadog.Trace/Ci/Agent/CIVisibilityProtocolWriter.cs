@@ -349,7 +349,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiTestCycleBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiTestCycleBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiTestCycleBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiTestCycleBufferAsync() : Task.CompletedTask;
         }
 
@@ -367,7 +367,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiCodeCoverageBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiCodeCoverageBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiCodeCoverageBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiCodeCoverageBufferAsync() : Task.CompletedTask;
         }
 

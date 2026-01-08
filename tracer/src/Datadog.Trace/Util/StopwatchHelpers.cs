@@ -16,15 +16,18 @@ namespace Datadog.Trace.Util
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TimeSpan GetElapsed(long stopwatchTicks)
-        {
-            var ticks = (long)(stopwatchTicks * DateTimeTickFrequency);
-            return new TimeSpan(ticks);
-        }
+            => new(GetElapsedTicks(stopwatchTicks));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long GetElapsedTicks(long stopwatchTicks)
+            => (long)(stopwatchTicks * DateTimeTickFrequency);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double GetElapsedMilliseconds(long stopwatchTicks)
-        {
-            return stopwatchTicks * TimestampToMilliseconds;
-        }
+            => stopwatchTicks * TimestampToMilliseconds;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double GetElapsedMilliseconds(this Stopwatch sw)
+            => sw.ElapsedTicks * TimestampToMilliseconds;
     }
 }
