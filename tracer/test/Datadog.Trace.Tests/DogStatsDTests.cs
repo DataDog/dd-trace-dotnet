@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
-                includeProcessTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
-                includeProcessTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
-                includeProcessTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -237,7 +237,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
-                includeProcessTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -33,13 +34,13 @@ internal sealed class StatsdManager : IStatsdManager
     }
 
     // Internal for testing
-    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, bool, StatsdClientHolder> statsdFactory)
+    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, IList<string>, StatsdClientHolder> statsdFactory)
     {
         // The initial factory, assuming there's no updates
         _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
             tracerSettings.Manager.InitialExporterSettings,
-            tracerSettings.PropagateProcessTags);
+            tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []);
 
         // We don't create a new client unless we need one, and we rely on consumers of the manager to tell us when it's needed
         _current = null;
@@ -62,7 +63,7 @@ internal sealed class StatsdManager : IStatsdManager
                 () => statsdFactory(
                     c.UpdatedMutable ?? c.PreviousMutable,
                     c.UpdatedExporter ?? c.PreviousExporter,
-                    tracerSettings.PropagateProcessTags));
+                    tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []));
 
             // check if we actually need to do an update or if noone is using the client yet
             if (Volatile.Read(ref _isRequiredMask) != 0)
@@ -175,9 +176,9 @@ internal sealed class StatsdManager : IStatsdManager
         return hasChanges;
     }
 
-    private static StatsdClientHolder CreateClient(MutableSettings settings, ExporterSettings exporter, bool withProcessTags)
+    private static StatsdClientHolder CreateClient(MutableSettings settings, ExporterSettings exporter, IList<string> processTags)
     {
-        return new StatsdClientHolder(StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true, withProcessTags));
+        return new StatsdClientHolder(StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true, processTags));
     }
 
     private void EnsureClient(bool ensureCreated, bool forceRecreate)

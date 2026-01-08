@@ -18,10 +18,10 @@ internal static class StatsdFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StatsdFactory));
 
-    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, bool includeProcessTags, string? prefix = null)
+    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, IList<string> processTags, string? prefix = null)
     {
         var customTagCount = settings.GlobalTags.Count;
-        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + (includeProcessTags ? ProcessTags.TagsList.Count : 0);
+        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + processTags.Count;
         var constantTags = new List<string>(tagsCount);
         if (includeDefaultTags)
         {
@@ -45,9 +45,9 @@ internal static class StatsdFactory
             }
         }
 
-        if (includeProcessTags)
+        if (processTags.Count > 0)
         {
-            constantTags.AddRange(ProcessTags.TagsList);
+            constantTags.AddRange(processTags);
         }
 
         return CreateDogStatsdClient(settings, exporter, constantTags, prefix);
