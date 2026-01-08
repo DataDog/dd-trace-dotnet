@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -71,19 +72,29 @@ namespace Datadog.Trace.Activity
             // Copy over tags from Activity to the Datadog Span
             // Starting with .NET 5, Activity can hold tags whose value have type object?
             // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
+            // We use the ActivityTagsHelper instead of enumerating the collections directly to avoid allocating
             if (activity5 is not null)
             {
-                foreach (var activityTag in activity5.TagObjects)
+                if (activity5.HasTagObjects())
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                    var state = new OtelTagsEnumerationState(span);
+                    var forEach = ActivityEnumerationHelper.GetTagObjectsEnumerator(activity5);
+                    forEach(activity5.TagObjects, ref state, static (ref s, kvp) =>
+                    {
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                        return true;
+                    });
                 }
             }
-            else
+            else if (activity.HasTags())
             {
-                foreach (var activityTag in activity.Tags)
+                var state = new OtelTagsEnumerationState(span);
+                var forEach = ActivityEnumerationHelper.GetTagsEnumerator(activity);
+                forEach(activity.Tags, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
-                }
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    return true;
+                });
             }
 
             // Additional Datadog policy: Set tag "span.kind"
