@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Activity.DuckTypes;
@@ -67,4 +68,22 @@ internal static class ActivityEnumerationHelper
     public static bool HasTags<T>(this T activity5)
         where T : IActivity
         => activity5.Tags is not KeyValuePair<string, string?>[] { Length: 0 };
+
+    /// <summary>
+    /// Checks if the <see cref="IActivity5.Events"/> object is a zero-length array, to avoid unnecessary allocations
+    /// from boxing the enumerator
+    /// </summary>
+    /// <returns>true if <see cref="IActivity5.Events"/> may contain values, false if it definitely doesn't</returns>
+    public static bool HasEvents<T>(this T activity5)
+        where T : IActivity5
+        => activity5.Events is not Array { Length: 0 };
+
+    /// <summary>
+    /// Checks if the <see cref="IActivity5.Links"/> object is a zero-length array, to avoid unnecessary allocations
+    /// from boxing the enumerator
+    /// </summary>
+    /// <returns>true if <see cref="IActivity5.Links"/> may contain values, false if it definitely doesn't</returns>
+    public static bool HasLinks<T>(this T activity5)
+        where T : IActivity5
+        => activity5.Links is not Array { Length: 0 };
 }
