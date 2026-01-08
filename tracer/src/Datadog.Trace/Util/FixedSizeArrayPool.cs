@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Datadog.Trace.Util;
 
-internal class FixedSizeArrayPool<T>
+internal sealed class FixedSizeArrayPool<T>
 {
     private const int MaxStackRetained = 63;
     private readonly ConcurrentStack<T[]> _items;
