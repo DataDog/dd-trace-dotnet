@@ -441,7 +441,15 @@ internal partial class ProbeExpressionParser<T>
     {
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
-            return finalExpr;
+            // If the expression type is already exactly T, return as-is.
+            if (finalExpr.Type == typeof(T))
+            {
+                return finalExpr;
+            }
+
+            // When the expression type is assignable to T but different (e.g., value type -> object),
+            // we need an explicit conversion.
+            return Expression.Convert(finalExpr, typeof(T));
         }
 
         if (typeof(T).IsNumeric()
@@ -470,7 +478,13 @@ internal partial class ProbeExpressionParser<T>
             }
 
             var argOrLocal = argsOrLocals[index];
-            var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
+
+            // CRITICAL: Use runtime type (Value.GetType()) instead of declared type (Type).
+            // The compilation must use the same types as runtime.
+            // If declared type is Int32 but actual value is Int64, using declared type
+            // would cause InvalidCastException when the lambda is executed.
+            var runtimeType = argOrLocal.Value?.GetType() ?? argOrLocal.Type;
+            var variable = Expression.Variable(runtimeType, argOrLocal.Name);
             scopeMembers.Add(variable);
 
             expressions.Add(
@@ -482,15 +496,15 @@ internal partial class ProbeExpressionParser<T>
                                 argsOrLocalsParameterExpression,
                                 Expression.Constant(index)),
                             "Value"),
-                        argOrLocal.Type)));
+                        runtimeType)));
         }
     }
 
-    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, MethodScopeMembers methodScopeMembers)
+    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, MethodScopeMembers methodScopeMembers, Type thisTypeOverride)
     {
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
-        var thisType = @this.Type ?? @this.Value?.GetType();
+        var thisType = thisTypeOverride;
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
@@ -576,12 +590,25 @@ internal partial class ProbeExpressionParser<T>
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers)
     {
+        // Extract thisType here to ensure consistency - use runtime type over declared type
+        var thisType = scopeMembers.InvocationTarget.Value?.GetType() ?? scopeMembers.InvocationTarget.Type ?? typeof(object);
+        return ParseExpression(expressionJson, scopeMembers, thisType);
+    }
+
+    internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers, Type thisTypeOverride)
+    {
         var parser = new ProbeExpressionParser<T>();
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
-            parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers);
-            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ReturnParameterExpression, parsedExpression.DurationParameterExpression, parsedExpression.ExceptionParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
+            parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
+            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(
+                parsedExpression.ExpressionBody,
+                parsedExpression.ThisParameterExpression,
+                parsedExpression.ReturnParameterExpression,
+                parsedExpression.DurationParameterExpression,
+                parsedExpression.ExceptionParameterExpression,
+                parsedExpression.ArgsAndLocalsParameterExpression);
             var compiled = expression.Compile();
             return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }

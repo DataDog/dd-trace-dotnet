@@ -7,10 +7,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
@@ -23,7 +21,7 @@ namespace Datadog.Trace.PlatformHelpers
     /// <summary>
     /// Utility class with methods to interact with container hosts.
     /// </summary>
-    internal static class ContainerMetadata
+    internal sealed class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
         private const string ControlGroupsNamespacesFilePath = "/proc/self/ns/cgroup";
@@ -41,19 +39,34 @@ namespace Datadog.Trace.PlatformHelpers
         // if we're running in host namespace or not (does not work when running in DinD)
         private const long HostCgroupNamespaceInode = 0xEFFFFFFB;
 
-        private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-        private static readonly Lazy<string> CgroupInode = new Lazy<string>(GetCgroupInodeInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
+
+        public static readonly ContainerMetadata Instance = new();
+
+        private readonly Lazy<string> _containerId;
+        private readonly Lazy<string> _entityId;
+
+        private ContainerMetadata()
+        {
+            _containerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+            _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
+        }
+
+        // For use in tests only
+        public ContainerMetadata(string containerId, string entityId)
+        {
+            _containerId = new Lazy<string>(() => containerId);
+            _entityId = new Lazy<string>(() => entityId);
+        }
 
         /// <summary>
         /// Gets the id of the container executing the code.
         /// Return <c>null</c> if code is not executing inside a supported container.
         /// </summary>
-        /// <returns>The container id or <c>null</c>.</returns>
-        public static string GetContainerId()
+        /// <value>The container id or <c>null</c>.</value>
+        public string ContainerId
         {
-            return ContainerId.Value;
+            get => _containerId.Value;
         }
 
         /// <summary>
@@ -66,21 +79,10 @@ namespace Datadog.Trace.PlatformHelpers
         /// <item><c>null</c> if neither are available.</item>
         /// </list>
         /// </summary>
-        /// <returns>The entity id or <c>null</c>.</returns>
-        public static string GetEntityId()
+        /// <value>The entity id or <c>null</c>.</value>
+        public string EntityId
         {
-            if (ContainerId.Value is string containerId)
-            {
-                return $"ci-{containerId}";
-            }
-            else if (CgroupInode.Value is string cgroupInode)
-            {
-                return $"in-{cgroupInode}";
-            }
-            else
-            {
-                return null;
-            }
+            get => _entityId.Value;
         }
 
         /// <summary>
@@ -234,7 +236,23 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private static string GetCgroupInodeInternal()
+        private static string GetEntityIdInternal(Lazy<string> lazyContainerId)
+        {
+            if (lazyContainerId.Value is string containerId)
+            {
+                return $"ci-{containerId}";
+            }
+            else if (GetCgroupInode() is string cgroupInode)
+            {
+                return $"in-{cgroupInode}";
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private static string GetCgroupInode()
         {
             try
             {

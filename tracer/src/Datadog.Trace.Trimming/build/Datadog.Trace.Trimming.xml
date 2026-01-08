@@ -672,6 +672,7 @@
       <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.IObservable`1" />
       <type fullname="System.IObserver`1" />
+      <type fullname="System.ISpanFormattable" />
       <type fullname="System.Lazy`1" />
       <type fullname="System.Math" />
       <type fullname="System.MethodAccessException" />

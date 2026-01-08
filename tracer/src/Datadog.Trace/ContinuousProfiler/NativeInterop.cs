@@ -83,6 +83,8 @@ namespace Datadog.Trace.ContinuousProfiler
             public string ServiceName;
             [MarshalAs(UnmanagedType.LPStr)]
             public string Version;
+            [MarshalAs(UnmanagedType.LPStr)]
+            public string ProcessTags;
         }
 
         // These methods are rewritten by the native tracer to use the correct paths

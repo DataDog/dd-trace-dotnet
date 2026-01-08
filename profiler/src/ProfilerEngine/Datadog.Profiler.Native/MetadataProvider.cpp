@@ -24,7 +24,6 @@ const std::string MetadataProvider::CpuTimeThreadsThreshold("DD_INTERNAL_PROFILI
 const std::string MetadataProvider::CodeHotspotsThreadsThreshold("DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD");
 const std::string MetadataProvider::TimestampsAsLabelEnabled("DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED"); // should never be 0
 const std::string MetadataProvider::CoreMinimumOverride("DD_PROFILING_MIN_CORES_THRESHOLD");
-const std::string MetadataProvider::UseBacktrace2("DD_INTERNAL_USE_BACKTRACE2");
 const std::string MetadataProvider::DebugInfoEnabled("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
 const std::string MetadataProvider::GcThreadsCpuTimeEnabled("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
 const std::string MetadataProvider::InternalMetricsEnabled("DD_INTERNAL_METRICS_ENABLED");
@@ -50,7 +49,6 @@ void MetadataProvider::Initialize()
     AddEnvVar(SectionEnvVars, WalltimeThreadsThreshold, EnvironmentVariables::WalltimeThreadsThreshold);
     AddEnvVar(SectionEnvVars, CpuTimeThreadsThreshold, EnvironmentVariables::CpuTimeThreadsThreshold);
     AddEnvVar(SectionEnvVars, CodeHotspotsThreadsThreshold, EnvironmentVariables::CodeHotspotsThreadsThreshold);
-    AddEnvVar(SectionEnvVars, UseBacktrace2, EnvironmentVariables::UseBacktrace2);
     AddEnvVar(SectionEnvVars, DebugInfoEnabled, EnvironmentVariables::DebugInfoEnabled);
     AddEnvVar(SectionEnvVars, GcThreadsCpuTimeEnabled, EnvironmentVariables::GcThreadsCpuTimeEnabled);
     AddEnvVar(SectionEnvVars, InternalMetricsEnabled, EnvironmentVariables::InternalMetricsEnabled);

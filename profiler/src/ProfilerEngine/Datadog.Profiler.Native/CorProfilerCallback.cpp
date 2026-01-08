@@ -15,7 +15,6 @@
 #include <windows.h>
 #else
 #include "cgroup.h"
-#include <libunwind.h>
 #include <signal.h>
 #endif
 
@@ -56,6 +55,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#include "Backtrace2Unwinder.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
@@ -563,6 +563,7 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+        _pUnwinder = std::make_unique<Backtrace2Unwinder>();
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -570,7 +571,8 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuSampleProvider,
-            _metricsRegistry);
+            _metricsRegistry,
+            _pUnwinder.get());
     }
 #endif
 
@@ -804,7 +806,8 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
             config.runtimeId,
             config.serviceName ? config.serviceName : std::string(),
             config.environment ? config.environment : std::string(),
-            config.version ? config.version : std::string());
+            config.version ? config.version : std::string(),
+            config.processTags ? config.processTags : std::string());
     }
     else
     {
@@ -1320,9 +1323,6 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 {
     // TODO: add more env vars values
     // --> should we dump the important ones to ensure that we get them during support investigations?
-
-    Log::Info("Environment variables:");
-    PRINT_ENV_VAR_IF_SET(EnvironmentVariables::UseBacktrace2);
 }
 
 // CLR event verbosity definition
@@ -2089,14 +2089,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // When calling uwn_backtraceXX, libunwind will initialize data structures for the current
-    // thread using TLS (Thread Local Storage).
+    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure 
+    // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
+    // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
     // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
+    Backtrace2Unwinder bt2;
     uintptr_t tab[1];
-    unw_backtrace((void**)tab, 1);
+    bt2.Unwind(nullptr, tab, 1);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;

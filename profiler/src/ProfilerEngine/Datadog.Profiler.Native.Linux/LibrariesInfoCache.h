@@ -2,6 +2,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 #pragma once
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
@@ -11,7 +14,6 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
-#include <libunwind.h>
 #include <link.h>
 #include <memory>
 #include <shared_mutex>
@@ -36,19 +38,21 @@ protected:
     bool StartImpl() final override;
     bool StopImpl() final override;
 
-private:
-    static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
-    static void NotifyCacheUpdate();
-
-    void UpdateCache();
-    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
 #ifdef DD_TEST
 public:
+    static void* GetLocalAddressSpace();
+#else
+private:
 #endif
+    static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
     void NotifyCacheUpdateImpl();
 #ifdef DD_TEST
 private:
 #endif
+    static void NotifyCacheUpdate();
+
+    void UpdateCache();
+    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
     void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
     static std::atomic<LibrariesInfoCache*> s_instance;

@@ -30,19 +30,17 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
-        private readonly string? _containerId;
-        private readonly string? _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly bool _enableDebug;
         private readonly bool _telemetryGzipCompressionEnabled;
         private readonly string _telemetryCompressionMethod;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = containerMetadata;
             _telemetryGzipCompressionEnabled = telemetryCompressionMethod.Equals("gzip", StringComparison.OrdinalIgnoreCase);
             _telemetryCompressionMethod = _telemetryGzipCompressionEnabled ? "gzip" : "uncompressed";
         }
@@ -75,15 +73,7 @@ namespace Datadog.Trace.Telemetry.Transports
                     request.AddHeader(TelemetryConstants.DebugHeader, "true");
                 }
 
-                if (_containerId is not null)
-                {
-                    request.AddHeader(TelemetryConstants.ContainerIdHeader, _containerId);
-                }
-
-                if (_entityId is not null)
-                {
-                    request.AddHeader(TelemetryConstants.EntityIdHeader, _entityId);
-                }
+                request.AddContainerMetadataHeaders(_containerMetadata);
 
                 TelemetryFactory.Metrics.RecordCountTelemetryApiRequests(endpointMetricTag);
 
