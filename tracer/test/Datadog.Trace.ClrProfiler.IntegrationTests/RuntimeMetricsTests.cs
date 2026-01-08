@@ -82,6 +82,60 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await RunTest();
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task ProcessTagsIncludedInMetrics_WhenEnabled()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            EnvironmentHelper.EnableDefaultTransport();
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
+            SetEnvironmentVariable("DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED", "1");
+            SetEnvironmentVariable("DD_SERVICE", "Samples.RuntimeMetrics");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var processResult = await RunSampleAndWaitForExit(agent);
+            var requests = agent.StatsdRequests;
+
+            Assert.True(requests.Count > 0, "No metrics received");
+
+            var metrics = requests.SelectMany(x => x.Split('\n')).ToList();
+
+            // Verify process tags are present in the metrics
+            // Process tags include: entrypoint.basedir, entrypoint.workdir, and optionally entrypoint.name
+            metrics
+               .Should()
+               .OnlyContain(s => s.Contains("entrypoint.basedir:"), "entrypoint.basedir process tag should be present")
+               .And.OnlyContain(s => s.Contains("entrypoint.workdir:"), "entrypoint.workdir process tag should be present");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task ProcessTagsNotIncludedInMetrics_WhenDisabled()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            EnvironmentHelper.EnableDefaultTransport();
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
+            SetEnvironmentVariable("DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED", "0");
+            SetEnvironmentVariable("DD_SERVICE", "Samples.RuntimeMetrics");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var processResult = await RunSampleAndWaitForExit(agent);
+            var requests = agent.StatsdRequests;
+
+            Assert.True(requests.Count > 0, "No metrics received");
+
+            var metrics = requests.SelectMany(x => x.Split('\n')).ToList();
+
+            // Verify process tags are NOT present in the metrics when disabled
+            metrics
+               .Should()
+               .NotContain(s => s.Contains("entrypoint.basedir:"), "entrypoint.basedir should not be present when process tags are disabled")
+               .And.NotContain(s => s.Contains("entrypoint.workdir:"), "entrypoint.workdir should not be present when process tags are disabled")
+               .And.NotContain(s => s.Contains("entrypoint.name:"), "entrypoint.name should not be present when process tags are disabled");
+        }
+
         private async Task RunTest()
         {
             var inputServiceName = "12_$#Samples.$RuntimeMetrics";

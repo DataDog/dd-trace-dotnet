@@ -725,6 +725,42 @@ public class StatsdManagerTests
     }
 
     [Fact]
+    public void ProcessTags_PassedToFactory_WhenEnabled()
+    {
+        IList<string> capturedProcessTags = null;
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, true } });
+        using var manager = new StatsdManager(settings, (_, _, processTags) =>
+        {
+            capturedProcessTags = processTags;
+            return new(new MockStatsdClient());
+        });
+
+        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+        capturedProcessTags.Should().NotBeNull();
+        capturedProcessTags.Should().NotBeEmpty("process tags should be passed to factory when enabled");
+        // Verify the format is key:value
+        capturedProcessTags.Should().AllSatisfy(tag => tag.Should().Contain(":"));
+    }
+
+    [Fact]
+    public void ProcessTags_NotPassedToFactory_WhenDisabled()
+    {
+        IList<string> capturedProcessTags = null;
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, false } });
+        using var manager = new StatsdManager(settings, (_, _, processTags) =>
+        {
+            capturedProcessTags = processTags;
+            return new(new MockStatsdClient());
+        });
+
+        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+        capturedProcessTags.Should().NotBeNull();
+        capturedProcessTags.Should().BeEmpty("process tags should not be passed to factory when disabled");
+    }
+
+    [Fact]
     public void DefaultLease_CanDisposeSafely()
     {
         using var manager = new StatsdManager(new TracerSettings(), (_, _, _) => new(new MockStatsdClient()));
