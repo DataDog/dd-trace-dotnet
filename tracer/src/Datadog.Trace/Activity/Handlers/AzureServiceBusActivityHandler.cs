@@ -46,17 +46,17 @@ namespace Datadog.Trace.Activity.Handlers
                 // then we can retrieve the active message object using our mapping. With access to the message
                 // object, we can accurately calculate the payload size for the DataStreamsCheckpoint
 
-                string key;
+                ActivityKey key;
                 if (activity is IW3CActivity w3cActivity)
                 {
-                    key = w3cActivity.TraceId + w3cActivity.SpanId;
+                    key = new(w3cActivity.TraceId, w3cActivity.SpanId);
                 }
                 else
                 {
-                    key = activity.Id;
+                    key = new ActivityKey(activity.Id);
                 }
 
-                if (ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
+                if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
                     && activityMapping.Scope?.Span is Span span)
                 {
                     // Copy over the data to our Span object so we can do an efficient tags lookup
