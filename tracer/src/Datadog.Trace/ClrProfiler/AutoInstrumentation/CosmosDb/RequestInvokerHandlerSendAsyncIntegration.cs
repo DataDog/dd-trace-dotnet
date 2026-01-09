@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb;
     IntegrationName = nameof(IntegrationId.CosmosDb))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class RequestInvokerHandlerSendAsyncIntegration
+public sealed class RequestInvokerHandlerSendAsyncIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestInvokerHandlerSendAsyncIntegration));
 
@@ -65,7 +66,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
             if (cosmosContainerCore?.Instance != null)
             {
                 containerId = cosmosContainerCore.Id;
-                databaseId = cosmosContainerCore.Database.Id;
+                databaseId = cosmosContainerCore.Database?.Id;
             }
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName("cosmosdb");
@@ -82,9 +83,15 @@ public class RequestInvokerHandlerSendAsyncIntegration
                 tags.UserAgent = clientContext.UserAgent;
 
                 var connectionMode = clientContext.ClientOptions.ConnectionMode;
-                tags.ConnectionMode = connectionMode == 0 ? "gateway" : "direct";
+                tags.ConnectionMode = connectionMode switch
+                {
+                    0 => "gateway",
+                    1 => "direct",
+                    _ => "other"
+                };
             }
 
+            tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);
 
             var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
@@ -116,7 +123,7 @@ public class RequestInvokerHandlerSendAsyncIntegration
             {
                 var tags = (CosmosDbTags)scope.Span.Tags;
                 var statusCode = (int)returnValue.StatusCode;
-                tags.ResponseStatusCode = statusCode.ToString();
+                tags.ResponseStatusCode = statusCode.ToString(CultureInfo.InvariantCulture);
 
                 if (returnValue.Headers?.Instance != null)
                 {

@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// </remarks>
     internal interface IContainer : IDuckType
     {
-        string Id { get; }
+        string? Id { get; }
 
-        IDatabase Database { get; }
+        IDatabase? Database { get; }
     }
 }

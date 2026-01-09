@@ -20,6 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     {
         HttpStatusCode StatusCode { get; }
 
-        IResponseHeaders Headers { get; }
+        IResponseHeaders? Headers { get; }
     }
 }
