@@ -7,7 +7,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <InvariantGlobalization>true</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <!--    <PublishAot>true</PublishAot>-->
   </PropertyGroup>
 
