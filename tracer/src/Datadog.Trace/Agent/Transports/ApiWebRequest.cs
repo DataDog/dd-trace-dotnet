@@ -75,22 +75,7 @@ namespace Datadog.Trace.Agent.Transports
 
             using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                // wrap in gzip if requested
-                using Stream gzip = (compression == MultipartCompression.GZip
-                                      ? new GZipStream(reqStream, CompressionMode.Compress, leaveOpen: true)
-                                      : null);
-                var streamToWriteTo = gzip ?? reqStream;
-
-                using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
-                using var jsonWriter = new JsonTextWriter(streamWriter)
-                {
-                    CloseOutput = false
-                };
-                var serializer = JsonSerializer.Create(settings);
-                serializer.Serialize(jsonWriter, payload);
-                await streamWriter.FlushAsync().ConfigureAwait(false);
-                await streamToWriteTo.FlushAsync().ConfigureAwait(false);
-                await reqStream.FlushAsync().ConfigureAwait(false);
+                await SerializationHelpers.WriteAsJson(reqStream, payload, settings, compression).ConfigureAwait(false);
             }
 
             return await FinishAndGetResponse().ConfigureAwait(false);

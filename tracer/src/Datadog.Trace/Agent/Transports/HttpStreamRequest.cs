@@ -61,32 +61,12 @@ namespace Datadog.Trace.Agent.Transports
             var result = await SendAsync(
                                  WebRequestMethods.Http.Post,
                                  contentType: MimeTypes.Json,
-                                 content: new HttpOverStreams.HttpContent.PushStreamContent(stream => WriteAsJson(stream, payload, settings, compression)),
+                                 content: new HttpOverStreams.HttpContent.PushStreamContent(stream => SerializationHelpers.WriteAsJson(stream, payload, settings, compression)),
                                  contentEncoding: contentEncoding,
                                  chunkedEncoding: true) // must use chunked encoding because push-stream content
                             .ConfigureAwait(false);
 
             return result.Item1;
-
-            static async Task WriteAsJson(Stream requestStream, T payload, JsonSerializerSettings serializationSettings, MultipartCompression compression)
-            {
-                // wrap in gzip if requested
-                using Stream gzip = compression == MultipartCompression.GZip
-                                        ? new GZipStream(requestStream, CompressionMode.Compress, leaveOpen: true)
-                                        : null;
-                var streamToWriteTo = gzip ?? requestStream;
-
-                using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
-                using var jsonWriter = new JsonTextWriter(streamWriter)
-                {
-                    CloseOutput = false
-                };
-                var serializer = JsonSerializer.Create(serializationSettings);
-                serializer.Serialize(jsonWriter, payload);
-                await streamWriter.FlushAsync().ConfigureAwait(false);
-                await streamToWriteTo.FlushAsync().ConfigureAwait(false);
-                await requestStream.FlushAsync().ConfigureAwait(false);
-            }
         }
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)

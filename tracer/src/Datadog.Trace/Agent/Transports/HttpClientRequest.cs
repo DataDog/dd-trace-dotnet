@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent.Transports
                 Log.Debug("Sending {Type} data as JSON with compression '{Compression}'", typeof(T).FullName, compression == MultipartCompression.GZip ? "gzip" : "none");
             }
 
-            using var content = new PushStreamContent(stream => WriteAsJson(stream, payload, settings, compression));
+            using var content = new PushStreamContent(stream => SerializationHelpers.WriteAsJson(stream, payload, settings, compression));
             content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
 
             if (compression == MultipartCompression.GZip)
@@ -93,26 +93,6 @@ namespace Datadog.Trace.Agent.Transports
 
             var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
             return new HttpClientResponse(response);
-
-            static async Task WriteAsJson(Stream requestStream, T payload, JsonSerializerSettings serializationSettings, MultipartCompression compression)
-            {
-                // wrap in gzip if requested
-                using Stream gzip = compression == MultipartCompression.GZip
-                                        ? new GZipStream(requestStream, CompressionMode.Compress, leaveOpen: true)
-                                        : null;
-                var streamToWriteTo = gzip ?? requestStream;
-
-                using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
-                using var jsonWriter = new JsonTextWriter(streamWriter)
-                {
-                    CloseOutput = false
-                };
-                var serializer = JsonSerializer.Create(serializationSettings);
-                serializer.Serialize(jsonWriter, payload);
-                await streamWriter.FlushAsync().ConfigureAwait(false);
-                await streamToWriteTo.FlushAsync().ConfigureAwait(false);
-                await requestStream.FlushAsync().ConfigureAwait(false);
-            }
         }
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)

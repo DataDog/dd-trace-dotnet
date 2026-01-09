@@ -5,6 +5,10 @@
 
 #nullable enable
 
+using System.IO;
+using System.IO.Compression;
+using System.Threading.Tasks;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -20,4 +24,24 @@ internal static class SerializationHelpers
             NamingStrategy = new SnakeCaseNamingStrategy(),
         }
     };
+
+    public static async Task WriteAsJson<T>(Stream requestStream, T payload, JsonSerializerSettings serializationSettings, MultipartCompression compression)
+    {
+        // wrap in gzip if requested
+        using Stream? gzip = compression == MultipartCompression.GZip
+                                 ? new GZipStream(requestStream, CompressionMode.Compress, leaveOpen: true)
+                                 : null;
+        var streamToWriteTo = gzip ?? requestStream;
+
+        using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+        using var jsonWriter = new JsonTextWriter(streamWriter)
+        {
+            CloseOutput = false
+        };
+        var serializer = JsonSerializer.Create(serializationSettings);
+        serializer.Serialize(jsonWriter, payload);
+        await streamWriter.FlushAsync().ConfigureAwait(false);
+        await streamToWriteTo.FlushAsync().ConfigureAwait(false);
+        await requestStream.FlushAsync().ConfigureAwait(false);
+    }
 }
