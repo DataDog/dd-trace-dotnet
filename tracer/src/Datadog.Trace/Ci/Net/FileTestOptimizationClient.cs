@@ -123,6 +123,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     private bool TryReadPayload<T>(string name, [NotNullWhen(true)] out T? payload)
     {
+        /*
         try
         {
             var file = Path.Combine(_cacheFolder, name);
@@ -138,6 +139,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         {
             Log.Error(ex, "FileTestOptimizationClient: error on TryReadPayload.");
         }
+        */
 
         payload = default;
         return false;
