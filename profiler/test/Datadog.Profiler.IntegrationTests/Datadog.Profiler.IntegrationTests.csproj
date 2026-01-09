@@ -76,12 +76,6 @@
     <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\DelayedMessageBus.cs">
       <Link>Xunit\DelayedMessageBus.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\FlakyTestMethodRunner.cs">
-      <Link>Xunit\FlakyTestMethodRunner.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\FlakyTestRunners.cs">
-      <Link>Xunit\FlakyTestRunners.cs</Link>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>

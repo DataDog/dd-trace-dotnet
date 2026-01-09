@@ -1,29 +1,183 @@
 // <copyright file="ProfilerCustomTestFramework.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
-// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Datadog.Profiler.IntegrationTests.Xunit
+[assembly: TestFramework("Datadog.Profiler.IntegrationTests.Xunit.ProfilerCustomTestFramework", "Datadog.Profiler.IntegrationTests")]
+
+namespace Datadog.Profiler.IntegrationTests.Xunit;
+
+public class ProfilerCustomTestFramework : XunitTestFramework
 {
-    /// <summary>
-    /// Custom test framework for profiler integration tests that supports flaky test retries.
-    /// Uses the shared FlakyTestFrameworkExecutor from Datadog.Trace.TestHelpers.
-    /// </summary>
-    public class ProfilerCustomTestFramework : XunitTestFramework
+    public ProfilerCustomTestFramework(IMessageSink messageSink)
+        : base(messageSink)
     {
-        public ProfilerCustomTestFramework(IMessageSink messageSink)
-            : base(messageSink)
+    }
+
+    protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
+    {
+        return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+    }
+
+    private class CustomExecutor : XunitTestFrameworkExecutor
+    {
+        public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink)
+            : base(assemblyName, sourceInformationProvider, diagnosticMessageSink)
         {
         }
 
-        protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
+        protected override async void RunTestCases(IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
         {
-            return new FlakyTestFrameworkExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+            using var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions);
+            await assemblyRunner.RunAsync();
+        }
+    }
+
+    private class CustomAssemblyRunner : XunitTestAssemblyRunner
+    {
+        public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
+            : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions)
+        {
+        }
+
+        protected override Task<RunSummary> RunTestCollectionAsync(IMessageBus messageBus, ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, CancellationTokenSource cancellationTokenSource)
+        {
+            return new CustomTestCollectionRunner(testCollection, testCases, DiagnosticMessageSink, messageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), cancellationTokenSource).RunAsync();
+        }
+    }
+
+    private class CustomTestCollectionRunner : XunitTestCollectionRunner
+    {
+        private readonly IMessageSink _diagnosticMessageSink;
+
+        public CustomTestCollectionRunner(ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            : base(testCollection, testCases, diagnosticMessageSink, messageBus, testCaseOrderer, aggregator, cancellationTokenSource)
+        {
+            _diagnosticMessageSink = diagnosticMessageSink;
+        }
+
+        protected override Task<RunSummary> RunTestClassAsync(ITestClass testClass, IReflectionTypeInfo @class, IEnumerable<IXunitTestCase> testCases)
+        {
+            return new CustomTestClassRunner(testClass, @class, testCases, _diagnosticMessageSink, MessageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), CancellationTokenSource, CollectionFixtureMappings)
+               .RunAsync();
+        }
+    }
+
+    private class CustomTestClassRunner : XunitTestClassRunner
+    {
+        public CustomTestClassRunner(ITestClass testClass, IReflectionTypeInfo @class, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, IDictionary<Type, object> collectionFixtureMappings)
+            : base(testClass, @class, testCases, diagnosticMessageSink, messageBus, testCaseOrderer, aggregator, cancellationTokenSource, collectionFixtureMappings)
+        {
+        }
+
+        protected override Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
+        {
+            return new CustomTestMethodRunner(testMethod, this.Class, method, testCases, this.DiagnosticMessageSink, this.MessageBus, new ExceptionAggregator(this.Aggregator), this.CancellationTokenSource, constructorArguments)
+               .RunAsync();
+        }
+    }
+
+    private class CustomTestMethodRunner : XunitTestMethodRunner
+    {
+        private readonly IMessageSink _diagnosticMessageSink;
+        private readonly object[] _constructorArguments;
+
+        public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments)
+            : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
+        {
+            _diagnosticMessageSink = diagnosticMessageSink;
+            _constructorArguments = constructorArguments;
+        }
+
+        protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
+        {
+            var parameters = string.Empty;
+
+            if (testCase.TestMethodArguments != null)
+            {
+                parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString() ?? "null"));
+            }
+
+            var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
+
+            var attemptsRemaining = 1;
+            var retryReason = string.Empty;
+            try
+            {
+                var flakyAttribute = Method.MethodInfo.GetCustomAttribute<FlakyAttribute>();
+                if (flakyAttribute != null)
+                {
+                    attemptsRemaining = flakyAttribute.MaxRetries + 1;
+                    retryReason = flakyAttribute.Reason;
+                }
+            }
+            catch (Exception e)
+            {
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: Looking for FlakyAttribute {e}"));
+            }
+
+            DelayedMessageBus messageBus = null;
+            try
+            {
+                while (true)
+                {
+                    attemptsRemaining--;
+                    messageBus = new DelayedMessageBus(MessageBus);
+
+                    // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
+                    var summary = await RunTest(messageBus);
+                    if (summary.Failed == 0 || attemptsRemaining <= 0)
+                    {
+                        // No failures, or not allowed to retry
+                        return summary;
+                    }
+
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
+                }
+            }
+            finally
+            {
+                // need to dispose of the message bus to flush any messages
+                messageBus?.Dispose();
+            }
+
+            async Task<RunSummary> RunTest(DelayedMessageBus messageBus)
+            {
+                using var timer = new Timer(
+                    _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
+                    null,
+                    TimeSpan.FromMinutes(15),
+                    Timeout.InfiniteTimeSpan);
+
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
+
+                try
+                {
+                    var result = await testCase.RunAsync(_diagnosticMessageSink, messageBus, _constructorArguments, new ExceptionAggregator(Aggregator), CancellationTokenSource);
+
+                    var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
+
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
+                    throw;
+                }
+            }
         }
     }
 }
