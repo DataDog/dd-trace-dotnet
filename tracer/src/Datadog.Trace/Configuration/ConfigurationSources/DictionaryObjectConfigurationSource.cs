@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
 
@@ -138,11 +138,23 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
-#if NETCOREAPP
-            var dictAsString = string.Join(separator, value.Select(x => $"{x.Key}:{x.Value}"));
-#else
-            var dictAsString = string.Join($"{separator}", value.Select(x => $"{x.Key}:{x.Value}"));
-#endif
+            var dictAsString = string.Empty;
+            if (value.Count > 0)
+            {
+                var sb = StringBuilderCache.Acquire();
+                foreach (var kvp in value)
+                {
+                    sb.Append(kvp.Key)
+                      .Append(':')
+                      .Append(kvp.Value)
+                      .Append(separator);
+                }
+
+                // remove the final separator (we know there was at least one so this is safe)
+                sb.Remove(sb.Length - 1, 1);
+                dictAsString = StringBuilderCache.GetStringAndRelease(sb);
+            }
+
             if (validator is null || validator(value))
             {
                 telemetry.Record(key, dictAsString, recordValue: true, Origin);
