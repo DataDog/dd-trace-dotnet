@@ -17,7 +17,7 @@ namespace Datadog.Trace.FeatureFlags;
 [Browsable(false)]
 public static class FeatureFlagsSdk
 {
-    /// <summary> Gets a value indicating wether FeatureFlags framework is available or not </summary>
+    /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]

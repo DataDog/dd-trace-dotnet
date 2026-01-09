@@ -10,10 +10,7 @@ using Datadog.Trace.FeatureFlags.Exposure.Model;
 
 namespace Datadog.Trace.FeatureFlags.Exposure;
 
-/// <summary>
-/// Esta clase no es thread-safe intencionalmente.
-/// La seguridad de hilos se gestiona en el patrón de acceso de un solo hilo.
-/// </summary>
+/// <summary> LRU ExposureEvents cache </summary>
 internal sealed class ExposureCache
 {
     private readonly int _capacity;
