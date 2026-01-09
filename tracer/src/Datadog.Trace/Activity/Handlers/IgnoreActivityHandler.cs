@@ -60,7 +60,7 @@ namespace Datadog.Trace.Activity.Handlers
                     w3cActivity.TraceId = span.Context.RawTraceId;
 
                     // SpanId (always 16 chars long)
-                    w3cActivity.ParentSpanId = span.Context.RawSpanId;
+                    w3cActivity.RawParentSpanId = span.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;
