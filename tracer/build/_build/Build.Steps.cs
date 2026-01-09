@@ -175,6 +175,7 @@ partial class Build
     Project[] ParallelIntegrationTests => new[]
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
+        Solution.GetProject(Projects.FleetInstallerTests),
     };
 
     Project[] ClrProfilerIntegrationTests
@@ -1797,6 +1798,14 @@ partial class Build
 
             try
             {
+                // filter out fleet installer tests unless we're on netframework and x64
+                var parallelJobs = ParallelIntegrationTests
+                   .Where(project => project.Name switch
+                    {
+                        "Datadog.FleetInstaller.Tests" => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
+                        _ => true,
+                    });
+
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
@@ -1815,7 +1824,7 @@ partial class Build
                     .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                    .CombineWith(ParallelIntegrationTests, (s, project) => s
+                    .CombineWith(parallelJobs, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
