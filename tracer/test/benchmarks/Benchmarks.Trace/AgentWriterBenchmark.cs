@@ -12,6 +12,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
@@ -160,6 +161,12 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
+            public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+                => throw new NotImplementedException();
+
+            public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+                => throw new NotImplementedException();
 
             public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
             {

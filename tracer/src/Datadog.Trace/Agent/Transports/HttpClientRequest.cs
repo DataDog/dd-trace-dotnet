@@ -6,12 +6,16 @@
 #if NETCOREAPP
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -64,6 +68,50 @@ namespace Datadog.Trace.Agent.Transports
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
+            }
+        }
+
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+            => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
+
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Sending {Type} data as JSON with compression '{Compression}'", typeof(T).FullName, compression == MultipartCompression.GZip ? "gzip" : "none");
+            }
+
+            using var content = new PushStreamContent(stream => WriteAsJson(stream, payload, settings, compression));
+            content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
+
+            if (compression == MultipartCompression.GZip)
+            {
+                content.Headers.ContentEncoding.Add("gzip");
+            }
+
+            _postRequest.Content = content;
+
+            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+            return new HttpClientResponse(response);
+
+            static async Task WriteAsJson(Stream requestStream, T payload, JsonSerializerSettings serializationSettings, MultipartCompression compression)
+            {
+                // wrap in gzip if requested
+                using Stream gzip = compression == MultipartCompression.GZip
+                                        ? new GZipStream(requestStream, CompressionMode.Compress, leaveOpen: true)
+                                        : null;
+                var streamToWriteTo = gzip ?? requestStream;
+
+                using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+                using var jsonWriter = new JsonTextWriter(streamWriter)
+                {
+                    CloseOutput = false
+                };
+                var serializer = JsonSerializer.Create(serializationSettings);
+                serializer.Serialize(jsonWriter, payload);
+                await streamWriter.FlushAsync().ConfigureAwait(false);
+                await streamToWriteTo.FlushAsync().ConfigureAwait(false);
+                await requestStream.FlushAsync().ConfigureAwait(false);
             }
         }
 
