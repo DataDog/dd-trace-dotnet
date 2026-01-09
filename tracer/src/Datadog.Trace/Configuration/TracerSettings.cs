@@ -182,7 +182,7 @@ namespace Datadog.Trace.Configuration
             RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
 
 #if !NET6_0_OR_GREATER
-            if (RuntimeMetricsDiagnosticsMetricsApiEnabled)
+            if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
                     $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
