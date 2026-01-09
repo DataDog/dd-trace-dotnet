@@ -52,7 +52,7 @@ COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
 # Install Windows Code Signer
-COPY --from=registry.ddbuild.io/windows-code-signer/go:$WINSIGN_VERSION c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
+COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.5.0 c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
 
 # Copy everything else
 COPY . .
