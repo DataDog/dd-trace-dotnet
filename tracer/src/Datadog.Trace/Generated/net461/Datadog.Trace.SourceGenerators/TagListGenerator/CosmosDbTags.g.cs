@@ -62,11 +62,11 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] ResponseSubStatusCodeBytes = new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 #endif
-        // UserAgentBytes = MessagePack.Serialize("user_agent.original");
+        // UserAgentBytes = MessagePack.Serialize("http.useragent");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 179, 117, 115, 101, 114, 95, 97, 103, 101, 110, 116, 46, 111, 114, 105, 103, 105, 110, 97, 108 };
+        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
 #else
-        private static readonly byte[] UserAgentBytes = new byte[] { 179, 117, 115, 101, 114, 95, 97, 103, 101, 110, 116, 46, 111, 114, 105, 103, 105, 110, 97, 108 };
+        private static readonly byte[] UserAgentBytes = new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
 #endif
         // ConnectionModeBytes = MessagePack.Serialize("cosmosdb.connection.mode");
 #if NETCOREAPP
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tagging
                 "out.host" => Host,
                 "db.response.status_code" => ResponseStatusCode,
                 "cosmosdb.response.sub_status_code" => ResponseSubStatusCode,
-                "user_agent.original" => UserAgent,
+                "http.useragent" => UserAgent,
                 "cosmosdb.connection.mode" => ConnectionMode,
                 _ => base.GetTag(key),
             };
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tagging
                 case "cosmosdb.response.sub_status_code": 
                     ResponseSubStatusCode = value;
                     break;
-                case "user_agent.original": 
+                case "http.useragent": 
                     UserAgent = value;
                     break;
                 case "cosmosdb.connection.mode": 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tagging
 
             if (UserAgent is not null)
             {
-                processor.Process(new TagItem<string>("user_agent.original", UserAgent, UserAgentBytes));
+                processor.Process(new TagItem<string>("http.useragent", UserAgent, UserAgentBytes));
             }
 
             if (ConnectionMode is not null)
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Tagging
 
             if (UserAgent is not null)
             {
-                sb.Append("user_agent.original (tag):")
+                sb.Append("http.useragent (tag):")
                   .Append(UserAgent)
                   .Append(',');
             }
