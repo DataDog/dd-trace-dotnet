@@ -46,7 +46,6 @@ COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "17.0.8"
 ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
-ENV WINSIGN_VERSION "v0.5.0"
 
 # Install JAVA
 COPY helpers.ps1 install_java.ps1 ./
