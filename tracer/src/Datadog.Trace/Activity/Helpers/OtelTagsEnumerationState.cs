@@ -5,10 +5,13 @@
 
 #nullable enable
 
-using Datadog.Trace.Tagging;
-
 namespace Datadog.Trace.Activity.Helpers;
 
+/// <summary>
+/// A state object for use with <see cref="AllocationFreeEnumerator{TEnumerable,TItem,TState}"/>.
+/// We can add more properties to it if they are required by the enumerator, but it should
+/// remain a readonly struct.
+/// </summary>
 internal readonly struct OtelTagsEnumerationState(Span span)
 {
     public Span Span { get; } = span;
