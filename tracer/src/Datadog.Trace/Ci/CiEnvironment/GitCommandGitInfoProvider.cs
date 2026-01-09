@@ -27,7 +27,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
         using var cd = CodeDurationRef.Create();
         var localGitInfo = new GitInfo
         {
-            SourceRoot = gitDirectory.Parent?.FullName
+            SourceRoot = gitDirectory.Name == ".git" ? gitDirectory.Parent?.FullName : gitDirectory.FullName
         };
 
         gitInfo = localGitInfo;
@@ -37,23 +37,11 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             // Ensure we have permissions to read the git directory
             var safeDirectory = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
-                $"config --global --add safe.directory {gitDirectory.FullName}",
+                $"config --global --add safe.directory {localGitInfo.SourceRoot}",
                 MetricTags.CIVisibilityCommands.SafeDirectory);
             if (safeDirectory?.ExitCode != 0)
             {
                 localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory?.Error}");
-            }
-
-            if (gitDirectory.Parent is not null)
-            {
-                var safeDirectory2 = GitCommandHelper.RunGitCommand(
-                    localGitInfo.SourceRoot,
-                    $"config --global --add safe.directory {gitDirectory.Parent.FullName}",
-                    MetricTags.CIVisibilityCommands.SafeDirectory);
-                if (safeDirectory2?.ExitCode != 0)
-                {
-                    localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory2?.Error}");
-                }
             }
 
             // Get the repository URL
