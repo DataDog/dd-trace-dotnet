@@ -25,6 +25,7 @@ public class ConfigurationTests
         "_DD_EXTENSION_PATH",
         // Internal variable just used to "pass" settings to the
         "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY",
+        "_DD_INTERNAL_TOPT_RUNID",
         // mini agent uses this directly from env var, and no reason to think that will change
         "DD_MINI_AGENT_PATH",
         "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
