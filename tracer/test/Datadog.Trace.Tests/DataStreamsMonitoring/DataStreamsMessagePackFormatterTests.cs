@@ -29,8 +29,8 @@ public class DataStreamsMessagePackFormatterTests
         var service = "service=name";
         var bucketDuration = 10_000_000_000;
         var edgeTags = new[] { "edge-1" };
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, "my-env" } });
-        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), service);
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, "my-env" }, { ConfigurationKeys.ServiceName, service } });
+        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -109,7 +109,7 @@ public class DataStreamsMessagePackFormatterTests
 
         var expected = new MockDataStreamsPayload
         {
-            Env = settings.Environment,
+            Env = settings.Manager.InitialMutableSettings.Environment,
             Service = service,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,
@@ -189,7 +189,7 @@ public class DataStreamsMessagePackFormatterTests
     {
         var bucketDuration = 10_000_000_000;
         var settings = TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.Environment, "my-env" }, { ConfigurationKeys.PropagateProcessTags, "true" } });
-        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), "service=name");
+        var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         using var ms = new MemoryStream();
         formatter.Serialize(ms, bucketDuration, [], []);

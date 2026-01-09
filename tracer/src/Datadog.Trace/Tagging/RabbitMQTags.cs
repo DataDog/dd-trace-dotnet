@@ -1,4 +1,4 @@
-// <copyright file="RabbitMQTags.cs" company="Datadog">
+﻿// <copyright file="RabbitMQTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public string InstrumentationName => nameof(Configuration.IntegrationId.RabbitMQ);
 
         [Tag(Trace.Tags.AmqpCommand)]
         public string Command { get; set; }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tagging
         public string OutHost { get; set; }
     }
 
-    internal partial class RabbitMQV1Tags : RabbitMQTags
+    internal sealed partial class RabbitMQV1Tags : RabbitMQTags
     {
         private string _peerServiceOverride = null;
 

@@ -41,27 +41,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         }
 
         /// <summary>
-        /// Extracts trace context from message properties dictionary
+        /// Extracts full propagation context (span context and baggage) from message properties dictionary
         /// </summary>
-        public static SpanContext? ExtractContext(IDictionary<string, object>? properties)
+        public static PropagationContext ExtractContext(IDictionary<string, object>? properties)
         {
             if (properties == null)
             {
-                return null;
+                return default;
             }
 
             try
             {
-                var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                     properties,
                     default(DictionaryContextPropagation));
-
-                return extractedContext.SpanContext;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to extract trace context from message properties");
-                return null;
+                Log.Warning(ex, "Failed to extract propagation context from message properties");
+                return default;
             }
         }
 

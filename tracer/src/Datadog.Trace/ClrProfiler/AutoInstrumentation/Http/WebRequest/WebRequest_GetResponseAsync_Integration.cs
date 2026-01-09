@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class WebRequest_GetResponseAsync_Integration
+    public sealed class WebRequest_GetResponseAsync_Integration
     {
         private const string MethodName = "GetResponseAsync";
 

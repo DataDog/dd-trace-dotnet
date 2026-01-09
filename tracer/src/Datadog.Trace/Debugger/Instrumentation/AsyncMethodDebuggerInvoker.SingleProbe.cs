@@ -161,7 +161,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
+                // In .NET Framework, we have en issue with multiple AppDomains. We can't easily share probe metadata
+                // between different AppDomain. The domain that request to put a probe might be different from the one that executes it.
+                // It results in entering into this branch. There is ongoing effort to fix this issue entirely in .NET Framework,
+                // for now as a quick fix to unblock a customer, this patch is being applied, to avoid logging tremendous amount of
+                // log entries.
+                #if !NETFRAMEWORK
                 Log.Warning("BeginMethod: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                #endif
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }

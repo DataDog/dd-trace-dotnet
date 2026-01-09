@@ -1,4 +1,4 @@
-// <copyright file="ProfilerStatus.cs" company="Datadog">
+﻿// <copyright file="ProfilerStatus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
-    internal class ProfilerStatus : IProfilerStatus
+    internal sealed class ProfilerStatus : IProfilerStatus
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerStatus));
 
@@ -17,6 +17,7 @@ namespace Datadog.Trace.ContinuousProfiler
         private readonly object _lockObj;
         private bool _isInitialized;
         private IntPtr _engineStatusPtr;
+        private bool _isProfilerReadyCache;
 
         public ProfilerStatus(ProfilerSettings settings)
         {
@@ -42,8 +43,16 @@ namespace Datadog.Trace.ContinuousProfiler
                     return false;
                 }
 
+                // once _isProfilerReadyCache is true, it's never false anymore
+                if (_isProfilerReadyCache)
+                {
+                    return true;
+                }
+
                 EnsureNativeIsIntialized();
-                return _engineStatusPtr != IntPtr.Zero && Marshal.ReadByte(_engineStatusPtr) != 0;
+                var isReady = _engineStatusPtr != IntPtr.Zero && Marshal.ReadByte(_engineStatusPtr) != 0;
+                _isProfilerReadyCache = isReady;
+                return isReady;
             }
         }
 

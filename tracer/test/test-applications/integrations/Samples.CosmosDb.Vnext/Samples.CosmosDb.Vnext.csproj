@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">3.18.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.56.0</ApiVersion>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
@@ -17,6 +17,10 @@
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="$(ApiVersion)" />
     <!-- error : The Newtonsoft.Json package must be explicitly referenced with version >= 10.0.2.
@@ -24,5 +28,5 @@
           property to 'true' to bypass this check-->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-  
+
 </Project>

@@ -11,7 +11,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
-    internal class Log4NetDirectSubmissionLogEvent : DirectSubmissionLogEvent
+    internal sealed class Log4NetDirectSubmissionLogEvent : DirectSubmissionLogEvent
     {
         private readonly ILoggingEventDuckBase _logEvent;
         private readonly DateTime _timestamp;

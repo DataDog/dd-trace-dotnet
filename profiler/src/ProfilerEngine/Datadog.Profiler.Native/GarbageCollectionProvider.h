@@ -48,7 +48,8 @@ public:
         std::chrono::nanoseconds endTimestamp,   // end of GC
         uint64_t gen2Size,
         uint64_t lohSize,
-        uint64_t pohSize) override;
+        uint64_t pohSize,
+        uint32_t memPressure) override;
 
 private:
     std::shared_ptr<CounterMetric> _gen0CountMetric;

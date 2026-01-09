@@ -212,7 +212,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Fact]
         public void ValidSettingsAreValid()
         {
-            var settings = LogSettingsHelper.GetValidSettings();
+            var settings = LogSettingsHelper.GetValidSettings().LogSubmissionSettings;
             settings.IsEnabled.Should().BeTrue();
         }
 
@@ -376,7 +376,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
 
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+            tracerSettings.Manager.InitialMutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
     }
 }

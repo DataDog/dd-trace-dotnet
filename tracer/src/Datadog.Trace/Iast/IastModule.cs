@@ -1,4 +1,4 @@
-// <copyright file="IastModule.cs" company="Datadog">
+﻿// <copyright file="IastModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -1004,7 +1004,7 @@ internal static partial class IastModule
         return DbRecords.AddDbValue(instance, column, value);
     }
 
-    internal class DbRecordManager
+    internal sealed class DbRecordManager
     {
         private ConditionalWeakTable<object, DbRecordData> dataBaseRows = new ConditionalWeakTable<object, DbRecordData>();
         private IastSettings iastSettings;
@@ -1073,7 +1073,7 @@ internal static partial class IastModule
             return true;
         }
 
-        private class DbRecordData
+        private sealed class DbRecordData
         {
             public int Count { get; set; } = 0;
         }

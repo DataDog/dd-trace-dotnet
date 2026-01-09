@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationTracerManager.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationTracerManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
@@ -142,13 +143,13 @@ namespace Datadog.Trace.Ci
             ((IEventWriter)AgentWriter).WriteEvent(@event);
         }
 
-        internal class LockedManager : TestOptimizationTracerManager, ILockedTracer
+        internal sealed class LockedManager : TestOptimizationTracerManager, ILockedTracer
         {
             public LockedManager(
                 TracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
-                IDogStatsd statsd,
+                IStatsdManager statsd,
                 RuntimeMetricsWriter runtimeMetricsWriter,
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,

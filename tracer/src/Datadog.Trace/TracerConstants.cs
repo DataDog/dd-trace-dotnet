@@ -8,7 +8,7 @@ namespace Datadog.Trace
     internal static class TracerConstants
     {
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.32.0.0";
-        public const string ThreePartVersion = "3.32.0";
+        public const string AssemblyVersion = "3.35.0.0";
+        public const string ThreePartVersion = "3.35.0";
     }
 }

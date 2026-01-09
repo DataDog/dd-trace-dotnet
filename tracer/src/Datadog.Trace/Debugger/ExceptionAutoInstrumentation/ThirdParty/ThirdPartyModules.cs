@@ -1,4 +1,4 @@
-// <copyright file="ThirdPartyModules.cs" company="Datadog">
+﻿// <copyright file="ThirdPartyModules.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
-    internal class ThirdPartyModules
+    internal sealed class ThirdPartyModules
     {
         private static readonly Lazy<bool> IsModulesPopulated = new(PopulateFromConfig);
         private static ImmutableHashSet<string> _thirdPartyModuleNames = ImmutableHashSet<string>.Empty;

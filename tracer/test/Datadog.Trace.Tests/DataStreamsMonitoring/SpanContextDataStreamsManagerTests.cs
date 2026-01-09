@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.TestHelpers.TransportHelpers;
@@ -70,12 +71,13 @@ public class SpanContextDataStreamsManagerTests
 
     private static DataStreamsManager GetEnabledDataStreamManager()
     {
-        var dsm = new DataStreamsManager(
-            env: "env",
-            defaultServiceName: "service",
-            new Mock<IDataStreamsWriter>().Object,
-            isInDefaultState: false,
-            processTags: null);
-        return dsm;
+        var settings = TracerSettings.Create(
+            new()
+            {
+                { ConfigurationKeys.Environment, "env" },
+                { ConfigurationKeys.ServiceName, "service" },
+                { ConfigurationKeys.DataStreamsMonitoring.Enabled, "1" },
+            });
+        return new DataStreamsManager(settings, new Mock<IDataStreamsWriter>().Object, processTags: null);
     }
 }

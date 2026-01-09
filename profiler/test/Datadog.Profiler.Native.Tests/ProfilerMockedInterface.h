@@ -67,7 +67,6 @@ public:
     MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
     MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
-    MOCK_METHOD(bool, UseBacktrace2, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
     MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
@@ -94,6 +93,11 @@ public:
     MOCK_METHOD(bool, IsWaitHandleProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
     MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
+    MOCK_METHOD(bool, IsHeapSnapshotEnabled, (), (const override));
+    MOCK_METHOD(std::chrono::minutes, GetHeapSnapshotInterval, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
+    MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
+    MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -173,7 +177,7 @@ class MockApplicationStore : public IApplicationStore
 {
 public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
-    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
 };
 

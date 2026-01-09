@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
-internal class GitHubSourceLinkUrlParser : SourceLinkUrlParser
+internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
     /// Extract the git commit sha and repository url from a GitHub SourceLink mapping string.

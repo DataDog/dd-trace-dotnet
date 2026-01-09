@@ -2,7 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
-
 #include "cor.h"
 #include "corprof.h"
 // end
@@ -16,7 +15,6 @@
 #include <windows.h>
 #else
 #include "cgroup.h"
-#include <libunwind.h>
 #include <signal.h>
 #endif
 
@@ -41,6 +39,7 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
+#include "NativeThreadList.h"
 #include "NetworkProvider.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -56,6 +55,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#include "Backtrace2Unwinder.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
@@ -199,6 +199,7 @@ void CorProfilerCallback::InitializeServices()
         return _pCodeHotspotsThreadList->Count();
     });
 
+    _pNativeThreadList = RegisterService<NativeThreadList>();
     _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
@@ -344,7 +345,20 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        if (_pConfiguration->IsHeapSnapshotEnabled())
+        {
+            _pHeapSnapshotManager = RegisterService<HeapSnapshotManager>(
+                _pConfiguration.get(),
+                _pCorProfilerInfoEvents,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _metricsRegistry,
+                _pNativeThreadList
+                );
+        }
+
+        // GC profiling is needed for both GC provider and heap snapshots
+        if ((_pHeapSnapshotManager != nullptr) || _pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
@@ -392,7 +406,8 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pNetworkProvider
+            _pNetworkProvider,
+            _pHeapSnapshotManager
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -402,6 +417,10 @@ void CorProfilerCallback::InitializeServices()
         if (_pLiveObjectsProvider != nullptr)
         {
             _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
+        }
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pEventPipeEventsManager->Register(_pHeapSnapshotManager);
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
@@ -544,6 +563,7 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+        _pUnwinder = std::make_unique<Backtrace2Unwinder>();
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -551,7 +571,8 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuSampleProvider,
-            _metricsRegistry);
+            _metricsRegistry,
+            _pUnwinder.get());
     }
 #endif
 
@@ -568,7 +589,8 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pMetadataProvider.get(),
         _pSsiManager.get(),
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pHeapSnapshotManager
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
@@ -784,7 +806,8 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
             config.runtimeId,
             config.serviceName ? config.serviceName : std::string(),
             config.environment ? config.environment : std::string(),
-            config.version ? config.version : std::string());
+            config.version ? config.version : std::string(),
+            config.processTags ? config.processTags : std::string());
     }
     else
     {
@@ -870,6 +893,7 @@ bool CorProfilerCallback::DisposeServices()
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
+    _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
     _pApplicationStore = nullptr;
 
@@ -1299,9 +1323,6 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 {
     // TODO: add more env vars values
     // --> should we dump the important ones to ensure that we get them during support investigations?
-
-    Log::Info("Environment variables:");
-    PRINT_ENV_VAR_IF_SET(EnvironmentVariables::UseBacktrace2);
 }
 
 // CLR event verbosity definition
@@ -1390,7 +1411,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
         _pConfiguration->IsHttpProfilingEnabled() ||
-        _pConfiguration->IsWaitHandleProfilingEnabled()
+        _pConfiguration->IsWaitHandleProfilingEnabled() ||
+        _pConfiguration->IsHeapSnapshotEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1487,6 +1509,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
         //  - WaitHandle events for .NET 9+
         //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //  - HTTP events via System.Net.Http provider
+        //  - Bulkxxx events for heap snapshots
         //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1533,7 +1557,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-
             providerCount = 6;
             providers =
             {
@@ -1598,6 +1621,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             _session = 0;
             Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, ".");
             return hr;
+        }
+
+        // keep track of the keywords and verbosity so that we will be able to reset what is stored
+        // by the GC and the CLR after a heap snapshot - see https://github.com/dotnet/runtime/issues/121462
+        // for more details
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            _pHeapSnapshotManager->SetRuntimeSessionParameters(activatedKeywords, verbosity);
         }
     }
     else
@@ -2023,6 +2054,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
+    // due to reverse p/invoke done by the EventPipe stack, it is possible that some of our native
+    // threads such as the HeapSnapshotManager one could be seen as "managed" by the CLR.
+    if (_pNativeThreadList->Contains(osThreadId))
+    {
+        return S_OK;
+    }
+
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
     // is the same native thread assigned to the managed thread.
@@ -2051,14 +2089,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // When calling uwn_backtraceXX, libunwind will initialize data structures for the current
-    // thread using TLS (Thread Local Storage).
+    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure 
+    // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
+    // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
     // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
+    Backtrace2Unwinder bt2;
     uintptr_t tab[1];
-    unw_backtrace((void**)tab, 1);
+    bt2.Unwind(nullptr, tab, 1);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;

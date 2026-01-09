@@ -1,12 +1,14 @@
-// <copyright file="Api.cs" company="Datadog">
+﻿// <copyright file="Api.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
@@ -22,7 +24,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal class Api : IApi
+    internal sealed class Api : IApi
     {
         private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
@@ -32,9 +34,8 @@ namespace Datadog.Trace.Agent
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IDogStatsd _statsd;
-        private readonly string _containerId;
-        private readonly string _entityId;
+        private readonly IStatsdManager _statsd;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
@@ -43,12 +44,15 @@ namespace Datadog.Trace.Agent
         private readonly SendCallback<SendTracesState> _sendTraces;
         private string _cachedResponse;
         private string _agentVersion;
+        private bool _healthMetricsEnabled;
 
         public Api(
             IApiRequestFactory apiRequestFactory,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
+            ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
+            bool healthMetricsEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -58,10 +62,11 @@ namespace Datadog.Trace.Agent
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            ToggleTracerHealthMetrics(healthMetricsEnabled);
+            _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
+            _healthMetricsEnabled = healthMetricsEnabled;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
             _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
@@ -75,6 +80,13 @@ namespace Datadog.Trace.Agent
             Success,
             Failed_CanRetry,
             Failed_DontRetry,
+        }
+
+        [MemberNotNull(nameof(_statsd))]
+        public void ToggleTracerHealthMetrics(bool enabled)
+        {
+            Volatile.Write(ref _healthMetricsEnabled, enabled);
+            _statsd.SetRequired(StatsdConsumer.TraceApi, enabled);
         }
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
@@ -195,16 +207,7 @@ namespace Datadog.Trace.Agent
             bool success = false;
             IApiResponse response = null;
 
-            // Set additional headers
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
@@ -275,16 +278,7 @@ namespace Datadog.Trace.Agent
 
             // Set additional headers
             request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             if (statsComputationEnabled)
             {
@@ -299,10 +293,13 @@ namespace Datadog.Trace.Agent
 
             try
             {
+                var healthMetricsEnabled = Volatile.Read(ref _healthMetricsEnabled);
+                using var lease = healthMetricsEnabled ? _statsd.TryGetClientLease() : default;
+                var healthStats = healthMetricsEnabled ? lease.Client : null;
                 try
                 {
                     TelemetryFactory.Metrics.RecordCountTraceApiRequests();
-                    _statsd?.Increment(TracerMetricNames.Api.Requests);
+                    healthStats?.Increment(TracerMetricNames.Api.Requests);
                     response = await request.PostAsync(traces, MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch (Exception ex)
@@ -311,17 +308,17 @@ namespace Datadog.Trace.Agent
                     // (which are handled below)
                     var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountTraceApiErrors(tag);
-                    _statsd?.Increment(TracerMetricNames.Api.Errors);
+                    healthStats?.Increment(TracerMetricNames.Api.Errors);
                     throw;
                 }
 
-                if (_statsd != null)
+                if (healthStats != null)
                 {
                     // don't bother creating the tags array if trace metrics are disabled
                     string[] tags = { $"status:{response.StatusCode}" };
 
                     // count every response, grouped by status code
-                    _statsd?.Increment(TracerMetricNames.Api.Responses, tags: tags);
+                    healthStats.Increment(TracerMetricNames.Api.Responses, tags: tags);
                 }
 
                 TelemetryFactory.Metrics.RecordCountTraceApiResponses(response.GetTelemetryStatusCodeMetricTag());

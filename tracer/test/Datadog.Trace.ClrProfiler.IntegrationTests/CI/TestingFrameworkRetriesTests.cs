@@ -151,6 +151,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             // AlwaysFails => 1 + 5 retries
             var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
             alwaysFailsTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            alwaysFailsTests = alwaysFailsTests.Where(t => t.Meta.ContainsKey("error.stack")).ToList();
             CheckForEnoughNumberOfStackFrames(alwaysFailsTests);
             alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
             alwaysFailsTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
@@ -172,6 +173,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
             trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
             trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            trueAtLastRetryTests = trueAtLastRetryTests.Where(t => t.Meta.ContainsKey("error.stack")).ToList();
             CheckForEnoughNumberOfStackFrames(trueAtLastRetryTests);
             trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
             trueAtLastRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
@@ -184,6 +186,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             trueAtThirdRetryTests.Should().HaveCount(1 + 3);
             trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
             trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            trueAtThirdRetryTests = trueAtThirdRetryTests.Where(t => t.Meta.ContainsKey("error.stack")).ToList();
             CheckForEnoughNumberOfStackFrames(trueAtThirdRetryTests);
             trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._er"));
             trueAtThirdRetryTests.Should().Contain(t => t.Meta.ContainsKey("_dd.di._eh"));
@@ -201,11 +204,11 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
     private static void CheckForEnoughNumberOfStackFrames(List<MockCIVisibilityTest> tests)
     {
         Skip.If(
-            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "\\n   at ") == 1),
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == 1),
             "There are stacktraces with only 1 stackframe, these kind of exception doesn't have any debugger info because that stack frame always refers to the throw frame.");
 
         Skip.If(
-            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "\\n   at ") == NumberOfOccurrences(t.Meta["error.stack"], "\\n   at Xunit.")),
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == NumberOfOccurrences(t.Meta["error.stack"], "   at Xunit.")),
             "All stackframes in the exception contains information of the Xunit assembly only.");
     }
 

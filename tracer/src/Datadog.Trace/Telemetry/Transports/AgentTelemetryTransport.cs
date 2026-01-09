@@ -1,4 +1,4 @@
-// <copyright file="AgentTelemetryTransport.cs" company="Datadog">
+﻿// <copyright file="AgentTelemetryTransport.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,14 +6,15 @@
 #nullable enable
 using System;
 using Datadog.Trace.Agent;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry.Transports;
 
-internal class AgentTelemetryTransport : JsonTelemetryTransport
+internal sealed class AgentTelemetryTransport : JsonTelemetryTransport
 {
-    public AgentTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled, string telemetryCompressionMethod)
-        : base(requestFactory, debugEnabled, telemetryCompressionMethod)
+    public AgentTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
+        : base(requestFactory, debugEnabled, telemetryCompressionMethod, containerMetadata)
     {
     }
 

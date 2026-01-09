@@ -1,4 +1,4 @@
-// <copyright file="MetricState.cs" company="Datadog">
+﻿// <copyright file="MetricState.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics;
 /// <summary>
 /// Represents the state for a metric instrument, used to avoid ConcurrentDictionary contention
 /// </summary>
-internal class MetricState
+internal sealed class MetricState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricState));
     private readonly MetricStreamIdentity _identity;

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.Manager.InitialExporterSettings.AgentUri.ToString());
         }
 
         [Theory]
@@ -423,7 +423,7 @@ namespace Datadog.Trace.Tests.Configuration
                 var source = CreateConfigurationSource(
                     (ConfigurationKeys.PropagationStyleInject, value),
                     (legacyKey, legacyValue),
-                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
                     (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
@@ -439,7 +439,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
             }
         }
 
@@ -463,7 +463,7 @@ namespace Datadog.Trace.Tests.Configuration
                 var source = CreateConfigurationSource(
                     (ConfigurationKeys.PropagationStyleExtract, value),
                     (legacyKey, legacyValue),
-                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
                     (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
@@ -479,7 +479,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
             }
         }
 
@@ -680,10 +680,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void RecordsTelemetryAboutTfm()
         {
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData();
+            var telemetry = new ConfigurationTelemetry();
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, telemetry);
+            var data = telemetry.GetData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()
@@ -788,10 +787,9 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
             var telemetry = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(source, telemetry, new());
+            _ = new TracerSettings(source, telemetry, new());
 
-            var config = tracerSettings
-                        .Telemetry
+            var config = telemetry
                         .Should()
                         .BeOfType<ConfigurationTelemetry>()
                         .Subject;

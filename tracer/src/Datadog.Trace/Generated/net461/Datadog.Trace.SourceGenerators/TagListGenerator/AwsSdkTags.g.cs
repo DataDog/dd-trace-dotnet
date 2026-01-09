@@ -15,31 +15,83 @@ namespace Datadog.Trace.Tagging
     partial class AwsSdkTags
     {
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // AgentNameBytes = MessagePack.Serialize("aws.agent");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AgentNameBytes => new byte[] { 169, 97, 119, 115, 46, 97, 103, 101, 110, 116 };
+#else
+        private static readonly byte[] AgentNameBytes = new byte[] { 169, 97, 119, 115, 46, 97, 103, 101, 110, 116 };
+#endif
         // OperationBytes = MessagePack.Serialize("aws.operation");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> OperationBytes => new byte[] { 173, 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] OperationBytes = new byte[] { 173, 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#endif
         // AwsRegionBytes = MessagePack.Serialize("aws.region");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AwsRegionBytes => new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+#else
+        private static readonly byte[] AwsRegionBytes = new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+#endif
         // RegionBytes = MessagePack.Serialize("region");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> RegionBytes => new byte[] { 166, 114, 101, 103, 105, 111, 110 };
+#else
+        private static readonly byte[] RegionBytes = new byte[] { 166, 114, 101, 103, 105, 111, 110 };
+#endif
         // RequestIdBytes = MessagePack.Serialize("aws.requestId");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> RequestIdBytes => new byte[] { 173, 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
+#else
+        private static readonly byte[] RequestIdBytes = new byte[] { 173, 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
+#endif
         // AwsServiceBytes = MessagePack.Serialize("aws.service");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AwsServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] AwsServiceBytes = new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
         // ServiceBytes = MessagePack.Serialize("aws_service");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 171, 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] ServiceBytes = new byte[] { 171, 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
+#endif
         // PeerServiceBytes = MessagePack.Serialize("peer.service");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] PeerServiceBytes = new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
         // PeerServiceSourceBytes = MessagePack.Serialize("_dd.peer.service.source");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PeerServiceSourceBytes => new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
+#else
+        private static readonly byte[] PeerServiceSourceBytes = new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
+#endif
         // HttpMethodBytes = MessagePack.Serialize("http.method");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+#else
+        private static readonly byte[] HttpMethodBytes = new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+#endif
         // HttpUrlBytes = MessagePack.Serialize("http.url");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpUrlBytes => new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] HttpUrlBytes = new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
+#endif
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+#else
+        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -62,7 +114,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

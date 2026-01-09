@@ -18,16 +18,6 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly string ExpectedExcludedSession = "/session/FakeSessionIdForPollingPurposes".ToUpperInvariant();
 
         [Theory]
-        [MemberData(nameof(NullableBooleanTestCases), null)]
-        public void Enabled(string value, bool? expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
-            var settings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.Enabled.Should().Be(expected);
-        }
-
-        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void Agentless(string value, bool expected)
         {
@@ -199,7 +189,7 @@ namespace Datadog.Trace.Tests.Configuration
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
             var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
-            tracerSettings.GlobalTags.Should()
+            tracerSettings.Manager.InitialMutableSettings.GlobalTags.Should()
                           .ContainKey(Datadog.Trace.Ci.Tags.CommonTags.UserProvidedTestServiceTag)
                           .WhoseValue.Should()
                           .Be(expectedTag);
@@ -216,7 +206,7 @@ namespace Datadog.Trace.Tests.Configuration
             var ciVisSettings = new TestOptimizationSettings(source, NullConfigurationTelemetry.Instance);
             var tracerSettings = ciVisSettings.InitializeTracerSettings(source);
 
-            tracerSettings.ServiceName.Should().Be(normalizedName);
+            tracerSettings.Manager.InitialMutableSettings.ServiceName.Should().Be(normalizedName);
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -139,11 +139,11 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("tests")]
         public readonly KnownTestsModules? Tests;
 
-        public class KnownTestsSuites : Dictionary<string, string[]?>
+        public sealed class KnownTestsSuites : Dictionary<string, string[]?>
         {
         }
 
-        public class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
+        public sealed class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
         {
         }
     }

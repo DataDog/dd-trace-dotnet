@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
-    internal class NullObfuscator : ObfuscatorBase
+    internal sealed class NullObfuscator : ObfuscatorBase
     {
         internal override string Obfuscate(string queryString) => queryString;
     }

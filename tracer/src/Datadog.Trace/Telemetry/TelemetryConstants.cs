@@ -1,4 +1,4 @@
-// <copyright file="TelemetryConstants.cs" company="Datadog">
+﻿// <copyright file="TelemetryConstants.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetryConstants
+    internal static class TelemetryConstants
     {
         public const string ApiVersionV2 = "v2";
         public const string TelemetryPath = "api/v2/apmtelemetry";
@@ -20,8 +20,6 @@ namespace Datadog.Trace.Telemetry
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
         public const string ClientLibraryLanguageHeader = "DD-Client-Library-Language";
         public const string ClientLibraryVersionHeader = "DD-Client-Library-Version";
-        public const string ContainerIdHeader = Datadog.Trace.AgentHttpHeaderNames.ContainerId;
-        public const string EntityIdHeader = Datadog.Trace.AgentHttpHeaderNames.EntityId;
 
         public const string CloudProviderHeader = "DD-Cloud-Provider";
         public const string CloudResourceTypeHeader = "DD-Cloud-Resource-Type";

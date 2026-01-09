@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         IntegrationName = AwsSqsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class CreateQueueIntegration
+    public sealed class CreateQueueIntegration
     {
         private const string Operation = "CreateQueue";
 

@@ -15,63 +15,179 @@ namespace Datadog.Trace.Ci.Tagging
     partial class TestSpanTags
     {
         // SourceStartBytes = MessagePack.Serialize("test.source.start");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SourceStartBytes => new byte[] { 177, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 115, 116, 97, 114, 116 };
+#else
+        private static readonly byte[] SourceStartBytes = new byte[] { 177, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 115, 116, 97, 114, 116 };
+#endif
         // SourceEndBytes = MessagePack.Serialize("test.source.end");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SourceEndBytes => new byte[] { 175, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 101, 110, 100 };
+#else
+        private static readonly byte[] SourceEndBytes = new byte[] { 175, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 101, 110, 100 };
+#endif
         // NameBytes = MessagePack.Serialize("test.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NameBytes => new byte[] { 169, 116, 101, 115, 116, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 169, 116, 101, 115, 116, 46, 110, 97, 109, 101 };
+#endif
         // ParametersBytes = MessagePack.Serialize("test.parameters");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ParametersBytes => new byte[] { 175, 116, 101, 115, 116, 46, 112, 97, 114, 97, 109, 101, 116, 101, 114, 115 };
+#else
+        private static readonly byte[] ParametersBytes = new byte[] { 175, 116, 101, 115, 116, 46, 112, 97, 114, 97, 109, 101, 116, 101, 114, 115 };
+#endif
         // TraitsBytes = MessagePack.Serialize("test.traits");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TraitsBytes => new byte[] { 171, 116, 101, 115, 116, 46, 116, 114, 97, 105, 116, 115 };
+#else
+        private static readonly byte[] TraitsBytes = new byte[] { 171, 116, 101, 115, 116, 46, 116, 114, 97, 105, 116, 115 };
+#endif
         // SkipReasonBytes = MessagePack.Serialize("test.skip_reason");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SkipReasonBytes => new byte[] { 176, 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
+#else
+        private static readonly byte[] SkipReasonBytes = new byte[] { 176, 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
+#endif
         // SkippedByIntelligentTestRunnerBytes = MessagePack.Serialize("test.skipped_by_itr");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SkippedByIntelligentTestRunnerBytes => new byte[] { 179, 116, 101, 115, 116, 46, 115, 107, 105, 112, 112, 101, 100, 95, 98, 121, 95, 105, 116, 114 };
+#else
+        private static readonly byte[] SkippedByIntelligentTestRunnerBytes = new byte[] { 179, 116, 101, 115, 116, 46, 115, 107, 105, 112, 112, 101, 100, 95, 98, 121, 95, 105, 116, 114 };
+#endif
         // UnskippableBytes = MessagePack.Serialize("test.itr.unskippable");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> UnskippableBytes => new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
+#else
+        private static readonly byte[] UnskippableBytes = new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
+#endif
         // ForcedRunBytes = MessagePack.Serialize("test.itr.forced_run");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ForcedRunBytes => new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
+#else
+        private static readonly byte[] ForcedRunBytes = new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
+#endif
         // TestIsNewBytes = MessagePack.Serialize("test.is_new");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
+#else
+        private static readonly byte[] TestIsNewBytes = new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
+#endif
         // TestIsRetryBytes = MessagePack.Serialize("test.is_retry");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+#else
+        private static readonly byte[] TestIsRetryBytes = new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+#endif
         // TestRetryReasonBytes = MessagePack.Serialize("test.retry_reason");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestRetryReasonBytes => new byte[] { 177, 116, 101, 115, 116, 46, 114, 101, 116, 114, 121, 95, 114, 101, 97, 115, 111, 110 };
+#else
+        private static readonly byte[] TestRetryReasonBytes = new byte[] { 177, 116, 101, 115, 116, 46, 114, 101, 116, 114, 121, 95, 114, 101, 97, 115, 111, 110 };
+#endif
         // BrowserDriverBytes = MessagePack.Serialize("test.browser.driver");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BrowserDriverBytes => new byte[] { 179, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114 };
+#else
+        private static readonly byte[] BrowserDriverBytes = new byte[] { 179, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114 };
+#endif
         // BrowserDriverVersionBytes = MessagePack.Serialize("test.browser.driver_version");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BrowserDriverVersionBytes => new byte[] { 187, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114, 95, 118, 101, 114, 115, 105, 111, 110 };
+#else
+        private static readonly byte[] BrowserDriverVersionBytes = new byte[] { 187, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114, 95, 118, 101, 114, 115, 105, 111, 110 };
+#endif
         // BrowserNameBytes = MessagePack.Serialize("test.browser.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BrowserNameBytes => new byte[] { 177, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] BrowserNameBytes = new byte[] { 177, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // BrowserVersionBytes = MessagePack.Serialize("test.browser.version");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BrowserVersionBytes => new byte[] { 180, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 118, 101, 114, 115, 105, 111, 110 };
+#else
+        private static readonly byte[] BrowserVersionBytes = new byte[] { 180, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 118, 101, 114, 115, 105, 111, 110 };
+#endif
         // IsRumActiveBytes = MessagePack.Serialize("test.is_rum_active");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsRumActiveBytes => new byte[] { 178, 116, 101, 115, 116, 46, 105, 115, 95, 114, 117, 109, 95, 97, 99, 116, 105, 118, 101 };
+#else
+        private static readonly byte[] IsRumActiveBytes = new byte[] { 178, 116, 101, 115, 116, 46, 105, 115, 95, 114, 117, 109, 95, 97, 99, 116, 105, 118, 101 };
+#endif
         // IsModifiedBytes = MessagePack.Serialize("test.is_modified");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsModifiedBytes => new byte[] { 176, 116, 101, 115, 116, 46, 105, 115, 95, 109, 111, 100, 105, 102, 105, 101, 100 };
+#else
+        private static readonly byte[] IsModifiedBytes = new byte[] { 176, 116, 101, 115, 116, 46, 105, 115, 95, 109, 111, 100, 105, 102, 105, 101, 100 };
+#endif
         // IsQuarantinedBytes = MessagePack.Serialize("test.test_management.is_quarantined");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsQuarantinedBytes => new byte[] { 217, 35, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 113, 117, 97, 114, 97, 110, 116, 105, 110, 101, 100 };
+#else
+        private static readonly byte[] IsQuarantinedBytes = new byte[] { 217, 35, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 113, 117, 97, 114, 97, 110, 116, 105, 110, 101, 100 };
+#endif
         // IsDisabledBytes = MessagePack.Serialize("test.test_management.is_test_disabled");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsDisabledBytes => new byte[] { 217, 37, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 116, 101, 115, 116, 95, 100, 105, 115, 97, 98, 108, 101, 100 };
+#else
+        private static readonly byte[] IsDisabledBytes = new byte[] { 217, 37, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 116, 101, 115, 116, 95, 100, 105, 115, 97, 98, 108, 101, 100 };
+#endif
         // IsAttemptToFixBytes = MessagePack.Serialize("test.test_management.is_attempt_to_fix");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IsAttemptToFixBytes => new byte[] { 217, 38, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+#else
+        private static readonly byte[] IsAttemptToFixBytes = new byte[] { 217, 38, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+#endif
         // HasFailedAllRetriesBytes = MessagePack.Serialize("test.has_failed_all_retries");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HasFailedAllRetriesBytes => new byte[] { 187, 116, 101, 115, 116, 46, 104, 97, 115, 95, 102, 97, 105, 108, 101, 100, 95, 97, 108, 108, 95, 114, 101, 116, 114, 105, 101, 115 };
+#else
+        private static readonly byte[] HasFailedAllRetriesBytes = new byte[] { 187, 116, 101, 115, 116, 46, 104, 97, 115, 95, 102, 97, 105, 108, 101, 100, 95, 97, 108, 108, 95, 114, 101, 116, 114, 105, 101, 115 };
+#endif
         // AttemptToFixPassedBytes = MessagePack.Serialize("test.test_management.attempt_to_fix_passed");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AttemptToFixPassedBytes => new byte[] { 217, 42, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120, 95, 112, 97, 115, 115, 101, 100 };
+#else
+        private static readonly byte[] AttemptToFixPassedBytes = new byte[] { 217, 42, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120, 95, 112, 97, 115, 115, 101, 100 };
+#endif
         // CapabilitiesTestImpactAnalysisBytes = MessagePack.Serialize("_dd.library_capabilities.test_impact_analysis");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesTestImpactAnalysisBytes => new byte[] { 217, 45, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 105, 109, 112, 97, 99, 116, 95, 97, 110, 97, 108, 121, 115, 105, 115 };
+#else
+        private static readonly byte[] CapabilitiesTestImpactAnalysisBytes = new byte[] { 217, 45, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 105, 109, 112, 97, 99, 116, 95, 97, 110, 97, 108, 121, 115, 105, 115 };
+#endif
         // CapabilitiesEarlyFlakeDetectionBytes = MessagePack.Serialize("_dd.library_capabilities.early_flake_detection");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesEarlyFlakeDetectionBytes => new byte[] { 217, 46, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 95, 100, 101, 116, 101, 99, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] CapabilitiesEarlyFlakeDetectionBytes = new byte[] { 217, 46, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 95, 100, 101, 116, 101, 99, 116, 105, 111, 110 };
+#endif
         // CapabilitiesAutoTestRetriesBytes = MessagePack.Serialize("_dd.library_capabilities.auto_test_retries");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesAutoTestRetriesBytes => new byte[] { 217, 42, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 97, 117, 116, 111, 95, 116, 101, 115, 116, 95, 114, 101, 116, 114, 105, 101, 115 };
+#else
+        private static readonly byte[] CapabilitiesAutoTestRetriesBytes = new byte[] { 217, 42, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 97, 117, 116, 111, 95, 116, 101, 115, 116, 95, 114, 101, 116, 114, 105, 101, 115 };
+#endif
         // CapabilitiesTestManagementQuarantineBytes = MessagePack.Serialize("_dd.library_capabilities.test_management.quarantine");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesTestManagementQuarantineBytes => new byte[] { 217, 51, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 113, 117, 97, 114, 97, 110, 116, 105, 110, 101 };
+#else
+        private static readonly byte[] CapabilitiesTestManagementQuarantineBytes = new byte[] { 217, 51, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 113, 117, 97, 114, 97, 110, 116, 105, 110, 101 };
+#endif
         // CapabilitiesTestManagementDisableBytes = MessagePack.Serialize("_dd.library_capabilities.test_management.disable");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesTestManagementDisableBytes => new byte[] { 217, 48, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 100, 105, 115, 97, 98, 108, 101 };
+#else
+        private static readonly byte[] CapabilitiesTestManagementDisableBytes = new byte[] { 217, 48, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 100, 105, 115, 97, 98, 108, 101 };
+#endif
         // CapabilitiesTestManagementAttemptToFixBytes = MessagePack.Serialize("_dd.library_capabilities.test_management.attempt_to_fix");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesTestManagementAttemptToFixBytes => new byte[] { 217, 55, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+#else
+        private static readonly byte[] CapabilitiesTestManagementAttemptToFixBytes = new byte[] { 217, 55, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -108,7 +224,7 @@ namespace Datadog.Trace.Ci.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
     IntegrationName = AwsEventBridgeCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class PutEventsAsyncIntegration
+public sealed class PutEventsAsyncIntegration
 {
     private const string Operation = "PutEvents";
     private const string SpanKind = SpanKinds.Producer;
@@ -63,8 +63,11 @@ public class PutEventsAsyncIntegration
             }
         }
 
-        var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-        ContextPropagation.InjectContext(tracer, request, context);
+        if (scope?.Span.Context is { } context)
+        {
+            var propagationContext = new PropagationContext(context, Baggage.Current);
+            ContextPropagation.InjectContext(tracer, request, propagationContext);
+        }
 
         return new CallTargetState(scope);
     }

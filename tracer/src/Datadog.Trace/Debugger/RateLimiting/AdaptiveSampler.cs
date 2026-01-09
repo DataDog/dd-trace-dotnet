@@ -1,4 +1,4 @@
-// <copyright file="AdaptiveSampler.cs" company="Datadog">
+﻿// <copyright file="AdaptiveSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     /// </summary>
-    internal class AdaptiveSampler : IAdaptiveSampler
+    internal sealed class AdaptiveSampler : IAdaptiveSampler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             };
         }
 
-        private class Counts
+        private sealed class Counts
         {
             private long _testCount;
             private long _sampleCount;
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        internal class State
+        internal sealed class State
         {
             public long TestCount { get; set; }
 

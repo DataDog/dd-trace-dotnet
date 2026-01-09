@@ -58,9 +58,9 @@ internal static class SpanPointers
     }
 
     // DynamoDB hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/DynamoDB/Item/README.md
-    public static void AddDynamoDbSpanPointer(Span span, string tableName, IDynamoDbKeysObject? keys)
+    public static void AddDynamoDbSpanPointer(Span span, string? tableName, IDynamoDbKeysObject? keys)
     {
-        if (keys?.Instance is null || keys.KeyNames is null || !keys.KeyNames.Any())
+        if (keys?.Instance is null || keys.KeyNames is null || !keys.KeyNames.Any() || tableName is null)
         {
             return;
         }

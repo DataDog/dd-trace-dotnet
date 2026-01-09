@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RedisNativeClientSendReceiveIntegration
+    public sealed class RedisNativeClientSendReceiveIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.ServiceStackRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.ServiceStackRedis;

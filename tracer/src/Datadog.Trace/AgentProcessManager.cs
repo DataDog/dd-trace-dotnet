@@ -1,4 +1,4 @@
-// <copyright file="AgentProcessManager.cs" company="Datadog">
+﻿// <copyright file="AgentProcessManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace
     /// <summary>
     /// This class is used to manage agent processes in contexts where the user can not, such as Azure App Services.
     /// </summary>
-    internal class AgentProcessManager
+    internal static class AgentProcessManager
     {
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
@@ -43,7 +43,7 @@ namespace Datadog.Trace
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentProcessManager>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentProcessManager));
 
         internal enum ProcessState
         {
@@ -289,7 +289,7 @@ namespace Datadog.Trace
                 });
         }
 
-        internal class ProcessMetadata
+        internal sealed class ProcessMetadata
         {
             private string _processPath;
 

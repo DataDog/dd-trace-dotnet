@@ -7,6 +7,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -24,14 +25,16 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection().Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope, isError: true);
-            request.Headers.Get("x-datadog-invocation-error").Should().Be("true");
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, true);
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
         }
 
         [Fact]
@@ -40,14 +43,17 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection().Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, isError: false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
         }
 
         [Fact]
@@ -56,26 +62,51 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, isError: false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().Be("1234");
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
         }
 
         [Fact]
         public void TestGetEndInvocationRequestWithoutScope()
         {
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope: null, isError: false);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope: null, state);
+
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, isError: false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().BeNull();
             request.Headers.Get("x-datadog-trace-id").Should().BeNull();
             request.Headers.Get("x-datadog-span-id").Should().BeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
+        }
+
+        [Fact]
+        public async Task TestGetEndInvocationRequestWithoutState()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var stateObject = new CallTargetState(scope, state: null);
+
+            ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, isError: false);
+            request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
+            request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
+            request.Headers.Get("x-datadog-trace-id").Should().Be("1234");
+            request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().BeNull();
         }
 
         [Fact]
@@ -84,6 +115,8 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection().Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             var errorMsg = "Exception";
             var errorType = "Exception";
@@ -97,7 +130,7 @@ namespace Datadog.Trace.Tests
             var expectedErrorStack = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(errorStack));
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope, true);
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, true);
             request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
             request.Headers.Get("x-datadog-invocation-error-msg").Should().Be(expectedErrorMsg);
             request.Headers.Get("x-datadog-invocation-error-type").Should().Be(expectedErrorType);
@@ -106,6 +139,7 @@ namespace Datadog.Trace.Tests
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
         }
 
         [Fact]
@@ -114,9 +148,11 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection().Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-            var request = requestBuilder.GetEndInvocationRequest(scope, true);
+            var request = requestBuilder.GetEndInvocationRequest(stateObject, true);
             request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
             request.Headers.Get("x-datadog-invocation-error-msg").Should().BeNull();
             request.Headers.Get("x-datadog-invocation-error-type").Should().BeNull();
@@ -125,6 +161,7 @@ namespace Datadog.Trace.Tests
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+            request.Headers.Get("lambda-runtime-aws-request-id").Should().Be("example-aws-request-id");
         }
     }
 }

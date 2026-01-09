@@ -9,7 +9,7 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class MetricsTelemetryCollector
+internal sealed partial class MetricsTelemetryCollector
 {
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)

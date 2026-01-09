@@ -86,14 +86,14 @@ namespace Datadog.Trace.IntegrationTests
                 { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
             };
 
-            if (ContainerMetadata.GetContainerId() is { } containerId)
+            if (ContainerMetadata.Instance.ContainerId is { } containerId)
             {
-                allExpected.Add("Datadog-Container-ID", containerId);
+                allExpected.Add(AgentHttpHeaderNames.ContainerId, containerId);
             }
 
-            if (ContainerMetadata.GetEntityId() is { } entityId)
+            if (ContainerMetadata.Instance.EntityId is { } entityId)
             {
-                allExpected.Add("Datadog-Entity-ID", entityId);
+                allExpected.Add(AgentHttpHeaderNames.EntityId, entityId);
             }
 
             if (agentless)
@@ -167,26 +167,25 @@ namespace Datadog.Trace.IntegrationTests
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3",
                     commitSha: "aaaaaaaaaaaaaaaaaa",
-                    repositoryUrl: "https://github.com/myOrg/myRepo"),
+                    repositoryUrl: "https://github.com/myOrg/myRepo",
+                    processTags: "entrypoint.basedir:Users,entrypoint.workdir:Downloads"),
                 host: new HostTelemetryData("SOME_HOST", "Windows", "x64"),
                 payload: null);
 
         private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri, string compressionMethod)
         {
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod),
-                ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, telemetryUri } }));
-            transport.AgentTransport.Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
-            return transport.AgentTransport;
+            var transport = new TelemetryTransportFactory(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
+            transport.AgentTransportFactory.Should().NotBeNull();
+            return transport.AgentTransportFactory!(ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, telemetryUri } }));
         }
 
         private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey, TelemetrySettings.AgentlessSettings.CloudSettings cloudSettings)
         {
             var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey, cloudSettings);
 
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: GzipCompression),
-                new ExporterSettings());
+            var transport = new TelemetryTransportFactory(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: GzipCompression));
 
             transport.AgentlessTransport.Should().NotBeNull().And.BeOfType<AgentlessTelemetryTransport>();
             return transport.AgentlessTransport;
