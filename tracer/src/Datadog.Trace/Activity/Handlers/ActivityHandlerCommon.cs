@@ -47,20 +47,19 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
-            // for non-IW3CActivity interfaces we'll use Activity.Id and string.Empty as the key as they don't have a guaranteed TraceId+SpanId
-            // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
-            // have to also validate that the TraceId and SpanId actually exist and aren't null - as they can be in some cases
+            // for non-W3C activities using Hierarchical IDs (both IW3CActivity and IActivity) we use Activity.Id and string.Empty
+            // for W3C ID activities (always IW3CActivity) we'll use the Activity.TraceId + Activity.SpanId as the key
             ActivityKey? activityKey = null;
 
-            if (activity is IW3CActivity w3cActivity)
+            if (activity is IW3CActivity activity3)
             {
-                var activityTraceId = w3cActivity.TraceId;
-                var activitySpanId = w3cActivity.SpanId;
+                var activityTraceId = activity3.TraceId;
+                var activitySpanId = activity3.SpanId;
 
                 if (!StringUtil.IsNullOrEmpty(activityTraceId))
                 {
                     // W3C ID
-                    if (w3cActivity is { ParentSpanId: { } parentSpanId })
+                    if (activity3 is { ParentSpanId: { } parentSpanId })
                     {
                         // This will be true for activities using W3C IDs which have a parent span.
                         // The ParentSpanId will be created from the Parent if that is set (or parsed out of _parentId if necessary)
@@ -91,7 +90,7 @@ namespace Datadog.Trace.Activity.Handlers
                 else
                 {
                     // No traceID, so much be Hierarchical ID
-                    if (w3cActivity.ParentSpanId is { } parentSpanId)
+                    if (activity3.ParentSpanId is { } parentSpanId)
                     {
                         // This is a weird scenario - we're in a hierarchical ID, we don't have a trace ID, but we _do_ have a _parentSpanID?!
                         // should never hit this path unless we've gone wrong somewhere
@@ -100,7 +99,7 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         // Since _parentSpanID is null, this either grabs _parentId, or Parent.Id, depending on what was set
-                        var parentId = w3cActivity.ParentId;
+                        var parentId = activity3.ParentId;
                         if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
@@ -117,15 +116,15 @@ namespace Datadog.Trace.Activity.Handlers
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
                     // TraceId (always 32 chars long even when using 64-bit ids)
-                    w3cActivity.TraceId = activeSpan.Context.RawTraceId;
-                    activityTraceId = w3cActivity.TraceId;
+                    activity3.TraceId = activeSpan.Context.RawTraceId;
+                    activityTraceId = activity3.TraceId;
 
                     // SpanId (always 16 chars long)
-                    w3cActivity.RawParentSpanId = activeSpan.Context.RawSpanId;
+                    activity3.RawParentSpanId = activeSpan.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
-                    w3cActivity.RawId = null;
-                    w3cActivity.RawParentId = null;
+                    activity3.RawId = null;
+                    activity3.RawParentId = null;
 
                     // Avoid recalculation of the traceId.
                     traceId = activeSpan.TraceId128;
