@@ -38,7 +38,7 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
-        -e CI_IDENTITY_GITLAB_JWT `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e CI_PROJECT_NAME `
         datadog/dd-trace-dotnet-docker-build:ci-identities `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
@@ -52,7 +52,7 @@ build:
     paths:
     - artifacts-out
   id_tokens:
-    CI_IDENTITY_GITLAB_JWT:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
 publish:
@@ -102,7 +102,7 @@ publish:
   variables:
     AWS_SHARED_CREDENTIALS_FILE: ${CI_PROJECT_DIR}\.aws\credentials-by-job-id\${CI_JOB_ID}
   id_tokens:
-    CI_IDENTITY_GITLAB_JWT:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
 
