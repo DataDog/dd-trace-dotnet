@@ -90,13 +90,13 @@ partial class Build
     {
         // See list of certificates
         // in https://datadoghq.atlassian.net/wiki/spaces/SECENG/pages/3217261499/Certificates+for+Windows+Code+Signing
-        List<string> expectedCertificateThumbprints =
-        [
+        var expectedCertificateThumbprints = new []
+        {
             "A0FB7BEE153FE31431062731306903B3A5CB1824",
             // TODO remove this one when the new certificate is deployed;
             // see https://github.com/DataDog/windows-code-signing-cert/blob/main/current-certs.toml
             "59063C826DAA5B628B5CE8A2B32015019F164BF0",
-        ];
+        };
 
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
