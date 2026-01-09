@@ -408,6 +408,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_transport");
                     writer.WriteValue(exporterSettings.TracesTransport.ToString());
 
+                    writer.WritePropertyName("traces_exporter");
+                    writer.WriteValue(exporterSettings.TracesExporter);
+
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
 

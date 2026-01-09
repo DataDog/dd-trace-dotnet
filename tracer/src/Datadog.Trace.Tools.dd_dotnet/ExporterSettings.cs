@@ -41,6 +41,7 @@ public partial class ExporterSettings
     public ExporterSettings(IConfigurationSource? configuration, Func<string, bool> fileExists)
     {
         _fileExists = fileExists;
+        var tracesExporter = GetValue(configuration, ConfigurationKeys.OpenTelemetry.TracesExporter) ?? "datadog";
         var agentUri = GetValue(configuration, ConfigurationKeys.AgentUri);
         var tracePipeName = GetValue(configuration, ConfigurationKeys.TracesPipeName);
         var agentHost = GetValue(configuration, ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME");
@@ -49,7 +50,7 @@ public partial class ExporterSettings
 
         int? agentPort = int.TryParse(agentPortStr, out var port) ? port : null;
 
-        var traceSettings = GetTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
+        var traceSettings = GetTraceTransport(tracesExporter, agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
         TracesTransport = traceSettings.Transport;
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;
@@ -63,7 +64,7 @@ public partial class ExporterSettings
     public ExporterSettings(string agentUri)
     {
         _fileExists = File.Exists;
-        var traceSettings = GetTraceTransport(agentUri, null, null, null, null);
+        var traceSettings = GetTraceTransport("datadog", agentUri, null, null, null, null);
         TracesTransport = traceSettings.Transport;
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;

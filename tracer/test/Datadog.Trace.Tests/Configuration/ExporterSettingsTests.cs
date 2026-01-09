@@ -294,6 +294,15 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settingsFromSource, hostname: "someotherhost");
         }
 
+        [Fact]
+        public void TracesExporter()
+        {
+            var param = "console";
+            var settingsFromSource = Setup("OTEL_TRACES_EXPORTER", param);
+
+            settingsFromSource.TracesExporter.Should().Be(param);
+        }
+
         [Theory]
         [InlineData(null, null, null)]
         [InlineData("http://someUrl", null, null)]

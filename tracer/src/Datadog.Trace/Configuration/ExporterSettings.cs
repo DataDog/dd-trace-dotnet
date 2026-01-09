@@ -1,4 +1,4 @@
-﻿// <copyright file="ExporterSettings.cs" company="Datadog">
+// <copyright file="ExporterSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -88,12 +88,14 @@ namespace Datadog.Trace.Configuration
             ValidationWarnings = new List<string>();
 
             var traceSettings = GetTraceTransport(
+                tracesExporter: rawSettings.TracesExporter,
                 agentUri: rawSettings.TraceAgentUri,
                 tracesPipeName: rawSettings.TracesPipeName,
                 agentHost: rawSettings.TraceAgentHost,
                 agentPort: rawSettings.TraceAgentPort,
                 tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
+            TracesExporter = traceSettings.Exporter;
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
@@ -182,6 +184,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; }
+
+        /// <summary>
+        /// Gets the exporter used to send traces.
+        /// Default is <c>"datadog"</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
+        public string TracesExporter { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.
@@ -431,6 +440,9 @@ namespace Datadog.Trace.Configuration
             {
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
+
+                TracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString("datadog");
+
                 // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
                 TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
@@ -454,6 +466,13 @@ namespace Datadog.Trace.Configuration
                                      .AsInt32(500, value => value > 0)
                                      .Value;
             }
+
+            /// <summary>
+            /// Gets the exporter used to send traces.
+            /// Default is <c>"datadog"</c>.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
+            public string TracesExporter { get; }
 
             /// <summary>
             /// Gets the Uri where the Tracer can connect to the Agent.

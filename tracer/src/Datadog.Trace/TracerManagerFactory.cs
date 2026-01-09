@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Exporter;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
@@ -274,6 +275,11 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
+            if (settings.Manager.InitialExporterSettings.TracesExporter == "console")
+            {
+                return new ConsoleExporter();
+            }
+
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
                            ? traceExporter
