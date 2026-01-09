@@ -93,6 +93,7 @@ internal abstract class LambdaCommon
         {
             span.SetException(exception);
         }
+
         scope?.Dispose();
 
         try
