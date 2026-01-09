@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.TestHelpers.TransportHelpers;
 
@@ -60,6 +61,18 @@ internal class TestApiRequest : IApiRequest
         var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
         Responses.Add(response);
         ContentType = contentType;
+
+        return Task.FromResult((IApiResponse)response);
+    }
+
+    public virtual Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+        => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
+
+    public virtual Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+    {
+        var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
+        Responses.Add(response);
+        ContentType = MimeTypes.Json;
 
         return Task.FromResult((IApiResponse)response);
     }

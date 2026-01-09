@@ -868,6 +868,11 @@
         "A"
       ]
     },
+    "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_SERVICE": {
       "version": [
         "A"
