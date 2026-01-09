@@ -71,7 +71,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             }
 
             skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
-            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built.");
+            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
             return skippableTestsBySuiteAndName;
         }
     }

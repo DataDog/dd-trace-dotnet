@@ -6,6 +6,8 @@
 #nullable enable
 using System;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -17,14 +19,23 @@ namespace Datadog.Trace.Ci.Net;
 internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FileTestOptimizationClient));
+    private static readonly SHA256 Hasher = SHA256.Create();
     private readonly ITestOptimizationClient _testOptimizationClient;
     private readonly string _cacheFolder;
 
     internal FileTestOptimizationClient(ITestOptimizationClient testOptimizationClient, ITestOptimization testOptimization)
     {
         _testOptimizationClient = testOptimizationClient;
+        var values = testOptimization.CIValues;
+        var salt = values.Branch + values.Commit + values.WorkspacePath + testOptimization.Settings.TestSessionName;
+        lock (Hasher)
+        {
+            var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(salt));
+            salt = BitConverter.ToString(hash).ToLowerInvariant();
+        }
+
         var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-        var cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, "http");
+        var cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, salt, "http");
         if (!Directory.Exists(cacheFolder))
         {
             Directory.CreateDirectory(cacheFolder);
@@ -123,7 +134,6 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     private bool TryReadPayload<T>(string name, [NotNullWhen(true)] out T? payload)
     {
-        /*
         try
         {
             var file = Path.Combine(_cacheFolder, name);
@@ -139,7 +149,6 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         {
             Log.Error(ex, "FileTestOptimizationClient: error on TryReadPayload.");
         }
-        */
 
         payload = default;
         return false;
