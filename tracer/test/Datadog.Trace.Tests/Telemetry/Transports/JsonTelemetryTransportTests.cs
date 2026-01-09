@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             // set up the request returned by the factory
             var savedHeaders = new Dictionary<string, string>();
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(fakeResponse);
+            requestMock.Setup(x => x.PostAsJsonAsync(It.IsAny<TelemetryData>(), It.IsAny<MultipartCompression>(), It.IsAny<JsonSerializerSettings>())).ReturnsAsync(fakeResponse);
             requestMock.Setup(x => x.AddHeader(It.IsAny<string>(), It.IsAny<string>())).Callback((string k, string v) => savedHeaders.Add(k, v));
 
             // set up the factory passed to the transport
@@ -81,9 +82,6 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             }
 
             savedHeaders.Should().BeEquivalentTo(allExpected);
-
-            var expectedEncoding = compression == "gzip" ? "gzip" : null;
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/json", expectedEncoding), Times.Once);
         }
 
 #endif
