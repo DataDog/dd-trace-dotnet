@@ -25,7 +25,7 @@ Exporter::Exporter(std::unique_ptr<AgentProxy> agentProxy, std::unique_ptr<FileS
 
 Exporter::~Exporter() = default;
 
-libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
+libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info, std::string processTags)
 {
     auto s = ddog_prof_Profile_serialize(*profile->_impl, nullptr, nullptr);
 
@@ -45,7 +45,7 @@ libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std:
     }
 
     assert(_agentProxy != nullptr);
-    return _agentProxy->Send(ep, std::move(tags), std::move(files), std::move(metadata), std::move(info));
+    return _agentProxy->Send(ep, std::move(tags), std::move(files), std::move(metadata), std::move(info), std::move(processTags));
 }
 
 } // namespace libdatadog
