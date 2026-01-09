@@ -353,7 +353,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.response.status_code")
                 .IsOptional("cosmosdb.response.sub_status_code")
                 .IsOptional("cosmosdb.connection.mode")
-                .IsOptional("user_agent.original")
+                .IsOptional("http.useragent")
                 .IsOptional("_dd.base_service")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
