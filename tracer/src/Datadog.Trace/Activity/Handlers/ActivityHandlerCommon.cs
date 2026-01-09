@@ -57,45 +57,54 @@ namespace Datadog.Trace.Activity.Handlers
                 var activityTraceId = w3cActivity.TraceId;
                 var activitySpanId = w3cActivity.SpanId;
 
-                // If the user has specified a parent context, get the parent Datadog SpanContext
-                // We avoid calling ParentId until we know we need it, as that will perform an expensive allocation
-                // Instead, we use ParentSpanId (which looks at the private string property) and Parent (which is a linked object).
-                // If either of these are non-null, then we have a parent
-                if (!StringUtil.IsNullOrEmpty(activityTraceId) && w3cActivity is { ParentSpanId: { } parentSpanId })
+                if (!StringUtil.IsNullOrEmpty(activityTraceId))
                 {
-                    // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
-                    // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
-                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
-                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
-                    if (ActivityMappingById.TryGetValue(new ActivityKey(activityTraceId, parentSpanId), out ActivityMapping mapping))
+                    // W3C ID
+                    if (w3cActivity is { ParentSpanId: { } parentSpanId })
                     {
-                        parent = mapping.Scope.Span.Context;
+                        // This will be true for activities using W3C IDs which have a parent span.
+                        // The ParentSpanId will be created from the Parent if that is set (or parsed out of _parentId if necessary)
+                        //
+                        // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
+                        // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
+                        // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
+                        // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
+                        if (ActivityMappingById.TryGetValue(new ActivityKey(activityTraceId, parentSpanId), out ActivityMapping mapping))
+                        {
+                            parent = mapping.Scope.Span.Context;
+                        }
+                        else
+                        {
+                            // create a new parent span context for the ActivityContext
+                            _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
+                            _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
+
+                            parent = Tracer.Instance.CreateSpanContext(
+                                SpanContext.None,
+                                traceId: newActivityTraceId,
+                                spanId: newActivitySpanId,
+                                rawTraceId: activityTraceId,
+                                rawSpanId: parentSpanId);
+                        }
+                    }
+                }
+                else
+                {
+                    // No traceID, so much be Hierarchical ID
+                    if (w3cActivity.ParentSpanId is { } parentSpanId)
+                    {
+                        // This is a weird scenario - we're in a hierarchical ID, we don't have a trace ID, but we _do_ have a _parentSpanID?!
+                        // should never hit this path unless we've gone wrong somewhere
+                        Log.Error("Activity with ID {ActivityId} had parent span ID {ParentSpanId} but TraceID was missing", activity.Id, parentSpanId);
                     }
                     else
                     {
-                        // create a new parent span context for the ActivityContext
-                        _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
-                        _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
-
-                        parent = Tracer.Instance.CreateSpanContext(
-                            SpanContext.None,
-                            traceId: newActivityTraceId,
-                            spanId: newActivitySpanId,
-                            rawTraceId: activityTraceId,
-                            rawSpanId: parentSpanId);
-                    }
-                }
-                else if ((string.IsNullOrEmpty(activityTraceId) && w3cActivity is { ParentSpanId: not null })
-                      || w3cActivity is { Parent: not null })
-                {
-                    // We know we have a parent context, but also that the traceID is (weirdly) null, so we fallback
-                    // to calling ParentId (which allocates) instead.
-                    var parentId = w3cActivity.ParentId;
-
-                    // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
-                    if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
-                    {
-                        parent = mapping.Scope.Span.Context;
+                        // Since _parentSpanID is null, this either grabs _parentId, or Parent.Id, depending on what was set
+                        var parentId = w3cActivity.ParentId;
+                        if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
+                        {
+                            parent = mapping.Scope.Span.Context;
+                        }
                     }
                 }
 
@@ -112,7 +121,7 @@ namespace Datadog.Trace.Activity.Handlers
                     activityTraceId = w3cActivity.TraceId;
 
                     // SpanId (always 16 chars long)
-                    w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
+                    w3cActivity.RawParentSpanId = activeSpan.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;
@@ -136,6 +145,15 @@ namespace Datadog.Trace.Activity.Handlers
                     rawTraceId = activityTraceId;
                     rawSpanId = activitySpanId;
                     activityKey = new(traceId: activityTraceId, spanId: activitySpanId);
+                }
+            }
+            else
+            {
+                // non-IW3CActivity, i.e. we're in .NET Core 2.x territory. Only have hierarchical IDs to worry about here
+                var parentId = activity.ParentId;
+                if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
+                {
+                    parent = mapping.Scope.Span.Context;
                 }
             }
 

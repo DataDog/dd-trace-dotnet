@@ -20,8 +20,14 @@ namespace Datadog.Trace.Activity.DuckTypes
         [DuckField(Name = "_spanId")]
         string? SpanId { get; set; }
 
+        /// <summary>
+        /// Gets the ParentSpanId or creates it if Parent is non-null.
+        /// Only applies to W3C IDs, always null for hierarchical IDs
+        /// </summary>
+        string? ParentSpanId { get; }
+
         [DuckField(Name = "_parentSpanId")]
-        string? ParentSpanId { get; set; }
+        string? RawParentSpanId { get; set; }
 
         [DuckField(Name = "_id")]
         string? RawId { get; set; }
