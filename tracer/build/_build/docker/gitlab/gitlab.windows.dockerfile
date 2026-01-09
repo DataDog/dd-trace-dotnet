@@ -44,8 +44,8 @@ RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha5
 COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0.2.0-windows-amd64 C:/ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
 
 # Java and code signing tool environment variables
-ENV JAVA_VERSION "17.0.8"
-ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
+ENV JAVA_VERSION "25.0.1"
+ENV JAVA_SHA256 "d56bed274adb2b16deea2dce3f21718d1b0dcdbe2253bc5cc332b525cbcd1fd1"
 
 # Install JAVA
 COPY helpers.ps1 install_java.ps1 ./
