@@ -15,7 +15,6 @@
 #include <windows.h>
 #else
 #include "cgroup.h"
-#include <libunwind.h>
 #include <signal.h>
 #endif
 
@@ -807,7 +806,8 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
             config.runtimeId,
             config.serviceName ? config.serviceName : std::string(),
             config.environment ? config.environment : std::string(),
-            config.version ? config.version : std::string());
+            config.version ? config.version : std::string(),
+            config.processTags ? config.processTags : std::string());
     }
     else
     {
@@ -2089,14 +2089,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // When calling uwn_backtraceXX, libunwind will initialize data structures for the current
-    // thread using TLS (Thread Local Storage).
+    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure 
+    // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
+    // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
     // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
+    Backtrace2Unwinder bt2;
     uintptr_t tab[1];
-    unw_backtrace((void**)tab, 1);
+    bt2.Unwind(nullptr, tab, 1);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
