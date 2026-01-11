@@ -122,7 +122,7 @@ namespace Datadog.Trace.Activity.Handlers
                     // SpanId (always 16 chars long)
                     activity3.RawParentSpanId = activeSpan.Context.RawSpanId;
 
-                    // We clear internals Id and ParentId values to force recalculation.
+                    // We clear internal IDs to force recalculation.
                     activity3.RawId = null;
                     activity3.RawParentId = null;
 
