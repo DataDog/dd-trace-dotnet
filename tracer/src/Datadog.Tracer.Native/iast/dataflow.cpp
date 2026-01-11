@@ -158,10 +158,8 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(ICorProfilerInfo* profiler, 
-                   std::shared_ptr<RejitHandler> rejitHandler,
-                   std::vector<ModuleID> moduleIds, 
-                   const RuntimeInformation& runtimeInfo) :
+Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
+                   std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
     m_runtimeType = runtimeInfo.runtime_type;
@@ -171,17 +169,21 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler,
     this->_setILOnJit = trace::IsEditAndContinueEnabled();
     if (this->_setILOnJit)
     {
-        trace::Logger::Info("Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
+        trace::Logger::Info(
+            "Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
     }
 
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (FAILED(hr))
     {
         _profiler = nullptr;
-        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
+        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. "
+                             "Disabling Dataflow. HRESULT : ",
+                             Hex(hr));
     }
 
     _preLoadedModuleIds = moduleIds;
+}
 
 Dataflow::~Dataflow()
 {
@@ -382,8 +384,6 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    ENTER_FUNC
-
     // Retrieve all already modules at once to mimic initialization from creation behavior
     if (_preLoadedModuleIds.size() > 0)
     {
