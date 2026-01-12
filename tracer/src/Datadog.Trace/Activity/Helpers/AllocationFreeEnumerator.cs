@@ -5,7 +5,7 @@
 
 #nullable enable
 
-// Thus is based on code from
+// This is based on code from
 // https://github.com/open-telemetry/opentelemetry-dotnet/blob/73bff75ef653f81fe6877299435b21131be36dc0/src/OpenTelemetry/Internal/EnumerationHelper.cs#L96
 // and
 // https://github.com/Macross-Software/core/blob/a4ed6770099826af3cbfd07d1442af68bc664526/ClassLibraries/Macross.Performance.Extensions/Code/StructEnumerator.cs
