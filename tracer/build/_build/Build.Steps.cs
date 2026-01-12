@@ -1802,7 +1802,7 @@ partial class Build
                 var parallelJobs = ParallelIntegrationTests
                    .Where(project => project.Name switch
                     {
-                        "Datadog.FleetInstaller.IntegrationTests" => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
+                        Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
                         _ => true,
                     });
 
@@ -2108,6 +2108,7 @@ partial class Build
                 TracerDirectory
                    .GlobFiles("test/*.IntegrationTests/*.csproj")
                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+                   .Where(path => !((string)path).Contains(Projects.FleetInstallerTests))
                    .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
 
             DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
