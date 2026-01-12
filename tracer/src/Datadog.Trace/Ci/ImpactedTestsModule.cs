@@ -60,7 +60,7 @@ internal sealed class ImpactedTestsModule
         // Check if the base commit SHA is available
         if (!string.IsNullOrEmpty(baseCommitSha))
         {
-            Log.Debug("ImpactedTestsModule: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
+            Log.Debug("ImpactedTestsModule.CreateInstance: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
             // Retrieve diff files and lines from Git Diff CLI
             try
             {
@@ -75,15 +75,13 @@ internal sealed class ImpactedTestsModule
         // We don't have any modified files, let's try to calculate the PR base commit
         if (modifiedFiles.Length == 0)
         {
-            // Retrieve diff files from Backend
-
             // set the new base commit SHA
             baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch, environmentValues);
 
             // First, we try to use the calculated base commit SHA for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
             {
-                Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
+                Log.Debug("ImpactedTestsModule.CreateInstance: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
                 // Retrieve diff files and lines from Git Diff CLI but with the calculated base commit (always try the maximum accuracy)
                 try
                 {
@@ -98,9 +96,10 @@ internal sealed class ImpactedTestsModule
 
         if (modifiedFiles.Length == 0)
         {
-            Log.Information("ImpactedTestsModule: No modified files found.");
+            Log.Information("ImpactedTestsModule.CreateInstance: No modified files found.");
         }
 
+        Log.Debug<string, string, int>("ImpactedTestsModule.CreateInstance: Created with BaseCommit {BaseCommit}, CurrentCommit {CurrentCommit}, ModifiedFilesCount {ModifiedFilesCount}", baseCommitSha, currentCommitSha, modifiedFiles.Length);
         return new ImpactedTestsModule(baseCommitSha, currentCommitSha, modifiedFiles);
     }
 
@@ -125,7 +124,7 @@ internal sealed class ImpactedTestsModule
         try
         {
             var tags = test.GetTags();
-            Log.Debug("ImpactedTestsModule: Impacted Tests Detection is enabled for {TestName}  - {FileName} {From}..{To} ", test.Name, tags.SourceFile, tags.SourceStart, tags.SourceEnd);
+            Log.Debug("ImpactedTestsModule.Analyze: Impacted Tests Detection is enabled for {TestName}  - {FileName} {From}..{To} ", test.Name, tags.SourceFile, tags.SourceStart, tags.SourceEnd);
             var modified = false;
             var testFiles = GetTestCoverage(tags);
 
@@ -142,10 +141,10 @@ internal sealed class ImpactedTestsModule
                     continue;
                 }
 
-                Log.Debug("ImpactedTestsModule: DiffFile found {File} ...", modifiedFile.Path);
+                Log.Debug("ImpactedTestsModule.Analyze: DiffFile found {File} ...", modifiedFile.Path);
                 if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
                 {
-                    Log.Debug("ImpactedTestsModule:   No line info");
+                    Log.Debug("ImpactedTestsModule.Analyze:   No line info");
                     modified = true;
                     break;
                 }
@@ -154,7 +153,7 @@ internal sealed class ImpactedTestsModule
                 var modifiedFileBitmap = new FileBitmap(modifiedFile.ExecutedBitmap);
                 if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
                 {
-                    Log.Debug("ImpactedTestsModule:   Intersecting lines. Marking test {TestName} as modified.", test.Name);
+                    Log.Debug("ImpactedTestsModule.Analyze:   Intersecting lines. Marking test {TestName} as modified.", test.Name);
                     modified = true;
                     break;
                 }
@@ -162,13 +161,14 @@ internal sealed class ImpactedTestsModule
 
             if (modified)
             {
+                Log.Debug("ImpactedTestsModule.Analyze: Impacted Tests detected. Marking test {TestName} as modified (test.is_modified=true).", test.Name);
                 tags.IsModified = "true";
                 TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
             }
         }
         catch (Exception err)
         {
-            Log.Error(err, "ImpactedTestsModule: Error analyzing Impacted Tests for {TestName}", test.Name);
+            Log.Error(err, "ImpactedTestsModule.Analyze: Error analyzing Impacted Tests for {TestName}", test.Name);
         }
     }
 
@@ -181,7 +181,7 @@ internal sealed class ImpactedTestsModule
     {
         if (string.IsNullOrEmpty(tags.SourceFile))
         {
-            Log.Information("ImpactedTestsModule: No test definition file found for {TestName}", tags.Name);
+            Log.Information("ImpactedTestsModule.GetTestCoverage: No test definition file found for {TestName}", tags.Name);
             return [];
         }
 
@@ -191,13 +191,13 @@ internal sealed class ImpactedTestsModule
         // Milestone 1.5 : Return the test definition lines
         if (tags.SourceStart is null or 0 || tags.SourceEnd is null or 0)
         {
-            Log.Debug("ImpactedTestsModule: TestCoverage for {TestFile}", tags.SourceFile);
+            Log.Debug("ImpactedTestsModule.GetTestCoverage: TestCoverage for {TestFile}", tags.SourceFile);
             return [file];
         }
 
         var executedBitmap = FileBitmap.FromActiveRange((int)tags.SourceStart, (int)tags.SourceEnd);
         file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
-        Log.Debug<string?, int, int>("ImpactedTestsModule: TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
+        Log.Debug<string?, int, int>("ImpactedTestsModule.GetTestCoverage: TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
         return [file];
     }
 

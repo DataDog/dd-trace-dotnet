@@ -21,28 +21,55 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// </summary>
 internal sealed class ManualParserGitInfoProvider : GitInfoProvider
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ManualParserGitInfoProvider));
+
     private ManualParserGitInfoProvider()
     {
     }
 
     public static IGitInfoProvider Instance { get; } = new ManualParserGitInfoProvider();
 
-    protected override bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
+    public override bool TryGetFrom(FileSystemInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
         if (gitDirectory == null)
         {
+            Log.Warning("ManualParserGitInfoProvider: gitDirectory is null, cannot load git information.");
             gitInfo = null;
             return false;
         }
 
         var tempGitInfo = new GitInfo();
 
+        string headDirectoryPath;
+        string gitDirectoryPath;
+        string sourceRoot;
+        if (gitDirectory is GitInfo.WorkTreeDirectoryInfo { GitDirectory: { } } wInfo)
+        {
+            headDirectoryPath = wInfo.WorkTreeGitDirectory.FullName;
+            gitDirectoryPath = wInfo.GitDirectory.FullName;
+            sourceRoot = wInfo.WorkTreeDirectory.FullName;
+            Log.Information("ManualParserGitInfoProvider: Using work tree directory {SourceRoot} with head path: {HeadPath} and git directory {GitDirectory}", sourceRoot, headDirectoryPath, gitDirectoryPath);
+        }
+        else if (gitDirectory is DirectoryInfo { Parent: { } } dInfo)
+        {
+            headDirectoryPath = dInfo.FullName;
+            gitDirectoryPath = dInfo.FullName;
+            sourceRoot = dInfo.Parent.FullName;
+            Log.Information("ManualParserGitInfoProvider: Using directory {SourceRoot} with head path: {HeadPath} and git directory {GitDirectory}", sourceRoot, headDirectoryPath, gitDirectoryPath);
+        }
+        else
+        {
+            Log.Warning("ManualParserGitInfoProvider: gitDirectory is not a valid DirectoryInfo or WorkTreeDirectoryInfo. Git directory: {GitDirectory}", gitDirectory.FullName);
+            gitInfo = null;
+            return false;
+        }
+
         try
         {
-            tempGitInfo.SourceRoot = gitDirectory.Parent?.FullName;
+            tempGitInfo.SourceRoot = sourceRoot;
 
             // Get Git commit
-            var headPath = Path.Combine(gitDirectory.FullName, "HEAD");
+            var headPath = Path.Combine(headDirectoryPath, "HEAD");
             if (File.Exists(headPath))
             {
                 var head = File.ReadAllText(headPath).Trim();
@@ -52,8 +79,8 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
                 {
                     tempGitInfo.Branch = head.Substring(4).Trim();
 
-                    var refPath = Path.Combine(gitDirectory.FullName, tempGitInfo.Branch);
-                    var infoRefPath = Path.Combine(gitDirectory.FullName, "info", "refs");
+                    var refPath = Path.Combine(gitDirectoryPath, tempGitInfo.Branch);
+                    var infoRefPath = Path.Combine(gitDirectoryPath, "info", "refs");
 
                     if (File.Exists(refPath))
                     {
@@ -82,13 +109,13 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             }
             else
             {
-                tempGitInfo.Errors.Add($"HEAD file not found in the git directory: {headPath}");
+                Log.Warning("ManualParserGitInfoProvider: HEAD file not found in the git directory: {HeadPath}", headPath);
                 gitInfo = null;
                 return false;
             }
 
             // Process Git Config
-            var configPath = Path.Combine(gitDirectory.FullName, "config");
+            var configPath = Path.Combine(gitDirectoryPath, "config");
             var lstConfigs = GetConfigItems(configPath);
             if (lstConfigs is { Count: > 0 })
             {
@@ -113,7 +140,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             {
                 var folder = tempGitInfo.Commit!.Substring(0, 2);
                 var file = tempGitInfo.Commit!.Substring(2);
-                var objectFilePath = Path.Combine(gitDirectory.FullName, "objects", folder, file);
+                var objectFilePath = Path.Combine(gitDirectoryPath, "objects", folder, file);
                 if (File.Exists(objectFilePath))
                 {
                     // Load and parse object file
@@ -131,7 +158,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
                 else
                 {
                     // Search git object file from the pack files
-                    var packFolder = Path.Combine(gitDirectory.FullName, "objects", "pack");
+                    var packFolder = Path.Combine(gitDirectoryPath, "objects", "pack");
                     var files = Directory.GetFiles(packFolder, "*.idx", SearchOption.TopDirectoryOnly);
                     foreach (var idxFile in files)
                     {
@@ -155,7 +182,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
         }
         catch (Exception ex)
         {
-            tempGitInfo.Errors.Add($"GitInfo: Error loading git information from directory: {ex}");
+            Log.Warning(ex, "ManualParserGitInfoProvider: Error loading git information from directory {GitDirectory}", gitDirectoryPath);
             gitInfo = null;
             return false;
         }
