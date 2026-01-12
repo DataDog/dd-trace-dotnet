@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.31903.286
@@ -627,7 +627,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MassTransit", "Samples.MassTransit\Samples.MassTransit.csproj", "{538D208F-AB3D-4A23-AA59-24399B842037}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MassTransit", "tracer\test\test-applications\integrations\Samples.MassTransit\Samples.MassTransit.csproj", "{538D208F-AB3D-4A23-AA59-24399B842037}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MassTransit7", "tracer\test\test-applications\integrations\Samples.MassTransit7\Samples.MassTransit7.csproj", "{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1517,6 +1519,10 @@ Global
 		{538D208F-AB3D-4A23-AA59-24399B842037}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{538D208F-AB3D-4A23-AA59-24399B842037}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{538D208F-AB3D-4A23-AA59-24399B842037}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1765,6 +1771,7 @@ Global
 		{C770F9F8-0430-587D-EB7A-8BEC2FE9B61C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{538D208F-AB3D-4A23-AA59-24399B842037} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

@@ -9508,6 +9508,156 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.IConsumer`1",
+    "TargetMethodName": "Consume",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "MassTransit.ConsumeContext`1"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ConsumeIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.IPublishEndpoint",
+    "TargetMethodName": "Publish",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Object",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.BusPublishObjectIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.IPublishEndpoint",
+    "TargetMethodName": "Publish",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Object",
+      "System.Type",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.BusPublishObjectTypeIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.ISendEndpoint",
+    "TargetMethodName": "Send",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Object",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointSendIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.MassTransitBus",
+    "TargetMethodName": "MassTransit.IPublishEndpoint.Publish",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "_",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.IPublishEndpointPublishIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.Pipeline.Filters.ConsumerMessageFilter`2",
+    "TargetMethodName": "GreenPipes.IFilter<MassTransit.ConsumeContext<TMessage>>.Send",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "_",
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver",
     "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",

@@ -1,0 +1,35 @@
+// <copyright file="MassTransitConstants.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using Datadog.Trace.Configuration;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
+{
+    internal static class MassTransitConstants
+    {
+        internal const string IntegrationName = nameof(IntegrationId.MassTransit);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.MassTransit;
+
+        internal const string MessagingType = "masstransit";
+
+        internal const string OperationPublish = "publish";
+        internal const string OperationSend = "send";
+        internal const string OperationReceive = "receive";
+        internal const string OperationProcess = "process";
+
+        // Assembly and type names
+        internal const string MassTransitAssembly = "MassTransit";
+        internal const string IBusTypeName = "MassTransit.IBus";
+        internal const string MassTransitBusTypeName = "MassTransit.MassTransitBus";
+        internal const string IPublishEndpointTypeName = "MassTransit.IPublishEndpoint";
+        internal const string ISendEndpointTypeName = "MassTransit.ISendEndpoint";
+        internal const string IConsumeContextTypeName = "MassTransit.ConsumeContext`1";
+        internal const string IConsumerTypeName = "MassTransit.IConsumer`1";
+        internal const string IRequestClientTypeName = "MassTransit.IRequestClient`1";
+        internal const string PublishContextTypeName = "MassTransit.PublishContext`1";
+        internal const string SendContextTypeName = "MassTransit.SendContext`1";
+        internal const string HeadersTypeName = "MassTransit.Headers";
+    }
+}
