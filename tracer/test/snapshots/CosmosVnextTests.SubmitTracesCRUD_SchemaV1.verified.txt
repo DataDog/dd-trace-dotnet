@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: cosmosdb.query,
     Resource: Create //dbs/,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -14,10 +14,13 @@
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -31,7 +34,7 @@
     SpanId: Id_4,
     Name: cosmosdb.query,
     Resource: Create dbs/db,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -41,10 +44,13 @@
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -58,7 +64,7 @@
     SpanId: Id_6,
     Name: cosmosdb.query,
     Resource: Create dbs/db/colls/items,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -70,10 +76,13 @@
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -86,23 +95,24 @@
     TraceId: Id_7,
     SpanId: Id_8,
     Name: cosmosdb.query,
-    Resource: Create dbs/db/colls/items,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Resource: Delete dbs/db,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
       cosmosdb.connection.mode: gateway,
-      cosmosdb.container: items,
-      db.name: db,
-      db.response.status_code: 201,
+      db.response.status_code: 204,
       db.type: cosmosdb,
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -115,21 +125,26 @@
     TraceId: Id_9,
     SpanId: Id_10,
     Name: cosmosdb.query,
-    Resource: Delete dbs/db,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Resource: Delete dbs/db/colls/items/docs/TestFamily.1,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
       cosmosdb.connection.mode: gateway,
+      cosmosdb.container: items,
+      db.name: db,
       db.response.status_code: 204,
       db.type: cosmosdb,
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -143,7 +158,7 @@
     SpanId: Id_12,
     Name: cosmosdb.query,
     Resource: Read dbs/db,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -153,10 +168,13 @@
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -170,7 +188,7 @@
     SpanId: Id_14,
     Name: cosmosdb.query,
     Resource: Read dbs/db/colls/items,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
@@ -180,10 +198,13 @@
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: cosmosdb-emulator,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -196,23 +217,26 @@
     TraceId: Id_15,
     SpanId: Id_16,
     Name: cosmosdb.query,
-    Resource: Read dbs/db/colls/items/docs/Andersen.1,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Resource: Read dbs/db/colls/items/docs/TestFamily.1,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
       cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
-      db.response.status_code: 404,
+      db.response.status_code: 200,
       db.type: cosmosdb,
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -225,127 +249,26 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: cosmosdb.query,
-    Resource: Read dbs/db/colls/items/docs/Wakefield.7,
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
+    Resource: Replace dbs/db/colls/items/docs/TestFamily.1,
+    Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
       component: CosmosDb,
       cosmosdb.connection.mode: gateway,
       cosmosdb.container: items,
       db.name: db,
-      db.response.status_code: 404,
+      db.response.status_code: 200,
       db.type: cosmosdb,
       env: integration_tests,
       http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|,
       language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
+      out.host: cosmosdb-emulator,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_20,
-    Name: cosmosdb.query,
-    Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
-    Type: sql,
-    Tags: {
-      component: CosmosDb,
-      cosmosdb.container: items,
-      db.name: db,
-      db.type: cosmosdb,
-      env: integration_tests,
-      language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_21,
-    SpanId: Id_22,
-    Name: cosmosdb.query,
-    Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
-    Type: sql,
-    Tags: {
-      component: CosmosDb,
-      cosmosdb.container: items,
-      db.name: db,
-      db.type: cosmosdb,
-      env: integration_tests,
-      language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_23,
-    SpanId: Id_24,
-    Name: cosmosdb.query,
-    Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
-    Type: sql,
-    Tags: {
-      component: CosmosDb,
-      cosmosdb.container: items,
-      db.name: db,
-      db.type: cosmosdb,
-      env: integration_tests,
-      language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_25,
-    SpanId: Id_26,
-    Name: cosmosdb.query,
-    Resource: SELECT * FROM c WHERE c.LastName = 'Andersen',
-    Service: Samples.CosmosDb.Vnext-cosmosdb,
-    Type: sql,
-    Tags: {
-      component: CosmosDb,
-      cosmosdb.container: items,
-      db.name: db,
-      db.type: cosmosdb,
-      env: integration_tests,
-      language: dotnet,
-      out.host: https://cosmosdb-emulator:8081/,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
