@@ -59,7 +59,7 @@ namespace Datadog.Trace.Activity.Handlers
                 if (!StringUtil.IsNullOrEmpty(activityTraceId))
                 {
                     // W3C ID
-                    if (activity3 is { ParentSpanId: { } parentSpanId })
+                    if (activity3 is { ParentSpanId.SpanId: { } parentSpanId })
                     {
                         // This will be true for activities using W3C IDs which have a parent span.
                         // The ParentSpanId will be created from the Parent if that is set (or parsed out of _parentId if necessary)
@@ -89,8 +89,8 @@ namespace Datadog.Trace.Activity.Handlers
                 }
                 else
                 {
-                    // No traceID, so much be Hierarchical ID
-                    if (activity3.ParentSpanId is { } parentSpanId)
+                    // No traceID, so must be Hierarchical ID
+                    if (activity3 is { ParentSpanId.SpanId: { } parentSpanId })
                     {
                         // This is a weird scenario - we're in a hierarchical ID, we don't have a trace ID, but we _do_ have a _parentSpanID?!
                         // should never hit this path unless we've gone wrong somewhere
