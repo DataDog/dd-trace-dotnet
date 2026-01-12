@@ -59,10 +59,11 @@ namespace Datadog.Trace.Activity.Handlers
                 if (!StringUtil.IsNullOrEmpty(activityTraceId))
                 {
                     // W3C ID
-                    if (activity3 is { ParentSpanId.SpanId: { } parentSpanId })
+                    if (activity3 is { RawParentSpanId: { } parentSpanId })
                     {
-                        // This will be true for activities using W3C IDs which have a parent span.
-                        // The ParentSpanId will be created from the Parent if that is set (or parsed out of _parentId if necessary)
+                        // This will be true for activities using W3C IDs which have a "remote" parent span ID
+                        // We explicitly don't check the case where we _do_ have a Parent object (i.e. in-process activity)
+                        // as in that scenario we may need to remap the parent instead (see below).
                         //
                         // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
                         // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Activity.Handlers
                 else
                 {
                     // No traceID, so must be Hierarchical ID
-                    if (activity3 is { ParentSpanId.SpanId: { } parentSpanId })
+                    if (activity3 is { RawParentSpanId: { } parentSpanId })
                     {
                         // This is a weird scenario - we're in a hierarchical ID, we don't have a trace ID, but we _do_ have a _parentSpanID?!
                         // should never hit this path unless we've gone wrong somewhere
@@ -107,6 +108,8 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                 }
 
+                // If we don't have a remote context, then we may need to remap the current activity to
+                // reparent it with a datadog span
                 if (parent is null
                  && activitySpanId is not null
                  && activityTraceId is not null
