@@ -5,7 +5,7 @@
 
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
   <PropertyGroup>
-    <ProductVersion>3.35.0</ProductVersion>
+    <ProductVersion>3.36.0</ProductVersion>
   </PropertyGroup>
   <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 

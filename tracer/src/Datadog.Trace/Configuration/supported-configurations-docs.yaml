@@ -555,6 +555,13 @@ DD_RUNTIME_METRICS_ENABLED: |
   Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
   Default value is <c>false</c> (disabled).
 
+DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED: |
+  Enables an experimental runtime metrics collector which uses the 
+  <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
+  This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
+  when using .NET 8+.
+  Default value is <c>false</c> (disabled).
+
 DD_SERVICE: |
   Configuration key for the application's default service name.
   Used as the service name for top-level spans,

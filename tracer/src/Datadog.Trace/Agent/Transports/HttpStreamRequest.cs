@@ -5,16 +5,22 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal sealed class HttpStreamRequest : IApiRequest
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpStreamRequest>();
+
         private readonly Uri _uri;
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
@@ -40,6 +46,28 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
             => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding, chunkedEncoding: false).ConfigureAwait(false)).Item1;
+
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+            => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
+
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Sending {Type} data as JSON with compression '{Compression}'", typeof(T).FullName, contentEncoding ?? "none");
+            }
+
+            var result = await SendAsync(
+                                 WebRequestMethods.Http.Post,
+                                 contentType: MimeTypes.Json,
+                                 content: new HttpOverStreams.HttpContent.PushStreamContent(stream => SerializationHelpers.WriteAsJson(stream, payload, settings, compression)),
+                                 contentEncoding: contentEncoding,
+                                 chunkedEncoding: true) // must use chunked encoding because push-stream content
+                            .ConfigureAwait(false);
+
+            return result.Item1;
+        }
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
             => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding, chunkedEncoding: true, multipartBoundary).ConfigureAwait(false)).Item1;

@@ -143,7 +143,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.35.0
+  ToolVersion: 3.36.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -1710,12 +1710,25 @@ stages:
         SampleName: $(IntegrationTestSampleName)
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: Run integration tests
+      displayName: Run integration tests (Tracer)
+      condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
+
+    - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
 
 #    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
 #    - script: docker compose -f docker-compose.windows.yml down
@@ -2272,7 +2285,26 @@ stages:
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
-      displayName: docker-compose run IntegrationTests
+      displayName: docker-compose run IntegrationTests (Tracer)
+      condition: ne(variables['area'], 'ASM')
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --no-deps --rm \
+          -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          -e IncludeTestsRequiringDocker=false  \
+          -e Filter=$(IntegrationTestFilter) \
+          -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
+          IntegrationTests
+      displayName: docker-compose run IntegrationTests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file

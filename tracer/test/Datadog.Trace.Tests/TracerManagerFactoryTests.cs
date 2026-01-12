@@ -158,7 +158,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
                 gitMetadataTagsProvider: Mock.Of<IGitMetadataTagsProvider>());
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()
-            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
+            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, useDiagnosticsApiListener: false, initializeListener: (_, _, _, _) => Mock.Of<IRuntimeMetricsListener>());
     }
 
     private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)

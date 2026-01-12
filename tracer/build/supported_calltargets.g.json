@@ -4304,6 +4304,39 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "CosmosDb",
+    "AssemblyName": "Microsoft.Azure.Cosmos.Client",
+    "TargetTypeName": "Microsoft.Azure.Cosmos.Handlers.RequestInvokerHandler",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Azure.Cosmos.ResponseMessage]",
+    "TargetParameterTypes": [
+      "System.String",
+      "Microsoft.Azure.Documents.ResourceType",
+      "Microsoft.Azure.Documents.OperationType",
+      "Microsoft.Azure.Cosmos.RequestOptions",
+      "Microsoft.Azure.Cosmos.ContainerInternal",
+      "_",
+      "System.IO.Stream",
+      "System.Action`1[Microsoft.Azure.Cosmos.RequestMessage]",
+      "_",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 12,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.RequestInvokerHandlerSendAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "Couchbase",
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.Core.ClusterNode",
