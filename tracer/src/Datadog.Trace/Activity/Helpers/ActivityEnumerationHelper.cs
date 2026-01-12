@@ -9,69 +9,100 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Logging;
+using TagObjectsEnumerator = Datadog.Trace.Activity.Helpers.AllocationFreeEnumerator<
+    System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, object?>>,
+    System.Collections.Generic.KeyValuePair<string, object?>,
+    Datadog.Trace.Activity.Helpers.OtelTagsEnumerationState>;
+using TagsEnumerator = Datadog.Trace.Activity.Helpers.AllocationFreeEnumerator<
+    System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string?>>,
+    System.Collections.Generic.KeyValuePair<string, string?>,
+    Datadog.Trace.Activity.Helpers.OtelTagsEnumerationState>;
 
 namespace Datadog.Trace.Activity.Helpers;
 
 internal static class ActivityEnumerationHelper
 {
-    private static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, object?>>, KeyValuePair<string, object?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate? _tagObjectsEnumerator;
-    private static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, string?>>, KeyValuePair<string, string?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate? _tagsEnumerator;
-#if DEBUG
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityEnumerationHelper));
+    private static TagObjectsEnumerator.AllocationFreeForEachDelegate? _tagObjectsEnumerator;
+    private static TagsEnumerator.AllocationFreeForEachDelegate? _tagsEnumerator;
     private static Type? _tagObjectsType;
-    private static Type? _tagType;
-#endif
+    private static Type? _tagsType;
 
     /// <summary>
-    /// Returns an enumerator than can be used to iterate the provided <see cref="IActivity5.TagObjects"/>, without allocating.
-    /// Before calling this API, call
+    /// Performs an allocation-free enumeration of the TagObjects field in the provided activity
     /// </summary>
-    /// <param name="activity5">The activity to enumerate</param>
-    /// <returns>An enumerator that can be used prior to enumerating</returns>
-    public static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, object?>>, KeyValuePair<string, object?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate GetTagObjectsEnumerator<T>(T activity5)
+    public static void EnumerateTagObjects<T>(T activity5, ref OtelTagsEnumerationState state, TagObjectsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity5
     {
-#if DEBUG
-        // Tag type used to call this method should never change
-        if (Volatile.Read(ref _tagObjectsType) is { } expectedType)
+        var tagObjects = activity5.TagObjects;
+        var runtimeType = tagObjects.GetType();
+
+        // This is a safety check - we must always invoke this method with the same _runtime_ type
+        // If we have a different type, we fallback to returning null instead and doing the allocating case
+        var expected = Volatile.Read(ref _tagObjectsType);
+        if (expected == runtimeType || expected is null)
         {
-            System.Diagnostics.Debug.Assert(expectedType == activity5.TagObjects.GetType(), "Must always call this method with the same type of TagObjects");
+            var forEach = Volatile.Read(ref _tagObjectsEnumerator) ?? BuildDelegate(runtimeType);
+            forEach(activity5.TagObjects, ref state, funcToRun);
+            return;
         }
-#endif
-        return Volatile.Read(ref _tagObjectsEnumerator) ?? BuildDelegate(activity5);
 
-        static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, object?>>, KeyValuePair<string, object?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate BuildDelegate(T activity5)
+        // fallback case
+        EnumerateWithAllocation(ref state, funcToRun, tagObjects, expected, runtimeType);
+
+        static TagObjectsEnumerator.AllocationFreeForEachDelegate BuildDelegate(Type runtimeType)
         {
-            var forEach = AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, object?>>, KeyValuePair<string, object?>, OtelTagsEnumerationState>
-               .BuildAllocationFreeForEachDelegate(activity5.TagObjects.GetType());
+            var forEach = TagObjectsEnumerator.BuildAllocationFreeForEachDelegate(runtimeType);
 
-#if DEBUG
-            Volatile.Write(ref _tagObjectsType, activity5.TagObjects.GetType());
-#endif
+            Volatile.Write(ref _tagObjectsType, runtimeType);
             return Interlocked.CompareExchange(ref _tagObjectsEnumerator, forEach, null) ?? forEach;
+        }
+
+        static void EnumerateWithAllocation(ref OtelTagsEnumerationState state, TagObjectsEnumerator.ForEachDelegate forEachDelegate, IEnumerable<KeyValuePair<string, object?>> values, Type expected, Type runtimeType)
+        {
+            Log.Error($"Invalid activity enumeration object was passed to {nameof(EnumerateTagObjects)}. Expected {{Expected}} but received {{Actual}}. Executing foreach loop using allocating fallback", expected, runtimeType);
+            foreach (var value in values)
+            {
+                forEachDelegate(ref state, value);
+            }
         }
     }
 
-    public static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, string?>>, KeyValuePair<string, string?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate GetTagsEnumerator<T>(T activity)
+    public static void EnumerateTags<T>(T activity, ref OtelTagsEnumerationState state, TagsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity
     {
-#if DEBUG
-        // Tag type used to call this method should never change
-        if (Volatile.Read(ref _tagType) is { } expectedType)
+        var tags = activity.Tags;
+        var runtimeType = tags.GetType();
+
+        // This is a safety check - we must always invoke this method with the same _runtime_ type
+        // If we have a different type, we fallback to returning null instead and doing the allocating case
+        var expected = Volatile.Read(ref _tagsType);
+        if (expected == runtimeType || expected is null)
         {
-            System.Diagnostics.Debug.Assert(expectedType == activity.Tags.GetType(), "Must always call this method with the same type of TagObjects");
+            var forEach = Volatile.Read(ref _tagsEnumerator) ?? BuildDelegate(runtimeType);
+            forEach(activity.Tags, ref state, funcToRun);
+            return;
         }
-#endif
-        return Volatile.Read(ref _tagsEnumerator) ?? BuildDelegate(activity);
 
-        static AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, string?>>, KeyValuePair<string, string?>, OtelTagsEnumerationState>.AllocationFreeForEachDelegate BuildDelegate(T activity)
+        // fallback case
+        EnumerateWithAllocation(ref state, funcToRun, tags, expected, runtimeType);
+
+        static TagsEnumerator.AllocationFreeForEachDelegate BuildDelegate(Type runtimeType)
         {
-            var forEach = AllocationFreeEnumerator<IEnumerable<KeyValuePair<string, string?>>, KeyValuePair<string, string?>, OtelTagsEnumerationState>
-               .BuildAllocationFreeForEachDelegate(activity.Tags.GetType());
+            var forEach = TagsEnumerator.BuildAllocationFreeForEachDelegate(runtimeType);
 
-#if DEBUG
-            Volatile.Write(ref _tagType, activity.Tags.GetType());
-#endif
+            Volatile.Write(ref _tagsType, runtimeType);
             return Interlocked.CompareExchange(ref _tagsEnumerator, forEach, null) ?? forEach;
+        }
+
+        static void EnumerateWithAllocation(ref OtelTagsEnumerationState state, TagsEnumerator.ForEachDelegate forEachDelegate, IEnumerable<KeyValuePair<string, string?>> values, Type expected, Type runtimeType)
+        {
+            Log.Error($"Invalid activity enumeration object was passed to {nameof(EnumerateTags)}. Expected {{Expected}} but received {{Actual}}. Executing foreach loop using allocating fallback", expected, runtimeType);
+            foreach (var value in values)
+            {
+                forEachDelegate(ref state, value);
+            }
         }
     }
 

@@ -78,8 +78,7 @@ namespace Datadog.Trace.Activity
                 if (activity5.HasTagObjects())
                 {
                     var state = new OtelTagsEnumerationState(span);
-                    var forEach = ActivityEnumerationHelper.GetTagObjectsEnumerator(activity5);
-                    forEach(activity5.TagObjects, ref state, static (ref s, kvp) =>
+                    ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
                     {
                         OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
                         return true;
@@ -89,8 +88,7 @@ namespace Datadog.Trace.Activity
             else if (activity.HasTags())
             {
                 var state = new OtelTagsEnumerationState(span);
-                var forEach = ActivityEnumerationHelper.GetTagsEnumerator(activity);
-                forEach(activity.Tags, ref state, static (ref s, kvp) =>
+                ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
                     return true;
