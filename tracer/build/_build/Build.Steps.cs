@@ -1802,7 +1802,7 @@ partial class Build
                 var parallelJobs = ParallelIntegrationTests
                    .Where(project => project.Name switch
                     {
-                        "Datadog.FleetInstaller.Tests" => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
+                        "Datadog.FleetInstaller.IntegrationTests" => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
                         _ => true,
                     });
 

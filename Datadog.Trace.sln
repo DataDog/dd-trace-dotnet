@@ -627,7 +627,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FleetInstaller.Tests", "tracer\test\Datadog.FleetInstaller.Tests\Datadog.FleetInstaller.Tests.csproj", "{64258238-DE63-4A0F-A618-DF51735BA22A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FleetInstaller.IntegrationTests", "tracer\test\Datadog.FleetInstaller.IntegrationTests\Datadog.FleetInstaller.IntegrationTests.csproj", "{64258238-DE63-4A0F-A618-DF51735BA22A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

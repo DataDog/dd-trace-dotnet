@@ -6,9 +6,9 @@
 using Xunit;
 using Xunit.Abstractions;
 
-[assembly: TestFramework("Datadog.FleetInstaller.Tests.CustomTestFramework", "Datadog.FleetInstaller.Tests")]
+[assembly: TestFramework("Datadog.FleetInstaller.IntegrationTests.CustomTestFramework", "Datadog.FleetInstaller.IntegrationTests")]
 
-namespace Datadog.FleetInstaller.Tests
+namespace Datadog.FleetInstaller.IntegrationTests
 {
     public class CustomTestFramework : Datadog.Trace.TestHelpers.CustomTestFramework
     {
