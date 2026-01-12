@@ -38,65 +38,67 @@ namespace Datadog.Trace.Activity
         internal static string GetOperationName(OpenTelemetryTags tags)
         {
             var httpRequestMethod = tags.GetTag("http.request.method");
-            if (tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(httpRequestMethod))
+            if (!string.IsNullOrEmpty(httpRequestMethod))
             {
-                // IsHttpServer
-                return "http.server.request";
+                if (tags.SpanKind == SpanKinds.Server)
+                {
+                    // IsHttpServer
+                    return "http.server.request";
+                }
+
+                if (tags.SpanKind == SpanKinds.Client)
+                {
+                    // IsHttpClient
+                    return "http.client.request";
+                }
             }
 
-            if (tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(httpRequestMethod))
-            {
-                // IsHttpClient
-                return "http.client.request";
-            }
-
-            var dbSystem = tags.GetTag("db.system");
-            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(dbSystem))
+            if (tags.SpanKind == SpanKinds.Client && tags.GetTag("db.system") is { Length: > 0 } dbSystem)
             {
                 // IsDatabase
                 return $"{dbSystem.ToLowerInvariant()}.query";
             }
 
-            var messagingSystem = tags.GetTag(Tags.MessagingSystem);
-            var messagingOperation = tags.GetTag(Tags.MessagingOperation);
             if (tags.SpanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer
-                  && !StringUtil.IsNullOrEmpty(messagingSystem) &&
-                     !StringUtil.IsNullOrEmpty(messagingOperation))
+                && tags.GetTag(Tags.MessagingSystem) is { Length: > 0 } messagingSystem
+                && tags.GetTag(Tags.MessagingOperation) is { Length: > 0 } messagingOperation)
             {
                 // IsMessaging
                 return $"{messagingSystem}.{messagingOperation}".ToLowerInvariant();
             }
 
             var rpcSystem = tags.GetTag(Tags.RpcSystem);
-            if (tags.SpanKind == SpanKinds.Client && string.Equals(rpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase))
+            if (!StringUtil.IsNullOrEmpty(rpcSystem))
             {
-                // IsAwsClient
-                var service = tags.GetTag(Tags.RpcService)?.ToLowerInvariant();
-                return !StringUtil.IsNullOrEmpty(service) ? $"aws.{service}.request" : "aws.client.request";
+                if (tags.SpanKind == SpanKinds.Client && string.Equals(rpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase))
+                {
+                    // IsAwsClient
+                    var service = tags.GetTag(Tags.RpcService)?.ToLowerInvariant();
+                    return !StringUtil.IsNullOrEmpty(service) ? $"aws.{service}.request" : "aws.client.request";
+                }
+
+                if (tags.SpanKind == SpanKinds.Client)
+                {
+                    // IsRpcClient
+                    return $"{rpcSystem.ToLowerInvariant()}.client.request";
+                }
+
+                if (tags.SpanKind == SpanKinds.Server)
+                {
+                    // IsRpcServer
+                    return $"{rpcSystem.ToLowerInvariant()}.server.request";
+                }
             }
 
-            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(rpcSystem))
-            {
-                // IsRpcClient
-                return $"{rpcSystem.ToLowerInvariant()}.client.request";
-            }
-
-            if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(rpcSystem))
-            {
-                // IsRpcServer
-                return $"{rpcSystem.ToLowerInvariant()}.server.request";
-            }
-
-            var faasTrigger = tags.GetTag("faas.trigger");
-            if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(faasTrigger))
+            if (tags.SpanKind == SpanKinds.Server && tags.GetTag("faas.trigger") is { Length: > 0 } faasTrigger)
             {
                 // IsFaasServer
                 return $"{faasTrigger.ToLowerInvariant()}.invoke";
             }
 
-            var faasInvokedProvider = tags.GetTag("faas.invoked_provider");
-            var faasInvokedName = tags.GetTag("faas.invoked_name");
-            if (tags.SpanKind == SpanKinds.Client && !StringUtil.IsNullOrEmpty(faasInvokedProvider) && !StringUtil.IsNullOrEmpty(faasInvokedName))
+            if (tags.SpanKind == SpanKinds.Client
+             && tags.GetTag("faas.invoked_provider") is { Length: > 0 } faasInvokedProvider
+             && tags.GetTag("faas.invoked_name") is { Length: > 0 } faasInvokedName)
             {
                 // IsFaasClient
                 return $"{faasInvokedProvider}.{faasInvokedName}.invoke".ToLowerInvariant();
