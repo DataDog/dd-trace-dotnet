@@ -873,7 +873,7 @@ DD_TRACE_HTTP_SERVER_ERROR_STATUSES: |
 
 DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED: |
   Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
-  Default value is <c>false</c> (enabled).
+  Default value is <c>false</c> (disabled).
   When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
   <ul>
     <li>The database is Microsoft SQL Server and <see cref="TracerSettings.DbmPropagationMode"/> is set to 
@@ -881,6 +881,11 @@ DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED: |
   <c>full</c>.</li>
     <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
   </ul>
+
+DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED: |
+  Enables Feature Flags Provider (Experimental).
+  Default value is <c>false</c> (disabled).
+
 
 DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED: |
   Configuration key to enable or disable the creation of a span context on exiting a successful Kafka

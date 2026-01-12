@@ -704,8 +704,9 @@
   "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "trace_profiler_managed_activation_enabled",
   "DD_CALLSITE_MANAGED_ACTIVATION_ENABLED": "trace_callsite_managed_activation_enabled",
   "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": "trace_graphql_error_extensions",
-  "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED":"application_monitoring_config_file_enabled",
+  "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED": "application_monitoring_config_file_enabled",
   "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED": "trace_azure_servicebus_batch_links_enabled",
   "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED": "trace_azure_eventhubs_batch_links_enabled",
+  "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED": "experimental_flagging_provider_enabled",
   "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": "experimental_propagate_process_tags_enabled"
 }
