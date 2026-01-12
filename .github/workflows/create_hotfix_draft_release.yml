@@ -28,6 +28,11 @@ jobs:
     create_hotfix_draft_release:
         needs: check_branch
         uses: ./.github/workflows/_create_draft_release.yml
+        # These permissions need to map to the ones demanded in _create_draft_release.yml
+        permissions:
+          contents: write # create release
+          actions: read # read secrets
+          issues: write # change milestones 
         with:
             forced_commit_id: ${{ inputs.forced_commit_id }}
             ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}
