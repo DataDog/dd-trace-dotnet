@@ -44,6 +44,7 @@ jobs:
   create_draft_release:
     runs-on: ubuntu-latest
     environment: publish-debug-symbols-env
+    # These permissions need to map to the ones demanded in create_normal_draft_release.yml and create_hotfix_draft_release.yml
     permissions:
       contents: write # create release
       actions: read # read secrets
