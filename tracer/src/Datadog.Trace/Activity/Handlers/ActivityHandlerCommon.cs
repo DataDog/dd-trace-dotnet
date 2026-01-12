@@ -39,7 +39,6 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
-            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
@@ -48,25 +47,28 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
-            // for non-IW3CActivity interfaces we'll use Activity.Id and string.Empty as the key as they don't have a guaranteed TraceId+SpanId
-            // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
-            // have to also validate that the TraceId and SpanId actually exist and aren't null - as they can be in some cases
+            // for non-W3C activities using Hierarchical IDs (both IW3CActivity and IActivity) we use Activity.Id and string.Empty
+            // for W3C ID activities (always IW3CActivity) we'll use the Activity.TraceId + Activity.SpanId as the key
             ActivityKey? activityKey = null;
 
-            if (activity is IW3CActivity w3cActivity)
+            if (activity is IW3CActivity activity3)
             {
-                var activityTraceId = w3cActivity.TraceId;
-                var activitySpanId = w3cActivity.SpanId;
+                var activityTraceId = activity3.TraceId;
+                var activitySpanId = activity3.SpanId;
 
-                // If the user has specified a parent context, get the parent Datadog SpanContext
-                if (w3cActivity is { ParentSpanId: { } parentSpanId, ParentId: { } parentId })
+                if (!StringUtil.IsNullOrEmpty(activityTraceId))
                 {
-                    // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
-                    // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
-                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
-                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
-                    if (activityTraceId != null!)
+                    // W3C ID
+                    if (activity3 is { RawParentSpanId: { } parentSpanId })
                     {
+                        // This will be true for activities using W3C IDs which have a "remote" parent span ID
+                        // We explicitly don't check the case where we _do_ have a Parent object (i.e. in-process activity)
+                        // as in that scenario we may need to remap the parent instead (see below).
+                        //
+                        // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
+                        // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
+                        // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
+                        // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
                         if (ActivityMappingById.TryGetValue(new ActivityKey(activityTraceId, parentSpanId), out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
@@ -85,43 +87,55 @@ namespace Datadog.Trace.Activity.Handlers
                                 rawSpanId: parentSpanId);
                         }
                     }
+                }
+                else
+                {
+                    // No traceID, so must be Hierarchical ID
+                    if (activity3 is { RawParentSpanId: { } parentSpanId })
+                    {
+                        // This is a weird scenario - we're in a hierarchical ID, we don't have a trace ID, but we _do_ have a _parentSpanID?!
+                        // should never hit this path unless we've gone wrong somewhere
+                        Log.Error("Activity with ID {ActivityId} had parent span ID {ParentSpanId} but TraceID was missing", activity.Id, parentSpanId);
+                    }
                     else
                     {
-                        // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
-                        if (ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
+                        // Since _parentSpanID is null, this either grabs _parentId, or Parent.Id, depending on what was set
+                        var parentId = activity3.ParentId;
+                        if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
                     }
                 }
 
-                if (parent is null && activeSpan is not null)
+                // If we don't have a remote context, then we may need to remap the current activity to
+                // reparent it with a datadog span
+                if (parent is null
+                 && activitySpanId is not null
+                 && activityTraceId is not null
+                 && Tracer.Instance.ActiveScope?.Span is Span activeSpan
+                 && (activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime))
                 {
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
-                    if ((activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime)
-                        && activitySpanId is not null
-                        && activityTraceId is not null)
-                    {
-                        // TraceId (always 32 chars long even when using 64-bit ids)
-                        w3cActivity.TraceId = activeSpan.Context.RawTraceId;
-                        activityTraceId = w3cActivity.TraceId;
+                    // TraceId (always 32 chars long even when using 64-bit ids)
+                    activity3.TraceId = activeSpan.Context.RawTraceId;
+                    activityTraceId = activity3.TraceId;
 
-                        // SpanId (always 16 chars long)
-                        w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
+                    // SpanId (always 16 chars long)
+                    activity3.RawParentSpanId = activeSpan.Context.RawSpanId;
 
-                        // We clear internals Id and ParentId values to force recalculation.
-                        w3cActivity.RawId = null;
-                        w3cActivity.RawParentId = null;
+                    // We clear internal IDs to force recalculation.
+                    activity3.RawId = null;
+                    activity3.RawParentId = null;
 
-                        // Avoid recalculation of the traceId.
-                        traceId = activeSpan.TraceId128;
-                    }
+                    // Avoid recalculation of the traceId.
+                    traceId = activeSpan.TraceId128;
                 }
 
                 // if there's an existing Activity we try to use its TraceId and SpanId,
                 // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
-                if (activityTraceId != null! && activitySpanId != null!)
+                if (activityTraceId != null && activitySpanId != null)
                 {
                     if (traceId == TraceId.Zero)
                     {
@@ -132,11 +146,16 @@ namespace Datadog.Trace.Activity.Handlers
 
                     rawTraceId = activityTraceId;
                     rawSpanId = activitySpanId;
-                }
-
-                if (activityTraceId != null! && activitySpanId != null!)
-                {
                     activityKey = new(traceId: activityTraceId, spanId: activitySpanId);
+                }
+            }
+            else
+            {
+                // non-IW3CActivity, i.e. we're in .NET Core 2.x territory. Only have hierarchical IDs to worry about here
+                var parentId = activity.ParentId;
+                if (!StringUtil.IsNullOrEmpty(parentId) && ActivityMappingById.TryGetValue(new ActivityKey(parentId), out ActivityMapping mapping))
+                {
+                    parent = mapping.Scope.Span.Context;
                 }
             }
 
@@ -158,8 +177,9 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 // We check if we have to ignore the activity by the operation name value
-                if (IgnoreActivityHandler.IgnoreByOperationName(activity, activeSpan))
+                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
                 {
+                    IgnoreActivityHandler.IgnoreActivity(activity, Tracer.Instance.ActiveScope?.Span as Span);
                     activityMapping = default;
                     return;
                 }
@@ -216,7 +236,7 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 if (activity.Instance is not null)
                 {
-                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity))
+                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
                     {
                         return;
                     }
@@ -255,6 +275,16 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                 }
 
+                StopActivitySlow(sourceName, activity);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
+            }
+
+            static void StopActivitySlow<TInner>(string sourceName, TInner activity)
+                where TInner : IActivity
+            {
                 // The listener didn't send us the Activity or the scope instance was not found
                 // In this case we are going go through the dictionary to check if we have an activity that
                 // has been closed and then close the associated scope.
@@ -318,10 +348,6 @@ namespace Datadog.Trace.Activity.Handlers
                         ActivityMappingById.TryRemove(item, out _);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
             }
 
             static void CloseActivityScope<TInner>(string sourceName, TInner activity, Scope scope)

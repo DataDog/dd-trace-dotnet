@@ -21,7 +21,7 @@ namespace Datadog.Trace.Activity.DuckTypes
         string? SpanId { get; set; }
 
         [DuckField(Name = "_parentSpanId")]
-        string ParentSpanId { get; set; }
+        string? RawParentSpanId { get; set; }
 
         [DuckField(Name = "_id")]
         string? RawId { get; set; }
