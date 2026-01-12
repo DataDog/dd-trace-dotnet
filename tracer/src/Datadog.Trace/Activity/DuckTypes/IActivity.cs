@@ -13,10 +13,13 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivity : IDuckType
     {
-        // The corresponding property on the Activity object is nullable,
-        // but we are guaranteed that the value will not be null once the Activity is started.
-        // Since we are only accessing the Activity after it has started, we can treat the value
-        // as never having a null value.
+        /// <summary>
+        /// Gets an ID for the activity. If the Activity is using hierarchical IDs, the Id has a hierarchical structure:
+        /// '|root-id.id1_id2.id3_' and is generated when Start() is called by appending suffix to Parent.Id
+        /// or ParentId; Activity has no Id until it started, but as we only see started IDs, this will always be non null.
+        /// </summary>
+        /// <remarks>NOTE: this property allocates when using W3C activities, and so should generally not be called
+        /// unless you know that you're not using W3C activities (because <see cref="IW3CActivity.SpanId"/> is null</remarks>
         string Id { get; }
 
         string? ParentId { get; }
@@ -35,9 +38,9 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         DateTime StartTimeUtc { get; }
 
-        IEnumerable<KeyValuePair<string, string>> Baggage { get; }
+        IEnumerable<KeyValuePair<string, string?>> Baggage { get; }
 
-        IEnumerable<KeyValuePair<string, string>> Tags { get; }
+        IEnumerable<KeyValuePair<string, string?>> Tags { get; }
 
         object AddBaggage(string key, string value);
 

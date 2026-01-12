@@ -339,6 +339,7 @@
   "DD_APM_ENABLE_RARE_SAMPLER": "trace_rare_sampler_enabled",
   "DD_TRACE_METRICS_ENABLED": "trace_metrics_enabled",
   "DD_RUNTIME_METRICS_ENABLED": "runtime_metrics_enabled",
+  "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED": "runtime_metrics_diagnostics_metrics_api_enabled",
   "DD_TRACE_AGENT_PATH": "agent_trace_agent_excecutable_path",
   "DD_TRACE_AGENT_ARGS": "agent_trace_agent_excecutable_args",
   "DD_DOGSTATSD_PATH": "agent_dogstatsd_executable_path",

@@ -126,7 +126,7 @@ namespace Datadog.Trace
 
             statsd ??= new StatsdManager(settings);
             runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
-                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService)
+                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
                                    : null;
 
             sampler ??= GetSampler(settings);
