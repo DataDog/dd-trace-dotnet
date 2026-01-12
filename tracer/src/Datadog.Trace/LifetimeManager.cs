@@ -9,7 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -115,21 +114,7 @@ namespace Datadog.Trace
                         SetSynchronizationContext(null);
                     }
 
-                    while (_shutdownHooks.TryDequeue(out var actionOrFunc))
-                    {
-                        if (actionOrFunc is Action<Exception?> action)
-                        {
-                            action(exception);
-                        }
-                        else if (actionOrFunc is Func<Exception?, Task> func)
-                        {
-                            AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
-                        }
-                        else
-                        {
-                            Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
-                        }
-                    }
+                    AsyncUtil.RunSyncNoCts(RunShutdownTasksAsync, exception, (int)TaskTimeout.TotalMilliseconds);
                 }
                 catch (Exception ex)
                 {
@@ -165,6 +150,27 @@ namespace Datadog.Trace
                 catch (MethodAccessException mae)
                 {
                     Log.Warning(mae, "Access to security crital method SynchronizationContext.SetSynchronizationContext has failed.");
+                }
+            }
+        }
+
+        public async Task RunShutdownTasksAsync(Exception? exception = null)
+        {
+            while (_shutdownHooks.TryDequeue(out var actionOrFunc))
+            {
+                if (actionOrFunc is Action<Exception?> action)
+                {
+                    action(exception);
+                }
+                else if (actionOrFunc is Func<Exception?, Task> func)
+                {
+                    // TODO: Should we have a timeout here too?
+                    // downside is more timers
+                    await func(exception).ConfigureAwait(false);
+                }
+                else
+                {
+                    Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
                 }
             }
         }
