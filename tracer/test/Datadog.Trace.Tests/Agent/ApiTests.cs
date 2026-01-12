@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var containerMetadata = new ContainerMetadata(containerId, entityId);
 
-            var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, containerMetadata, updateSampleRates: null, partialFlushEnabled: false, healthMetricsEnabled: false);
+            var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, containerMetadata, updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), numberOfTraces: 1, statsComputationEnabled: false, numberOfDroppedP0Traces: 0, numberOfDroppedP0Spans: 0, apmTracingEnabled: false);
 
@@ -348,7 +348,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var configSet = false;
             Action<string> updateConfig = _ => configSet = true;
-            var api = new Api(apiRequestFactory: factory, statsd: TestStatsdManager.NoOp, updateSampleRates: null, updateConfigState: updateConfig, partialFlushEnabled: false, healthMetricsEnabled: false);
+            var api = new Api(apiRequestFactory: factory, statsd: TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: updateConfig, partialFlushEnabled: false, healthMetricsEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0, false);
             configSet.Should().BeFalse();
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Tests.Agent
 
             string config = null;
             Action<string> updateConfig = value => config = value;
-            var api = new Api(apiRequestFactory: factory, statsd: TestStatsdManager.NoOp, updateSampleRates: null, updateConfigState: updateConfig, partialFlushEnabled: false, healthMetricsEnabled: false);
+            var api = new Api(apiRequestFactory: factory, statsd: TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: updateConfig, partialFlushEnabled: false, healthMetricsEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0, false);
             config.Should().Be(expectedHash);
