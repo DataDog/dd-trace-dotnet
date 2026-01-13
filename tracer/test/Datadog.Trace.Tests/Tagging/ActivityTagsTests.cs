@@ -5,8 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -71,7 +74,7 @@ public class ActivityTagsTests
 
     [Theory]
     [MemberData(nameof(TagData), DisableDiscoveryEnumeration = true)]
-    public void Tags_ShouldBe_PlacedInMetricsOrMeta(string tagKey, object tagValue, TagKind expectedTagKind)
+    public async Task Tags_ShouldBe_PlacedInMetricsOrMeta(string tagKey, object tagValue, TagKind expectedTagKind)
     {
         var activityMock = new Mock<IActivity5>();
         activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
@@ -79,8 +82,10 @@ public class ActivityTagsTests
         var tagObjects = new Dictionary<string, object> { { tagKey, tagValue } };
 
         activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+        // UpdateSpanFromActivity implicitly accesses Tracer.Instance if there's no associated Tracer in the span
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
 
-        var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
         OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
         switch (expectedTagKind)
@@ -98,7 +103,7 @@ public class ActivityTagsTests
 
     [Theory]
     [MemberData(nameof(ArrayTagData), DisableDiscoveryEnumeration = true)]
-    public void ArrayedTags_ShouldBe_PlacedInMeta(string tagKey, object tagValue, TagKind expectedTagKind, Dictionary<string, object> expectedTagValues)
+    public async Task ArrayedTags_ShouldBe_PlacedInMeta(string tagKey, object tagValue, TagKind expectedTagKind, Dictionary<string, object> expectedTagValues)
     {
         var activityMock = new Mock<IActivity5>();
         activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
@@ -107,7 +112,9 @@ public class ActivityTagsTests
 
         activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-        var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+        // UpdateSpanFromActivity implicitly accesses Tracer.Instance if there's no associated Tracer in the span
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
         OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
         foreach (var keyValue in expectedTagValues)
