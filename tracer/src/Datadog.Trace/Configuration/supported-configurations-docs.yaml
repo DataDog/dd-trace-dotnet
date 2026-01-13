@@ -565,6 +565,7 @@ DD_RUNTIME_METRICS_ENABLED: |
   - runtime.dotnet.gc.allocated_bytes - Total allocated bytes (.NET Core 3.0+)
   - runtime.dotnet.gc.fragmentation_percent - Heap fragmentation percentage
   - runtime.dotnet.gc.total_available_memory - Container-aware total available memory
+  - runtime.dotnet.gc.high_memory_load_threshold - GC high memory pressure trigger threshold
 
   <b>Threading Metrics:</b>
   - runtime.dotnet.threads.contention_time - Lock contention time

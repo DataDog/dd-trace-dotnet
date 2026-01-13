@@ -92,6 +92,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Gauge(MetricsNames.GcAllocatedBytes, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.GcFragmentationPercent, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.GcTotalAvailableMemory, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.GcHighMemoryLoadThreshold, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.PohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         }
 

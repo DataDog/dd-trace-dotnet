@@ -188,13 +188,16 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             // GC total available memory (container-aware)
             statsd.Gauge(MetricsNames.GcTotalAvailableMemory, gcInfo.TotalAvailableMemoryBytes);
 
+            // GC high memory load threshold (GC pressure trigger point)
+            statsd.Gauge(MetricsNames.GcHighMemoryLoadThreshold, gcInfo.HighMemoryLoadThresholdBytes);
+
             // POH size (generation 4 on .NET 5+)
             if (gcInfo.GenerationInfo.Length > 4)
             {
                 statsd.Gauge(MetricsNames.PohSize, gcInfo.GenerationInfo[4].SizeAfterBytes);
             }
 
-            Log.Debug($"Sent the following GC metrics to the DD agent: {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}, {MetricsNames.PohSize}");
+            Log.Debug($"Sent the following GC metrics to the DD agent: {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}, {MetricsNames.GcHighMemoryLoadThreshold}, {MetricsNames.PohSize}");
         }
         else
         {

@@ -20,7 +20,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string RuntimeEventSourceName = "Microsoft-Windows-DotNETRuntime";
         private const string AspNetCoreHostingEventSourceName = "Microsoft.AspNetCore.Hosting";
         private const string AspNetCoreKestrelEventSourceName = "Microsoft-AspNetCore-Server-Kestrel";
-        private const string GcHeapStatsMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {{MetricsNames.PohSize}}, {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}";
+        private const string GcHeapStatsMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {{MetricsNames.PohSize}}, {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}, {MetricsNames.GcHighMemoryLoadThreshold}";
         private const string GcGlobalHeapMetrics = $"{MetricsNames.GcMemoryLoad}, runtime.dotnet.gc.count.gen#";
         private const string ThreadStatsMetrics = $"{MetricsNames.ContentionTime}, {MetricsNames.ContentionCount}, {MetricsNames.ThreadPoolWorkersCount}, {MetricsNames.ThreadsQueueLength}, {MetricsNames.ThreadsAvailableWorkers}, {MetricsNames.ThreadsAvailableCompletionPorts}, {MetricsNames.ThreadsCompletedWorkItems}";
         private const string JitMetrics = $"{MetricsNames.JitCompiledILBytes}, {MetricsNames.JitCompiledMethods}, {MetricsNames.JitCompilationTime}";
@@ -175,6 +175,7 @@ namespace Datadog.Trace.RuntimeMetrics
                         }
 
                         statsd.Gauge(MetricsNames.GcTotalAvailableMemory, gcInfo.TotalAvailableMemoryBytes);
+                        statsd.Gauge(MetricsNames.GcHighMemoryLoadThreshold, gcInfo.HighMemoryLoadThresholdBytes);
 
 #if NET5_0_OR_GREATER
                         if (gcInfo.GenerationInfo.Length > 4)

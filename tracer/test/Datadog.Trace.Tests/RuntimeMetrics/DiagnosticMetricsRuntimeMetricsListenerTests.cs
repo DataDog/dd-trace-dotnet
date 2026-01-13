@@ -78,6 +78,7 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
         statsd.Verify(s => s.Gauge(MetricsNames.GcAllocatedBytes, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.GcFragmentationPercent, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.GcTotalAvailableMemory, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+        statsd.Verify(s => s.Gauge(MetricsNames.GcHighMemoryLoadThreshold, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
 #if NET5_0_OR_GREATER
         statsd.Verify(s => s.Gauge(MetricsNames.PohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
 #endif

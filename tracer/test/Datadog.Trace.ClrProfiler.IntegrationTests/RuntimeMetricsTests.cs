@@ -199,9 +199,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var fragmentationCount = metrics.Count(r => r.StartsWith(MetricsNames.GcFragmentationPercent));
                 var totalAvailableMemoryCount = metrics.Count(r => r.StartsWith(MetricsNames.GcTotalAvailableMemory));
+                var highMemoryLoadThresholdCount = metrics.Count(r => r.StartsWith(MetricsNames.GcHighMemoryLoadThreshold));
 
                 Assert.True(fragmentationCount > 0, "No GC fragmentation percent metrics received. Metrics received: " + string.Join("\n", requests));
                 Assert.True(totalAvailableMemoryCount > 0, "No GC total available memory metrics received. Metrics received: " + string.Join("\n", requests));
+                Assert.True(highMemoryLoadThresholdCount > 0, "No GC high memory load threshold metrics received. Metrics received: " + string.Join("\n", requests));
             }
 
             // POH size (.NET 5+)

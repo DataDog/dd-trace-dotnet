@@ -25,6 +25,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public const string GcAllocatedBytes = "runtime.dotnet.gc.allocated_bytes";
         public const string GcFragmentationPercent = "runtime.dotnet.gc.fragmentation_percent";
         public const string GcTotalAvailableMemory = "runtime.dotnet.gc.total_available_memory";
+        public const string GcHighMemoryLoadThreshold = "runtime.dotnet.gc.high_memory_load_threshold";
 
         public const string ContentionTime = "runtime.dotnet.threads.contention_time";
         public const string ContentionCount = "runtime.dotnet.threads.contention_count";
