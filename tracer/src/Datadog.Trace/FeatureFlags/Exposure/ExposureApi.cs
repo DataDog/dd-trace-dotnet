@@ -106,10 +106,10 @@ internal sealed class ExposureApi : IDisposable
                 var apiRequestFactory = _apiRequestFactory;
                 var uri = apiRequestFactory.GetEndpoint(ExposurePath);
                 var payload = TryGetPayload();
-                if (payload.Count != 0)
+                if (payload is not null)
                 {
                     var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.None).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -130,7 +130,7 @@ internal sealed class ExposureApi : IDisposable
         }
     }
 
-    private ArraySegment<byte> TryGetPayload()
+    private ExposuresRequest? TryGetPayload()
     {
         List<ExposureEvent> exposures;
         lock (_exposures)
@@ -138,16 +138,14 @@ internal sealed class ExposureApi : IDisposable
             if (_exposures.Count == 0)
             {
                 // nothing to do, skip send
-                return default;
+                return null;
             }
 
             exposures = [.. _exposures];
             _exposures.Clear();
         }
 
-        var request = new ExposuresRequest(_context, exposures);
-        var json = JsonConvert.SerializeObject(request);
-        return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+        return new ExposuresRequest(_context, exposures);
     }
 
     public void SendExposure(in ExposureEvent exposure)
