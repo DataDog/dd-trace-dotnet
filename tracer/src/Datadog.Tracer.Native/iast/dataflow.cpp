@@ -384,10 +384,10 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
+    CSGUARD(_cs);
     // Retrieve all already modules at once to mimic initialization from creation behavior
     if (_preLoadedModuleIds.size() > 0)
     {
-        CSGUARD(_cs);
         for (auto const& id : _preLoadedModuleIds)
         {
             GetModuleInfo(id);
