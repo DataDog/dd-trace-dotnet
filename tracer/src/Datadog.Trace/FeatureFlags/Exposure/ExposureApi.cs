@@ -17,6 +17,7 @@ using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.FeatureFlags.Exposure;
 
@@ -26,6 +27,15 @@ internal sealed class ExposureApi : IDisposable
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
     public const string ExposurePath = "evp_proxy/v2/api/v2/exposure";
+    private static readonly JsonSerializerSettings SerializerSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Include,
+        ContractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy(),
+        }
+    };
+
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
@@ -109,7 +119,7 @@ internal sealed class ExposureApi : IDisposable
                 if (payload is not null)
                 {
                     var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.None).ConfigureAwait(false);
+                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
