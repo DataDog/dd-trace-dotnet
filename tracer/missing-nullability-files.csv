@@ -182,7 +182,6 @@ src/Datadog.Trace/Tagging/InstrumentationTags.cs
 src/Datadog.Trace/Tagging/ITags.cs
 src/Datadog.Trace/Tagging/KafkaTags.cs
 src/Datadog.Trace/Tagging/MsmqTags.cs
-src/Datadog.Trace/Tagging/OpenTelemetryTags.cs
 src/Datadog.Trace/Tagging/RabbitMQTags.cs
 src/Datadog.Trace/Tagging/RemotingTags.cs
 src/Datadog.Trace/Tagging/SqlTags.cs
