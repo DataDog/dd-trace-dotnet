@@ -155,7 +155,12 @@ namespace Datadog.Trace.Activity
                 else
                 {
                     // if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
-                    CreateDiagnosticSourceListenerInstance(diagnosticListenerType);
+                    DiagnosticListeners.DiagnosticObserverFactory.SubscribeWithStaticCallback(
+                                                                            diagnosticListenerType,
+                                                                            typeof(DiagnosticObserverListener),
+                                                                            nameof(DiagnosticObserverListener.OnSetListener),
+                                                                            "Datadog.DiagnosticObserverListener.Dynamic",
+                                                                            typeof(ActivityListener));
                 }
 
                 return;
@@ -246,68 +251,6 @@ namespace Datadog.Trace.Activity
 
             // Set the global field after calling the `AddActivityListener` method
             _activityListenerInstance = activityListener;
-        }
-
-        private static void CreateDiagnosticSourceListenerInstance(Type diagnosticListenerType)
-        {
-            Log.Information("DiagnosticListener listener: {DiagnosticListenerType}", diagnosticListenerType.AssemblyQualifiedName ?? "(null)");
-
-            var observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
-
-            // Initialize and subscribe to DiagnosticListener.AllListeners.Subscribe
-            var diagnosticObserverType = CreateDiagnosticObserverType(diagnosticListenerType, observerDiagnosticListenerType);
-            if (diagnosticObserverType is null)
-            {
-                throw new NullReferenceException("ActivityListener.CreateDiagnosticObserverType returned null.");
-            }
-
-            var diagnosticListenerInstance = Activator.CreateInstance(diagnosticObserverType);
-            var allListenersPropertyInfo = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
-            if (allListenersPropertyInfo is null)
-            {
-                throw new NullReferenceException("DiagnosticListener.AllListeners method cannot be found.");
-            }
-
-            var subscribeMethodInfo = allListenersPropertyInfo.PropertyType.GetMethod("Subscribe", new[] { observerDiagnosticListenerType });
-            subscribeMethodInfo?.Invoke(allListenersPropertyInfo.GetValue(null), new[] { diagnosticListenerInstance });
-        }
-
-        private static Type? CreateDiagnosticObserverType(Type diagnosticListenerType, Type observerDiagnosticListenerType)
-        {
-            var assemblyName = new AssemblyName("Datadog.DiagnosticObserverListener.Dynamic");
-            assemblyName.Version = typeof(ActivityListener).Assembly.GetName().Version;
-            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-
-            DuckType.EnsureTypeVisibility(moduleBuilder, typeof(ActivityListener));
-
-            var typeBuilder = moduleBuilder.DefineType(
-                "DiagnosticObserver",
-                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
-                typeof(object),
-                new[] { observerDiagnosticListenerType });
-
-            var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
-
-            // OnCompleted
-            var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
-            var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
-            onCompletedMethodIl.Emit(OpCodes.Ret);
-
-            // OnError
-            var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
-            var onErrorMethodIl = onErrorMethod.GetILGenerator();
-            onErrorMethodIl.Emit(OpCodes.Ret);
-
-            // OnNext
-            var onSetListenerMethodInfo = typeof(DiagnosticObserverListener).GetMethod(nameof(DiagnosticObserverListener.OnSetListener), BindingFlags.Static | BindingFlags.Public)!;
-            var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { diagnosticListenerType });
-            var onNextMethodIl = onNextMethod.GetILGenerator();
-            onNextMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextMethodIl.EmitCall(OpCodes.Call, onSetListenerMethodInfo, null);
-            onNextMethodIl.Emit(OpCodes.Ret);
-
-            return typeBuilder.CreateTypeInfo()?.AsType();
         }
 
         private static void CreateActivityKindSetter(Type activityType)

@@ -50,9 +50,6 @@ public class QuartzTests : TracingIntegrationTest
     [MemberData(nameof(GetData))]
     public async Task SubmitsTraces(string packageVersion)
     {
-#if NETFRAMEWORK
-        Skip.If(true, "Quartz instrumentation is not supported on .NET Framework - DiagnosticObserver infrastructure is excluded with #if !NETFRAMEWORK");
-#endif
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
         using (var telemetry = this.ConfigureTelemetry())
@@ -104,6 +101,8 @@ public class QuartzTests : TracingIntegrationTest
         {
 #if NETCOREAPP3_0 || NETCOREAPP3_1
             return new("V3NETCOREAPP3X", 2);
+#elif NETFRAMEWORK
+            return new("V3NETFRAMEWORK", 2);
 #else
             return new("V3", 2);
 #endif
@@ -114,6 +113,8 @@ public class QuartzTests : TracingIntegrationTest
             { } v when v >= new Version("4.0.0") => new("V4", 3),
 #if NETCOREAPP3_0 || NETCOREAPP3_1
             { } v when v >= new Version("3.0.0") => new("V3NETCOREAPP3X", 2),
+#elif  NETFRAMEWORK
+            { } v when v >= new Version("3.0.0") => new("V3NETFRAMEWORK", 2),
 #endif
             _ => new("V3", 2)
         };
