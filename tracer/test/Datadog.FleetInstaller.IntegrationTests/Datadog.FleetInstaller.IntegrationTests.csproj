@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- only run .NET Framework tests on Windows -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
     <OutputType>Library</OutputType>
   </PropertyGroup>
