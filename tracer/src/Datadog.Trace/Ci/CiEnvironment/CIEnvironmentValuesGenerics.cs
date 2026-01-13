@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -107,6 +108,18 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     protected override void Setup(IGitInfo gitInfo)
     {
+        if (gitInfo.Errors.Count > 0)
+        {
+            var sb = StringBuilderCache.Acquire();
+            sb.AppendLine();
+            foreach (var err in gitInfo.Errors)
+            {
+                sb.AppendLine(" Error: " + err);
+            }
+
+            Log.Warning("CIEnvironmentValues: Errors detected in the local gitInfo: {Errors}", StringBuilderCache.GetStringAndRelease(sb));
+        }
+
         OnInitialize(gitInfo);
 
         // **********
@@ -257,11 +270,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
+                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
                         }
                         else
                         {
-                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
                         }
 
                         return false;
@@ -296,11 +309,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 {
                     if (string.IsNullOrEmpty(defaultValue))
                     {
-                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
+                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
                     }
                     else
                     {
-                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
                     }
 
                     return false;
