@@ -70,18 +70,6 @@ namespace Datadog.Trace.Activity
                 tags.OtelTraceId = w3cActivity.TraceId;
             }
 
-            // Fixup "version" tag
-            // Fallback to static instance if no tracer associated with the trace
-            var traceContext = span.Context.TraceContext;
-            var tracer = traceContext?.Tracer ?? Tracer.Instance;
-            // TODO: This is checking that the tag is being set on the _span_ not on the _activity_, is that really correct?
-            // If it's correct, we should probably update the SetTag logic and remove this?
-            if (tracer.PerTraceSettings.Settings.ServiceVersion is null
-             && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
-            {
-                traceContext?.ServiceVersion = otelServiceVersion;
-            }
-
             // Copy over tags from Activity to the Datadog Span
             // Starting with .NET 5, Activity can hold tags whose value have type object?
             // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
@@ -106,6 +94,15 @@ namespace Datadog.Trace.Activity
                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
                     return true;
                 });
+            }
+
+            // Fixup "version" tag
+            var traceContext = span.Context.TraceContext;
+            if (traceContext is not null
+             && string.IsNullOrEmpty(traceContext.ServiceVersion)
+             && span.GetTag("service.version") is { Length: > 0 } otelServiceVersion)
+            {
+                traceContext.ServiceVersion = otelServiceVersion;
             }
 
             // Additional Datadog policy: Set tag "span.kind"
