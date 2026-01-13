@@ -113,7 +113,7 @@ internal static class ActivityEnumerationHelper
     /// <returns>true if <see cref="IActivity5.TagObjects"/> may contain values, false if it definitely doesn't</returns>
     public static bool HasTagObjects<T>(this T activity5)
         where T : IActivity5
-        => activity5.TagObjects is not KeyValuePair<string, object?>[] { Length: 0 };
+        => activity5.TagObjects is not null and not KeyValuePair<string, object?>[] { Length: 0 };
 
     /// <summary>
     /// Checks if the <see cref="IActivity5.TagObjects"/> object is a zero-length array, to avoid unnecessary allocations
@@ -122,7 +122,7 @@ internal static class ActivityEnumerationHelper
     /// <returns>true if <see cref="IActivity5.TagObjects"/> may contain values, false if it definitely doesn't</returns>
     public static bool HasTags<T>(this T activity5)
         where T : IActivity
-        => activity5.Tags is not KeyValuePair<string, string?>[] { Length: 0 };
+        => activity5.Tags is not null and not KeyValuePair<string, string?>[] { Length: 0 };
 
     /// <summary>
     /// Checks if the <see cref="IActivity5.Events"/> object is a zero-length array, to avoid unnecessary allocations
@@ -131,7 +131,7 @@ internal static class ActivityEnumerationHelper
     /// <returns>true if <see cref="IActivity5.Events"/> may contain values, false if it definitely doesn't</returns>
     public static bool HasEvents<T>(this T activity5)
         where T : IActivity5
-        => activity5.Events is not Array { Length: 0 };
+        => activity5.Events is not null and not Array { Length: 0 };
 
     /// <summary>
     /// Checks if the <see cref="IActivity5.Links"/> object is a zero-length array, to avoid unnecessary allocations
@@ -140,5 +140,5 @@ internal static class ActivityEnumerationHelper
     /// <returns>true if <see cref="IActivity5.Links"/> may contain values, false if it definitely doesn't</returns>
     public static bool HasLinks<T>(this T activity5)
         where T : IActivity5
-        => activity5.Links is not Array { Length: 0 };
+        => activity5.Links is not null and not Array { Length: 0 };
 }
