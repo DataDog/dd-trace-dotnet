@@ -702,7 +702,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
-                AspNetCoreRequestHandler.CopyAspNetCoreActivityTagsIfRequired(scope.Span);
                 scope.Dispose();
             }
         }
