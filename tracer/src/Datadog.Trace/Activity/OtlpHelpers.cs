@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -71,19 +72,27 @@ namespace Datadog.Trace.Activity
             // Copy over tags from Activity to the Datadog Span
             // Starting with .NET 5, Activity can hold tags whose value have type object?
             // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
+            // We use the ActivityTagsHelper instead of enumerating the collections directly to avoid allocating
             if (activity5 is not null)
             {
-                foreach (var activityTag in activity5.TagObjects)
+                if (activity5.HasTagObjects())
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                    var state = new OtelTagsEnumerationState(span);
+                    ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
+                    {
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                        return true;
+                    });
                 }
             }
-            else
+            else if (activity.HasTags())
             {
-                foreach (var activityTag in activity.Tags)
+                var state = new OtelTagsEnumerationState(span);
+                ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
-                }
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    return true;
+                });
             }
 
             // Additional Datadog policy: Set tag "span.kind"
@@ -192,19 +201,24 @@ namespace Datadog.Trace.Activity
             }
 
             // extract any ActivityLinks and ActivityEvents
-            ExtractActivityLinks<TInner>(span, activity5);
-            ExtractActivityEvents<TInner>(span, activity5);
+            if (activity5 is not null)
+            {
+                ExtractActivityLinks(span, activity5);
+                ExtractActivityEvents(span, activity5);
+            }
         }
 
-        private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
-            where TInner : IActivity
+        private static void ExtractActivityLinks<TInner>(Span span, TInner activity5)
+            where TInner : IActivity5
         {
-            if (activity5 is null)
+            // The underlying storage when there are no link is an empty array, so bail out in this scenario,
+            // to avoid the allocations from boxing the enumerator
+            if (!activity5.HasLinks())
             {
                 return;
             }
 
-            foreach (var link in (activity5.Links))
+            foreach (var link in activity5.Links)
             {
                 if (!link.TryDuckCast<IActivityLink>(out var duckLink)
                  || duckLink.Context.TraceId.TraceId is null
@@ -253,7 +267,7 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                List<KeyValuePair<string, string>> attributes = new();
+                List<KeyValuePair<string, string>>? attributes = null;
                 if (duckLink.Tags is not null)
                 {
                     foreach (var kvp in duckLink.Tags)
@@ -268,6 +282,7 @@ namespace Datadog.Trace.Activity
                                 {
                                     if (item?.ToString() is { } value)
                                     {
+                                        attributes ??= new();
                                         attributes.Add(new($"{kvp.Key}.{index}", value));
                                         index++;
                                     }
@@ -275,6 +290,7 @@ namespace Datadog.Trace.Activity
                             }
                             else if (kvp.Value?.ToString() is { } kvpValue)
                             {
+                                attributes ??= new();
                                 attributes.Add(new(kvp.Key, kvpValue));
                             }
                         }
@@ -285,10 +301,12 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        private static void ExtractActivityEvents<TInner>(Span span, IActivity5? activity5)
-            where TInner : IActivity
+        private static void ExtractActivityEvents<TInner>(Span span, TInner activity5)
+            where TInner : IActivity5
         {
-            if (activity5 is null)
+            // The underlying storage when there are no link is an empty array, so bail out in this scenario,
+            // to avoid the allocations from boxing the enumerator
+            if (!activity5.HasEvents())
             {
                 return;
             }
@@ -300,11 +318,12 @@ namespace Datadog.Trace.Activity
                     continue;
                 }
 
-                var eventAttributes = new List<KeyValuePair<string, object>>();
+                List<KeyValuePair<string, object>>? eventAttributes = null;
                 foreach (var kvp in duckEvent.Tags)
                 {
                     if (!string.IsNullOrEmpty(kvp.Key) && kvp.Value is not null)
                     {
+                        eventAttributes ??= new();
                         eventAttributes.Add(new(kvp.Key, kvp.Value));
                     }
                 }
@@ -515,7 +534,7 @@ namespace Datadog.Trace.Activity
         {
             // OpenTelemetry stores the exception attributes in Activity.Events
             // Activity.Events was only added in .NET 5+, which maps to our IActivity5 & IActivity6
-            if (activity is not IActivity5 activity5)
+            if (activity is not IActivity5 activity5 || !activity5.HasEvents())
             {
                 return;
             }
