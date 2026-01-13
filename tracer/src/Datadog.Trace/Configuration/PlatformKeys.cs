@@ -9,4 +9,9 @@ namespace Datadog.Trace.Configuration;
 
 internal static partial class PlatformKeys
 {
+    /// <summary>
+    /// Built-in Windows environment variable that holds the system's unique name
+    /// Also, the instance name in Azure where the traced application is running.
+    /// </summary>
+    internal const string InstanceNameKey = "COMPUTERNAME";
 }

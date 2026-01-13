@@ -65,7 +65,7 @@ namespace Datadog.Trace.Configuration
             SiteName = config.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
             InstanceId = config.WithKeys(PlatformKeys.AzureAppService.InstanceIdKey).AsString("unknown");
-            InstanceName = config.WithKeys(PlatformKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            InstanceName = config.WithKeys(PlatformKeys.InstanceNameKey).AsString("unknown");
             OperatingSystem = config.WithKeys(PlatformKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
             SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
             WebsiteSku = config.WithKeys(PlatformKeys.AzureAppService.WebsiteSku).AsString();

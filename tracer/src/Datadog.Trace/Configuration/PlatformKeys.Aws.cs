@@ -10,7 +10,7 @@ internal static partial class PlatformKeys
 {
     internal static class Aws
     {
-        public const string FunctionName = "AWS_LAMBDA_FUNCTION_NAME";
-        public const string Handler = "_HANDLER";
+        public const string LambdaFunctionName = "AWS_LAMBDA_FUNCTION_NAME";
+        public const string LambdaHandler = "_HANDLER";
     }
 }

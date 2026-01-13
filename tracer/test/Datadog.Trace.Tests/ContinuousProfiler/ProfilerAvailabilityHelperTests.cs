@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler;
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 [EnvironmentRestorer(
     ConfigurationKeys.ContinuousProfiler.InternalProfilingNativeEnginePath,
-    PlatformKeys.Aws.FunctionName,
+    PlatformKeys.Aws.LambdaFunctionName,
     PlatformKeys.AzureAppService.SiteNameKey,
     PlatformKeys.AzureFunctions.FunctionsWorkerRuntime,
     PlatformKeys.AzureFunctions.FunctionsExtensionVersion,
@@ -72,7 +72,7 @@ public class ProfilerAvailabilityHelperTests
     public void IsContinuousProfilerAvailable_InLambda_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
-        Environment.SetEnvironmentVariable(PlatformKeys.Aws.FunctionName, @"SomeFunction");
+        Environment.SetEnvironmentVariable(PlatformKeys.Aws.LambdaFunctionName, @"SomeFunction");
         ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
     }
 

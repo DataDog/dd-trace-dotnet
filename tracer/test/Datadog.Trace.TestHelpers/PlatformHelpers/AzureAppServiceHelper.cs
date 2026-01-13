@@ -39,10 +39,10 @@ public static class AzureAppServiceHelper
     {
         var vars = EnvironmentHelpers.GetEnvironmentVariables();
 
-        if (vars.Contains(PlatformKeys.AzureAppService.InstanceNameKey))
+        if (vars.Contains(PlatformKeys.InstanceNameKey))
         {
             // This is the COMPUTERNAME key which we'll remove for consistent testing
-            vars.Remove(PlatformKeys.AzureAppService.InstanceNameKey);
+            vars.Remove(PlatformKeys.InstanceNameKey);
         }
 
         if (vars.Contains(ConfigurationKeys.DebugEnabled))
@@ -67,7 +67,7 @@ public static class AzureAppServiceHelper
         vars.Add(PlatformKeys.AzureAppService.SiteNameKey, deploymentId);
         vars.Add(PlatformKeys.AzureAppService.OperatingSystemKey, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux");
         vars.Add(PlatformKeys.AzureAppService.InstanceIdKey, "instance_id");
-        vars.Add(PlatformKeys.AzureAppService.InstanceNameKey, "instance_name");
+        vars.Add(PlatformKeys.InstanceNameKey, "instance_name");
         vars.Add(ConfigurationKeys.DebugEnabled, ddTraceDebug);
 
         if (functionsVersion != null)

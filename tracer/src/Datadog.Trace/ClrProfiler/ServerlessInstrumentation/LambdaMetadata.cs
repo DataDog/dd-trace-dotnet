@@ -37,7 +37,7 @@ internal sealed class LambdaMetadata
 
     public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
     {
-        var functionName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.FunctionName);
+        var functionName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.LambdaFunctionName);
 
         var isRunningInLambda = !string.IsNullOrEmpty(functionName)
                              && File.Exists(
@@ -50,7 +50,7 @@ internal sealed class LambdaMetadata
             return new LambdaMetadata(isRunningInLambda: false, functionName, handlerName: null, serviceName: null);
         }
 
-        var handlerName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.Handler);
+        var handlerName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.LambdaHandler);
         var serviceName = handlerName?.IndexOf("::", StringComparison.Ordinal) switch
         {
             null => null, // not provided

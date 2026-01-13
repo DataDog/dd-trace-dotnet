@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), "unknown", Strings.AllowEmpty)]
         public void InstanceName(string value, string expected)
         {
-            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.InstanceNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.InstanceNameKey, value));
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.InstanceName.Should().Be(expected);

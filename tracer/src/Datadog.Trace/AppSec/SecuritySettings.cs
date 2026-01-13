@@ -177,9 +177,9 @@ namespace Datadog.Trace.AppSec
                         .AsBool();
 
             NoCustomLocalRules = Rules == null;
-
-            DdDotnetTracerHome = config.WithKeys(ConfigurationKeys.DotnetTracerHome).AsString();
-            InternalTraceNativeEnginePath = config.WithKeys(ConfigurationKeys.InternalTraceNativeEnginePath).AsString();
+            var envConfig = new ConfigurationBuilder(new EnvironmentConfigurationSource(), telemetry);
+            DdDotnetTracerHome = envConfig.WithKeys(ConfigurationKeys.DotNetTracerHome).AsString();
+            InternalTraceNativeEnginePath = envConfig.WithKeys(ConfigurationKeys.InternalTraceNativeEnginePath).AsString();
         }
 
         public string? DdDotnetTracerHome { get; set; }

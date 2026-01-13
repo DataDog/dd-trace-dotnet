@@ -159,7 +159,7 @@ internal static class EnvironmentHelpers
     /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
     /// This method reads environment variables directly and bypasses the configuration system.
     /// </summary>
-    public static bool IsAwsLambda() => EnvironmentVariableExists(PlatformKeys.Aws.FunctionName);
+    public static bool IsAwsLambda() => EnvironmentVariableExists(PlatformKeys.Aws.LambdaFunctionName);
 
     /// <summary>
     /// Check if the current environment is Google Cloud Functions
