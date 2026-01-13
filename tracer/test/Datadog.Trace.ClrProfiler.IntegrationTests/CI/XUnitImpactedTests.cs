@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -137,6 +139,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private async Task SubmitTestsWithGitBranch(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter = null, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
         {
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
+
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
 
