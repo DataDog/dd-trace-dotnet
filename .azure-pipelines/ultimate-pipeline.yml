@@ -4543,32 +4543,32 @@ stages:
           sampleName: Computer01
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent1
-          framework: net7.0
+          framework: net10.0
         Exceptions:
           sampleName: ExceptionGenerator
           testName: exceptions
           poolName: ProfilerExecBenchAgent2
-          framework: net7.0
+          framework: net10.0
         Contention:
           sampleName: Computer01
           testName: contention
           poolName: ProfilerExecBenchAgent3
-          framework: net7.0
+          framework: net10.0
         Allocations:
           sampleName: Computer01
           testName: allocations
           poolName: ProfilerExecBenchAgent4
-          framework: net7.0
+          framework: net10.0
         LiveHeap:
           sampleName: Computer01
           testName: liveheap
           poolName: ProfilerExecBenchAgent5
-          framework: net7.0
+          framework: net10.0
         GarbageCollections:
           sampleName: Computer01
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent11
-          framework: net7.0
+          framework: net10.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -4637,32 +4637,32 @@ stages:
           sampleName: Computer01
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent6
-          framework: net7.0
+          framework: net10.0
         Exceptions:
           sampleName: ExceptionGenerator
           testName: exceptions
           poolName: ProfilerExecBenchAgent7
-          framework: net7.0
+          framework: net10.0
         Contention:
           sampleName: Computer01
           testName: contention
           poolName: ProfilerExecBenchAgent8
-          framework: net7.0
+          framework: net10.0
         Allocations:
           sampleName: Computer01
           testName: allocations
           poolName: ProfilerExecBenchAgent9
-          framework: net7.0
+          framework: net10.0
         LiveHeap:
           sampleName: Computer01
           testName: liveheap
           poolName: ProfilerExecBenchAgent10
-          framework: net7.0
+          framework: net10.0
         GarbageCollections:
           sampleName: Computer01
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent12
-          framework: net7.0
+          framework: net10.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
