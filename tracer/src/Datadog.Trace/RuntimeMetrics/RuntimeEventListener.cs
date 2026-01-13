@@ -20,9 +20,10 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string RuntimeEventSourceName = "Microsoft-Windows-DotNETRuntime";
         private const string AspNetCoreHostingEventSourceName = "Microsoft.AspNetCore.Hosting";
         private const string AspNetCoreKestrelEventSourceName = "Microsoft-AspNetCore-Server-Kestrel";
-        private const string GcHeapStatsMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}";
+        private const string GcHeapStatsMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {{MetricsNames.PohSize}}, {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}";
         private const string GcGlobalHeapMetrics = $"{MetricsNames.GcMemoryLoad}, runtime.dotnet.gc.count.gen#";
-        private const string ThreadStatsMetrics = $"{MetricsNames.ContentionTime}, {MetricsNames.ContentionCount}, {MetricsNames.ThreadPoolWorkersCount}";
+        private const string ThreadStatsMetrics = $"{MetricsNames.ContentionTime}, {MetricsNames.ContentionCount}, {MetricsNames.ThreadPoolWorkersCount}, {MetricsNames.ThreadsQueueLength}, {MetricsNames.ThreadsAvailableWorkers}, {MetricsNames.ThreadsAvailableCompletionPorts}, {MetricsNames.ThreadsCompletedWorkItems}";
+        private const string JitMetrics = $"{MetricsNames.JitCompiledILBytes}, {MetricsNames.JitCompiledMethods}, {MetricsNames.JitCompilationTime}";
 
         private const int EventGcSuspendBegin = 9;
         private const int EventGcRestartEnd = 3;
@@ -73,7 +74,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public void Refresh()
         {
             // if we can't send stats (e.g. we're shutting down), there's not much point in
-            // running all this, but seeing as we update various state, play it safe and just do no-ops
+            // running all this, but seeing as we update various state, play it safe and jadd ust do no-ops
             using var lease = _statsd.TryGetClientLease();
             var statsd = lease.Client ?? NoOpStatsd.Instance;
 
@@ -84,10 +85,35 @@ namespace Datadog.Trace.RuntimeMetrics
 
             statsd?.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
 
+            // ThreadPool Metrics
+#if NETCOREAPP3_0_OR_GREATER
+            statsd?.Gauge(MetricsNames.ThreadsQueueLength, ThreadPool.PendingWorkItemCount);
+#endif
+
+            ThreadPool.GetAvailableThreads(out var availableWorkers, out var availableIo);
+            statsd?.Gauge(MetricsNames.ThreadsAvailableWorkers, availableWorkers);
+            statsd?.Gauge(MetricsNames.ThreadsAvailableCompletionPorts, availableIo);
+
+#if NET5_0_OR_GREATER
+            statsd?.Gauge(MetricsNames.ThreadsCompletedWorkItems, ThreadPool.CompletedWorkItemCount);
+#endif
+
             if (statsd is not NoOpStatsd)
             {
                 Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ThreadStatsMetrics);
             }
+
+            // JIT Metrics (.NET 6+)
+#if NET6_0_OR_GREATER
+            statsd?.Gauge(MetricsNames.JitCompiledILBytes, System.Runtime.JitInfo.GetCompiledILBytes());
+            statsd?.Gauge(MetricsNames.JitCompiledMethods, System.Runtime.JitInfo.GetCompiledMethodCount());
+            statsd?.Gauge(MetricsNames.JitCompilationTime, System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds);
+
+            if (statsd is not NoOpStatsd)
+            {
+                Log.Debug("Sent the following JIT metrics to the DD agent: {Metrics}", JitMetrics);
+            }
+#endif
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -135,6 +161,27 @@ namespace Datadog.Trace.RuntimeMetrics
                         statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
                         statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
                         statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
+
+                        // GC Metrics
+                        var gcInfo = GC.GetGCMemoryInfo();
+#if NETCOREAPP3_0_OR_GREATER
+                        statsd.Gauge(MetricsNames.GcAllocatedBytes, GC.GetTotalAllocatedBytes());
+#endif
+
+                        if (gcInfo.HeapSizeBytes > 0)
+                        {
+                            var fragmentationPercent = (double)gcInfo.FragmentedBytes * 100.0 / gcInfo.HeapSizeBytes;
+                            statsd.Gauge(MetricsNames.GcFragmentationPercent, fragmentationPercent);
+                        }
+
+                        statsd.Gauge(MetricsNames.GcTotalAvailableMemory, gcInfo.TotalAvailableMemoryBytes);
+
+#if NET5_0_OR_GREATER
+                        if (gcInfo.GenerationInfo.Length > 4)
+                        {
+                            statsd.Gauge(MetricsNames.PohSize, gcInfo.GenerationInfo[4].SizeAfterBytes);
+                        }
+#endif
 
                         Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GcHeapStatsMetrics);
                     }
