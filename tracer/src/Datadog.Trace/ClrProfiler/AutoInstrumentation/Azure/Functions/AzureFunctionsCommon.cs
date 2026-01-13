@@ -18,6 +18,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -349,7 +350,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     scopeObj is Scope aspNetCoreScope)
                 {
                     parentScope = aspNetCoreScope;
-                    Log.Debug("Azure Functions span creation: Retrieved AspNetCore scope - span_id: {SpanId}, trace_id: {TraceId}", aspNetCoreScope.Span.SpanId, aspNetCoreScope.Span.TraceId);
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var spanContext = parentScope.Span.Context;
+
+                        Log.Debug(
+                            "Azure Functions span creation: Retrieved AspNetCore scope {TraceId}-{SpanId}",
+                            spanContext.RawTraceId,
+                            spanContext.RawSpanId);
+                    }
                 }
                 else
                 {
