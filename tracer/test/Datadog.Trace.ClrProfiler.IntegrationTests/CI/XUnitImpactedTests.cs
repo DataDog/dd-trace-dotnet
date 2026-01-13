@@ -38,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public Task BaseShaFromPr(string packageVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             InjectGitHubActionsSession();
             return SubmitTests(packageVersion, 2, TestIsModified);
         }
@@ -140,6 +141,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private async Task SubmitTestsWithGitBranch(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter = null, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
         {
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
