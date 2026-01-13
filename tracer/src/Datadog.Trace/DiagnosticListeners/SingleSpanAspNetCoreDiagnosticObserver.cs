@@ -351,34 +351,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // To avoid the expensive reading of activity tags etc if they don't have "otel compatibility enabled"
              && _tracer.Settings.IsActivityListenerEnabled)
             {
-                AddActivityTags(span);
-            }
-
-            static void AddActivityTags(Span span)
-            {
-                try
-                {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
-                }
+                AspNetCoreRequestHandler.CopyAspNetCoreActivityTagsIfRequired(scope.Span);
             }
         }
 

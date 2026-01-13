@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -258,6 +261,61 @@ namespace Datadog.Trace.PlatformHelpers
 
                     security.CheckAndBlock(httpContext, rootSpan);
                 }
+            }
+        }
+
+        public void CopyAspNetCoreActivityTagsIfRequired(Span span)
+        {
+            // TODO: Should we still run this code if _tracer.Settings.IsActivityListenerEnabled = false?
+
+            // Extract data from the Activity if there is one, and it's the one we expect
+            // We're using GetCurrentActivityObject rather than GetCurrentActivity because
+            // we don't actually need to duck cast as IActivity6 or IW3CActivity
+            var rawActivity = ActivityListener.GetCurrentActivityObject();
+            if (rawActivity is null)
+            {
+                return;
+            }
+
+            // AFAICT this has been static since at least .NET Core 2.1
+            // https://github.com/dotnet/aspnetcore/blob/v2.1.33/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L18C46-L18C88
+            // https://github.com/dotnet/aspnetcore/blob/v10.0.1/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L20
+            const string aspnetcoreActivityOperationName = "Microsoft.AspNetCore.Hosting.HttpRequestIn";
+
+            try
+            {
+                if (rawActivity.DuckAs<IActivity5>() is { } activity5
+                 && string.Equals(activity5.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
+                 && activity5.HasTagObjects())
+                {
+                    var state = new OtelTagsEnumerationState(span);
+                    ActivityEnumerationHelper.EnumerateTagObjects(
+                        activity5,
+                        ref state,
+                        static (ref s, kvp) =>
+                        {
+                            OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                            return true;
+                        });
+                }
+                else if (rawActivity.DuckAs<IActivity>() is { } activity
+                      && string.Equals(activity.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
+                      && activity.HasTags())
+                {
+                    var state = new OtelTagsEnumerationState(span);
+                    ActivityEnumerationHelper.EnumerateTags(
+                        activity,
+                        ref state,
+                        static (ref s, kvp) =>
+                        {
+                            OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                            return true;
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error extracting activity data.");
             }
         }
 
