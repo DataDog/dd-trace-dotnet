@@ -469,11 +469,10 @@ internal sealed class TestOptimization : ITestOptimization
             return _runId;
         }
 
-        const string testOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
-        if (EnvironmentHelpers.GetEnvironmentVariable(testOptimizationRunId) is not { } runId)
+        if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) is not { } runId)
         {
             runId = Guid.NewGuid().ToString("n");
-            EnvironmentHelpers.SetEnvironmentVariable(testOptimizationRunId, runId);
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
 
             try
             {

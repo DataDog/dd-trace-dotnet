@@ -430,9 +430,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 _queue = new();
 
-                for (int i = 0; i < Environment.ProcessorCount; i++)
+                for (var i = 0; i < Environment.ProcessorCount; i++)
                 {
-                    var thread = new Thread(DoWork) { IsBackground = true };
+                    var thread = new Thread(DoWork)
+                    {
+                        IsBackground = true,
+                        Name = "ConcurrentRunner:" + i
+                    };
                     thread.Start();
                 }
             }

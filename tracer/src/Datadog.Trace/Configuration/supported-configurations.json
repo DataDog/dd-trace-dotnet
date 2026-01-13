@@ -1532,6 +1532,12 @@
       ],
       "product": "CIVisibility"
     },
+    "_DD_INTERNAL_TOPT_RUNID": {
+      "version": [
+        "A"
+      ],
+      "product": "CIVisibility"
+    },
     "_DD_TRACE_STATS_COMPUTATION_INTERVAL": {
       "version": [
         "A"

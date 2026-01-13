@@ -1198,6 +1198,9 @@ OTEL_TRACES_SAMPLER_ARG: |
 _DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY: |
   An internal key used to "tell" tracer settings that we're running in CI Visibility mode
 
+_DD_INTERNAL_TOPT_RUNID: |
+  An internal key used to share a runtime ID across all the processes started in a test session
+
 _DD_TRACE_STATS_COMPUTATION_INTERVAL: |
   Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics)
 
