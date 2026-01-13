@@ -52,13 +52,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetCoreIisMinimalApisTestsInProcessSingleSpan : AspNetCoreIisMinimalApisTests
+    {
+        public AspNetCoreIisMinimalApisTestsInProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, inProcess: true, flags: AspNetCoreFeatureFlags.SingleSpan)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetCoreIisMinimalApisTestsOutOfProcessSingleSpan : AspNetCoreIisMinimalApisTests
+    {
+        public AspNetCoreIisMinimalApisTestsOutOfProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, inProcess: false, flags: AspNetCoreFeatureFlags.SingleSpan)
+        {
+        }
+    }
+
     public abstract class AspNetCoreIisMinimalApisTests : AspNetCoreIisMvcTestBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
         protected AspNetCoreIisMinimalApisTests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMinimalApis", fixture, output, inProcess, enableRouteTemplateResourceNames)
+            : this(fixture, output, inProcess, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None)
+        {
+        }
+
+        protected AspNetCoreIisMinimalApisTests(IisFixture fixture, ITestOutputHelper output, bool inProcess, AspNetCoreFeatureFlags flags)
+            : base("AspNetCoreMinimalApis", fixture, output, inProcess, flags)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMinimalApisTests));
             _iisFixture = fixture;

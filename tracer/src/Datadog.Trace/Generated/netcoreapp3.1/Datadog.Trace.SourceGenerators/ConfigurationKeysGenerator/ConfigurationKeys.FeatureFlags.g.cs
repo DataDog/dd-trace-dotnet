@@ -109,6 +109,16 @@ internal static partial class ConfigurationKeys
         public const string RouteTemplateResourceNamesEnabled = "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
 
         /// <summary>
+        /// Feature Flag: Enables generating only a single span in the ASP.NET Core integration,
+        /// by only creating `aspnet_core.request` spans, without creating handler spans or tracking
+        /// specific route values. Defaults to <c>false</c>. Not compatible with
+        /// DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED (that value is ignored), but may be used
+        /// with DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED. Only supported on .NET 6+.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.SingleSpanAspNetCoreEnabled"/>
+        public const string SingleSpanAspNetCoreEnabled = "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED";
+
+        /// <summary>
         /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
         /// into the <c>resourceName</c> of a span.
         /// <para>Note: that this only applies when the WCF action is an empty string.</para>
