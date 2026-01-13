@@ -68,8 +68,12 @@ internal sealed class ImpactedTestsModule
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Git command failed.");
+                Log.Debug(ex, "ImpactedTestsModule: Git command failed.");
             }
+        }
+        else
+        {
+            Log.Debug("ImpactedTestsModule: Base commit sha not found in {Path} (current sha: {CurrentSha})", workspacePath, currentCommitSha);
         }
 
         // We don't have any modified files, let's try to calculate the PR base commit
@@ -91,7 +95,7 @@ internal sealed class ImpactedTestsModule
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "Git command failed.");
+                    Log.Debug(ex, "ImpactedTestsModule: Git command failed.");
                 }
             }
         }
