@@ -34,6 +34,7 @@ namespace Datadog.Trace.PlatformHelpers
     internal sealed class AspNetCoreHttpRequestHandler
     {
         internal const string HttpContextTrackingKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
+        internal const string HttpContextActiveScopeKey = "__Datadog.AspNetCoreHttpRequestHandler.ActiveScope";
 
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
@@ -158,7 +159,7 @@ namespace Datadog.Trace.PlatformHelpers
             if (EnvironmentHelpers.IsAzureFunctions())
             {
                 // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
-                httpContext.Items["__Datadog.Trace.AspNetCore.ActiveScope"] = scope;
+                httpContext.Items[HttpContextActiveScopeKey] = scope;
 
                 if (_log.IsEnabled(LogEventLevel.Debug) && scope.Span.Context is { } spanContext)
                 {

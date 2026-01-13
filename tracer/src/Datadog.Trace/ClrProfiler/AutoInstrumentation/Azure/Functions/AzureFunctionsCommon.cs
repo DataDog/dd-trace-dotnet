@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -346,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (functionContext.Items != null &&
                     functionContext.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
                     httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
-                    httpContext.Items.TryGetValue("__Datadog.Trace.AspNetCore.ActiveScope", out var scopeObj) &&
+                    httpContext.Items.TryGetValue(AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey, out var scopeObj) &&
                     scopeObj is Scope aspNetCoreScope)
                 {
                     parentScope = aspNetCoreScope;
