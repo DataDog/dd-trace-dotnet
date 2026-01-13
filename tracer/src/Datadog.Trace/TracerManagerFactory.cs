@@ -133,7 +133,13 @@ namespace Datadog.Trace
                                    : null;
 
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, statsd, rates => sampler.SetDefaultSampleRates(rates), discoveryService, telemetrySettings);
+            agentWriter ??= GetAgentWriter(
+                settings,
+                statsd,
+                rates => sampler.SetDefaultSampleRates(rates),
+                discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
+                discoveryService,
+                telemetrySettings);
             scopeManager ??= new AsyncLocalScopeManager();
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
@@ -279,12 +285,12 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
                            ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, settings.PartialFlushEnabled);
+                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
