@@ -39,11 +39,22 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
 
         listener.Refresh();
 
+        // ThreadPool metrics
         statsd.Verify(s => s.Gauge(MetricsNames.ThreadPoolWorkersCount, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.ThreadsQueueLength, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.ThreadsAvailableWorkers, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.ThreadsAvailableCompletionPorts, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.ThreadsCompletedWorkItems, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.ThreadsActiveTimers, It.IsAny<double>(), 1, null), Times.Once);
 
         // some metrics are only recorded the _second_ time this is called, to avoid skewing the results at the start, so we just check for a couple
         statsd.Verify(s => s.Gauge(MetricsNames.Gen0HeapSize, It.IsAny<double>(), 1, null), Times.Once);
         statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
+
+        // JIT metrics
+        statsd.Verify(s => s.Gauge(MetricsNames.JitCompiledILBytes, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.JitCompiledMethods, It.IsAny<double>(), 1, null), Times.Once);
+        statsd.Verify(s => s.Gauge(MetricsNames.JitCompilationTime, It.IsAny<double>(), 1, null), Times.Once);
     }
 
     [Fact]
@@ -64,6 +75,12 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
         statsd.Verify(s => s.Gauge(MetricsNames.Gen2HeapSize,  It.IsInRange(0d, long.MaxValue, Range.Exclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.LohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
+        statsd.Verify(s => s.Gauge(MetricsNames.GcAllocatedBytes, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+        statsd.Verify(s => s.Gauge(MetricsNames.GcFragmentationPercent, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+        statsd.Verify(s => s.Gauge(MetricsNames.GcTotalAvailableMemory, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+#if NET5_0_OR_GREATER
+        statsd.Verify(s => s.Gauge(MetricsNames.PohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+#endif
         statsd.Verify(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), null), Times.AtLeastOnce);
     }

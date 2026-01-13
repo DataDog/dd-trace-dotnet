@@ -115,6 +115,23 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
         Log.Debug($"Sent the following metrics to the DD agent: {MetricsNames.ThreadPoolWorkersCount}");
 
+        // ThreadPool Metrics
+        statsd.Gauge(MetricsNames.ThreadsQueueLength, ThreadPool.PendingWorkItemCount);
+        statsd.Gauge(MetricsNames.ThreadsCompletedWorkItems, ThreadPool.CompletedWorkItemCount);
+        statsd.Gauge(MetricsNames.ThreadsActiveTimers, Timer.ActiveCount);
+
+        ThreadPool.GetAvailableThreads(out var availableWorkers, out var availableIo);
+        statsd.Gauge(MetricsNames.ThreadsAvailableWorkers, availableWorkers);
+        statsd.Gauge(MetricsNames.ThreadsAvailableCompletionPorts, availableIo);
+
+        Log.Debug($"Sent the following ThreadPool metrics to the DD agent: {MetricsNames.ThreadsQueueLength}, {MetricsNames.ThreadsAvailableWorkers}, {MetricsNames.ThreadsAvailableCompletionPorts}, {MetricsNames.ThreadsCompletedWorkItems}, {MetricsNames.ThreadsActiveTimers}");
+
+        // JIT Metrics (.NET 6+)
+        statsd.Gauge(MetricsNames.JitCompiledILBytes, System.Runtime.JitInfo.GetCompiledILBytes());
+        statsd.Gauge(MetricsNames.JitCompiledMethods, System.Runtime.JitInfo.GetCompiledMethodCount());
+        statsd.Gauge(MetricsNames.JitCompilationTime, System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds);
+        Log.Debug($"Sent the following JIT metrics to the DD agent: {MetricsNames.JitCompiledILBytes}, {MetricsNames.JitCompiledMethods}, {MetricsNames.JitCompilationTime}");
+
         var contentionCount = Monitor.LockContentionCount;
         if (_previousContentionCount.HasValue)
         {
@@ -157,6 +174,27 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             {
                 statsd.Gauge(MetricsNames.GcMemoryLoad, (double)gcInfo.MemoryLoadBytes * 100.0 / availableBytes);
             }
+
+            // GC allocation rate (cumulative)
+            statsd.Gauge(MetricsNames.GcAllocatedBytes, GC.GetTotalAllocatedBytes());
+
+            // GC fragmentation percentage
+            if (gcInfo.HeapSizeBytes > 0)
+            {
+                var fragmentationPercent = (double)gcInfo.FragmentedBytes * 100.0 / gcInfo.HeapSizeBytes;
+                statsd.Gauge(MetricsNames.GcFragmentationPercent, fragmentationPercent);
+            }
+
+            // GC total available memory (container-aware)
+            statsd.Gauge(MetricsNames.GcTotalAvailableMemory, gcInfo.TotalAvailableMemoryBytes);
+
+            // POH size (generation 4 on .NET 5+)
+            if (gcInfo.GenerationInfo.Length > 4)
+            {
+                statsd.Gauge(MetricsNames.PohSize, gcInfo.GenerationInfo[4].SizeAfterBytes);
+            }
+
+            Log.Debug($"Sent the following GC metrics to the DD agent: {MetricsNames.GcAllocatedBytes}, {MetricsNames.GcFragmentationPercent}, {MetricsNames.GcTotalAvailableMemory}, {MetricsNames.PohSize}");
         }
         else
         {
