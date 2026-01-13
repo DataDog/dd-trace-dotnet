@@ -36,8 +36,11 @@ if "%nuke_args%"=="" (
     exit /b 1
 )
 
-:: the CI Identities client will write the credentials in environment variables
-c:\devtools\ci-identities-gitlab-job-client.exe assume-role -- dotnet run --project tracer/build/_build/_build.csproj -- %nuke_args% --Artifacts "build-out\%CI_JOB_ID%"
+:: the CI Identities client will write the credentials to the path in the environment variable AWS_SHARED_CREDENTIALS_FILE,
+:: and if the variable is not set, it will write to %USERPROFILE%\.aws\credentials
+c:\devtools\ci-identities-gitlab-job-client.exe assume-role
+
+dotnet run --project tracer/build/_build/_build.csproj -- %nuke_args% --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 
