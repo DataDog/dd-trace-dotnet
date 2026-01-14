@@ -6,12 +6,17 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
-GCThreadsCpuProvider::GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry) :
-    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer)
+GCThreadsCpuProvider::GCThreadsCpuProvider(
+    SampleValueTypeProvider& valueTypeProvider,
+    RawSampleTransformer* cpuSampleTransformer,
+    MetricsRegistry& metricsRegistry,
+    libdatadog::SymbolsStore* symbolsStore) :
+    NativeThreadsCpuProviderBase(valueTypeProvider, cpuSampleTransformer, symbolsStore)
 {
     _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_cpu_duration");
 }
@@ -111,15 +116,15 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
 
 Labels GCThreadsCpuProvider::GetLabels()
 {
-    return Labels{StringLabel{"gc_cpu_sample", "true"}};
+    return Labels{StringLabel{_pSymbolsStore->GetGcCpuThread(), "true"}};
 }
 
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
 {
     return
     {
-        {"", "|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:", "", 0},
-        {"", "|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:", "", 0}
+        {_pSymbolsStore->GetNativeGcModuleId(), _pSymbolsStore->GetGCRootFrameId(), 0},
+        {_pSymbolsStore->GetNativeClrModuleId(), _pSymbolsStore->GetDotNetRootFrameId(), 0}
     };
 }
 

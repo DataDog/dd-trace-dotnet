@@ -12,6 +12,7 @@
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 #include "RawSampleTransformer.h"
+#include "SymbolsStore.h"
 
 #include <memory>
 
@@ -97,12 +98,14 @@ public:
         std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         RawSampleTransformer* rawSampleTransformer,
         RingBuffer* ringBuffer,
-        MetricsRegistry& metricsRegistry) :
+        MetricsRegistry& metricsRegistry,
+        libdatadog::SymbolsStore* symbolsStore) :
         ProviderBase(name),
         _valueOffsets{std::move(valueOffsets)},
         _rawSampleTransformer{rawSampleTransformer},
         _collectedSamples{ringBuffer},
-        _failedReservationMetric{metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_raw_sample_failed_allocation")}
+        _failedReservationMetric{metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_raw_sample_failed_allocation")},
+        _symbolsStore{symbolsStore}
     {
     }
 
@@ -120,7 +123,7 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(std::move(_collectedSamples->GetReader()), _rawSampleTransformer, _valueOffsets);
+        return std::make_unique<SamplesEnumeratorImpl>(std::move(_collectedSamples->GetReader()), _rawSampleTransformer, _valueOffsets, _symbolsStore);
     }
 
 private:
@@ -129,10 +132,12 @@ private:
     public:
         SamplesEnumeratorImpl(RingBuffer::Reader&& reader,
                               RawSampleTransformer* rawSampleTransformer,
-                              std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) :
+                              std::vector<SampleValueTypeProvider::Offset> const& valueOffsets,
+                              libdatadog::SymbolsStore* symbolsStore) :
             _reader{std::move(reader)},
             _rawSampleTransformer{rawSampleTransformer},
-            _valueOffsets{valueOffsets}
+            _valueOffsets{valueOffsets},
+            _symbolsStore{symbolsStore}
         {
         }
 
@@ -159,7 +164,7 @@ private:
             auto* rawSample = const_cast<TRawSample*>(
                 reinterpret_cast<TRawSample const*>(buffer.data()));
 
-            _rawSampleTransformer->Transform(*rawSample, sample, _valueOffsets);
+            _rawSampleTransformer->Transform(*rawSample, sample, _valueOffsets, _symbolsStore);
             std::destroy_at(rawSample);
             return true;
         }
@@ -168,6 +173,7 @@ private:
         RingBuffer::Reader _reader;
         RawSampleTransformer* _rawSampleTransformer;
         std::vector<SampleValueTypeProvider::Offset> const& _valueOffsets;
+        libdatadog::SymbolsStore* _symbolsStore;
     };
 
     bool StartImpl() override
@@ -184,4 +190,5 @@ private:
     RawSampleTransformer* _rawSampleTransformer;
     RingBuffer* _collectedSamples;
     std::shared_ptr<DiscardMetrics> _failedReservationMetric;
+    libdatadog::SymbolsStore* _symbolsStore;
 };

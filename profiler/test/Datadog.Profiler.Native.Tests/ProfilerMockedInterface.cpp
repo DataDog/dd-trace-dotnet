@@ -1,5 +1,7 @@
 #include "ProfilerMockedInterface.h"
 
+#include "SymbolsStore.h"
+
 std::tuple<std::unique_ptr<IConfiguration>, MockConfiguration&> CreateConfiguration()
 {
     std::unique_ptr<IConfiguration> configuration = std::make_unique<MockConfiguration>();
@@ -38,30 +40,34 @@ std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager()
     return {std::move(manager), *managerPtr};
 }
 
-std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
+std::vector<std::pair<libdatadog::ModuleId*, libdatadog::FunctionId*>> CreateCallstack(int depth, libdatadog::SymbolsStore* symbolsStore)
 {
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::pair<libdatadog::ModuleId*, libdatadog::FunctionId*>> result;
 
     for (auto i = 0; i < depth; i++)
     {
         std::ostringstream oss;
         oss << "frame_" << i;
-        result.push_back(std::make_pair("module", oss.str()));
+        result.push_back(std::make_pair(symbolsStore->InternMapping(oss.str()).value(), symbolsStore->InternFunction(oss.str(), "").value()));
     }
 
     return result;
 }
 
-std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value)
+std::shared_ptr<Sample> CreateSample(libdatadog::SymbolsStore* symbolsStore,
+    std::string_view runtimeId,
+    const std::vector<std::pair<libdatadog::ModuleId*, libdatadog::FunctionId*>>& callstack,
+    const std::vector<std::pair<libdatadog::StringId*, std::string>>& labels,
+    std::int64_t value)
 {
     // For now sample contains only one value `value`.
     // If we change the number of values, do not forget to change this.
     Sample::ValuesCount = 1;
-    auto sample = std::make_shared<Sample>(runtimeId);
+    auto sample = std::make_shared<Sample>(runtimeId, symbolsStore);
 
     for (auto& [module, frame] : callstack)
     {
-        sample->AddFrame({module, frame, "", 0});
+        sample->AddFrame({module, frame, 0});
     }
 
     for (auto const& [name, value] : labels)

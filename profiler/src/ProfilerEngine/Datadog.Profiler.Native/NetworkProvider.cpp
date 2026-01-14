@@ -25,13 +25,15 @@ NetworkProvider::NetworkProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* pSymbolsStore)
     :
     CollectorBase<RawNetworkSample>(
         "NetworkProvider",
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         rawSampleTransformer,
-        memoryResource),
+        memoryResource,
+        pSymbolsStore),
     _pCorProfilerInfo{ pCorProfilerInfo },
     _pManagedThreadList{ pManagedThreadList },
     _pConfiguration{ pConfiguration },

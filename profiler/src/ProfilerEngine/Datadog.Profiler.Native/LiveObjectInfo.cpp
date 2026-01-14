@@ -6,7 +6,7 @@
 std::atomic<uint64_t> LiveObjectInfo::s_nextObjectId = 1;
 
 
-LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp)
+LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp, libdatadog::SymbolsStore* symbolsStore)
     :
     _address(address),
     _weakHandle(nullptr),
@@ -14,10 +14,10 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     _gcCount(0)
 {
     auto id = s_nextObjectId++;
-    sample->AddLabel(StringLabel{Sample::ObjectIdLabel, std::to_string(id)});
+    sample->AddLabel(StringLabel{symbolsStore->GetObjectId(), std::to_string(id)});
 
-    sample->AddLabel(StringLabel{Sample::ObjectGenerationLabel, std::to_string(0)});
-    sample->AddLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string(0)});
+    sample->AddLabel(StringLabel{symbolsStore->GetObjectGeneration(), std::to_string(0)});
+    sample->AddLabel(StringLabel{symbolsStore->GetObjectLifetime(), std::to_string(0)});
     _sample = sample;
 }
 

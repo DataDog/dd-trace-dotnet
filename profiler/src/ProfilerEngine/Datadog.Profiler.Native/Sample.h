@@ -5,6 +5,8 @@
 
 #include "IFrameStore.h"
 
+#include "SymbolsStore.h"
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -15,6 +17,11 @@
 #include <tuple>
 #include <variant>
 #include <vector>
+
+// forward declaration
+namespace libdatadog {
+struct StringId;
+}
 
 struct SampleValueType
 {
@@ -28,8 +35,8 @@ struct SampleValueType
 };
 
 typedef std::vector<int64_t> Values;
-typedef std::pair<std::string_view, std::string> StringLabel;
-typedef std::pair<std::string_view, int64_t> NumericLabel;
+typedef std::pair<libdatadog::StringId*, std::string> StringLabel;
+typedef std::pair<libdatadog::StringId*, int64_t> NumericLabel;
 typedef std::vector<NumericLabel> NumericLabels;
 typedef std::vector<std::variant<StringLabel, NumericLabel>> Labels;
 
@@ -46,8 +53,8 @@ public:
     static size_t ValuesCount;
 
 public:
-    Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount);
-    Sample(std::string_view runtimeId); // only for tests
+    Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount, libdatadog::SymbolsStore* symbolsStore);
+    Sample(std::string_view runtimeId, libdatadog::SymbolsStore* symbolsStore); // only for tests
 
 #ifndef DD_TEST
 private:
@@ -100,25 +107,25 @@ public:
     template <typename T>
     void SetPid(T&& pid)
     {
-        AddLabel(NumericLabel{ProcessIdLabel, std::forward<T>(pid)});
+        AddLabel(NumericLabel{_pSymbolsStore->GetProcessId(), std::forward<T>(pid)});
     }
 
     template <typename T>
     void SetAppDomainName(T&& name)
     {
-        AddLabel(StringLabel{AppDomainNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{_pSymbolsStore->GetAppDomainName(), std::forward<T>(name)});
     }
 
     template <typename T>
     void SetThreadId(T&& tid)
     {
-        AddLabel(StringLabel{ThreadIdLabel, std::forward<T>(tid)});
+        AddLabel(StringLabel{_pSymbolsStore->GetThreadId(), std::forward<T>(tid)});
     }
 
     template <typename T>
     void SetThreadName(T&& name)
     {
-        AddLabel(StringLabel{ThreadNameLabel, std::forward<T>(name)});
+        AddLabel(StringLabel{_pSymbolsStore->GetThreadName(), std::forward<T>(name)});
     }
 
     void SetTimestamp(std::chrono::nanoseconds timestamp)
@@ -185,4 +192,5 @@ private:
     Values _values;
     Labels _allLabels;
     std::string_view _runtimeId;
+    libdatadog::SymbolsStore* _pSymbolsStore;
 };

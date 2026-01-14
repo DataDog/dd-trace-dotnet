@@ -15,6 +15,9 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 class IConfiguration;
 class SampleValueTypeProvider;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class StopTheWorldGCProvider
     : public CollectorBase<RawStopTheWorldSample>,
@@ -26,7 +29,8 @@ public:
     StopTheWorldGCProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     // Inherited via IGCSuspensionsListener
     void OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration) override;

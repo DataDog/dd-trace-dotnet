@@ -11,6 +11,10 @@
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 class RawSampleTransformer;
 
 class GCThreadsCpuProvider
@@ -19,7 +23,7 @@ class GCThreadsCpuProvider
     public IGcSettingsProvider
 {
 public:
-    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
+    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry, libdatadog::SymbolsStore* symbolStore);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;

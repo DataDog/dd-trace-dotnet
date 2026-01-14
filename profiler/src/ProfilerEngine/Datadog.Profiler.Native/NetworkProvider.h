@@ -23,7 +23,9 @@ class IManagedThreadList;
 class IThreadsCpuManager;
 class IConfiguration;
 class RawSampleTransformer;
-
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class NetworkProvider :
     public CollectorBase<RawNetworkSample>,
@@ -38,7 +40,8 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
 public:
     // Inherited via INetworkListener

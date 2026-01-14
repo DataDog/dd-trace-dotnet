@@ -27,5 +27,6 @@ std::string GetErrorMessage(ddog_MaybeError& error);
 Success make_error(ddog_Error error);
 Success make_error(std::string error);
 Success make_error(ddog_MaybeError error);
+Success make_error(ddog_prof_Status status);
 Success make_success();
 } // namespace libdatadog

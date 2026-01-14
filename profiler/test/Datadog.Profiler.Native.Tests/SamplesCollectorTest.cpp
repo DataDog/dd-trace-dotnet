@@ -14,6 +14,8 @@
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ThreadsCpuManagerHelper.h"
+#include "SymbolsStore.h"
+#include "ServiceWrapper.hpp"
 
 #include <chrono>
 #include <list>
@@ -51,10 +53,11 @@ template <typename T>
 class FakeSamplesProvider : public T
 {
 public:
-    FakeSamplesProvider(std::string_view runtimeId, int nbSamples) :
+    FakeSamplesProvider(std::string_view runtimeId, int nbSamples, libdatadog::SymbolsStore* symbolsStore) :
         _calls{0},
         _runtimeId{runtimeId},
-        _nbSamples{nbSamples}
+        _nbSamples{nbSamples},
+        _symbolsStore(symbolsStore)
     {
     }
 
@@ -75,9 +78,9 @@ public:
         static std::string ModuleName = "My module";
         static std::string FunctionName = "My frame";
 
-        auto s = std::make_shared<Sample>(rid);
+        auto s = std::make_shared<Sample>(rid, _symbolsStore);
 
-        s->AddFrame({ModuleName, FunctionName, "", 0});
+        s->AddFrame({_symbolsStore->InternMapping(ModuleName).value(), _symbolsStore->InternFunction(FunctionName, "").value(), 0});
 
         return s;
     }
@@ -101,15 +104,17 @@ private:
     std::string_view _runtimeId;
     int _nbSamples;
     int _calls;
+    libdatadog::SymbolsStore* _symbolsStore;
 };
 
 TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
 {
     std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     std::string runtimeId2 = "MyRid2";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider2(runtimeId2, 2);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider2(runtimeId, 2, symbolsStore);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
@@ -122,7 +127,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender, symbolsStore);
     collector.Register(&samplesProvider);
     collector.Register(&samplesProvider2);
 
@@ -170,11 +175,12 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
 
 TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 {
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
     std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     std::string runtimeId2 = "MyRid2";
-    FakeSamplesProvider<IBatchedSamplesProvider> batchedSamplesProvider(runtimeId2, 2);
+    FakeSamplesProvider<IBatchedSamplesProvider> batchedSamplesProvider(runtimeId, 1, symbolsStore);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
@@ -187,7 +193,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender, symbolsStore);
     collector.Register(&samplesProvider);
     collector.RegisterBatchedProvider(&batchedSamplesProvider);
 
@@ -237,7 +243,8 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 TEST(SamplesCollectorTest, MustStopCollectingSamples)
 {
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
@@ -247,7 +254,7 @@ TEST(SamplesCollectorTest, MustStopCollectingSamples)
     auto [exporter, mockExporter] = CreateExporter();
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender, symbolsStore);
     collector.Register(&samplesProvider);
 
     collector.Start();
@@ -277,12 +284,13 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockExporter, Export(_)).Times(AtLeast(1)).WillRepeatedly(Throw(std::exception()));
 
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender, symbolsStore);
 
     collector.Register(&samplesProvider);
 
@@ -309,9 +317,10 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
-    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender, symbolsStore);
 
     collector.Register(&samplesProvider);
 
@@ -327,8 +336,9 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
 
 TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
 {
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
@@ -340,7 +350,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender, symbolsStore);
 
     collector.Register(&samplesProvider);
 
@@ -353,6 +363,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
 
 TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 {
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(10s));
 
@@ -363,9 +374,9 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
     EXPECT_CALL(mockSamplesProvider, GetSamples())
         .Times(AtLeast(1))
         .WillRepeatedly(
-            [runtimeId]() {
+            [&runtimeId, &symbolsStore]() {
                 // process sample with empty callstack
-                return std::make_unique<FakeSamples>(std::make_shared<Sample>(runtimeId.c_str()));
+                return std::make_unique<FakeSamples>(std::make_shared<Sample>(runtimeId.c_str(), symbolsStore));
             });
 
     EXPECT_CALL(mockSamplesProvider, GetName())
@@ -380,7 +391,7 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender, symbolsStore);
 
     collector.Register(samplesProvider.get());
 
