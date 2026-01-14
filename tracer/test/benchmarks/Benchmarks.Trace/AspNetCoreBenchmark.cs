@@ -176,6 +176,26 @@ namespace Benchmarks.Trace
             }
         }
     }
+#else
+    [MemoryDiagnoser]
+    public class SingleSpanAspNetCoreBenchmark
+    {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+        }
+
+        [Benchmark]
+        public string SingleSpanAspNetCore()
+        {
+            return null;
+        }
+    }
 #endif
 
     /// <summary>
@@ -222,12 +242,6 @@ namespace Benchmarks.Trace
         {
             return null;
         }
-
-        [Benchmark]
-        public string CallTargetSendRequest()
-        {
-            return null;
-        }
     }
 
 #if !NET6_0_OR_GREATER
@@ -245,13 +259,7 @@ namespace Benchmarks.Trace
         }
 
         [Benchmark]
-        public string SendRequest()
-        {
-            return null;
-        }
-
-        [Benchmark]
-        public string CallTargetSendRequest()
+        public string SingleSpanAspNetCore()
         {
             return null;
         }
