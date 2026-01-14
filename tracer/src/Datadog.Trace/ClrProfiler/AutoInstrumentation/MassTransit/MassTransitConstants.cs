@@ -29,15 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         // Assembly and type names
         internal const string MassTransitAssembly = "MassTransit";
-        internal const string IBusTypeName = "MassTransit.IBus";
-        internal const string MassTransitBusTypeName = "MassTransit.MassTransitBus";
-        internal const string IPublishEndpointTypeName = "MassTransit.IPublishEndpoint";
         internal const string ISendEndpointTypeName = "MassTransit.ISendEndpoint";
         internal const string IConsumeContextTypeName = "MassTransit.ConsumeContext`1";
         internal const string IConsumerTypeName = "MassTransit.IConsumer`1";
-        internal const string IRequestClientTypeName = "MassTransit.IRequestClient`1";
-        internal const string PublishContextTypeName = "MassTransit.PublishContext`1";
-        internal const string SendContextTypeName = "MassTransit.SendContext`1";
-        internal const string HeadersTypeName = "MassTransit.Headers";
     }
 }
