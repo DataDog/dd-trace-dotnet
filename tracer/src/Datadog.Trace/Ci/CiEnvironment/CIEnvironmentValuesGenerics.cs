@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -27,6 +28,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {
+        Log.Debug("CIEnvironmentValues: Creating instance.");
         if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Travis)))
         {
             return new TravisEnvironmentValues<TValueProvider>(valueProvider);
@@ -120,6 +122,23 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             Log.Warning("CIEnvironmentValues: Errors detected in the local gitInfo: {Errors}", StringBuilderCache.GetStringAndRelease(sb));
         }
 
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            var sb = StringBuilderCache.Acquire();
+            sb.AppendLine();
+            var values = ValueProvider.GetValues();
+            foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
+            {
+                var fieldName = field.GetValue(null) as string;
+                if (!StringUtil.IsNullOrEmpty(fieldName) && values.TryGetValue<string>(fieldName, out var value))
+                {
+                    sb.AppendFormat("\t{0}={1}{2}", fieldName, value == string.Empty ? "(empty)" : $"\"{value}\"", Environment.NewLine);
+                }
+            }
+
+            Log.Debug("CIEnvironmentValues: Values detected:{Values}", StringBuilderCache.GetStringAndRelease(sb));
+        }
+
         OnInitialize(gitInfo);
 
         // **********
@@ -172,7 +191,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
         else
         {
-            Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
+            Log.Warning("CIEnvironmentValues: Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
         }
 
         // **********
@@ -194,7 +213,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             }
             else
             {
-                Log.Warning("Error fetching data for git commit '{HeadCommit}'", HeadCommit);
+                Log.Warning("CIEnvironmentValues: Error fetching data for git commit '{HeadCommit}'", HeadCommit);
             }
         }
 
@@ -222,11 +241,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
                         }
                         else
                         {
-                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                         }
 
                         return false;
@@ -236,11 +255,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                         }
                         else
                         {
-                            Log.ErrorSkipTelemetry("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                         }
 
                         return false;
@@ -252,7 +271,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Warning("The Git repository couldn't be automatically extracted.");
+                    Log.Warning("CIEnvironmentValues: The Git repository couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
@@ -270,11 +289,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
+                            Log.Error("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
                         }
                         else
                         {
-                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
+                            Log.Error("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
                         }
 
                         return false;
@@ -286,7 +305,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Warning("The Git commit sha couldn't be automatically extracted.");
+                    Log.Warning("CIEnvironmentValues: The Git commit sha couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
@@ -309,11 +328,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 {
                     if (string.IsNullOrEmpty(defaultValue))
                     {
-                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
+                        Log.Error("CIEnvironmentValues: DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
                     }
                     else
                     {
-                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
+                        Log.Error("CIEnvironmentValues: DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
                     }
 
                     return false;
