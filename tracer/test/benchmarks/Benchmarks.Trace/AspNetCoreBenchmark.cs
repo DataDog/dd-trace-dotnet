@@ -191,13 +191,7 @@ namespace Benchmarks.Trace
         }
 
         [Benchmark]
-        public string SendRequest()
-        {
-            return null;
-        }
-
-        [Benchmark]
-        public string CallTargetSendRequest()
+        public string SingleSpanAspNetCore()
         {
             return null;
         }
@@ -248,12 +242,6 @@ namespace Benchmarks.Trace
         {
             return null;
         }
-
-        [Benchmark]
-        public string CallTargetSendRequest()
-        {
-            return null;
-        }
     }
 
 #if !NET6_0_OR_GREATER
@@ -271,13 +259,7 @@ namespace Benchmarks.Trace
         }
 
         [Benchmark]
-        public string SendRequest()
-        {
-            return null;
-        }
-
-        [Benchmark]
-        public string CallTargetSendRequest()
+        public string SingleSpanAspNetCore()
         {
             return null;
         }
