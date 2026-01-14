@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
@@ -16,7 +17,7 @@ internal sealed class TestOptimizationImpactedTestsDetectionFeature : ITestOptim
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationImpactedTestsDetectionFeature));
     private readonly CIEnvironmentValues _environmentValues;
     private readonly string? _defaultBranch;
-    private ImpactedTestsModule? _impactedTestsModule;
+    private Lazy<ImpactedTestsModule> _impactedTestsModule;
 
     private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, CIEnvironmentValues environmentValues)
     {
@@ -29,28 +30,21 @@ internal sealed class TestOptimizationImpactedTestsDetectionFeature : ITestOptim
         }
 
         Enabled = settings.ImpactedTestsDetectionEnabled == true;
-        Log.Information("{V}", Enabled ? "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is enabled." : "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
+        if (Enabled)
+        {
+            Log.Information("{V}", "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is enabled.");
+            _impactedTestsModule = new(() => ImpactedTestsModule.CreateInstance(_environmentValues, _defaultBranch));
+        }
+        else
+        {
+            Log.Information("{V}", "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
+            _impactedTestsModule = new(() => ImpactedTestsModule.CreateNoOp());
+        }
     }
 
     public bool Enabled { get; }
 
-    public ImpactedTestsModule ImpactedTestsAnalyzer
-    {
-        get
-        {
-            if (_impactedTestsModule is not null)
-            {
-                return _impactedTestsModule;
-            }
-
-            if (Enabled)
-            {
-                return _impactedTestsModule = ImpactedTestsModule.CreateInstance(_environmentValues, _defaultBranch);
-            }
-
-            return _impactedTestsModule = ImpactedTestsModule.CreateNoOp();
-        }
-    }
+    public ImpactedTestsModule ImpactedTestsAnalyzer => _impactedTestsModule.Value;
 
     public static ITestOptimizationImpactedTestsDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, CIEnvironmentValues environmentValues)
         => new TestOptimizationImpactedTestsDetectionFeature(settings, clientSettingsResponse, environmentValues);

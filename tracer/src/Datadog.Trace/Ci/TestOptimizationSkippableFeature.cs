@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
@@ -95,22 +94,23 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
     public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
     {
-        WaitForSkippableTaskToFinish();
-        return InternalGetSkippableTestsFromSuiteAndName(suite, name);
-    }
-
-    private IList<SkippableTest> InternalGetSkippableTestsFromSuiteAndName(string suite, string name)
-    {
         if (_skippableTestsTask is null)
         {
             return [];
         }
 
-        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
-        if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
-            testsInSuite.TryGetValue(name, out var tests))
+        try
         {
-            return tests;
+            var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+            if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
+                testsInSuite.TryGetValue(name, out var tests))
+            {
+                return tests;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimizationSkippableFeature: Error waiting for skippable tests task to finish.");
         }
 
         return [];
