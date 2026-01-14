@@ -300,6 +300,8 @@ profiler_cpu_timer_create-x86:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* platform/artifacts
   artifacts:
     name: "artifacts"
     when: always
