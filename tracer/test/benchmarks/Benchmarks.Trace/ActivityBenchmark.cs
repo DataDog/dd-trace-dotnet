@@ -20,9 +20,9 @@ public class ActivityBenchmark
     private static readonly DateTime _endTime = DateTimeOffset.FromUnixTimeSeconds(5).UtcDateTime;
 
     private Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
-    private ActivitySource _source;
-    private ActivityListener _activityListener;
-    private DefaultActivityHandler _handler;
+    private ActivitySource? _source;
+    private ActivityListener? _activityListener;
+    private DefaultActivityHandler? _handler;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -41,8 +41,8 @@ public class ActivityBenchmark
     [GlobalCleanup]
     public void GlobalCleanup()
     {
-        _source.Dispose();
-        _activityListener.Dispose();
+        _source!.Dispose();
+        _activityListener!.Dispose();
         TracerHelper.CleanupGlobalTracer();
     }
 
@@ -65,7 +65,7 @@ public class ActivityBenchmark
         using var child = CreateActivity(parent);
         var parentMock = parent.DuckAs<IActivity6>()!;
         var childMock = child.DuckAs<IActivity6>()!;
-        _handler.ActivityStarted(SourceName, parentMock);
+        _handler!.ActivityStarted(SourceName, parentMock);
         _handler.ActivityStarted(SourceName, childMock);
         child.Stop();
         _handler.ActivityStopped(SourceName, childMock);
@@ -80,7 +80,7 @@ public class ActivityBenchmark
         using var child = CreateActivity(parent, idFormat: ActivityIdFormat.Hierarchical);
         var parentMock = parent.DuckAs<IActivity6>()!;
         var childMock = child.DuckAs<IActivity6>()!;
-        _handler.ActivityStarted(SourceName, parentMock);
+        _handler!.ActivityStarted(SourceName, parentMock);
         _handler.ActivityStarted(SourceName, childMock);
         child.Stop();
         _handler.ActivityStopped(SourceName, childMock);
