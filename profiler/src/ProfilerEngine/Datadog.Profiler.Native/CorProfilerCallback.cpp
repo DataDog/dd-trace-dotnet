@@ -53,6 +53,7 @@
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
 #include "StackSamplerLoopManager.h"
+#include "SymbolsStore.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
@@ -172,6 +173,8 @@ void CorProfilerCallback::InitializeServices()
 
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
 
+    _pSymbolsStore = RegisterService<libdatadog::SymbolsStore>();
+
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
     {
@@ -186,8 +189,8 @@ void CorProfilerCallback::InitializeServices()
     RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
-    _pFrameStore = std::make_unique<FrameStore>(
-        _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get(), _pSymbolsStore);
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -256,14 +259,15 @@ void CorProfilerCallback::InitializeServices()
         _pThreadLifetimeProvider = RegisterService<ThreadLifetimeProvider>(
             valueTypeProvider,
             _rawSampleTransformer.get(),
-            MemoryResourceManager::GetDefault());
+            MemoryResourceManager::GetDefault(),
+            _pSymbolsStore);
     }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
         // PERF: use a synchronized pool to avoid race conditions when adding samples to the profile.
         auto pool = _memoryResourceManager.GetSynchronizedPool(1000, sizeof(RawWallTimeSample));
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool);
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _rawSampleTransformer.get(), pool, _pSymbolsStore);
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
@@ -272,7 +276,7 @@ void CorProfilerCallback::InitializeServices()
         if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime)
         {
             _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-                valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+                valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault(), _pSymbolsStore);
         }
         else
         {
@@ -291,11 +295,11 @@ void CorProfilerCallback::InitializeServices()
             std::size_t rbSize = std::ceil(nbSamplesCollectorTick * cpuAllocated * RawSampleCollectorBase<RawCpuSample>::SampleSize);
             Log::Info("RingBuffer size estimate (bytes): ", rbSize);
             _pCpuProfilerRb = std::make_unique<RingBuffer>(rbSize, CpuSampleProvider::SampleSize);
-            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), _pCpuProfilerRb.get(), _metricsRegistry);
+            _pCpuSampleProvider = RegisterService<CpuSampleProvider>(valueTypeProvider, _rawSampleTransformer.get(), _pCpuProfilerRb.get(), _metricsRegistry, _pSymbolsStore);
         }
 #else // WINDOWS
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-            valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault());
+            valueTypeProvider, _rawSampleTransformer.get(), MemoryResourceManager::GetDefault(), _pSymbolsStore);
 #endif
     }
 
@@ -310,8 +314,9 @@ void CorProfilerCallback::InitializeServices()
             _rawSampleTransformer.get(),
             _metricsRegistry,
             CallstackProvider(_memoryResourceManager.GetDefault()),
-            MemoryResourceManager::GetDefault());
-
+            MemoryResourceManager::GetDefault(),
+            _pSymbolsStore);
+        
         if (_pConfiguration->IsMemoryFootprintEnabled())
         {
             _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_exceptions_provider", [this]() {
@@ -332,7 +337,8 @@ void CorProfilerCallback::InitializeServices()
                     _pCorProfilerInfoLiveHeap,
                     valueTypeProvider,
                     _rawSampleTransformer.get(),
-                    _pConfiguration.get());
+                    _pConfiguration.get(),
+                    _pSymbolsStore);
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
                     false, // not .NET Framework
@@ -345,7 +351,8 @@ void CorProfilerCallback::InitializeServices()
                     _pLiveObjectsProvider,
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
-                    MemoryResourceManager::GetDefault()
+                    MemoryResourceManager::GetDefault(),
+                    _pSymbolsStore
                 );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -373,7 +380,8 @@ void CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore
             );
         }
 
@@ -390,7 +398,8 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore
             );
         }
 
@@ -419,13 +428,15 @@ void CorProfilerCallback::InitializeServices()
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
-                MemoryResourceManager::GetDefault()
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore
             );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
                 _metricsRegistry,
-                MemoryResourceManager::GetDefault()
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore
             );
         }
         else
@@ -447,7 +458,8 @@ void CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
-                    MemoryResourceManager::GetDefault()
+                    MemoryResourceManager::GetDefault(),
+                    _pSymbolsStore
                 );
 
                 if (_pConfiguration->IsMemoryFootprintEnabled())
@@ -504,7 +516,8 @@ void CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault());
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore);
         }
 
         // WaitHandle profiling is not supported in .NET Framework
@@ -518,7 +531,8 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault());
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore);
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -526,13 +540,15 @@ void CorProfilerCallback::InitializeServices()
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
-                MemoryResourceManager::GetDefault());
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore);
 
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
                 _rawSampleTransformer.get(),
                 _metricsRegistry,
-                MemoryResourceManager::GetDefault());
+                MemoryResourceManager::GetDefault(),
+                _pSymbolsStore);
         }
         else
         {
@@ -666,14 +682,15 @@ void CorProfilerCallback::InitializeServices()
         _pMetadataProvider.get(),
         _pSsiManager.get(),
         _pAllocationsRecorder.get(),
-        _pHeapSnapshotManager
+        _pHeapSnapshotManager,
+        _pSymbolsStore
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pConfiguration->IsCpuProfilingEnabled() && // CPU profiling must be enabled
         _pRuntimeInfo->GetMajorVersion() >= 5)
     {
-        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry);
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(valueTypeProvider, _rawSampleTransformer.get(), _metricsRegistry, _pSymbolsStore);
 
         _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
         _pExporter->RegisterGcSettingsProvider(_gcThreadsCpuProvider.get());
@@ -701,7 +718,8 @@ void CorProfilerCallback::InitializeServices()
         _pConfiguration.get(),
         _pThreadsCpuManager,
         _pExporter.get(),
-        _metricsSender.get());
+        _metricsSender.get(),
+        _pSymbolsStore);
 
     if (_pConfiguration->IsThreadLifetimeEnabled())
     {

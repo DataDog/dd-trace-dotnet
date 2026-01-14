@@ -27,11 +27,13 @@ LiveObjectsProvider::LiveObjectsProvider(
     ICorProfilerInfo13* pCorProfilerInfo,
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    libdatadog::SymbolsStore* pSymbolsStore)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
     _rawSampleTransformer{rawSampleTransformer},
-    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
+    _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)},
+    _pSymbolsStore{pSymbolsStore}
 {
     _heapHandleLimit = pConfiguration->GetHeapHandleLimit();
 }
@@ -136,8 +138,8 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
-        sample->ReplaceLabel(StringLabel{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+        sample->ReplaceLabel(StringLabel{_pSymbolsStore->GetObjectLifetime(), std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
+        sample->ReplaceLabel(StringLabel{_pSymbolsStore->GetObjectGeneration(), info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);
     }
@@ -161,9 +163,10 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         if (handle != nullptr)
         {
             LiveObjectInfo info(
-                _rawSampleTransformer->Transform(rawSample, _valueOffsets),
+                _rawSampleTransformer->Transform(rawSample, _valueOffsets, _pSymbolsStore),
                 rawSample.Address,
-                rawSample.Timestamp);
+                rawSample.Timestamp,
+                _pSymbolsStore);
             info.SetHandle(handle);
             _monitoredObjects.push_back(std::move(info));
         }

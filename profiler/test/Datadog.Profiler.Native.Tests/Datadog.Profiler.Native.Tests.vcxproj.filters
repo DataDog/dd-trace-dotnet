@@ -246,6 +246,7 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.h" />
+    <ClInclude Include="ServiceWrapper.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />

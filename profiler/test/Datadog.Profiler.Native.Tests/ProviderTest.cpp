@@ -24,8 +24,32 @@
 #include "SampleValueTypeProvider.h"
 #include "ThreadsCpuManagerHelper.h"
 #include "WallTimeProvider.h"
+#include "ServiceWrapper.hpp"
+#include "SymbolsStore.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
+
+#define INTERN_MODULE(m)                                                \
+    auto m##Id = symbolsStore->InternMapping(#m);                       \
+    if (!m##Id)                                                         \
+    {                                                                   \
+        ASSERT_TRUE(false) << "Failed to intern module '" << #m << "'"; \
+    }
+
+#define INTERN_FUNCTION(fn)                                                 \
+    auto fn##Id = symbolsStore->InternFunction(#fn, "");                    \
+    if (!fn##Id)                                                            \
+    {                                                                       \
+        ASSERT_TRUE(false) << " Failed to intern function '" << #fn << "'"; \
+    }
+
+#define INTERN_STRING(s)                                                \
+    auto s##Id = symbolsStore->InternString(#s);                        \
+    if (!s##Id)                                                         \
+    {                                                                   \
+        ASSERT_TRUE(false) << "Failed to intern string '" << #s << "'"; \
+    }
+
 
 using namespace std::chrono_literals;
 
@@ -88,7 +112,8 @@ RawCpuSample GetRawCpuSample(
 TEST(WallTimeProviderTest, CheckNoMissingSample)
 {
     // collect samples and check none are missing on the provider side (just count)
-    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", 1, symbolsStore);
     auto appDomainStore = AppDomainStoreHelper(2);
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
@@ -99,7 +124,7 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
-    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource(), symbolsStore);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -118,7 +143,8 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 {
     // add samples and check their appdomain, and pid labels
     // Note: thread labels cannot be checked because ThreadInfo is nullptr
-    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", 1, symbolsStore);
     auto appDomainStore = AppDomainStoreHelper(2);
     auto [configuration, mockConfiguration] = CreateConfiguration();
     auto threadscpuManager = ThreadsCpuManagerHelper();
@@ -132,7 +158,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
-    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource(), symbolsStore);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -150,7 +176,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     provider.Stop();
 
     size_t currentSample = 0;
-    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10, symbolsStore);
 
     auto expectedPid = OpSysTools::GetProcId();
     while (samples->MoveNext(sample))
@@ -169,13 +195,19 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
 
+        auto expectedPid = expectedAppDomainId[currentSample];
+
+        auto pidLabelId = symbolsStore->GetProcessId();
+        auto appDomainLabelId = symbolsStore->GetAppDomainName();
+        auto threadLabelId = symbolsStore->GetThreadId();
+        auto threadNameLabelId = symbolsStore->GetThreadName();
         auto labels = sample->GetLabels();
         for (auto const& label : labels)
         {
             std::visit(LabelsVisitor{
-                [expectedPid](NumericLabel const& label){
+                [expectedPid, pidLabelId](NumericLabel const& label){
                     auto const& [name, value] = label;
-                    if(name == Sample::ProcessIdLabel)
+                    if(name == pidLabelId)
                     {
                         ASSERT_EQ(expectedPid, value);
                     }
@@ -184,15 +216,15 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
                         ASSERT_TRUE(false) << label.first;
                     }
                 },
-                [expectedAppDomainName](StringLabel const& label) {
+                [expectedAppDomainName, appDomainLabelId, threadLabelId, threadNameLabelId](StringLabel const& label) {
                     auto const& [name, value] = label;
-                    if (name == Sample::AppDomainNameLabel)
+                    if (name == appDomainLabelId)
                     {
                         ASSERT_EQ(expectedAppDomainName, value);
                     }
                     else if (
-                        (name == Sample::ThreadIdLabel) ||
-                        (name == Sample::ThreadNameLabel))
+                        (name == threadLabelId) ||
+                        (name == threadNameLabelId))
                     {
                         // can't test thread info
                     }
@@ -212,7 +244,8 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
 TEST(WallTimeProviderTest, CheckFrames)
 {
     // add samples and check their frames
-    auto frameStore = FrameStoreHelper(true, "Frame", 4);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", 4, symbolsStore);
     auto appDomainStore = AppDomainStoreHelper(1);
     auto [configuration, mockConfiguration] = CreateConfiguration();
     auto threadscpuManager = ThreadsCpuManagerHelper();
@@ -223,7 +256,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
-    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource(), symbolsStore);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -239,23 +272,32 @@ TEST(WallTimeProviderTest, CheckFrames)
     auto samples = provider.GetSamples();
     provider.Stop();
 
-    std::vector<std::string> expectedFrames =
+    INTERN_FUNCTION(frame1);
+    INTERN_FUNCTION(frame2);
+    INTERN_FUNCTION(frame3);
+    INTERN_FUNCTION(frame4);
+
+    std::vector<libdatadog::FunctionId*> expectedFrames =
         {
-            "Frame #1",
-            "Frame #2",
-            "Frame #3",
-            "Frame #4",
+            frame1Id.value(),
+            frame2Id.value(),
+            frame3Id.value(),
+            frame4Id.value(),
         };
 
-    std::vector<std::string> expectedModules =
+    INTERN_MODULE(module1);
+    INTERN_MODULE(module2);
+    INTERN_MODULE(module3);
+    INTERN_MODULE(module4);
+    std::vector<libdatadog::ModuleId*> expectedModules =
         {
-            "module #1",
-            "module #2",
-            "module #3",
-            "module #4",
+            module1Id.value(),
+            module2Id.value(),
+            module3Id.value(),
+            module4Id.value(),
         };
 
-    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10, symbolsStore);
 
     while (samples->MoveNext(sample))
     {
@@ -263,8 +305,8 @@ TEST(WallTimeProviderTest, CheckFrames)
         auto frames = sample->GetCallstack();
         for (auto frame : frames)
         {
-            ASSERT_EQ(expectedModules[currentFrame], frame.ModuleName);
-            ASSERT_EQ(expectedFrames[currentFrame], frame.Frame);
+            ASSERT_EQ(expectedModules[currentFrame], frame.ModuleId);
+            ASSERT_EQ(expectedFrames[currentFrame], frame.FunctionId);
 
             currentFrame++;
         }
@@ -274,7 +316,8 @@ TEST(WallTimeProviderTest, CheckFrames)
 TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
 {
     // add samples and check their frames
-    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", 1, symbolsStore);
     auto appDomainStore = AppDomainStoreHelper(1);
     auto [configuration, mockConfiguration] = CreateConfiguration();
     auto threadscpuManager = ThreadsCpuManagerHelper();
@@ -285,7 +328,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
-    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    WallTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource(), symbolsStore);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -302,7 +345,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     auto currentSample = 1ns;
-    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10, symbolsStore);
 
     while (samples->MoveNext(sample))
     {
@@ -322,7 +365,8 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
 TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
 {
     // add samples and check their frames
-    auto frameStore = FrameStoreHelper(true, "Frame", 1);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", 1, symbolsStore);
     auto appDomainStore = AppDomainStoreHelper(1);
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
@@ -330,7 +374,7 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
-    CpuTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());
+    CpuTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource(), symbolsStore);
     Sample::ValuesCount = 2;
     provider.Start();
 
@@ -348,7 +392,7 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     auto currentSample = 1ns;
-    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10, symbolsStore);
 
     while (samples->MoveNext(sample))
     {
@@ -360,5 +404,34 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
         ASSERT_GT(values[1], 0);
 
         currentSample++;
+    }
+}
+
+
+extern "C"
+{
+    #include "datadog/common.h"
+    #include "datadog/profiling.h"
+}
+TEST(CpuTimeProviderTest, XX)
+{
+
+    ddog_prof_ProfilesDictionaryHandle dict = {0};
+    auto status = ddog_prof_ProfilesDictionary_new(&dict);
+    if (status.err != nullptr)
+    {
+        ASSERT_FALSE(true) << "Failed to create dict";
+    }
+
+    auto fn = ddog_prof_Function2{
+        .name = DDOG_PROF_STRINGID2_EMPTY,
+        .system_name = DDOG_PROF_STRINGID2_EMPTY,
+        .file_name = DDOG_PROF_STRINGID2_EMPTY};
+
+    ddog_prof_FunctionId2 function_id;
+    status = ddog_prof_ProfilesDictionary_insert_function(&function_id, dict, &fn);
+    if (status.err != nullptr)
+    {
+        ASSERT_FALSE(true) << "Failed to intern function";
     }
 }

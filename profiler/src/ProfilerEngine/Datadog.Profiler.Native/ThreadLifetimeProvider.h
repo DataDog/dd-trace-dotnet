@@ -13,6 +13,9 @@
 
 class IThreadsCpuManager;
 class RawSampleTransformer;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class ThreadLifetimeProvider
     : public CollectorBase<RawThreadLifetimeSample>,
@@ -22,7 +25,8 @@ public:
     ThreadLifetimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     // Inherited via IThreadLifetimeListener
     void OnThreadStart(std::shared_ptr<ManagedThreadInfo> threadInfo) override;

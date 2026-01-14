@@ -5,20 +5,21 @@
 
 void RawThreadLifetimeSample::OnTransform(
     std::shared_ptr<Sample>& sample,
-    std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const
+    std::vector<SampleValueTypeProvider::Offset> const& valueOffset,
+    libdatadog::SymbolsStore* pSymbolsStore) const
 {
     // There is no value for threads lifetime events
     // but it could be interesting to compute the life duration of a thread to detect too short lived threads
 
     if (Kind == ThreadEventKind::Start)
     {
-        sample->AddFrame({EmptyModule, StartFrame, "", 0});
-        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStart));
+        sample->AddFrame({pSymbolsStore->GetClrModuleId(), pSymbolsStore->GetThreadStartFrame(), 0});
+        sample->AddLabel(StringLabel(pSymbolsStore->GetTimelineEventType(), Sample::TimelineEventTypeThreadStart));
     }
     else if (Kind == ThreadEventKind::Stop)
     {
-        sample->AddFrame({EmptyModule, StopFrame, "", 0});
-        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStop));
+        sample->AddFrame({pSymbolsStore->GetClrModuleId(), pSymbolsStore->GetThreadStopFrame(), 0});
+        sample->AddLabel(StringLabel(pSymbolsStore->GetTimelineEventType(), Sample::TimelineEventTypeThreadStop));
     }
 
     // Set an arbitratry value to avoid being discarded by the backend
