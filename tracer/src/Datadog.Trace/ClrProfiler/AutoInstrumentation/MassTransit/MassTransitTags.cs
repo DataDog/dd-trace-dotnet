@@ -42,6 +42,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         [Tag("messaging.masstransit.destination_address")]
         public string DestinationAddress { get; set; }
 
+        // MT8 OTEL has input_address on receive spans
+        [Tag("messaging.masstransit.input_address")]
+        public string InputAddress { get; set; }
+
         [Tag("messaging.masstransit.message_types")]
         public string MessageTypes { get; set; }
 
@@ -59,5 +63,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         [Tag("messaging.masstransit.fault_address")]
         public string FaultAddress { get; set; }
+
+        // Saga state machine tags (matching MT8 OTEL instrumentation)
+        [Tag("messaging.masstransit.begin_state")]
+        public string BeginState { get; set; }
+
+        [Tag("messaging.masstransit.end_state")]
+        public string EndState { get; set; }
+
+        [Tag("messaging.masstransit.correlation_id")]
+        public string CorrelationId { get; set; }
+
+        [Tag("messaging.masstransit.saga_id")]
+        public string SagaId { get; set; }
+
+        // Additional MT8 OTEL tags
+        [Tag("peer.address")]
+        public string PeerAddress { get; set; }
+
+        [Tag("messaging.masstransit.consumer_type")]
+        public string ConsumerType { get; set; }
     }
 }

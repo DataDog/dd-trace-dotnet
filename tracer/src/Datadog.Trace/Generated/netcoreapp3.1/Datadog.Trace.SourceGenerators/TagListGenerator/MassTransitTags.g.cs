@@ -68,6 +68,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 #else
         private static readonly byte[] DestinationAddressBytes = new byte[] { 217, 41, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 95, 97, 100, 100, 114, 101, 115, 115 };
 #endif
+        // InputAddressBytes = MessagePack.Serialize("messaging.masstransit.input_address");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InputAddressBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 112, 117, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
+#else
+        private static readonly byte[] InputAddressBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 112, 117, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
+#endif
         // MessageTypesBytes = MessagePack.Serialize("messaging.masstransit.message_types");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> MessageTypesBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 116, 121, 112, 101, 115 };
@@ -104,6 +110,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 #else
         private static readonly byte[] FaultAddressBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 102, 97, 117, 108, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
 #endif
+        // BeginStateBytes = MessagePack.Serialize("messaging.masstransit.begin_state");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> BeginStateBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 98, 101, 103, 105, 110, 95, 115, 116, 97, 116, 101 };
+#else
+        private static readonly byte[] BeginStateBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 98, 101, 103, 105, 110, 95, 115, 116, 97, 116, 101 };
+#endif
+        // EndStateBytes = MessagePack.Serialize("messaging.masstransit.end_state");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> EndStateBytes => new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101 };
+#else
+        private static readonly byte[] EndStateBytes = new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101 };
+#endif
+        // CorrelationIdBytes = MessagePack.Serialize("messaging.masstransit.correlation_id");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CorrelationIdBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#else
+        private static readonly byte[] CorrelationIdBytes = new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#endif
+        // SagaIdBytes = MessagePack.Serialize("messaging.masstransit.saga_id");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SagaIdBytes => new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
+#else
+        private static readonly byte[] SagaIdBytes = new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
+#endif
+        // PeerAddressBytes = MessagePack.Serialize("peer.address");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PeerAddressBytes => new byte[] { 172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#else
+        private static readonly byte[] PeerAddressBytes = new byte[] { 172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#endif
+        // ConsumerTypeBytes = MessagePack.Serialize("messaging.masstransit.consumer_type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ConsumerTypeBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] ConsumerTypeBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 116, 121, 112, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -118,12 +160,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 "messaging.message.conversation_id" => ConversationId,
                 "messaging.masstransit.source_address" => SourceAddress,
                 "messaging.masstransit.destination_address" => DestinationAddress,
+                "messaging.masstransit.input_address" => InputAddress,
                 "messaging.masstransit.message_types" => MessageTypes,
                 "messaging.message.body.size" => MessageSize,
                 "messaging.masstransit.initiator_id" => InitiatorId,
                 "messaging.masstransit.request_id" => RequestId,
                 "messaging.masstransit.response_address" => ResponseAddress,
                 "messaging.masstransit.fault_address" => FaultAddress,
+                "messaging.masstransit.begin_state" => BeginState,
+                "messaging.masstransit.end_state" => EndState,
+                "messaging.masstransit.correlation_id" => CorrelationId,
+                "messaging.masstransit.saga_id" => SagaId,
+                "peer.address" => PeerAddress,
+                "messaging.masstransit.consumer_type" => ConsumerType,
                 _ => base.GetTag(key),
             };
         }
@@ -153,6 +202,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 case "messaging.masstransit.destination_address": 
                     DestinationAddress = value;
                     break;
+                case "messaging.masstransit.input_address": 
+                    InputAddress = value;
+                    break;
                 case "messaging.masstransit.message_types": 
                     MessageTypes = value;
                     break;
@@ -170,6 +222,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     break;
                 case "messaging.masstransit.fault_address": 
                     FaultAddress = value;
+                    break;
+                case "messaging.masstransit.begin_state": 
+                    BeginState = value;
+                    break;
+                case "messaging.masstransit.end_state": 
+                    EndState = value;
+                    break;
+                case "messaging.masstransit.correlation_id": 
+                    CorrelationId = value;
+                    break;
+                case "messaging.masstransit.saga_id": 
+                    SagaId = value;
+                    break;
+                case "peer.address": 
+                    PeerAddress = value;
+                    break;
+                case "messaging.masstransit.consumer_type": 
+                    ConsumerType = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -228,6 +298,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 processor.Process(new TagItem<string>("messaging.masstransit.destination_address", DestinationAddress, DestinationAddressBytes));
             }
 
+            if (InputAddress is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.input_address", InputAddress, InputAddressBytes));
+            }
+
             if (MessageTypes is not null)
             {
                 processor.Process(new TagItem<string>("messaging.masstransit.message_types", MessageTypes, MessageTypesBytes));
@@ -256,6 +331,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (FaultAddress is not null)
             {
                 processor.Process(new TagItem<string>("messaging.masstransit.fault_address", FaultAddress, FaultAddressBytes));
+            }
+
+            if (BeginState is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.begin_state", BeginState, BeginStateBytes));
+            }
+
+            if (EndState is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.end_state", EndState, EndStateBytes));
+            }
+
+            if (CorrelationId is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.correlation_id", CorrelationId, CorrelationIdBytes));
+            }
+
+            if (SagaId is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.saga_id", SagaId, SagaIdBytes));
+            }
+
+            if (PeerAddress is not null)
+            {
+                processor.Process(new TagItem<string>("peer.address", PeerAddress, PeerAddressBytes));
+            }
+
+            if (ConsumerType is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.consumer_type", ConsumerType, ConsumerTypeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -326,6 +431,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                   .Append(',');
             }
 
+            if (InputAddress is not null)
+            {
+                sb.Append("messaging.masstransit.input_address (tag):")
+                  .Append(InputAddress)
+                  .Append(',');
+            }
+
             if (MessageTypes is not null)
             {
                 sb.Append("messaging.masstransit.message_types (tag):")
@@ -365,6 +477,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 sb.Append("messaging.masstransit.fault_address (tag):")
                   .Append(FaultAddress)
+                  .Append(',');
+            }
+
+            if (BeginState is not null)
+            {
+                sb.Append("messaging.masstransit.begin_state (tag):")
+                  .Append(BeginState)
+                  .Append(',');
+            }
+
+            if (EndState is not null)
+            {
+                sb.Append("messaging.masstransit.end_state (tag):")
+                  .Append(EndState)
+                  .Append(',');
+            }
+
+            if (CorrelationId is not null)
+            {
+                sb.Append("messaging.masstransit.correlation_id (tag):")
+                  .Append(CorrelationId)
+                  .Append(',');
+            }
+
+            if (SagaId is not null)
+            {
+                sb.Append("messaging.masstransit.saga_id (tag):")
+                  .Append(SagaId)
+                  .Append(',');
+            }
+
+            if (PeerAddress is not null)
+            {
+                sb.Append("peer.address (tag):")
+                  .Append(PeerAddress)
+                  .Append(',');
+            }
+
+            if (ConsumerType is not null)
+            {
+                sb.Append("messaging.masstransit.consumer_type (tag):")
+                  .Append(ConsumerType)
                   .Append(',');
             }
 

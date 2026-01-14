@@ -16,17 +16,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
     /// MassTransit MassTransitBus.Publish(object) calltarget instrumentation
+    /// NOTE: This instrumentation is DISABLED to match MT8 OTEL behavior.
+    /// MT8 OTEL does not create a separate "publish" span - only the "send" span is created.
+    /// The SendEndpointPipeSendIntegration captures all send operations including publishes.
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = MassTransitConstants.MassTransitAssembly,
-        TypeName = MassTransitConstants.IPublishEndpointTypeName,
-        MethodName = "Publish",
-        ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { ClrNames.Object, ClrNames.CancellationToken },
-        MinimumVersion = "7.0.0",
-        MaximumVersion = "7.*.*",
-        IntegrationName = MassTransitConstants.IntegrationName,
-        CallTargetIntegrationKind = CallTargetKind.Interface)]
+    // [InstrumentMethod(
+    //     AssemblyName = MassTransitConstants.MassTransitAssembly,
+    //     TypeName = MassTransitConstants.IPublishEndpointTypeName,
+    //     MethodName = "Publish",
+    //     ReturnTypeName = ClrNames.Task,
+    //     ParameterTypeNames = new[] { ClrNames.Object, ClrNames.CancellationToken },
+    //     MinimumVersion = "7.0.0",
+    //     MaximumVersion = "7.*.*",
+    //     IntegrationName = MassTransitConstants.IntegrationName,
+    //     CallTargetIntegrationKind = CallTargetKind.Interface)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class BusPublishObjectIntegration

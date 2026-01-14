@@ -1,4 +1,4 @@
-// <copyright file="MethodConsumerMessageFilterIntegration.cs" company="Datadog">
+// <copyright file="StateMachineSagaMessageFilterIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,13 +13,13 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 
 /// <summary>
-/// MassTransit.Pipeline.Filters.MethodConsumerMessageFilter`2.Send calltarget instrumentation
-/// This is the internal MassTransit class that actually invokes IConsumer.Consume()
+/// Automatonymous.Pipeline.StateMachineSagaMessageFilter`2.Send calltarget instrumentation
+/// This instruments saga state machine message processing in MassTransit 7
 /// </summary>
 [InstrumentMethod(
     AssemblyName = MassTransitConstants.MassTransitAssembly,
-    TypeName = "MassTransit.Pipeline.Filters.ConsumerMessageFilter`2",
-    MethodName = "GreenPipes.IFilter<MassTransit.ConsumeContext<TMessage>>.Send",
+    TypeName = "Automatonymous.Pipeline.StateMachineSagaMessageFilter`2",
+    MethodName = "Send",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["_", "_"],
     MinimumVersion = "7.0.0",
@@ -27,58 +27,84 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
     IntegrationName = MassTransitConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class MethodConsumerMessageFilterIntegration
+public sealed class StateMachineSagaMessageFilterIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodConsumerMessageFilterIntegration));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StateMachineSagaMessageFilterIntegration));
 
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
-    /// <typeparam name="TTarget">Type of the target (MethodConsumerMessageFilter)</typeparam>
-    /// <typeparam name="TContext">Type of the ConsumerConsumeContext</typeparam>
+    /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <typeparam name="TContext">Type of the SagaConsumeContext</typeparam>
     /// <typeparam name="TPipe">Type of the pipe</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="context">The consumer consume context.</param>
+    /// <param name="context">The saga consume context.</param>
     /// <param name="next">The next pipe in the pipeline.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TPipe>(TTarget instance, TContext context, TPipe next)
     {
-        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration.OnMethodBegin() - Intercepted consumer message dispatch");
+        Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration.OnMethodBegin() - Intercepted saga state machine");
 
         string? messageType = null;
-        string? consumerType = null;
+        string? sagaType = null;
+        Guid? correlationId = null;
+        string? destinationAddress = null;
+        string? messagingSystem = "in-memory";
+        string? beginState = null;
+        object? sagaInstance = null;
 
         try
         {
-            // Get message type from generic argument of the TARGET type (ConsumerMessageFilter<TConsumer, TMessage>)
-            // The instance is the filter which has the generic args we need
-            // NOTE: We must use instance.GetType() at runtime instead of typeof(TTarget)
-            // because CallTarget boxing causes TTarget to be System.Object at compile time
+            // Get saga and message types from generic arguments of the TARGET type
             var targetType = instance?.GetType();
             if (targetType != null && targetType.IsGenericType)
             {
                 var genericArgs = targetType.GetGenericArguments();
                 if (genericArgs.Length >= 2)
                 {
-                    consumerType = genericArgs[0].Name;
+                    sagaType = genericArgs[0].Name;
                     messageType = genericArgs[1].Name;
                 }
             }
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Failed to extract message/consumer type from target");
+            Log.Debug(ex, "Failed to extract message/saga type from target");
         }
 
-        // Extract destination address and determine messaging system for proper span naming
-        string? destinationAddress = null;
-        string? messagingSystem = "in-memory";
-
+        // Try to extract context info using reflection
         if (context is not null)
         {
             try
             {
                 var contextType = context.GetType();
+
+                // Try to get CorrelationId from the saga context
+                var correlationIdProp = contextType.GetProperty("CorrelationId");
+                if (correlationIdProp?.GetValue(context) is Guid id)
+                {
+                    correlationId = id;
+                }
+
+                // Try to get the saga instance to extract current state
+                var sagaProp = contextType.GetProperty("Saga");
+                if (sagaProp != null)
+                {
+                    sagaInstance = sagaProp.GetValue(context);
+                    if (sagaInstance != null)
+                    {
+                        // Try to get CurrentState property from the saga
+                        var currentStateProp = sagaInstance.GetType().GetProperty("CurrentState");
+                        if (currentStateProp != null)
+                        {
+                            var currentState = currentStateProp.GetValue(sagaInstance);
+                            beginState = currentState?.ToString();
+                            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Begin state: {BeginState}", beginState);
+                        }
+                    }
+                }
+
+                // Get destination address for messaging system detection via MessageContext interface
                 var messageContextInterface = contextType.GetInterface("MassTransit.MessageContext");
                 if (messageContextInterface != null)
                 {
@@ -92,7 +118,7 @@ public sealed class MethodConsumerMessageFilterIntegration
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Failed to extract destination address");
+                Log.Debug(ex, "Failed to extract saga info");
             }
         }
 
@@ -110,18 +136,37 @@ public sealed class MethodConsumerMessageFilterIntegration
 
         if (scope != null)
         {
-            Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Created consumer scope for message type: {MessageType}, consumer: {ConsumerType}", messageType, consumerType);
+            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Created saga scope for message type: {MessageType}, saga: {SagaType}", messageType, sagaType);
 
             if (scope.Span?.Tags is MassTransitTags tags)
             {
-                // Add consumer type as a tag (MT8 OTEL style)
-                if (consumerType != null)
+                // Add saga-specific tags (MT8 OTEL style)
+                if (sagaType != null)
                 {
-                    tags.ConsumerType = consumerType;
+                    tags.SetTag("messaging.masstransit.saga_type", sagaType);
+                    // MT8 OTEL uses consumer_type for the state machine name
+                    tags.ConsumerType = sagaType + "StateMachine";
                 }
 
-                // Try to extract additional context info using reflection
-                // Properties are explicit interface implementations on MessageContext
+                if (correlationId.HasValue)
+                {
+                    tags.SagaId = correlationId.Value.ToString();
+                    tags.CorrelationId = correlationId.Value.ToString();
+                }
+
+                // Set begin state (MT8 OTEL tag)
+                if (beginState != null)
+                {
+                    tags.BeginState = beginState;
+                }
+
+                // Set peer address to match MT8 OTEL
+                if (destinationAddress != null)
+                {
+                    tags.PeerAddress = destinationAddress;
+                }
+
+                // Try to extract additional context info
                 if (context is not null)
                 {
                     try
@@ -130,15 +175,9 @@ public sealed class MethodConsumerMessageFilterIntegration
                         var messageContextInterface = contextType.GetInterface("MassTransit.MessageContext");
                         if (messageContextInterface != null)
                         {
-                            var sourceAddressProp = messageContextInterface.GetProperty("SourceAddress");
                             var messageIdProp = messageContextInterface.GetProperty("MessageId");
                             var conversationIdProp = messageContextInterface.GetProperty("ConversationId");
-                            var correlationIdProp = messageContextInterface.GetProperty("CorrelationId");
-
-                            if (sourceAddressProp?.GetValue(context) is Uri sourceAddress)
-                            {
-                                tags.SourceAddress = sourceAddress.ToString();
-                            }
+                            var sourceAddressProp = messageContextInterface.GetProperty("SourceAddress");
 
                             if (messageIdProp?.GetValue(context) is Guid messageId)
                             {
@@ -150,28 +189,26 @@ public sealed class MethodConsumerMessageFilterIntegration
                                 tags.ConversationId = conversationId.ToString();
                             }
 
-                            if (correlationIdProp?.GetValue(context) is Guid correlationId)
+                            // MT8 OTEL tag: source_address
+                            if (sourceAddressProp?.GetValue(context) is Uri sourceAddress)
                             {
-                                tags.CorrelationId = correlationId.ToString();
-                            }
-
-                            // Set peer address to match MT8 OTEL
-                            if (destinationAddress != null)
-                            {
-                                tags.PeerAddress = destinationAddress;
+                                tags.SourceAddress = sourceAddress.ToString();
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Debug(ex, "Failed to set additional consumer tags");
+                        Log.Debug(ex, "Failed to set additional saga context tags");
                     }
                 }
             }
+
+            // Store saga instance in state to capture end state later
+            return new CallTargetState(scope, sagaInstance);
         }
         else
         {
-            Log.Warning("MassTransit MethodConsumerMessageFilterIntegration - Failed to create consumer scope (integration may be disabled)");
+            Log.Warning("MassTransit StateMachineSagaMessageFilterIntegration - Failed to create saga scope (integration may be disabled)");
         }
 
         return new CallTargetState(scope);
@@ -189,11 +226,34 @@ public sealed class MethodConsumerMessageFilterIntegration
     /// <returns>A response value</returns>
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration.OnAsyncMethodEnd() - Completing consume span");
+        Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration.OnAsyncMethodEnd() - Completing saga span");
 
         if (exception != null)
         {
-            Log.Warning(exception, "MassTransit MethodConsumerMessageFilterIntegration - Consumer failed with exception");
+            Log.Warning(exception, "MassTransit StateMachineSagaMessageFilterIntegration - Saga state machine processing failed with exception");
+        }
+
+        // Try to capture end state (MT8 OTEL tag)
+        if (state.Scope?.Span?.Tags is MassTransitTags tags && state.State != null)
+        {
+            try
+            {
+                var sagaInstance = state.State;
+                var currentStateProp = sagaInstance.GetType().GetProperty("CurrentState");
+                if (currentStateProp != null)
+                {
+                    var endState = currentStateProp.GetValue(sagaInstance)?.ToString();
+                    if (endState != null)
+                    {
+                        tags.EndState = endState;
+                        Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - End state: {EndState}", endState);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed to capture saga end state");
+            }
         }
 
         state.Scope.DisposeWithException(exception);

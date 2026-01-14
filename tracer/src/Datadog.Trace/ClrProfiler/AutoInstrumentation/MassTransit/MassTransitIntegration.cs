@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             string operation,
             string? messageType,
             string? destinationName = null,
-            DateTimeOffset? startTime = null)
+            DateTimeOffset? startTime = null,
+            string? messagingSystem = null)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
@@ -39,7 +40,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 };
 
                 var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MassTransitConstants.MessagingType);
-                var operationName = $"{MassTransitConstants.MessagingType}.{operation}";
+
+                // Determine messaging system from destination or use provided value or default to in-memory
+                var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName);
+                tags.MessagingSystem = resolvedMessagingSystem;
+
+                // MT8 OTEL-style operation name: {messaging_system}.{operation}
+                // e.g., "in_memory.send", "rabbitmq.send"
+                var operationName = $"{resolvedMessagingSystem.Replace("-", "_")}.{operation}";
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -50,14 +58,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
 
-                // Determine messaging system from destination or default to in-memory
-                var messagingSystem = DetermineMessagingSystem(destinationName);
-                tags.MessagingSystem = messagingSystem;
-
-                // Set resource name
-                if (messageType != null)
+                // Resource name uses clean destination name: "{clean_destination} {operation}"
+                // e.g., "submit-order send" instead of "loopback://localhost/submit-order send"
+                if (destinationName != null)
                 {
-                    span.ResourceName = $"{operation} {messageType}";
+                    var cleanDestination = ExtractDestinationName(destinationName);
+                    span.ResourceName = $"{cleanDestination} {operation}";
+                    // MT8 OTEL: messaging.destination.name = clean name, messaging.masstransit.destination_address = full URI
+                    tags.DestinationName = cleanDestination;
+                    tags.DestinationAddress = destinationName;
+                }
+                else if (messageType != null)
+                {
+                    span.ResourceName = $"{messageType} {operation}";
+                    tags.DestinationName = messageType;
                     tags.MessageTypes = $"urn:message:{messageType}";
                 }
                 else
@@ -65,9 +79,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     span.ResourceName = operation;
                 }
 
-                if (destinationName != null)
+                // Set message type if provided
+                if (messageType != null)
                 {
-                    tags.DestinationName = destinationName;
+                    tags.MessageTypes = $"urn:message:{messageType}";
                 }
             }
             catch (Exception ex)
@@ -83,7 +98,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             string operation,
             string? messageType,
             PropagationContext context = default,
-            DateTimeOffset? startTime = null)
+            DateTimeOffset? startTime = null,
+            string? destinationName = null,
+            string? messagingSystem = null)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
@@ -101,7 +118,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 };
 
                 var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MassTransitConstants.MessagingType);
-                var operationName = $"{MassTransitConstants.MessagingType}.{operation}";
+
+                // Determine messaging system from destination or use provided value or default to in-memory
+                var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName) ?? "in-memory";
+                tags.MessagingSystem = resolvedMessagingSystem;
+
+                // MT8 OTEL-style operation name for consumer: "consumer"
+                // This matches the MT8 OTEL instrumentation which uses "consumer" for all consumer operations
+                var operationName = MassTransitConstants.ConsumerOperationName;
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -113,18 +137,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
 
-                // Default to in-memory for consumer
-                tags.MessagingSystem = "in-memory";
-
-                // Set resource name
-                if (messageType != null)
+                // Resource name uses clean destination name: "{clean_destination} {operation}"
+                // e.g., "submit-order receive" instead of "loopback://localhost/submit-order receive"
+                if (destinationName != null)
                 {
-                    span.ResourceName = $"{operation} {messageType}";
+                    var cleanDestination = ExtractDestinationName(destinationName);
+                    span.ResourceName = $"{cleanDestination} {operation}";
+                    // MT8 OTEL: messaging.destination.name = clean name, messaging.masstransit.destination_address = full URI
+                    tags.DestinationName = cleanDestination;
+                    tags.DestinationAddress = destinationName;
+                }
+                else if (messageType != null)
+                {
+                    span.ResourceName = $"{messageType} {operation}";
+                    tags.DestinationName = messageType;
                     tags.MessageTypes = $"urn:message:{messageType}";
                 }
                 else
                 {
                     span.ResourceName = operation;
+                }
+
+                // Set message type if provided
+                if (messageType != null)
+                {
+                    tags.MessageTypes = $"urn:message:{messageType}";
                 }
             }
             catch (Exception ex)
@@ -171,6 +208,86 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 tags.MessagingSystem = messagingSystem;
             }
+        }
+
+        /// <summary>
+        /// Extracts a clean destination name from a MassTransit address URI.
+        /// Matches MT8 OTEL behavior in BaseSendTransportContext.ActivityDestination.
+        /// For example: "loopback://localhost/submit-order" -> "submit-order"
+        /// Or for message types: "urn:message:Namespace:MessageType" -> "MessageType"
+        /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
+        /// </summary>
+        internal static string ExtractDestinationName(string? fullAddress)
+        {
+            if (string.IsNullOrEmpty(fullAddress))
+            {
+                return "unknown";
+            }
+
+            // Handle URN format (urn:message:Namespace:MessageType)
+            if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                // Extract just the message type name (last segment after colon)
+                var lastColon = fullAddress.LastIndexOf(':');
+                if (lastColon > 0 && lastColon < fullAddress.Length - 1)
+                {
+                    return fullAddress.Substring(lastColon + 1);
+                }
+
+                return fullAddress;
+            }
+
+            // Try to parse as URI and extract the path
+            string entityName = fullAddress;
+            try
+            {
+                if (Uri.TryCreate(fullAddress, UriKind.Absolute, out var uri))
+                {
+                    // Get the last segment of the path
+                    var path = uri.AbsolutePath.TrimStart('/');
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        // If path contains slashes, get the last segment
+                        var lastSlash = path.LastIndexOf('/');
+                        if (lastSlash >= 0 && lastSlash < path.Length - 1)
+                        {
+                            entityName = path.Substring(lastSlash + 1);
+                        }
+                        else
+                        {
+                            entityName = path;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Continue with fullAddress as entityName
+            }
+
+            // MT8 OTEL-style normalization of special endpoint names
+            // See: BaseSendTransportContext.cs in MassTransit source
+            if (entityName.IndexOf("_bus_", StringComparison.Ordinal) >= 0)
+            {
+                return "bus";
+            }
+
+            if (entityName.IndexOf("_endpoint_", StringComparison.Ordinal) >= 0)
+            {
+                return "endpoint";
+            }
+
+            if (entityName.IndexOf("_signalr_", StringComparison.Ordinal) >= 0)
+            {
+                return "signalr";
+            }
+
+            if (entityName.StartsWith("Instance_", StringComparison.Ordinal))
+            {
+                return "instance";
+            }
+
+            return entityName;
         }
 
         private static string DetermineMessagingSystem(string? destination)

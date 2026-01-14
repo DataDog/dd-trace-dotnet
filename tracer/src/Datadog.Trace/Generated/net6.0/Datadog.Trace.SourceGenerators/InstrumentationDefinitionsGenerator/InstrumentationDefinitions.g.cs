@@ -453,12 +453,12 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.AppenderCollectionLegacyIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ConsumeIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.BusPublishObjectIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.BusPublishObjectTypeIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.StateMachineSagaMessageFilterIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ConsumeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointSendIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.IPublishEndpointPublishIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ReceivePipeDispatcherIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointPipeSendIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MassTransit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"

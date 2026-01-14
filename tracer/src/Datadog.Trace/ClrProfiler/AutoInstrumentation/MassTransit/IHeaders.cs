@@ -10,18 +10,16 @@ using System.Collections.Generic;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
-    /// Duck-typing interface for MassTransit.Headers
+    /// Duck-typing interface for MassTransit.Headers (for reading headers on consume side)
     /// </summary>
-    internal interface IHeaders : IEnumerable<KeyValuePair<string, object>>
+    internal interface IHeaders
     {
-        /// <summary>
-        /// Gets or sets a header value
-        /// </summary>
-        object? this[string key] { get; set; }
-
         /// <summary>
         /// Tries to get a header value
         /// </summary>
-        bool TryGetHeader(string key, out object? value);
+        /// <param name="key">The header key</param>
+        /// <param name="value">The header value if found</param>
+        /// <returns>True if header found, false otherwise</returns>
+        bool TryGetHeader(string key, out object value);
     }
 }

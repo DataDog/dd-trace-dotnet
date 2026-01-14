@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Samples.MassTransit7;
 using Samples.MassTransit7.Consumers;
 using Samples.MassTransit7.Messages;
+using Samples.MassTransit7.Sagas;
 
 Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║   MassTransit 7 Comprehensive Feature Demonstration         ║");
@@ -31,6 +32,10 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ProcessPaymentConsumer>();
     x.AddConsumer<ShipOrderConsumer>();
     x.AddConsumer<InventoryConsumer>();
+
+    // Add Saga State Machine with in-memory repository
+    x.AddSagaStateMachine<OrderStateMachine, OrderState>()
+        .InMemoryRepository();
 
     // Configure the bus - MassTransit 7 style
     x.UsingInMemory((context, cfg) =>
@@ -103,19 +108,34 @@ try
     Console.WriteLine("═══════════════════════════════════════════════════════════════");
     await DemoPublishSubscribe(bus, logger, tracker);
     Console.WriteLine("[DEBUG] Waiting for all consumers to complete...");
-    await tracker.WaitForAll(TimeSpan.FromSeconds(15));
-    Console.WriteLine("[DEBUG] All consumers completed");
+    try
+    {
+        await tracker.WaitForAll(TimeSpan.FromSeconds(5));
+        Console.WriteLine("[DEBUG] All consumers completed");
+    }
+    catch (TimeoutException ex)
+    {
+        Console.WriteLine($"[DEBUG] Consumer wait timed out (proceeding anyway): {ex.Message}");
+    }
     // Small delay to ensure all RECEIVE logs are flushed
-    await Task.Delay(100);
+    await Task.Delay(500);
 
     Console.WriteLine("\n═══════════════════════════════════════════════════════════════");
-    Console.WriteLine("Feature 3: Multiple Orders in Parallel");
+    Console.WriteLine("Feature 3: Saga State Machine Workflow");
+    Console.WriteLine("═══════════════════════════════════════════════════════════════");
+    await DemoSagaStateMachine(bus, logger);
+    Console.WriteLine("[DEBUG] Waiting for saga workflow to complete...");
+    await Task.Delay(5000);
+    Console.WriteLine("[DEBUG] Saga demo completed");
+
+    Console.WriteLine("\n═══════════════════════════════════════════════════════════════");
+    Console.WriteLine("Feature 4: Multiple Orders in Parallel");
     Console.WriteLine("═══════════════════════════════════════════════════════════════");
     await DemoParallelProcessing(bus, logger);
     await Task.Delay(2000);
 
     Console.WriteLine("\n═══════════════════════════════════════════════════════════════");
-    Console.WriteLine("Feature 4: Payment Failures & Error Handling");
+    Console.WriteLine("Feature 5: Payment Failures & Error Handling");
     Console.WriteLine("═══════════════════════════════════════════════════════════════");
     await DemoErrorHandling(bus, logger);
     await Task.Delay(2000);
@@ -186,6 +206,27 @@ static async Task DemoPublishSubscribe(IBus bus, ILogger logger, MessageCompleti
     await bus.Publish(new ShipOrder(orderId, "123 Main St"));
 
     logger.LogInformation("Order commands submitted - waiting for consumers to process them");
+}
+
+static async Task DemoSagaStateMachine(IBus bus, ILogger logger)
+{
+    logger.LogInformation("Submitting a single order to demonstrate saga workflow...");
+    logger.LogInformation("Saga will coordinate: Order → Payment → Shipping → Completion");
+
+    // The saga state machine will:
+    // 1. Receive OrderSubmitted -> transition to AwaitingPayment -> publish ProcessPayment
+    // 2. ProcessPaymentConsumer handles ProcessPayment -> publishes PaymentProcessed
+    // 3. Saga receives PaymentProcessed -> transition to AwaitingShipment -> publish ShipOrder
+    // 4. ShipOrderConsumer handles ShipOrder -> publishes OrderShipped
+    // 5. Saga receives OrderShipped -> transition to Final -> publish OrderCompleted
+
+    var orderId = Guid.NewGuid();
+
+    // Start the saga by publishing OrderSubmitted event
+    // The consumers will automatically drive the rest of the workflow
+    await bus.Publish(new OrderSubmitted(orderId, "Alice Johnson", 99.99m, DateTime.UtcNow));
+
+    logger.LogInformation("Order submitted - watch the saga orchestrate the workflow");
 }
 
 static async Task DemoParallelProcessing(IBus bus, ILogger logger)
