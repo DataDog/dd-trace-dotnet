@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
@@ -14,6 +15,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     /// </summary>
     internal interface IConsumeContext
     {
+        /// <summary>
+        /// Gets the supported message types from the message
+        /// </summary>
+        IEnumerable<string> SupportedMessageTypes { get; }
+
         /// <summary>
         /// Gets the message ID
         /// </summary>

@@ -449,7 +449,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.StateMachineSagaMessageFilterIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ConsumeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointSendIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ReceivePipeDispatcherIntegration"
