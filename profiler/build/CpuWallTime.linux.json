@@ -15,7 +15,14 @@
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
+
         "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
         "DD_TRACE_ENABLED" : "0"
       }
     },
@@ -25,8 +32,14 @@
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
         "DD_INTERNAL_USE_BACKTRACE2": "1",
         "DD_INTERNAL_CPU_PROFILER_TYPE": "TimerCreate",
+
         "DD_TRACE_ENABLED" : "0"
       }
     },
@@ -36,9 +49,16 @@
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
         "DD_INTERNAL_CPU_PROFILER_TYPE": "TimerCreate",
         "DD_INTERNAL_USE_BACKTRACE2": "0",
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     },
     {
@@ -47,16 +67,23 @@
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
         "DD_INTERNAL_USE_BACKTRACE2": "1",
         "DD_INTERNAL_CPU_PROFILER_TYPE": "ManualCpuTime",
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     }
   ],
   "processName": "Samples.Computer01",
   "processArguments": "--scenario 5 --iterations 1",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net7.0",
+  "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net10.0",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
     "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
@@ -68,9 +95,9 @@
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Core",
-    "runtime.version": "7.0",
-    "benchmark.job.runtime.name": ".NET 7.0",
-    "benchmark.job.runtime.moniker": "net7.0"
+    "runtime.version": "10.0",
+    "benchmark.job.runtime.name": ".NET 10.0",
+    "benchmark.job.runtime.moniker": "net10.0"
   },
   "metricsFilePath": "*metrics.json"
 }

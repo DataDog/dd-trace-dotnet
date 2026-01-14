@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -42,6 +43,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));
         }
+
+#if NET6_0_OR_GREATER
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DiagnosticsMetricsApiSubmitsMetrics()
+        {
+            SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, "1");
+            EnvironmentHelper.EnableDefaultTransport();
+            await RunTest();
+        }
+#endif
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

@@ -25,6 +25,8 @@
   <ItemGroup>
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\*.cs" />
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\Trace\**\*.cs" Link="Trace\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Benchmarks.Trace\DummyAgentWriter.cs" />
+    <Compile Include="..\Benchmarks.Trace\TracerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>

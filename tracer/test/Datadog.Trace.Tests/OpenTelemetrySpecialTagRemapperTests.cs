@@ -11,6 +11,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Moq;
 using Xunit;
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
@@ -92,7 +93,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
@@ -113,7 +114,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
@@ -135,7 +136,7 @@ namespace Datadog.Trace.Tests
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
-            var span = new Span(spanContext, DateTimeOffset.UtcNow);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 

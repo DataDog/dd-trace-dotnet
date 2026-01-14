@@ -1,0 +1,41 @@
+using System;
+using System.Threading;
+using OpenFeature.Model;
+
+namespace Samples.FeatureFlags;
+
+class Evaluator
+{
+    static global::OpenFeature.FeatureClient client;
+
+    public static void Init()
+    {
+        Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
+
+        global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
+        client = global::OpenFeature.Api.Instance.GetClient();
+    }
+
+    public static (string? Value, string? Error)? Evaluate(string key)
+    {
+        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+        var evaluation = client.GetStringDetailsAsync(key, "Not found", context).Result;
+
+        if (evaluation is null || string.IsNullOrEmpty(evaluation.FlagKey))
+        {
+            Console.WriteLine($"Eval ({key}) : <NULL> (FeatureFlagsSdk is disabled)");
+            return null;
+        }
+        
+        if (evaluation.ErrorMessage is not null)
+        {
+            Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.ErrorMessage}>");
+        }
+        else
+        {
+            Console.WriteLine($"Eval ({key}) : <OK: {evaluation.Value ?? "<NULL>"}>");
+        }
+
+        return (evaluation.Value, evaluation.ErrorMessage);
+    }
+}
