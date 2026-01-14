@@ -55,6 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     serviceName: serviceName,
                     startTime: startTime);
 
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
+
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
 
@@ -133,6 +135,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     tags: tags,
                     serviceName: serviceName,
                     startTime: startTime);
+
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;

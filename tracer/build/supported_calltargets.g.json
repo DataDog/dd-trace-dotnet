@@ -9535,30 +9535,6 @@
   {
     "IntegrationName": "MassTransit",
     "AssemblyName": "MassTransit",
-    "TargetTypeName": "MassTransit.IConsumer`1",
-    "TargetMethodName": "Consume",
-    "TargetReturnType": "System.Threading.Tasks.Task",
-    "TargetParameterTypes": [
-      "MassTransit.ConsumeContext`1"
-    ],
-    "MinimumVersion": {
-      "Item1": 7,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 7,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ConsumeIntegration",
-    "IntegrationKind": 2,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MassTransit",
-    "AssemblyName": "MassTransit",
     "TargetTypeName": "MassTransit.ISendEndpoint",
     "TargetMethodName": "Send",
     "TargetReturnType": "System.Threading.Tasks.Task",
