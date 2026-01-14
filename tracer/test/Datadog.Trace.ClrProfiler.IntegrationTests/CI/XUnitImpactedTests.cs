@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
@@ -40,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             InjectGitHubActionsSession();
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.TravisCommitMessage, nameof(BaseShaFromPr));
             return SubmitTests(packageVersion, 2, TestIsModified);
         }
 
@@ -50,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task DisabledByEnvVar(string packageVersion)
         {
             InjectGitHubActionsSession(true, false);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.TravisCommitMessage, nameof(DisabledByEnvVar));
             return SubmitTests(packageVersion, 0, TestIsModified);
         }
 
@@ -62,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine due to a Detached Head status. An issue has been opened to handle the situation. Meanwhile we are skipping it.");
 
             InjectGitHubActionsSession(true, null);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.TravisCommitMessage, nameof(EnabledBySettings));
             return SubmitTests(packageVersion, 2, TestIsModified);
         }
 
@@ -74,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check for Git availability
             Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
 
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.TravisCommitMessage, nameof(GitBranchBasedImpactDetection));
             var testBranchName = $"test-impact-detection-{Guid.NewGuid():N}";
             var originalBranch = string.Empty;
 
