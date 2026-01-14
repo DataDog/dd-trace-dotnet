@@ -91,8 +91,8 @@ public class ActivityBenchmark
     private Activity CreateActivity(Activity? parent = null, ActivityIdFormat idFormat = ActivityIdFormat.W3C)
     {
         var activity = parent is null
-                           ? _source.CreateActivity("parent", System.Diagnostics.ActivityKind.Internal)
-                           : _source.CreateActivity("child", System.Diagnostics.ActivityKind.Internal, parent!.Context);
+                           ? _source!.CreateActivity("parent", System.Diagnostics.ActivityKind.Internal)
+                           : _source!.CreateActivity("child", System.Diagnostics.ActivityKind.Internal, parent!.Context);
 
         if (activity is null)
         {
