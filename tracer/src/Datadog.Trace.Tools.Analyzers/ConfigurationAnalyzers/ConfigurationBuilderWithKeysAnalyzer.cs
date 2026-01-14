@@ -63,19 +63,19 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
 
                 var configurationBuilder = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationBuilder);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationBuilder, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationBuilder))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationBuilder, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationBuilder))
                 {
                     return;
                 }
 
                 var configurationKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationKeys))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationKeys))
                 {
                     return;
                 }
 
                 var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
                 {
                     return;
                 }
@@ -83,12 +83,12 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var targetTypes = new TargetTypeSymbols(configurationBuilder, configurationKeys, platformKeys);
 
                 compilationContext.RegisterSyntaxNodeAction(
-                    c => AnalyzeInvocationExpression(c, targetTypes),
+                    c => AnalyzeInvocationExpression(c, in targetTypes),
                     SyntaxKind.InvocationExpression);
             });
         }
 
-        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, TargetTypeSymbols targetTypes)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, in TargetTypeSymbols targetTypes)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 

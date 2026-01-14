@@ -77,31 +77,31 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
 
                 var environmentHelpers = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpers);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpers, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpers))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpers, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpers))
                 {
                     return;
                 }
 
                 var environmentHelpersNoLogging = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpersNoLogging);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpersNoLogging, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpersNoLogging))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpersNoLogging, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpersNoLogging))
                 {
                     return;
                 }
 
                 var iValueProvider = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.IValueProvider);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, iValueProvider, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.IValueProvider))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, iValueProvider, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.IValueProvider))
                 {
                     return;
                 }
 
                 var configurationKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.ConfigurationKeys))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.ConfigurationKeys))
                 {
                     return;
                 }
 
                 var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
-                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.PlatformKeys))
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.PlatformKeys))
                 {
                     return;
                 }
@@ -109,12 +109,12 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var targetTypes = new TargetTypeSymbols(environmentHelpers, environmentHelpersNoLogging, iValueProvider, configurationKeys, platformKeys);
 
                 compilationContext.RegisterSyntaxNodeAction(
-                    c => AnalyzeInvocationExpression(c, targetTypes),
+                    c => AnalyzeInvocationExpression(c, in targetTypes),
                     SyntaxKind.InvocationExpression);
             });
         }
 
-        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, TargetTypeSymbols targetTypes)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, in TargetTypeSymbols targetTypes)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 

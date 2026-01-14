@@ -57,7 +57,7 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
             var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
             var platformKeysType = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
 
-            if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeysType, nameof(PlatformKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
+            if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeysType, nameof(PlatformKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
             {
                 return;
             }
