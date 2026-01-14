@@ -9,6 +9,7 @@
 #include "ProfileImpl.hpp"
 #include "Sample.h"
 #include "ScopeFinalizer.h"
+#include "SymbolsStore.h"
 
 #include <chrono>
 
@@ -18,9 +19,15 @@ using namespace std::chrono_literals;
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
-Profile::Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
+Profile::Profile(IConfiguration* configuration,
+    std::vector<SampleValueType> const& valueTypes,
+    std::string const& periodType,
+    std::string const& periodUnit,
+    std::string applicationName,
+    libdatadog::SymbolsStore* pSymbolsStore) :
     _applicationName{std::move(applicationName)},
-    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()}
+    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()},
+    _pSymbolsStore{pSymbolsStore}
 {
     _impl = CreateProfile(valueTypes, periodType, periodUnit);
 }
@@ -45,23 +52,20 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     {
         auto& location = locations[idx];
 
-        location.mapping = {};
-        location.mapping.filename = to_char_slice(frame.ModuleName);
-        location.function.filename = to_char_slice(frame.Filename);
+        location.mapping = reinterpret_cast<ddog_prof_MappingId2>(frame.ModuleId);
+        location.function = reinterpret_cast<ddog_prof_FunctionId2>(frame.FunctionId);
         location.line = frame.StartLine; // For now we only have the start line of the function.
-        location.function.name = to_char_slice(frame.Frame);
-        location.address = 0; // TODO check if we can get that information in the provider
 
         ++idx;
     }
 
-    auto ffiSample = ddog_prof_Sample{};
+    auto ffiSample = ddog_prof_Sample2{};
     ffiSample.locations = {locations.data(), nbFrames};
 
     // Labels
     // PERF: since adding to a profile is done by only one thread (SamplesCollector worker thread),
     // we can reuse the same ffi labels vector for all samples.
-    static std::vector<ddog_prof_Label> ffiLabels;
+    static std::vector<ddog_prof_Label2> ffiLabels;
     auto const& labels = sample->GetLabels();
     ffiLabels.reserve(labels.size());
 
@@ -71,17 +75,17 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     };
 
     auto labelsVisitor = LabelsVisitor{
-        [](NumericLabel const& l) -> ddog_prof_Label {
+        [](NumericLabel const& l) -> ddog_prof_Label2 {
             auto const& [name, value] = l;
-            return ddog_prof_Label {
-                .key = {name.data(), name.size()},
+            return ddog_prof_Label2 {
+                .key = reinterpret_cast<ddog_prof_StringId2>(name),
                 .num = value
             };
         },
-        [](StringLabel const& l) -> ddog_prof_Label {
+        [](StringLabel const& l) -> ddog_prof_Label2 {
             auto const& [name, value] = l;
-            return ddog_prof_Label {
-                .key = {name.data(), name.size()},
+            return ddog_prof_Label2 {
+                .key = reinterpret_cast<ddog_prof_StringId2>(name),
                 .str = {value.data(), value.size()}
             };
         }
@@ -108,8 +112,8 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
-    if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto add_res = ddog_prof_Profile_add2(&profile, ffiSample, timestamp.count());
+    if (add_res.err != nullptr)
     {
         return make_error(add_res.err);
     }

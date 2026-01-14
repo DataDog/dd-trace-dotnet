@@ -16,6 +16,9 @@
 
 class RawSampleTransformer;
 class SampleValueTypeProvider;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class GarbageCollectionProvider
     : public CollectorBase<RawGarbageCollectionSample>,
@@ -26,7 +29,8 @@ public:
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(

@@ -10,6 +10,8 @@
 #include "FrameStoreHelper.h"
 #include "IAppDomainStore.h"
 #include "ProfilerMockedInterface.h"
+#include "ServiceWrapper.hpp"
+#include "SymbolsStore.h"
 
 #include "RingBuffer.h"
 
@@ -17,7 +19,8 @@ TEST(CpuSampleProviderTest, WriteAndReadSample)
 {
     auto const maxNbFrames = 4;
     auto appDomainStore = AppDomainStoreHelper(1);
-    auto frameStore = FrameStoreHelper(true, "Frame", maxNbFrames);
+    auto symbolsStore = ServiceWrapper<libdatadog::SymbolsStore>();
+    auto frameStore = FrameStoreHelper(true, "Frame", maxNbFrames, symbolsStore);
     MockRuntimeIdStore runtimeIdStore;
 
     std::string firstExpectedRuntimeId = "MyRid";
@@ -32,7 +35,7 @@ TEST(CpuSampleProviderTest, WriteAndReadSample)
     auto const nbSamples = 11;
     auto metricRegistry = MetricsRegistry();
     auto rb = std::make_unique<RingBuffer>(CpuSampleProvider::SampleSize * nbSamples, CpuSampleProvider::SampleSize);
-    auto provider = CpuSampleProvider(valueTypes, &rawSampleTransformer, rb.get(), metricRegistry);
+    auto provider = CpuSampleProvider(valueTypes, &rawSampleTransformer, rb.get(), metricRegistry, symbolsStore);
 
     provider.Start();
 
@@ -57,26 +60,26 @@ TEST(CpuSampleProviderTest, WriteAndReadSample)
 
     auto samples = provider.GetSamples();
 
-    std::vector<std::string> expectedFrames =
+    std::vector<libdatadog::FunctionId*> expectedFunctionIds =
         {
-            "Frame #1",
-            "Frame #2",
-            "Frame #3",
-            "Frame #4",
+            symbolsStore->InternFunction("Frame #1", "").value(),
+            symbolsStore->InternFunction("Frame #2", "").value(),
+            symbolsStore->InternFunction("Frame #3", "").value(),
+            symbolsStore->InternFunction("Frame #4", "").value(),
         };
 
-    std::vector<std::string> expectedModules =
+    std::vector<libdatadog::ModuleId*> expectedModulesIds =
         {
-            "module #1",
-            "module #2",
-            "module #3",
-            "module #4",
+            symbolsStore->InternMapping("module #1").value(),
+            symbolsStore->InternMapping("module #2").value(),
+            symbolsStore->InternMapping("module #3").value(),
+            symbolsStore->InternMapping("module #4").value(),
         };
 
     ASSERT_EQ(samples->size(), nbSamples);
 
     Sample::ValuesCount = 2; // Duration and CPU samples count
-    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
+    auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10, symbolsStore);
     size_t currentSampleIdx = 0;
     while (samples->MoveNext(sample))
     {
@@ -84,8 +87,8 @@ TEST(CpuSampleProviderTest, WriteAndReadSample)
         auto frames = sample->GetCallstack();
         for (auto frame : frames)
         {
-            ASSERT_EQ(expectedModules[currentFrame], frame.ModuleName);
-            ASSERT_EQ(expectedFrames[currentFrame], frame.Frame);
+            ASSERT_EQ(expectedModulesIds[currentFrame], frame.ModuleId);
+            ASSERT_EQ(expectedFunctionIds[currentFrame], frame.FunctionId);
 
             currentFrame++;
         }

@@ -12,10 +12,14 @@
 
 #include "Sample.h"
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp);
+    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp, libdatadog::SymbolsStore* symbolsStore);
 
     // accessors
     void SetHandle(ObjectHandleID handle);
