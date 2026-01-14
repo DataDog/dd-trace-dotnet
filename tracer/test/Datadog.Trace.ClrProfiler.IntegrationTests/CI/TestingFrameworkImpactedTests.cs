@@ -212,6 +212,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
 
             // Set relevant GitHub variables
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubSha, baseSha);
             SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubRepository, repo);
             SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubBaseRef, branch);
             SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, repositoryRoot);

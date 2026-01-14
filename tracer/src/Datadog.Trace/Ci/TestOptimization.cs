@@ -45,8 +45,9 @@ internal sealed class TestOptimization : ITestOptimization
     public TestOptimization()
     {
         using var cd = CodeDurationRef.Create();
-        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
+        Log.Debug("TestOptimization: .ctor [CommandLine: {CommandLine}]", Environment.CommandLine);
+        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
         _enablement = InternalEnabled(Log);
     }
 
