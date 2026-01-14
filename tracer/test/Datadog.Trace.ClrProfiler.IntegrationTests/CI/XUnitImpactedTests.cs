@@ -71,6 +71,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check for Git availability
             Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
 
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
             var testBranchName = $"test-impact-detection-{Guid.NewGuid():N}";
             var originalBranch = string.Empty;
 
