@@ -28,6 +28,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             {
                 Sources =
                 {
+                    AnalyzerTestHelper.MinimalRequiredTypes,
                     """
                     #nullable enable
                     namespace Datadog.Trace.Configuration.Telemetry;
@@ -45,7 +46,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                     #nullable enable
                     namespace Datadog.Trace.Configuration;
 
-                    public static class ConfigurationKeys
+                    public static partial class ConfigurationKeys
                     {
                         public const string TraceEnabled = "DD_TRACE_ENABLED";
                         public const string ServiceName = "DD_SERVICE";
@@ -69,6 +70,8 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.SolutionTransforms.Add((solution, projectId) =>
+            solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
     }
 
@@ -81,6 +84,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             {
                 Sources =
                 {
+                    AnalyzerTestHelper.MinimalRequiredTypes,
                     """
                     #nullable enable
                     namespace Datadog.Trace.Configuration.Telemetry;
@@ -98,7 +102,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                     #nullable enable
                     namespace Datadog.Trace.Configuration;
 
-                    public static class PlatformKeys
+                    public static partial class PlatformKeys
                     {
                         public const string CorProfilerPath = "CORECLR_PROFILER_PATH";
                         public const string AwsLambdaFunctionName = "AWS_LAMBDA_FUNCTION_NAME";
@@ -122,6 +126,8 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.SolutionTransforms.Add((solution, projectId) =>
+            solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
     }
 
@@ -134,6 +140,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             {
                 Sources =
                 {
+                    AnalyzerTestHelper.MinimalRequiredTypes,
                     """
                     #nullable enable
                     namespace Datadog.Trace.Configuration.Telemetry;
@@ -151,7 +158,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                     #nullable enable
                     namespace Datadog.Trace.Configuration;
 
-                    public static class ConfigurationKeys
+                    public static partial class ConfigurationKeys
                     {
                         public static class CIVisibility
                         {
@@ -176,31 +183,27 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.SolutionTransforms.Add((solution, projectId) =>
+            solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
     }
 
     [Fact]
     public async Task WithKeysUsingHardcodedString_ShouldReportDD0007()
     {
-        var code = """
-                   #nullable enable
-                   namespace Datadog.Trace.Configuration.Telemetry;
-
-                   public struct ConfigurationBuilder
+        var code = AnalyzerTestHelper.MinimalRequiredTypes + """
+                   namespace Datadog.Trace.Configuration.Telemetry
                    {
-                       public HasKeys WithKeys(string key) => default;
-                   }
+                       public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+                       public struct HasKeys { }
 
-                   public struct HasKeys
-                   {
-                   }
-
-                   public class TestClass
-                   {
-                       public void TestMethod()
+                       public class TestClass
                        {
+                           public void TestMethod()
+                           {
                            var builder = new ConfigurationBuilder();
                            builder.WithKeys({|#0:"DD_TRACE_ENABLED"|});
+                       }
                        }
                    }
                    """;
@@ -209,32 +212,26 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                       .WithLocation(0)
                       .WithArguments("WithKeys", "DD_TRACE_ENABLED");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task WithKeysUsingVariable_ShouldReportDD0008()
     {
-        var code = """
-                   #nullable enable
-                   namespace Datadog.Trace.Configuration.Telemetry;
-
-                   public struct ConfigurationBuilder
+        var code = AnalyzerTestHelper.MinimalRequiredTypes + """
+                   namespace Datadog.Trace.Configuration.Telemetry
                    {
-                       public HasKeys WithKeys(string key) => default;
-                   }
+                       public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+                       public struct HasKeys { }
 
-                   public struct HasKeys
-                   {
-                   }
-
-                   public class TestClass
-                   {
-                       public void TestMethod()
+                       public class TestClass
                        {
+                           public void TestMethod()
+                           {
                            var builder = new ConfigurationBuilder();
                            var myKey = "DD_TRACE_ENABLED";
                            builder.WithKeys({|#0:myKey|});
+                       }
                        }
                    }
                    """;
@@ -243,34 +240,28 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                       .WithLocation(0)
                       .WithArguments("WithKeys", "myKey");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task WithKeysUsingMethodCall_ShouldReportDD0008()
     {
-        var code = """
-                   #nullable enable
-                   namespace Datadog.Trace.Configuration.Telemetry;
-
-                   public struct ConfigurationBuilder
+        var code = AnalyzerTestHelper.MinimalRequiredTypes + """
+                   namespace Datadog.Trace.Configuration.Telemetry
                    {
-                       public HasKeys WithKeys(string key) => default;
-                   }
+                       public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+                       public struct HasKeys { }
 
-                   public struct HasKeys
-                   {
-                   }
-
-                   public class TestClass
-                   {
-                       public void TestMethod()
+                       public class TestClass
                        {
+                           public void TestMethod()
+                           {
                            var builder = new ConfigurationBuilder();
                            builder.WithKeys({|#0:GetKey()|});
                        }
 
                        private string GetKey() => "DD_TRACE_ENABLED";
+                   }
                    }
                    """;
 
@@ -278,32 +269,26 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                       .WithLocation(0)
                       .WithArguments("WithKeys", "GetKey()");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task WithKeysUsingStringInterpolation_ShouldReportDD0008()
     {
-        var code = """
-                   #nullable enable
-                   namespace Datadog.Trace.Configuration.Telemetry;
-
-                   public struct ConfigurationBuilder
+        var code = AnalyzerTestHelper.MinimalRequiredTypes + """
+                   namespace Datadog.Trace.Configuration.Telemetry
                    {
-                       public HasKeys WithKeys(string key) => default;
-                   }
+                       public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+                       public struct HasKeys { }
 
-                   public struct HasKeys
-                   {
-                   }
-
-                   public class TestClass
-                   {
-                       public void TestMethod()
+                       public class TestClass
                        {
+                           public void TestMethod()
+                           {
                            var builder = new ConfigurationBuilder();
                            var prefix = "DD_";
                            builder.WithKeys({|#0:$"{prefix}TRACE_ENABLED"|});
+                       }
                        }
                    }
                    """;
@@ -312,7 +297,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                       .WithLocation(0)
                       .WithArguments("WithKeys", "$\"{prefix}TRACE_ENABLED\"");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -324,6 +309,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             {
                 Sources =
                 {
+                    AnalyzerTestHelper.MinimalRequiredTypes,
                     """
                     #nullable enable
                     namespace Datadog.Trace.Configuration.Telemetry;
@@ -369,6 +355,8 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.SolutionTransforms.Add((solution, projectId) =>
+            solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
     }
 
@@ -381,6 +369,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             {
                 Sources =
                 {
+                    AnalyzerTestHelper.MinimalRequiredTypes,
                     """
                     #nullable enable
                     namespace Datadog.Trace.Configuration.Telemetry;
@@ -398,7 +387,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                     #nullable enable
                     namespace Datadog.Trace.Configuration;
 
-                    public static class ConfigurationKeys
+                    public static partial class ConfigurationKeys
                     {
                         public const string TraceEnabled = "DD_TRACE_ENABLED";
                     }
@@ -433,36 +422,68 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.SolutionTransforms.Add((solution, projectId) =>
+            solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
     }
 
     [Fact]
     public async Task DifferentWithKeysMethodInDifferentNamespace_ShouldHaveNoDiagnostics()
     {
-        var code = """
-                   #nullable enable
-                   namespace SomeOther.Namespace;
-
-                   public struct ConfigurationBuilder
+        var code = AnalyzerTestHelper.MinimalRequiredTypes + """
+                   namespace Datadog.Trace.Configuration.Telemetry
                    {
-                       public HasKeys WithKeys(string key) => default;
+                       public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+                       public struct HasKeys { }
                    }
-
-                   public struct HasKeys
+                   namespace SomeOther.Namespace
                    {
-                   }
-
-                   public class TestClass
-                   {
-                       public void TestMethod()
+                       public struct ConfigurationBuilder
                        {
-                           var builder = new ConfigurationBuilder();
-                           builder.WithKeys("DD_TRACE_ENABLED");
-                           builder.WithKeys("DD_SERVICE");
+                           public HasKeys WithKeys(string key) => default;
+                       }
+
+                       public struct HasKeys
+                       {
+                       }
+
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new ConfigurationBuilder();
+                               builder.WithKeys("DD_TRACE_ENABLED");
+                               builder.WithKeys("DD_SERVICE");
+                           }
                        }
                    }
                    """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task MissingRequiredType_ShouldReportDD0009()
+    {
+        // Only define ConfigurationBuilder, missing ConfigurationKeys and PlatformKeys
+        var code = """
+                   namespace Datadog.Trace.Configuration.Telemetry
+                   {
+                       public struct ConfigurationBuilder
+                       {
+                           public HasKeys WithKeys(string key) => default;
+                       }
+
+                       public struct HasKeys
+                       {
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult("DD0009", DiagnosticSeverity.Error)
+                      .WithNoLocation()
+                      .WithArguments("ConfigurationBuilderWithKeysAnalyzer", "Datadog.Trace.Configuration.ConfigurationKeys");
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 }

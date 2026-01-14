@@ -68,7 +68,8 @@ internal static class EnvironmentHelpersNoLogging
     public static string? ProgramData() => GetEnvironmentVariable(PlatformKeys.ProgramData);
 
 #pragma warning disable RS0030
-// this access is allowed here as it's controlled by analyzer EnvironmentGetEnvironmentVariableAnalyzer making sure it's using a key from ConfigurationKeys/PlatformKeys
+    // -> Don't rename unless you adapt EnvironmentGetEnvironmentVariableAnalyzer
+    // this access is allowed here as it's controlled by analyzer EnvironmentGetEnvironmentVariableAnalyzer making sure it's using a key from ConfigurationKeys/PlatformKeys
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string? GetEnvironmentVariable(string key) => Environment.GetEnvironmentVariable(key);
 #pragma warning restore RS0030

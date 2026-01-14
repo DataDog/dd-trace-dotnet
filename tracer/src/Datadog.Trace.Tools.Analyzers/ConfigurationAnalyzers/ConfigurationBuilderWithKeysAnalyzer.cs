@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Immutable;
 using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule];
+            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, Diagnostics.MissingRequiredType];
 
         /// <summary>
         /// Initialize the analyzer
@@ -60,10 +61,26 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             context.RegisterCompilationStartAction(compilationContext =>
             {
                 var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
-                var targetTypes = new TargetTypeSymbols(
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationBuilder),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys));
+
+                var configurationBuilder = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationBuilder);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationBuilder, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationBuilder))
+                {
+                    return;
+                }
+
+                var configurationKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationKeys))
+                {
+                    return;
+                }
+
+                var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
+                {
+                    return;
+                }
+
+                var targetTypes = new TargetTypeSymbols(configurationBuilder, configurationKeys, platformKeys);
 
                 compilationContext.RegisterSyntaxNodeAction(
                     c => AnalyzeInvocationExpression(c, targetTypes),
@@ -98,7 +115,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
             // Analyze the first argument
             var argumentList = invocation.ArgumentList;
-            if (argumentList.Arguments.Count > 0)
+            if (argumentList?.Arguments.Count > 0)
             {
                 var argument = argumentList.Arguments[0];
                 AnalyzeConfigurationArgument(context, argument, WellKnownTypeNames.WithKeysMethodName, targetTypes);

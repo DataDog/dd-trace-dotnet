@@ -2,7 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 using System.Collections.Immutable;
 using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(UseConfigurationKeysRule, UseConfigurationKeysNotVariablesRule);
+            ImmutableArray.Create(UseConfigurationKeysRule, UseConfigurationKeysNotVariablesRule, Diagnostics.MissingRequiredType);
 
         /// <summary>
         /// Initialize the analyzer
@@ -75,12 +75,38 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             context.RegisterCompilationStartAction(compilationContext =>
             {
                 var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
-                var targetTypes = new TargetTypeSymbols(
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpers),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpersNoLogging),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.IValueProvider),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys),
-                    wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys));
+
+                var environmentHelpers = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpers);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpers, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpers))
+                {
+                    return;
+                }
+
+                var environmentHelpersNoLogging = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.EnvironmentHelpersNoLogging);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, environmentHelpersNoLogging, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.EnvironmentHelpersNoLogging))
+                {
+                    return;
+                }
+
+                var iValueProvider = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.IValueProvider);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, iValueProvider, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.IValueProvider))
+                {
+                    return;
+                }
+
+                var configurationKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.ConfigurationKeys))
+                {
+                    return;
+                }
+
+                var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
+                if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(EnvironmentGetEnvironmentVariableAnalyzer), WellKnownTypeNames.PlatformKeys))
+                {
+                    return;
+                }
+
+                var targetTypes = new TargetTypeSymbols(environmentHelpers, environmentHelpersNoLogging, iValueProvider, configurationKeys, platformKeys);
 
                 compilationContext.RegisterSyntaxNodeAction(
                     c => AnalyzeInvocationExpression(c, targetTypes),
@@ -117,7 +143,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
 
             // Check the first argument (the environment variable name)
-            if (argumentList.Arguments.Count > 0)
+            if (argumentList?.Arguments.Count > 0)
             {
                 var argument = argumentList.Arguments[0];
                 AnalyzeEnvironmentVariableArgument(context, argument, targetTypes);

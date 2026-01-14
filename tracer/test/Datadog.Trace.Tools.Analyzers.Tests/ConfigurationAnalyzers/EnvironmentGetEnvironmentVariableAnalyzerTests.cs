@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -21,69 +22,61 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
     [Fact]
     public async Task ValidUsage_WithConfigurationKeysConstant_NoDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Configuration
             {
-                internal static partial class ConfigurationKeys { public const string ApiKey = "DD_API_KEY"; }
+                public static partial class ConfigurationKeys { public const string ApiKey = "DD_API_KEY"; }
             }
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
                 class C { void M() => EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.ApiKey); }
             }
             """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code);
     }
 
     [Fact]
     public async Task ValidUsage_WithNestedConfigurationKeys_NoDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Configuration
             {
-                internal static class ConfigurationKeys { public static class CIVisibility { public const string Enabled = "DD_CIVISIBILITY_ENABLED"; } }
+                public static partial class ConfigurationKeys { public static class CIVisibility { public const string Enabled = "DD_CIVISIBILITY_ENABLED"; } }
             }
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
                 class C { void M() => EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled); }
             }
             """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code);
     }
 
     [Fact]
     public async Task ValidUsage_WithPlatformKeys_NoDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Configuration
             {
-                internal static class PlatformKeys { public const string AwsLambda = "AWS_LAMBDA_FUNCTION_NAME"; }
+                public static partial class PlatformKeys { public const string AwsLambda = "AWS_LAMBDA_FUNCTION_NAME"; }
             }
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
-                class C { void M() => EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.AwsLambda); }
+                partial class C { void M() => EnvironmentHelpers.GetEnvironmentVariable(Configuration.PlatformKeys.AwsLambda); }
             }
             """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code);
     }
 
     [Fact]
     public async Task InvalidUsage_WithHardcodedString_ReportsDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
-                class C { void M() => EnvironmentHelpers.GetEnvironmentVariable({|#0:"DD_API_KEY"|}); }
+                partial class C { void M() => EnvironmentHelpers.GetEnvironmentVariable({|#0:"DD_API_KEY"|}); }
             }
             """;
 
@@ -91,18 +84,16 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
             .WithLocation(0)
             .WithArguments("DD_API_KEY");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task InvalidUsage_WithVariable_ReportsDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
-                class C { void M() { var key = "DD_API_KEY"; EnvironmentHelpers.GetEnvironmentVariable({|#0:key|}); } }
+                partial class C { void M() { var key = "DD_API_KEY"; EnvironmentHelpers.GetEnvironmentVariable({|#0:key|}); } }
             }
             """;
 
@@ -110,18 +101,16 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
             .WithLocation(0)
             .WithArguments("key");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task InvalidUsage_WithStringInterpolation_ReportsDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
-                class C { void M() { var prefix = "DD_"; EnvironmentHelpers.GetEnvironmentVariable({|#0:$"{prefix}API_KEY"|}); } }
+                partial class C { void M() { var prefix = "DD_"; EnvironmentHelpers.GetEnvironmentVariable({|#0:$"{prefix}API_KEY"|}); } }
             }
             """;
 
@@ -129,19 +118,17 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
             .WithLocation(0)
             .WithArguments("$\"{prefix}API_KEY\"");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task InvalidUsage_WithConstantFromDifferentClass_ReportsDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
                 static class MyKeys { public const string ApiKey = "DD_API_KEY"; }
-                class C { void M() => EnvironmentHelpers.GetEnvironmentVariable({|#0:MyKeys.ApiKey|}); }
+                partial class C { void M() => EnvironmentHelpers.GetEnvironmentVariable({|#0:MyKeys.ApiKey|}); }
             }
             """;
 
@@ -149,37 +136,34 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
             .WithLocation(0)
             .WithArguments("MyKeys.ApiKey");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
     }
 
     [Fact]
     public async Task ValidUsage_OtherEnvironmentMethods_NoDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers 
+                public static partial class EnvironmentHelpers 
                 { 
-                    public static string GetEnvironmentVariable(string key) => null;
                     public static void SetEnvironmentVariable(string key, string value) { }
                 }
             
-                class C { void M() => EnvironmentHelpers.SetEnvironmentVariable("DD_API_KEY", "value"); }
+                partial class C { void M() => EnvironmentHelpers.SetEnvironmentVariable("DD_API_KEY", "value"); }
             }
             """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code);
     }
 
     [Fact]
     public async Task InvalidUsage_WithParameter_ReportsDiagnostic()
     {
-        var code = """
+        var code = AnalyzerTestHelper.RequiredTypes + """
             namespace Datadog.Trace.Util
             {
-                internal static class EnvironmentHelpers { public static string GetEnvironmentVariable(string key) => null; }
-            
-                class C 
+                partial class C 
                 { 
                     void GetEnv(string key) => EnvironmentHelpers.GetEnvironmentVariable({|#0:key|});
                     void Caller() => GetEnv("DD_API_KEY");
@@ -191,6 +175,27 @@ public class EnvironmentGetEnvironmentVariableAnalyzerTests
             .WithLocation(0)
             .WithArguments("key");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task MissingRequiredType_ShouldReportDD0009()
+    {
+        // Only define EnvironmentHelpers, missing ConfigurationKeys, PlatformKeys, and IValueProvider
+        var code = """
+                   namespace Datadog.Trace.Util
+                   {
+                       public static class EnvironmentHelpers
+                       {
+                           public static string GetEnvironmentVariable(string key) => null;
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult("DD0009", DiagnosticSeverity.Error)
+                      .WithNoLocation()
+                      .WithArguments("EnvironmentGetEnvironmentVariableAnalyzer", "Datadog.Trace.Util.EnvironmentHelpersNoLogging");
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<EnvironmentGetEnvironmentVariableAnalyzer>(code, expected);
     }
 }

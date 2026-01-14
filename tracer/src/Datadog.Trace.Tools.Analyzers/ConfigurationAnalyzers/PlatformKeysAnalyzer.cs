@@ -45,7 +45,7 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
         description: "Constants in PlatformKeys class should not start with OTEL, DD_, or _DD_ prefixes as these are reserved for OpenTelemetry and Datadog configuration keys. Platform keys should represent environment variables from external platforms and services.");
 
     /// <inheritdoc />
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [Rule, Helpers.Diagnostics.MissingRequiredType];
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -57,12 +57,14 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
             var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
             var platformKeysType = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
 
-            if (platformKeysType != null)
+            if (Helpers.Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeysType, nameof(PlatformKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
             {
-                compilationContext.RegisterSymbolAction(
-                    c => AnalyzeNamedType(c, platformKeysType),
-                    SymbolKind.NamedType);
+                return;
             }
+
+            compilationContext.RegisterSymbolAction(
+                c => AnalyzeNamedType(c, platformKeysType),
+                SymbolKind.NamedType);
         });
     }
 
