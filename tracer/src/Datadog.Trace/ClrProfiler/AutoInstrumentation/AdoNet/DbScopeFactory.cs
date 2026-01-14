@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged = false;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, string? baseHash)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
@@ -102,9 +103,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
+                        if (tracer.Settings.InjectSqlBasehash && !string.IsNullOrEmpty(baseHash))
+                        {
+                            tags.BaseHash = baseHash;
+                        }
+
+                        // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, tracer.Settings.InjectSqlBasehash ? baseHash : null);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
 
@@ -255,7 +261,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
+            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, string? baseHash)
             {
                 var commandType = command.GetType();
 
@@ -271,7 +277,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         dbType: DbTypeName,
                         operationName: OperationName,
                         serviceName: GetServiceName(tracer, DbTypeName),
-                        tagsFromConnectionString: ref tagsFromConnectionString);
+                        ref tagsFromConnectionString,
+                        baseHash);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
@@ -287,7 +294,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         dbType: dbTypeName,
                         operationName: operationName,
                         serviceName: GetServiceName(tracer, dbTypeName),
-                        tagsFromConnectionString: ref tagsFromConnectionString);
+                        ref tagsFromConnectionString,
+                        baseHash);
                 }
 
                 return null;

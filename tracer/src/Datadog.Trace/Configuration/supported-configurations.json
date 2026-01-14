@@ -387,6 +387,11 @@
         "A"
       ]
     },
+    "DD_INJECT_SQL_BASEHASH": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_DIAGNOSTIC_SOURCE_ENABLED": {
       "version": [
         "A"

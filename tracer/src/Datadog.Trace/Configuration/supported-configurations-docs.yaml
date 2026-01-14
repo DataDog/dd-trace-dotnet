@@ -231,6 +231,11 @@ DD_DBM_PROPAGATION_MODE: |
   Default value is disabled, expected values are either: disabled, service or full
   <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
 
+DD_INJECT_SQL_BASEHASH: |
+  Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+  Default value is false (disabled).
+  <seealso cref="Datadog.Trace.Configuration.TracerSettings.InjectSqlBasehash"/>
+
 DD_DIAGNOSTIC_SOURCE_ENABLED: |
   Configuration key for enabling or disabling the use of System.Diagnostics.DiagnosticSource.
   Default value is <c>true</c> (enabled).

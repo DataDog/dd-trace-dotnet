@@ -56,6 +56,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] DbmTraceInjectedBytes = new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
 #endif
+        // BaseHashBytes = MessagePack.Serialize("_dd.propagated_hash");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> BaseHashBytes => new byte[] { 179, 95, 100, 100, 46, 112, 114, 111, 112, 97, 103, 97, 116, 101, 100, 95, 104, 97, 115, 104 };
+#else
+        private static readonly byte[] BaseHashBytes = new byte[] { 179, 95, 100, 100, 46, 112, 114, 111, 112, 97, 103, 97, 116, 101, 100, 95, 104, 97, 115, 104 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -68,6 +74,7 @@ namespace Datadog.Trace.Tagging
                 "db.user" => DbUser,
                 "out.host" => OutHost,
                 "_dd.dbm_trace_injected" => DbmTraceInjected,
+                "_dd.propagated_hash" => BaseHash,
                 _ => base.GetTag(key),
             };
         }
@@ -93,6 +100,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "_dd.dbm_trace_injected": 
                     DbmTraceInjected = value;
+                    break;
+                case "_dd.propagated_hash": 
+                    BaseHash = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(SqlTags));
@@ -138,6 +148,11 @@ namespace Datadog.Trace.Tagging
             if (DbmTraceInjected is not null)
             {
                 processor.Process(new TagItem<string>("_dd.dbm_trace_injected", DbmTraceInjected, DbmTraceInjectedBytes));
+            }
+
+            if (BaseHash is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.propagated_hash", BaseHash, BaseHashBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -191,6 +206,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("_dd.dbm_trace_injected (tag):")
                   .Append(DbmTraceInjected)
+                  .Append(',');
+            }
+
+            if (BaseHash is not null)
+            {
+                sb.Append("_dd.propagated_hash (tag):")
+                  .Append(BaseHash)
                   .Append(',');
             }
 

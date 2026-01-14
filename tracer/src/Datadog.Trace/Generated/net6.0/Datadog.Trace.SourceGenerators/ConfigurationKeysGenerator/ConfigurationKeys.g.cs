@@ -177,6 +177,13 @@ internal static partial class ConfigurationKeys
     public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
 
     /// <summary>
+    /// Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+    /// Default value is false (disabled).
+    /// </summary>
+    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.InjectSqlBasehash"/>
+    public const string InjectSqlBasehash = "DD_INJECT_SQL_BASEHASH";
+
+    /// <summary>
     /// Configuration key for enabling or disabling the injection of products via single step instrumentation.
     /// </summary>
     public const string SsiDeployed = "DD_INJECTION_ENABLED";

@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance, ContainerMetadata.Instance.ContainerTagsHash));
         }
 
         /// <summary>

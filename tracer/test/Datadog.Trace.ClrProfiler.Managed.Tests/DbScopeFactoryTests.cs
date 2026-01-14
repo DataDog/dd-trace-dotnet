@@ -153,6 +153,35 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
+        public async Task CreateDbCommandScope_HasBaseHashWhenConfigured(Type commandType, string dbmMode, bool hashPropagationEnabled)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+
+            var tracerSettings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.InjectSqlBasehash, hashPropagationEnabled.ToString() },
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            });
+            await using var tracer = TracerHelper.Create(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command, "my_hash");
+
+            scope.Should().NotBeNull();
+            if (hashPropagationEnabled)
+            {
+                scope.Span.GetTag(Tags.BaseHash).Should().Be("my_hash");
+                command.CommandText.Should().Contain("ddsh='my_hash'");
+            }
+            else
+            {
+                scope.Span.GetTag(Tags.BaseHash).Should().BeNull();
+                command.CommandText.Should().NotContain("ddsh=");
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
         public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
@@ -757,10 +786,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return TracerHelper.Create(tracerSettings);
         }
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string baseHash = null)
         {
             var methodName = nameof(DbScopeFactory.Cache<object>.CreateDbCommandScope);
-            var arguments = new object[] { tracer, command };
+            var arguments = new object[] { tracer, command, baseHash };
 
             return (Scope)typeof(DbScopeFactory.Cache<>).MakeGenericType(command.GetType())
                                                         .GetMethod(methodName)
