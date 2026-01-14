@@ -229,6 +229,10 @@
       "const_name": "KnownTestsEnabled"
     },
     {
+      "env_var": "_DD_EXTENSION_PATH",
+      "const_name": "LambdaExtensionPath"
+    },
+    {
       "env_var": "DD_CIVISIBILITY_LOGS_ENABLED",
       "const_name": "Logs"
     },

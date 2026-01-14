@@ -141,7 +141,7 @@ namespace Datadog.Trace.PlatformHelpers
                     return host;
                 }
 
-                return EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.InstanceNameKey);
+                return EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ComputerNameKey);
             }
             catch (InvalidOperationException)
             {

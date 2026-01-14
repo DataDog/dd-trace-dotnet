@@ -19,6 +19,6 @@ internal static partial class ConfigurationKeys
     {
         public const string ExtensionEndpoint = "_DD_EXTENSION_ENDPOINT";
 
-        public const string ExtensionPath = "_DD_EXTENSION_PATH";
+        public const string LambdaExtensionPath = "_DD_EXTENSION_PATH";
     }
 }

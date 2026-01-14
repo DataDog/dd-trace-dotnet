@@ -41,7 +41,7 @@ internal sealed class LambdaMetadata
 
         var isRunningInLambda = !string.IsNullOrEmpty(functionName)
                              && File.Exists(
-                                    EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Aws.ExtensionPath)
+                                    EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Aws.LambdaExtensionPath)
                                  ?? extensionPath);
 
         if (!isRunningInLambda)
