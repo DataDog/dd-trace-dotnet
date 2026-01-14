@@ -176,6 +176,32 @@ namespace Benchmarks.Trace
             }
         }
     }
+#else
+    [MemoryDiagnoser]
+    public class SingleSpanAspNetCoreBenchmark
+    {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+        }
+
+        [Benchmark]
+        public string SendRequest()
+        {
+            return null;
+        }
+
+        [Benchmark]
+        public string CallTargetSendRequest()
+        {
+            return null;
+        }
+    }
 #endif
 
     /// <summary>
