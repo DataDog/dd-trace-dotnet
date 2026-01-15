@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if !NETFRAMEWORK
 using System;
 using System.IO;
@@ -13,21 +15,20 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        private static FrameworkDescription _instance = null;
+        private const string Unknown = "unknown";
+        private static readonly Lazy<FrameworkDescription> _instance = new(Create);
 
-        public static FrameworkDescription Instance
-        {
-            get { return _instance ?? (_instance = Create()); }
-        }
+        public static FrameworkDescription Instance => _instance.Value;
 
         public static FrameworkDescription Create()
         {
-            var frameworkName = "unknown";
-            var frameworkVersion = "unknown";
-            var osPlatform = "unknown";
-            var osArchitecture = "unknown";
-            var processArchitecture = "unknown";
-            var osDescription = "unknown";
+            string frameworkName = Unknown;
+            string frameworkVersion = Unknown;
+            string osPlatform = Unknown;
+            string osArchitecture = Unknown;
+            string processArchitecture = Unknown;
+            string osDescription = Unknown;
+            Version? runtimeVersion = null;
 
             try
             {
@@ -59,11 +60,11 @@ namespace Datadog.Trace
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
                 processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
-                frameworkVersion = GetNetCoreOrNetFrameworkVersion();
+                GetNetCoreOrNetFrameworkVersion(out runtimeVersion, out frameworkVersion);
 #if NET8_0_OR_GREATER
                 osDescription = RuntimeInformation.OSDescription;
 #else
-                osDescription = GetOsDescription();
+                osDescription = GetOsDescription() ?? Unknown;
 #endif
             }
             catch (Exception ex)
@@ -77,7 +78,8 @@ namespace Datadog.Trace
                 osPlatform: osPlatform,
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture,
-                osDescription: osDescription);
+                osDescription: osDescription,
+                runtimeVersion ?? Environment.Version);
         }
 
         public bool IsCoreClr()
@@ -85,61 +87,61 @@ namespace Datadog.Trace
             return Name.ToLowerInvariant().Contains("core") || IsNet5();
         }
 
-        private static string GetNetCoreOrNetFrameworkVersion()
+        private static void GetNetCoreOrNetFrameworkVersion(out Version version, out string productVersion)
         {
-            string productVersion = null;
-
-            if (Environment.Version.Major == 3 || Environment.Version.Major >= 5)
+            version = Environment.Version;
+            if (version.Major == 3 || version.Major >= 5)
             {
                 // Environment.Version returns "4.x" in .NET Core 2.x,
                 // but it is correct since .NET Core 3.0.0
-                productVersion = Environment.Version.ToString();
+                productVersion = version.ToString();
+                return;
             }
 
-            if (productVersion == null)
+            string? foundVersion = null;
+            try
             {
-                try
-                {
-                    // try to get product version from assembly path
+                // try to get product version from assembly path
 #if NET5_0_OR_GREATER
-                    // Can't use RootAssembly.CodeBase in .NET 5+
-                    var location = RootAssembly.Location;
+                // Can't use RootAssembly.CodeBase in .NET 5+
+                var location = RootAssembly.Location;
 #else
-                    var location = RootAssembly.CodeBase;
+                var location = RootAssembly.CodeBase;
 #endif
-                    Match match = Regex.Match(
-                        location,
-                        @"[\\/][^\\/]*microsoft\.netcore\.app[\\/](\d+\.\d+\.\d+[^/]*)[\\/]",
-                        RegexOptions.IgnoreCase);
+                Match match = Regex.Match(
+                    location,
+                    @"[\\/][^\\/]*microsoft\.netcore\.app[\\/](\d+\.\d+\.\d+[^/]*)[\\/]",
+                    RegexOptions.IgnoreCase);
 
-                    if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
-                    {
-                        productVersion = match.Groups[1].Value;
-                    }
-                }
-                catch (Exception e)
+                if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
                 {
-                    Log.Error(e, "Error getting .NET Core version from assembly path");
+                    foundVersion = match.Groups[1].Value;
                 }
             }
-
-            if (productVersion == null)
+            catch (Exception e)
             {
-                // if we fail to extract version from assembly path,
-                // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
-                productVersion = GetVersionFromAssemblyAttributes();
+                Log.Error(e, "Error getting .NET Core version from assembly path");
             }
 
-            if (productVersion == null)
+            // if we fail to extract version from assembly path,
+            // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
+            foundVersion ??= GetVersionFromAssemblyAttributes();
+            if (foundVersion != null)
             {
-                // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
-                productVersion = Environment.Version.ToString();
+                productVersion = foundVersion;
+                if (Version.TryParse(foundVersion, out var parsedVersion))
+                {
+                    version = parsedVersion;
+                }
+
+                return;
             }
 
-            return productVersion;
+            // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
+            productVersion = version.ToString();
         }
 
-        private static string GetOsDescription()
+        private static string? GetOsDescription()
         {
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
@@ -194,7 +196,7 @@ namespace Datadog.Trace
 #else
                 // Parse the NAME, PRETTY_NAME, and VERSION fields.
                 // These fields are suitable for presentation to the user.
-                string prettyName = default, name = default, version = default;
+                string? prettyName = default, name = default, version = default;
                 foreach (string line in lines)
                 {
                     _ = TryGetFieldValue(line, "PRETTY_NAME=", ref prettyName) ||
@@ -246,7 +248,7 @@ namespace Datadog.Trace
                 return true;
             }
 #else
-            static bool TryGetFieldValue(string line, string prefix, ref string value)
+            static bool TryGetFieldValue(string line, string prefix, ref string? value)
             {
                 if (!line.StartsWith(prefix))
                 {
