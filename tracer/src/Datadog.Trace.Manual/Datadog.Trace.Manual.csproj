@@ -24,11 +24,13 @@
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Metadata\*.cs" Link="Ci\Coverage\Metadata\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\ArrayExtensions.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" 
-             Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\DuckTyping\DuckAsClassAttribute.cs" Link="DuckTyping\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="FeatureFlags\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="FeatureFlags\ValueType.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="FeatureFlags\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
     <Compile Include="..\Datadog.Trace\IScope.cs" />

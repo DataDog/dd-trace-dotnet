@@ -3,7 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1
+// Only testing a single specific TFM just to reduce overhead
+#if NET8_0
 
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31InferredProxySpansEnabled : AspNetCoreMvc31InferredProxySpansTests
     {
         public AspNetCoreMvc31InferredProxySpansEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inferredProxySpansEnabled: true)
+            : base(fixture, output, inferredProxySpansEnabled: true, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
         {
         }
     }
@@ -32,7 +33,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31InferredProxySpansDisabled : AspNetCoreMvc31InferredProxySpansTests
     {
         public AspNetCoreMvc31InferredProxySpansDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inferredProxySpansEnabled: false)
+            : base(fixture, output, inferredProxySpansEnabled: false, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc31InferredProxySpansEnabledSingleSpan : AspNetCoreMvc31InferredProxySpansTests
+    {
+        public AspNetCoreMvc31InferredProxySpansEnabledSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, inferredProxySpansEnabled: true, AspNetCoreFeatureFlags.SingleSpan)
         {
         }
     }
@@ -40,22 +49,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public abstract class AspNetCoreMvc31InferredProxySpansTests : AspNetCoreMvcTestBase
     {
         private readonly bool _inferredProxySpansEnabled;
+        private readonly bool _isSingleSpan;
         private readonly string _testName;
 
         protected AspNetCoreMvc31InferredProxySpansTests(
             AspNetCoreTestFixture fixture,
             ITestOutputHelper output,
-            bool inferredProxySpansEnabled)
+            bool inferredProxySpansEnabled,
+            AspNetCoreFeatureFlags flags)
             : base(
                 "AspNetCoreMvc31",
                 fixture,
                 output,
-                enableRouteTemplateResourceNames: true)
+                flags)
         {
             _inferredProxySpansEnabled = inferredProxySpansEnabled;
+            _isSingleSpan = flags == AspNetCoreFeatureFlags.SingleSpan;
 
             var enabled = inferredProxySpansEnabled ? "Enabled" : "Disabled";
-            _testName = $"{nameof(AspNetCoreMvc31InferredProxySpansTests)}.{enabled}";
+            var single = flags == AspNetCoreFeatureFlags.SingleSpan ? ".Single" : string.Empty;
+            _testName = $"{nameof(AspNetCoreMvc31InferredProxySpansTests)}.{enabled}{single}";
 
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, inferredProxySpansEnabled ? "true" : "false");
         }
@@ -70,6 +83,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [InlineData("/handled-exception", 500, 2)]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode, int spanCount)
         {
+            // single span only creates a single span!
+            if (_isSingleSpan)
+            {
+                spanCount = 1;
+            }
+
             var start = DateTimeOffset.UtcNow;
             await Fixture.TryStartApp(this);
 

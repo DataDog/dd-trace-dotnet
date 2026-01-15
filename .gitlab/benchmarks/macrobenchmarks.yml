@@ -162,6 +162,18 @@ calltarget_ngen-x86:
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
 
+single_span-x86:
+  extends: .benchmarks-x86
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_CLR_ENABLE_INLINING: 1
+    DD_CLR_ENABLE_NGEN: 1
+    DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
+    ENDPOINT: "hello"
+
 trace_stats-x86:
   extends: .benchmarks-x86
   variables:
@@ -300,6 +312,8 @@ profiler_cpu_timer_create-x86:
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
+  after_script:
+    - mv /var/log/datadog/dotnet/* platform/artifacts
   artifacts:
     name: "artifacts"
     when: always
@@ -344,6 +358,19 @@ calltarget_ngen-arm64:
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
+    ENDPOINT: "hello"
+
+single_span-arm64:
+  extends: .benchmarks-arm64
+  tags: ["runner:apm-k8s-arm-metal"]
+  variables:
+    NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_CLR_ENABLE_INLINING: 1
+    DD_CLR_ENABLE_NGEN: 1
+    DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
     ENDPOINT: "hello"
 
 trace_stats-arm64:
@@ -558,6 +585,16 @@ calltarget_ngen-win:
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
+    ENDPOINT: "hello"
+
+single_span-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_CLR_ENABLE_INLINING: 1
+    DD_CLR_ENABLE_NGEN: 1
+    DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED: 1
     ENDPOINT: "hello"
 
 trace_stats-win:

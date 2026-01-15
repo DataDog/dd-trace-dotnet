@@ -9,6 +9,7 @@ internal static class RcmProducts
 {
     public const string LiveDebugging = "LIVE_DEBUGGING";
     public const string LiveDebuggingSymbolDb = "LIVE_DEBUGGING_SYMBOL_DB";
+
     public const string Asm = "ASM";
     public const string AsmFeatures = "ASM_FEATURES";
     public const string AsmDd = "ASM_DD";
@@ -16,4 +17,6 @@ internal static class RcmProducts
 
     public const string TracerFlareInitiated = "AGENT_CONFIG";
     public const string TracerFlareRequested = "AGENT_TASK";
+
+    public const string FfeFlags = "FFE_FLAGS";
 }
