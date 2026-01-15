@@ -1,4 +1,4 @@
-namespace Samples.MassTransit.Contracts;
+namespace Samples.MassTransit8.Contracts;
 
 public record GettingStartedMessage
 {

@@ -1,7 +1,7 @@
 using MassTransit;
-using Samples.MassTransit.Contracts;
+using Samples.MassTransit8.Contracts;
 
-namespace Samples.MassTransit;
+namespace Samples.MassTransit8;
 
 public class Worker : BackgroundService
 {

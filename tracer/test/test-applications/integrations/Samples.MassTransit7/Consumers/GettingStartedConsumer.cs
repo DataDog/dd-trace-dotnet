@@ -1,7 +1,7 @@
 using MassTransit;
-using Samples.MassTransit.Contracts;
+using Samples.MassTransit7.Contracts;
 
-namespace Samples.MassTransit.Consumers;
+namespace Samples.MassTransit7.Consumers;
 
 public class GettingStartedConsumer : IConsumer<GettingStartedMessage>
 {
