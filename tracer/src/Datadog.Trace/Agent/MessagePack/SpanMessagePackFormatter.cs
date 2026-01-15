@@ -655,10 +655,9 @@ namespace Datadog.Trace.Agent.MessagePack
             // AAS tags need to be set on any span for the backend to properly handle the billing.
             // That said, it's more intuitive to find it on the local root for the customer.
             // Skip adding AAS tags to inferred proxy spans as they represent infrastructure outside the AAS environment
-            var isInferredProxySpan = span.Tags.GetMetric(Metrics.InferredSpan) == 1.0;
             if (model.TraceChunk.IsRunningInAzureAppService &&
                 model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings &&
-                !isInferredProxySpan)
+                span.Tags.GetMetric(Metrics.InferredSpan) != 1.0)
             {
                 // Done here to avoid initializing in most cases
                 InitializeAasTags();

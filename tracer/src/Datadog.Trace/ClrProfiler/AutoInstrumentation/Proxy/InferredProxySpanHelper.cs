@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal static class InferredProxySpanHelper
 {
-    private const string AzureProxyHeaderValue = "azure-apim";
+    public const string AzureProxyHeaderValue = "azure-apim";
     private const string AwsProxyHeaderValue = "aws-apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InferredProxySpanHelper));
     private static InferredProxyCoordinator? _awsCoordinator;
@@ -49,17 +49,17 @@ internal static class InferredProxySpanHelper
 
         if (string.Equals(proxyName, AzureProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
         {
-            _azureCoordinator ??= new(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
+            _azureCoordinator ??= new InferredProxyCoordinator(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
             return _azureCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
         if (string.Equals(proxyName, AwsProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
         {
-            _awsCoordinator ??= new(new AwsApiGatewayExtractor(), new AwsApiGatewaySpanFactory());
+            _awsCoordinator ??= new InferredProxyCoordinator(new AwsApiGatewayExtractor(), new AwsApiGatewaySpanFactory());
             return _awsCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
-        Log.Debug("Invalid {HeaderName} header with value {Value}", InferredProxyHeaders.Name, proxyName);
+        Log.Debug("Invalid \"{HeaderName}\" header value: \"{Value}\"", InferredProxyHeaders.Name, proxyName);
         return null;
     }
 }

@@ -53,18 +53,5 @@ internal readonly struct HttpHeadersCollection : IHeadersCollection
     {
         _headers.Remove(name);
     }
-
-    public override string ToString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.AppendLine("Headers:");
-        foreach (var header in _headers)
-        {
-            sb.AppendLine($"{header.Key}: {header.Value}");
-        }
-
-        return sb.ToString();
-    }
 }
 #endif
-

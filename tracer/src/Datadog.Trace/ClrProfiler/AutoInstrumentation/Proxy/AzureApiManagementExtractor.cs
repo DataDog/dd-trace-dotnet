@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
 {
     // This is the expected value of the x-dd-proxy header
-    private const string ProxyName = "azure-apim";
+    private const string AzureApim = InferredProxySpanHelper.AzureProxyHeaderValue;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementExtractor>();
 
@@ -42,7 +42,7 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(ProxyName, startTime, domainName, httpMethod, path, null);
+            data = new InferredProxyData(AzureApim, startTime, domainName, httpMethod, path, null);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

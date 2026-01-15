@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public const string OperationName = "azure_functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
+        public const string AzureApim = InferredProxySpanHelper.AzureProxyHeaderValue;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -117,10 +118,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-
+                var rootSpanName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("azure.", StringComparison.OrdinalIgnoreCase) == true ||
-                                  tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("aws.", StringComparison.OrdinalIgnoreCase) == true;
+                var isProxySpan = rootSpanName?.Contains(AzureApim) == true ||
+                                  rootSpanName?.Contains("aws.apigw") == true;
 
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
@@ -287,7 +288,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var functionName = context.FunctionDefinition.Name;
 
                 // Check if there's an APIM proxy span that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName?.StartsWith("azure.", StringComparison.OrdinalIgnoreCase) == true;
+                var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
+                var isProxySpan = spanRootName?.Contains(AzureApim) == true;
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -496,7 +498,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             foreach (var kvp in context.Features)
             {
-                if (kvp.Key.FullName?.Equals(featureTypeName) == true)
+                if (kvp.Key.FullName == featureTypeName)
                 {
                     return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
                 }
