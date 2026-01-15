@@ -48,28 +48,9 @@ void RawSampleTransformer::Transform(const RawSample& rawSample, std::shared_ptr
 
 void RawSampleTransformer::SetAppDomainDetails(const RawSample& rawSample, std::shared_ptr<Sample>& sample)
 {
-    ProcessID pid;
-    std::string appDomainName;
-
-    // check for null AppDomainId (garbage collection for example)
-    if (rawSample.AppDomainId == 0)
-    {
-        sample->SetAppDomainName("CLR");
-        sample->SetPid(OpSysTools::GetProcId());
-
-        return;
-    }
-
-    if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
-    {
-        sample->SetAppDomainName("");
-        sample->SetPid(OpSysTools::GetProcId());
-
-        return;
-    }
-
+    auto appDomainName = _pAppDomainStore->GetName(rawSample.AppDomainId);
     sample->SetAppDomainName(std::move(appDomainName));
-    sample->SetPid(pid);
+    sample->SetPid(OpSysTools::GetProcId());
 }
 
 void RawSampleTransformer::SetThreadDetails(const RawSample& rawSample, std::shared_ptr<Sample>& sample)
