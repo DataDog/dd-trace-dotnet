@@ -13,6 +13,10 @@
 
 #include <chrono>
 
+extern "C" {
+    #include "datadog/profiling.h"
+}
+
 namespace libdatadog {
 
 using namespace std::chrono_literals;

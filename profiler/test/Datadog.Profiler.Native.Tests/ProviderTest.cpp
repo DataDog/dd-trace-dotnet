@@ -1,7 +1,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "gtest/gtest.h"
+//#include "gtest/gtest.h"
 
 #include <chrono>
 #include <memory>
@@ -30,15 +30,15 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #define INTERN_MODULE(m)                                                \
-    auto m##Id = symbolsStore->InternMapping(#m);                       \
-    if (!m##Id)                                                         \
+    auto module##m##Id = symbolsStore->InternMapping("module #" #m);                       \
+    if (!module##m##Id)                                                         \
     {                                                                   \
         ASSERT_TRUE(false) << "Failed to intern module '" << #m << "'"; \
     }
 
 #define INTERN_FUNCTION(fn)                                                 \
-    auto fn##Id = symbolsStore->InternFunction(#fn, "");                    \
-    if (!fn##Id)                                                            \
+    auto frame##fn##Id = symbolsStore->InternFunction("Frame #" #fn, "");                    \
+    if (!frame##fn##Id)                                                            \
     {                                                                       \
         ASSERT_TRUE(false) << " Failed to intern function '" << #fn << "'"; \
     }
@@ -272,10 +272,10 @@ TEST(WallTimeProviderTest, CheckFrames)
     auto samples = provider.GetSamples();
     provider.Stop();
 
-    INTERN_FUNCTION(frame1);
-    INTERN_FUNCTION(frame2);
-    INTERN_FUNCTION(frame3);
-    INTERN_FUNCTION(frame4);
+    INTERN_FUNCTION(1);
+    INTERN_FUNCTION(2);
+    INTERN_FUNCTION(3);
+    INTERN_FUNCTION(4);
 
     std::vector<libdatadog::FunctionId*> expectedFrames =
         {
@@ -285,10 +285,10 @@ TEST(WallTimeProviderTest, CheckFrames)
             frame4Id.value(),
         };
 
-    INTERN_MODULE(module1);
-    INTERN_MODULE(module2);
-    INTERN_MODULE(module3);
-    INTERN_MODULE(module4);
+    INTERN_MODULE(1);
+    INTERN_MODULE(2);
+    INTERN_MODULE(3);
+    INTERN_MODULE(4);
     std::vector<libdatadog::ModuleId*> expectedModules =
         {
             module1Id.value(),
