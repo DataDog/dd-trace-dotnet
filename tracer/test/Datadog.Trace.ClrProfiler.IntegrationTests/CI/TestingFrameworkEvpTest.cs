@@ -69,6 +69,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         _gacFixture.RemoveAssembliesFromGac();
     }
 
+    protected static bool IsMacOS()
+        => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase);
+
     protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
     {
         return $$"""
@@ -392,7 +395,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         out string sessionWorkingDirectory,
         out string gitRepositoryUrl,
         out string gitBranch,
-        out string gitCommitSha)
+        out string gitCommitSha,
+        out string runId)
     {
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
@@ -412,6 +416,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+
+        runId = Guid.NewGuid().ToString("n");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)
@@ -425,13 +432,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         try
         {
             using var logsIntake = new MockLogsIntakeForCiVisibility();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: !IsMacOS());
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";

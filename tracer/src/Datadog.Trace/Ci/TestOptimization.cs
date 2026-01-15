@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -39,6 +40,7 @@ internal sealed class TestOptimization : ITestOptimization
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
     private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
+    private string? _runId;
 
     public TestOptimization()
     {
@@ -71,6 +73,8 @@ internal sealed class TestOptimization : ITestOptimization
             return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
         }
     }
+
+    public string RunId => EnsureRunId();
 
     public bool Enabled => _enablement.IsEnabled;
 
@@ -240,7 +244,7 @@ internal sealed class TestOptimization : ITestOptimization
             PropagateCiVisibilityEnvironmentVariable();
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility");
+        Log.Information("TestOptimization: Initializing CI Visibility with RunId: {RunId}", RunId);
         var settings = Settings;
 
         // In case we are running using the agent, check if the event platform proxy is supported.
@@ -322,7 +326,7 @@ internal sealed class TestOptimization : ITestOptimization
             return;
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner");
+        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner with RunId: {RunId}", RunId);
         Settings = settings;
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
@@ -449,6 +453,52 @@ internal sealed class TestOptimization : ITestOptimization
 
     private static TestOptimizationDetection.Enablement InternalEnabled(IDatadogLogger log)
         => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log);
+
+    internal string EnsureRunId(string? baseDirectory = null)
+    {
+        if (_runId is not null)
+        {
+            return _runId;
+        }
+
+        if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) is not { } runId)
+        {
+            runId = Guid.NewGuid().ToString("n");
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
+
+            try
+            {
+                var cacheFolder = Path.Combine(baseDirectory ?? CIValues.WorkspacePath ?? Environment.CurrentDirectory, ".dd", runId);
+                Log.Debug("TestOptimization: Creating cache folder: {Folder}", cacheFolder);
+                if (!Directory.Exists(cacheFolder))
+                {
+                    Directory.CreateDirectory(cacheFolder);
+                }
+
+                LifetimeManager.Instance.AddShutdownTask(_ =>
+                {
+                    try
+                    {
+                        Log.Debug("TestOptimization: Removing cache folder: {Folder}", cacheFolder);
+                        if (Directory.Exists(cacheFolder))
+                        {
+                            Directory.Delete(cacheFolder, true);
+                        }
+                    }
+                    catch (Exception exInner)
+                    {
+                        Log.Warning(exInner, "TestOptimization: Error deleting cache folder.");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "TestOptimization: Error creating cache folder.");
+            }
+        }
+
+        return _runId = runId;
+    }
 
     private async Task ShutdownAsync(Exception? exception)
     {

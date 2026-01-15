@@ -271,8 +271,10 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         var codeCoverageReceived = new StrongBox<bool>(false);
         var name = $"session_{sessionId}";
         using var ipcServer = new IpcServer(name);
