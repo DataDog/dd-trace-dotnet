@@ -218,6 +218,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Matches MT8 OTEL behavior in BaseSendTransportContext.ActivityDestination.
         /// For example: "loopback://localhost/submit-order" -> "submit-order"
         /// Or for message types: "urn:message:Namespace:MessageType" -> "MessageType"
+        /// Or for publish URIs: "loopback://localhost/urn:message:Namespace:MessageType" -> "MessageType"
         /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
         /// </summary>
         internal static string ExtractDestinationName(string? fullAddress)
@@ -227,17 +228,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 return "unknown";
             }
 
-            // Handle URN format (urn:message:Namespace:MessageType)
+            // Handle direct URN format (urn:message:Namespace:MessageType)
             if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
             {
-                // Extract just the message type name (last segment after colon)
-                var lastColon = fullAddress.LastIndexOf(':');
-                if (lastColon > 0 && lastColon < fullAddress.Length - 1)
-                {
-                    return fullAddress.Substring(lastColon + 1);
-                }
-
-                return fullAddress;
+                return ExtractMessageTypeFromUrn(fullAddress);
             }
 
             // Try to parse as URI and extract the path
@@ -268,6 +262,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Continue with fullAddress as entityName
             }
 
+            // Check if the extracted path is itself a URN (e.g., from "loopback://localhost/urn:message:Namespace:MessageType")
+            if (entityName.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                return ExtractMessageTypeFromUrn(entityName);
+            }
+
             // MT8 OTEL-style normalization of special endpoint names
             // See: BaseSendTransportContext.cs in MassTransit source
             if (entityName.IndexOf("_bus_", StringComparison.Ordinal) >= 0)
@@ -291,6 +291,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return entityName;
+        }
+
+        /// <summary>
+        /// Extracts just the message type name from a URN like "urn:message:Namespace:MessageType" -> "MessageType"
+        /// </summary>
+        private static string ExtractMessageTypeFromUrn(string urn)
+        {
+            // Extract just the message type name (last segment after colon)
+            var lastColon = urn.LastIndexOf(':');
+            if (lastColon > 0 && lastColon < urn.Length - 1)
+            {
+                return urn.Substring(lastColon + 1);
+            }
+
+            return urn;
         }
 
         private static string DetermineMessagingSystem(string? destination)
