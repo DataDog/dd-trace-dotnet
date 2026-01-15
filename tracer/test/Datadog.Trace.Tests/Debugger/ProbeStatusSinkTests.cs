@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger
             Clock.SetForCurrentThread(_timeLord);
 
             _settings = DebuggerSettings.FromDefaultSource();
-            _sink = DiagnosticsSink.Create(() => "test", _settings);
+            _sink = DiagnosticsSink.Create(() => "ProbeStatusSinkTests", _settings);
         }
 
         [Fact]
