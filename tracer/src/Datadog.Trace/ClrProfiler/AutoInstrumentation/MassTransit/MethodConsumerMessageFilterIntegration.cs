@@ -7,13 +7,10 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 
@@ -76,50 +73,42 @@ public sealed class MethodConsumerMessageFilterIntegration
         }
 
         // Extract context info using duck typing
+        // NOTE: We do NOT extract propagation context from headers here.
+        // The receive span (ReceivePipeDispatcherIntegration) already extracts the distributed trace context
+        // from headers. The process span should simply parent under the current active span (the receive span),
+        // creating the proper hierarchy: receive -> process
         string? destinationAddress = null;
         string? messagingSystem = "in-memory";
-        PropagationContext propagationContext = default;
-        IConsumerConsumeContext? duckContext = null;
+        IConsumeContext? consumeContext = null;
 
         if (context is not null)
         {
             try
             {
-                // Duck-cast the context to access its properties
-                if (context.TryDuckCast<IConsumerConsumeContext>(out var ducked))
+                // MessageConsumeContext<T> wraps a ConsumeContext in a private _context field.
+                // We use IMessageConsumeContext with [DuckField] to access that field,
+                // then duck-cast the result to IConsumeContext to get the properties we need.
+                if (context.TryDuckCast<IMessageConsumeContext>(out var messageContext))
                 {
-                    duckContext = ducked;
-                    var destAddr = duckContext.DestinationAddress;
-                    if (destAddr != null)
+                    var innerContext = messageContext.Context;
+                    if (innerContext != null && innerContext.TryDuckCast<IConsumeContext>(out var ducked))
                     {
-                        destinationAddress = destAddr.ToString();
-                        messagingSystem = DetermineMessagingSystem(destinationAddress);
+                        consumeContext = ducked;
+                        var destAddr = consumeContext.DestinationAddress;
+                        if (destAddr != null)
+                        {
+                            destinationAddress = destAddr.ToString();
+                            messagingSystem = DetermineMessagingSystem(destinationAddress);
+                        }
                     }
-
-                    // Try to get headers for context propagation (use reflection-based approach)
-                    var headersObj = duckContext.Headers;
-                    if (headersObj != null)
+                    else
                     {
-                        var headersAdapter = new ContextPropagation(headersObj);
-                        propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);
-                        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Extracted propagation context from headers");
+                        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast inner context to IConsumeContext");
                     }
                 }
                 else
                 {
-                    var contextType = context.GetType();
-                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast context to IConsumerConsumeContext");
-                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Context type: {ContextType}", contextType.FullName);
-
-                    // Include inherited properties using FlattenHierarchy
-                    var props = contextType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
-                    var propNames = string.Join(", ", props.Select(p => $"{p.Name}:{p.PropertyType.Name}").Take(30));
-                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Available properties (with inherited): {Properties}", propNames);
-
-                    // Also check interfaces
-                    var interfaces = contextType.GetInterfaces();
-                    var interfaceNames = string.Join(", ", interfaces.Select(i => i.Name).Take(15));
-                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Implemented interfaces: {Interfaces}", interfaceNames);
+                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast context to IMessageConsumeContext");
                 }
             }
             catch (Exception ex)
@@ -128,12 +117,12 @@ public sealed class MethodConsumerMessageFilterIntegration
             }
         }
 
-        // Create process span - if we extracted propagation context, use it; otherwise parent under current active span
+        // Create process span - parent under current active span (the receive span)
+        // Do NOT pass propagation context - we want to parent under the receive span, not the original sender
         var scope = MassTransitIntegration.CreateConsumerScope(
             Tracer.Instance,
             MassTransitConstants.OperationProcess,
             messageType ?? "Unknown",
-            context: propagationContext,
             destinationName: destinationAddress,
             messagingSystem: messagingSystem);
 
@@ -150,33 +139,33 @@ public sealed class MethodConsumerMessageFilterIntegration
                 }
 
                 // Set additional tags from duck-typed context
-                if (duckContext != null)
+                if (consumeContext != null)
                 {
                     try
                     {
-                        if (duckContext.SourceAddress != null)
+                        if (consumeContext.SourceAddress != null)
                         {
-                            tags.SourceAddress = duckContext.SourceAddress.ToString();
+                            tags.SourceAddress = consumeContext.SourceAddress.ToString();
                         }
 
-                        if (duckContext.MessageId.HasValue && duckContext.MessageId.Value != Guid.Empty)
+                        if (consumeContext.MessageId.HasValue && consumeContext.MessageId.Value != Guid.Empty)
                         {
-                            tags.MessageId = duckContext.MessageId.Value.ToString();
+                            tags.MessageId = consumeContext.MessageId.Value.ToString();
                         }
 
-                        if (duckContext.ConversationId.HasValue && duckContext.ConversationId.Value != Guid.Empty)
+                        if (consumeContext.ConversationId.HasValue && consumeContext.ConversationId.Value != Guid.Empty)
                         {
-                            tags.ConversationId = duckContext.ConversationId.Value.ToString();
+                            tags.ConversationId = consumeContext.ConversationId.Value.ToString();
                         }
 
-                        if (duckContext.CorrelationId.HasValue && duckContext.CorrelationId.Value != Guid.Empty)
+                        if (consumeContext.CorrelationId.HasValue && consumeContext.CorrelationId.Value != Guid.Empty)
                         {
-                            tags.CorrelationId = duckContext.CorrelationId.Value.ToString();
+                            tags.CorrelationId = consumeContext.CorrelationId.Value.ToString();
                         }
 
-                        if (duckContext.InitiatorId.HasValue && duckContext.InitiatorId.Value != Guid.Empty)
+                        if (consumeContext.InitiatorId.HasValue && consumeContext.InitiatorId.Value != Guid.Empty)
                         {
-                            tags.InitiatorId = duckContext.InitiatorId.Value.ToString();
+                            tags.InitiatorId = consumeContext.InitiatorId.Value.ToString();
                         }
 
                         // Set peer address to match MT8 OTEL
