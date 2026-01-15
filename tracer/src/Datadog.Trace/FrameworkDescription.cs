@@ -50,11 +50,6 @@ namespace Datadog.Trace
 
         public Version RuntimeVersion { get; }
 
-        public static bool IsNet5()
-        {
-            return Environment.Version.Major >= 5;
-        }
-
         public bool IsWindows()
         {
             return string.Equals(OSPlatform, OSPlatformName.Windows, StringComparison.OrdinalIgnoreCase);

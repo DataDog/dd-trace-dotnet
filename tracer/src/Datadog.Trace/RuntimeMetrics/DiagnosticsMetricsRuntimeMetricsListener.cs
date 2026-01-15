@@ -57,15 +57,16 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         };
 
         // ASP.NET Core metrics are only available on .NET 8+
-        _aspnetcoreMetricsAvailable = Environment.Version.Major >= 8;
+        var version = FrameworkDescription.Instance.RuntimeVersion;
+        _aspnetcoreMetricsAvailable = version.Major >= 8;
 
-        if (Environment.Version.Major >= 9)
+        if (version.Major >= 9)
         {
             // System.Runtime metrics are only available on .NET 9+, but the only one we need it for is GC pause time
             _getGcPauseTimeFunc = GetGcPauseTime_RuntimeMetrics;
         }
-        else if (Environment.Version.Major > 6
-                 || Environment.Version is { Major: 6, Build: >= 21 })
+        else if (version.Major > 6
+                 || version is { Major: 6, Build: >= 21 })
         {
             // .NET 6.0.21 introduced the GC.GetTotalPauseDuration() method https://github.com/dotnet/runtime/pull/87143
             // Which is what OTel uses where required: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/5aa6d868/src/OpenTelemetry.Instrumentation.Runtime/RuntimeMetrics.cs#L105C40-L107
