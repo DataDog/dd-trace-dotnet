@@ -19,6 +19,8 @@ internal static class TestOptimizationDetection
 {
     public static Enablement IsEnabled(IConfigurationSource source, IConfigurationTelemetry telemetry, IDatadogLogger log)
     {
+        using var cd = CodeDurationRef.Create();
+
         // By configuration
         var config = new ConfigurationBuilder(source, telemetry);
         var explicitlyEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
@@ -41,6 +43,8 @@ internal static class TestOptimizationDetection
 
     private static bool InferredAvailable(IDatadogLogger log)
     {
+        using var cd = CodeDurationRef.Create();
+
         // Try to autodetect based in the domain name.
         var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
         if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||

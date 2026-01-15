@@ -115,10 +115,19 @@ internal sealed partial class TestOptimizationClient
 
     internal readonly struct SearchCommitResponse
     {
+        [JsonProperty("localCommits")]
         public readonly string[] LocalCommits;
+
+        [JsonProperty("remoteCommits")]
         public readonly string[] RemoteCommits;
+
+        [JsonProperty("isOk")]
         public readonly bool IsOk;
+
+        [JsonProperty("hasCommits")]
         public readonly bool HasCommits;
+
+        [JsonProperty("missingCommits")]
         public readonly string[] MissingCommits;
 
         public SearchCommitResponse(string[]? localCommits, string[]? remoteCommits, bool isOk)
