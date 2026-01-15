@@ -26,7 +26,7 @@ internal sealed class ExposureApi : IDisposable
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
-    public const string ExposurePath = "evp_proxy/v4/api/v2/exposures";
+    public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
     private static readonly JsonSerializerSettings SerializerSettings = new()
     {
         NullValueHandling = NullValueHandling.Include,
