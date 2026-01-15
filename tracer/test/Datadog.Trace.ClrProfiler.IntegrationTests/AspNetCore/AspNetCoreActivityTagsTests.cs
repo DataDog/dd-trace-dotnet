@@ -2,6 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#if NETCOREAPP
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore;
 public abstract class AspNetCoreActivityTagsTests : AspNetCoreMvcTestBase
 {
     protected AspNetCoreActivityTagsTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string sampleName, bool singleSpan = false)
-        : base(sampleName, fixture, output, enableRouteTemplateResourceNames: true)
+        : base(sampleName, fixture, output, singleSpan ? AspNetCoreFeatureFlags.SingleSpan : AspNetCoreFeatureFlags.RouteTemplateResourceNames)
     {
         SetEnvironmentVariable("ADD_ACTIVITY_MIDDLEWARE", "1");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, singleSpan.ToString());
@@ -85,3 +87,4 @@ public abstract class AspNetCoreActivityTagsTests : AspNetCoreMvcTestBase
     }
 #endif
 }
+#endif
