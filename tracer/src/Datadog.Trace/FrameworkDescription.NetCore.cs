@@ -84,7 +84,7 @@ namespace Datadog.Trace
 
         public bool IsCoreClr()
         {
-            return Name.ToLowerInvariant().Contains("core") || IsNet5();
+            return RuntimeVersion.Major >= 5 || Name.IndexOf("core", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static void GetNetCoreOrNetFrameworkVersion(out Version version, out string productVersion)
