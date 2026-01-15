@@ -1,6 +1,7 @@
 using MassTransit;
 using Samples.MassTransit7;
 using Samples.MassTransit7.Consumers;
+using Samples.MassTransit7.Instrumentation;
 
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -11,6 +12,10 @@ var builder = Host.CreateDefaultBuilder(args)
 
             x.UsingInMemory((context, cfg) =>
             {
+                // Reflection-based injection during configuration callback
+                // This demonstrates how automatic instrumentation could hook in
+                ConfigurationTimeInjector.InjectDuringConfiguration(cfg);
+
                 cfg.ConfigureEndpoints(context);
             });
         });

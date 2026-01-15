@@ -16,6 +16,9 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Filter injection now happens at configuration time in Program.cs
+        // See: ConfigurationTimeInjector.InjectDuringConfiguration()
+
         _logger.LogInformation("Starting the bus...");
         await _busControl.StartAsync(stoppingToken);
 
