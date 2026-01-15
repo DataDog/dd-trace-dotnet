@@ -47,7 +47,7 @@ internal static class SnapshotHelper
             MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
             MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, withProcessTags);
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, withProcessTags, serviceNameProvider: static () => "test-service");
         {
             // method entry
             snapshotCreator.StartEntry();
