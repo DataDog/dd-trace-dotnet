@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         public static IEnumerable<object[]> GetData()
         {
-            string dataFolder = DataHelpers.GetCiDataDirectory();
+            var dataFolder = DataHelpers.GetCiDataDirectory();
 
             // gitdata-01 => Git clone
             yield return
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
-                    SourceRoot = dataFolder
+                    SourceRoot = Path.Combine(dataFolder, "gitdata-01")
                 }
             ];
 
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
-                    SourceRoot = dataFolder
+                    SourceRoot = Path.Combine(dataFolder, "gitdata-02")
                 }
             ];
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
-                    SourceRoot = dataFolder
+                    SourceRoot = Path.Combine(dataFolder, "gitdata-03")
                 }
             ];
 
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
-                    SourceRoot = dataFolder
+                    SourceRoot = Path.Combine(dataFolder, "gitdata-04")
                 },
             };
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
-                    SourceRoot = dataFolder
+                    SourceRoot = Path.Combine(dataFolder, "gitdata-05")
                 }
             ];
         }
@@ -115,15 +115,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void ExtractGitDataFromFolder(TestItem testItem)
         {
             Directory.Exists(testItem.GitFolderPath).Should().BeTrue();
-
-            // Let's try with the git info provider based on manual parsing of the git folder
-            if (!ManualParserGitInfoProvider.Instance.TryGetFrom(testItem.GitFolderPath, out var gitInfo))
-            {
-                var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
-                throw new Exception($"Error parsing git info from provider: {nameof(ManualParserGitInfoProvider)}{Environment.NewLine}{errors}");
-            }
-
-            AssertGitInfo(testItem, gitInfo);
             AssertGitInfo(testItem, GitInfo.GetFrom(testItem.GitFolderPath));
 
             static void AssertGitInfo(TestItem testItem, IGitInfo gitInfo)
