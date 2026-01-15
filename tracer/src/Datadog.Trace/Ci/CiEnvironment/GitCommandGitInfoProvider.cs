@@ -34,16 +34,6 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
         try
         {
-            // Ensure we have permissions to read the git directory
-            var safeDirectory = GitCommandHelper.RunGitCommand(
-                localGitInfo.SourceRoot,
-                $"config --global --add safe.directory {localGitInfo.SourceRoot}",
-                MetricTags.CIVisibilityCommands.SafeDirectory);
-            if (safeDirectory?.ExitCode != 0)
-            {
-                localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory?.Error}");
-            }
-
             // Get the repository URL
             var repositoryOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,

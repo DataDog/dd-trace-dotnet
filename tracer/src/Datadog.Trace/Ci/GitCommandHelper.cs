@@ -88,6 +88,7 @@ internal static class GitCommandHelper
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
+            arguments = $"-c safe.directory={workingDirectory} {arguments}";
             var sw = RefStopwatch.Create();
             var gitOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
