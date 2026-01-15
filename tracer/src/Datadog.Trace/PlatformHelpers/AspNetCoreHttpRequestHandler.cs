@@ -300,7 +300,15 @@ namespace Datadog.Trace.PlatformHelpers
                             ref state,
                             static (ref s, kvp) =>
                             {
-                                OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                                // We don't want to set know values to avoid conflicting scenarios
+                                // with the status code, resource name, operation name etc that we set
+                                // by default on aspnetcore spans when _not_ using activities
+                                // We also don't want to override our standard aspnetcore/web tags.
+                                if (!IsKnownWebTag(kvp.Key))
+                                {
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                }
+
                                 return true;
                             });
                     }
@@ -314,7 +322,15 @@ namespace Datadog.Trace.PlatformHelpers
                             ref state,
                             static (ref s, kvp) =>
                             {
-                                OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                                // We don't want to set know values to avoid conflicting scenarios
+                                // with the status code, resource name, operation name etc that we set
+                                // by default on aspnetcore spans when _not_ using activities
+                                // We also don't want to override our standard aspnetcore/web tags.
+                                if (!IsKnownWebTag(kvp.Key))
+                                {
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                }
+
                                 return true;
                             });
                     }
@@ -324,6 +340,19 @@ namespace Datadog.Trace.PlatformHelpers
                     log.Error(ex, "Error extracting activity data.");
                 }
             }
+
+            // Theoretically we should check
+            // for _all_ the tags we might set on aspnetcore root spans,
+            // but we only both to check tags that are likely to be set here
+            // (i.e. don't bother checking the aspnetcore. tags)
+            static bool IsKnownWebTag(string tagName) =>
+                tagName == Tags.HttpRoute
+             || tagName == Tags.HttpUserAgent
+             || tagName == Tags.HttpMethod
+             || tagName == Tags.HttpUrl
+             || tagName == Tags.HttpStatusCode
+             || tagName == Tags.NetworkClientIp
+             || tagName == Tags.HttpClientIp;
         }
 
         /// <summary>
