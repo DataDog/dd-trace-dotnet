@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,12 +42,19 @@ internal sealed class ExposureApi : IDisposable
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
     private ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
+    private KeyValuePair<string, string>[] _apiRequestHeaders;
     private IApiRequestFactory _apiRequestFactory;
     private Dictionary<string, string> _context;
     private int _started = 0;
 
     internal ExposureApi(TracerSettings tracerSettings)
     {
+        _apiRequestHeaders =
+        [
+            new("X-Datadog-EVP-Subdomain", "event-platform-intake"),
+            .. AgentHttpHeaderNames.MinimalHeaders
+        ];
+
         UpdateApi(tracerSettings.Manager.InitialExporterSettings);
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
@@ -71,7 +79,7 @@ internal sealed class ExposureApi : IDisposable
                 exporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                AgentHttpHeaderNames.MinimalHeaders,
+                _apiRequestHeaders,
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
             Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
@@ -119,7 +127,7 @@ internal sealed class ExposureApi : IDisposable
                 if (payload is not null)
                 {
                     var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
+                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
