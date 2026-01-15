@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Logging;
 
@@ -15,29 +18,14 @@ namespace Datadog.Trace
 
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
-        private static readonly Tuple<int, string>[] DotNetFrameworkVersionMapping =
-        {
-            // known min value for each framework version
-            Tuple.Create(533325, "4.8.1"),
-            Tuple.Create(528040, "4.8"),
-            Tuple.Create(461808, "4.7.2"),
-            Tuple.Create(461308, "4.7.1"),
-            Tuple.Create(460798, "4.7"),
-            Tuple.Create(394802, "4.6.2"),
-            Tuple.Create(394254, "4.6.1"),
-            Tuple.Create(393295, "4.6"),
-            Tuple.Create(379893, "4.5.2"),
-            Tuple.Create(378675, "4.5.1"),
-            Tuple.Create(378389, "4.5"),
-        };
-
         private FrameworkDescription(
             string name,
             string productVersion,
             string osPlatform,
             string osArchitecture,
             string processArchitecture,
-            string osDescription)
+            string osDescription,
+            Version runtimeVersion)
         {
             Name = name;
             ProductVersion = productVersion;
@@ -45,6 +33,7 @@ namespace Datadog.Trace
             OSArchitecture = osArchitecture;
             OSDescription = osDescription;
             ProcessArchitecture = processArchitecture;
+            RuntimeVersion = runtimeVersion;
         }
 
         public string Name { get; }
@@ -58,6 +47,8 @@ namespace Datadog.Trace
         public string ProcessArchitecture { get; }
 
         public string OSDescription { get; }
+
+        public Version RuntimeVersion { get; }
 
         public static bool IsNet5()
         {
@@ -77,14 +68,14 @@ namespace Datadog.Trace
             return $"{Name} {ProductVersion} {ProcessArchitecture} on {OSPlatform} {OSArchitecture}";
         }
 
-        private static string GetVersionFromAssemblyAttributes()
+        private static string? GetVersionFromAssemblyAttributes()
         {
-            string productVersion = null;
+            string? productVersion = null;
 
             try
             {
                 // if we fail to extract version from assembly path, fall back to the [AssemblyInformationalVersion],
-                var informationalVersionAttribute = (AssemblyInformationalVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
+                var informationalVersionAttribute = (AssemblyInformationalVersionAttribute?)RootAssembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
 
                 // split remove the commit hash from pre-release versions
                 productVersion = informationalVersionAttribute?.InformationalVersion?.Split('+')[0];
@@ -99,7 +90,7 @@ namespace Datadog.Trace
                 try
                 {
                     // and if that fails, try [AssemblyFileVersion]
-                    var fileVersionAttribute = (AssemblyFileVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
+                    var fileVersionAttribute = (AssemblyFileVersionAttribute?)RootAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
                     productVersion = fileVersionAttribute?.Version;
                 }
                 catch (Exception e)
@@ -109,6 +100,65 @@ namespace Datadog.Trace
             }
 
             return productVersion;
+        }
+
+        private static bool GetDotNetFrameworkProductMapping(
+            int release,
+            [NotNullWhen(true)] out string? productVersion,
+            [NotNullWhen(true)] out Version? runtimeVersion)
+        {
+            switch (release)
+            {
+                // known min value for each framework version
+                case >= 533325:
+                    productVersion = "4.8.1";
+                    runtimeVersion = new Version(4, 8, 1);
+                    return true;
+                case >= 528040:
+                    productVersion = "4.8";
+                    runtimeVersion = new Version(4, 8);
+                    return true;
+                case >= 461808:
+                    productVersion = "4.7.2";
+                    runtimeVersion = new Version(4, 7, 2);
+                    return true;
+                case >= 461308:
+                    productVersion = "4.7.1";
+                    runtimeVersion = new Version(4, 7, 1);
+                    return true;
+                case >= 460798:
+                    productVersion = "4.7";
+                    runtimeVersion = new Version(4, 7);
+                    return true;
+                case >= 394802:
+                    productVersion = "4.6.2";
+                    runtimeVersion = new Version(4, 6, 2);
+                    return true;
+                case >= 394254:
+                    productVersion = "4.6.1";
+                    runtimeVersion = new Version(4, 6, 1);
+                    return true;
+                case >= 393295:
+                    productVersion = "4.6";
+                    runtimeVersion = new Version(4, 6);
+                    return true;
+                case >= 379893:
+                    productVersion = "4.5.2";
+                    runtimeVersion = new Version(4, 5, 2);
+                    return true;
+                case >= 378675:
+                    productVersion = "4.5.1";
+                    runtimeVersion = new Version(4, 5, 1);
+                    return true;
+                case >= 378389:
+                    productVersion = "4.5";
+                    runtimeVersion = new Version(4, 5);
+                    return true;
+            }
+
+            productVersion = null;
+            runtimeVersion = null;
+            return false;
         }
     }
 }
