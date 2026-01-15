@@ -559,8 +559,7 @@ internal static class MetricTags
         [Description("command:merge_base")] MergeBase,
         [Description("command:rev_list")] RevList,
         [Description("command:ls_remote")] LsRemote,
-        [Description("command:fetch")] Fetch,
-        [Description("command:safe_directory")] SafeDirectory
+        [Description("command:fetch")] Fetch
     }
 
     public enum CIVisibilityExitCodes
