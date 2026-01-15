@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -19,6 +21,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
 
@@ -33,13 +36,60 @@ internal static class GitCommandHelper
     private static readonly string[] PossibleBaseBranches = ["main", "master", "preprod", "prod", "dev", "development", "trunk"];
     private static readonly char[] LineSeparators = ['\n', '\r'];
     private static readonly char[] WhitespaceSeparators = ['\t', ' '];
+    private static readonly SHA256 Hasher = SHA256.Create();
 
-    public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
+    public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null, bool useCache = true)
     {
+        using var cd = CodeDurationRef.Create();
+        string? cacheKey = null;
+        workingDirectory ??= CIEnvironmentValues.Instance.SourceRoot ?? Environment.CurrentDirectory;
+        if (useCache && string.IsNullOrEmpty(input))
+        {
+            string runId;
+            if (TestOptimization.Instance is TestOptimization { } tOpt)
+            {
+                runId = tOpt.EnsureRunId(workingDirectory);
+            }
+            else
+            {
+                runId = TestOptimization.Instance.RunId;
+            }
+
+            var cacheFolder = Path.Combine(workingDirectory, ".dd", runId, "git");
+            try
+            {
+                if (!Directory.Exists(cacheFolder))
+                {
+                    Directory.CreateDirectory(cacheFolder);
+                }
+
+                lock (Hasher)
+                {
+                    var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(arguments));
+                    cacheKey = Path.Combine(cacheFolder, BitConverter.ToString(hash).ToLowerInvariant() + ".json");
+                }
+
+                if (File.Exists(cacheKey))
+                {
+                    var jsonValue = File.ReadAllText(cacheKey);
+                    if (JsonConvert.DeserializeObject<ProcessHelpers.CommandOutput>(jsonValue) is { } cachedOutput)
+                    {
+                        cachedOutput.Cached = true;
+                        return cachedOutput;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error in the git cache.");
+            }
+        }
+
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            arguments = $"-c safe.directory={workingDirectory} {arguments}";
+            var sw = RefStopwatch.Create();
             var gitOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     "git",
@@ -51,7 +101,7 @@ internal static class GitCommandHelper
                     useWhereIsIfFileNotFound: true,
                     timeout: TimeSpan.FromMinutes(5)),
                 input);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.ElapsedMilliseconds);
             if (gitOutput is null)
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
@@ -67,7 +117,9 @@ internal static class GitCommandHelper
                 var sb = StringBuilderCache.Acquire();
                 sb.AppendLine(" -> ");
                 sb.AppendLine($"  command : git {arguments}");
+                sb.AppendLine($"       wd : {workingDirectory}");
                 sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
+                sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds}ms");
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
                 {
@@ -76,6 +128,21 @@ internal static class GitCommandHelper
 
                 var txt = StringBuilderCache.GetStringAndRelease(sb);
                 Log.Debug("GitCommandHelper: Git command {Command}", txt);
+            }
+
+            if (useCache &&
+                !string.IsNullOrEmpty(cacheKey) &&
+                gitOutput is not null &&
+                JsonConvert.SerializeObject(gitOutput) is { } jsonValue)
+            {
+                try
+                {
+                    File.WriteAllText(cacheKey, jsonValue);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error writing git cache.");
+                }
             }
 
             return gitOutput;

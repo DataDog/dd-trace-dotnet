@@ -15,8 +15,10 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 internal sealed class GitInfo : IGitInfo
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
+    private static readonly string? RuntimeFolder = Path.GetDirectoryName(typeof(string).Assembly.Location);
+    private static readonly string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static IGitInfoProvider[] _gitInfoProviders = [
-        ManualParserGitInfoProvider.Instance,
+        // ManualParserGitInfoProvider.Instance,
         GitCommandGitInfoProvider.Instance,
     ];
 
@@ -121,8 +123,30 @@ internal sealed class GitInfo : IGitInfo
     public static IGitInfo GetCurrent()
     {
         List<string>? errors = null;
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
+        List<string> searchPaths = new();
+
+        var baseDirectory = AppContext.BaseDirectory;
+        if (!baseDirectory.Contains("/dotnet/sdk") && !string.IsNullOrWhiteSpace(RuntimeFolder) && !baseDirectory.Contains(RuntimeFolder))
+        {
+            if (!File.Exists(Path.Combine(baseDirectory, DatadogTraceToolsRunnerAssembly)))
+            {
+                searchPaths.Add(baseDirectory);
+            }
+        }
+
+        searchPaths.Add(Environment.CurrentDirectory);
+
+        DirectoryInfo? gitDirectory = null;
+        foreach (var sp in searchPaths)
+        {
+            Log.Information("GitInfo: Using directory: {Directory}", sp);
+            gitDirectory = GetParentGitFolder(sp);
+            if (gitDirectory is not null)
+            {
+                break;
+            }
+        }
+
         if (gitDirectory != null)
         {
             foreach (var provider in _gitInfoProviders)
