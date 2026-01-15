@@ -35,6 +35,17 @@ internal static class ActivityEnumerationHelper
     public static void EnumerateTagObjects<T>(T activity5, ref OtelTagsEnumerationState state, TagObjectsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity5
     {
+        if (Environment.Version.Major >= 10)
+        {
+            // .NET 10 doesn't allocate _anyway_, so we should just do naive enumeration
+            foreach (var value in activity5.TagObjects)
+            {
+                funcToRun(ref state, value);
+            }
+
+            return;
+        }
+
         var tagObjects = activity5.TagObjects;
         var runtimeType = tagObjects.GetType();
 
@@ -72,6 +83,17 @@ internal static class ActivityEnumerationHelper
     public static void EnumerateTags<T>(T activity, ref OtelTagsEnumerationState state, TagsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity
     {
+        if (Environment.Version.Major >= 10)
+        {
+            // .NET 10 doesn't allocate _anyway_, so we should just do naive enumeration
+            foreach (var value in activity.Tags)
+            {
+                funcToRun(ref state, value);
+            }
+
+            return;
+        }
+
         var tags = activity.Tags;
         var runtimeType = tags.GetType();
 
