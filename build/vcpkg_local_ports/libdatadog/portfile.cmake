@@ -4,12 +4,12 @@ if(TARGET_TRIPLET STREQUAL "x64-windows" OR
    TARGET_TRIPLET STREQUAL "x64-windows-static")
     set(PLATFORM "x64")
     # TODO: Update this hash after first libdatadog-dotnet release
-    set(LIBDATADOG_HASH "abcdc9a07494ef5043bcc9654cd9fea833762441b80cf2d7959779c83f7c25cc0c3a8b2ec341389942d950720c4532b2feb1703f18d55386348ed691352dda88")
+    set(LIBDATADOG_HASH "72e24e30f9bf4e047f46038d215f070f8f77613653867024a339c243ef9f47bb7dfdbc4536d957d1deb33181167ef86647447586b31d3404ce8d302b9415bb0c")
 elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
        TARGET_TRIPLET STREQUAL "x86-windows-static")
     set(PLATFORM "x86")
     # TODO: Update this hash after first libdatadog-dotnet release (when x86 support is added)
-    set(LIBDATADOG_HASH "b93fee3a03453fe64c1e4e5267063cdff78c1fd7a12651556f53947b40c7ca716fdb4c03d6a496c0a961d1aba06088f9611eb40cb3bfbf625220a8f0f475267d")
+    set(LIBDATADOG_HASH "03a50287519e48b4fa75ea5d7cd76da5c2083da0d8613bc95707d5f87dfdd86b8a2b6e82092a277513d368c66079b3646dee2f9112dfa142d7a671ccd6bbca79")
 else()
     message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
 endif()

@@ -4,7 +4,7 @@ endif()
 
 include(FetchContent)
 
-set(LIBDATADOG_VERSION "v25.0.0" CACHE STRING "libdatadog version")
+set(LIBDATADOG_VERSION "v1.0.1" CACHE STRING "libdatadog version")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
