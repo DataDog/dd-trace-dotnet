@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads;
@@ -69,7 +70,7 @@ internal sealed class CICodeCoveragePayload : MultipartPayload
             TestCoverageEventsCount++;
         }
 
-        TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.GetElapsedMilliseconds());
         return success;
     }
 
