@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit

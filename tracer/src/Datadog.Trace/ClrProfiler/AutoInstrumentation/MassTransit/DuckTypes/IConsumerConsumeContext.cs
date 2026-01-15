@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
 /// Duck type for MassTransit.ConsumerConsumeContext&lt;TConsumer, TMessage&gt;

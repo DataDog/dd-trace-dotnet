@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
