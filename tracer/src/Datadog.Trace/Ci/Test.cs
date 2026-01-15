@@ -220,11 +220,17 @@ public sealed class Test
                 static suiteTags => suiteTags.SourceFile,
                 static (suiteTags, value) => suiteTags.SourceFile = value);
 
-            if (ciValues.TryGetCodeOwnersRelativePath(methodSymbol.File, false, out var codeOwnersRelativePath) &&
-                ciValues.CodeOwners is { } codeOwners &&
-                codeOwners.Match("/" + codeOwnersRelativePath) is { } match)
+            string[]? owners;
+            if (ciValues.CodeOwners is { } codeOwners &&
+                (owners = codeOwners.Match("/" + tags.SourceFile).ToArray()) is { Length: > 0 })
             {
-                SetCodeOwnersOnTags(tags, Suite.Tags, match);
+                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
+            }
+            else if (ciValues.TryGetCodeOwnersRelativePath(methodSymbol.File, false, out var codeOwnersRelativePath) &&
+                     ciValues.CodeOwners is { } fallbackCodeOwners &&
+                     (owners = fallbackCodeOwners.Match("/" + codeOwnersRelativePath).ToArray()) is { Length: > 0 })
+            {
+                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
             }
         }
     }

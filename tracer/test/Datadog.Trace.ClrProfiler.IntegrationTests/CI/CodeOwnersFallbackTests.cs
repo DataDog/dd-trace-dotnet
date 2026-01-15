@@ -172,6 +172,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableFact]
+        public void KeepsSourceRootMatchWhenFallbackCannotResolve()
+        {
+            using var repoDirectory = new TemporaryDirectory();
+            var repoRoot = repoDirectory.RootPath;
+            File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n");
+
+            var env = new Dictionary<string, string>
+            {
+                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
+                [CIEnvironmentValues.Constants.GitHubWorkspace] = repoRoot,
+                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+            };
+
+            var ciValues = CIEnvironmentValues.Create(env);
+
+            var externalRoot = Path.Combine(Path.GetTempPath(), "dd-ci-outside-" + Guid.NewGuid().ToString("N"));
+            var sourceFile = Path.Combine(externalRoot, "tracer", "test", "Snapshots", "Snapshot.cs");
+            Directory.CreateDirectory(Path.GetDirectoryName(sourceFile)!);
+            File.WriteAllText(sourceFile, "class Snapshot {}");
+
+            var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+
+            Assert.StartsWith("..", relative, StringComparison.Ordinal);
+            Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out _));
+
+            var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
+            Assert.Equal(new[] { "@global" }, owners);
+        }
+
+        [SkippableFact]
         public void UsesWorkspaceFallbackWhenSourceRootIsDifferent()
         {
             using var tempDirectory = new TemporaryDirectory();
