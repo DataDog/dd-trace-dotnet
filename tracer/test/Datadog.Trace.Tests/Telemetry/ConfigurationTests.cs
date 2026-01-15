@@ -19,51 +19,60 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class ConfigurationTests
 {
     private static readonly string[] ExcludedKeys =
-        new[]
-            {
-                // Lambda handler extracts these directly from env var, and no reason to think that will change
-                "_DD_EXTENSION_ENDPOINT",
-                "_DD_EXTENSION_PATH",
-                // Internal variable just used to "pass" settings to the
-                "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY",
-                // mini agent uses this directly from env var, and no reason to think that will change
-                "DD_MINI_AGENT_PATH",
-                "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
-                // CIapp extracts  directly from env var, and no reason to think that will change
-                "DD_CUSTOM_TRACE_ID",
-                "DD_GIT_BRANCH",
-                "DD_GIT_TAG",
-                "DD_GIT_REPOSITORY_URL",
-                "DD_GIT_COMMIT_SHA",
-                "DD_GIT_COMMIT_MESSAGE",
-                "DD_GIT_COMMIT_AUTHOR_NAME",
-                "DD_GIT_COMMIT_AUTHOR_EMAIL",
-                "DD_GIT_COMMIT_AUTHOR_DATE",
-                "DD_GIT_COMMIT_COMMITTER_NAME",
-                "DD_GIT_COMMIT_COMMITTER_EMAIL",
-                "DD_GIT_COMMIT_COMMITTER_DATE",
-                "DD_GIT_PULL_REQUEST_BASE_BRANCH",
-                "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA",
-                "DD_ACTION_EXECUTION_ID",
-                "DD_PIPELINE_EXECUTION_ID",
-                "DD_TESTSESSION_COMMAND",
-                "DD_TESTSESSION_WORKINGDIRECTORY",
-                "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
-                "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
-                // Internal env vars that we only ever read from environment
-                "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
-                "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
-                "DD_DOTNET_TRACER_HOME",
-                "DD_INSTRUMENTATION_INSTALL_ID",
-                "DD_INSTRUMENTATION_INSTALL_TYPE",
-                "DD_INSTRUMENTATION_INSTALL_TIME",
-                "DD_INJECTION_ENABLED",
-                "DD_INJECT_FORCE",
-                // deprecated alias
-                "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED"
-            }
-           .Concat(IntegrationNameToKeys.GetAllIntegrationEnabledKeys())
-           .ToArray();
+    {
+        // Lambda handler extracts these directly from env var, and no reason to think that will change
+        "_DD_EXTENSION_ENDPOINT",
+        "_DD_EXTENSION_PATH",
+        // Internal variable just used to "pass" settings to the
+        "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY",
+        "_DD_INTERNAL_TOPT_RUNID",
+        // mini agent uses this directly from env var, and no reason to think that will change
+        "DD_MINI_AGENT_PATH",
+        "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
+        // CIapp extracts  directly from env var, and no reason to think that will change
+        "DD_CUSTOM_TRACE_ID",
+        "DD_GIT_BRANCH",
+        "DD_GIT_TAG",
+        "DD_GIT_REPOSITORY_URL",
+        "DD_GIT_COMMIT_SHA",
+        "DD_GIT_COMMIT_MESSAGE",
+        "DD_GIT_COMMIT_AUTHOR_NAME",
+        "DD_GIT_COMMIT_AUTHOR_EMAIL",
+        "DD_GIT_COMMIT_AUTHOR_DATE",
+        "DD_GIT_COMMIT_COMMITTER_NAME",
+        "DD_GIT_COMMIT_COMMITTER_EMAIL",
+        "DD_GIT_COMMIT_COMMITTER_DATE",
+        "DD_GIT_PULL_REQUEST_BASE_BRANCH",
+        "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA",
+        "DD_ACTION_EXECUTION_ID",
+        "DD_PIPELINE_EXECUTION_ID",
+        "DD_TESTSESSION_COMMAND",
+        "DD_TESTSESSION_WORKINGDIRECTORY",
+        "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
+        "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
+        // Internal env vars that we only ever read from environment
+        "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
+        "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
+        "DD_DOTNET_TRACER_HOME",
+        "DD_INSTRUMENTATION_INSTALL_ID",
+        "DD_INSTRUMENTATION_INSTALL_TYPE",
+        "DD_INSTRUMENTATION_INSTALL_TIME",
+        "DD_INJECTION_ENABLED",
+        "DD_INJECT_FORCE",
+        // deprecated alias
+        "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED"
+    };
+
+    // These are the keys that are used in the integration registry which are _not_ sent to telemetry, so we can ignore them
+    private static readonly string[] IntegrationSettingKeys =
+        IntegrationRegistry.Names
+            .SelectMany(x => new[]
+                            {
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ENABLED",
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ANALYTICS_ENABLED",
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ANALYTICS_SAMPLE_RATE"
+                            })
+            .ToArray();
 
     [Fact]
     public void AllConfigurationValuesAreRegisteredWithIntake()
@@ -92,7 +101,7 @@ public class ConfigurationTests
                                     .Concat(configKeyStrings)
                                     .Where(x => !x.Contains("{0}") && x != "DD_" && x != "DD_TRACE_") // exclude the format string ones + the interpolated string ones
                                     .Distinct()
-                                    .Where(x => !ExcludedKeys.Contains(x))
+                                    .Where(x => !ExcludedKeys.Contains(x) && !IntegrationSettingKeys.Contains(x))
                                     .ToList();
 
         var keysWithoutConfig = new List<string>();
@@ -122,8 +131,7 @@ public class ConfigurationTests
         keysWithoutConfig
            .OrderBy(x => x)
            .Should()
-           .BeEmpty(
-                $"Keys should be listed in config_norm_rules or block_prefixes: {string.Join(", ", keysWithoutConfig)}");
+           .BeEmpty($"Keys should be listed in config_norm_rules or block_prefixes");
     }
 
     private static List<string> GetConfigurationKeyStrings()
