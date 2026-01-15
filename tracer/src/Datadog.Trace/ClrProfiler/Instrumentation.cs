@@ -16,13 +16,9 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -494,7 +490,17 @@ namespace Datadog.Trace.ClrProfiler
                 // Iast hasn't yet, but doing it now is fine
                 // span origins is _not_ initialized yet, and we can't guarantee it will be
                 // so just be lazy instead
-                observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
+#if NET6_0_OR_GREATER
+                if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
+                {
+                    observers.Add(new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, null));
+                }
+                else
+#endif
+                {
+                    observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
+                }
+
                 observers.Add(new QuartzDiagnosticObserver());
             }
 

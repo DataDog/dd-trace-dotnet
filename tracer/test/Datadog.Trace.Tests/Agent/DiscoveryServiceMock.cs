@@ -64,5 +64,9 @@ internal class DiscoveryServiceMock : IDiscoveryService
         Callbacks.Remove(callback);
     }
 
+    public void SetCurrentConfigStateHash(string configStateHash)
+    {
+    }
+
     public Task DisposeAsync() => Task.CompletedTask;
 }

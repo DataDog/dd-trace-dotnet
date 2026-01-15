@@ -868,6 +868,11 @@
         "A"
       ]
     },
+    "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_SERVICE": {
       "version": [
         "A"
@@ -1188,6 +1193,12 @@
       ],
       "product": "FeatureFlags"
     },
+    "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "FeatureFlags"
+    },
     "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED": {
       "version": [
         "A"
@@ -1330,6 +1341,12 @@
         "A"
       ]
     },
+    "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED": {
+      "version": [
+        "A"
+      ],
+      "product": "FeatureFlags"
+    },
     "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": {
       "version": [
         "A"
@@ -1404,8 +1421,7 @@
       ],
       "product": "OpenTelemetry"
     },
-    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT":
-    {
+    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": {
       "version": [
         "A"
       ],
@@ -1423,8 +1439,7 @@
       ],
       "product": "OpenTelemetry"
     },
-    "OTEL_EXPORTER_OTLP_LOGS_HEADERS":
-    {
+    "OTEL_EXPORTER_OTLP_LOGS_HEADERS": {
       "version": [
         "A"
       ],
