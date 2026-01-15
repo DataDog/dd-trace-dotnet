@@ -55,10 +55,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     serviceName: serviceName,
                     startTime: startTime);
 
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
-
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 // Resource name uses clean destination name: "{clean_destination} {operation}"
                 // e.g., "submit-order send" instead of "loopback://localhost/submit-order send"
@@ -136,10 +135,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     serviceName: serviceName,
                     startTime: startTime);
 
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
-
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 // Resource name uses clean destination name: "{clean_destination} {operation}"
                 // e.g., "submit-order receive" instead of "loopback://localhost/submit-order receive"

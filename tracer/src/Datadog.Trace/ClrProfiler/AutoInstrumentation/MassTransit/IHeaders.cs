@@ -11,15 +11,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
     /// Duck-typing interface for MassTransit.Headers (for reading headers on consume side)
+    /// JsonTransportHeaders has: GetAll, Get[T](string, T), GetEnumerator
+    /// Since Get is generic, we use GetAll which returns IEnumerable[HeaderValue]
     /// </summary>
     internal interface IHeaders
     {
         /// <summary>
-        /// Tries to get a header value
+        /// Gets all header values
         /// </summary>
-        /// <param name="key">The header key</param>
-        /// <param name="value">The header value if found</param>
-        /// <returns>True if header found, false otherwise</returns>
-        bool TryGetHeader(string key, out object value);
+        /// <returns>Enumerable of all headers</returns>
+        IEnumerable<KeyValuePair<string, object>> GetAll();
     }
 }

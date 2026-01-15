@@ -7,8 +7,9 @@
 
 using System;
 using System.ComponentModel;
-using System.Reflection;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -50,43 +51,48 @@ public sealed class ReceivePipeDispatcherIntegration
         // Extract trace context from headers
         var propagationContext = default(PropagationContext);
         Uri? inputAddress = null;
+        IReceiveContext? receiveContext = null;
+        object? transportHeadersObj = null;
 
-        // Try to extract headers and context info using reflection
+        // Try to duck-type the context
         if (context is not null)
         {
             try
             {
                 var contextType = context.GetType();
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Context type: {ContextType}", contextType.FullName);
 
-                // Get InputAddress from ReceiveContext
-                var inputAddressProp = contextType.GetProperty("InputAddress");
-                if (inputAddressProp?.GetValue(context) is Uri addr)
-                {
-                    inputAddress = addr;
-                }
+                // Log available properties to debug duck typing failures
+                var props = contextType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var propNames = string.Join(", ", props.Select(p => $"{p.Name}:{p.PropertyType.Name}").Take(20));
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Available properties: {Properties}", propNames);
 
-                // Get TransportHeaders for trace context propagation
-                var transportHeadersProp = contextType.GetProperty("TransportHeaders");
-                if (transportHeadersProp != null)
+                if (context.TryDuckCast<IReceiveContext>(out var duckContext))
                 {
-                    var headersObj = transportHeadersProp.GetValue(context);
-                    if (headersObj != null)
+                    receiveContext = duckContext;
+                    inputAddress = receiveContext.InputAddress;
+
+                    // Get transport headers
+                    transportHeadersObj = receiveContext.TransportHeaders;
+                    if (transportHeadersObj != null)
                     {
-                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders type: {HeadersType}", headersObj.GetType().FullName);
+                        var headersType = transportHeadersObj.GetType();
+                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders type: {HeadersType}", headersType.FullName);
 
-                        var headersType = headersObj.GetType();
-                        var headersInterface = headersType.GetInterface("MassTransit.Headers");
-                        if (headersInterface != null)
-                        {
-                            var tryGetHeaderMethod = headersInterface.GetMethod("TryGetHeader");
-                            if (tryGetHeaderMethod != null)
-                            {
-                                var headersAdapter = new ReflectionHeadersAdapter(headersObj, tryGetHeaderMethod);
-                                propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);
-                                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Extracted propagation context from transport headers");
-                            }
-                        }
+                        // Log available methods to debug duck typing failures
+                        var methods = headersType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        var methodSignatures = string.Join(", ", methods.Where(m => !m.IsSpecialName).Select(m => $"{m.Name}({string.Join(",", m.GetParameters().Select(p => p.ParameterType.Name))})").Distinct().Take(15));
+                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders methods: {Methods}", methodSignatures);
+
+                        // Use reflection-based ContextPropagation since the Get method is generic
+                        var headersAdapter = new ContextPropagation(transportHeadersObj);
+                        propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);
+                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Extracted propagation context from transport headers");
                     }
+                }
+                else
+                {
+                    Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Could not duck-cast context to IReceiveContext");
                 }
             }
             catch (Exception ex)
@@ -152,113 +158,57 @@ public sealed class ReceivePipeDispatcherIntegration
                     tags.InputAddress = inputAddress.ToString();
                 }
 
-                // Try to extract additional context info
-                if (context is not null)
+                // Try to extract additional context info using duck-typed context
+                if (receiveContext != null)
                 {
                     try
                     {
-                        var contextType = context.GetType();
-
-                        // Get body length if available (MT8 OTEL tag)
-                        var bodyLengthProp = contextType.GetProperty("ContentLength") ?? contextType.GetProperty("BodyLength");
-                        if (bodyLengthProp != null)
-                        {
-                            var bodyLength = bodyLengthProp.GetValue(context);
-                            if (bodyLength != null)
-                            {
-                                tags.MessageSize = bodyLength.ToString() ?? "0";
-                            }
-                        }
-
-                        // Get redelivered status
-                        var redeliveredProp = contextType.GetProperty("Redelivered");
-                        if (redeliveredProp?.GetValue(context) is bool redelivered && redelivered)
-                        {
-                            tags.SetTag("messaging.masstransit.redelivered", "true");
-                        }
-
                         // MT8 OTEL tags from TransportHeaders - extract message context info
                         // Note: TransportHeaders are raw transport-level headers. The MassTransit envelope
                         // properties (MessageId, ConversationId, etc.) are inside the message body and
                         // become available on ConsumeContext after deserialization (in process spans).
-                        // Here we extract what's available at the transport level.
-                        var transportHeadersProp = contextType.GetProperty("TransportHeaders");
-                        if (transportHeadersProp != null)
+                        // Here we extract what's available at the transport level using reflection.
+                        if (transportHeadersObj != null)
                         {
-                            var headersObj = transportHeadersProp.GetValue(context);
-                            if (headersObj != null)
+                            // Create a helper to read headers using reflection
+                            var headerReader = new ContextPropagation(transportHeadersObj);
+
+                            // Try various header name patterns used by different transports
+                            // RabbitMQ uses different header names than in-memory transport
+
+                            // Extract message_id - try common patterns
+                            var messageId = TryExtractHeader(headerReader, "MessageId", "message_id", "message-id");
+                            if (!string.IsNullOrEmpty(messageId))
                             {
-                                var headersType = headersObj.GetType();
-                                var headersInterface = headersType.GetInterface("MassTransit.Headers");
-                                if (headersInterface != null)
-                                {
-                                    var tryGetHeaderMethod = headersInterface.GetMethod("TryGetHeader");
-                                    if (tryGetHeaderMethod != null)
-                                    {
-                                        // Try various header name patterns used by different transports
-                                        // RabbitMQ uses different header names than in-memory transport
+                                tags.MessageId = messageId;
+                            }
 
-                                        // Extract message_id - try common patterns
-                                        var messageIdHeaders = new[] { "MessageId", "message_id", "message-id" };
-                                        foreach (var headerName in messageIdHeaders)
-                                        {
-                                            var args = new object?[] { headerName, null };
-                                            if ((bool)(tryGetHeaderMethod.Invoke(headersObj, args) ?? false) && args[1] != null)
-                                            {
-                                                tags.MessageId = args[1]?.ToString();
-                                                break;
-                                            }
-                                        }
+                            // Extract conversation_id
+                            var conversationId = TryExtractHeader(headerReader, "MT-ConversationId", "ConversationId", "conversation_id");
+                            if (!string.IsNullOrEmpty(conversationId))
+                            {
+                                tags.ConversationId = conversationId;
+                            }
 
-                                        // Extract conversation_id
-                                        var convIdHeaders = new[] { "MT-ConversationId", "ConversationId", "conversation_id" };
-                                        foreach (var headerName in convIdHeaders)
-                                        {
-                                            var args = new object?[] { headerName, null };
-                                            if ((bool)(tryGetHeaderMethod.Invoke(headersObj, args) ?? false) && args[1] != null)
-                                            {
-                                                tags.ConversationId = args[1]?.ToString();
-                                                break;
-                                            }
-                                        }
+                            // Extract initiator_id
+                            var initiatorId = TryExtractHeader(headerReader, "MT-Initiator-Id", "InitiatorId", "initiator_id");
+                            if (!string.IsNullOrEmpty(initiatorId))
+                            {
+                                tags.InitiatorId = initiatorId;
+                            }
 
-                                        // Extract initiator_id
-                                        var initiatorHeaders = new[] { "MT-Initiator-Id", "InitiatorId", "initiator_id" };
-                                        foreach (var headerName in initiatorHeaders)
-                                        {
-                                            var args = new object?[] { headerName, null };
-                                            if ((bool)(tryGetHeaderMethod.Invoke(headersObj, args) ?? false) && args[1] != null)
-                                            {
-                                                tags.InitiatorId = args[1]?.ToString();
-                                                break;
-                                            }
-                                        }
+                            // Extract request_id
+                            var requestId = TryExtractHeader(headerReader, "MT-Request-Id", "RequestId", "request_id");
+                            if (!string.IsNullOrEmpty(requestId))
+                            {
+                                tags.RequestId = requestId;
+                            }
 
-                                        // Extract request_id
-                                        var requestIdHeaders = new[] { "MT-Request-Id", "RequestId", "request_id" };
-                                        foreach (var headerName in requestIdHeaders)
-                                        {
-                                            var args = new object?[] { headerName, null };
-                                            if ((bool)(tryGetHeaderMethod.Invoke(headersObj, args) ?? false) && args[1] != null)
-                                            {
-                                                tags.RequestId = args[1]?.ToString();
-                                                break;
-                                            }
-                                        }
-
-                                        // Extract source_address
-                                        var sourceAddrHeaders = new[] { "MT-Source-Address", "SourceAddress", "source_address" };
-                                        foreach (var headerName in sourceAddrHeaders)
-                                        {
-                                            var args = new object?[] { headerName, null };
-                                            if ((bool)(tryGetHeaderMethod.Invoke(headersObj, args) ?? false) && args[1] != null)
-                                            {
-                                                tags.SourceAddress = args[1]?.ToString();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
+                            // Extract source_address
+                            var sourceAddress = TryExtractHeader(headerReader, "MT-Source-Address", "SourceAddress", "source_address");
+                            if (!string.IsNullOrEmpty(sourceAddress))
+                            {
+                                tags.SourceAddress = sourceAddress;
                             }
                         }
                     }
@@ -298,5 +248,24 @@ public sealed class ReceivePipeDispatcherIntegration
 
         state.Scope.DisposeWithException(exception);
         return returnValue;
+    }
+
+    /// <summary>
+    /// Tries to extract a header value from multiple possible header names using the reflection-based header reader
+    /// </summary>
+    private static string? TryExtractHeader(ContextPropagation headerReader, params string[] headerNames)
+    {
+        foreach (var headerName in headerNames)
+        {
+            foreach (var value in headerReader.GetValues(headerName))
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        return null;
     }
 }

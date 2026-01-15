@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Headers;
@@ -13,21 +14,76 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
     /// Adapter for extracting trace context from MassTransit Headers (consume side)
+    /// JsonTransportHeaders has: GetAll() which returns IEnumerable[HeaderValue]
+    /// The Get method has a constraint (T : struct) so we use GetAll instead
     /// </summary>
     internal readonly struct ContextPropagation : IHeadersCollection
     {
-        private readonly IHeaders? _headers;
+        private readonly object? _headers;
+        private readonly MethodInfo? _getAllMethod;
 
-        public ContextPropagation(IHeaders? headers)
+        public ContextPropagation(object? headers)
         {
             _headers = headers;
+            _getAllMethod = null;
+
+            if (headers != null)
+            {
+                // Find the GetAll method that returns IEnumerable<HeaderValue>
+                var headersType = headers.GetType();
+                _getAllMethod = headersType.GetMethod("GetAll", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+            }
         }
 
         public IEnumerable<string> GetValues(string name)
         {
-            if (_headers?.TryGetHeader(name, out var value) == true && value != null)
+            string? result = null;
+
+            if (_headers != null && _getAllMethod != null)
             {
-                yield return value.ToString() ?? string.Empty;
+                try
+                {
+                    // GetAll returns IEnumerable<HeaderValue> where HeaderValue has Key and Value properties
+                    var allHeaders = _getAllMethod.Invoke(_headers, null);
+                    if (allHeaders is System.Collections.IEnumerable enumerable)
+                    {
+                        foreach (var headerValue in enumerable)
+                        {
+                            if (headerValue == null)
+                            {
+                                continue;
+                            }
+
+                            // HeaderValue is a struct with Key and Value properties
+                            var hvType = headerValue.GetType();
+                            var keyProp = hvType.GetProperty("Key");
+                            var valueProp = hvType.GetProperty("Value");
+
+                            if (keyProp != null && valueProp != null)
+                            {
+                                var key = keyProp.GetValue(headerValue) as string;
+                                if (string.Equals(key, name, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var value = valueProp.GetValue(headerValue);
+                                    if (value != null)
+                                    {
+                                        result = value.ToString();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore errors reading headers
+                }
+            }
+
+            if (result != null)
+            {
+                yield return result;
             }
         }
 
@@ -49,6 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
     /// <summary>
     /// Adapter for injecting trace context into MassTransit SendHeaders (send side)
+    /// Uses duck-typed ISendHeaders interface
     /// </summary>
     internal readonly struct SendContextPropagation : IHeadersCollection
     {
@@ -79,87 +136,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         public void Remove(string name)
         {
             // MassTransit SendHeaders doesn't have a Remove method
-        }
-    }
-
-    /// <summary>
-    /// Adapter for injecting trace context into MassTransit SendHeaders using reflection
-    /// This bypasses duck typing to directly invoke the Set method
-    /// </summary>
-    internal readonly struct ReflectionSendHeadersAdapter : IHeadersCollection
-    {
-        private readonly object _headers;
-        private readonly MethodInfo _setMethod;
-
-        public ReflectionSendHeadersAdapter(object headers, MethodInfo setMethod)
-        {
-            _headers = headers;
-            _setMethod = setMethod;
-        }
-
-        public IEnumerable<string> GetValues(string name)
-        {
-            // SendHeaders is write-only for our purposes
-            yield break;
-        }
-
-        public void Set(string name, string value)
-        {
-            // Call Set(string key, object value, bool overwrite)
-            _setMethod.Invoke(_headers, new object[] { name, value, true });
-        }
-
-        public void Add(string name, string value)
-        {
-            // Set replaces existing values, which is the desired behavior
-            _setMethod.Invoke(_headers, new object[] { name, value, true });
-        }
-
-        public void Remove(string name)
-        {
-            // MassTransit SendHeaders doesn't have a Remove method
-        }
-    }
-
-    /// <summary>
-    /// Adapter for extracting trace context from MassTransit Headers using reflection
-    /// This bypasses duck typing to directly invoke the TryGetHeader method
-    /// </summary>
-    internal readonly struct ReflectionHeadersAdapter : IHeadersCollection
-    {
-        private readonly object _headers;
-        private readonly MethodInfo _tryGetHeaderMethod;
-
-        public ReflectionHeadersAdapter(object headers, MethodInfo tryGetHeaderMethod)
-        {
-            _headers = headers;
-            _tryGetHeaderMethod = tryGetHeaderMethod;
-        }
-
-        public IEnumerable<string> GetValues(string name)
-        {
-            // Call TryGetHeader(string key, out object value)
-            var parameters = new object?[] { name, null };
-            var result = (bool)_tryGetHeaderMethod.Invoke(_headers, parameters)!;
-            if (result && parameters[1] != null)
-            {
-                yield return parameters[1]!.ToString() ?? string.Empty;
-            }
-        }
-
-        public void Set(string name, string value)
-        {
-            // Headers on consume side are read-only
-        }
-
-        public void Add(string name, string value)
-        {
-            // Headers on consume side are read-only
-        }
-
-        public void Remove(string name)
-        {
-            // Headers on consume side are read-only
         }
     }
 }

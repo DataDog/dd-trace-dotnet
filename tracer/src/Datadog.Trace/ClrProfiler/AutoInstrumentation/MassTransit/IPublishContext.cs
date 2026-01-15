@@ -45,8 +45,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         Uri? DestinationAddress { get; }
 
         /// <summary>
-        /// Gets the message headers
+        /// Gets the message headers (returns object to allow duck-typing, should be duck-cast to ISendHeaders)
         /// </summary>
-        IHeaders? Headers { get; }
+        object? Headers { get; }
     }
 }

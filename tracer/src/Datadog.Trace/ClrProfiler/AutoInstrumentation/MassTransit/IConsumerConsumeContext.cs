@@ -6,19 +6,18 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 
 /// <summary>
 /// Duck type for MassTransit.ConsumerConsumeContext&lt;TConsumer, TMessage&gt;
 /// </summary>
-internal interface IConsumerConsumeContext : IDuckType
+internal interface IConsumerConsumeContext
 {
     /// <summary>
-    /// Gets the headers from the consume context
+    /// Gets the headers from the consume context (returns object to allow duck-typing, should be duck-cast to IHeaders)
     /// </summary>
-    IHeaders? Headers { get; }
+    object? Headers { get; }
 
     /// <summary>
     /// Gets the source address

@@ -46,11 +46,8 @@ public sealed class SendEndpointPipeSendIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
     {
-        Log.Debug("MassTransit SendEndpointPipeSendIntegration.OnMethodBegin() - ENTRY");
-
         if (context is null)
         {
-            Log.Debug("MassTransit SendEndpointPipeSendIntegration - Context is null, skipping");
             return CallTargetState.GetDefault();
         }
 
@@ -58,168 +55,98 @@ public sealed class SendEndpointPipeSendIntegration
         Scope? scope = null;
         string? destinationAddress = null;
         string? messageType = null;
-        string? messagingSystem = "in-memory";
+        string messagingSystem = "in-memory";
+        ISendContext? duckContext = null;
         object? headersObj = null;
-        MethodInfo? setMethod = null;
 
         try
         {
             var contextType = context.GetType();
-            Log.Debug("MassTransit SendEndpointPipeSendIntegration - Context type: {ContextType}", contextType.FullName);
 
-            // In MT7, the DestinationAddress may not be set on MessageSendContext yet
-            // First try the context, then try the instance (SendEndpointPipe has _endpoint field pointing to SendEndpoint)
-            var destAddressProp = contextType.GetProperty("DestinationAddress");
-            if (destAddressProp?.GetValue(context) is Uri destUri)
+            // The SendEndpointPipe is a nested class inside SendEndpoint.
+            // The DestinationAddress on context is null at OnMethodBegin because it gets set
+            // inside the Send method: context.DestinationAddress = _endpoint.DestinationAddress
+            // We need to get the destination from the outer SendEndpoint class instead.
+            try
             {
-                destinationAddress = destUri.ToString();
-                messagingSystem = DetermineMessagingSystem(destinationAddress);
-                Log.Debug("MassTransit SendEndpointPipeSendIntegration - Got destination from context: {Destination}", destinationAddress);
-            }
-            else if (instance != null)
-            {
-                // Try to get destination from the SendEndpointPipe's parent SendEndpoint
-                // In MT7, SendEndpointPipe has a _endpoint field that references the parent SendEndpoint
-                var instanceType = instance.GetType();
-                Log.Debug("MassTransit SendEndpointPipeSendIntegration - Instance type: {InstanceType}", instanceType.FullName);
-
-                // Try _endpoint field first (MT7 structure: SendEndpointPipe._endpoint -> SendEndpoint.DestinationAddress)
-                var endpointField = instanceType.GetField("_endpoint", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (endpointField != null)
+                var instanceType = instance?.GetType();
+                if (instanceType != null)
                 {
-                    var sendEndpoint = endpointField.GetValue(instance);
-                    if (sendEndpoint != null)
+                    // SendEndpointPipe has _endpoint field pointing to the outer SendEndpoint
+                    var endpointField = instanceType.GetField("_endpoint", BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (endpointField != null)
                     {
-                        var sendEndpointType = sendEndpoint.GetType();
-                        Log.Debug("MassTransit SendEndpointPipeSendIntegration - SendEndpoint type: {SendEndpointType}", sendEndpointType.FullName);
-
-                        // The DestinationAddress property might be an explicit interface implementation
-                        // Iterate through all properties to find DestinationAddress
-                        var allProps = sendEndpointType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        foreach (var prop in allProps)
+                        var endpoint = endpointField.GetValue(instance);
+                        if (endpoint != null)
                         {
-                            if (prop.Name == "DestinationAddress" || prop.Name.EndsWith(".DestinationAddress"))
+                            var endpointType = endpoint.GetType();
+
+                            // Try to get DestinationAddress - first check direct property
+                            var destProp = endpointType.GetProperty("DestinationAddress", BindingFlags.Public | BindingFlags.Instance);
+
+                            if (destProp == null)
                             {
-                                try
+                                // Try from interface
+                                var sendEndpointInterface = endpointType.GetInterface("MassTransit.ISendEndpoint");
+                                if (sendEndpointInterface != null)
                                 {
-                                    if (prop.GetValue(sendEndpoint) is Uri propUri)
-                                    {
-                                        destinationAddress = propUri.ToString();
-                                        messagingSystem = DetermineMessagingSystem(destinationAddress);
-                                        Log.Debug("MassTransit SendEndpointPipeSendIntegration - Got destination from SendEndpoint property {PropName}: {Destination}", prop.Name, destinationAddress);
-                                        break;
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Debug(ex, "MassTransit SendEndpointPipeSendIntegration - Failed to get DestinationAddress from {PropName}", prop.Name);
+                                    destProp = sendEndpointInterface.GetProperty("DestinationAddress");
                                 }
                             }
-                        }
-                    }
-                }
 
-                // If _endpoint didn't work, try _context (might be different in some versions)
-                if (destinationAddress == null)
-                {
-                    var contextField = instanceType.GetField("_context", BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (contextField != null)
-                    {
-                        var sendEndpointContext = contextField.GetValue(instance);
-                        if (sendEndpointContext != null)
-                        {
-                            var sendEndpointContextType = sendEndpointContext.GetType();
-                            Log.Debug("MassTransit SendEndpointPipeSendIntegration - SendEndpointContext type: {ContextType}", sendEndpointContextType.FullName);
-
-                            // Try EndpointAddress first
-                            var endpointAddressProp = sendEndpointContextType.GetProperty("EndpointAddress");
-                            if (endpointAddressProp?.GetValue(sendEndpointContext) is Uri endpointUri)
+                            if (destProp == null)
                             {
-                                destinationAddress = endpointUri.ToString();
-                                messagingSystem = DetermineMessagingSystem(destinationAddress);
-                                Log.Debug("MassTransit SendEndpointPipeSendIntegration - Got destination from _context.EndpointAddress: {Destination}", destinationAddress);
-                            }
-                            else
-                            {
-                                // Try DestinationAddress
-                                var destAddrProp = sendEndpointContextType.GetProperty("DestinationAddress");
-                                if (destAddrProp?.GetValue(sendEndpointContext) is Uri destAddr)
+                                // Try getting the backing field directly (auto-property backing field)
+                                var destField = endpointType.GetField("<DestinationAddress>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance);
+                                if (destField?.GetValue(endpoint) is Uri fieldUri)
                                 {
-                                    destinationAddress = destAddr.ToString();
+                                    destinationAddress = fieldUri.ToString();
                                     messagingSystem = DetermineMessagingSystem(destinationAddress);
-                                    Log.Debug("MassTransit SendEndpointPipeSendIntegration - Got destination from _context.DestinationAddress: {Destination}", destinationAddress);
                                 }
+                            }
+                            else if (destProp.GetValue(endpoint) is Uri destUri)
+                            {
+                                destinationAddress = destUri.ToString();
+                                messagingSystem = DetermineMessagingSystem(destinationAddress);
                             }
                         }
                     }
                 }
+            }
+            catch (Exception endpointEx)
+            {
+                Log.Debug(endpointEx, "MassTransit SendEndpointPipeSendIntegration - Failed to get destination from _endpoint");
+            }
 
-                // Log all fields for debugging if we still don't have destination
-                if (destinationAddress == null)
+            // Try to duck-cast the context to access its properties
+            if (context.TryDuckCast<ISendContext>(out var ducked))
+            {
+                duckContext = ducked;
+                headersObj = duckContext.Headers;
+            }
+            else
+            {
+                // Fall back to reflection for headers
+                var headersProperty = contextType.GetProperty("Headers");
+                headersObj = headersProperty?.GetValue(context);
+            }
+
+            // Get message type from the generic type argument
+            if (string.IsNullOrEmpty(messageType))
+            {
+                if (contextType.IsGenericType)
                 {
-                    var fields = instanceType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                    foreach (var field in fields)
+                    var genericArgs = contextType.GetGenericArguments();
+                    if (genericArgs.Length > 0)
                     {
-                        Log.Debug("MassTransit SendEndpointPipeSendIntegration - Available field: {FieldName} of type {FieldType}", field.Name, field.FieldType.FullName);
+                        messageType = genericArgs[0].Name;
                     }
                 }
             }
 
-            // Try to get message type from context's generic argument or SupportedMessageTypes
-            var messageTypesProperty = contextType.GetProperty("SupportedMessageTypes");
-            if (messageTypesProperty?.GetValue(context) is System.Collections.IEnumerable messageTypes)
-            {
-                foreach (var mt in messageTypes)
-                {
-                    messageType = mt?.ToString();
-                    break; // Just take the first one
-                }
-            }
-
-            // If we couldn't get message type from SupportedMessageTypes, try the generic type argument
-            if (string.IsNullOrEmpty(messageType) && contextType.IsGenericType)
-            {
-                var genericArgs = contextType.GetGenericArguments();
-                if (genericArgs.Length > 0)
-                {
-                    messageType = genericArgs[0].Name;
-                    Log.Debug("MassTransit SendEndpointPipeSendIntegration - Got message type from generic: {MessageType}", messageType);
-                }
-            }
-
-            // Get the Headers property directly from the context using reflection
-            var headersProperty = contextType.GetProperty("Headers");
-            if (headersProperty == null)
-            {
-                Log.Warning("MassTransit SendEndpointPipeSendIntegration - Headers property not found on context type: {ContextType}", contextType.FullName);
-                return CallTargetState.GetDefault();
-            }
-
-            headersObj = headersProperty.GetValue(context);
             if (headersObj == null)
             {
                 Log.Warning("MassTransit SendEndpointPipeSendIntegration - Headers property is null");
-                return CallTargetState.GetDefault();
-            }
-
-            Log.Debug("MassTransit SendEndpointPipeSendIntegration - Headers type: {HeadersType}", headersObj.GetType().FullName);
-
-            // Use reflection to call the Set method directly on headers
-            var headersType = headersObj.GetType();
-            setMethod = headersType.GetMethod("Set", new[] { typeof(string), typeof(object), typeof(bool) });
-
-            if (setMethod == null)
-            {
-                var sendHeadersInterface = headersType.GetInterface("MassTransit.SendHeaders");
-                if (sendHeadersInterface != null)
-                {
-                    setMethod = sendHeadersInterface.GetMethod("Set", new[] { typeof(string), typeof(object), typeof(bool) });
-                }
-            }
-
-            if (setMethod == null)
-            {
-                Log.Warning("MassTransit SendEndpointPipeSendIntegration - Set method not found on headers type: {HeadersType}", headersType.FullName);
                 return CallTargetState.GetDefault();
             }
 
@@ -233,100 +160,42 @@ public sealed class SendEndpointPipeSendIntegration
 
             if (scope != null)
             {
-                Log.Debug("MassTransit SendEndpointPipeSendIntegration - Created send span for destination: {Destination}", destinationAddress);
-
-                // Set additional tags
+                // Set additional tags from duck-typed context
                 if (scope.Span?.Tags is MassTransitTags tags)
                 {
-                    // Extract additional context info
-                    // Handle nullable Guid properties - they may be Guid? which won't match "is Guid" when null
-                    var messageIdProp = contextType.GetProperty("MessageId");
-                    if (messageIdProp != null)
+                    if (duckContext != null)
                     {
-                        var messageIdValue = messageIdProp.GetValue(context);
-                        if (messageIdValue is Guid messageId && messageId != Guid.Empty)
+                        try
                         {
-                            tags.MessageId = messageId.ToString();
-                        }
-                    }
-
-                    var conversationIdProp = contextType.GetProperty("ConversationId");
-                    if (conversationIdProp != null)
-                    {
-                        var conversationIdValue = conversationIdProp.GetValue(context);
-                        if (conversationIdValue is Guid conversationId && conversationId != Guid.Empty)
-                        {
-                            tags.ConversationId = conversationId.ToString();
-                        }
-                    }
-
-                    var correlationIdProp = contextType.GetProperty("CorrelationId");
-                    if (correlationIdProp != null)
-                    {
-                        var correlationIdValue = correlationIdProp.GetValue(context);
-                        if (correlationIdValue is Guid correlationId && correlationId != Guid.Empty)
-                        {
-                            tags.CorrelationId = correlationId.ToString();
-                        }
-                    }
-
-                    var sourceAddressProp = contextType.GetProperty("SourceAddress");
-                    if (sourceAddressProp?.GetValue(context) is Uri sourceAddress)
-                    {
-                        tags.SourceAddress = sourceAddress.ToString();
-                    }
-
-                    // MT8 OTEL tag: request_id
-                    var requestIdProp = contextType.GetProperty("RequestId");
-                    if (requestIdProp != null)
-                    {
-                        var requestIdValue = requestIdProp.GetValue(context);
-                        if (requestIdValue is Guid requestId && requestId != Guid.Empty)
-                        {
-                            tags.RequestId = requestId.ToString();
-                        }
-                    }
-
-                    // MT8 OTEL tag: body size - ContentLength/BodyLength may not be available
-                    // until the message body is serialized, so wrap in try/catch
-                    try
-                    {
-                        var contentLengthProp = contextType.GetProperty("ContentLength");
-                        if (contentLengthProp != null)
-                        {
-                            var contentLength = contentLengthProp.GetValue(context);
-                            if (contentLength != null)
+                            if (duckContext.MessageId.HasValue && duckContext.MessageId.Value != Guid.Empty)
                             {
-                                var lengthStr = contentLength.ToString();
-                                if (!string.IsNullOrEmpty(lengthStr) && lengthStr != "0")
-                                {
-                                    tags.MessageSize = lengthStr;
-                                }
+                                tags.MessageId = duckContext.MessageId.Value.ToString();
+                            }
+
+                            if (duckContext.ConversationId.HasValue && duckContext.ConversationId.Value != Guid.Empty)
+                            {
+                                tags.ConversationId = duckContext.ConversationId.Value.ToString();
+                            }
+
+                            if (duckContext.CorrelationId.HasValue && duckContext.CorrelationId.Value != Guid.Empty)
+                            {
+                                tags.CorrelationId = duckContext.CorrelationId.Value.ToString();
+                            }
+
+                            if (duckContext.SourceAddress != null)
+                            {
+                                tags.SourceAddress = duckContext.SourceAddress.ToString();
+                            }
+
+                            if (duckContext.RequestId.HasValue && duckContext.RequestId.Value != Guid.Empty)
+                            {
+                                tags.RequestId = duckContext.RequestId.Value.ToString();
                             }
                         }
-
-                        // Also try BodyLength as fallback
-                        if (string.IsNullOrEmpty(tags.MessageSize))
+                        catch (Exception ex)
                         {
-                            var bodyLengthProp = contextType.GetProperty("BodyLength");
-                            if (bodyLengthProp != null)
-                            {
-                                var bodyLength = bodyLengthProp.GetValue(context);
-                                if (bodyLength != null)
-                                {
-                                    var lengthStr = bodyLength.ToString();
-                                    if (!string.IsNullOrEmpty(lengthStr) && lengthStr != "0")
-                                    {
-                                        tags.MessageSize = lengthStr;
-                                    }
-                                }
-                            }
+                            Log.Debug(ex, "Failed to set additional tags from duck-typed context");
                         }
-                    }
-                    catch (Exception)
-                    {
-                        // BodyLength/ContentLength may throw if message body hasn't been serialized yet
-                        // This is expected - skip setting the body size tag
                     }
 
                     // Set peer address to match MT8 OTEL
@@ -338,12 +207,9 @@ public sealed class SendEndpointPipeSendIntegration
 
                 // Now inject trace context with the NEW span context (send span is the parent)
                 var spanContext = scope.Span?.Context as SpanContext;
-                if (spanContext != null)
+                if (spanContext != null && headersObj != null)
                 {
-                    var headersAdapter = new ReflectionSendHeadersAdapter(headersObj, setMethod);
-                    var propagationContext = new PropagationContext(spanContext, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, headersAdapter);
-                    Log.Debug("MassTransit SendEndpointPipeSendIntegration - Injected trace context. TraceId: {TraceId}, SpanId: {SpanId}", spanContext.TraceId, spanContext.SpanId);
+                    InjectTraceContext(headersObj, spanContext, tracer);
                 }
             }
         }
@@ -367,15 +233,45 @@ public sealed class SendEndpointPipeSendIntegration
     /// <returns>A response value</returns>
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        Log.Debug("MassTransit SendEndpointPipeSendIntegration.OnAsyncMethodEnd() - Completing send span");
-
-        if (exception != null)
-        {
-            Log.Warning(exception, "MassTransit SendEndpointPipeSendIntegration - Send failed with exception");
-        }
-
         state.Scope.DisposeWithException(exception);
         return returnValue;
+    }
+
+    private static void InjectTraceContext(object headersObj, SpanContext spanContext, Tracer tracer)
+    {
+        // Try to duck-cast headers to ISendHeaders for injection
+        if (headersObj.TryDuckCast<ISendHeaders>(out var duckHeaders))
+        {
+            var headersAdapter = new SendContextPropagation(duckHeaders);
+            var propagationContext = new PropagationContext(spanContext, Baggage.Current);
+            tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, headersAdapter);
+        }
+        else
+        {
+            // Fallback to reflection if duck typing fails
+            var headersType = headersObj.GetType();
+            var setMethod = headersType.GetMethod("Set", new[] { typeof(string), typeof(object), typeof(bool) });
+
+            if (setMethod == null)
+            {
+                var sendHeadersInterface = headersType.GetInterface("MassTransit.SendHeaders");
+                if (sendHeadersInterface != null)
+                {
+                    setMethod = sendHeadersInterface.GetMethod("Set", new[] { typeof(string), typeof(object), typeof(bool) });
+                }
+            }
+
+            if (setMethod != null)
+            {
+                var adapter = new ReflectionSendHeadersAdapter(headersObj, setMethod);
+                var propagationContext = new PropagationContext(spanContext, Baggage.Current);
+                tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
+            }
+            else
+            {
+                Log.Warning("MassTransit SendEndpointPipeSendIntegration - Could not inject trace context: Set method not found on headers type: {HeadersType}", headersType.FullName);
+            }
+        }
     }
 
     private static string DetermineMessagingSystem(string? destination)
@@ -412,5 +308,40 @@ public sealed class SendEndpointPipeSendIntegration
         }
 
         return "in-memory";
+    }
+
+    /// <summary>
+    /// Simple adapter for reflection-based header injection (fallback when duck typing fails)
+    /// </summary>
+    private readonly struct ReflectionSendHeadersAdapter : Headers.IHeadersCollection
+    {
+        private readonly object _headers;
+        private readonly MethodInfo _setMethod;
+
+        public ReflectionSendHeadersAdapter(object headers, MethodInfo setMethod)
+        {
+            _headers = headers;
+            _setMethod = setMethod;
+        }
+
+        public System.Collections.Generic.IEnumerable<string> GetValues(string name)
+        {
+            yield break; // Write-only adapter
+        }
+
+        public void Set(string name, string value)
+        {
+            _setMethod.Invoke(_headers, new object[] { name, value, true });
+        }
+
+        public void Add(string name, string value)
+        {
+            _setMethod.Invoke(_headers, new object[] { name, value, true });
+        }
+
+        public void Remove(string name)
+        {
+            // Not supported
+        }
     }
 }

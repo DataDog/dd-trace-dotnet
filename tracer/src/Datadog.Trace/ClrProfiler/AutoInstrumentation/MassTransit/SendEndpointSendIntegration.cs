@@ -8,9 +8,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
@@ -31,8 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendEndpointSendIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SendEndpointSendIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -44,8 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message, CancellationToken cancellationToken)
         {
-            Log.Debug("MassTransit SendEndpointSendIntegration.OnMethodBegin() - Intercepted ISendEndpoint.Send<{MessageType}>", typeof(TMessage).Name);
-
             var messageType = typeof(TMessage).Name;
             var messageTypeFullName = typeof(TMessage).FullName;
             var scope = MassTransitIntegration.CreateProducerScope(
@@ -53,15 +47,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 MassTransitConstants.OperationSend,
                 messageType,
                 destinationName: $"urn:message:{messageTypeFullName}");
-
-            if (scope != null)
-            {
-                Log.Debug("MassTransit SendEndpointSendIntegration - Created producer scope for message type: {MessageType}", messageType);
-            }
-            else
-            {
-                Log.Warning("MassTransit SendEndpointSendIntegration - Failed to create producer scope (integration may be disabled)");
-            }
 
             return new CallTargetState(scope);
         }
@@ -78,13 +63,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// <returns>A response value</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Log.Debug("MassTransit SendEndpointSendIntegration.OnAsyncMethodEnd() - Completing send span");
-
-            if (exception != null)
-            {
-                Log.Warning(exception, "MassTransit SendEndpointSendIntegration - Send failed with exception");
-            }
-
             state.Scope.DisposeWithException(exception);
             return returnValue;
         }

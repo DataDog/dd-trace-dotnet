@@ -6,20 +6,25 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 
 /// <summary>
 /// Duck-typing interface for MassTransit.SendContext
 /// Used to access headers on outgoing messages for trace context injection
+/// Only includes properties that exist on MessageSendContext
 /// </summary>
-internal interface ISendContext : IDuckType
+internal interface ISendContext
 {
     /// <summary>
     /// Gets the message ID
     /// </summary>
     Guid? MessageId { get; }
+
+    /// <summary>
+    /// Gets the request ID (for request/response)
+    /// </summary>
+    Guid? RequestId { get; }
 
     /// <summary>
     /// Gets the conversation ID
@@ -47,7 +52,7 @@ internal interface ISendContext : IDuckType
     Uri? DestinationAddress { get; }
 
     /// <summary>
-    /// Gets the send headers for setting trace context
+    /// Gets the send headers for setting trace context (returns object to allow duck-typing, should be duck-cast to ISendHeaders)
     /// </summary>
-    ISendHeaders? Headers { get; }
+    object? Headers { get; }
 }
