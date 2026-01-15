@@ -9560,8 +9560,8 @@
   {
     "IntegrationName": "MassTransit",
     "AssemblyName": "MassTransit",
-    "TargetTypeName": "MassTransit.Pipeline.Filters.ConsumerMessageFilter`2",
-    "TargetMethodName": "GreenPipes.IFilter<MassTransit.ConsumeContext<TMessage>>.Send",
+    "TargetTypeName": "MassTransit.Pipeline.Filters.ConsumerSplitFilter`2",
+    "TargetMethodName": "Send",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
       "_",
@@ -9589,8 +9589,8 @@
     "TargetMethodName": "Dispatch",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "MassTransit.ReceiveContext",
-      "MassTransit.Transports.ReceiveLockContext"
+      "_",
+      "_"
     ],
     "MinimumVersion": {
       "Item1": 7,

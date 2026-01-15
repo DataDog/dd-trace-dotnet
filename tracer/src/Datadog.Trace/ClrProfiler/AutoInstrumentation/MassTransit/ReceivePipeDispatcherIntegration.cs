@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
     TypeName = "MassTransit.Transports.ReceivePipeDispatcher",
     MethodName = "Dispatch",
     ReturnTypeName = ClrNames.Task,
-    ParameterTypeNames = ["MassTransit.ReceiveContext", "MassTransit.Transports.ReceiveLockContext"],
+    ParameterTypeNames = ["_", "_"],
     MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = MassTransitConstants.IntegrationName)]

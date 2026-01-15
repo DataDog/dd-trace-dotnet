@@ -15,13 +15,14 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 
 /// <summary>
-/// MassTransit.Pipeline.Filters.MethodConsumerMessageFilter`2.Send calltarget instrumentation
-/// This is the internal MassTransit class that actually invokes IConsumer.Consume()
+/// MassTransit.Pipeline.Filters.ConsumerSplitFilter`2.Send calltarget instrumentation
+/// This instruments the consumer pipeline filter to create "process" spans
+/// ConsumerSplitFilter is called for every consumer message and has a non-explicit Send method
 /// </summary>
 [InstrumentMethod(
     AssemblyName = MassTransitConstants.MassTransitAssembly,
-    TypeName = "MassTransit.Pipeline.Filters.ConsumerMessageFilter`2",
-    MethodName = "GreenPipes.IFilter<MassTransit.ConsumeContext<TMessage>>.Send",
+    TypeName = "MassTransit.Pipeline.Filters.ConsumerSplitFilter`2",
+    MethodName = "Send",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["_", "_"],
     MinimumVersion = "7.0.0",
@@ -36,26 +37,23 @@ public sealed class MethodConsumerMessageFilterIntegration
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
-    /// <typeparam name="TTarget">Type of the target (MethodConsumerMessageFilter)</typeparam>
-    /// <typeparam name="TContext">Type of the ConsumerConsumeContext</typeparam>
-    /// <typeparam name="TPipe">Type of the pipe</typeparam>
+    /// <typeparam name="TTarget">Type of the target (ConsumerSplitFilter&lt;TConsumer, TMessage&gt;)</typeparam>
+    /// <typeparam name="TContext">Type of the ConsumerConsumeContext&lt;TConsumer, TMessage&gt;</typeparam>
+    /// <typeparam name="TPipe">Type of the next pipe</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <param name="context">The consumer consume context.</param>
     /// <param name="next">The next pipe in the pipeline.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TPipe>(TTarget instance, TContext context, TPipe next)
     {
-        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration.OnMethodBegin() - Intercepted consumer message dispatch");
+        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration.OnMethodBegin() - Intercepted ConsumerSplitFilter.Send");
 
         string? messageType = null;
         string? consumerType = null;
 
         try
         {
-            // Get message type from generic argument of the TARGET type (ConsumerMessageFilter<TConsumer, TMessage>)
-            // The instance is the filter which has the generic args we need
-            // NOTE: We must use instance.GetType() at runtime instead of typeof(TTarget)
-            // because CallTarget boxing causes TTarget to be System.Object at compile time
+            // Get consumer and message type from generic arguments of the filter type
             var targetType = instance?.GetType();
             if (targetType != null && targetType.IsGenericType)
             {
@@ -85,30 +83,20 @@ public sealed class MethodConsumerMessageFilterIntegration
         {
             try
             {
-                // MessageConsumeContext<T> wraps a ConsumeContext in a private _context field.
-                // We use IMessageConsumeContext with [DuckField] to access that field,
-                // then duck-cast the result to IConsumeContext to get the properties we need.
-                if (context.TryDuckCast<IMessageConsumeContext>(out var messageContext))
+                // Try to duck-cast the ConsumeContext directly
+                if (context.TryDuckCast<IConsumeContext>(out var ducked))
                 {
-                    var innerContext = messageContext.Context;
-                    if (innerContext != null && innerContext.TryDuckCast<IConsumeContext>(out var ducked))
+                    consumeContext = ducked;
+                    var destAddr = consumeContext.DestinationAddress;
+                    if (destAddr != null)
                     {
-                        consumeContext = ducked;
-                        var destAddr = consumeContext.DestinationAddress;
-                        if (destAddr != null)
-                        {
-                            destinationAddress = destAddr.ToString();
-                            messagingSystem = DetermineMessagingSystem(destinationAddress);
-                        }
-                    }
-                    else
-                    {
-                        Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast inner context to IConsumeContext");
+                        destinationAddress = destAddr.ToString();
+                        messagingSystem = DetermineMessagingSystem(destinationAddress);
                     }
                 }
                 else
                 {
-                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast context to IMessageConsumeContext");
+                    Log.Debug("MassTransit MethodConsumerMessageFilterIntegration - Could not duck-cast context to IConsumeContext");
                 }
             }
             catch (Exception ex)
