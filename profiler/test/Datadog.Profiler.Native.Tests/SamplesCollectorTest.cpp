@@ -114,7 +114,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     std::string runtimeId2 = "MyRid2";
-    FakeSamplesProvider<ISamplesProvider> samplesProvider2(runtimeId, 2, symbolsStore);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider2(runtimeId2, 2, symbolsStore);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
@@ -180,7 +180,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1, symbolsStore);
 
     std::string runtimeId2 = "MyRid2";
-    FakeSamplesProvider<IBatchedSamplesProvider> batchedSamplesProvider(runtimeId, 1, symbolsStore);
+    FakeSamplesProvider<IBatchedSamplesProvider> batchedSamplesProvider(runtimeId2, 2, symbolsStore);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 

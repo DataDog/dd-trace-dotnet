@@ -13,11 +13,15 @@
 
 #include <chrono>
 
+extern "C" {
+    #include "datadog/profiling.h"
+}
+
 namespace libdatadog {
 
 using namespace std::chrono_literals;
 
-libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, libdatadog::SymbolsStore* symbolsStore);
 
 Profile::Profile(IConfiguration* configuration,
     std::vector<SampleValueType> const& valueTypes,
@@ -29,7 +33,7 @@ Profile::Profile(IConfiguration* configuration,
     _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()},
     _pSymbolsStore{pSymbolsStore}
 {
-    _impl = CreateProfile(valueTypes, periodType, periodUnit);
+    _impl = CreateProfile(valueTypes, periodType, periodUnit, _pSymbolsStore);
 }
 
 Profile::~Profile() = default;
@@ -190,7 +194,7 @@ libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t>
     return make_success();
 }
 
-libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, SymbolsStore* symbolsStore)
 {
     std::vector<ddog_prof_ValueType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
@@ -213,12 +217,16 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     period.type_ = period_value_type;
     period.value = 1;
 
-    auto res = ddog_prof_Profile_new(sample_types, &period);
-    if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
+    ddog_prof_Profile profile = {0};
+    auto dictHandle = reinterpret_cast<ddog_prof_ProfilesDictionaryHandle>(symbolsStore->GetDictionary());
+    auto res = ddog_prof_Profile_with_dictionary(&profile, &dictHandle, sample_types, &period);
+    if (res.err != nullptr)
     {
+        auto error = libdatadog::make_error(res);
+        Log::Error("Failed to create profile with dictionary: ", error.message());
         return nullptr;
     }
-    return std::make_unique<ProfileImpl>(res.ok);
+    return std::make_unique<ProfileImpl>(profile);
 }
 
 std::string const& Profile::GetApplicationName() const
