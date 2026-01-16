@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -125,10 +126,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
                     var rootSpan = activeScope.Root.Span;
+
                     // The shortname is prefixed with "Functions.", so strip that off
                     var remoteFunctionName = functionName?.StartsWith("Functions.") == true
                                                  ? functionName.Substring(10)
                                                  : functionName;
+
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: remoteFunctionName,
@@ -207,6 +210,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
+
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
