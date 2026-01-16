@@ -56,6 +56,8 @@ internal static class GitCommandHelper
             }
 
             var cacheFolder = Path.Combine(workingDirectory, ".dd", runId, "git");
+
+            // Try to read from cache
             try
             {
                 if (!Directory.Exists(cacheFolder))
@@ -130,19 +132,20 @@ internal static class GitCommandHelper
                 Log.Debug("GitCommandHelper: Git command {Command}", txt);
             }
 
-            if (useCache &&
-                !string.IsNullOrEmpty(cacheKey) &&
-                gitOutput is not null &&
-                JsonConvert.SerializeObject(gitOutput) is { } jsonValue)
+            // Write the git result to the cache
+            try
             {
-                try
+                if (useCache &&
+                        !string.IsNullOrEmpty(cacheKey) &&
+                        gitOutput is not null &&
+                        JsonConvert.SerializeObject(gitOutput) is { } jsonValue)
                 {
-                    File.WriteAllText(cacheKey, jsonValue);
+                        File.WriteAllText(cacheKey, jsonValue);
                 }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Error writing git cache.");
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error writing git cache.");
             }
 
             return gitOutput;
