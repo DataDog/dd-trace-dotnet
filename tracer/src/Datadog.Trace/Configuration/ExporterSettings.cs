@@ -102,6 +102,7 @@ namespace Datadog.Trace.Configuration
             AgentUri = traceSettings.AgentUri;
             OtlpTracesProtocol = CalculateOltpTracesProtocol(rawSettings.OtlpTracesProtocol, rawSettings.OtlpGeneralProtocol);
             OtlpTracesEndpoint = CalculateOltpTracesEndpoint(OtlpTracesProtocol, rawSettings.OtlpTracesEndpoint, rawSettings.OtlpGeneralEndpoint);
+            OtlpTracesHeaders = CalculateOltpTracesHeaders(rawSettings.OtlpTracesHeaders, rawSettings.OtlpGeneralHeaders);
 
             var metricsSettings = ConfigureMetricsTransport(
                 metricsUrl: rawSettings.MetricsUrl,
@@ -190,6 +191,8 @@ namespace Datadog.Trace.Configuration
         internal OtlpProtocol OtlpTracesProtocol { get; }
 
         internal Uri OtlpTracesEndpoint { get; }
+
+        internal KeyValuePair<string, string>[] OtlpTracesHeaders { get; }
 
         /// <summary>
         /// Gets the exporter used to send traces.

@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -77,6 +79,19 @@ namespace Datadog.Trace.Configuration
             {
                 return new Uri("http://localhost:4318");
             }
+        }
+
+        private KeyValuePair<string, string>[] CalculateOltpTracesHeaders(string? otlpTracesHeaders, string? otlpGeneralHeaders)
+        {
+            return (otlpTracesHeaders ?? otlpGeneralHeaders) switch
+            {
+                string s => s.Split(',')
+                             .Select(x => x.Split(new char[] { '=' }, 2))
+                             .Select(x => new KeyValuePair<string, string>(x[0], x[1]))
+                             .Concat(new[] { new KeyValuePair<string, string>("x-datadog-tracing-enabled", "false") })
+                             .ToArray(),
+                null => new[] { new KeyValuePair<string, string>("x-datadog-tracing-enabled", "false") },
+            };
         }
 
         private TraceTransportSettings GetTraceTransport(string tracesExporter, string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
