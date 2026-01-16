@@ -79,10 +79,10 @@ namespace Datadog.Trace.FeatureFlags
             Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
             try
             {
-                // Feed configs to the rules evaluator (take only the last one)
+                // Feed configs to the rules evaluator
                 if (list.Count > 0)
                 {
-                    var selectedConfig = list[list.Count - 1].Value;
+                    var selectedConfig = MergeConfigs(list);
                     Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig));
                     _onNewConfigEventHander?.Invoke();
                 }
@@ -90,6 +90,22 @@ namespace Datadog.Trace.FeatureFlags
             catch (Exception ex)
             {
                 Log.Warning(ex, "FeatureFlagsModule::UpdateRemoteConfig -> Error processing new config");
+            }
+
+            static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)
+            {
+                if (list.Count == 1)
+                {
+                    return list[0].Value;
+                }
+
+                var res = new ServerConfiguration();
+                foreach (var conf in list)
+                {
+                    res.Merge(conf.Value);
+                }
+
+                return res;
             }
         }
 

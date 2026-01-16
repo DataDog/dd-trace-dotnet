@@ -151,6 +151,93 @@ public class ProbesTests : TestHelper
         await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ServiceNameChangedInCode_IsReflectedInSnapshots()
+    {
+        // We intentionally do NOT set DD_SERVICE via env var here
+        // to validate that a runtime update via Tracer.Configure(...) is reflected in debugger snapshots.
+
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(ChangeServiceNameInCodeTest));
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+
+        // Minimal debugger environment setup without setting ConfigurationKeys.ServiceName
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
+        SetProbeConfiguration(agent, Array.Empty<LogProbe>());
+
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+
+        try
+        {
+            var guidGenerator = new DeterministicGuidGenerator();
+            var probes = new[]
+            {
+                DebuggerTestHelper.CreateDefaultLogProbe(nameof(ChangeServiceNameInCodeTest), nameof(ChangeServiceNameInCodeTest.BeforeServiceNameChange), guidGenerator: guidGenerator),
+                DebuggerTestHelper.CreateDefaultLogProbe(nameof(ChangeServiceNameInCodeTest), nameof(ChangeServiceNameInCodeTest.AfterServiceNameChange), guidGenerator: guidGenerator),
+            };
+            var beforeProbeId = probes[0].Id;
+            var afterProbeId = probes[1].Id;
+
+            SetProbeConfiguration(agent, probes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            agent.ClearSnapshots();
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotCount: 2, timeout: TimeSpan.FromSeconds(15));
+
+            string beforeService = null;
+            string afterService = null;
+
+            foreach (var raw in snapshots)
+            {
+                var token = JToken.Parse(raw);
+                var id = token.SelectToken("debugger.snapshot.probe.id")?.Value<string>();
+                if (string.Equals(id, beforeProbeId, StringComparison.Ordinal))
+                {
+                    beforeService = token["service"]?.Value<string>();
+                }
+                else if (string.Equals(id, afterProbeId, StringComparison.Ordinal))
+                {
+                    afterService = token["service"]?.Value<string>();
+                }
+            }
+
+            if (beforeService is null || afterService is null)
+            {
+                var details = snapshots.Select(s =>
+                {
+                    var t = JToken.Parse(s);
+                    var pid = t.SelectToken("debugger.snapshot.probe.id")?.Value<string>();
+                    var service = t["service"]?.Value<string>();
+                    var loggerName = t.SelectToken("logger.name")?.Value<string>();
+                    var loggerMethod = t.SelectToken("logger.method")?.Value<string>();
+                    return $"probe.id={pid}, service={service}, logger.name={loggerName}, logger.method={loggerMethod}";
+                });
+
+                throw new InvalidOperationException(
+                    $"Did not find expected probe ids in snapshots. Expected beforeProbeId={beforeProbeId}, afterProbeId={afterProbeId}. " +
+                    $"Snapshots: {string.Join(" | ", details)}");
+            }
+
+            // baseline should be the app name (Samples.Probes)
+            beforeService.Should().Be("samples.probes");
+            afterService.Should().Be(ChangeServiceNameInCodeTest.UpdatedServiceName);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
     [SkippableFact(Skip = "Too flakey")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.FeatureFlags.Exposure;
 
@@ -25,18 +27,34 @@ internal sealed class ExposureApi : IDisposable
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
-    public const string ExposurePath = "evp_proxy/v2/api/v2/exposure";
+    public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
+    private static readonly JsonSerializerSettings SerializerSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Include,
+        ContractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy(),
+        }
+    };
+
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
     private ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
+    private KeyValuePair<string, string>[] _apiRequestHeaders;
     private IApiRequestFactory _apiRequestFactory;
     private Dictionary<string, string> _context;
     private int _started = 0;
 
     internal ExposureApi(TracerSettings tracerSettings)
     {
+        _apiRequestHeaders =
+        [
+            new("X-Datadog-EVP-Subdomain", "event-platform-intake"),
+            .. AgentHttpHeaderNames.MinimalHeaders
+        ];
+
         UpdateApi(tracerSettings.Manager.InitialExporterSettings);
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
@@ -61,7 +79,7 @@ internal sealed class ExposureApi : IDisposable
                 exporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                AgentHttpHeaderNames.MinimalHeaders,
+                _apiRequestHeaders,
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
             Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
@@ -106,10 +124,10 @@ internal sealed class ExposureApi : IDisposable
                 var apiRequestFactory = _apiRequestFactory;
                 var uri = apiRequestFactory.GetEndpoint(ExposurePath);
                 var payload = TryGetPayload();
-                if (payload.Count != 0)
+                if (payload is not null)
                 {
                     var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -130,7 +148,7 @@ internal sealed class ExposureApi : IDisposable
         }
     }
 
-    private ArraySegment<byte> TryGetPayload()
+    private ExposuresRequest? TryGetPayload()
     {
         List<ExposureEvent> exposures;
         lock (_exposures)
@@ -138,16 +156,14 @@ internal sealed class ExposureApi : IDisposable
             if (_exposures.Count == 0)
             {
                 // nothing to do, skip send
-                return default;
+                return null;
             }
 
             exposures = [.. _exposures];
             _exposures.Clear();
         }
 
-        var request = new ExposuresRequest(_context, exposures);
-        var json = JsonConvert.SerializeObject(request);
-        return new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+        return new ExposuresRequest(_context, exposures);
     }
 
     public void SendExposure(in ExposureEvent exposure)
