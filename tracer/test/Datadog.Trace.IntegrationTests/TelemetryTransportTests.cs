@@ -17,10 +17,11 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class TelemetryTransportTests
+    public class TelemetryTransportTests(ITestOutputHelper output)
     {
         private const string GzipCompression = "gzip";
         private const string NoCompression = "none";
@@ -47,6 +48,36 @@ namespace Datadog.Trace.IntegrationTests
             var v2 = received.Should().BeOfType<TelemetryData>().Subject;
             v2.Application.Env.Should().Be(data.Application.Env);
             v2.Application.ServiceName.Should().Be(data.Application.ServiceName);
+        }
+
+        [SkippableTheory]
+        [InlineData(GzipCompression)]
+        [InlineData(NoCompression)]
+        [Flaky("Named pipes are notoriously flaky", maxRetries: 3)]
+        public async Task CanSendTelemetry_NamedPipes(string compressionMethod)
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+            var pipeName = $"trace-{Guid.NewGuid()}";
+            using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig(pipeName, metrics: string.Empty) { UseTelemetry = true });
+
+            var transportFactory = new TelemetryTransportFactory(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
+            transportFactory.AgentTransportFactory.Should().NotBeNull();
+            var transport = transportFactory.AgentTransportFactory!(ExporterSettings.Create(new() { { ConfigurationKeys.TracesPipeName, pipeName } }));
+
+            var data =  GetSampleData();
+            var result = await transport.PushTelemetry(data);
+
+            result.Should().Be(TelemetryPushResult.Success);
+            var received = await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).SeqId == data.SeqId);
+
+            var telemetryData = received.Should().NotBeNull().And.BeOfType<TelemetryData>().Subject;
+
+            // check some basic values
+            telemetryData.SeqId.Should().Be(data.SeqId);
+            telemetryData.Application.Env.Should().Be(data.Application.Env);
+            telemetryData.Application.ServiceName.Should().Be(data.Application.ServiceName);
         }
 
         [SkippableTheory]
@@ -80,7 +111,6 @@ namespace Datadog.Trace.IntegrationTests
             {
                 { "DD-Telemetry-API-Version", TelemetryConstants.ApiVersionV2 },
                 { "Content-Type", "application/json" },
-                { "Content-Length", null },
                 { "DD-Telemetry-Request-Type", "app-heartbeat" },
                 { "DD-Client-Library-Language", "dotnet" },
                 { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
@@ -118,6 +148,12 @@ namespace Datadog.Trace.IntegrationTests
                         headers[header.Key].Should().Be(header.Value);
                     }
                 }
+
+                // should have either content-length or chunked encoding
+                headers.AllKeys.Should()
+                       .Contain(s => s.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)
+                                  || (s.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
+                                   && headers[s] == "chunked"));
             }
         }
 

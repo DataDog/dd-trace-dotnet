@@ -620,7 +620,7 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialTelemetryData(MockHttpRequest request)
         {
-            if (request.ContentLength >= 1)
+            if (ShouldDeserializeTraces)
             {
                 try
                 {
@@ -805,7 +805,7 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialRemoteConfig(MockHttpRequest request)
         {
-            if (request.ContentLength >= 1)
+            if (ShouldDeserializeTraces)
             {
                 try
                 {

@@ -17,8 +17,14 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "0",
         "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
         "DD_PROFILING_LOCK_ENABLED": "1",
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     },
     {
@@ -28,15 +34,21 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
         "DD_PROFILING_LOCK_ENABLED": "1",
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     }
   ],
   "processName": "Samples.Computer01.exe",
   "processArguments": "--scenario 10 --threads 30 --param 30",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-$(arch)\\profiler\\src\\Demos\\Samples.Computer01\\net7.0",
+  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-$(arch)\\profiler\\src\\Demos\\Samples.Computer01\\net10.0",
   "environmentVariables": {
     "COR_ENABLE_PROFILING": "1",
     "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
@@ -51,9 +63,9 @@
   "tags": {
     "runtime.architecture": "$(arch)",
     "runtime.name": ".NET Core",
-    "runtime.version": "7.0",
-    "benchmark.job.runtime.name": ".NET 7.0",
-    "benchmark.job.runtime.moniker": "net7.0"
+    "runtime.version": "10.0",
+    "benchmark.job.runtime.name": ".NET 10.0",
+    "benchmark.job.runtime.moniker": "net10.0"
   },
   "metricsFilePath": "*metrics.json"
 }

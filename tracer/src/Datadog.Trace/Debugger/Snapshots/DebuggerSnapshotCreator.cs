@@ -34,6 +34,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
         private readonly bool _injectProcessTags;
+        private readonly Func<string> _serviceNameProvider;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -57,13 +58,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _limitInfo = limitInfo;
             _injectProcessTags = withProcessTags;
+            _serviceNameProvider = serviceNameProvider;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags, serviceNameProvider)
         {
             MethodScopeMembers = methodScopeMembers;
         }
@@ -732,7 +734,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, ProcessTags.SerializedTags, traceId, spanId)
+            .AddGeneralInfo(_serviceNameProvider(), ProcessTags.SerializedTags, traceId, spanId)
             .AddMessage()
             .Complete();
         }

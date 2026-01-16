@@ -100,7 +100,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                         _logStringBuilder.Capacity = InitialBuilderSizeBytes;
                     }
 
-                    log.Format(_logStringBuilder, _formatter);
+                    try
+                    {
+                        log.Format(_logStringBuilder, _formatter);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Log dropped due to an error during serialization");
+                        continue;
+                    }
 
                     // would be nice to avoid this, but can't see a way without direct UTF8 serialization (System.Text.Json)
                     // Currently a rogue giant message still pays the serialization cost but is then thrown away

@@ -256,6 +256,7 @@
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="HeapSnapshotManager.h" />
     <ClInclude Include="IGCDumpListener.h" />
+    <ClInclude Include="IGcSettingsProvider.h" />
     <ClInclude Include="IHeapSnapshotManager.h" />
     <ClInclude Include="INativeThreadList.h" />
     <ClInclude Include="INetworkListener.h" />
