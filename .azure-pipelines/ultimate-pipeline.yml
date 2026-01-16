@@ -298,7 +298,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [create_github_token, build]
 
   # Create this token on the linux side (create_github_token doesn't work on Windows currently)
   - job: create_github_token
@@ -309,9 +309,9 @@ stages:
     - template: steps/create-github-app-token.yml
 
   - job: build
+    dependsOn: create_github_token
     pool:
       name: $(windowsX64Pool)
-      dependsOn: [create_github_token]
     variables:
       GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     steps:
@@ -319,7 +319,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
