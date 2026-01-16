@@ -10,6 +10,7 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <!-- Stop NuGet from complaining about vulnerable packages -->
     <NuGetAudit>false</NuGetAudit>
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 
     <!-- SYSLIB0014: WebRequest, HttpWebRequest, ServicePoint, WebClient are obsolete -->
