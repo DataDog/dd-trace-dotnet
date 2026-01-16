@@ -27,11 +27,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
-
+   <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+   <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
     <!-- Use PrivateAssets="none" to stop excluding content files by default -->
-    <PackageReference Include="Datadog.Serverless.Compat" Version="1.2.0" PrivateAssets="none" />
+   <PackageReference Include="Datadog.Serverless.Compat" Version="1.1.0" PrivateAssets="none" />
 
     <!-- managed assemblies -->
     <None Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" Visible="false" PackagePath="contentFiles/any/any/datadog/net6.0/">
