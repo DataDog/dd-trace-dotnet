@@ -57,6 +57,9 @@ public abstract class FeatureFlagsTestsBase : TestHelper
     public FeatureFlagsTestsBase(string sampleName, ITestOutputHelper output)
         : base(sampleName, output)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     [SkippableFact]

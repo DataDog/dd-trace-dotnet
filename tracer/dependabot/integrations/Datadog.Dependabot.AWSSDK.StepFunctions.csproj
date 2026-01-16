@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.2.4 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.2.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.2.7 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.2.7" />
   </ItemGroup>
 
 </Project>
