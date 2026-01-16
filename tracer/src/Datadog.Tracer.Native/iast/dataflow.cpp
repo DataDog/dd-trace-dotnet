@@ -159,7 +159,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 //--------------------
 
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
-                   const RuntimeInformation& runtimeInfo) :
+                   std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
     m_runtimeType = runtimeInfo.runtime_type;
@@ -169,15 +169,20 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
     this->_setILOnJit = trace::IsEditAndContinueEnabled();
     if (this->_setILOnJit)
     {
-        trace::Logger::Info("Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
+        trace::Logger::Info(
+            "Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
     }
 
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (FAILED(hr))
     {
         _profiler = nullptr;
-        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
+        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. "
+                             "Disabling Dataflow. HRESULT : ",
+                             Hex(hr));
     }
+
+    _preLoadedModuleIds = moduleIds;
 }
 
 Dataflow::~Dataflow()
@@ -379,6 +384,17 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
+    CSGUARD(_cs);
+    // Retrieve all already modules at once to mimic initialization from creation behavior
+    if (_preLoadedModuleIds.size() > 0)
+    {
+        for (auto const& id : _preLoadedModuleIds)
+        {
+            GetModuleInfo(id);
+        }
+        _preLoadedModuleIds.clear();
+    }
+
     GetModuleInfo(moduleId);
     return S_OK;
 }
@@ -526,20 +542,21 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     }
 
     // Retrieve module information if not found
+    const int pathLen = 2048;
     LPCBYTE pbBaseLoadAddr;
-    WCHAR wszPath[300];
-    ULONG cchNameIn = 300;
-    ULONG cchNameOut;
+    ULONG pathOut;
+    WCHAR wszName[pathLen];
+    WCHAR wszPath[pathLen];
     AssemblyID assemblyId;
     AppDomainID appDomainId;
     ModuleID modIDDummy;
-    WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    pathOut = 0;
+    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, pathLen, &pathOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
         _modules[id] = nullptr; 
         return nullptr;
     }
@@ -549,10 +566,12 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
         return nullptr;
     } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
-    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
+    pathOut = 0;
+    hr = _profiler->GetAssemblyInfo(assemblyId, pathLen, &pathOut, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
+                             assemblyId, " hr:", Hex(hr));
         _modules[id] = nullptr;
         return nullptr;
     }

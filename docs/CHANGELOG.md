@@ -37,6 +37,73 @@
 
 
 
+
+## [Release 3.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.35.0)
+
+## Summary
+
+* [Continuous Profiler] Fix a potential deadlock when running on Alpine
+* [Direct Log Submission] Fix handling of Serilog custom properties
+* [OpenTelemetry] Various performance improvements for Activity integration
+* [Runtime Metrics] Add experimental `System.Diagnostics.Metrics`-based runtime metrics listener
+
+## Changes
+
+### Tracer
+* Small perf tweaks for `AspNetCoreDiagnosticObserver` (#7963)
+* Stop recreating `SpanEventsManager` (#7978)
+* Fix nullable annotations on `Activity` duck types (#8038)
+* Avoid allocating a closure for `ActivityMappingById.GetOrAdd` (#8039)
+* Introduce `ActivityKey` to remove string concatenation (#8037)
+
+### Continuous Profiler
+* Add process tags to profiles (#7715)
+* [Profiler] Fix alpine deadlock 2 (#8021)
+
+### Debugger
+* [Dynamic Instrumentation] Fix DebuggerUploader adaptive flush interval (#7831)
+* [Dynamic Instrumentation] DEBUG-4758 Fix type mismatch with @duration expression (#7844)
+* [EL] DEBUG-4880 Align probe expression compilation with runtime types (#7992)
+* [Dynamic Instrumentation] Disable AppDomain related log flooding on .NET Framework (#8025)
+* [SymDB] Do not send telemetry on transient http error (#7832)
+
+### Fixes
+* Fix `DuckTypeFieldIsReadonlyException` in RabbitMQ v7+ auto-instrumentation (#8006)
+* Fix Serilog direct log submission failing when writing unknown custom properties (#8010)
+
+### Miscellaneous
+* Fix invalid telemetry when using manual config in code with dictionaries (#8022)
+* Add helper methods to `IApiWebRequest` for serializing JSON directly to a `Stream` (#8019)
+* Refacto: Make ContainerMetadata an instance class (#7898)
+* Stop storing tracer setting telemetry forever (#7914)
+* Add /analyze-crash and /analyze-error Claude commands (#7961)
+* Add a `ValueStringBuilder` for .NET 6 (#7962)
+* Add Windows Command Line Best Practices to AGENTS.md (#7980)
+* Use `IApiRequest.PostAsJson<T>` where possible (#8017)
+* Create `System.Diagnostics.Metrics`-based runtime metrics listener (#8027)
+* Support custom `LogEventPropertyValue` values in direct log submission (#8034)
+
+### Build / Test
+* Update one-pipeline version and fix automation (#7941)
+* Fix broken release scripts (#7953)
+* Improve CI resilency against connectivity errors (#7974)
+* Fix OnSupportedFrameworkInSsi_CallsForwarderWithExpectedTelemetry flakiness (#7981)
+* Reorganize serverless `CODEOWNERS` by cloud provider teams (#7985)
+* [Test Package Versions Bump] Updating package versions (#7995)
+* Add arm64 smoke tests for macOS (#7997)
+* Flaky tests: Debugger (#8000)
+* Flaky tests: Tracer (#8001)
+* [Test Package Versions Bump] Updating package versions (#8008)
+* Ensure we run the BenchmarksOpenTelemetryApi benchmarks on master (#8012)
+* Fix race condition in IpcTests (#8013)
+* Retry DownloadLibDatadog (#8014)
+* Bump the gh-actions-packages group across 2 directories with 3 updates (#8026)
+* Allow filtering when running profiler tests (#8029)
+* Update `Activity` benchmarks for stability (#8036)
+
+
+[Changes since 3.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.34.0...v3.35.0)
+
 ## [Release 3.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.34.0)
 
 ## Summary

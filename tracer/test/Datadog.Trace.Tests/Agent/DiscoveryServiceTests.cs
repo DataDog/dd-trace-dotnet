@@ -75,6 +75,39 @@ public class DiscoveryServiceTests
     }
 
     [Fact]
+    public async Task CalculatesConfigStateHash()
+    {
+        var serializedConfig = "{\n\t\"version\": \"7.65.2\",\n\t\"git_commit\": \"0e9956bce2\",\n\t\"endpoints\": [\n\t\t\"/v0.3/traces\",\n\t\t\"/v0.3/services\",\n\t\t\"/v0.4/traces\",\n\t\t\"/v0.4/services\",\n\t\t\"/v0.5/traces\",\n\t\t\"/v0.7/traces\",\n\t\t\"/profiling/v1/input\",\n\t\t\"/telemetry/proxy/\",\n\t\t\"/v0.6/stats\",\n\t\t\"/v0.1/pipeline_stats\",\n\t\t\"/openlineage/api/v1/lineage\",\n\t\t\"/evp_proxy/v1/\",\n\t\t\"/evp_proxy/v2/\",\n\t\t\"/evp_proxy/v3/\",\n\t\t\"/evp_proxy/v4/\",\n\t\t\"/debugger/v1/input\",\n\t\t\"/debugger/v1/diagnostics\",\n\t\t\"/symdb/v1/input\",\n\t\t\"/dogstatsd/v1/proxy\",\n\t\t\"/dogstatsd/v2/proxy\",\n\t\t\"/tracer_flare/v1\",\n\t\t\"/v0.7/config\",\n\t\t\"/config/set\"\n\t],\n\t\"client_drop_p0s\": true,\n\t\"span_meta_structs\": true,\n\t\"long_running_spans\": true,\n\t\"span_events\": true,\n\t\"evp_proxy_allowed_headers\": [\n\t\t\"Content-Type\",\n\t\t\"Accept-Encoding\",\n\t\t\"Content-Encoding\",\n\t\t\"User-Agent\",\n\t\t\"DD-CI-PROVIDER-NAME\"\n\t],\n\t\"config\": {\n\t\t\"default_env\": \"andrew\",\n\t\t\"target_tps\": 10,\n\t\t\"max_eps\": 200,\n\t\t\"receiver_port\": 8126,\n\t\t\"receiver_socket\": \"\",\n\t\t\"connection_limit\": 0,\n\t\t\"receiver_timeout\": 0,\n\t\t\"max_request_bytes\": 26214400,\n\t\t\"statsd_port\": 8125,\n\t\t\"max_memory\": 500000000,\n\t\t\"max_cpu\": 0.5,\n\t\t\"analyzed_spans_by_service\": {},\n\t\t\"obfuscation\": {\n\t\t\t\"elastic_search\": true,\n\t\t\t\"mongo\": true,\n\t\t\t\"sql_exec_plan\": false,\n\t\t\t\"sql_exec_plan_normalize\": false,\n\t\t\t\"http\": {\n\t\t\t\t\"remove_query_string\": false,\n\t\t\t\t\"remove_path_digits\": false\n\t\t\t},\n\t\t\t\"remove_stack_traces\": false,\n\t\t\t\"redis\": {\n\t\t\t\t\"Enabled\": true,\n\t\t\t\t\"RemoveAllArgs\": false\n\t\t\t},\n\t\t\t\"valkey\": {\n\t\t\t\t\"Enabled\": true,\n\t\t\t\t\"RemoveAllArgs\": false\n\t\t\t},\n\t\t\t\"memcached\": {\n\t\t\t\t\"Enabled\": true,\n\t\t\t\t\"KeepCommand\": false\n\t\t\t}\n\t\t}\n\t},\n\t\"peer_tags\": [\n\t\t\"_dd.base_service\",\n\t\t\"active_record.db.vendor\",\n\t\t\"amqp.destination\",\n\t\t\"amqp.exchange\",\n\t\t\"amqp.queue\",\n\t\t\"aws.queue.name\",\n\t\t\"aws.s3.bucket\",\n\t\t\"bucketname\",\n\t\t\"cassandra.keyspace\",\n\t\t\"db.cassandra.contact.points\",\n\t\t\"db.couchbase.seed.nodes\",\n\t\t\"db.hostname\",\n\t\t\"db.instance\",\n\t\t\"db.name\",\n\t\t\"db.namespace\",\n\t\t\"db.system\",\n\t\t\"db.type\",\n\t\t\"dns.hostname\",\n\t\t\"grpc.host\",\n\t\t\"hostname\",\n\t\t\"http.host\",\n\t\t\"http.server_name\",\n\t\t\"messaging.destination\",\n\t\t\"messaging.destination.name\",\n\t\t\"messaging.kafka.bootstrap.servers\",\n\t\t\"messaging.rabbitmq.exchange\",\n\t\t\"messaging.system\",\n\t\t\"mongodb.db\",\n\t\t\"msmq.queue.path\",\n\t\t\"net.peer.name\",\n\t\t\"network.destination.ip\",\n\t\t\"network.destination.name\",\n\t\t\"out.host\",\n\t\t\"peer.hostname\",\n\t\t\"peer.service\",\n\t\t\"queuename\",\n\t\t\"rpc.service\",\n\t\t\"rpc.system\",\n\t\t\"sequel.db.vendor\",\n\t\t\"server.address\",\n\t\t\"streamname\",\n\t\t\"tablename\",\n\t\t\"topicname\"\n\t],\n\t\"span_kinds_stats_computed\": [\n\t\t\"client\",\n\t\t\"producer\",\n\t\t\"server\",\n\t\t\"consumer\"\n\t],\n\t\"obfuscation_version\": 1\n}";
+        var expectedHash = "9265333c1d9b94b2022dcc423a686786bacfeb7db425c61fae03b8248e08f819";
+
+        AgentConfiguration config = null;
+        using var mutex = new ManualResetEventSlim();
+        var factory = new TestRequestFactory(
+            x => new TestApiRequest(x, responseContent: serializedConfig));
+
+        await using var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        ds.SubscribeToChanges(
+            x =>
+            {
+                config = x;
+                mutex.Set();
+            });
+
+        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
+        config.Should().NotBeNull();
+        config.AgentVersion.Should().Be("7.65.2");
+        config.ConfigurationEndpoint.Should().Be("v0.7/config");
+        config.DebuggerEndpoint.Should().Be("debugger/v1/input");
+        config.DiagnosticsEndpoint.Should().Be("debugger/v1/diagnostics");
+        config.SymbolDbEndpoint.Should().Be("symdb/v1/input");
+        config.ClientDropP0s.Should().Be(true);
+        config.StatsEndpoint.Should().Be("v0.6/stats");
+        config.DataStreamsMonitoringEndpoint.Should().Be("v0.1/pipeline_stats");
+        config.EventPlatformProxyEndpoint.Should().Be("evp_proxy/v4");
+        ds.ConfigStateHash.Should().Be(expectedHash);
+    }
+
+    [Fact]
     public async Task DoesNotFireInitialCallbackIfInitialConfigNotFetched()
     {
         var notificationFired = false;
@@ -304,6 +337,25 @@ public class DiscoveryServiceTests
 
         config1.Equals(config2).Should().BeTrue();
         config1.Equals(config3).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null, null, 0, true)] // first loop
+    [InlineData("abc", null, 0, true)] // no update yet
+    [InlineData(null, "123", 10, true)] // recent update, but never polled
+    [InlineData("abc", "123", 10, true)] // recent update, but wrong hash
+    [InlineData("abc", "abc", 60_000, true)] // same hash, but old
+    [InlineData("abc", "abc", 10_000, false)] // recent update, matches
+    public async Task RequireRefresh(string originalHash, string agentHash, int timeElapsed, bool refreshRequired)
+    {
+        var recheckIntervalMs = 30_000;
+        var factory = new TestRequestFactory();
+        await using var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+
+        var now = DateTimeOffset.UtcNow;
+        ds.SetCurrentConfigStateHash(agentHash);
+
+        ds.RequireRefresh(originalHash, now.AddMilliseconds(timeElapsed)).Should().Be(refreshRequired);
     }
 
     [Fact]
