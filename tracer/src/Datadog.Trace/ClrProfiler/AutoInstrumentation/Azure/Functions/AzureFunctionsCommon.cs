@@ -197,7 +197,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T context)
+        internal static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
-                foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
+                foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
                     var binding = entry.Value.DuckCast<BindingMetadata>();
@@ -236,27 +236,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
                     else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
                     {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
                     else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
                     {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                        extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
                 }
 
-                var functionName = context.FunctionDefinition.Name;
+                var functionName = functionContext.FunctionDefinition.Name;
 
                 var tags = new AzureFunctionsTags
                 {
                     TriggerType = triggerType,
                     ShortName = functionName,
-                    FullName = context.FunctionDefinition.EntryPoint,
+                    FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
                 if (tracer.InternalActiveScope == null)
@@ -273,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: functionName,
-                        fullName: context.FunctionDefinition.EntryPoint,
+                        fullName: functionContext.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: triggerType);
                 }
