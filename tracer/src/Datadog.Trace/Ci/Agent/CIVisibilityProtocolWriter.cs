@@ -74,7 +74,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
     public CIVisibilityProtocolWriter(
         TestOptimizationSettings settings,
         ICIVisibilityProtocolWriterSender sender,
-        IFormatterResolver? formatterResolver = null,
+        IFormatterResolver formatterResolver,
         int? concurrency = null,
         int batchInterval = DefaultBatchInterval,
         int maxItemsInQueue = DefaultMaxItemsInQueue)
@@ -90,8 +90,8 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         {
             var buffers = new Buffers(
                 sender,
-                new CITestCyclePayload(settings, formatterResolver: formatterResolver),
-                new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
+                new CITestCyclePayload(settings, formatterResolver),
+                new CICodeCoveragePayload(settings, formatterResolver));
             _buffersArray[i] = buffers;
             var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
             tskFlush.ContinueWith(t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
