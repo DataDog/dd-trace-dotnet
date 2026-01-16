@@ -116,7 +116,7 @@ namespace Benchmarks.Trace
                 return endpoint.ToString();
             }
 
-            public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpointUri, relativePath);
+            public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpointUri : UriHelpers.Combine(_baseEndpointUri, relativePath);
 
             public IApiRequest Create(Uri endpoint)
             {

@@ -452,6 +452,9 @@ namespace Datadog.Trace.Configuration
                 OtlpGeneralProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
                 OtlpGeneralEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
+                OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsString()?.Trim();
+                OtlpGeneralHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsString()?.Trim();
+
                 TracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString("datadog");
                 TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
@@ -506,6 +509,18 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
             public string? OtlpGeneralEndpoint { get; private init; }
+
+            /// <summary>
+            /// Gets the headers for OTLP traces.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
+            public string? OtlpTracesHeaders { get; private init; }
+
+            /// <summary>
+            /// Gets the headers for OTLP, signal-agnostic.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+            public string? OtlpGeneralHeaders { get; private init; }
 
             /// <summary>
             /// Gets the Uri where the Tracer can connect to the Agent.
