@@ -1,4 +1,4 @@
-// <copyright file="ManagedApi.cs" company="Datadog">
+// <copyright file="ManagedApiOtlp.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,11 +20,11 @@ namespace Datadog.Trace.Agent;
 /// <summary>
 /// A managed version of <see cref="Api"/> that is rebuilt whenever the exporter settings change
 /// </summary>
-internal sealed class ManagedApi : IApi
+internal sealed class ManagedApiOtlp : IApi
 {
-    private Api _api;
+    private IApi _api;
 
-    public ManagedApi(
+    public ManagedApiOtlp(
         TracerSettings.SettingsManager settings,
         IStatsdManager statsd,
         Action<Dictionary<string, float>> updateSampleRates,
@@ -39,17 +39,13 @@ internal sealed class ManagedApi : IApi
                 var mutable = changes.UpdatedMutable ?? changes.PreviousMutable;
                 UpdateApi(exporter, mutable.TracerMetricsEnabled);
             }
-            else if (changes.UpdatedMutable is { } mutable && mutable.TracerMetricsEnabled != changes.PreviousMutable.TracerMetricsEnabled)
-            {
-                _api.ToggleTracerHealthMetrics(mutable.TracerMetricsEnabled);
-            }
         });
 
         [MemberNotNull(nameof(_api))]
         void UpdateApi(ExporterSettings exporterSettings, bool healthMetricsEnabled)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
-            var api = new Api(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
+            var apiRequestFactory = OtlpTracesTransportStrategy.Get(exporterSettings);
+            var api = new ApiOtlp(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
             Interlocked.Exchange(ref _api!, api);
         }
     }

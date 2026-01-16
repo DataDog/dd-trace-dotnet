@@ -1029,6 +1029,10 @@
       "const_name": "ExporterOtlpTimeoutMs"
     },
     {
+      "env_var": "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT",
+      "const_name": "ExporterOtlpTracesTimeoutMs"
+    },
+    {
       "env_var": "OTEL_LOG_LEVEL",
       "const_name": "LogLevel"
     },

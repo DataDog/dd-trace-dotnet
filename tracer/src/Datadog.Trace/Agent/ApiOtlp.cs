@@ -1,11 +1,10 @@
-// <copyright file="Api.cs" company="Datadog">
+// <copyright file="ApiOtlp.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Sockets;
@@ -18,6 +17,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -25,14 +25,12 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal sealed class Api : IApi
+    internal sealed class ApiOtlp : IApi
     {
-        private const string TracesPath = "/v0.4/traces";
         private const string StatsPath = "/v0.6/stats";
         internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
 
         private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
-        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -48,7 +46,7 @@ namespace Datadog.Trace.Agent
         private string _agentVersion;
         private bool _healthMetricsEnabled;
 
-        public Api(
+        public ApiOtlp(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
             ContainerMetadata containerMetadata,
@@ -64,12 +62,11 @@ namespace Datadog.Trace.Agent
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
-            ToggleTracerHealthMetrics(healthMetricsEnabled);
             _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _healthMetricsEnabled = healthMetricsEnabled;
-            _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
+            _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The absolute traces endpoint has already been calculated, since it is only one endpoint
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
             _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
             _log.Debug("Using stats endpoint {StatsEndpoint}", _statsEndpoint.ToString());
@@ -84,14 +81,7 @@ namespace Datadog.Trace.Agent
             Failed_DontRetry,
         }
 
-        [MemberNotNull(nameof(_statsd))]
-        public void ToggleTracerHealthMetrics(bool enabled)
-        {
-            Volatile.Write(ref _healthMetricsEnabled, enabled);
-            _statsd.SetRequired(StatsdConsumer.TraceApi, enabled);
-        }
-
-        public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        public Task<bool> Ping() => Task.FromResult(true);
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         {
@@ -304,7 +294,12 @@ namespace Datadog.Trace.Agent
                 {
                     TelemetryFactory.Metrics.RecordCountTraceApiRequests();
                     healthStats?.Increment(TracerMetricNames.Api.Requests);
-                    response = await request.PostAsync(traces, MimeTypes.MsgPack).ConfigureAwait(false);
+                    // Remove the fixed-size header from the buffer
+                    var tracesNoFixedHeader = new ArraySegment<byte>(traces.Array, traces.Offset + SpanBuffer.HeaderSize, traces.Count - SpanBuffer.HeaderSize);
+                    var json = Datadog.Trace.Util.EncodingHelpers.Utf8NoBom.GetString(tracesNoFixedHeader.Array, tracesNoFixedHeader.Offset, tracesNoFixedHeader.Count); // TODO: Delete
+                    Console.WriteLine(json);
+                    // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
+                    response = await request.PostAsync(tracesNoFixedHeader, MimeTypes.Json).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

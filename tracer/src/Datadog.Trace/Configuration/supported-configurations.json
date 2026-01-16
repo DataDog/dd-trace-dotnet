@@ -1465,6 +1465,30 @@
       ],
       "product": "OpenTelemetry"
     },
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_HEADERS": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
     "OTEL_LOG_LEVEL": {
       "version": [
         "A"

@@ -14,5 +14,6 @@ namespace Datadog.Trace.Agent
     {
         Datadog,
         Console,
+        Otlp,
     }
 }

@@ -231,6 +231,7 @@
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
    <assembly fullname="System.Diagnostics.Debug">
+      <type fullname="System.Diagnostics.Debug" />
       <type fullname="System.Diagnostics.Debugger" />
       <type fullname="System.Diagnostics.DebuggerBrowsableAttribute" />
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
@@ -427,6 +428,7 @@
       <type fullname="System.Net.WebException" />
       <type fullname="System.Net.WebExceptionStatus" />
       <type fullname="System.Net.WebRequest" />
+      <type fullname="System.Net.WebRequestMethods" />
       <type fullname="System.Net.WebResponse" />
    </assembly>
    <assembly fullname="System.Net.Sockets">
@@ -582,6 +584,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
+      <type fullname="System.Diagnostics.Debug" />
+      <type fullname="System.Diagnostics.Debug/AssertInterpolatedStringHandler" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
       <type fullname="System.Diagnostics.Debugger" />

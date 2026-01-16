@@ -275,9 +275,15 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
-            if (settings.Manager.InitialExporterSettings.TracesExporter == "console")
+            if (settings.Manager.InitialExporterSettings.TracesExporter == TracesExporterType.Console)
             {
                 return new ConsoleExporter();
+            }
+            else if (settings.Manager.InitialExporterSettings.TracesExporter == TracesExporterType.Otlp)
+            {
+                var otlpApi = new ManagedApiOtlp(settings.Manager, statsd, updateSampleRates, settings.PartialFlushEnabled);
+                var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService);
+                return new AgentWriter(otlpApi, otlpStatsAggregator, statsd, settings, TracesEncoding.OtlpJson);
             }
 
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
@@ -287,7 +293,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, settings);
+            return new AgentWriter(api, statsAggregator, statsd, settings, TracesEncoding.DatadogV0);
         }
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)

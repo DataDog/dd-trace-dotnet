@@ -100,6 +100,8 @@ namespace Datadog.Trace.Configuration
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
             AgentUri = traceSettings.AgentUri;
+            OtlpTracesProtocol = CalculateOltpTracesProtocol(rawSettings.OtlpTracesProtocol, rawSettings.OtlpGeneralProtocol);
+            OtlpTracesEndpoint = CalculateOltpTracesEndpoint(OtlpTracesProtocol, rawSettings.OtlpTracesEndpoint, rawSettings.OtlpGeneralEndpoint);
 
             var metricsSettings = ConfigureMetricsTransport(
                 metricsUrl: rawSettings.MetricsUrl,
@@ -185,12 +187,16 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; }
 
+        internal OtlpProtocol OtlpTracesProtocol { get; }
+
+        internal Uri OtlpTracesEndpoint { get; }
+
         /// <summary>
         /// Gets the exporter used to send traces.
         /// Default is <c>"datadog"</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
-        public string TracesExporter { get; }
+        internal TracesExporterType TracesExporter { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.
@@ -441,9 +447,12 @@ namespace Datadog.Trace.Configuration
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
 
-                TracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString("datadog");
-
                 // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
+                OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
+                OtlpGeneralProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
+                OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
+                OtlpGeneralEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
+                TracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString("datadog");
                 TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
                 TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
@@ -473,6 +482,30 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
             public string TracesExporter { get; }
+
+            /// <summary>
+            /// Gets the protocol for OTLP traces.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
+            public string? OtlpTracesProtocol { get; private init; }
+
+            /// <summary>
+            /// Gets the protocol for OTLP, signal-agnostic.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+            public string? OtlpGeneralProtocol { get; private init; }
+
+            /// <summary>
+            /// Gets the endpoint for OTLP traces.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint"/>
+            public string? OtlpTracesEndpoint { get; private init; }
+
+            /// <summary>
+            /// Gets the endpoint for OTLP, signal-agnostic.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+            public string? OtlpGeneralEndpoint { get; private init; }
 
             /// <summary>
             /// Gets the Uri where the Tracer can connect to the Agent.

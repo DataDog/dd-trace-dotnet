@@ -11,6 +11,7 @@ using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.Configuration
 {
@@ -39,6 +40,45 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
 
+        private OtlpProtocol CalculateOltpTracesProtocol(string? otlpTracesProtocol, string? otlpGeneralProtocol)
+        {
+            var defaultProtocol = OtlpProtocol.HttpJson;
+            var protocol = otlpTracesProtocol ?? otlpGeneralProtocol;
+            if (string.Equals(protocol, "http/json", StringComparison.OrdinalIgnoreCase))
+            {
+                return OtlpProtocol.HttpJson;
+            }
+
+            // Set the default to http/json for now
+            // TODO: Change this
+            return defaultProtocol;
+        }
+
+        private Uri CalculateOltpTracesEndpoint(OtlpProtocol finalOtlpTracesProtocol, string? otlpTracesEndpoint, string? otlpGeneralEndpoint)
+        {
+            if (otlpTracesEndpoint is not null)
+            {
+                return new Uri(otlpTracesEndpoint);
+            }
+            else if (otlpGeneralEndpoint is not null
+                     && finalOtlpTracesProtocol == OtlpProtocol.Grpc)
+            {
+                return new Uri(otlpGeneralEndpoint);
+            }
+            else if (otlpGeneralEndpoint is not null)
+            {
+                return new Uri(new Uri(otlpGeneralEndpoint), "v1/traces");
+            }
+            else if (finalOtlpTracesProtocol == OtlpProtocol.Grpc)
+            {
+                return new Uri("http://localhost:4317");
+            }
+            else
+            {
+                return new Uri("http://localhost:4318");
+            }
+        }
+
         private TraceTransportSettings GetTraceTransport(string tracesExporter, string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor
@@ -65,8 +105,15 @@ namespace Datadog.Trace.Configuration
                     uri = CreateDefaultUri();
                 }
 
+                TracesExporterType exporter = tracesExporter switch
+                {
+                    "otlp" => TracesExporterType.Otlp,
+                    "console" => TracesExporterType.Console,
+                    _ => TracesExporterType.Datadog,
+                };
+
                 return new TraceTransportSettings(
-                    tracesExporter,
+                    exporter,
                     TracesTransportType.WindowsNamedPipe,
                     GetAgentUriReplacingLocalhost(uri, origin),
                     PipeName: tracesPipeName);
@@ -142,6 +189,13 @@ namespace Datadog.Trace.Configuration
 
         private TraceTransportSettings GetAgentUriAndTransport(string tracesExporter, Uri uri, ConfigurationOrigins origin)
         {
+            TracesExporterType exporter = tracesExporter switch
+            {
+                "otlp" => TracesExporterType.Otlp,
+                "console" => TracesExporterType.Console,
+                _ => TracesExporterType.Datadog,
+            };
+
             TracesTransportType transport;
             string? udsPath;
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
@@ -194,7 +248,7 @@ namespace Datadog.Trace.Configuration
             }
 
             var agentUri = GetAgentUriReplacingLocalhost(uri, origin);
-            return new(tracesExporter, transport, agentUri, UdsPath: udsPath);
+            return new(exporter, transport, agentUri, UdsPath: udsPath);
         }
 
         private Uri GetAgentUriReplacingLocalhost(Uri uri, ConfigurationOrigins origin)
@@ -220,6 +274,6 @@ namespace Datadog.Trace.Configuration
 
         private Uri CreateDefaultUri() => new Uri($"http://{DefaultAgentHost}:{DefaultAgentPort}");
 
-        private readonly record struct TraceTransportSettings(string Exporter, TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
+        private readonly record struct TraceTransportSettings(TracesExporterType Exporter, TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
     }
 }

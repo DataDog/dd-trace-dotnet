@@ -35,6 +35,7 @@ src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
 src/Datadog.Trace/Agent/Api.cs
+src/Datadog.Trace/Agent/ApiOtlp.cs
 src/Datadog.Trace/Agent/ClientStatsPayload.cs
 src/Datadog.Trace/Agent/IApi.cs
 src/Datadog.Trace/Agent/IApiRequest.cs
@@ -45,6 +46,7 @@ src/Datadog.Trace/Agent/IStatsAggregator.cs
 src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
+src/Datadog.Trace/Agent/OtlpTracesTransportStrategy.cs
 src/Datadog.Trace/Agent/SpanBuffer.cs
 src/Datadog.Trace/Agent/StatsAggregationKey.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs

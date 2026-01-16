@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.dd_dotnet;
 
@@ -41,6 +42,13 @@ public partial class ExporterSettings
     public ExporterSettings(IConfigurationSource? configuration, Func<string, bool> fileExists)
     {
         _fileExists = fileExists;
+
+        // TODO: Refactor so we only do this once
+        var otlpTracesProtocol = GetValue(configuration, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol);
+        var otlpGeneralProtocol = GetValue(configuration, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol);
+        var otlpTracesEndpoint = GetValue(configuration, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint);
+        var otlpGeneralEndpoint = GetValue(configuration, ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint);
+
         var tracesExporter = GetValue(configuration, ConfigurationKeys.OpenTelemetry.TracesExporter) ?? "datadog";
         var agentUri = GetValue(configuration, ConfigurationKeys.AgentUri);
         var tracePipeName = GetValue(configuration, ConfigurationKeys.TracesPipeName);
@@ -55,6 +63,8 @@ public partial class ExporterSettings
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;
         AgentUri = traceSettings.AgentUri;
+        OtlpTracesProtocol = CalculateOltpTracesProtocol(otlpTracesProtocol, otlpGeneralProtocol);
+        OtlpTracesEndpoint = CalculateOltpTracesEndpoint(OtlpTracesProtocol, otlpTracesEndpoint, otlpGeneralEndpoint);
     }
 
     /// <summary>
@@ -69,6 +79,8 @@ public partial class ExporterSettings
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;
         AgentUri = traceSettings.AgentUri;
+        OtlpTracesProtocol = CalculateOltpTracesProtocol(null, null);
+        OtlpTracesEndpoint = CalculateOltpTracesEndpoint(OtlpTracesProtocol, null, null);
     }
 
     internal enum TelemetryErrorCode
@@ -77,6 +89,10 @@ public partial class ExporterSettings
     }
 
     internal Uri AgentUri { get; }
+
+    internal OtlpProtocol OtlpTracesProtocol { get; }
+
+    internal Uri OtlpTracesEndpoint { get; }
 
     internal List<string> ValidationWarnings { get; } = new();
 
