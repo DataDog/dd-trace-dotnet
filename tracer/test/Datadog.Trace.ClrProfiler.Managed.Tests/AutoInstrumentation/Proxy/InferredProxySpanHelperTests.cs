@@ -44,9 +44,8 @@ public class InferredProxySpanHelperTests
     [Fact]
     public void ExtractAndCreateInferredProxyScope_WithAzureHeaders_ReturnsAzureScope()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var start = DateTimeOffset.UtcNow;
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(start.ToString("o", CultureInfo.InvariantCulture));
 
         var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
             _tracer,
