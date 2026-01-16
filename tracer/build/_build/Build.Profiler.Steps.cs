@@ -41,6 +41,20 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(async () =>
         {
+            // Ensure GITHUB_TOKEN is available for private repo access (libdatadog-dotnet)
+            var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN")
+                           ?? Environment.GetEnvironmentVariable("GITHUB_APP_TOKEN");
+
+            if (!string.IsNullOrEmpty(githubToken))
+            {
+                Logger.Information("GITHUB_TOKEN available for vcpkg private repo access");
+                Environment.SetEnvironmentVariable("GITHUB_TOKEN", githubToken);
+            }
+            else
+            {
+                Logger.Warning("GITHUB_TOKEN not found - downloads from private repos may fail");
+            }
+
             var vcpkg = ToolResolver.GetLocalTool(await GetVcpkg());
             vcpkg("integrate install");
         });
