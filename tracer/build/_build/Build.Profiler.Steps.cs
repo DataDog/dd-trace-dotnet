@@ -49,6 +49,8 @@ partial class Build
             {
                 Logger.Information("GITHUB_TOKEN available for vcpkg private repo access");
                 Environment.SetEnvironmentVariable("GITHUB_TOKEN", githubToken);
+                // Tell vcpkg to preserve GITHUB_TOKEN when spawning child processes
+                Environment.SetEnvironmentVariable("VCPKG_KEEP_ENV_VARS", "GITHUB_TOKEN");
             }
             else
             {

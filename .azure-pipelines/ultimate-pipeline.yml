@@ -325,6 +325,7 @@ stages:
       retryCountOnTaskFailure: 1
       env:
         GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
+        VCPKG_KEEP_ENV_VARS: GITHUB_TOKEN
 
     - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
       displayName: Build and run profiler native tests
