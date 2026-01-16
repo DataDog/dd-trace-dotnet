@@ -309,9 +309,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
+    - template: steps/create-github-app-token.yml
+
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
+      env:
+        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
 
     - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
       displayName: Build and run profiler native tests
@@ -2729,7 +2733,10 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
         destinationFolder: $(monitoringHome)
 
-    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildProfilerSamples --TargetPlatform $(targetPlatform)
+      displayName: Build Profiler Samples
+
+    - script: tracer\build.cmd BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)

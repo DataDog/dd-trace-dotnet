@@ -15,10 +15,19 @@ else()
 endif()
 
 # Define the version and download URL for the prebuilt binaries
-# Note: Changed to use libdatadog-dotnet repository for custom .NET-specific builds
+# Note: Changed to use libdatadog-dotnet repository for custom .NET-specific builds (private repo)
 set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
 set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
-set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
+
+# Build authenticated URL if GITHUB_TOKEN is available (for private repo access)
+# Otherwise use standard URL (will fail for private repos but allows local builds with public access)
+if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
+    message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
+    set(LIBDATADOG_URL "https://$ENV{GITHUB_TOKEN}@github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
+else()
+    message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet")
+    set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
+endif()
 
 # Download and extract the prebuilt binaries
 vcpkg_download_distfile(ARCHIVE
