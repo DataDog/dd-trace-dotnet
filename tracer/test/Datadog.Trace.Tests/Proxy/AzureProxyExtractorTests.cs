@@ -19,10 +19,10 @@ public class AzureProxyExtractorTests
     [Fact]
     public void TryExtract_WithAllValidHeaders_ReturnsTrue()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var start = DateTimeOffset.UtcNow;
+        var startTimeString = start.ToString("O", CultureInfo.InvariantCulture);
 
-        var headers = CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = CreateValidAzureHeaders(startTimeString);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
@@ -38,10 +38,10 @@ public class AzureProxyExtractorTests
     [Fact]
     public void TryExtract_WithMinimumValidHeaders_ReturnsTrue()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var start = DateTimeOffset.UtcNow;
+        var startTimeString = start.ToString("O", CultureInfo.InvariantCulture);
 
-        var headers = CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = CreateValidAzureHeaders(startTimeString);
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
@@ -61,7 +61,8 @@ public class AzureProxyExtractorTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("invalid")]
-    [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // too large
+    [InlineData("not-a-date")]
+    [InlineData("12345")] // not ISO 8601
     public void TryExtract_WithInvalidStartTime_ReturnsFalse(string startTime)
     {
         var headers = CreateValidAzureHeaders();
@@ -88,10 +89,10 @@ public class AzureProxyExtractorTests
     [Fact]
     public void TryExtract_WithCustomHeaderValues_ExtractsAllData()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var start = DateTimeOffset.UtcNow;
+        var startTimeString = start.ToString("O", CultureInfo.InvariantCulture);
 
-        var headers = CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = CreateValidAzureHeaders(startTimeString);
         headers.Set(InferredProxyHeaders.HttpMethod, "PUT");
         headers.Set(InferredProxyHeaders.Path, "/api/v2/orders/123");
         headers.Set(InferredProxyHeaders.Region, "east us");
@@ -106,17 +107,17 @@ public class AzureProxyExtractorTests
     }
 
     [Theory]
-    [InlineData("0")] // Unix epoch
-    [InlineData("1609459200000")] // 2021-01-01 00:00:00 UTC
-    [InlineData("9999999999999")] // Far future date
-    public void TryExtract_WithValidStartTimestamps_ReturnsTrue(string startTime)
+    [InlineData("2021-01-01T00:00:00.000Z", "2021-01-01T00:00:00.000Z")] // UTC with milliseconds
+    [InlineData("2025-12-03T14:21:01.1900116Z", "2025-12-03T14:21:01.1900116Z")] // High precision
+    [InlineData("2020-06-15T10:30:45Z", "2020-06-15T10:30:45Z")] // Without milliseconds
+    public void TryExtract_WithValidStartTimestamps_ReturnsTrue(string startTime, string expectedTime)
     {
         var headers = CreateValidAzureHeaders(startTime);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
-        data.StartTime.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTime)));
+        data.StartTime.Should().Be(DateTimeOffset.Parse(expectedTime, CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -205,8 +206,9 @@ public class AzureProxyExtractorTests
     [Fact]
     public void TryExtract_WithPathOnly_ExtractsCorrectly()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var headers = CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var start = DateTimeOffset.UtcNow;
+        var startTimeString = start.ToString("O", CultureInfo.InvariantCulture);
+        var headers = CreateValidAzureHeaders(startTimeString);
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Region);
 
@@ -220,8 +222,9 @@ public class AzureProxyExtractorTests
     [Fact]
     public void TryExtract_WithMethodOnly_ExtractsCorrectly()
     {
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var headers = CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var start = DateTimeOffset.UtcNow;
+        var startTimeString = start.ToString("O", CultureInfo.InvariantCulture);
+        var headers = CreateValidAzureHeaders(startTimeString);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
 
@@ -234,7 +237,7 @@ public class AzureProxyExtractorTests
 
     private static NameValueHeadersCollection CreateValidAzureHeaders(string start = null)
     {
-        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+        start ??= DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
 
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "azure-apim");
