@@ -5,14 +5,13 @@
 #include "AppDomainStore.h"
 
 #include "shared/src/native-src/string.h"
-
+#include "Log.h"
 
 AppDomainStore::AppDomainStore(ICorProfilerInfo4* pProfilerInfo)
     :
     _pProfilerInfo{pProfilerInfo}
 {
 }
-
 
 std::string_view AppDomainStore::GetName(AppDomainID appDomainId)
 {
