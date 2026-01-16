@@ -41,9 +41,10 @@ internal sealed class FixedSizeArrayPool<T>
 
     public static FixedSizeArrayPool<T> FiveItemPool => field ??= new(5);
 
-    public ArrayPoolItem Get() => new(GetArray(), this);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ArrayPoolItem Get() => new(InternalGetArray(), this);
 
-    public T[] GetArray()
+    private T[] InternalGetArray()
     {
         if (Interlocked.Exchange(ref _fastPath, null) is { } cached)
         {
@@ -60,7 +61,7 @@ internal sealed class FixedSizeArrayPool<T>
         return value;
     }
 
-    public void ReturnArray(T[] value)
+    private void InternalReturnArray(T[] value)
     {
 #if DEBUG
         if (value is null)
@@ -93,8 +94,7 @@ internal sealed class FixedSizeArrayPool<T>
         if (Interlocked.CompareExchange(ref _fastPath, value, null) is not null)
         {
             // Bound the number of retained arrays in the stack to avoid unbounded growth.
-            var newCount = Interlocked.Increment(ref _stackCount);
-            if (newCount <= MaxStackRetained)
+            if (Interlocked.Increment(ref _stackCount) <= MaxStackRetained)
             {
                 _items.Push(value);
             }
@@ -118,6 +118,7 @@ internal sealed class FixedSizeArrayPool<T>
 
         public T[] Array
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
 #if DEBUG
@@ -132,13 +133,12 @@ internal sealed class FixedSizeArrayPool<T>
 
         public void Dispose()
         {
-            if (_array is null)
-            {
-                return;
-            }
-
-            _owner.ReturnArray(_array);
+            var arr = _array;
             _array = null;
+            if (arr is not null)
+            {
+                _owner.InternalReturnArray(arr);
+            }
         }
     }
 }
