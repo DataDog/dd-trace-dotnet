@@ -55,7 +55,7 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", ProxyName);
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", AzureApim);
             return false;
         }
     }
