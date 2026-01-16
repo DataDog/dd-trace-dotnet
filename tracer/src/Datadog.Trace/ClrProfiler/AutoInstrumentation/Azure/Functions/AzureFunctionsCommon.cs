@@ -277,7 +277,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         triggerType: triggerType);
                 }
 
+                // change root span's type to "serverless"
                 scope.Root.Span.Type = SpanType;
+
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
