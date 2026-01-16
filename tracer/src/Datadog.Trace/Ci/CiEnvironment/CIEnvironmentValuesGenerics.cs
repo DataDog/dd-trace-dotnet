@@ -425,6 +425,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 }
 
                 dictionary[key] = value;
+            }
         }
     }
 
@@ -438,7 +439,6 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
         return fields;
     }
-}
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected string? ExpandPath(string? path)
