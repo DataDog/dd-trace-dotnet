@@ -300,22 +300,32 @@ stages:
     parameters:
       jobs: [build]
 
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+  - job: create_github_token
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - template: steps/create-github-app-token.yml
+
   - job: build
     pool:
       name: $(windowsX64Pool)
+      dependsOn: [create_github_token]
+    variables:
+      GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/create-github-app-token.yml
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
       env:
-        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
     - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
       displayName: Build and run profiler native tests
