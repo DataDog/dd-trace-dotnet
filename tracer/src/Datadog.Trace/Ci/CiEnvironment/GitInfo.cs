@@ -18,7 +18,6 @@ internal sealed class GitInfo : IGitInfo
     private static readonly string? RuntimeFolder = Path.GetDirectoryName(typeof(string).Assembly.Location);
     private static readonly string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static IGitInfoProvider[] _gitInfoProviders = [
-        // ManualParserGitInfoProvider.Instance,
         GitCommandGitInfoProvider.Instance,
     ];
 
