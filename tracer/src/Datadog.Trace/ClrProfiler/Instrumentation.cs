@@ -367,7 +367,7 @@ namespace Datadog.Trace.ClrProfiler
                     // ignore
                 }
             }
-#endif
+#endif // #if !NETFRAMEWORK
 
             try
             {
@@ -496,7 +496,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
             }
-#endif
+#endif // #if NET6_0_OR_GREATER
 
             return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
         }
