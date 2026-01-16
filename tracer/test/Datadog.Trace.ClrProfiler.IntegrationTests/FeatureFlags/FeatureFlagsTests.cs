@@ -78,7 +78,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 
         agent.EventPlatformProxyPayloadReceived += (sender, e) =>
         {
-            if (e.Value.PathAndQuery.EndsWith("api/v2/exposure"))
+            if (e.Value.PathAndQuery.EndsWith("api/v2/exposures"))
             {
                 Interlocked.Increment(ref eventsReceived);
                 e.Value.Headers["Content-Encoding"].Should().Be(MimeTypes.Json);
