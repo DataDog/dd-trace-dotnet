@@ -19,7 +19,6 @@
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -50,11 +49,6 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <!-- System.Diagnostics.DiagnosticSource doesn't support netcoreapp3.1-->
-    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
