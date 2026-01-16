@@ -300,7 +300,7 @@ namespace Datadog.Trace.Tests.Configuration
             var param = "console";
             var settingsFromSource = Setup("OTEL_TRACES_EXPORTER", param);
 
-            settingsFromSource.TracesExporter.Should().Be(param);
+            settingsFromSource.TracesExporter.Should().Be(TracesExporterType.Console);
         }
 
         [Theory]
