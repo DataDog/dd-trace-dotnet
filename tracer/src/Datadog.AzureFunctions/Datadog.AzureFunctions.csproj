@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+
     <!-- Use PrivateAssets="none" to stop excluding content files by default -->
     <PackageReference Include="Datadog.Serverless.Compat" Version="1.1.0" PrivateAssets="none" />
 
