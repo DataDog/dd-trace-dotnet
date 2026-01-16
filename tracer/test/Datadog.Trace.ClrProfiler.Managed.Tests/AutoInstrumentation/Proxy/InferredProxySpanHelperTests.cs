@@ -116,7 +116,9 @@ public class InferredProxySpanHelperTests
     [InlineData("Azure-Apim")]
     public void ExtractAndCreateInferredProxyScope_WithAzureProxyName_CaseInsensitive_ReturnsAzureScope(string proxyName)
     {
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders();
+        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var startTime = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds).ToString("o");
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(start: startTime);
         headers.Set(InferredProxyHeaders.Name, proxyName);
 
         var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
