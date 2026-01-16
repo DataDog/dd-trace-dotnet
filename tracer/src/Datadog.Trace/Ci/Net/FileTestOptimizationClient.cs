@@ -26,19 +26,29 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
     internal FileTestOptimizationClient(ITestOptimizationClient testOptimizationClient, ITestOptimization testOptimization)
     {
         _testOptimizationClient = testOptimizationClient;
-        var values = testOptimization.CIValues;
-        var salt = values.Branch + values.Commit + values.WorkspacePath + testOptimization.Settings.TestSessionName;
-        lock (Hasher)
-        {
-            var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(salt));
-            salt = BitConverter.ToString(hash).ToLowerInvariant();
-        }
 
-        var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-        var cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, salt, "http");
-        if (!Directory.Exists(cacheFolder))
+        string cacheFolder;
+        try
         {
-            Directory.CreateDirectory(cacheFolder);
+            var values = testOptimization.CIValues;
+            var salt = values.Branch + values.Commit + values.WorkspacePath + testOptimization.Settings.TestSessionName;
+            lock (Hasher)
+            {
+                var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(salt));
+                salt = BitConverter.ToString(hash).ToLowerInvariant();
+            }
+
+            var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
+            cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, salt, "http");
+            if (!Directory.Exists(cacheFolder))
+            {
+                Directory.CreateDirectory(cacheFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            cacheFolder = string.Empty;
+            Log.Warning(ex, "FileTestOptimizationClient: error creating the cache folder, disabling cache.");
         }
 
         _cacheFolder = cacheFolder;
@@ -134,6 +144,13 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     private bool TryReadPayload<T>(string name, [NotNullWhen(true)] out T? payload)
     {
+        if (string.IsNullOrEmpty(_cacheFolder))
+        {
+            // cache is disabled.
+            payload = default;
+            return false;
+        }
+
         try
         {
             var file = Path.Combine(_cacheFolder, name);
@@ -147,7 +164,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "FileTestOptimizationClient: error on TryReadPayload.");
+            Log.Warning(ex, "FileTestOptimizationClient: error on TryReadPayload.");
         }
 
         payload = default;
@@ -156,8 +173,21 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     private void WritePayload(string name, object value)
     {
-        var file = Path.Combine(_cacheFolder, name);
-        Log.Debug("FileTestOptimizationClient: Writing to: {File}", file);
-        File.WriteAllText(file, JsonConvert.SerializeObject(value));
+        if (string.IsNullOrEmpty(_cacheFolder))
+        {
+            // cache is disabled.
+            return;
+        }
+
+        try
+        {
+            var file = Path.Combine(_cacheFolder, name);
+            Log.Debug("FileTestOptimizationClient: Writing to: {File}", file);
+            File.WriteAllText(file, JsonConvert.SerializeObject(value));
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "FileTestOptimizationClient: Error writing the cache file.");
+        }
     }
 }
