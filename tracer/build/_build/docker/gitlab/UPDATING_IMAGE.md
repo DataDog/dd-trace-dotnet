@@ -48,6 +48,13 @@ docker inspect --format='{{index .RepoDigests 0}}' datadog/dd-trace-dotnet-docke
 
 Extract the SHA256 hash from the output (format: `docker.io/datadog/dd-trace-dotnet-docker-build@sha256:<HASH>`).
 
+You can also use [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md)
+
+```
+$ crane digest datadog/dd-trace-dotnet-docker-build:dotnet10-rc1
+sha256:180cb096b25d9c53e24b23d0324cd403cc7fe4e99c88ec2c20e851dc37d359ef
+```
+
 ### 6. Create Mirror PR
 
 In the `DataDog/images` repository, add entries to two files:

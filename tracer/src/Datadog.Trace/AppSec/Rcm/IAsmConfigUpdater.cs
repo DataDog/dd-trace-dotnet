@@ -12,7 +12,5 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal interface IAsmConfigUpdater
 {
-    void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files);
-
-    void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct);
+    void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfigurationPath>? removedConfigsForThisProduct, List<RemoteConfiguration>? files);
 }

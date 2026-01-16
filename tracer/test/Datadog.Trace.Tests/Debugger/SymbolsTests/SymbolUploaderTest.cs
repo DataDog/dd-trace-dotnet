@@ -47,7 +47,7 @@ public class SymbolUploaderTest
         var tracerSettings = new TracerSettings(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Environment, "SymbolUploaderTests" }, { ConfigurationKeys.ServiceVersion, "1" } }));
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, tracerSettings, settings, "test");
+        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, tracerSettings, settings, () => "test");
     }
 
     [Fact]

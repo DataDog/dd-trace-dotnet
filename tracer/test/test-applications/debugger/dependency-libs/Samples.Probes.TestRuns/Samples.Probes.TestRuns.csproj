@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Samples.Probes.External\Samples.Probes.External.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
   </ItemGroup>
 
 </Project>
