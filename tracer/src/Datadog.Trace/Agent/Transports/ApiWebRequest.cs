@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,6 +52,8 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             ResetRequest(method: "POST", contentType, contentEncoding);
+
+            Console.WriteLine($"{typeof(ApiWebRequest).FullName}: Sending request to Endpoint={_request.RequestUri} with headers {string.Join(", ", _request.Headers.AllKeys.Select(h => $"{h}: {_request.Headers[h]}"))}");
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {

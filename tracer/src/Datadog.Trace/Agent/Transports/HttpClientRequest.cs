@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -64,6 +65,8 @@ namespace Datadog.Trace.Agent.Transports
                 }
 
                 _postRequest.Content = content;
+
+                Console.WriteLine($"{typeof(HttpClientRequest).FullName}: Sending request to Endpoint={_uri} with headers {string.Join(", ", _postRequest.Headers.Select(h => $"{h.Key}: {h.Value}"))}");
 
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
 
