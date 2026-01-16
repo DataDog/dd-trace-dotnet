@@ -19,4 +19,35 @@ internal sealed class ServerConfiguration
     public Environment? Environment { get; set; }
 
     public Dictionary<string, Flag>? Flags { get; set; }
+
+    internal void Merge(ServerConfiguration other)
+    {
+        if (other.CreatedAt is not null)
+        {
+            CreatedAt = other.CreatedAt;
+        }
+
+        if (other.Format is not null)
+        {
+            Format = other.Format;
+        }
+
+        if (other.Environment is not null)
+        {
+            Environment = other.Environment;
+        }
+
+        if (Flags is null)
+        {
+            Flags = new Dictionary<string, Flag>();
+        }
+
+        if (other.Flags is not null)
+        {
+            foreach (var pair in other.Flags)
+            {
+                Flags[pair.Key] = pair.Value;
+            }
+        }
+    }
 }
