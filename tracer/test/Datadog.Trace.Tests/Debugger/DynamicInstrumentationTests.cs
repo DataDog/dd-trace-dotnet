@@ -118,6 +118,10 @@ public class DynamicInstrumentationTests
         {
         }
 
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+        }
+
         public Task DisposeAsync() => Task.CompletedTask;
     }
 

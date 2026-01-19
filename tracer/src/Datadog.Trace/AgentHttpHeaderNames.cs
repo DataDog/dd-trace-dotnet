@@ -67,6 +67,11 @@ namespace Datadog.Trace
         public const string AgentVersion = "Datadog-Agent-Version";
 
         /// <summary>
+        /// Agent state reported by the Datadog agent
+        /// </summary>
+        public const string AgentState = "Datadog-Agent-State";
+
+        /// <summary>
         /// Tells the agent whether stats are computer by the tracer
         /// </summary>
         public const string StatsComputation = "Datadog-Client-Computed-Stats";

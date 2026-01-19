@@ -46,12 +46,18 @@ public class AspNetCoreResourceNameHelperTests
         { "{controller}/{action}/{id}", "/home/index/{id}", true },
         { "{controller}/{action}", "/home/index", false },
         { "{controller}/{action}", "/home/index", true },
+        { "{area:exists}/{controller}/{action}", "/{area}/home/index", false },
+        { "{area:exists}/{controller}/{action}", "/{area}/home/index", true },
         { "prefix/{controller}/{action}", "/prefix/home/index", false },
         { "prefix/{controller}/{action}", "/prefix/home/index", true },
         { "prefix-{controller}/{action}-suffix", "/prefix-home/index-suffix", false },
         { "prefix-{controller}/{action}-suffix", "/prefix-home/index-suffix", true },
         { "prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix", "/prefix-home-index-{nonid}-{id}-{formvalue}-suffix", false },
         { "prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix", "/prefix-home-index-oops-{id}-view-suffix", true },
+        { "prefix-{controller}-{action}-{Area}-{id}-{FormValue}-suffix", "/prefix-home-index-{area}-{id}-{formvalue}-suffix", false },
+        { "prefix-{controller}-{action}-{Area}-{id}-{FormValue}-suffix", "/prefix-home-index-{area}-{id}-view-suffix", true },
+        { "prefix-{controller}-{action}-{id}-{FormValue}/{Area?}", "/prefix-home-index-{id}-{formvalue}", false },
+        { "prefix-{controller}-{action}-{id}-{FormValue}/{Area?}", "/prefix-home-index-{id}-view", true },
         { "standalone/prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix/standalone", "/standalone/prefix-home-index-{nonid}-{id}-{formvalue}-suffix/standalone", false },
         { "standalone/prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix/standalone", "/standalone/prefix-home-index-oops-{id}-view-suffix/standalone", true },
         { "{controller}/{action}/{nonid}", "/home/index/{nonid}", false },
@@ -183,5 +189,35 @@ public class AspNetCoreResourceNameHelperTests
 
         resource.Should().Be(expected);
     }
+
+#if NET6_0_OR_GREATER
+    [Theory]
+    [MemberData(nameof(ValidRouteTemplates))]
+    public void SingleSpan_SimplifyRoutePattern_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
+    {
+        var originalPattern = RoutePatternFactory.Parse(template);
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: duckTypedPattern,
+            routeValueDictionary: Values,
+            expandRouteTemplates);
+
+        resource.Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidRouteTemplatesWithExternalDefaults))]
+    public void SingleSpan_SimplifyRoutePattern_CleansValidRouteTemplatesWithDefaults(string template, string expected, bool expandRouteTemplates)
+    {
+        var originalPattern = RoutePatternFactory.Parse(template, Defaults, parameterPolicies: ParameterPolicies);
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: duckTypedPattern,
+            routeValueDictionary: Values,
+            expandRouteTemplates);
+
+        resource.Should().Be(expected);
+    }
+#endif
 }
 #endif

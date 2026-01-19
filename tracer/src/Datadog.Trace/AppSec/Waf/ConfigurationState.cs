@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationState.cs" company="Datadog">
+// <copyright file="ConfigurationState.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -63,7 +63,7 @@ internal sealed record ConfigurationState
         }
     }
 
-    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull, Dictionary<string, RuleSet>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
+    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull, List<KeyValuePair<string, RuleSet>>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
         : this(settings, telemetry, wafIsNull)
     {
         if (rulesetConfigs is not null)
@@ -98,7 +98,7 @@ internal sealed record ConfigurationState
     internal Dictionary<string, JToken> AsmDataConfigs { get; } = new();
 
     // RC Product: ASM_DD
-    internal Dictionary<string, RuleSet> RulesetConfigs { get; } = new();
+    internal List<KeyValuePair<string, RuleSet>> RulesetConfigs { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -215,16 +215,11 @@ internal sealed record ConfigurationState
         // no need to clear _fileUpdates / _fileRemoves after they've been applied, as when we receive a new config, `StoreLastConfigState` method will clear anything remaining anyway.
         foreach (var updater in _productConfigUpdaters)
         {
-            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var value);
-            if (fileUpdates)
+            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var removes);
+            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var updates);
+            if (fileRemoves || fileUpdates)
             {
-                updater.Value.ProcessUpdates(this, value!);
-            }
-
-            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var valueRemove);
-            if (fileRemoves)
-            {
-                updater.Value.ProcessRemovals(this, valueRemove!);
+                updater.Value.ProcessUpdates(this, removes, updates);
             }
         }
     }
@@ -294,19 +289,14 @@ internal sealed record ConfigurationState
 
     private void ApplyAsmFeatures(bool appsecCurrentlyEnabled)
     {
-        var change = false;
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
         // (the enable of auto user instrumentation as added to asm_features)
-        if (_fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals))
-        {
-            _asmFeatureProduct.ProcessRemovals(this, removals);
-            change = true;
-        }
+        var change = _fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals);
+        change |= _fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates);
 
-        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
+        if (change)
         {
-            _asmFeatureProduct.ProcessUpdates(this, updates);
-            change = true;
+            _asmFeatureProduct.ProcessUpdates(this, removals, updates);
         }
 
         if (!change) { return; }

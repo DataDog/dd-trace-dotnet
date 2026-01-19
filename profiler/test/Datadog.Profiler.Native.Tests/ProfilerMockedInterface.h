@@ -13,6 +13,7 @@
 #include "IApplicationStore.h"
 #include "IContentionListener.h"
 #include "IExporter.h"
+#include "IGcSettingsProvider.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
@@ -110,6 +111,7 @@ public:
     MOCK_METHOD(void, RegisterUpscalePoissonProvider, (IUpscalePoissonProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
     MOCK_METHOD(void, RegisterApplication, (std::string_view runtimeId), (override));
+    MOCK_METHOD(void, RegisterGcSettingsProvider, (IGcSettingsProvider * provider), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -177,7 +179,7 @@ class MockApplicationStore : public IApplicationStore
 {
 public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
-    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
 };
 

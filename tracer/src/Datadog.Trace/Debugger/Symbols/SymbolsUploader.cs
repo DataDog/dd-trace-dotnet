@@ -1,4 +1,4 @@
-﻿// <copyright file="SymbolsUploader.cs" company="Datadog">
+// <copyright file="SymbolsUploader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
         private readonly JsonSerializerSettings _jsonSerializerSettings;
-        private readonly string _serviceName;
+        private readonly Lazy<string> _serviceName;
         private readonly string? _serviceVersion;
         private readonly string? _environment;
         private readonly SemaphoreSlim _assemblySemaphore;
@@ -59,13 +59,14 @@ namespace Datadog.Trace.Debugger.Symbols
             IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
             TracerSettings tracerSettings,
-            string serviceName)
+            Func<string> serviceNameProvider)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
             _environment = tracerSettings.Manager.InitialMutableSettings.Environment;
             _serviceVersion = tracerSettings.Manager.InitialMutableSettings.ServiceVersion;
-            _serviceName = serviceName;
+            // Capture service name on first use and keep it fixed for the lifetime of this uploader instance
+            _serviceName = new Lazy<string>(serviceNameProvider, LazyThreadSafetyMode.ExecutionAndPublication);
             _discoveryService = discoveryService;
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
@@ -120,7 +121,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService.RemoveSubscription(ConfigurationChanged);
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
@@ -135,7 +136,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
-            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
+            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceNameProvider);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -253,7 +254,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var root = new Root
             {
-                Service = _serviceName,
+                Service = _serviceName.Value,
                 Env = _environment,
                 Language = "dotnet",
                 Version = _serviceVersion,

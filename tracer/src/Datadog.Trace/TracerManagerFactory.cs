@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
@@ -62,7 +63,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
-                spanEventsManager: null);
+                spanEventsManager: null,
+                featureFlags: null);
 
             tracer.Settings.Manager.SubscribeToChanges(changes =>
             {
@@ -106,7 +108,8 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlags)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -127,11 +130,17 @@ namespace Datadog.Trace
 
             statsd ??= new StatsdManager(settings);
             runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
-                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService)
+                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
                                    : null;
 
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, statsd, rates => sampler.SetDefaultSampleRates(rates), discoveryService, telemetrySettings);
+            agentWriter ??= GetAgentWriter(
+                settings,
+                statsd,
+                rates => sampler.SetDefaultSampleRates(rates),
+                discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
+                discoveryService,
+                telemetrySettings);
             scopeManager ??= new AsyncLocalScopeManager();
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
@@ -187,6 +196,8 @@ namespace Datadog.Trace
                 }
             }
 
+            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance);
+
             return CreateTracerManagerFrom(
                 settings,
                 agentWriter,
@@ -203,7 +214,8 @@ namespace Datadog.Trace
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager);
+                spanEventsManager,
+                featureFlags);
         }
 
         protected virtual TelemetrySettings CreateTelemetrySettings(TracerSettings settings) =>
@@ -243,8 +255,9 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlagsModule)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
@@ -273,12 +286,12 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
                            ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, settings.PartialFlushEnabled);
+                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 

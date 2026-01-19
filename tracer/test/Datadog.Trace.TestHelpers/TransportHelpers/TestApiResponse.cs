@@ -21,6 +21,7 @@ internal class TestApiResponse : IApiResponse
     {
         StatusCode = statusCode;
         _body = body;
+        _headers = headers;
         ContentTypeHeader = contentType;
         _headers = headers ?? new Dictionary<string, string>();
     }
@@ -41,7 +42,8 @@ internal class TestApiResponse : IApiResponse
     {
     }
 
-    public string GetHeader(string headerName) => _headers.TryGetValue(headerName, out var value) ? value : null;
+    public string GetHeader(string headerName)
+        => _headers?.TryGetValue(headerName, out var headerValue) == true ? headerValue : null;
 
     public Task<Stream> GetStreamAsync()
     {

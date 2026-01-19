@@ -1,4 +1,4 @@
-﻿// <copyright file="SymbolUploadApi.cs" company="Datadog">
+// <copyright file="SymbolUploadApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -26,14 +27,14 @@ namespace Datadog.Trace.Debugger.Upload
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly ArraySegment<byte> _eventMetadata;
+        private readonly Lazy<ArraySegment<byte>> _eventMetadata;
         private readonly bool _enableCompression;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            ArraySegment<byte> eventMetadata,
+            Lazy<ArraySegment<byte>> eventMetadata,
             bool enableCompression)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
@@ -51,11 +52,13 @@ namespace Datadog.Trace.Debugger.Upload
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            string serviceName,
+            Func<string> serviceNameProvider,
             bool enableCompression)
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
+                // Capture service name on first use, and keep it fixed for the lifetime of this API instance
+                var serviceName = serviceNameProvider();
                 var eventMetadata = $$"""{"ddsource": "{{DebuggerTags.DDSource}}", "service": "{{serviceName}}", "runtimeId": "{{Tracer.RuntimeId}}", "debugger.type": {{DebuggerTags.DebuggerType.SymDb}}}""";
 
                 var count = Encoding.UTF8.GetByteCount(eventMetadata);
@@ -64,7 +67,7 @@ namespace Datadog.Trace.Debugger.Upload
                 return new ArraySegment<byte>(eventAsBytes);
             }
 
-            var eventMetadata = GetEventMetadataAsArraySegment();
+            var eventMetadata = new Lazy<ArraySegment<byte>>(GetEventMetadataAsArraySegment, LazyThreadSafetyMode.ExecutionAndPublication);
             return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata, enableCompression);
         }
 
@@ -104,7 +107,7 @@ namespace Datadog.Trace.Debugger.Upload
                 symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", compressedSymbols.Value);
             }
 
-            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
+            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata.Value) };
 
             while (retries < MaxRetries)
             {

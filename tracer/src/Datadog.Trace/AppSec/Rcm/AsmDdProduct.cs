@@ -1,4 +1,4 @@
-﻿// <copyright file="AsmDdProduct.cs" company="Datadog">
+// <copyright file="AsmDdProduct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,34 +17,41 @@ internal sealed class AsmDdProduct : IAsmConfigUpdater
 {
     internal const string DefaultConfigKey = "datadog/00/ASM_DD/default/config";
 
-    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfigurationPath>? removedConfigs, List<RemoteConfiguration>? files)
     {
-        var firstFile = files.First();
-        var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
-        var result = asmDd.Deserialize<JToken>();
-
-        if (result.TypedFile != null)
+        if (removedConfigs is { Count: > 0 })
         {
-            RuleSet ruleSet;
-            if (!result.TypedFile.HasValues)
+            foreach (var removedConfig in removedConfigs)
             {
-                var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
-                ruleSet = RuleSet.From(o);
+                configurationStatus.RulesetConfigs.RemoveAll(p => p.Key == removedConfig.Path);
             }
-            else
-            {
-                ruleSet = RuleSet.From(result.TypedFile);
-            }
-
-            configurationStatus.RulesetConfigs[firstFile.Path.Path] = ruleSet;
         }
-    }
 
-    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
-    {
-        foreach (var removedConfig in removedConfigsForThisProduct)
+        if (files is { Count: > 0 })
         {
-            configurationStatus.RulesetConfigs.Remove(removedConfig.Path);
+            // var file = files.First();
+            foreach (var file in files)
+            {
+                var asmDd = new NamedRawFile(file!.Path, file.Contents);
+                var result = asmDd.Deserialize<JToken>();
+
+                if (result.TypedFile != null)
+                {
+                    RuleSet ruleSet;
+                    if (!result.TypedFile.HasValues)
+                    {
+                        var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
+                        ruleSet = RuleSet.From(o);
+                    }
+                    else
+                    {
+                        ruleSet = RuleSet.From(result.TypedFile);
+                    }
+
+                    configurationStatus.RulesetConfigs.RemoveAll(p => p.Key == file.Path.Path);
+                    configurationStatus.RulesetConfigs.Add(new KeyValuePair<string, RuleSet>(file.Path.Path, ruleSet));
+                }
+            }
         }
     }
 }

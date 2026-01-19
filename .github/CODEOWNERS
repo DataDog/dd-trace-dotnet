@@ -165,6 +165,14 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 /tracer/src/**/*GCP*.cs                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 /tracer/test/**/*GCP*.cs                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 
+## Feature Flagging and Experimentation (Currently developed by ASM)
+/tracer/src/Datadog.Trace/FeatureFlags/                                         @DataDog/tracing-dotnet @DataDog/asm-dotnet
+/tracer/src/Datadog.Trace.Manual/FeatureFlags/                                  @DataDog/tracing-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/FeatureFlags/                                  @DataDog/tracing-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/FeatureFlags/           @DataDog/tracing-dotnet @DataDog/asm-dotnet
+/tracer/test/test-applications/integrations/Samples.FeatureFlags/               @DataDog/tracing-dotnet @DataDog/asm-dotnet
+/tracer/test/test-applications/integrations/Samples.OpenFeature/                @DataDog/tracing-dotnet @DataDog/asm-dotnet
+
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet
 
