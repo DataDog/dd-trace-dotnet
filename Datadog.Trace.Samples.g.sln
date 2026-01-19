@@ -189,6 +189,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.nets
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "tracer\test\test-applications\integrations\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.LifetimeManager.TerminationSignals", "tracer\test\test-applications\integrations\Samples.LifetimeManager.TerminationSignals\Samples.LifetimeManager.TerminationSignals.csproj", "{6DA76C63-4732-4387-B7CD-4058B55BFB3F}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCoreAssemblyLoadFailureOlderNuGet", "tracer\test\test-applications\regression\NetCoreAssemblyLoadFailureOlderNuGet\NetCoreAssemblyLoadFailureOlderNuGet.csproj", "{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer.NetFramework20", "tracer\test\test-applications\integrations\Samples.SqlServer.NetFramework20\Samples.SqlServer.NetFramework20.csproj", "{8276E670-FC3F-4EDE-9D51-6DAD90336C32}"
@@ -577,6 +579,10 @@ Global
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1143,6 +1149,7 @@ Global
 		{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{8276E670-FC3F-4EDE-9D51-6DAD90336C32} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA} = {8683D82A-2BBE-4199-9C36-C59F48804F90}

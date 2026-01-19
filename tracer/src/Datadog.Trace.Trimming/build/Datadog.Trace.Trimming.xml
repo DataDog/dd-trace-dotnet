@@ -960,6 +960,9 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
