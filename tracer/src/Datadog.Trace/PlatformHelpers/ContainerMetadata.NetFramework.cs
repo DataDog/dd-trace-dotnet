@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Threading;
+
 #if NETFRAMEWORK
 
 namespace Datadog.Trace.PlatformHelpers;
@@ -30,7 +32,11 @@ internal sealed class ContainerMetadata
     /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
     /// This is set when we receive a value for it in an http response from the agent
     /// </summary>
-    public string? ContainerTagsHash { get; set; }
+    public string? ContainerTagsHash
+    {
+        get => Volatile.Read(ref field);
+        set => Volatile.Write(ref field, value);
+    }
 
     /// <summary>
     /// Gets the id of the container executing the code.
