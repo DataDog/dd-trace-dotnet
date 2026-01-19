@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,14 +16,18 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Iast;
+using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using RoutePattern = Microsoft.AspNetCore.Routing.Patterns.RoutePattern;
 
 namespace Benchmarks.Trace
 {
@@ -98,6 +103,100 @@ namespace Benchmarks.Trace
             }
         }
     }
+#if NET6_0_OR_GREATER
+    [MemoryDiagnoser]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    public class SingleSpanAspNetCoreBenchmark
+    {
+        private HttpClient _client;
+        private Tracer _tracer;
+        private Security _security;
+        private Datadog.Trace.Iast.Iast _iast;
+        private SpanCodeOrigin _spanCodeOrigin;
+        private DiagnosticManager _diagnosticManager;
+        private TestServer _testServer;
+
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            var config = new CustomSettingsForTests(TracerHelper.DefaultConfig);
+            var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
+
+            _tracer = TracerHelper.CreateTracer(settings);
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+
+            var builder = new WebHostBuilder()
+                .UseStartup<Startup>();
+
+            _testServer = new TestServer(builder);
+            _client = _testServer.CreateClient();
+
+            var observers = new List<DiagnosticObserver>();
+            _spanCodeOrigin = new SpanCodeOrigin(new DebuggerSettings(config, NullConfigurationTelemetry.Instance));
+            observers.Add(new SingleSpanAspNetCoreDiagnosticObserver(_tracer, _security, _iast, _spanCodeOrigin));
+            _diagnosticManager = new DiagnosticManager(observers);
+            _diagnosticManager.Start();
+
+            // Warmup to initialize middleware pipeline
+            SingleSpanAspNetCore();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _diagnosticManager.Dispose();
+            _testServer.Dispose();
+            _security.Dispose();
+            _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+        }
+
+        [Benchmark]
+        public string SingleSpanAspNetCore()
+        {
+            return _client.GetStringAsync("/Home").GetAwaiter().GetResult();
+        }
+
+        private class Startup
+        {
+            public void ConfigureServices(IServiceCollection services)
+            {
+                services.AddMvc();
+            }
+
+            public void Configure(IApplicationBuilder builder)
+            {
+                builder.UseRouting();
+                builder.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllerRoute(
+                        name: "default",
+                        pattern: "{controller=Home}/{action=Index}/{id?}");
+                });
+            }
+        }
+    }
+#else
+    [MemoryDiagnoser]
+    public class SingleSpanAspNetCoreBenchmark
+    {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+        }
+
+        [Benchmark]
+        public string SingleSpanAspNetCore()
+        {
+            return null;
+        }
+    }
+#endif
 
     /// <summary>
     /// Simple controller used for the aspnetcore benchmark
@@ -143,13 +242,29 @@ namespace Benchmarks.Trace
         {
             return null;
         }
+    }
+
+#if !NET6_0_OR_GREATER
+    [MemoryDiagnoser]
+    public class SingleSpanAspNetCoreBenchmark
+    {
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+        }
 
         [Benchmark]
-        public string CallTargetSendRequest()
+        public string SingleSpanAspNetCore()
         {
             return null;
         }
     }
+#endif
 }
 
 #endif

@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.Activity
         internal const string OpenTelemetryErrorMsg = "exception.message";
         internal const string OpenTelemetryErrorStack = "exception.stacktrace";
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
+
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
@@ -38,6 +41,14 @@ namespace Datadog.Trace.Activity
         private static void AgentConvertSpan<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
+            // This code path _should_ only be called from places where the span being closed was created with OTel tags
+            // By predicating on that, we can make some performance optimizations and assumptions
+            if (span.Tags is not OpenTelemetryTags tags)
+            {
+                Log.Error("Span closed in OtlpHelpers.AgentConvertSpan was unexpectedly of type {TagsType} instead of OpenTelemetryTags. Span tagging may be incorrect.", span.Tags.GetType());
+                return;
+            }
+
             // Perform activity casts first and check for null when their members need to be accessed
             var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
@@ -56,34 +67,42 @@ namespace Datadog.Trace.Activity
 
             if (w3cActivity is not null)
             {
-                span.SetTag("otel.trace_id", w3cActivity.TraceId);
-            }
-
-            // Fixup "version" tag
-            // Fallback to static instance if no tracer associated with the trace
-            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
-            if (tracer.PerTraceSettings.Settings.ServiceVersion is null
-             && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
-            {
-                span.SetTag(Tags.Version, otelServiceVersion);
+                tags.OtelTraceId = w3cActivity.TraceId;
             }
 
             // Copy over tags from Activity to the Datadog Span
             // Starting with .NET 5, Activity can hold tags whose value have type object?
             // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
+            // We use the ActivityTagsHelper instead of enumerating the collections directly to avoid allocating
             if (activity5 is not null)
             {
-                foreach (var activityTag in activity5.TagObjects)
+                if (activity5.HasTagObjects())
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                    var state = new OtelTagsEnumerationState(span);
+                    ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
+                    {
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                        return true;
+                    });
                 }
             }
-            else
+            else if (activity.HasTags())
             {
-                foreach (var activityTag in activity.Tags)
+                var state = new OtelTagsEnumerationState(span);
+                ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
-                }
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    return true;
+                });
+            }
+
+            // Fixup "version" tag
+            var traceContext = span.Context.TraceContext;
+            if (traceContext is not null
+             && string.IsNullOrEmpty(traceContext.ServiceVersion)
+             && span.GetTag("service.version") is { Length: > 0 } otelServiceVersion)
+            {
+                traceContext.ServiceVersion = otelServiceVersion;
             }
 
             // Additional Datadog policy: Set tag "span.kind"
@@ -92,20 +111,24 @@ namespace Datadog.Trace.Activity
             // Note that the "span.kind" is used to help craft an OperationName for the span (if present)
             if (activity5 is not null)
             {
-                span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
+                tags.SpanKind = GetSpanKind(activity5.Kind);
             }
 
             // Later: Support config 'span_name_as_resource_name'
             // Later: Support config 'span_name_remappings'
-            OperationNameMapper.MapToOperationName(span);
+            if (string.IsNullOrEmpty(span.OperationName))
+            {
+                span.OperationName = OperationNameMapper.GetOperationName(tags);
+            }
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
 
             // Fixup "env" tag
-            if (span.Context.TraceContext?.Environment is null
-                && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
+            if (traceContext is not null
+             && traceContext.Environment is null
+             && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
             {
-                span.SetTag(Tags.Env, otelServiceEnv);
+                traceContext.Environment = otelServiceEnv;
             }
 
             // TODO: The .NET OTLP exporter doesn't currently add tracestate, but the DD agent will set it as tag "w3c.tracestate" if detected
@@ -119,44 +142,51 @@ namespace Datadog.Trace.Activity
                 // and not when an Activity object is created manually and having .Start() called on it
                 if (!string.IsNullOrEmpty(activity5.Source.Name))
                 {
-                    span.SetTag("otel.library.name", activity5.Source.Name);
+                    tags.OtelLibraryName = activity5.Source.Name;
                 }
 
                 if (!string.IsNullOrEmpty(activity5.Source.Version))
                 {
-                    span.SetTag("otel.library.version", activity5.Source.Version);
+                    tags.OtelLibraryVersion = activity5.Source.Version;
                 }
             }
 
             // Set OTEL status code and OTEL status description
-            if (span.GetTag("otel.status_code") is null)
+            if (tags.OtelStatusCode is null)
             {
                 if (activity6 is not null)
                 {
-                    switch (activity6.Status)
+                    tags.OtelStatusCode = activity6.Status switch
                     {
-                        case ActivityStatusCode.Unset:
-                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
-                            break;
-                        case ActivityStatusCode.Ok:
-                            span.SetTag("otel.status_code", "STATUS_CODE_OK");
-                            break;
-                        case ActivityStatusCode.Error:
-                            span.SetTag("otel.status_code", "STATUS_CODE_ERROR");
-                            break;
-                        default:
-                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
-                            break;
-                    }
+                        ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
+                        ActivityStatusCode.Ok => "STATUS_CODE_OK",
+                        ActivityStatusCode.Error => "STATUS_CODE_ERROR",
+                        _ => "STATUS_CODE_UNSET"
+                    };
                 }
                 else
                 {
-                    span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                    tags.OtelStatusCode = "STATUS_CODE_UNSET";
                 }
             }
 
             // Map the OTEL status to error tags
-            AgentStatus2Error(activity, span);
+            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+            if (activity6?.Status == ActivityStatusCode.Error)
+            {
+                AgentStatus2ErrorActivity6(activity6, span, tags);
+            }
+            else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            {
+                if (activity5 is not null)
+                {
+                    AgentStatus2ErrorActivity5(activity5, span);
+                }
+                else
+                {
+                    AgentStatus2ErrorBasic(activity, span);
+                }
+            }
 
             // Update Service with a reasonable default
             if (span.ServiceName is null)
@@ -192,19 +222,24 @@ namespace Datadog.Trace.Activity
             }
 
             // extract any ActivityLinks and ActivityEvents
-            ExtractActivityLinks<TInner>(span, activity5);
-            ExtractActivityEvents<TInner>(span, activity5);
+            if (activity5 is not null)
+            {
+                ExtractActivityLinks(span, activity5);
+                ExtractActivityEvents(span, activity5);
+            }
         }
 
-        private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
-            where TInner : IActivity
+        private static void ExtractActivityLinks<TInner>(Span span, TInner activity5)
+            where TInner : IActivity5
         {
-            if (activity5 is null)
+            // The underlying storage when there are no link is an empty array, so bail out in this scenario,
+            // to avoid the allocations from boxing the enumerator
+            if (!activity5.HasLinks())
             {
                 return;
             }
 
-            foreach (var link in (activity5.Links))
+            foreach (var link in activity5.Links)
             {
                 if (!link.TryDuckCast<IActivityLink>(out var duckLink)
                  || duckLink.Context.TraceId.TraceId is null
@@ -253,7 +288,7 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                List<KeyValuePair<string, string>> attributes = new();
+                List<KeyValuePair<string, string>>? attributes = null;
                 if (duckLink.Tags is not null)
                 {
                     foreach (var kvp in duckLink.Tags)
@@ -268,6 +303,7 @@ namespace Datadog.Trace.Activity
                                 {
                                     if (item?.ToString() is { } value)
                                     {
+                                        attributes ??= new();
                                         attributes.Add(new($"{kvp.Key}.{index}", value));
                                         index++;
                                     }
@@ -275,6 +311,7 @@ namespace Datadog.Trace.Activity
                             }
                             else if (kvp.Value?.ToString() is { } kvpValue)
                             {
+                                attributes ??= new();
                                 attributes.Add(new(kvp.Key, kvpValue));
                             }
                         }
@@ -285,10 +322,12 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        private static void ExtractActivityEvents<TInner>(Span span, IActivity5? activity5)
-            where TInner : IActivity
+        private static void ExtractActivityEvents<TInner>(Span span, TInner activity5)
+            where TInner : IActivity5
         {
-            if (activity5 is null)
+            // The underlying storage when there are no link is an empty array, so bail out in this scenario,
+            // to avoid the allocations from boxing the enumerator
+            if (!activity5.HasEvents())
             {
                 return;
             }
@@ -300,11 +339,12 @@ namespace Datadog.Trace.Activity
                     continue;
                 }
 
-                var eventAttributes = new List<KeyValuePair<string, object>>();
+                List<KeyValuePair<string, object>>? eventAttributes = null;
                 foreach (var kvp in duckEvent.Tags)
                 {
                     if (!string.IsNullOrEmpty(kvp.Key) && kvp.Value is not null)
                     {
+                        eventAttributes ??= new();
                         eventAttributes.Add(new(kvp.Key, kvp.Value));
                     }
                 }
@@ -456,44 +496,47 @@ namespace Datadog.Trace.Activity
         }
 
         // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-        internal static void AgentStatus2Error<TInner>(TInner activity, Span span)
+        private static void AgentStatus2ErrorActivity6<TInner>(TInner activity, Span span, OpenTelemetryTags tags)
+            where TInner : IActivity6
+        {
+            span.Error = true;
+
+            // First iterate through Activity events first and set error.msg, error.type, and error.stack
+            ExtractExceptionAttributes(activity, span);
+
+            if (span.GetTag(Tags.ErrorMsg) is null)
+            {
+                span.SetTag(Tags.ErrorMsg, activity.StatusDescription);
+            }
+        }
+
+        private static void AgentStatus2ErrorActivity5<TInner>(TInner activity, Span span)
+            where TInner : IActivity5
+        {
+            ExtractExceptionAttributes(activity, span);
+            AgentStatus2ErrorBasic(activity, span);
+        }
+
+        private static void AgentStatus2ErrorBasic<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
-            if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
+            span.Error = true;
+
+            if (span.GetTag(Tags.ErrorMsg) is null)
             {
-                span.Error = true;
-
-                // First iterate through Activity events first and set error.msg, error.type, and error.stack
-                ExtractExceptionAttributes(activity, span);
-
-                if (span.GetTag(Tags.ErrorMsg) is null)
+                if (span.GetTag("otel.status_description") is string statusDescription)
                 {
-                    span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                    span.SetTag(Tags.ErrorMsg, statusDescription);
                 }
-            }
-            else if (span.GetTag("otel.status_code") == "STATUS_CODE_ERROR")
-            {
-                span.Error = true;
-
-                // First iterate through Activity events first and set error.msg, error.type, and error.stack
-                ExtractExceptionAttributes(activity, span);
-
-                if (span.GetTag(Tags.ErrorMsg) is null)
+                else if (span.GetTag("http.status_code") is string statusCodeString)
                 {
-                    if (span.GetTag("otel.status_description") is string statusDescription)
+                    if (span.GetTag("http.status_text") is string httpTextString)
                     {
-                        span.SetTag(Tags.ErrorMsg, statusDescription);
+                        span.SetTag(Tags.ErrorMsg, $"{statusCodeString} {httpTextString}");
                     }
-                    else if (span.GetTag("http.status_code") is string statusCodeString)
+                    else
                     {
-                        if (span.GetTag("http.status_text") is string httpTextString)
-                        {
-                            span.SetTag(Tags.ErrorMsg, $"{statusCodeString} {httpTextString}");
-                        }
-                        else
-                        {
-                            span.SetTag(Tags.ErrorMsg, statusCodeString);
-                        }
+                        span.SetTag(Tags.ErrorMsg, statusCodeString);
                     }
                 }
             }
@@ -511,16 +554,16 @@ namespace Datadog.Trace.Activity
         /// </typeparam>
         /// <remarks>OpenTelemetry creates these attributes via it's <c>Activity.RecordException</c> function.</remarks>
         private static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
-            where TInner : IActivity
+            where TInner : IActivity5
         {
             // OpenTelemetry stores the exception attributes in Activity.Events
             // Activity.Events was only added in .NET 5+, which maps to our IActivity5 & IActivity6
-            if (activity is not IActivity5 activity5)
+            if (!activity.HasEvents())
             {
                 return;
             }
 
-            foreach (var activityEvent in activity5.Events)
+            foreach (var activityEvent in activity.Events)
             {
                 if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
                 {

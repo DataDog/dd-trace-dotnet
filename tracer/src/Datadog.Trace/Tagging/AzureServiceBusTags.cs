@@ -23,6 +23,12 @@ namespace Datadog.Trace.Tagging
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
+        [Tag(Tags.MessagingSystem)]
+        public string MessagingSystem { get; set; }
+
+        [Tag(Tags.MessagingOperation)]
+        public string MessagingOperation { get; set; }
+
         [Tag(Trace.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
 

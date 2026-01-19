@@ -11,14 +11,17 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IW3CActivity : IActivity
     {
+        // Note that TraceId and SpanId will not be null when using W3C IDs, but they
+        // _Can_ be nullable when using Hierarchical IDs. Also note that IW3CActivity
+        // could be using _either_ type of ID
         [DuckField(Name = "_traceId")]
-        string TraceId { get; set; }
+        string? TraceId { get; set; }
 
         [DuckField(Name = "_spanId")]
-        string SpanId { get; set; }
+        string? SpanId { get; set; }
 
         [DuckField(Name = "_parentSpanId")]
-        string ParentSpanId { get; set; }
+        string? RawParentSpanId { get; set; }
 
         [DuckField(Name = "_id")]
         string? RawId { get; set; }

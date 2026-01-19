@@ -614,6 +614,7 @@
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
       <type fullname="System.GC" />
+      <type fullname="System.GCGenerationInfo" />
       <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />

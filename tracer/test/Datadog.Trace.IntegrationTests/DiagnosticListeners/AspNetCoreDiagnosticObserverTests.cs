@@ -35,7 +35,7 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
-    public class AspNetCoreDiagnosticObserverTests
+    public partial class AspNetCoreDiagnosticObserverTests
     {
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMinimalApisTestsCallTarget : AspNetCoreMinimalApisTests
     {
         public AspNetCoreMinimalApisTestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, AspNetCoreFeatureFlags.None)
         {
         }
     }
@@ -28,7 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMinimalApisTestsCallTargetWithFeatureFlag : AspNetCoreMinimalApisTests
     {
         public AspNetCoreMinimalApisTestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
+        {
+        }
+    }
+
+    public class AspNetCoreMinimalApisTestsCallTargetSingleSpan : AspNetCoreMinimalApisTests
+    {
+        public AspNetCoreMinimalApisTestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, AspNetCoreFeatureFlags.SingleSpan)
         {
         }
     }
@@ -37,8 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         private readonly string _testName;
 
-        protected AspNetCoreMinimalApisTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMinimalApis", fixture, output, enableRouteTemplateResourceNames)
+        protected AspNetCoreMinimalApisTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, AspNetCoreFeatureFlags flags)
+            : base("AspNetCoreMinimalApis", fixture, output, flags)
         {
             _testName = GetTestName(nameof(AspNetCoreMinimalApisTests));
         }

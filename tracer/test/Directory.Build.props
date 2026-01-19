@@ -10,13 +10,13 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <!-- Stop NuGet from complaining about vulnerable packages -->
     <NuGetAudit>false</NuGetAudit>
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 
-    <!-- WebClient is obsolete -->
+    <!-- SYSLIB0014: WebRequest, HttpWebRequest, ServicePoint, WebClient are obsolete -->
+    <!-- NU1510: PackageReference X will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. -->
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <!-- PackageReference X will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. -->
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904;NU1510</NoWarn>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>

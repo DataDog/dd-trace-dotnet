@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers;
@@ -32,14 +33,14 @@ namespace Datadog.Trace.Tests
         }
 
         [SkippableFact]
-        public void SimpleActivitiesAndSpansTest()
+        public async Task SimpleActivitiesAndSpansTest()
         {
             // macos 12 is crazy flaky around timings
             // We should unskip this once we have resolved the issues around Hierarchical IDs
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
             var settings = new TracerSettings();
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             Tracer.Instance.ActiveScope.Should().BeNull();
@@ -136,10 +137,10 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SimpleSpansAndActivitiesTest()
+        public async Task SimpleSpansAndActivitiesTest()
         {
             var settings = new TracerSettings();
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             Tracer.Instance.ActiveScope.Should().BeNull();
@@ -207,12 +208,12 @@ namespace Datadog.Trace.Tests
 
             public ActivityFixture()
             {
-                Activity.ActivityListener.Initialize();
+                Datadog.Trace.Activity.ActivityListener.Initialize();
             }
 
             public void Dispose()
             {
-                Activity.ActivityListener.StopListeners();
+                Datadog.Trace.Activity.ActivityListener.StopListeners();
             }
 
             public void StartActivity(SD.Activity activity)

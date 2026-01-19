@@ -415,10 +415,7 @@
       runtime-id: Guid_1
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -433,10 +430,7 @@
       runtime-id: Guid_2
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -451,10 +445,7 @@
       runtime-id: Guid_3
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -469,10 +460,7 @@
       runtime-id: Guid_4
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -487,10 +475,7 @@
       runtime-id: Guid_5
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -505,10 +490,7 @@
       runtime-id: Guid_6
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -523,10 +505,7 @@
       runtime-id: Guid_7
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -541,10 +520,7 @@
       runtime-id: Guid_8
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -559,10 +535,7 @@
       runtime-id: Guid_9
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -577,10 +550,7 @@
       runtime-id: Guid_10
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -595,10 +565,7 @@
       runtime-id: Guid_11
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -613,10 +580,7 @@
       runtime-id: Guid_12
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -631,10 +595,7 @@
       runtime-id: Guid_13
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -649,10 +610,7 @@
       runtime-id: Guid_14
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -667,10 +625,7 @@
       runtime-id: Guid_15
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -685,10 +640,7 @@
       runtime-id: Guid_16
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -703,10 +655,7 @@
       runtime-id: Guid_17
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -721,10 +670,7 @@
       runtime-id: Guid_18
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -739,10 +685,7 @@
       runtime-id: Guid_19
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -757,10 +700,7 @@
       runtime-id: Guid_20
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -775,10 +715,7 @@
       runtime-id: Guid_21
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -793,10 +730,7 @@
       runtime-id: Guid_22
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -811,10 +745,7 @@
       runtime-id: Guid_23
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -829,10 +760,7 @@
       runtime-id: Guid_24
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -847,10 +775,7 @@
       runtime-id: Guid_25
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -865,10 +790,7 @@
       runtime-id: Guid_26
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -883,10 +805,7 @@
       runtime-id: Guid_27
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -901,10 +820,7 @@
       runtime-id: Guid_28
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -919,10 +835,7 @@
       runtime-id: Guid_29
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -937,10 +850,7 @@
       runtime-id: Guid_30
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -955,10 +865,7 @@
       runtime-id: Guid_31
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -973,10 +880,7 @@
       runtime-id: Guid_32
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -991,10 +895,7 @@
       runtime-id: Guid_33
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1009,10 +910,7 @@
       runtime-id: Guid_34
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1027,10 +925,7 @@
       runtime-id: Guid_35
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1045,10 +940,7 @@
       runtime-id: Guid_36
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1063,10 +955,7 @@
       runtime-id: Guid_37
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1081,10 +970,7 @@
       runtime-id: Guid_38
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1977,6 +1863,752 @@
     },
     Metrics: {
       _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_39,
+      runtime-id: Guid_1,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_40,
+      runtime-id: Guid_2,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_41,
+      runtime-id: Guid_3,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_42,
+      runtime-id: Guid_4,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_43,
+      runtime-id: Guid_5,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_44,
+      runtime-id: Guid_6,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_45,
+      runtime-id: Guid_7,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_46,
+      runtime-id: Guid_8,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_47,
+      runtime-id: Guid_9,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_48,
+      runtime-id: Guid_10,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_49,
+      runtime-id: Guid_11,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_24,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_50,
+      runtime-id: Guid_12,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_26,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_51,
+      runtime-id: Guid_13,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_27,
+    SpanId: Id_28,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_52,
+      runtime-id: Guid_14,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_29,
+    SpanId: Id_30,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_53,
+      runtime-id: Guid_15,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_31,
+    SpanId: Id_32,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_54,
+      runtime-id: Guid_16,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_33,
+    SpanId: Id_34,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_55,
+      runtime-id: Guid_17,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_36,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_56,
+      runtime-id: Guid_18,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_38,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_57,
+      runtime-id: Guid_19,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_40,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_58,
+      runtime-id: Guid_20,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_41,
+    SpanId: Id_42,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_59,
+      runtime-id: Guid_21,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_44,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_60,
+      runtime-id: Guid_22,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_45,
+    SpanId: Id_46,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_61,
+      runtime-id: Guid_23,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_47,
+    SpanId: Id_48,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_62,
+      runtime-id: Guid_24,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_49,
+    SpanId: Id_50,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_63,
+      runtime-id: Guid_25,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_51,
+    SpanId: Id_52,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_64,
+      runtime-id: Guid_26,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_65,
+      runtime-id: Guid_27,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_56,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_66,
+      runtime-id: Guid_28,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_58,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Error: 1,
+    Tags: {
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      language: dotnet,
+      request_id: Guid_67,
+      runtime-id: Guid_29,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_60,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_68,
+      runtime-id: Guid_30,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_61,
+    SpanId: Id_62,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_69,
+      runtime-id: Guid_31,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_64,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_70,
+      runtime-id: Guid_32,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_66,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_71,
+      runtime-id: Guid_33,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_67,
+    SpanId: Id_68,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_72,
+      runtime-id: Guid_34,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_69,
+    SpanId: Id_70,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_73,
+      runtime-id: Guid_35,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_72,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_74,
+      runtime-id: Guid_36,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_73,
+    SpanId: Id_74,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_75,
+      runtime-id: Guid_37,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_75,
+    SpanId: Id_76,
+    Name: dd-tracer-serverless-span,
+    Resource: dd-tracer-serverless-span,
+    Service: dd-tracer-serverless-span,
+    Tags: {
+      language: dotnet,
+      request_id: Guid_76,
+      runtime-id: Guid_38,
+      _dd.base_service: Samples.Amazon.Lambda.RuntimeSupport
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   }
 ]

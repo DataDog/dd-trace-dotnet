@@ -270,7 +270,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (isIastEnabled || isRaspEnabled)
         {
-            _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+            auto modules = module_ids.Get();
+            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
         }
         else
         {
@@ -2076,7 +2077,8 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
         Logger::Debug("Creating Dataflow.");
-        dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+        auto modules = module_ids.Get();
+        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
     }
 
     if (dataflow != nullptr)
