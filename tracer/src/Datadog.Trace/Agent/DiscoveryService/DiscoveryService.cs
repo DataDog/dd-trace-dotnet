@@ -415,7 +415,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
                 BuildHeaders(containerId),
-                () => new MinimalAgentHeaderHelper(),
+                () => new MinimalAgentHeaderHelper(containerId),
                 uri => uri);
         }
     }
