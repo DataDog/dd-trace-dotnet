@@ -10,6 +10,10 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Util;
 
+/// <summary>
+/// Struct version of the Stopwatch
+/// This version doesn't allocate (ref struct) in the heap but it's only useful in sync method, for async method is better to use the existing Stopwatch.
+/// </summary>
 internal ref struct RefStopwatch
 {
     private long _started;
