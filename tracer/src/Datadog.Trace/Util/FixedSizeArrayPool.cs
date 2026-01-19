@@ -24,7 +24,7 @@ internal sealed class FixedSizeArrayPool<T>
     {
         if (arrayItems <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(arrayItems), arrayItems, "Array size must be greater than 0.");
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(arrayItems), arrayItems, "Array size must be greater than 0.");
         }
 
         _arrayItems = arrayItems;
@@ -63,24 +63,15 @@ internal sealed class FixedSizeArrayPool<T>
 
     private void InternalReturnArray(T[] value)
     {
-#if DEBUG
         if (value is null)
         {
-            Debug.Fail("Attempted to return a null array to FixedSizeArrayPool.");
-            return;
+            ThrowHelper.ThrowArgumentNullException(nameof(value));
         }
 
         if (value.Length != _arrayItems)
         {
-            Debug.Fail($"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems}.");
-            return;
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(value), $"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems}.");
         }
-#else
-        if (value is null || value.Length != _arrayItems)
-        {
-            return;
-        }
-#endif
 
 #if NETCOREAPP3_0_OR_GREATER
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
