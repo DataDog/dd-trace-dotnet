@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!--    Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.1.4 -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.1.3 -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
   </ItemGroup>
 
 </Project>

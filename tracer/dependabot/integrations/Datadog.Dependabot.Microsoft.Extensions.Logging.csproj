@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!--    Assembly: Microsoft.Extensions.Logging -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/10.0.2 -->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/10.0.1 -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
   </ItemGroup>
 
 </Project>

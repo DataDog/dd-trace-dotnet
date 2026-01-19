@@ -972,7 +972,7 @@
     "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "2.0.*",
-      "2.10.*"
+      "2.*.*"
     ]
   }
 ]

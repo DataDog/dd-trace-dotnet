@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.8.3 -->
-    <PackageReference Include="GraphQL" Version="8.8.3" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.8.2 -->
+    <PackageReference Include="GraphQL" Version="8.8.2" />
   </ItemGroup>
 
 </Project>

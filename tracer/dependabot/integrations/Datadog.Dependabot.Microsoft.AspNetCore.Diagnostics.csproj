@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.AspNetCore.Diagnostics -->
     <!--    Assembly: Microsoft.AspNetCore.Diagnostics -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Diagnostics/2.3.9 -->
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.3.9" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Diagnostics/2.3.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.3.0" />
   </ItemGroup>
 
 </Project>
