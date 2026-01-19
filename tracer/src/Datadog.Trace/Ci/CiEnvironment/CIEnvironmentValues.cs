@@ -26,7 +26,7 @@ internal abstract class CIEnvironmentValues
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
-    private static readonly StringComparer CodeOwnersSearchComparer = Path.DirectorySeparatorChar == '\\'
+    private static readonly StringComparer CodeOwnersSearchComparer = FrameworkDescription.Instance.IsWindows()
                                                                           ? StringComparer.OrdinalIgnoreCase
                                                                           : StringComparer.Ordinal;
 
