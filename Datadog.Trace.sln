@@ -197,6 +197,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "tracer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "tracer\test\test-applications\integrations\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.LifetimeManager.TerminationSignals", "tracer\test\test-applications\integrations\Samples.LifetimeManager.TerminationSignals\Samples.LifetimeManager.TerminationSignals.csproj", "{6DA76C63-4732-4387-B7CD-4058B55BFB3F}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{9518425A-36A5-4B8F-B0B8-6137DB88441D}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\test\test-applications\Directory.Build.props = tracer\test\test-applications\Directory.Build.props
@@ -1511,6 +1513,10 @@ Global
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1566,6 +1572,7 @@ Global
 		{C00D8070-A38A-4267-9730-E9985CAE77DF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{B8D132F6-43E3-44D9-902C-78051DBAD01C} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{6DA76C63-4732-4387-B7CD-4058B55BFB3F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{9518425A-36A5-4B8F-B0B8-6137DB88441D} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{498A300E-D036-49B7-A43D-821D1CAF11A5} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{EFE48691-1FBA-41D5-9BFD-676771973F0C} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
