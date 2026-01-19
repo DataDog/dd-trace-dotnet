@@ -398,10 +398,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
             if (containerId != null)
             {
                 // if container ID is available, add it to headers
-                var headers = new KeyValuePair<string, string>[AgentHttpHeaderNames.MinimalHeaders.Length + 1];
-                Array.Copy(AgentHttpHeaderNames.MinimalHeaders, headers, AgentHttpHeaderNames.MinimalHeaders.Length);
-                headers[AgentHttpHeaderNames.MinimalHeaders.Length] = new KeyValuePair<string, string>(AgentHttpHeaderNames.ContainerId, containerId);
-                return headers;
+                return
+                [
+                    ..AgentHttpHeaderNames.MinimalHeaders,
+                    new(AgentHttpHeaderNames.ContainerId, containerId),
+                ];
             }
 
             return AgentHttpHeaderNames.MinimalHeaders;
