@@ -231,17 +231,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    if (triggerType == "Http")
+                    switch (triggerType)
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                    }
-                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
-                    }
-                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                        case "Http":
+                            extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
