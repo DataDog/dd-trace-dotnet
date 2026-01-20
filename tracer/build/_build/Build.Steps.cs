@@ -1555,7 +1555,8 @@ partial class Build
                   // (no, I don't know why, I can't seem to convince it to do this automatically)
                   var projects = TracerDirectory.GlobFiles(
                       "test/test-applications/integrations/dependency-libs/**/*.csproj",
-                      "test/test-applications/integrations/**/*.vbproj"
+                      "test/test-applications/integrations/**/*.vbproj",
+                      "src/Datadog.FeatureFlags.OpenFeature/*.csproj"
                   );
 
                   DotnetBuild(projects, noDependencies: false, noRestore: false);
