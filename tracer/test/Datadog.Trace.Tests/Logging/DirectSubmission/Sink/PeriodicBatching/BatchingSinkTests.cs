@@ -67,9 +67,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
-            var batches = await WaitForBatchesAsync(sink);
+            await WaitForBatchesAsync(sink);
+            await sink.DisposeAsync();
 
-            batches.Count.Should().Be(1);
+            sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
             batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
