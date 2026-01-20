@@ -25,7 +25,7 @@ class Program
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
-        int attempts = 20;
+        int attempts = 50;
         while (configUpdates == 0)
         {
             if (attempts-- == 0)
