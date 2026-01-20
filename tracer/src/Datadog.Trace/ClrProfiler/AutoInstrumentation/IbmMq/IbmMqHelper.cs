@@ -9,6 +9,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
@@ -25,7 +26,7 @@ internal static class IbmMqHelper
     /// </summary>
     internal static string SanitizeQueueName(string? queueName)
     {
-        if (queueName is null || queueName.Length == 0)
+        if (StringUtil.IsNullOrEmpty(queueName))
         {
             return string.Empty;
         }
