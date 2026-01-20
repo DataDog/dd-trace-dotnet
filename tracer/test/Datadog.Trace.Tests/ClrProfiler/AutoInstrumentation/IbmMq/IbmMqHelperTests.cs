@@ -17,6 +17,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.IbmMq
         [InlineData("queue://my_queue", "my_queue")]
         [InlineData("queue://DEV.QUEUE.1", "DEV.QUEUE.1")]
         [InlineData("queue://my_ibmmq.queue.1", "my_ibmmq.queue.1")]
+        [InlineData("queue://MY.QUEUE_NAME-123", "MY.QUEUE_NAME-123")]
         [InlineData("QUEUE://MY_QUEUE", "MY_QUEUE")] // case insensitive
         [InlineData("Queue://Mixed.Case.Queue", "Mixed.Case.Queue")] // case insensitive
         public void SanitizeQueueName_RemovesQueueUriPrefix(string input, string expected)
@@ -71,14 +72,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.IbmMq
             var result = IbmMqHelper.SanitizeQueueName(input);
 
             result.Should().Be(expected);
-        }
-
-        [Fact]
-        public void SanitizeQueueName_HandlesQueueNameWithSpecialCharacters()
-        {
-            var result = IbmMqHelper.SanitizeQueueName("queue://MY.QUEUE_NAME-123");
-
-            result.Should().Be("MY.QUEUE_NAME-123");
         }
 
         [Fact]
