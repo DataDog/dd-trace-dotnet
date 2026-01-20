@@ -137,6 +137,52 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_NonNullableValueTypeComparedToNull_DoesNotThrow()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string equalsJson = """
+                                      {
+                                        "eq": [
+                                          { "ref": "IntLocal" },
+                                          null
+                                        ]
+                                      }
+                                      """;
+
+            const string notEqualsJson = """
+                                         {
+                                           "ne": [
+                                             { "ref": "IntLocal" },
+                                             null
+                                           ]
+                                         }
+                                         """;
+
+            var equalsCompiled = ProbeExpressionParser<bool>.ParseExpression(equalsJson, scopeMembers);
+            var equalsResult = equalsCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(equalsResult);
+            Assert.True(equalsCompiled.Errors == null || equalsCompiled.Errors.Length == 0);
+
+            var notEqualsCompiled = ProbeExpressionParser<bool>.ParseExpression(notEqualsJson, scopeMembers);
+            var notEqualsResult = notEqualsCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(notEqualsResult);
+            Assert.True(notEqualsCompiled.Errors == null || notEqualsCompiled.Errors.Length == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange

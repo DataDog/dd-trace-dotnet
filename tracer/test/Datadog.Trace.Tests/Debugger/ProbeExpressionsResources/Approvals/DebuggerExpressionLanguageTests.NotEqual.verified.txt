@@ -63,7 +63,7 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.Nested.NestedString == "dd") || (this.Nested.NestedString != null);
+    var $dd_el_result = (this.Nested.NestedString == "dd") || !(this.Nested.NestedString == null);
 
     return $dd_el_result;
 }
