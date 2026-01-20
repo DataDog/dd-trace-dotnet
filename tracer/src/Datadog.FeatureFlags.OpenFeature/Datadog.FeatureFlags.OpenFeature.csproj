@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Title>Datadog FeatureFlags OpenFeature SDK</Title>
     <Description>OpenFeature assets for Datadog Feature Flags</Description>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
