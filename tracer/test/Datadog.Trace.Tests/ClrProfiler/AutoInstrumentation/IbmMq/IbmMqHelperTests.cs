@@ -74,10 +74,12 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.IbmMq
             result.Should().Be(expected);
         }
 
-        [Fact]
-        public void SanitizeQueueName_HandlesEmptyQueueNameAfterPrefix()
+        [Theory]
+        [InlineData("queue://")]
+        [InlineData("topic://")]
+        public void SanitizeQueueName_HandlesEmptyNameAfterPrefix(string input)
         {
-            var result = IbmMqHelper.SanitizeQueueName("queue://");
+            var result = IbmMqHelper.SanitizeQueueName(input);
 
             result.Should().Be(string.Empty);
         }
