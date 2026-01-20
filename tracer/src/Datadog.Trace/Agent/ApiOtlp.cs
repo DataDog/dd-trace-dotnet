@@ -28,9 +28,9 @@ namespace Datadog.Trace.Agent
     internal sealed class ApiOtlp : IApi
     {
         private const string StatsPath = "/v0.6/stats";
-        internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
+        internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {OtlpTracesEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
 
-        private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
+        private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<ApiOtlp>();
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -410,6 +411,15 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("traces_exporter");
                     writer.WriteValue(exporterSettings.TracesExporter);
+
+                    writer.WritePropertyName("otlp_traces_protocol");
+                    writer.WriteValue(exporterSettings.OtlpTracesProtocol.ToString());
+
+                    writer.WritePropertyName("otlp_traces_endpoint");
+                    writer.WriteValue(exporterSettings.OtlpTracesEndpoint.ToString());
+
+                    writer.WritePropertyName("otlp_traces_headers");
+                    writer.WriteValue(string.Join(", ", exporterSettings.OtlpTracesHeaders.Select(h => $"{h.Key}:{h.Value}")));
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabled);

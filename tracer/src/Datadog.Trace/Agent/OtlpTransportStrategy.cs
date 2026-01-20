@@ -74,7 +74,7 @@ internal static class OtlpTransportStrategy
             default:
 #if NETCOREAPP
                 Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
-                return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
+                return new HttpClientRequestFactory(getBaseEndpoint(settings.OtlpTracesEndpoint), defaultAgentHeaders, timeout: tcpTimeout);
 #else
                 Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
                 return new ApiWebRequestFactory(getBaseEndpoint(settings.OtlpTracesEndpoint), defaultAgentHeaders, timeout: tcpTimeout);
