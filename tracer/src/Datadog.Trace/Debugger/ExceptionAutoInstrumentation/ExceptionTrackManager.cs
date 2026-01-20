@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
@@ -618,7 +619,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// </summary>
         private bool IsEnCFeatureEnabled()
         {
-            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable("COMPLUS_ForceEnc");
+            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ForceEnc);
             return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 

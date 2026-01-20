@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
@@ -23,7 +24,6 @@ internal abstract class LambdaCommon
     // Name of the placeholder span to be filtered out by the Lambda Extension
     private const string InvocationSpanName = "dd-tracer-serverless-span";
     private const double ServerlessMaxWaitingFlushTime = 3;
-    private const string LogLevelEnvName = "DD_LOG_LEVEL";
     private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
@@ -149,7 +149,7 @@ internal abstract class LambdaCommon
 
     internal static void Log(string message, Exception ex = null, bool debug = true)
     {
-        if (!debug || EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
+        if (!debug || EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel)?.ToLower() == "debug")
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
         }

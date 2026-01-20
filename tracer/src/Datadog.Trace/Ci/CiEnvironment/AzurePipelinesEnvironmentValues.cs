@@ -1,10 +1,11 @@
-﻿// <copyright file="AzurePipelinesEnvironmentValues.cs" company="Datadog">
+// <copyright file="AzurePipelinesEnvironmentValues.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -19,55 +20,55 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
         IsCI = true;
         Provider = "azurepipelines";
         MetricTag = MetricTags.CIVisibilityTestSessionProvider.AzurePipelines;
-        SourceRoot = ValueProvider.GetValue(Constants.AzureBuildSourcesDirectory);
-        WorkspacePath = ValueProvider.GetValue(Constants.AzureBuildSourcesDirectory);
-        PipelineId = ValueProvider.GetValue(Constants.AzureBuildBuildId);
-        PipelineName = ValueProvider.GetValue(Constants.AzureBuildDefinitionName);
-        PipelineNumber = ValueProvider.GetValue(Constants.AzureBuildBuildId);
+        SourceRoot = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourcesDirectory);
+        WorkspacePath = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourcesDirectory);
+        PipelineId = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildBuildId);
+        PipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildDefinitionName);
+        PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildBuildId);
         PipelineUrl = string.Format(
             "{0}{1}/_build/results?buildId={2}",
-            ValueProvider.GetValue(Constants.AzureSystemTeamFoundationServerUri),
-            ValueProvider.GetValue(Constants.AzureSystemTeamProjectId),
-            ValueProvider.GetValue(Constants.AzureBuildBuildId));
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamProjectId),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildBuildId));
 
-        StageName = ValueProvider.GetValue(Constants.AzureSystemStageDisplayName);
+        StageName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemStageDisplayName);
 
-        JobId = ValueProvider.GetValue(Constants.AzureSystemJobId);
-        JobName = ValueProvider.GetValue(Constants.AzureSystemJobDisplayName);
+        JobId = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemJobId);
+        JobName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemJobDisplayName);
         JobUrl = string.Format(
             "{0}{1}/_build/results?buildId={2}&view=logs&j={3}&t={4}",
-            ValueProvider.GetValue(Constants.AzureSystemTeamFoundationServerUri),
-            ValueProvider.GetValue(Constants.AzureSystemTeamProjectId),
-            ValueProvider.GetValue(Constants.AzureBuildBuildId),
-            ValueProvider.GetValue(Constants.AzureSystemJobId),
-            ValueProvider.GetValue(Constants.AzureSystemTaskInstanceId));
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamProjectId),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildBuildId),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemJobId),
+            ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTaskInstanceId));
 
-        var prRepo = ValueProvider.GetValue(Constants.AzureSystemPullRequestSourceRepositoryUri);
-        Repository = !string.IsNullOrWhiteSpace(prRepo) ? prRepo : ValueProvider.GetValue(Constants.AzureBuildRepositoryUri);
+        var prRepo = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestSourceRepositoryUri);
+        Repository = !string.IsNullOrWhiteSpace(prRepo) ? prRepo : ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildRepositoryUri);
 
-        var prCommit = ValueProvider.GetValue(Constants.AzureSystemPullRequestSourceCommitId);
-        Commit = !string.IsNullOrWhiteSpace(prCommit) ? prCommit : ValueProvider.GetValue(Constants.AzureBuildSourceVersion);
+        var prCommit = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestSourceCommitId);
+        Commit = !string.IsNullOrWhiteSpace(prCommit) ? prCommit : ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceVersion);
 
-        var prBranch = ValueProvider.GetValue(Constants.AzureSystemPullRequestSourceBranch);
-        Branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : ValueProvider.GetValue(Constants.AzureBuildSourceBranch);
+        var prBranch = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch);
+        Branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceBranch);
 
         if (string.IsNullOrWhiteSpace(Branch))
         {
-            Branch = ValueProvider.GetValue(Constants.AzureBuildSourceBranchName);
+            Branch = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceBranchName);
         }
 
-        Message = ValueProvider.GetValue(Constants.AzureBuildSourceVersionMessage);
-        AuthorName = ValueProvider.GetValue(Constants.AzureBuildRequestedForId);
-        AuthorEmail = ValueProvider.GetValue(Constants.AzureBuildRequestedForEmail);
+        Message = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildSourceVersionMessage);
+        AuthorName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildRequestedForId);
+        AuthorEmail = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildRequestedForEmail);
 
         VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
-            Constants.AzureSystemTeamProjectId,
-            Constants.AzureBuildBuildId,
-            Constants.AzureSystemJobId);
+            PlatformKeys.Ci.Azure.SystemTeamProjectId,
+            PlatformKeys.Ci.Azure.BuildBuildId,
+            PlatformKeys.Ci.Azure.SystemJobId);
 
-        PrBaseBranch = ValueProvider.GetValue(Constants.AzureSystemPullRequestTargetBranch);
-        PrNumber = ValueProvider.GetValue(Constants.AzureSystemPullRequestNumber);
+        PrBaseBranch = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestTargetBranch);
+        PrNumber = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemPullRequestNumber);
     }
 }

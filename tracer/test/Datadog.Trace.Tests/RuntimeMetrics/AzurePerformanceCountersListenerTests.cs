@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         public void PushEvents()
         {
             Environment.SetEnvironmentVariable(
-                AzureAppServicePerformanceCounters.EnvironmentVariableName,
+                PlatformKeys.AzureAppService.CountersKey,
                 "{\"bytesInAllHeaps\": 8069304,\"gcHandles\": 6796,\"gen0Collections\": 108,\"gen1Collections\": 76,\"gen2Collections\": 16,\"inducedGC\": 0,\"pinnedObjects\": 20,\"committedBytes\": 17788928,\"reservedBytes\": 50319360,\"timeInGC\": 99342447,\"timeInGCBase\": 385095681,\"allocatedBytes\": 761378928,\"gen0HeapSize\": 8388608,\"gen1HeapSize\": 1448968,\"gen2HeapSize\": 3857504,\"largeObjectHeapSize\": 2762832,\"currentAssemblies\": 104,\"currentClassesLoaded\": 177389,\"exceptionsThrown\": 913,\"appDomains\": 10,\"appDomainsUnloaded\": 8}");
 
             const double expectedGen0HeapSize = 8388608;
