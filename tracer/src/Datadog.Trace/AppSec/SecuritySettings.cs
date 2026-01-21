@@ -11,6 +11,7 @@ using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 
@@ -32,12 +33,12 @@ namespace Datadog.Trace.AppSec
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplatePath = config
-                                 .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsRedactedString(); // Redacted because it's huge
+                                     .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
+                                     .AsRedactedString(); // Redacted because it's huge
 
             BlockedJsonTemplatePath = config
-                                 .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
-                                 .AsString();
+                                     .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
+                                     .AsString();
 
             // both should default to false
             var enabledEnvVar = config
@@ -113,13 +114,13 @@ namespace Datadog.Trace.AppSec
             }
 
             if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode
-                || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
+             || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingAnonMode;
             }
 
             if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode
-                || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
+             || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
@@ -132,15 +133,15 @@ namespace Datadog.Trace.AppSec
                                            .Value;
 
             ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
-                                           .AsBool(true);
+                                                         .AsBool(true);
 
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
-                                           .AsInt32(300, val => val >= 0)
-                                           .Value;
+                                                              .AsInt32(300, val => val >= 0)
+                                                              .Value;
 
             ApiSecurityParseResponseBody = config
-                                .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
-                                .AsBool(true);
+                                          .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
+                                          .AsBool(true);
 
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
@@ -153,30 +154,37 @@ namespace Datadog.Trace.AppSec
                                       .AsBool(true);
 
             MaxStackTraces = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                                  .AsInt32(defaultValue: 2, validator: val => val >= 1)
-                                  .Value;
+                            .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                            .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                            .Value;
 
             MaxStackTraceDepth = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(defaultValue: 32, validator: val => val >= 1)
-                                  .Value;
+                                .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+                                .AsInt32(defaultValue: 32, validator: val => val >= 1)
+                                .Value;
 
             MaxStackTraceDepthTopPercent = config
-                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
-                                  .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
-                                  .Value;
+                                          .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
+                                          .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
+                                          .Value;
 
             WafDebugEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
 
             ScaEnabled = config
-                             .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
-                             .AsBool();
+                        .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
+                        .AsBool();
 
             NoCustomLocalRules = Rules == null;
+            var envConfig = new ConfigurationBuilder(new EnvironmentConfigurationSource(), telemetry);
+            DdDotnetTracerHome = envConfig.WithKeys(ConfigurationKeys.DotNetTracerHome).AsString();
+            InternalTraceNativeEnginePath = envConfig.WithKeys(ConfigurationKeys.InternalTraceNativeEnginePath).AsString();
         }
+
+        public string? DdDotnetTracerHome { get; set; }
+
+        public string? InternalTraceNativeEnginePath { get; set; }
 
         public double ApiSecuritySampleDelay { get; set; }
 

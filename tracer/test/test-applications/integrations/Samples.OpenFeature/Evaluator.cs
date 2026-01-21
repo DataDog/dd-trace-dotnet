@@ -7,13 +7,27 @@ namespace Samples.FeatureFlags;
 class Evaluator
 {
     static global::OpenFeature.FeatureClient client;
+    static Action? _onNewConfig = null;
 
-    public static void Init()
+    public static bool Init()
     {
         Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
+        if (Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
+        {
 
-        global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
-        client = global::OpenFeature.Api.Instance.GetClient();
+            global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
+            client = global::OpenFeature.Api.Instance.GetClient();
+            Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+            return true;
+        }
+
+        return false;
+
+    }
+
+    public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
+    {
+        _onNewConfig = onNewConfig;
     }
 
     public static (string? Value, string? Error)? Evaluate(string key)

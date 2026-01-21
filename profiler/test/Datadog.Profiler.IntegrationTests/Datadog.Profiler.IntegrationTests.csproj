@@ -89,6 +89,6 @@
      <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
   </ItemGroup>
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
-    <PackageReference Include="DatadogTestLogger" Version="0.0.38" ExcludeAssets="compile" />
+    <PackageReference Include="DatadogTestLogger" Version="0.0.52" ExcludeAssets="compile" />
   </ItemGroup>
 </Project>

@@ -106,9 +106,9 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     { } x when x.IsWindows() => true, // Works on Windows
                     { } x when !x.IsCoreClr() => true, // Works on .NET Framework
-                    _ when Environment.Version is { Major: >= 5 } => true, // Works on .NET 5 and above
-                    _ when Environment.Version is { Major: 3, Minor: > 0 } => true, // 3.1 works
-                    _ when Environment.Version is { Major: 3, Minor: 0 } => false, // 3.0 is broken on linux
+                    { RuntimeVersion: { Major: >= 5 } } => true, // Works on .NET 5 and above
+                    { RuntimeVersion: { Major: 3, Minor: > 0 } } => true, // 3.1 works
+                    { RuntimeVersion: { Major: 3, Minor: 0 } } => false, // 3.0 is broken on linux
                     _ => false, // everything else (i.e. <.NET Core 3.0) is broken
                 };
 #endif

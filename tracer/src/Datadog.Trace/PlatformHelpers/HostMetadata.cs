@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -140,7 +141,7 @@ namespace Datadog.Trace.PlatformHelpers
                     return host;
                 }
 
-                return EnvironmentHelpers.GetEnvironmentVariable("COMPUTERNAME");
+                return EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ComputerNameKey);
             }
             catch (InvalidOperationException)
             {
