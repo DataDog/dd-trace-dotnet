@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
-using Datadog.Trace.Util;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -42,15 +42,33 @@ internal static class ProcessTags
     /// </summary>
     private static void AddNormalizedTag(this List<string> tags, string key, string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (StringUtil.IsNullOrWhiteSpace(value))
         {
             return;
         }
 
-        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
-        // which we don't want because we use it as a key/value separator.
-        var normalizedValue = TraceUtil.NormalizeTag(value).Replace(oldChar: ':', newChar: '_');
-        tags.Add($"{key}:{normalizedValue}");
+        var normalizedValue = NormalizeTagValue(value);
+        // check length because normalization can squish the string to nothing
+        if (normalizedValue.Length > 0)
+        {
+            tags.Add($"{key}:{normalizedValue}");
+        }
+    }
+
+    [TestingAndPrivateOnly]
+    internal static string NormalizeTagValue(string tagValue)
+    {
+        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':', which we don't want because we use it as a key/value separator.
+        // We need to replace ':' before calling NormalizeTag because there is a logic to remove duplicate underscores.
+        var normalized = TraceUtil.NormalizeTag(tagValue.Replace(oldChar: ':', newChar: '_'));
+
+        // truncate to 100 char, which the max allowed for a service name, and this is the only usage for those tags
+        if (normalized.Length > 100)
+        {
+            return normalized.Substring(startIndex: 0, length: 100);
+        }
+
+        return normalized;
     }
 
     private static string GetSerializedTagsFromList(List<string> tags)
