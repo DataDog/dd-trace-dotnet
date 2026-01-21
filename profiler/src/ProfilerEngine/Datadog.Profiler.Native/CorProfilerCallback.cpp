@@ -1781,6 +1781,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    _pAppDomainStore->Register(appDomainId);
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
         // TODO: why only for SSI?
