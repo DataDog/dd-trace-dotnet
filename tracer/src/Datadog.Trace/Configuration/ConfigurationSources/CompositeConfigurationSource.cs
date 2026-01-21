@@ -189,70 +189,17 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-        {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
-            var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
-            for (var i = _sources.Count - 1; i >= 0; i--)
-            {
-                var source = _sources[i];
-                var value = source.GetDictionary(key, telemetry, validator);
-                if (value.IsValid)
-                {
-                    result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
-                }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
-            }
-
-            return result;
-        }
+            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings: false, separator: null);
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-        {
-            // We iterate in reverse order, and keep the last successful value
-            // because we need to record the data for all the sources in telemetry
-            var result = ConfigurationResult<IDictionary<string, string>>.NotFound();
-            var isLastFound = false;
-            var origin = ConfigurationOrigins.Unknown;
-            for (var i = _sources.Count - 1; i >= 0; i--)
-            {
-                var source = _sources[i];
-                var value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
-                if (value.IsValid)
-                {
-                    result = value;
-                    isLastFound = true;
-                    origin = source.Origin;
-                }
-                else if (value.IsPresent)
-                {
-                    isLastFound = false;
-                }
-            }
-
-            if (result.IsValid && !isLastFound)
-            {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
-            }
-
-            return result;
-        }
+            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator);
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+            => GetDictionary(key, telemetry, validator, parser, allowOptionalMappings: false, separator: null);
+
+        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -262,7 +209,20 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetDictionary(key, telemetry, validator, parser);
+                ConfigurationResult<IDictionary<string, string>> value;
+                if (parser is not null)
+                {
+                    value = source.GetDictionary(key, telemetry, validator, parser);
+                }
+                else if (separator.HasValue)
+                {
+                    value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator.Value);
+                }
+                else
+                {
+                    value = source.GetDictionary(key, telemetry, validator);
+                }
+
                 if (value.IsValid)
                 {
                     result = value;
@@ -277,7 +237,8 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                // there should always be a telemetry override by convention, so just record a sentinel for now if there's not for some reason
+                telemetry.Record(key, result.TelemetryOverride ?? "<MISSING>", recordValue: true, origin);
             }
 
             return result;

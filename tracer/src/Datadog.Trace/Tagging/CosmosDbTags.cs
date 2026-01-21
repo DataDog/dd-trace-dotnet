@@ -31,6 +31,18 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
+        [Tag(Trace.Tags.DbResponseStatusCode)]
+        public string ResponseStatusCode { get; set; }
+
+        [Tag(Trace.Tags.CosmosDbResponseSubStatusCode)]
+        public string ResponseSubStatusCode { get; set; }
+
+        [Tag(Trace.Tags.HttpUserAgent)]
+        public string UserAgent { get; set; }
+
+        [Tag(Trace.Tags.CosmosDbConnectionMode)]
+        public string ConnectionMode { get; set; }
+
         public virtual void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.ToString();

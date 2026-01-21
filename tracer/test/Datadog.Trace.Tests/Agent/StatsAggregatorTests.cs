@@ -467,6 +467,10 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             public Task DisposeAsync() => Task.CompletedTask;
+
+            public void SetCurrentConfigStateHash(string configStateHash)
+            {
+            }
         }
     }
 }

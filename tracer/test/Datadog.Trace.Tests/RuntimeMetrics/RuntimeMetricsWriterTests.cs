@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             listener.Setup(l => l.Refresh())
                 .Callback(() => mutex.Set());
 
-            using (new RuntimeMetricsWriter(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMilliseconds(10), false, (statsd, timeSpan, inAppContext) => listener.Object))
+            using (new RuntimeMetricsWriter(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMilliseconds(10), false, false, (statsd, timeSpan, inAppContext, _) => listener.Object))
             {
                 Assert.True(mutex.Wait(10000), "Method Refresh() wasn't called on the listener");
             }
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         [Fact]
         public void ShouldSwallowFactoryExceptions()
         {
-            var writer = new RuntimeMetricsWriter(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMilliseconds(10), false, (statsd, timeSpan, inAppContext) => throw new InvalidOperationException("This exception should be caught"));
+            var writer = new RuntimeMetricsWriter(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMilliseconds(10), false, false, (statsd, timeSpan, inAppContext, _) => throw new InvalidOperationException("This exception should be caught"));
             writer.Dispose();
         }
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
-            using (var writer = new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromMilliseconds(Timeout.Infinite), false, (statsd, timeSpan, inAppContext) => listener.Object))
+            using (var writer = new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromMilliseconds(Timeout.Infinite), false, false, (statsd, timeSpan, inAppContext, _) => listener.Object))
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
-            using (new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromSeconds(1), false, (_, _, _) => listener.Object))
+            using (new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromSeconds(1), false, false, (_, _, _, _) => listener.Object))
             {
                 var expectedNumberOfThreads = Process.GetCurrentProcess().Threads.Count;
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
-            var writer = new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromMilliseconds(Timeout.Infinite), false, (statsd, timeSpan, inAppContext) => listener.Object);
+            var writer = new RuntimeMetricsWriter(new TestStatsdManager(statsd.Object), TimeSpan.FromMilliseconds(Timeout.Infinite), false, false, (statsd, timeSpan, inAppContext, _) => listener.Object);
             writer.Dispose();
 
 #if  NETFRAMEWORK

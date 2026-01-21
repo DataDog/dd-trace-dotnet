@@ -19,6 +19,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -74,6 +75,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlagsModule,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -103,6 +105,7 @@ namespace Datadog.Trace
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
+            FeatureFlags = featureFlagsModule;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
@@ -176,6 +179,8 @@ namespace Datadog.Trace
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public ISpanEventsManager SpanEventsManager { get; }
+
+        public FeatureFlagsModule FeatureFlags { get; }
 
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
@@ -304,10 +309,17 @@ namespace Datadog.Trace
                     oldManager.TracerFlareManager.Dispose();
                 }
 
+                var featureFlagsReplaced = false;
+                if (oldManager.FeatureFlags != newManager.FeatureFlags && oldManager.FeatureFlags is not null)
+                {
+                    featureFlagsReplaced = true;
+                    oldManager.FeatureFlags.Dispose();
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}, FeatureFlags {FeatureFlagsReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced, featureFlagsReplaced });
             }
             catch (Exception ex)
             {
@@ -749,6 +761,8 @@ namespace Datadog.Trace
                     var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
+                    Log.Debug("Disposing FeatureFlagsManager");
+                    instance.FeatureFlags?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);

@@ -179,6 +179,16 @@ namespace Datadog.Trace.Configuration
 
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+
+#if !NET6_0_OR_GREATER
+            if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
+            {
+                Log.Warning(
+                    $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -378,9 +388,23 @@ namespace Datadog.Trace.Configuration
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
 
+            SingleSpanAspNetCoreEnabled = config
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
+                                         .AsBool(defaultValue: false);
+#if !NET6_0_OR_GREATER
+            // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
+            if (SingleSpanAspNetCoreEnabled)
+            {
+                SingleSpanAspNetCoreEnabled = false;
+                Log.Warning(
+                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set to true, but is only supported in .NET 6+. Using false instead.");
+                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
+
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
-                                         .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
+                                         .AsBool(defaultValue: !(RouteTemplateResourceNamesEnabled || SingleSpanAspNetCoreEnabled)); // disabled by default if route template resource names or single-span enabled
 
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
@@ -603,6 +627,9 @@ namespace Datadog.Trace.Configuration
                 var userSplit = TrimSplitString(userDisabledAdoNetCommandTypes, commaSeparator);
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
+
+            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
+                                                       .AsBool(false);
 
             if (source is CompositeConfigurationSource compositeSource)
             {
@@ -1058,6 +1085,15 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the experimental runtime metrics collector which uses the
+        /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
+        /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
+        /// when using .NET 8+.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
+        internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline
         /// is enabled.
         /// </summary>
@@ -1093,9 +1129,15 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
-        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> or <see cref="SingleSpanAspNetCoreEnabled"/> are <code>true</code>.
         /// </summary>
         internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether single-span ASP.NET Core instrumentation should be used.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled"/>
+        internal bool SingleSpanAspNetCoreEnabled { get; }
 
         /// <summary>
         /// Gets the direct log submission settings.
@@ -1239,6 +1281,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether remote Feature Flags Provider is enabled
+        /// </summary>
+        internal bool IsFlaggingProviderEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

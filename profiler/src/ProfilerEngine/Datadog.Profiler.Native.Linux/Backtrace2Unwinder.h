@@ -14,4 +14,5 @@ public:
 
     // Returns the number of frames unwound
     std::int32_t Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize) const override;
+
 };

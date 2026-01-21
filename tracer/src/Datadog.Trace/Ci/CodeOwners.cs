@@ -43,10 +43,11 @@ namespace Datadog.Trace.Ci
         public IEnumerable<string> Match(string path)
         {
             var owners = new HashSet<string>(StringComparer.Ordinal);
+            var normalizedPath = path.IndexOf('\\') >= 0 ? path.Replace('\\', '/') : path;
 
             foreach (var section in _sections)
             {
-                if (section.TryMatch(path, _platform, out var sectionOwners))
+                if (section.TryMatch(normalizedPath, _platform, out var sectionOwners))
                 {
                     foreach (var o in sectionOwners)
                     {

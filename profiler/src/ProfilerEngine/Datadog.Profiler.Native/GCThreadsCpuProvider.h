@@ -4,6 +4,7 @@
 #pragma once
 
 #include "IFrameStore.h"
+#include "IGcSettingsProvider.h"
 #include "ISamplesProvider.h"
 #include "IThreadInfo.h"
 #include "NativeThreadsCpuProviderBase.h"
@@ -12,13 +13,19 @@
 
 class RawSampleTransformer;
 
-class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
+class GCThreadsCpuProvider
+    :
+    public NativeThreadsCpuProviderBase,
+    public IGcSettingsProvider
 {
 public:
     GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;
+
+    // Inherited via IGcSettingsProvider
+    GCMode GetMode() override;
 
 protected:
     void OnCpuDuration(std::chrono::milliseconds cpuTime) override;
