@@ -463,13 +463,16 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         var parts = name.Split('_');
         var pascalName = string.Concat(parts.Select(p => p.Length > 0 ? char.ToUpper(p[0]) + p.Substring(1).ToLower() : string.Empty));
 
+        // Handle special case: Dotnet => DotNet
+        pascalName = pascalName.Replace("Dotnet", "DotNet");
+
         // Strip product prefix if the const name starts with it
         if (productNames != null)
         {
             foreach (var productName in productNames)
             {
                 if (pascalName.Length > productName.Length &&
-                    pascalName.StartsWith(productName, StringComparison.InvariantCulture))
+                    pascalName.StartsWith(productName, StringComparison.Ordinal))
                 {
                     pascalName = pascalName.Substring(productName.Length);
                     break;

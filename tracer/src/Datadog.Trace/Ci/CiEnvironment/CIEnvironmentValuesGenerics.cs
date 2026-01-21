@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -12,13 +13,13 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 #pragma warning disable SA1649
 // ReSharper disable once InconsistentNaming
-
 internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues
     where TValueProvider : struct, IValueProvider
 {
@@ -26,78 +27,78 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Travis)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Travis.Name)))
         {
             return new TravisEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CircleCI)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.CircleCI.Name)))
         {
             return new CircleCiEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.JenkinsUrl)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Jenkins.Url)))
         {
             return new JenkinsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitlabCI)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.GitLab.Name)))
         {
             return new GitlabEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Appveyor)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.AppVeyor.Name)))
         {
             return new AppveyorEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.AzureTFBuild)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Azure.TFBuild)))
         {
             return new AzurePipelinesEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitBucketCommit)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Bitbucket.Commit)))
         {
             return new BitbucketEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitHubSha)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.GitHub.Sha)))
         {
             return new GithubActionsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.TeamCityVersion)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.TeamCity.Version)))
         {
             return new TeamcityEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BuildKite)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Buildkite.Name)))
         {
             return new BuildkiteEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitriseBuildSlug)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Bitrise.BuildSlug)))
         {
             return new BitriseEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Buddy)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Buddy.Name)))
         {
             return new BuddyEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CodefreshBuildId)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Codefresh.BuildId)))
         {
             return new CodefreshEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.AWSCodePipelineBuildInitiator) is { Length: > 0 } initiator &&
+        if (valueProvider.GetValue(PlatformKeys.Ci.AwsCodePipeline.BuildInitiator) is { Length: > 0 } initiator &&
             initiator.StartsWith("codepipeline"))
         {
             return new AWSCodePipelineEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Drone)))
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(PlatformKeys.Ci.Drone.Name)))
         {
             return new DroneEnvironmentValues<TValueProvider>(valueProvider);
         }
@@ -195,10 +196,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         // **********
         // Custom environment variables.
         // **********
-        Branch = GetVariableIfIsNotEmpty(Constants.DDGitBranch, Branch);
-        Tag = GetVariableIfIsNotEmpty(Constants.DDGitTag, Tag);
+        Branch = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitBranch, Branch);
+        Tag = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitTag, Tag);
         Repository = GetVariableIfIsNotEmpty(
-            Constants.DDGitRepository,
+            ConfigurationKeys.CIVisibility.GitRepositoryUrl,
             Repository,
             (value, defaultValue) =>
             {
@@ -246,7 +247,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 return false;
             });
         Commit = GetVariableIfIsNotEmpty(
-            Constants.DDGitCommitSha,
+            ConfigurationKeys.CIVisibility.GitCommitSha,
             Commit,
             (value, defaultValue) =>
             {
@@ -279,47 +280,53 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If not set use the default value
                 return false;
             });
-        Message = GetVariableIfIsNotEmpty(Constants.DDGitCommitMessage, Message);
-        AuthorName = GetVariableIfIsNotEmpty(Constants.DDGitCommitAuthorName, AuthorName);
-        AuthorEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitAuthorEmail, AuthorEmail);
-        AuthorDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitAuthorDate, AuthorDate);
-        CommitterName = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
-        CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
-        CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
-        PrBaseBranch = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranch, PrBaseBranch);
-        PrBaseCommit = GetVariableIfIsNotEmpty(Constants.DDGitPullRequestBaseBranchSha, PrBaseCommit, (value, defaultValue) =>
-        {
-            if (value is not null)
+        Message = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitMessage, Message);
+        AuthorName = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorName, AuthorName);
+        AuthorEmail = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorEmail, AuthorEmail);
+        AuthorDate = GetDateTimeOffsetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorDate, AuthorDate);
+        CommitterName = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitCommitterName, CommitterName);
+        CommitterEmail = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitCommitterEmail, CommitterEmail);
+        CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitCommitterDate, CommitterDate);
+        PrBaseBranch = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitPullRequestBaseBranch, PrBaseBranch);
+        PrBaseCommit = GetVariableIfIsNotEmpty(
+            ConfigurationKeys.CIVisibility.GitPullRequestBaseBranchSha,
+            PrBaseCommit,
+            (value, defaultValue) =>
             {
-                value = value.Trim();
-                if (value.Length != 40 || !IsHex(value))
+                if (value is not null)
                 {
-                    if (string.IsNullOrEmpty(defaultValue))
+                    value = value.Trim();
+                    if (value.Length != 40 || !IsHex(value))
                     {
-                        Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
-                    }
-                    else
-                    {
-                        Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                        if (string.IsNullOrEmpty(defaultValue))
+                        {
+                            Log.Error("DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
+                        }
+                        else
+                        {
+                            Log.Error("DD_GIT_CODD_GIT_PULL_REQUEST_BASE_BRANCH_SHAMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                        }
+
+                        return false;
                     }
 
-                    return false;
+                    // All ok!
+                    return true;
                 }
 
-                // All ok!
-                return true;
-            }
-
-            // If not set use the default value
-            return false;
-        });
+                // If not set use the default value
+                return false;
+            });
 
         Message = Message?.Trim();
     }
 
     protected string? GetVariableIfIsNotEmpty(string key, string? defaultValue, Func<string?, string?, bool>? validator = null)
     {
+// TODO temporary, this needs to be addressed
+#pragma warning disable DD0012
         var value = ValueProvider.GetValue(key, defaultValue);
+#pragma warning restore DD0012
         if (validator is not null)
         {
             if (!validator.Invoke(value, defaultValue))
@@ -340,7 +347,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     protected DateTimeOffset? GetDateTimeOffsetVariableIfIsNotEmpty(string key, DateTimeOffset? defaultValue)
     {
+// TODO temporary, this needs to be addressed
+#pragma warning disable DD0012
         var value = ValueProvider.GetValue(key);
+#pragma warning restore DD0012
         if (string.IsNullOrEmpty(value))
         {
             return defaultValue;
@@ -371,7 +381,10 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 continue;
             }
 
+// TODO temporary, this needs to be addressed
+#pragma warning disable DD0012
             var value = ValueProvider.GetValue(key);
+#pragma warning restore DD0012
             if (!string.IsNullOrEmpty(value))
             {
                 if (filter is not null)
@@ -391,8 +404,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         {
             var homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
                             Environment.OSVersion.Platform == PlatformID.MacOSX)
-                               ? ValueProvider.GetValue(Constants.Home)
-                               : ValueProvider.GetValue(Constants.UserProfile);
+                               ? ValueProvider.GetValue(PlatformKeys.Ci.Home)
+                               : ValueProvider.GetValue(PlatformKeys.Ci.UserProfile);
             path = homePath + path.Substring(1);
         }
 

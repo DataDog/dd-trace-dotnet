@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -17,7 +18,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLocationHelper));
 
-        internal static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string[] runtimeIds)
+        internal static List<string> GetDatadogNativeFolders(string tracerHome, string traceNativeEnginePath, FrameworkDescription frameworkDescription, string[] runtimeIds)
         {
             // first get anything "home folder" like
             // if running under Windows:
@@ -30,11 +31,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             List<string> paths = new();
 
-            AddNativeLoaderEnginePath(paths);
+            // AddNativeLoaderEnginePath;
+            // The native loader sets this env var to say where it's loaded from, so the waf should be next to it
+            // Use this preferentially over other options
+            if (!string.IsNullOrWhiteSpace(traceNativeEnginePath))
+            {
+                paths.Add(Path.GetDirectoryName(traceNativeEnginePath));
+            }
 
             foreach (var runtimeId in runtimeIds)
             {
-                AddHomeFolders(paths, runtimeId);
+                AddHomeFolders(tracerHome, paths, runtimeId);
             }
 
             foreach (var runtimeId in runtimeIds)
@@ -45,54 +52,48 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return paths.Distinct().ToList();
         }
 
-        private static void AddNativeLoaderEnginePath(List<string> paths)
-        {
-            // The native loader sets this env var to say where it's loaded from, so the waf should be next to it
-            // Use this preferentially over other options
-            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                paths.Add(Path.GetDirectoryName(value));
-            }
-        }
-
         private static void AddProfilerFolders(List<string> paths, FrameworkDescription frameworkDescription, string runtimeId)
         {
-            var profilerEnvVar =
-                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            var isCoreClr = frameworkDescription.IsCoreClr();
+            // Try architecture-agnostic profiler path first
+            var archAgnosticValue = isCoreClr
+                ? EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetCoreClrProfiler)
+                : EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetClrProfiler);
 
-            if (TryAddProfilerFolders(paths, profilerEnvVar))
+            if (!string.IsNullOrWhiteSpace(archAgnosticValue))
             {
-                // added the locations
+                AddRuntimeSpecificLocations(paths, Path.GetDirectoryName(archAgnosticValue), runtimeId);
                 return;
             }
 
-            var profilerEnvVarBitsExt =
-                profilerEnvVar + (Environment.Is64BitProcess ? "_64" : "_32");
+            // Try architecture-specific profiler path
+            string archSpecificValue;
+            if (isCoreClr)
+            {
+                archSpecificValue = Environment.Is64BitProcess
+                    ? EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetCoreClrProfiler64)
+                    : EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetCoreClrProfiler32);
+            }
+            else
+            {
+                archSpecificValue = Environment.Is64BitProcess
+                    ? EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetClrProfiler64)
+                    : EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetClrProfiler32);
+            }
 
-            if (!TryAddProfilerFolders(paths, profilerEnvVarBitsExt))
+            if (!string.IsNullOrWhiteSpace(archSpecificValue))
+            {
+                AddRuntimeSpecificLocations(paths, Path.GetDirectoryName(archSpecificValue), runtimeId);
+            }
+            else
             {
                 // this is expected under Windows, but problematic under other OSs
                 Log.Debug("Couldn't find profilerFolder");
             }
-
-            bool TryAddProfilerFolders(List<string> pathLists, string envVar)
-            {
-                var value = EnvironmentHelpers.GetEnvironmentVariable(envVar);
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    return false;
-                }
-
-                AddRuntimeSpecificLocations(pathLists, Path.GetDirectoryName(value), runtimeId);
-                return true;
-            }
         }
 
-        private static void AddHomeFolders(List<string> paths, string runtimeId)
+        private static void AddHomeFolders(string tracerHome, List<string> paths, string runtimeId)
         {
-            // the real trace home
-            var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
             if (!string.IsNullOrWhiteSpace(tracerHome))
             {
                 // the home folder could contain the native dll directly (in legacy versions of the package),

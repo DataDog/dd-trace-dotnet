@@ -129,7 +129,7 @@ public class DatadogDiagnoser : IDiagnoser
     private static IEnumerable<string?> GetHomeFolderPaths(DiagnoserActionParameters parameters)
     {
         // try to locate it from the environment variable
-        yield return EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+        yield return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DotNetTracerHome);
 
         // try to locate it inside the running benchmark folder
         yield return Path.Combine(parameters.Process.StartInfo.WorkingDirectory, "datadog");

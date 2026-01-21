@@ -32,8 +32,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.ServiceName, ServiceName },
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, serviceVersion },
-                    { ConfigurationKeys.GitCommitSha, "mySha" },
-                    { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
+                    { ConfigurationKeys.CIVisibility.GitCommitSha, "mySha" },
+                    { ConfigurationKeys.CIVisibility.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
             configurationTelemetry,
             new OverrideErrorLog());
@@ -120,8 +120,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.ServiceName, ServiceName },
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, serviceVersion },
-                    { ConfigurationKeys.GitCommitSha, "mySha" },
-                    { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
+                    { ConfigurationKeys.CIVisibility.GitCommitSha, "mySha" },
+                    { ConfigurationKeys.CIVisibility.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
             configurationTelemetry,
             new OverrideErrorLog());
