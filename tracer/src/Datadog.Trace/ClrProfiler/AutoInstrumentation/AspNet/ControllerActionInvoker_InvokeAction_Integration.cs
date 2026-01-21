@@ -8,14 +8,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -70,7 +74,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
             }
 
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AddSpanCodeOrigin(actionDescriptor, codeOrigin);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
+            }
+
             return CallTargetState.GetDefault();
+        }
+
+        private static void AddSpanCodeOrigin<TActionDescriptor>(TActionDescriptor actionDescriptor, SpanCodeOrigin codeOrigin)
+        {
+            if (SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey) is not { Root.Span: { } rootSpan })
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Code origin is enabled for spans but MVC scope was not found in HttpContext.");
+                }
+
+                return;
+            }
+
+            if (actionDescriptor is null)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Code origin is enabled for spans but MVC ActionDescriptor instance was null.");
+                }
+
+                return;
+            }
+
+            if (!actionDescriptor.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected) || reflected.MethodInfo is not { } actionMethod)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled for spans but could not extract MVC action MethodInfo from ActionDescriptor type {ActionDescriptorType}.",
+                        actionDescriptor.GetType());
+                }
+
+                return;
+            }
+
+            if (actionMethod.DeclaringType is not { } actionType)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled for spans but extracted MVC action MethodInfo has no DeclaringType. Method: {Method}.",
+                        actionMethod);
+                }
+
+                return;
+            }
+
+            codeOrigin.SetCodeOriginForEntrySpan(rootSpan, actionType, actionMethod);
         }
 
         /// <summary>

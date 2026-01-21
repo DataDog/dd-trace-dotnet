@@ -1,4 +1,4 @@
-﻿// <copyright file="EndpointDetector.cs" company="Datadog">
+// <copyright file="EndpointDetector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,20 +18,20 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin;
 
 internal static class EndpointDetector
 {
-    private static readonly HashSet<string> ControllerAttributes =
+    private static readonly HashSet<string> AspNetCoreControllerAttributes =
     [
         "Microsoft.AspNetCore.Mvc.ApiControllerAttribute",
         "Microsoft.AspNetCore.Mvc.ControllerAttribute",
         "Microsoft.AspNetCore.Mvc.RouteAttribute"
     ];
 
-    private static readonly HashSet<string> ControllerBaseNames =
+    private static readonly HashSet<string> AspNetCoreControllerBaseNames =
     [
         "Microsoft.AspNetCore.Mvc.Controller",
         "Microsoft.AspNetCore.Mvc.ControllerBase"
     ];
 
-    private static readonly HashSet<string> ActionAttributes =
+    private static readonly HashSet<string> AspNetCoreActionAttributes =
     [
         "Microsoft.AspNetCore.Mvc.HttpGetAttribute",
         "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
@@ -41,6 +41,25 @@ internal static class EndpointDetector
         "Microsoft.AspNetCore.Mvc.HttpHeadAttribute",
         "Microsoft.AspNetCore.Mvc.HttpOptionsAttribute",
         "Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute"
+    ];
+
+    private static readonly HashSet<string> NetFrameworkControllerBaseNames =
+    [
+        // MVC 4/5
+        "System.Web.Mvc.Controller",
+        "System.Web.Mvc.ControllerBase",
+
+        // Web API 2
+        "System.Web.Http.ApiController"
+    ];
+
+    private static readonly HashSet<string> NetFrameworkNonActionAttributes =
+    [
+        // MVC 4/5
+        "System.Web.Mvc.NonActionAttribute",
+
+        // Web API 2
+        "System.Web.Http.NonActionAttribute"
     ];
 
     private static readonly HashSet<string> SignalRHubBaseNames =
@@ -74,7 +93,9 @@ internal static class EndpointDetector
             bool isPageModel = false;
             bool isSignalRHub = false;
             bool isCompilerGeneratedType = false;
-            var isController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, ControllerAttributes, ControllerBaseNames);
+            var isAspNetCoreController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, AspNetCoreControllerAttributes, AspNetCoreControllerBaseNames);
+            var isNetFrameworkController = !isAspNetCoreController && IsInheritFromTypes(typeDef, metadataReader, NetFrameworkControllerBaseNames);
+            var isController = isAspNetCoreController || isNetFrameworkController;
             if (!isController)
             {
                 isPageModel = IsInheritFromTypes(typeDef, metadataReader, PageModelBaseNames);
@@ -101,7 +122,13 @@ internal static class EndpointDetector
                     continue;
                 }
 
-                if (isController && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, ActionAttributes))
+                if (isAspNetCoreController && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, AspNetCoreActionAttributes))
+                {
+                    builder.Add(metadataReader.GetToken(methodHandle));
+                    continue;
+                }
+
+                if (isNetFrameworkController && !HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, NetFrameworkNonActionAttributes))
                 {
                     builder.Add(metadataReader.GetToken(methodHandle));
                     continue;
@@ -141,7 +168,8 @@ internal static class EndpointDetector
     {
         var attributes = methodDef.Attributes;
         return (attributes & MethodAttributes.Public) != 0 &&
-               (attributes & MethodAttributes.Static) == 0;
+               (attributes & MethodAttributes.Static) == 0 &&
+               (attributes & MethodAttributes.SpecialName) == 0;
     }
 
     private static bool IsInheritFromTypesOrHasAttribute(TypeDefinition typeDef, MetadataReader reader, HashSet<string> attributesNames, HashSet<string> baseTypeNames)
