@@ -42,6 +42,9 @@ class Program
         Evaluator.Evaluate("rule-based-flag");
         Evaluator.Evaluate("numeric-rule-flag");
         Evaluator.Evaluate("time-based-flag");
+
+        Console.WriteLine("Extra checks...");
+        Evaluator.ExtraChecks();
     }
 
 

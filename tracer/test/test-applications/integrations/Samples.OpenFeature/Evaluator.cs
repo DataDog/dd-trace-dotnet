@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Diagnostics;
 using OpenFeature.Model;
 
 namespace Samples.FeatureFlags;
@@ -51,5 +51,21 @@ class Evaluator
         }
 
         return (evaluation.Value, evaluation.ErrorMessage);
+    }
+
+    public static void ExtraChecks()
+    {
+        var key = "simple-json";
+        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+
+        var defaultValue = new Value("Not found");
+        var evaluation = client.GetObjectDetailsAsync(key, defaultValue, context).Result;
+
+        Debug.Assert(evaluation is not null);
+        Debug.Assert(evaluation.ErrorMessage is null);
+        Debug.Assert(evaluation.Value != defaultValue);
+        Debug.Assert(evaluation.Value.IsStructure);
+        Debug.Assert(evaluation.Value.AsStructure.ContainsKey("integer"));
+        Debug.Assert(evaluation.Value.AsStructure.GetValue("integer").AsInteger == 1);
     }
 }
