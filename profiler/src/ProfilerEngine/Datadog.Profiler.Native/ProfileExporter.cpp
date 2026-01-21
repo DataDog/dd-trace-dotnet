@@ -86,8 +86,8 @@ ProfileExporter::ProfileExporter(
     IMetadataProvider* metadataProvider,
     ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder,
-    IHeapSnapshotManager* heapSnapshotManager)
-    :
+    IHeapSnapshotManager* heapSnapshotManager,
+    libdatadog::SymbolsStore* symbolsStore) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
@@ -96,8 +96,9 @@ ProfileExporter::ProfileExporter(
     _configuration{configuration},
     _runtimeInfo{runtimeInfo},
     _ssiManager{ssiManager},
-    ProviderList{GetEnabledProfilers(enabledProfilers)},
-    _heapSnapshotManager{heapSnapshotManager}
+    _providerList{GetEnabledProfilers(enabledProfilers)},
+    _heapSnapshotManager{heapSnapshotManager},
+    _pSymbolsStore{symbolsStore}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -162,7 +163,7 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 
 std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName), _pSymbolsStore);
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
@@ -886,7 +887,7 @@ void ProfileExporter::AppendProfilerInfo(std::stringstream& builder, std::string
         builder << ",";
         AppendValue(builder, "activation", activationValue);
         builder << ",";
-        AppendValue(builder, "provider_list", ProviderList);
+        AppendValue(builder, "provider_list", _providerList);
         builder << ",";
         ElementStart(builder, "runtime");
             AppendValue(builder, "os", _runtimeInfo->GetOs());

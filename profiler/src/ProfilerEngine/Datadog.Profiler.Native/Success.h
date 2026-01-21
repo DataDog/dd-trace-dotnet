@@ -14,7 +14,7 @@ class Success
 {
 public:
     Success();
-    Success(std::unique_ptr<SuccessImpl> error);
+    Success(SuccessImpl* error);
     ~Success();
 
     Success(Success&& o) noexcept;
@@ -28,6 +28,6 @@ public:
     }
 
 private:
-    std::unique_ptr<SuccessImpl> _details;
+    SuccessImpl* _details;
 };
 } // namespace libdatadog

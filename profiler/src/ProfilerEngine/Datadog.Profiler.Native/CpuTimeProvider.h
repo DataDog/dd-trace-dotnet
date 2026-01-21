@@ -12,6 +12,9 @@
 class IConfiguration;
 class SampleValueTypeProvider;
 class RawSampleTransformer;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class CpuTimeProvider
     :
@@ -21,7 +24,8 @@ public:
     CpuTimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     static std::vector<SampleValueType> SampleTypeDefinitions;
 };

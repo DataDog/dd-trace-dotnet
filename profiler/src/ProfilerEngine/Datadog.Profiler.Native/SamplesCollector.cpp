@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "OpSysTools.h"
 #include "SamplesEnumerator.h"
+#include "SymbolsStore.h"
 
 #include <chrono>
 
@@ -16,12 +17,13 @@ SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
     IThreadsCpuManager* pThreadsCpuManager,
     IExporter* exporter,
-    IMetricsSender* metricsSender) :
+    IMetricsSender* metricsSender,
+    libdatadog::SymbolsStore* pSymbolsStore) :
     _uploadInterval{configuration->GetUploadInterval()},
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
-    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, Callstack::MaxFrames)}
+    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, Callstack::MaxFrames, pSymbolsStore)}
 {
 }
 

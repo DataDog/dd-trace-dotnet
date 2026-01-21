@@ -46,7 +46,7 @@ struct ProfileImpl
     }
 
 private:
-    std::vector<ddog_prof_Location> _locations;
+    std::vector<ddog_prof_Location2> _locations;
     std::size_t _locationsSize = 512;
 
     ddog_prof_Profile _inner;
@@ -68,7 +68,7 @@ struct tuple_size<libdatadog::ProfileImpl> : std::integral_constant<size_t, 3>
 template <>
 struct tuple_element<0, libdatadog::ProfileImpl>
 {
-    using type = std::vector<ddog_prof_Location>;
+    using type = std::vector<ddog_prof_Location2>;
 };
 template <>
 struct tuple_element<1, libdatadog::ProfileImpl>
