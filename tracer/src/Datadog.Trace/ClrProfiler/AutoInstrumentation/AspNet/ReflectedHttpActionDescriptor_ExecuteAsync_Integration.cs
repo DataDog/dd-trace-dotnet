@@ -16,8 +16,11 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -70,7 +73,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
 
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AddSpanCodeOrigin(instance, codeOrigin);
+                }
+            }
+            catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+            }
+
             return CallTargetState.GetDefault();
+        }
+
+        private static void AddSpanCodeOrigin<TTarget>(TTarget instance, SpanCodeOrigin codeOrigin)
+        {
+            if (SharedItems.TryPeekScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey) is not { Root.Span: { } rootSpan })
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Code origin is enabled for spans but WebApi2 scope was not found in HttpContext.");
+                }
+
+                return;
+            }
+
+            if (instance is null)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Code origin is enabled for spans but ReflectedHttpActionDescriptor instance was null.");
+                }
+
+                return;
+            }
+
+            if (!instance.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected) || reflected.MethodInfo is not { } actionMethod)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled for spans but could not extract WebApi2 action MethodInfo from ReflectedHttpActionDescriptor type {ActionDescriptorType}.",
+                        instance.GetType());
+                }
+
+                return;
+            }
+
+            if (actionMethod.DeclaringType is not { } actionType)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled for spans but extracted WebApi2 action MethodInfo has no DeclaringType. Method: {Method}.",
+                        actionMethod);
+                }
+
+                return;
+            }
+
+            codeOrigin.SetCodeOriginForEntrySpan(rootSpan, actionType, actionMethod);
         }
 
         internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception? exception, in CallTargetState state)
