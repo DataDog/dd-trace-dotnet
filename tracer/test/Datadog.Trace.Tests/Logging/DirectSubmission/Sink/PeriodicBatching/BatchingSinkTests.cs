@@ -52,6 +52,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
+            await sink.FlushAsync();
             await sink.DisposeAsync();
 
             sink.Batches.Count.Should().Be(1);
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
-            await WaitForBatchesAsync(sink);
+            await sink.FlushAsync();
             await sink.DisposeAsync();
 
             sink.Batches.Count.Should().Be(1);
