@@ -597,7 +597,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void CaptureEntryAsyncMethod<T>(ref CaptureInfo<T> info)
         {
             CaptureEntryMethodStartMarker(ref info);
-            bool hasArgument = CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             CaptureEntryMethodEndMarker(info.Value, info.Type);
         }
 
@@ -607,10 +607,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             _errors = evaluationResult.Errors;
         }
 
-        private bool CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
+        private void CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
         {
             // capture hoisted arguments
-            var hasArgument = false;
             for (var index = 0; index < asyncHoistedArguments.Length; index++)
             {
                 ref var argument = ref asyncHoistedArguments[index];
@@ -621,10 +620,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 var argumentValue = argument.GetValue(moveNextInvocationTarget);
                 CaptureArgument(argumentValue, argument.Name, argumentValue?.GetType() ?? argument.FieldType);
-                hasArgument = true;
             }
-
-            return hasArgument;
         }
 
         private void ExitAsyncMethodStart<T>(ref CaptureInfo<T> info)
