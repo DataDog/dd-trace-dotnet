@@ -53,6 +53,7 @@ namespace Datadog.Trace.OpenTelemetry.Traces;
 /// </example>
 internal sealed class OtlpTracesSerializer
 {
+    internal static readonly int SpanAttributeCountLimit = 128;
     internal static readonly int EventCountLimit = 128;
     internal static readonly int LinkCountLimit = 128;
     internal static readonly int AttributePerEventCountLimit = 128;
@@ -245,12 +246,8 @@ internal sealed class OtlpTracesSerializer
         // attributes (optional)
         // TODO: Actually implement
         int droppedAttributesCount = 0;
-        // if (spanModel.Span.Attributes != null && spanModel.Span.Attributes.Count > 0)
-        // {
-        //     writer.WritePropertyName("attributes");
-        //     WriteKeyValueArray(writer, spanModel.Span.Attributes);
-        //     droppedAttributesCount = WriteKeyValueArrayWithLimit(writer, spanModel.Span.Attributes, AttributePerLinkCountLimit);
-        // }
+        writer.WritePropertyName("attributes");
+        droppedAttributesCount = OtlpMapper.WriteDatadogSpanAttributes(writer, in spanModel, SpanAttributeCountLimit);
 
         // droppedAttributesCount (optional)
         if (droppedAttributesCount > 0)
