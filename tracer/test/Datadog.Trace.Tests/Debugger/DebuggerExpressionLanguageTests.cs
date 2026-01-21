@@ -183,6 +183,35 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(notEqualsCompiled.Errors == null || notEqualsCompiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_ValueTypeNull_UsesDefaultValue()
+        {
+            // Arrange
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.Duration = new ScopeMember("@duration", typeof(TimeSpan), null, ScopeMemberKind.Duration);
+
+            const string json = """
+                                {
+                                  "ref": "@duration"
+                                }
+                                """;
+
+            // Act
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<TimeSpan>(result);
+            Assert.Equal(default(TimeSpan), (TimeSpan)result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
