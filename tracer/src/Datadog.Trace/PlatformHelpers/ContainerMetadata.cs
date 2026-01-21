@@ -66,7 +66,11 @@ namespace Datadog.Trace.PlatformHelpers
         public string ContainerTagsHash
         {
             get => Volatile.Read(ref field);
-            set => Volatile.Write(ref field, value);
+            set
+            {
+                Volatile.Write(ref field, value);
+                BaseHash.Recompute(ProcessTags.SerializedTags, value);
+            }
         }
 
         /// <summary>

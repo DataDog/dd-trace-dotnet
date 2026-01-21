@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
@@ -21,7 +22,13 @@ internal static class BaseHash
     /// <summary>
     /// Gets the base64 representation of the hash
     /// </summary>
-    public static string B64Value { get; private set; } = Recompute(ProcessTags.SerializedTags, ContainerMetadata.Instance.ContainerTagsHash);
+    public static string B64Value
+    {
+        get => Volatile.Read(ref field);
+        private set => Volatile.Write(ref field, value);
+    }
+
+        = Recompute(ProcessTags.SerializedTags, ContainerMetadata.Instance.ContainerTagsHash);
 
     public static string Recompute(string processTags, string? containerTagsHash)
     {
