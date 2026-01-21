@@ -1,4 +1,4 @@
-// <copyright file="FeatureFlagsSdkEvaluateIntegration.cs" company="Datadog">
+// <copyright file="OpenFeatureSdkEvaluateIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,23 +11,23 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
 /// <summary>
 /// Datadog.Trace.FeatureFlags.IEvaluation Datadog.Trace.FeatureFlags.FeatureFlagsSdk::Evaluate(System.String,System.Type,System.Object,Datadog.Trace.FeatureFlags.IEvaluationContext) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "Datadog.Trace.Manual",
-    TypeName = "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    AssemblyName = "Datadog.FeatureFlags.OpenFeature",
+    TypeName = "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     MethodName = "Evaluate",
     ReturnTypeName = "Datadog.Trace.FeatureFlags.IEvaluation",
     ParameterTypeNames = [ClrNames.String, "Datadog.Trace.FeatureFlags.ValueType", ClrNames.Object, ClrNames.String, "System.Collections.Generic.IDictionary`2[System.String,System.Object]"],
-    MinimumVersion = "3.31.0",
-    MaximumVersion = "3.*.*",
-    IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.OpenFeature))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public sealed class FeatureFlagsSdkEvaluateIntegration
+public sealed class OpenFeatureSdkEvaluateIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
