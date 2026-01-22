@@ -112,11 +112,16 @@ bool DbgHelpParser::LoadPdbFile(const std::string& pdbFilePath)
         return false;
     }
 
-    // fill up the ModuleDebugInfo methods unordered map
-    _pModuleInfo->RvaToDebugInfo.reserve(_methods.size() + 1);
+    // fill up the ModuleDebugInfo methods vector
+    _pModuleInfo->RidToDebugInfo.reserve(_methods.size() + 1);
+
+    // first element is for RID 0 which is not used
+    _pModuleInfo->RidToDebugInfo.push_back({NoFileFoundString, 0});
+
+    // then insert all methods found in the .pdb
     for (const MethodInfo& sym : _methods)
     {
-        _pModuleInfo->RvaToDebugInfo[sym.RVA] = {sym.sourceFile, sym.lineNumber};
+        _pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
     }
 
     return true;
@@ -140,14 +145,13 @@ BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, UL
 
     if (
         (pSymInfo->Tag == SymTagFunction)
-        //&& ((pSymInfo->Flags & (SYMFLAG_CLR_TOKEN | SYMFLAG_METADATA)) == (SYMFLAG_CLR_TOKEN | SYMFLAG_METADATA))
+        && ((pSymInfo->Flags & (SYMFLAG_CLR_TOKEN | SYMFLAG_METADATA)) == (SYMFLAG_CLR_TOKEN | SYMFLAG_METADATA))
         )
     {
-        // extract the RID from the method name Method.#<RID>
         MethodInfo info;
         info.address = pSymInfo->Address;
         info.size = pSymInfo->Size;
-        info.RVA = static_cast<uint32_t>(pSymInfo->Address - pSymInfo->ModBase);
+        info.rid = parser->_currentRID++;
 
         // Try to get source file and line information
         IMAGEHLP_LINE64 line = { 0 };
@@ -174,6 +178,12 @@ BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, UL
 
 bool DbgHelpParser::ComputeMethodsInfo()
 {
+    // first RID is 1
+    _currentRID = 1;
+
+    // the method symbols are enumerated in an implicit "RID" order corresponding
+    // to the same order as in the metadata methodDef table
+    // --> the rid will be the index in the enumeration
     if (!SymEnumSymbols(
             _hProcess,
             _baseAddress,

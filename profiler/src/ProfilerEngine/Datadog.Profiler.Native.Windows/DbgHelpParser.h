@@ -16,7 +16,7 @@
 
 struct MethodInfo
 {
-    uint32_t RVA;
+    uint32_t rid;
     uint64_t address;
     uint32_t size;
     std::string_view sourceFile;
@@ -67,6 +67,9 @@ private:
 
     HANDLE _hProcess;
     uint64_t _baseAddress;
+
+    // the symbols are enumerated in an implicit "RID" order
+    uint32_t _currentRID;
 
     // strings corresponding to source file paths are stored in the given ModuleDebugInfo
     // but we use this map to avoid duplications

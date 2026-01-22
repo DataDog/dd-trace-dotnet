@@ -28,8 +28,6 @@ enum class SymbolLoadingState
     Windows
 };
 
-// TODO: not sure if it would be worth having a base class and two derived classes
-// to avoid having both a vector and an unordered_map in the same structure
 struct ModuleDebugInfo
 {
 public:
@@ -40,11 +38,6 @@ public:
 
     // for Portable PDBs, we can use directly the RID from the methodDef token to lookup the debug info
     std::vector<SymbolDebugInfo> RidToDebugInfo;
-
-#ifdef _WINDOWS
-    // for Windows PDBs, we need to use the RVA to find the correct method
-    std::unordered_map<ULONG, SymbolDebugInfo> RvaToDebugInfo;
-#endif
 
     SymbolLoadingState LoadingState;
     bool ErrorLogged = false;
@@ -60,7 +53,7 @@ public:
 public:
     DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* configuration) noexcept;
 
-    SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef, ULONG rva);
+    SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
     // for tests
     void ParseModuleDebugInfo(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
@@ -72,7 +65,10 @@ private:
     template <typename TInfo>
     SymbolDebugInfo GetFromRID(TInfo& info, ModuleID moduleId, RID rid)
     {
-        auto invalidInfo = (info.LoadingState != SymbolLoadingState::Portable) || rid >= info.RidToDebugInfo.size();
+        auto invalidInfo =
+            (info.LoadingState == SymbolLoadingState::Failed) ||
+            (info.LoadingState == SymbolLoadingState::Unknown) ||
+            (rid >= info.RidToDebugInfo.size());
         if (!invalidInfo)
         {
             return info.RidToDebugInfo[rid];
@@ -82,9 +78,12 @@ private:
         auto alreadyLogged = std::exchange(info.ErrorLogged, true);
         if (!alreadyLogged)
         {
-            if (info.LoadingState != SymbolLoadingState::Portable)
+            if (
+                (info.LoadingState == SymbolLoadingState::Failed) ||
+                (info.LoadingState == SymbolLoadingState::Unknown)
+                )
             {
-                Log::Info("The portable debug info for the module `", info.ModulePath, "` seems to be invalid");
+                Log::Info("The debug info for the module `", info.ModulePath, "` seems to be invalid");
             }
             else
             if (rid >= info.RidToDebugInfo.size())
@@ -97,30 +96,6 @@ private:
     }
 
 #ifdef _WINDOWS
-    SymbolDebugInfo GetFromRVA(ModuleDebugInfo& info, ULONG rva)
-    {
-        auto it = info.RvaToDebugInfo.find(rva);
-        if (it != info.RvaToDebugInfo.end())
-        {
-            return it->second;
-        }
-
-        // log only once per module
-        auto alreadyLogged = std::exchange(info.ErrorLogged, true);
-        if (!alreadyLogged)
-        {
-            if (info.LoadingState != SymbolLoadingState::Windows)
-            {
-                Log::Info("The Windows debug info for the module `", info.ModulePath, "` seems to be invalid");
-            }
-            else
-            {
-                Log::Info("No debug info found for RVA ", rva, " in module `", info.ModulePath, "`");
-            }
-        }
-        return SymbolDebugInfo{NoFileFound, NoStartLine};
-    }
-
     bool TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo);
 #endif
 

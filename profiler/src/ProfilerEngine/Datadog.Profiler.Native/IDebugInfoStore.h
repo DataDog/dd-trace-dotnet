@@ -22,5 +22,5 @@ class IDebugInfoStore
 {
 public:
     virtual ~IDebugInfoStore() = default;
-    virtual SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef, ULONG rva) = 0;
+    virtual SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef) = 0;
 };

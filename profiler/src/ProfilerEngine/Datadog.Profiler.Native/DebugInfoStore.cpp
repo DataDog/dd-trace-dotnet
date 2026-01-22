@@ -28,7 +28,7 @@ DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* 
 {
 }
 
-SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef, ULONG rva)
+SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
 {
     if (!_isEnabled)
     {
@@ -47,16 +47,12 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef, UL
     ModuleDebugInfo& info = (it == _modulesInfo.cend()) ? _modulesInfo[moduleId] : it->second;
 
     // we should support 2 situations:
-    //  - portable .pdb was found and we can use methodDef directly as RID
-    //  - only windows .pdb was found and we need to use rva instead of RID
-    if (info.LoadingState == SymbolLoadingState::Portable)
+    //  - portable .pdb was found and we can use methodDef as RID
+    //  - only windows .pdb was found and we have rebuilt the RID
+    if ((info.LoadingState == SymbolLoadingState::Portable) || (info.LoadingState == SymbolLoadingState::Windows))
     {
         auto rid = RidFromToken(methodDef);
         return GetFromRID(info, moduleId, rid);
-    }
-    else if (info.LoadingState == SymbolLoadingState::Windows)
-    {
-        return GetFromRVA(info, rva);
     }
     else
     {

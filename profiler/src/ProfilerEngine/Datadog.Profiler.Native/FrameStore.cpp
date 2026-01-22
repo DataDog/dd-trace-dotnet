@@ -241,7 +241,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     builder << " |fg:" << methodGenericParameters;
     builder << " |sg:" << signature;
 
-    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc, rva);
+    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
     std::string managedFrame = builder.str();
 

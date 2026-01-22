@@ -59,7 +59,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 
     // Validate that debug info was populated
     ASSERT_FALSE(moduleInfo.Files.empty()) << "Expected at least one source file in debug info";
-    ASSERT_FALSE(moduleInfo.RvaToDebugInfo.empty()) << "Expected RVA to debug info mapping for Windows PDB";
+    ASSERT_FALSE(moduleInfo.RidToDebugInfo.empty()) << "Expected RID to debug info mapping for Windows PDB";
 
     // The first entry should be the empty string placeholder
     ASSERT_EQ(moduleInfo.Files[0], DebugInfoStore::NoFileFound);
@@ -79,12 +79,12 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
     }
     ASSERT_TRUE(foundCsFile) << "Expected at least one .cs source file in debug info";
 
-    // Validate that we have RVA mappings
-    ASSERT_GT(moduleInfo.RvaToDebugInfo.size(), 0) << "Expected RVA to debug info mappings";
+    // Validate that we have RID mappings
+    ASSERT_GT(moduleInfo.RidToDebugInfo.size(), 1) << "Expected RID to debug info mappings";
 
-    // Validate that at least some RVA entries have valid line numbers
+    // Validate that at least some entries have valid line numbers
     bool foundValidLineNumber = false;
-    for (const auto& [rva, debugInfo] : moduleInfo.RvaToDebugInfo)
+    for (const auto& debugInfo : moduleInfo.RidToDebugInfo)
     {
         if (debugInfo.StartLine > 0 && debugInfo.File != DebugInfoStore::NoFileFound)
         {
