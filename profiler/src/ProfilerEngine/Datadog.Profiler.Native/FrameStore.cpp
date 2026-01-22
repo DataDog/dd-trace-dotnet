@@ -191,7 +191,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
-    auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
+    auto [rva, methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
@@ -241,7 +241,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     builder << " |fg:" << methodGenericParameters;
     builder << " |sg:" << signature;
 
-    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
+    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc, rva);
 
     std::string managedFrame = builder.str();
 
@@ -557,17 +557,17 @@ bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr
     return true;
 }
 
-std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
+std::tuple<ULONG, std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     FunctionID functionId,
     IMetaDataImport2* pMetadataImport,
     mdMethodDef mdTokenFunc,
     ULONG32 genericParametersCount,
     ClassID* genericParameters)
 {
-    auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
+    auto [methodName, mdTokenType, rva] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        return std::make_tuple(std::move(methodName), std::string(), mdTokenType);
+        return std::make_tuple(rva, std::move(methodName), std::string(), mdTokenType);
     }
 
     // Get generic parameters if any
@@ -606,7 +606,7 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << ">";
 
-    return std::make_tuple(methodName, builder.str(), mdTokenType);
+    return std::make_tuple(rva, methodName, builder.str(), mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -935,27 +935,28 @@ std::tuple<std::string, std::string, std::string> FrameStore::GetManagedTypeName
     }
 }
 
-std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
+std::tuple<std::string, mdTypeDef, ULONG> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
 {
     // get the method name
     ULONG nameCharCount = 0;
+    ULONG rva = 0;
     HRESULT hr = pMetadataImport->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
     mdTypeDef mdTokenType;
 
-    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
+    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, &rva, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
+    return std::make_tuple(shared::ToString(buffer.get()), mdTokenType, rva);
 }
 
 std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, mdTypeDef mdTokenType, FunctionID functionId, mdMethodDef mdTokenFunc)

@@ -215,6 +215,7 @@
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
     <ClInclude Include="chrono_helper.hpp" />
     <ClInclude Include="CrashReportingWindows.h" />
+    <ClInclude Include="DbgHelpParser.h" />
     <ClInclude Include="EtwEventsManager.h" />
     <ClInclude Include="ETW\EtwEventsHandler.h" />
     <ClInclude Include="ETW\IIpcLogger.h" />
@@ -233,6 +234,7 @@
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
     <ClCompile Include="CrashReportingWindows.cpp" />
+    <ClCompile Include="DbgHelpParser.cpp" />
     <ClCompile Include="EtwEventsManager.cpp" />
     <ClCompile Include="ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="ETW\IpcClient.cpp" />
