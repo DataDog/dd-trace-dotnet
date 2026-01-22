@@ -379,6 +379,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 targetTest.Meta.Remove(TestTags.TestIsNew);
                 targetTest.Meta.Remove(TestTags.TestIsRetry);
 
+                // Remove test final status
+                targetTest.Meta.Remove(TestTags.TestFinalStatus);
+
                 // Remove capabilities
                 targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
                 targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
