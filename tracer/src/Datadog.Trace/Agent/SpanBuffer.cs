@@ -120,9 +120,7 @@ namespace Datadog.Trace.Agent
                     // Now we create a list of SccopeSpans which differs based on the InstrumentationScope
                     // For now, let's assume all spans come from the same InstrumentationScope
                     // TODO: Convert trace chunk to TracesData
-                    size = OtlpTracesSerializer.SerializeToJson(ref temporaryBuffer, 0, in traceChunk);
-                    var json = System.Text.Encoding.UTF8.GetString(temporaryBuffer); // TODO: Delete
-                    Console.WriteLine(json);
+                    size = OtlpTracesSerializer.SerializeToJson(ref temporaryBuffer, 0, in traceChunk, maxSize: _maxBufferSize);
                 }
 
                 if (size == 0)

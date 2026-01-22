@@ -9,6 +9,7 @@ using System.IO;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -70,8 +71,9 @@ internal sealed class OtlpTracesSerializer
     /// <param name="bytes">The temporary byte buffer</param>
     /// <param name="offset">The offset of the temporary byte buffer</param>
     /// <param name="traceChunk">The trace chunk to serialize</param>
+    /// <param name="maxSize">Maximum allowed size of the trace chunk</param>
     /// <returns>UTF-8 encoded JSON byte array</returns>
-    public static int SerializeToJson(ref byte[] bytes, int offset, in TraceChunkModel traceChunk)
+    public static int SerializeToJson(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, int? maxSize)
     {
         using var memoryStream = new MemoryStream();
         using var streamWriter = new StreamWriter(memoryStream, EncodingHelpers.Utf8NoBom, bufferSize: 4096, leaveOpen: true);
@@ -89,12 +91,14 @@ internal sealed class OtlpTracesSerializer
         // Get the length of the written JSON
         var length = (int)memoryStream.Position;
 
-        // Ensure the target buffer has enough space
-        if (bytes.Length < offset + length)
+        if (maxSize != null && length - offset >= maxSize)
         {
-            // Indicate an error by returning 0
+            // We've already reached the maximum size, give up
             return 0;
         }
+
+        // Ensure the target buffer has enough space
+        MessagePackBinary.EnsureCapacity(ref bytes, offset, length);
 
         // Copy the internal buffer to the target buffer
         // MemoryStream.GetBuffer() returns the internal buffer without copying
