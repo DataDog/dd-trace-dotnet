@@ -67,13 +67,10 @@ internal static class OtlpMapper
             tagProcessors = tracer.TracerManager?.TagProcessors;
         }
 
-        if (tagProcessors is not null && tagProcessors.Length > 0)
-        {
-            var tagWriter = new TagWriter(writer, tagProcessors, count, limit);
-            spanModel.Span.Tags.EnumerateTags(ref tagWriter);
-            count += tagWriter.Count;
-            droppedAttributesCount += tagWriter.DroppedCount;
-        }
+        var tagWriter = new TagWriter(writer, tagProcessors, count, limit);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        count += tagWriter.Count;
+        droppedAttributesCount += tagWriter.DroppedCount;
 
         // Write trace tags
 
@@ -151,13 +148,10 @@ internal static class OtlpMapper
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        if (tagProcessors is not null && tagProcessors.Length > 0)
-        {
-            var metricsWriter = new TagWriter(writer, tagProcessors, count, limit);
-            spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
-            count += metricsWriter.Count;
-            droppedAttributesCount += metricsWriter.DroppedCount;
-        }
+        var metricsWriter = new TagWriter(writer, tagProcessors, count, limit);
+        spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
+        count += metricsWriter.Count;
+        droppedAttributesCount += metricsWriter.DroppedCount;
 
         // if (model.IsLocalRoot)
         // add the "apm.enabled" tag with a value of 0
@@ -172,14 +166,14 @@ internal static class OtlpMapper
     internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
     {
         private readonly JsonTextWriter _writer;
-        private readonly ITagProcessor[] _tagProcessors;
+        private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
 
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(JsonTextWriter writer, ITagProcessor[] tagProcessors, int count, int limit)
+        internal TagWriter(JsonTextWriter writer, ITagProcessor[]? tagProcessors, int count, int limit)
         {
             _writer = writer;
             _tagProcessors = tagProcessors;
