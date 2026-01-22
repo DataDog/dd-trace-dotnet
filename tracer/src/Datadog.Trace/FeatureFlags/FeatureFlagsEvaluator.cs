@@ -21,7 +21,6 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
         internal const string MetadataAllocationKey = "dd_allocationKey";
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
@@ -432,17 +431,16 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            if (DateTime.TryParseExact(
+            if (DateTime.TryParse(
                     dateString,
-                    DateFormat,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.AdjustToUniversal,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
                     out var dt))
             {
                 return dt;
             }
 
-            throw new FormatException("Wrong date format");
+            throw new FormatException($"Wrong date format: {dateString}");
         }
 
         private static object? ResolveAttribute(string? name, EvaluationContext? context)
