@@ -296,7 +296,9 @@ namespace Datadog.Trace.TestHelpers
                         }
 
                         _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
-                        var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+                        var testFullName = testCase.DisplayName.StartsWith(TestMethod.TestClass.Class.Name) ?
+                            testCase.DisplayName :
+                            $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
                         await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
                     }
                 }
