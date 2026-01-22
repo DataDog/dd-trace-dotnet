@@ -296,8 +296,6 @@ namespace Datadog.Trace.Agent
                     healthStats?.Increment(TracerMetricNames.Api.Requests);
                     // Remove the fixed-size header from the buffer
                     var tracesNoFixedHeader = new ArraySegment<byte>(traces.Array, traces.Offset + SpanBuffer.HeaderSize, traces.Count - SpanBuffer.HeaderSize);
-                    var json = Datadog.Trace.Util.EncodingHelpers.Utf8NoBom.GetString(tracesNoFixedHeader.Array, tracesNoFixedHeader.Offset, tracesNoFixedHeader.Count); // TODO: Delete
-                    Console.WriteLine(json);
                     // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
                     response = await request.PostAsync(tracesNoFixedHeader, MimeTypes.Json).ConfigureAwait(false);
                 }
