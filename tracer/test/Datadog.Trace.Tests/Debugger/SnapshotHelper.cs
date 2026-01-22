@@ -61,7 +61,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureArgument(args[i], "arg" + i, args[i].GetType());
             }
 
-            snapshotCreator.EndEntry(hasArgumentsOrLocals: args.Length > 0);
+            snapshotCreator.EndEntry();
         }
 
         {
@@ -82,7 +82,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureInstance(instance, instance.GetType());
             }
 
-            snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
+            snapshotCreator.EndReturn();
         }
 
         snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");

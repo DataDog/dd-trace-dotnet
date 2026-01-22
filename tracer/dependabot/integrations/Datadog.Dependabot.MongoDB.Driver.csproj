@@ -6,11 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Integration: MongoDB.Driver -->
-    <!--    Assembly: MongoDB.Driver -->
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.5.2 -->
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.6.0 -->
     <PackageReference Include="MongoDB.Driver" Version="3.5.2" />
   </ItemGroup>
 
