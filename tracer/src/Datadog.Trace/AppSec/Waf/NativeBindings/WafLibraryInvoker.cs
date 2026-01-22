@@ -168,8 +168,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <summary>
         /// Initializes static members of the <see cref="WafLibraryInvoker"/> class.
         /// </summary>
+        /// <param name="ddDotnetTracerHome">DD_DOTNET_TRACER_HOME value</param>
+        /// <param name="traceNativeEnginePath">DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH value, internal env var set by native loader</param>
         /// <param name="libVersion">can be null, means use a specific version in the name of the loaded file </param>
-        internal static LibraryInitializationResult Initialize(string libVersion = null)
+        internal static LibraryInitializationResult Initialize(string ddDotnetTracerHome, string traceNativeEnginePath, string libVersion = null)
         {
             var fd = FrameworkDescription.Instance;
 
@@ -181,7 +183,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             IntPtr libraryHandle;
             if (libName != null && runtimeIds != null)
             {
-                var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
+                var paths = LibraryLocationHelper.GetDatadogNativeFolders(ddDotnetTracerHome, traceNativeEnginePath, fd, runtimeIds);
                 if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
                 {
                     return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.LibraryLoad);

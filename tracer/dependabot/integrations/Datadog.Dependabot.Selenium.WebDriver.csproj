@@ -8,7 +8,7 @@
   <ItemGroup>
     <!-- Integration: WebDriver -->
     <!--    Assembly: WebDriver -->
-    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.39.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.40.0 -->
     <PackageReference Include="Selenium.WebDriver" Version="4.39.0" />
   </ItemGroup>
 

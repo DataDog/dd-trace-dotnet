@@ -18,7 +18,6 @@
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
 
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 

@@ -658,10 +658,10 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
             // these are SSI variables that would be useful for correlation purposes
-            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
-            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InjectForce), recordValue: true, ConfigurationOrigins.EnvVars);
 
-            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+            var installType = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallType);
 
             var instrumentationSource = installType switch
             {
@@ -669,7 +669,7 @@ namespace Datadog.Trace.Configuration
                 "dd_trace_tool" => "cmd_line",
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
-                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)) => "ssi", // "normal" ssi
                 _ => "manual" // everything else
             };
 
@@ -750,7 +750,7 @@ namespace Datadog.Trace.Configuration
                 // SSI already utilizes libdatadog. To prevent unexpected behavior,
                 // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
                 // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)))
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(

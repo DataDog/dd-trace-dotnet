@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36908.2
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -632,6 +632,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.Analyzers.CodeFixes", "tracer\src\Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj", "{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FleetInstaller.IntegrationTests", "tracer\test\Datadog.FleetInstaller.IntegrationTests\Datadog.FleetInstaller.IntegrationTests.csproj", "{64258238-DE63-4A0F-A618-DF51735BA22A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature", "tracer\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj", "{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.LifetimeManager.TerminationSignals", "tracer\test\test-applications\integrations\Samples.LifetimeManager.TerminationSignals\Samples.LifetimeManager.TerminationSignals.csproj", "{0E3E1069-80FF-99C9-D29F-936D96D5F516}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1537,6 +1541,14 @@ Global
 		{64258238-DE63-4A0F-A618-DF51735BA22A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64258238-DE63-4A0F-A618-DF51735BA22A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64258238-DE63-4A0F-A618-DF51735BA22A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1787,6 +1799,8 @@ Global
 		{021D714E-1764-D76B-15B5-C9114FE934C2} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{32521F0A-D52D-4DB1-86C4-3D72DEDA6E55} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{64258238-DE63-4A0F-A618-DF51735BA22A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{0E3E1069-80FF-99C9-D29F-936D96D5F516} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1800,6 +1814,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0c0578cb-3b67-4f95-8547-206cd2a560cd}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0df4363a-0df4-4882-a39f-3c9f404b8de5}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0e036453-2c80-4fc9-a517-771f0071734b}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0e3e1069-80ff-99c9-d29f-936d96d5f516}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f0f7d45-0e13-42b0-a158-8f303bbe8358}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f1d9fb5-4415-40f1-b7b0-6dd5a3bab0c4}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f8eab52-0c5b-4f60-92c5-42fac21f4e77}*SharedItemsImports = 5

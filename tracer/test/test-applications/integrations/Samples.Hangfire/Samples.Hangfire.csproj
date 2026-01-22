@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   
   <PropertyGroup>
-    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
-    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.7.0</ApiVersion>
     <Nullable>enable</Nullable>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>

@@ -68,7 +68,7 @@
                     "access_modifiers": [
                       "sanitized"
                     ],
-                    "return_type": "System.Bool",
+                    "return_type": "System.Boolean",
                     "start_column": 999,
                     "end_column": 999
                   },
@@ -219,7 +219,7 @@
                     "access_modifiers": [
                       "sanitized"
                     ],
-                    "return_type": "System.Bool",
+                    "return_type": "System.Boolean",
                     "start_column": 999,
                     "end_column": 999
                   },

@@ -440,7 +440,11 @@ inline AppDomainID ManagedThreadInfo::GetAppDomainId()
     // the AppDomainID from a signal handler.
     AppDomainID appDomainId{0};
     HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
-    return appDomainId;
+    if (SUCCEEDED(hr))
+    {
+        return appDomainId;
+    }
+    return 0;
 }
 
 inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingContext() const

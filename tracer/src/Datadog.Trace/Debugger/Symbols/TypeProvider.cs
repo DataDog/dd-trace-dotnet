@@ -220,7 +220,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return typeCode switch
             {
                 PrimitiveTypeCode.Void => "System.Void",
-                PrimitiveTypeCode.Boolean => "System.Bool",
+                PrimitiveTypeCode.Boolean => "System.Boolean",
                 PrimitiveTypeCode.Char => "System.Char",
                 PrimitiveTypeCode.SByte => "System.SByte",
                 PrimitiveTypeCode.Byte => "System.Byte",
@@ -247,6 +247,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return type switch
             {
                 "System.Void" => PrimitiveTypeCode.Void,
+                "System.Boolean" => PrimitiveTypeCode.Boolean,
                 "System.Bool" => PrimitiveTypeCode.Boolean,
                 "System.Char" => PrimitiveTypeCode.Char,
                 "System.SByte" => PrimitiveTypeCode.SByte,
