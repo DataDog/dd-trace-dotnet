@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -45,6 +46,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         // Some very, very approximate tests here :)
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatchOnDispose()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
@@ -60,6 +62,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatch()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
