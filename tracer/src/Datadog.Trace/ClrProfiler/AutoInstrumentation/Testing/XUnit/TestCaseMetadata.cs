@@ -47,5 +47,16 @@ internal class TestCaseMetadata
 
     public bool HasAnException { get; set; } = false;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
+    /// </summary>
+    public bool InitialExecutionPassed { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether any retry execution passed. Only PASS counts as passed, not SKIP.
+    /// Used for final_status calculation (distinct from AllRetriesFailed which clears on pass OR skip).
+    /// </summary>
+    public bool AnyRetryPassed { get; set; } = false;
+
     public string UniqueID { get; }
 }

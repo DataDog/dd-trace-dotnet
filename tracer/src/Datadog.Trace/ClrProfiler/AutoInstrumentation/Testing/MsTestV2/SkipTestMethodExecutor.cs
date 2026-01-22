@@ -8,6 +8,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -37,8 +38,17 @@ internal abstract class SkipTestMethodExecutor
         if (testMethod.TryDuckCast<ITestMethod>(out var testMethodInfo))
         {
             // Create the skip span
-            MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
-               .Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
+            var test = MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false);
+            if (test is not null)
+            {
+                // Set final_status = skip for pre-execution skipped tests (ITR/attribute-based skips)
+                if (test.GetTags() is { } testTags)
+                {
+                    testTags.FinalStatus = TestTags.StatusSkip;
+                }
+
+                test.Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
+            }
         }
     }
 

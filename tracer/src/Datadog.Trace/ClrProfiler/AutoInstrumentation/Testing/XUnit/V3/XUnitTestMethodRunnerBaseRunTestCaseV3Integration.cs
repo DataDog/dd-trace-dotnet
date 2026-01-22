@@ -325,6 +325,13 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         return returnValue;
     }
 
+    /// <summary>
+    /// Read-only check of remaining ATR budget for pre-check before span closes (XUnit v3).
+    /// Returns -1 if budget is uninitialized, 0 if exhausted, or a positive number if available.
+    /// </summary>
+    internal static int GetRemainingAtrBudget()
+        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
+
     private readonly struct TestRunnerState
     {
         public readonly RetryMessageBus MessageBus;

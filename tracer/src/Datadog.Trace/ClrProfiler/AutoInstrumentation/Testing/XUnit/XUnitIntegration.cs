@@ -131,7 +131,7 @@ internal static class XUnitIntegration
                 if (testIsNew && testCaseMetadata.ExecutionIndex > 0)
                 {
                     testTags.TestIsRetry = "true";
-                    testTags.TestRetryReason = "efd";
+                    testTags.TestRetryReason = TestTags.TestRetryReasonEfd;
                 }
 
                 Common.CheckFaultyThreshold(test, Interlocked.Read(ref _newTestCases), Interlocked.Read(ref _totalTestCases));
@@ -162,6 +162,8 @@ internal static class XUnitIntegration
         // Skip tests
         if (runnerInstance.SkipReason is { } skipReason)
         {
+            // Set final_status = skip for pre-execution skipped tests (ITR/attribute-based skips)
+            testTags.FinalStatus = TestTags.StatusSkip;
             test.Close(TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return null;
         }
@@ -204,7 +206,20 @@ internal static class XUnitIntegration
                         testCaseMetadata.AllRetriesFailed = false;
                     }
 
-                    WriteFinalTagsFromMetadata(test, testCaseMetadata);
+                    // Set Skipped flag for dynamic skips
+                    if (testCaseMetadata is not null)
+                    {
+                        testCaseMetadata.Skipped = true;
+                    }
+
+                    WriteFinalTagsFromMetadata(test, testCaseMetadata, isSkip: true);
+
+                    // Handle null metadata - set final_status for tests without retry features
+                    if (testCaseMetadata is null && test.GetTags() is { } nullMetaSkipTags)
+                    {
+                        nullMetaSkipTags.FinalStatus = TestTags.StatusSkip;
+                    }
+
                     var skipReason = exception.Message.Replace("$XunitDynamicSkip$", string.Empty);
                     test.Close(TestStatus.Skip, TimeSpan.Zero, skipReason);
                 }
@@ -213,13 +228,21 @@ internal static class XUnitIntegration
                     if (testCaseMetadata != null)
                     {
                         testCaseMetadata.HasAnException = true;
+                        // ATF: AllAttemptsPassed clears on non-pass (fail or skip)
                         if (testCaseMetadata.IsAttemptToFix)
                         {
                             testCaseMetadata.AllAttemptsPassed = false;
                         }
                     }
 
-                    WriteFinalTagsFromMetadata(test, testCaseMetadata);
+                    WriteFinalTagsFromMetadata(test, testCaseMetadata, isSkip: false);
+
+                    // Handle null metadata - set final_status for tests without retry features
+                    if (testCaseMetadata is null && test.GetTags() is { } nullMetaFailTags)
+                    {
+                        nullMetaFailTags.FinalStatus = TestTags.StatusFail;
+                    }
+
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
                         var span = Tracer.Instance.ActiveScope?.Span;
@@ -233,12 +256,35 @@ internal static class XUnitIntegration
             }
             else
             {
-                if (testCaseMetadata?.TotalExecutions > 1)
+                // Test passed
+                if (testCaseMetadata is not null)
                 {
-                    testCaseMetadata.AllRetriesFailed = false;
+                    // Track pass status for final_status calculation
+                    if (testCaseMetadata.ExecutionIndex == 0)
+                    {
+                        // Initial execution passed
+                        testCaseMetadata.InitialExecutionPassed = true;
+                    }
+                    else
+                    {
+                        // Retry execution passed
+                        testCaseMetadata.AnyRetryPassed = true;
+                    }
+
+                    if (testCaseMetadata.TotalExecutions > 1)
+                    {
+                        testCaseMetadata.AllRetriesFailed = false;
+                    }
                 }
 
-                WriteFinalTagsFromMetadata(test, testCaseMetadata);
+                WriteFinalTagsFromMetadata(test, testCaseMetadata, isSkip: false);
+
+                // Handle null metadata - set final_status for tests without retry features
+                if (testCaseMetadata is null && test.GetTags() is { } nullMetaPassTags)
+                {
+                    nullMetaPassTags.FinalStatus = TestTags.StatusPass;
+                }
+
                 test.Close(TestStatus.Pass, duration);
             }
         }
@@ -256,7 +302,7 @@ internal static class XUnitIntegration
         }
     }
 
-    private static void WriteFinalTagsFromMetadata(Test test, TestCaseMetadata? testCaseMetadata)
+    private static void WriteFinalTagsFromMetadata(Test test, TestCaseMetadata? testCaseMetadata, bool isSkip)
     {
         if (testCaseMetadata == null)
         {
@@ -264,20 +310,72 @@ internal static class XUnitIntegration
         }
 
         var tags = test.GetTags();
-        if (!testCaseMetadata.IsLastRetry)
+
+        // Per-span guard to prevent duplicate setting
+        if (tags.FinalStatus is not null)
         {
             return;
         }
 
-        if (testCaseMetadata.IsAttemptToFix)
+        // Determine if this is a "final execution" for final_status calculation
+        // XUnit has a timing issue: TotalExecutions is stale during initial EFD execution
+        // (it's updated in OnAsyncMethodEnd AFTER FinishTest). Use guards to handle this.
+        var isInitialEfdOrAtfExecution = testCaseMetadata.ExecutionIndex == 0 &&
+                                          (testCaseMetadata.EarlyFlakeDetectionEnabled || testCaseMetadata.IsAttemptToFix);
+
+        // Check if EFD/ATF will retry (even if TotalExecutions is not yet set)
+        // If EFD is enabled for a new test, retries will happen regardless of initial result
+        // If ATF is enabled, retries will happen regardless of initial result
+        var willHaveRetries = isInitialEfdOrAtfExecution && testCaseMetadata.TotalExecutions <= 1;
+
+        // ATR early exit detection
+        var isAtrRetry = testCaseMetadata.IsRetry &&
+                         tags.TestRetryReason == TestTags.TestRetryReasonAtr;
+        var isAtrEarlyExit = isAtrRetry &&
+                             !testCaseMetadata.HasAnException &&
+                             !testCaseMetadata.Skipped &&
+                             !testCaseMetadata.IsLastRetry;
+
+        // ATR budget exhaustion detection (Edge Case 23)
+        var isAtrBudgetExhausted = false;
+        if (isAtrRetry && testCaseMetadata.HasAnException && !testCaseMetadata.IsLastRetry)
         {
-            tags.AttemptToFixPassed = testCaseMetadata.AllAttemptsPassed ? "true" : "false";
+            var remainingBudget = GetRemainingAtrBudget();
+            isAtrBudgetExhausted = remainingBudget <= 1;
         }
 
-        if (testCaseMetadata.AllRetriesFailed)
+        // Single-execution test: TotalExecutions == 1 means no retries were scheduled
+        var isSingleExecution = testCaseMetadata.TotalExecutions == 1 && !willHaveRetries;
+
+        var isFinalExecution = testCaseMetadata.IsLastRetry || isSingleExecution || isAtrEarlyExit || isAtrBudgetExhausted;
+
+        if (!isFinalExecution)
         {
-            tags.HasFailedAllRetries = "true";
+            return;
         }
+
+        // Only set retry-specific tags for tests with actual retries
+        if (testCaseMetadata.TotalExecutions > 1)
+        {
+            if (testCaseMetadata.IsAttemptToFix)
+            {
+                tags.AttemptToFixPassed = testCaseMetadata.AllAttemptsPassed ? "true" : "false";
+            }
+
+            if (testCaseMetadata.AllRetriesFailed)
+            {
+                tags.HasFailedAllRetries = "true";
+            }
+        }
+
+        // Calculate final_status
+        // For single-execution tests, use HasAnException to determine pass/fail
+        var anyExecutionPassed = testCaseMetadata.TotalExecutions == 1
+            ? !testCaseMetadata.HasAnException && !testCaseMetadata.Skipped // Single: no exception and not skipped = passed
+            : testCaseMetadata.InitialExecutionPassed || testCaseMetadata.AnyRetryPassed; // Retry: tracked values
+
+        var isSkippedOrInconclusive = isSkip || testCaseMetadata.Skipped;
+        tags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, isSkippedOrInconclusive, tags);
     }
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
@@ -316,5 +414,17 @@ internal static class XUnitIntegration
     internal static void IncrementTotalTestCases()
     {
         Interlocked.Increment(ref _totalTestCases);
+    }
+
+    /// <summary>
+    /// Unified read-only check of remaining ATR budget for pre-check before span closes.
+    /// Uses Math.Max to handle both v2 and v3 scenarios (they have separate budgets).
+    /// Returns -1 if budget is uninitialized, 0 if exhausted, or a positive number if available.
+    /// </summary>
+    internal static int GetRemainingAtrBudget()
+    {
+        var v2Budget = XUnitTestRunnerRunAsyncIntegration.GetRemainingAtrBudget();
+        var v3Budget = V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration.GetRemainingAtrBudget();
+        return Math.Max(v2Budget, v3Budget);
     }
 }
