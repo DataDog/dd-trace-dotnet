@@ -45,6 +45,7 @@ class Program
 
         Console.WriteLine("Extra checks...");
         Evaluator.ExtraChecks();
+        Console.WriteLine("Exit. OK");
     }
 
 

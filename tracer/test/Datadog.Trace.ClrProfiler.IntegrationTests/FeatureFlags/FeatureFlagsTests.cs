@@ -97,6 +97,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         Assert.Contains("Eval (numeric-rule-flag) : <OK: ", output);
         Assert.Contains("Eval (time-based-flag) : <OK: ", output);
         Assert.Contains("Eval (exposure-flag) : <OK: ", output);
+        Assert.Contains("Exit. OK", output);
         Assert.True(eventsReceived > 0);
     }
 

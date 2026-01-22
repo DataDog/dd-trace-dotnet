@@ -26,7 +26,7 @@ internal static class FeatureFlagsHelpers
             ["numeric-rule-flag"] = CreateNumericRuleFlag(),
             ["time-based-flag"] = CreateTimeBasedFlag(),
             ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag(),
-            ["json-flag"] = CreateSimpleFlag("simple-json", ValueType.Json, new Dictionary<string, object> { { "integer", 1 }, { "string", "one" }, { "float", 1.0 } }, "on"),
+            ["simple-json"] = CreateSimpleFlag("simple-json", ValueType.Json, new Dictionary<string, object> { { "integer", 1 }, { "string", "one" }, { "float", 1.0 } }, "on"),
         };
 
         return flags;
