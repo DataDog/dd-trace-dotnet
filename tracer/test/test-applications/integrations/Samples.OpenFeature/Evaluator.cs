@@ -61,11 +61,21 @@ class Evaluator
         var defaultValue = new Value("Not found");
         var evaluation = client.GetObjectDetailsAsync(key, defaultValue, context).Result;
 
-        Debug.Assert(evaluation is not null);
-        Debug.Assert(evaluation.ErrorMessage is null);
-        Debug.Assert(evaluation.Value != defaultValue);
-        Debug.Assert(evaluation.Value.IsStructure);
-        Debug.Assert(evaluation.Value.AsStructure.ContainsKey("integer"));
-        Debug.Assert(evaluation.Value.AsStructure.GetValue("integer").AsInteger == 1);
+        Assert(evaluation is not null, "Null eval");
+        Assert(evaluation.ErrorMessage is null, $"Non Null error ({evaluation.ErrorMessage})");
+        Assert(evaluation.Value != defaultValue, "Default value");
+        Assert(evaluation.Value.IsStructure, "No structure value");
+        Assert(evaluation.Value.AsStructure.ContainsKey("integer"), "Integer value not found");
+        Assert(evaluation.Value.AsStructure.GetValue("integer").AsInteger == 1, "Wrong Integer value");
+
+        static void Assert(bool condition, string message = "")
+        {
+            if (!condition)
+            {
+                var error = $"ERROR: Assertion failed. {message}";
+                Console.WriteLine(error);
+                throw new Exception(error);
+            }
+        }
     }
 }
