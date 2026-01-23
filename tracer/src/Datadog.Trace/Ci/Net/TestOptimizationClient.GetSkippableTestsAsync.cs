@@ -163,7 +163,10 @@ internal sealed partial class TestOptimizationClient
 
     public readonly struct SkippableTestsResponse
     {
+        [JsonProperty("correlationId")]
         public readonly string? CorrelationId;
+
+        [JsonProperty("tests")]
         public readonly ICollection<SkippableTest> Tests;
 
         public SkippableTestsResponse()
