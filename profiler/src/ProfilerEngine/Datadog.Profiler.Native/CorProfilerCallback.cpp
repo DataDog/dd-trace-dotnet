@@ -2487,10 +2487,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinish
         Log::Debug("DynamicMethodJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
         return S_OK;
     }
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->AddFunction(functionId);
-    }
+    _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
 
