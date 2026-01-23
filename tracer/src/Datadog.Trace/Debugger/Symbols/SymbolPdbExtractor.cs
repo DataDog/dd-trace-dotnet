@@ -1,4 +1,4 @@
-﻿// <copyright file="SymbolPdbExtractor.cs" company="Datadog">
+// <copyright file="SymbolPdbExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -140,6 +140,27 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
         closureMethodScope.Name = methodName;
         closureMethodScope.ScopeType = ScopeType.Closure;
+
+        // For compiler-generated state machine/closure methods, the declaring type is a generated nested type
+        // (e.g. "+<DoAsyncWork>d__3" / "+<>c__DisplayClass..."). Exposing that in the 'this' argument type
+        // is confusing for customers; for closure scopes we want 'this' to reflect the user-declared type
+        // that owns the original method.
+        var declaringTypeName = method.GetDeclaringType().FullName(MetadataReader);
+        if (!string.IsNullOrEmpty(declaringTypeName) && closureMethodScope.Symbols is { Length: > 0 } symbols)
+        {
+            for (var i = 0; i < symbols.Length; i++)
+            {
+                if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
+                {
+                    var updated = symbols[i];
+                    updated.Type = declaringTypeName;
+                    symbols[i] = updated;
+                }
+            }
+
+            closureMethodScope.Symbols = symbols;
+        }
+
         return true;
     }
 

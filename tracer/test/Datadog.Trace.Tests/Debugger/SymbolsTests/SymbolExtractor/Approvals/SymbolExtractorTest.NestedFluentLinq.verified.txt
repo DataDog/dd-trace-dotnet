@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -63,7 +63,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
@@ -92,7 +92,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
@@ -121,7 +121,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
@@ -150,7 +150,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
@@ -179,7 +179,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
@@ -208,7 +208,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
                       "symbol_type": "arg",
                       "line": 0
                     },
