@@ -405,6 +405,10 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
+            // Using TryParse instead of TryParseExact to support RFC 3339 dates with
+            // variable fractional second precision (0-9 digits). TryParseExact would
+            // require ~10 format strings. Since dates come from our controlled backend,
+            // accepting broader date formats is acceptable.
             if (DateTime.TryParse(
                     dateString,
                     CultureInfo.InvariantCulture,
