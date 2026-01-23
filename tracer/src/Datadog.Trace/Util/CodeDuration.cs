@@ -14,6 +14,18 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Util;
 
+/// <summary>
+/// Value-type duration helper that can be used in async methods (it can flow across awaits).
+/// </summary>
+/// <remarks>
+/// Avoid copying; use as a local variable only (copying can lead to multiple Dispose calls).
+/// </remarks>
+/// <example>
+/// <code>
+/// using var duration = CodeDuration.Create();
+/// await DoWorkAsync();
+/// </code>
+/// </example>
 internal struct CodeDuration : IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CodeDuration));
@@ -75,6 +87,18 @@ internal struct CodeDuration : IDisposable
     }
 }
 
+/// <summary>
+/// Ref-struct duration helper for synchronous <c>using</c> scopes only.
+/// </summary>
+/// <remarks>
+/// Cannot be captured or used across <c>await</c>.
+/// </remarks>
+/// <example>
+/// <code>
+/// using var duration = CodeDurationRef.Create();
+/// DoWork();
+/// </code>
+/// </example>
 internal ref struct CodeDurationRef
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CodeDurationRef));
