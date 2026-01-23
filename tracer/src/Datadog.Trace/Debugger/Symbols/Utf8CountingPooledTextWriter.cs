@@ -96,11 +96,15 @@ internal sealed class Utf8CountingPooledTextWriter : TextWriter
             throw new ArgumentNullException(nameof(buffer));
         }
 
-        if ((uint)index > (uint)buffer.Length || (uint)count > (uint)(buffer.Length - index))
+        if ((uint)index > (uint)buffer.Length)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(index));
         }
 
+        if ((uint)count > (uint)(buffer.Length - index))
+        {
+            throw new ArgumentOutOfRangeException(nameof(count));
+        }
         if (count == 0)
         {
             return;
