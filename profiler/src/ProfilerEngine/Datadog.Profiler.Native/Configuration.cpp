@@ -124,7 +124,7 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
     _heapHandleLimit = ExtractHeapHandleLimit();
-    _useCustomGetFunctionFromIP = GetEnvironmentValue(EnvironmentVariables::UseCustomGetFunctionFromIP, true);
+    _useCustomGetFunctionFromIP = GetEnvironmentValue(EnvironmentVariables::UseCustomGetFunctionFromIP, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
