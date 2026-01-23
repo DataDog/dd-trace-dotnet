@@ -30,4 +30,61 @@ public class ProcessTagsTests
             });
         // cannot really assert on content because it depends on how the tests are run.
     }
+
+    [Theory]
+    [InlineData(@"C:\Users\MyUser\Documents", "Documents")]
+    [InlineData(@"C:\Users\MyUser\Documents\", "Documents")]
+    [InlineData(@"/home/user/projects", "projects")]
+    [InlineData(@"/home/user/projects/", "projects")]
+    [InlineData(@"C:\Program Files\", "Program Files")]
+    [InlineData(@"/var/log/", "log")]
+    [InlineData(@"C:\", @"C:\")]
+    [InlineData(@"/", @"/")]
+    [InlineData(@"simple", "simple")]
+    [InlineData(@"simple/", "simple")]
+    [InlineData(@"", "")]
+    [InlineData(null, "")]
+    public void GetLastPathSegment_ReturnsLastDirectory(string path, string expected)
+    {
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\MyUser\Documents", @"C:\Users\MyUser\Documents")]
+    [InlineData(@"C:\Users\MyUser\Documents\", @"C:\Users\MyUser\Documents")]
+    [InlineData(@"/home/user/projects", @"/home/user/projects")]
+    [InlineData(@"/home/user/projects/", @"/home/user/projects")]
+    [InlineData(@"C:\", @"C:")]
+    [InlineData(@"/", @"")]
+    [InlineData(@"simple", @"simple")]
+    [InlineData(@"simple\", @"simple")]
+    [InlineData(@"simple/", @"simple")]
+    [InlineData(@"", "")]
+    [InlineData(null, "")]
+    public void TrimEndingDirectorySeparator_RemovesTrailingSeparator(string path, string expected)
+    {
+        ProcessTags.TrimEndingDirectorySeparator(path).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(@"/", true)]
+    [InlineData(@"C:\", true)]
+    [InlineData(@"c:\", true)]
+    [InlineData(@"D:\", true)]
+    [InlineData(@"C:/", true)]
+    [InlineData(@"C:\Users", false)]
+    [InlineData(@"/home", false)]
+    [InlineData(@"C:\Program Files", false)]
+    [InlineData(@"/var/log", false)]
+    [InlineData(@"simple", false)]
+    [InlineData(@"", false)]
+    [InlineData(null, false)]
+    [InlineData(@"C:", false)]
+    [InlineData(@"C", false)]
+    [InlineData(@"1:\", false)]
+    [InlineData(@"CC:\", false)]
+    public void IsRootPath_DetectsRootPaths(string path, bool expected)
+    {
+        ProcessTags.IsRootPath(path).Should().Be(expected);
+    }
 }
