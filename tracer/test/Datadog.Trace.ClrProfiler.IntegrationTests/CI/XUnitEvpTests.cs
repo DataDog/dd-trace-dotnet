@@ -263,8 +263,10 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         var codeCoverageReceived = new StrongBox<bool>(false);
         var name = $"session_{sessionId}";
         using var ipcServer = new IpcServer(name);
@@ -279,7 +281,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         using var logsIntake = new MockLogsIntakeForCiVisibility();
         EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
 
-        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";

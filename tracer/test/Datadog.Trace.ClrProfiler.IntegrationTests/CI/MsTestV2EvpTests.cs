@@ -267,8 +267,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 out var sessionWorkingDirectory,
                 out var gitRepositoryUrl,
                 out var gitBranch,
-                out var gitCommitSha);
+                out var gitCommitSha,
+                out var runId);
 
+            Output.WriteLine("RunId: {0}", runId);
             try
             {
                 using (var agent = EnvironmentHelper.GetMockAgent())
