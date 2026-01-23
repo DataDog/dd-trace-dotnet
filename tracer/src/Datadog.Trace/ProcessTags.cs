@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -61,11 +61,77 @@ internal static class ProcessTags
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
     /// </summary>
-    private static string GetLastPathSegment(string directoryPath)
+    [TestingAndPrivateOnly]
+    internal static string GetLastPathSegment(string directoryPath)
     {
-        // Path.GetFileName returns an empty string if the path ends with a '/'.
-        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
-        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
+        if (StringUtil.IsNullOrEmpty(directoryPath))
+        {
+            return string.Empty;
+        }
+
+        if (IsRootPath(directoryPath))
+        {
+            // return root paths like "/" or "C:\" as-is
+            return directoryPath;
+        }
+
+        // Path.GetFileName() returns an empty string if the path ends in a directory separator,
+        // so trim those first
+        var trimmedPath = TrimEndingDirectorySeparator(directoryPath.AsSpan());
+
+#if NETCOREAPP3_1_OR_GREATER
+        // avoid the intermediate string allocation for trimmedPath
+        return Path.GetFileName(trimmedPath).ToString();
+#else
+        return Path.GetFileName(trimmedPath.ToString());
+#endif
+    }
+
+    [TestingOnly]
+    internal static string TrimEndingDirectorySeparator(string path)
+    {
+        return TrimEndingDirectorySeparator(path.AsSpan()).ToString();
+    }
+
+    private static ReadOnlySpan<char> TrimEndingDirectorySeparator(ReadOnlySpan<char> path)
+    {
+        if (path.IsEmpty)
+        {
+            return ReadOnlySpan<char>.Empty;
+        }
+
+        // Path.TrimEndingDirectorySeparator() is not available in older .NET versions.
+        // Not using "#if NETCOREAPP3_1_OR_GREATER" here to keep consistent behavior across TFMs.
+        var last = path[path.Length - 1];
+
+        return last == Path.DirectorySeparatorChar || last == Path.AltDirectorySeparatorChar ?
+                   path.Slice(0, path.Length - 1) :
+                   path;
+    }
+
+    [TestingAndPrivateOnly]
+    internal static bool IsRootPath(string path)
+    {
+        if (StringUtil.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        if (path == "/")
+        {
+            return true;
+        }
+
+        // path could be drive root like C:\
+        if (path.Length == 3 &&
+            char.IsLetter(path[0]) &&
+            path[1] == ':' &&
+            (path[2] == Path.DirectorySeparatorChar || path[2] == Path.AltDirectorySeparatorChar))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private static string? GetEntryPointName()
