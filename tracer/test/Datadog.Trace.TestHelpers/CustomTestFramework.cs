@@ -296,9 +296,15 @@ namespace Datadog.Trace.TestHelpers
                         }
 
                         _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
-                        var testFullName = testCase.DisplayName.StartsWith(TestMethod.TestClass.Class.Name) ?
+                        var testFullName = (testCase.DisplayName.StartsWith(TestMethod.TestClass.Class.Name) ?
                             testCase.DisplayName :
-                            $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+                            $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}").Trim();
+
+                        if (testFullName.Length > 200)
+                        {
+                            testFullName = testFullName.Substring(0, 200);
+                        }
+
                         await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
                     }
                 }
@@ -351,7 +357,7 @@ namespace Datadog.Trace.TestHelpers
                     var tags = $$"""
                                      "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
                                      "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                                     "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
+                                     "target.framework:{{SanitizeTagValue("v" + FrameworkDescription.Instance.ProductVersion)}}",
                                      "test.name:{{SanitizeTagValue(testFullName)}}",
                                      "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
                                      "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
