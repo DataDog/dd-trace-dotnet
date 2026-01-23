@@ -1,4 +1,8 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #pragma once
+
 #include "ServiceBase.h"
 #include "AutoResetEvent.h"
 
@@ -138,8 +142,8 @@ private:
     
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
-    void AppendRangesToCache(std::vector<CodeRange> newRanges);
-    void AppendModuleRangeToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
+    void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+    void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
@@ -152,14 +156,14 @@ private:
     // Map from page number -> page entry (with its own lock)
 
 
-    std::unordered_map<uint64_t, PageEntry> m_pageMap;
-    std::unordered_set<ModuleID> m_moduleMap;
-    std::vector<ModuleCodeRange> m_moduleCodeRanges;
-    mutable std::shared_mutex m_moduleMapLock;
+    std::unordered_map<uint64_t, PageEntry> _pagesMap;
+    std::unordered_set<ModuleID> _modules;
+    std::vector<ModuleCodeRange> _modulesCodeRanges;
+    mutable std::shared_mutex _modulesMutex;
     
     // Coarse lock ONLY for modifying the map structure itself
     // (adding/removing pages, not modifying page contents)
-    mutable std::shared_mutex m_mapStructureLock;
+    mutable std::shared_mutex _pagesMutex;
     
     // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
     ICorProfilerInfo4* _profilerInfo;
@@ -174,10 +178,10 @@ private:
 
     template<typename WorkType>
     void EnqueueWork(WorkType work);
-    std::optional<FunctionID> GetCodeInfo(std::uintptr_t ip) const noexcept;
-    std::optional<FunctionID> GetFunctionId(std::uintptr_t ip) const noexcept;
+    std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
     bool IsCodeInR2RModule(std::uintptr_t ip) const noexcept;
-    std::optional<FunctionID> GetFunctionIdFromIPOriginal(std::uintptr_t ip) noexcept;
+    std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
+    void AddFunctionImpl(FunctionID functionId, bool isAsync);
     
     AutoResetEvent _workerQueueEvent;
 
