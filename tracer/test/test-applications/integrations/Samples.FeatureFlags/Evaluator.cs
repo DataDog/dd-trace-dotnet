@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
 using Datadog.Trace.FeatureFlags;
 
 namespace Samples.FeatureFlags;
@@ -46,5 +43,9 @@ class Evaluator
         }
 
         return (evaluation.Value as string, evaluation.Error);
+    }
+
+    public static void ExtraChecks()
+    {
     }
 }
