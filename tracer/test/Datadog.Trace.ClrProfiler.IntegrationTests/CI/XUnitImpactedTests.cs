@@ -103,9 +103,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "True");
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
-                SetEnvironmentVariable(CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch, testBranchName);
-                SetEnvironmentVariable(CIEnvironmentValues.Constants.AzureBuildSourceBranch, testBranchName);
-                SetEnvironmentVariable(CIEnvironmentValues.Constants.AzureBuildSourceBranchName, testBranchName);
+                SetEnvironmentVariable(PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch, testBranchName);
+                SetEnvironmentVariable(PlatformKeys.Ci.Azure.BuildSourceBranch, testBranchName);
+                SetEnvironmentVariable(PlatformKeys.Ci.Azure.BuildSourceBranchName, testBranchName);
 
                 // Run the test submission without GitHub Actions injection
                 await SubmitTestsWithGitBranch(packageVersion, 2, TestIsModified);
