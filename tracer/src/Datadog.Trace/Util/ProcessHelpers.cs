@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Util
 {
@@ -289,13 +290,20 @@ namespace Datadog.Trace.Util
                 TimedOut = timedOut;
             }
 
+            [JsonProperty("output")]
             public string Output { get; }
 
+            [JsonProperty("error")]
             public string Error { get; }
 
+            [JsonProperty("exitCode")]
             public int ExitCode { get; }
 
+            [JsonProperty("timedOut")]
             public bool TimedOut { get; }
+
+            [JsonIgnore]
+            public bool Cached { get; internal set; }
         }
 
         private static class CurrentProcess
