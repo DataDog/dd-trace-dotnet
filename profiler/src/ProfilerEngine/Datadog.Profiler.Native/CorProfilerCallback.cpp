@@ -1872,6 +1872,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID modu
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
+    _managedCodeCache->RemoveModule(moduleId);
     return S_OK;
 }
 

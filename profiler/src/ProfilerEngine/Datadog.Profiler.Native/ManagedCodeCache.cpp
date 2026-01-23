@@ -86,6 +86,12 @@ bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
     
     --moduleIt;
     
+    if (moduleIt->isRemoved)
+    {
+        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range is removed for ip: 0x", std::hex, ip);
+        return false;
+    }
+
     return moduleIt->contains(ip);
 }
 
@@ -291,33 +297,23 @@ void ManagedCodeCache::AddFunction(FunctionID functionId)
 // Maybe rename this into OnModuleLoaded
 void ManagedCodeCache::AddModule(ModuleID moduleId)
 {
-    LPCBYTE baseLoadAddress;
-    DWORD moduleFlags;
-    HRESULT hr = _profilerInfo->GetModuleInfo2(
-        moduleId, &baseLoadAddress, 0, NULL, NULL, NULL, &moduleFlags);
-    
-    if (FAILED(hr))
-        return;
-    
-    // We only register NGEN/R2R modules
-    if ((moduleFlags & COR_PRF_MODULE_NGEN) != COR_PRF_MODULE_NGEN)
-        return;
+    auto moduleCodeRanges = GetModuleCodeRanges(moduleId);
 
-    auto moduleCodeRanges = GetModuleCodeRange((UINT_PTR)baseLoadAddress);
     if (moduleCodeRanges.empty())
     {
-        // TODO we may want to log something here
         Log::Debug("ManagedCodeCache::AddModule: No module code ranges found for module id: ", moduleId);
         return;
     }
 
-    std::stringstream ss;
-    for (auto &range : moduleCodeRanges)
+    if (Log::IsDebugEnabled())
     {
-        ss << std::hex << "Range: [0x" << range.startAddress << " - 0x" << range.endAddress  << "], " << std::endl;
+        std::stringstream ss;
+        for (auto &range : moduleCodeRanges)
+        {
+            ss << std::hex << "Range: [0x" << range.startAddress << " - 0x" << range.endAddress  << "], " << std::endl;
+        }
+        Log::Debug("ManagedCodeCache::AddModule: Module code ranges for module id: ", moduleId, " are: ", ss.str());
     }
-    Log::Debug("ManagedCodeCache::AddModule: Module code ranges for module id: ", moduleId, " are: ", ss.str());
-    
 
     // IMPORTANT: Defer to background thread to avoid deadlock
     //
@@ -334,6 +330,28 @@ void ManagedCodeCache::AddModule(ModuleID moduleId)
     // Additional benefit: Reduces callback latency and avoids holding
     // CLR-internal locks longer than necessary.
     AddModuleCodeRangesAsync(std::move(moduleCodeRanges));
+}
+
+void ManagedCodeCache::RemoveModule(ModuleID moduleId)
+{
+    auto moduleCodeRanges = GetModuleCodeRanges(moduleId);
+    if (moduleCodeRanges.empty())
+    {
+        return;
+    }
+
+    std::unique_lock<std::shared_mutex> moduleLock(m_moduleMapLock);
+    for (auto const& range : moduleCodeRanges)
+    {
+        auto it = std::find_if(m_moduleCodeRanges.begin(), m_moduleCodeRanges.end(),
+         [&range](const ModuleCodeRange& r) {
+            return r.startAddress == range.startAddress && r.endAddress == range.endAddress;
+        });
+        if (it != m_moduleCodeRanges.end())
+        {
+            it->isRemoved = true;
+        }
+    }
 }
 
 std::vector<CodeRange> ManagedCodeCache::QueryCodeRanges(FunctionID functionId)
@@ -454,45 +472,6 @@ void ManagedCodeCache::EnsurePageExists(uint64_t page)
     }
 }
 
-std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRange(UINT_PTR baseLoadAddress)
-{
-    std::vector<ModuleCodeRange> result;
-    result.reserve(2);
-
-    // PE parsing
-    auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(baseLoadAddress);
-
-    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-    {
-        return result;
-    }
-
-    UINT_PTR ntHeadersAddress = baseLoadAddress + dosHeader->e_lfanew;
-    auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS_GENERIC*>(ntHeadersAddress);
-
-    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
-    {
-        return result;
-    }
-
-    UINT_PTR sectionHeaderAddress = ntHeadersAddress 
-        + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) 
-        + ntHeaders->FileHeader.SizeOfOptionalHeader;
-
-    auto sectionHeaders = reinterpret_cast<PIMAGE_SECTION_HEADER>(sectionHeaderAddress);
-
-    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
-    {
-        if (sectionHeaders[i].Characteristics & IMAGE_SCN_MEM_EXECUTE)
-        {
-            UINT_PTR codeStart = baseLoadAddress + sectionHeaders[i].VirtualAddress;
-            UINT_PTR codeEnd = codeStart + sectionHeaders[i].Misc.VirtualSize;
-            result.emplace_back(codeStart, codeEnd);
-        }
-    }
-    return result;
-}
-
 // Template struct for appending ranges work items
 template<typename T>
 struct AppendRangesWork
@@ -609,4 +588,55 @@ void ManagedCodeCache::AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges)
 void ManagedCodeCache::AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges)
 {
     EnqueueWork(AppendModuleRangesWork(std::move(moduleCodeRanges)));
+}
+
+std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRanges(ModuleID moduleId)
+{
+    std::vector<ModuleCodeRange> result;
+    UINT_PTR baseLoadAddress = 0;
+    DWORD moduleFlags;
+    HRESULT hr = _profilerInfo->GetModuleInfo2(
+        moduleId, reinterpret_cast<LPCBYTE*>(&baseLoadAddress), 0, NULL, NULL, NULL, &moduleFlags);
+
+    if (FAILED(hr))
+        return result;
+
+    // We only register NGEN/R2R modules
+    if ((moduleFlags & COR_PRF_MODULE_NGEN) != COR_PRF_MODULE_NGEN)
+        return result;
+
+    result.reserve(2);
+
+    // PE parsing
+    auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(baseLoadAddress);
+
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+    {
+        return result;
+    }
+
+    UINT_PTR ntHeadersAddress = baseLoadAddress + dosHeader->e_lfanew;
+    auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS_GENERIC*>(ntHeadersAddress);
+
+    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+    {
+        return result;
+    }
+
+    UINT_PTR sectionHeaderAddress = ntHeadersAddress 
+        + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) 
+        + ntHeaders->FileHeader.SizeOfOptionalHeader;
+
+    auto sectionHeaders = reinterpret_cast<PIMAGE_SECTION_HEADER>(sectionHeaderAddress);
+
+    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
+    {
+        if (sectionHeaders[i].Characteristics & IMAGE_SCN_MEM_EXECUTE)
+        {
+            UINT_PTR codeStart = baseLoadAddress + sectionHeaders[i].VirtualAddress;
+            UINT_PTR codeEnd = codeStart + sectionHeaders[i].Misc.VirtualSize;
+            result.emplace_back(codeStart, codeEnd);
+        }
+    }
+    return result;
 }

@@ -47,6 +47,7 @@ struct CodeRange {
 struct ModuleCodeRange {
     UINT_PTR startAddress;
     UINT_PTR endAddress;
+    bool isRemoved = false;
     // For binary search
     bool operator<(const ModuleCodeRange& other) const {
         return startAddress < other.startAddress;
@@ -90,6 +91,7 @@ public:
 
     void AddFunction(FunctionID functionId);
     void AddModule(ModuleID moduleId);
+    void RemoveModule(ModuleID moduleId);
 
     bool StartImpl() override;
     bool StopImpl() override;
@@ -124,8 +126,6 @@ private:
     static uint64_t GetPageNumber(UINT_PTR address) {
         return address >> PAGE_SHIFT;
     }
-
-    static std::vector<ModuleCodeRange> GetModuleCodeRange(UINT_PTR baseLoadAddress);
     
     // Helper: Find range in sorted vector using binary search (signal-safe)
     static const CodeRange* FindRangeInVector(
@@ -142,6 +142,7 @@ private:
     void AppendModuleRangeToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
+    std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
 
     void WorkerThread(std::promise<void> startPromise);
     
