@@ -116,11 +116,10 @@ namespace Datadog.Trace
         {
             if (azureAppServiceSettings.DebugModeEnabled)
             {
-                const string ddLogLevelKey = "DD_LOG_LEVEL";
-                if (EnvironmentHelpers.GetEnvironmentVariable(ddLogLevelKey) == null)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel) == null)
                 {
                     // This ensures that a single setting from applicationConfig can enable debug logs for every aspect of the extension
-                    EnvironmentHelpers.SetEnvironmentVariable(ddLogLevelKey, "debug");
+                    EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel, "debug");
                 }
             }
 

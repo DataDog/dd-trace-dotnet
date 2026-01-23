@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -20,10 +21,17 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal abstract class CIEnvironmentValues
 {
+    private const int CodeOwnersSearchCacheLimit = 256;
     internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
+    private static readonly StringComparer CodeOwnersSearchComparer = FrameworkDescription.Instance.IsWindows()
+                                                                          ? StringComparer.OrdinalIgnoreCase
+                                                                          : StringComparer.Ordinal;
+
+    private readonly object _codeOwnersLock = new();
+    private readonly HashSet<string> _codeOwnersSearchStarts = new(CodeOwnersSearchComparer);
 
     private string? _gitSearchFolder = null;
 
@@ -114,6 +122,8 @@ internal abstract class CIEnvironmentValues
     public string? HeadMessage { get; protected set; }
 
     public CodeOwners? CodeOwners { get; protected set; }
+
+    internal string? CodeOwnersRoot { get; private set; }
 
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
 
@@ -250,6 +260,132 @@ internal abstract class CIEnvironmentValues
         return Tuple.Create(branch, tag);
     }
 
+    private static string? GetCodeOwnersSearchStart(string? path, string? basePath)
+    {
+        if (StringUtil.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        string? resolvedPath = null;
+        try
+        {
+            if (Path.IsPathRooted(path) || Uri.TryCreate(path, UriKind.Absolute, out _))
+            {
+                resolvedPath = path;
+            }
+            else if (!StringUtil.IsNullOrWhiteSpace(basePath) && Path.IsPathRooted(basePath))
+            {
+                // Keep relative paths anchored to a known workspace and reject escapes (no CWD fallback).
+                TryResolvePathWithinBase(path, basePath, out resolvedPath);
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(resolvedPath))
+            {
+                return null;
+            }
+
+            // Start searching from the directory containing the candidate path.
+            if (Directory.Exists(resolvedPath))
+            {
+                return resolvedPath;
+            }
+
+            return Path.GetDirectoryName(resolvedPath);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error resolving CODEOWNERS search start for '{Path}'", resolvedPath ?? path);
+            return null;
+        }
+    }
+
+    private static bool HasGitDirectory(string path)
+    {
+        var gitPath = Path.Combine(path, ".git");
+        return Directory.Exists(gitPath) || File.Exists(gitPath);
+    }
+
+    private static bool TryResolvePathWithinBase(string relativePath, string basePath, [NotNullWhen(true)] out string? absolutePath)
+    {
+        absolutePath = null;
+
+        if (StringUtil.IsNullOrWhiteSpace(relativePath) || StringUtil.IsNullOrWhiteSpace(basePath))
+        {
+            return false;
+        }
+
+        try
+        {
+            // Only combine relative paths; rooted or absolute inputs bypass base anchoring.
+            if (Path.IsPathRooted(relativePath) || Uri.TryCreate(relativePath, UriKind.Absolute, out _))
+            {
+                return false;
+            }
+
+            if (!Path.IsPathRooted(basePath))
+            {
+                return false;
+            }
+
+            // Normalize to full paths and ensure the combined path stays within the base.
+            var comparison = Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            var fullBasePath = Path.GetFullPath(basePath);
+            var fullBasePathWithSeparator = fullBasePath;
+            if (!fullBasePathWithSeparator.EndsWith(Path.DirectorySeparatorChar.ToString(), comparison) &&
+                !fullBasePathWithSeparator.EndsWith(Path.AltDirectorySeparatorChar.ToString(), comparison))
+            {
+                fullBasePathWithSeparator += Path.DirectorySeparatorChar;
+            }
+
+            var combinedPath = Path.Combine(fullBasePath, relativePath);
+            var fullCombinedPath = Path.GetFullPath(combinedPath);
+            // Reject traversal that escapes the base directory.
+            if (!fullCombinedPath.StartsWith(fullBasePathWithSeparator, comparison) &&
+                !string.Equals(fullCombinedPath, fullBasePath, comparison))
+            {
+                return false;
+            }
+
+            absolutePath = fullCombinedPath;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error resolving relative path '{Path}' within base '{BasePath}'", relativePath, basePath);
+        }
+
+        return false;
+    }
+
+    private static bool TryGetCodeOwnersPath(string sourceRoot, bool logLookup, [NotNullWhen(true)] out string? codeOwnersPath)
+    {
+        foreach (var path in GetCodeOwnersPaths(sourceRoot))
+        {
+            if (logLookup)
+            {
+                Log.Debug("Looking for CODEOWNERS file in: {Path}", path);
+            }
+
+            if (File.Exists(path))
+            {
+                codeOwnersPath = path;
+                return true;
+            }
+        }
+
+        codeOwnersPath = null;
+        return false;
+    }
+
+    private static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot)
+    {
+        yield return Path.Combine(sourceRoot, "CODEOWNERS");
+        yield return Path.Combine(sourceRoot, ".github", "CODEOWNERS");
+        yield return Path.Combine(sourceRoot, ".gitlab", "CODEOWNERS");
+        yield return Path.Combine(sourceRoot, ".docs", "CODEOWNERS");
+    }
+
     public void DecorateSpan(Span span)
     {
         if (span == null)
@@ -333,6 +469,12 @@ internal abstract class CIEnvironmentValues
         CommitterDate = null;
         Message = null;
         SourceRoot = null;
+        CodeOwners = null;
+        CodeOwnersRoot = null;
+        lock (_codeOwnersLock)
+        {
+            _codeOwnersSearchStarts.Clear();
+        }
 
         Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder!));
 
@@ -363,24 +505,12 @@ internal abstract class CIEnvironmentValues
         // **********
         if (!string.IsNullOrEmpty(SourceRoot))
         {
-            foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot!))
+            if (TryGetCodeOwnersPath(SourceRoot!, logLookup: true, out var codeOwnersPath))
             {
-                Log.Debug("Looking for CODEOWNERS file in: {Path}", codeOwnersPath);
-                if (File.Exists(codeOwnersPath))
-                {
-                    Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
-                    CodeOwners = new CodeOwners(codeOwnersPath, GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub);
-                    break;
-                }
+                Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
+                CodeOwners = new CodeOwners(codeOwnersPath, GetCodeOwnersPlatform());
+                CodeOwnersRoot = SourceRoot;
             }
-        }
-
-        static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot)
-        {
-            yield return Path.Combine(sourceRoot, "CODEOWNERS");
-            yield return Path.Combine(sourceRoot, ".github", "CODEOWNERS");
-            yield return Path.Combine(sourceRoot, ".gitlab", "CODEOWNERS");
-            yield return Path.Combine(sourceRoot, ".docs", "CODEOWNERS");
         }
     }
 
@@ -417,19 +547,111 @@ internal abstract class CIEnvironmentValues
 
     public string MakeRelativePathFromSourceRoot(string absolutePath, bool useOSSeparator = true)
     {
-        var pivotFolder = SourceRoot;
-        if (string.IsNullOrEmpty(pivotFolder))
+        return MakeRelativePath(SourceRoot, absolutePath, useOSSeparator);
+    }
+
+    internal string MakeRelativePathFromSourceRootWithFallback(string sourceFilePath, bool useOSSeparator = true)
+    {
+        var sourceRelativePath = MakeRelativePathFromSourceRoot(sourceFilePath, useOSSeparator);
+        // If CODEOWNERS is rooted elsewhere, normalize SourceFile to that root for consistent matching.
+        if (TryGetCodeOwnersRelativePath(sourceFilePath, useOSSeparator, out var codeOwnersRelativePath))
+        {
+            return codeOwnersRelativePath;
+        }
+
+        return sourceRelativePath;
+    }
+
+    internal bool TryGetCodeOwnersRelativePath(string sourceFilePath, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
+    {
+        codeOwnersRelativePath = null;
+
+        if (StringUtil.IsNullOrWhiteSpace(sourceFilePath))
+        {
+            return false;
+        }
+
+        // Algorithm: load CODEOWNERS (with fallback), resolve roots, then normalize source file to repo-relative.
+        // Ensure CODEOWNERS is loaded (or discovered via fallback) before attempting normalization.
+        EnsureCodeOwnersFromFallback(sourceFilePath);
+
+        if (CodeOwners is null || StringUtil.IsNullOrWhiteSpace(CodeOwnersRoot))
+        {
+            return false;
+        }
+
+        var codeOwnersRoot = CodeOwnersRoot!;
+        if (!Path.IsPathRooted(codeOwnersRoot))
+        {
+            // If SourceRoot was relative, re-anchor to WorkspacePath before matching.
+            if (StringUtil.IsNullOrWhiteSpace(WorkspacePath) ||
+                !TryResolvePathWithinBase(codeOwnersRoot, WorkspacePath!, out var resolvedRoot))
+            {
+                return false;
+            }
+
+            // Require a CODEOWNERS file at the resolved root to avoid mismatched roots.
+            // Avoid mixing CODEOWNERS content from one root with a different resolved root.
+            if (!TryGetCodeOwnersPath(resolvedRoot, logLookup: false, out _))
+            {
+                return false;
+            }
+
+            codeOwnersRoot = resolvedRoot;
+        }
+
+        // Only match when the source file can be resolved under the CODEOWNERS root.
+        string absolutePath;
+        if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
+        {
+            // Absolute paths are already resolved, no workspace anchoring needed.
+            absolutePath = sourceFilePath;
+        }
+        else
+        {
+            // For relative paths, enforce that they stay within the CODEOWNERS root.
+            // Relative paths must stay within the codeowners root; otherwise we skip.
+            if (!TryResolvePathWithinBase(sourceFilePath, codeOwnersRoot, out var resolvedPath))
+            {
+                return false;
+            }
+
+            absolutePath = resolvedPath;
+        }
+
+        // Normalize to a repo-relative path before matching the CODEOWNERS rules.
+        var relativePath = MakeRelativePath(codeOwnersRoot, absolutePath, useOSSeparator);
+        // Guard against paths that escape the root or remain absolute after normalization.
+        if (StringUtil.IsNullOrWhiteSpace(relativePath) ||
+            Path.IsPathRooted(relativePath) ||
+            Uri.TryCreate(relativePath, UriKind.Absolute, out _) ||
+            relativePath.Equals("..", StringComparison.Ordinal) ||
+            relativePath.StartsWith("../", StringComparison.Ordinal) ||
+            relativePath.StartsWith("..\\", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        codeOwnersRelativePath = relativePath;
+        return true;
+    }
+
+    private string MakeRelativePath(string? basePath, string absolutePath, bool useOSSeparator)
+    {
+        var pivotFolder = basePath;
+        if (StringUtil.IsNullOrEmpty(pivotFolder))
         {
             return absolutePath;
         }
 
-        if (string.IsNullOrEmpty(absolutePath))
+        if (StringUtil.IsNullOrEmpty(absolutePath))
         {
             return pivotFolder!;
         }
 
         try
         {
+            // Use Uri to normalize and compute the relative path across OS separators.
             var folderSeparator = Path.DirectorySeparatorChar;
             if (pivotFolder![pivotFolder.Length - 1] != folderSeparator)
             {
@@ -455,268 +677,86 @@ internal abstract class CIEnvironmentValues
         return absolutePath;
     }
 
-    internal sealed class Constants
+    private void EnsureCodeOwnersFromFallback(string? sourceFilePath)
     {
-        public const string Home = "HOME";
-        public const string UserProfile = "USERPROFILE";
+        if (CodeOwners is not null)
+        {
+            return;
+        }
 
-        // Travis CI Environment variables
-        public const string Travis = "TRAVIS";
-        public const string TravisPullRequestSlug = "TRAVIS_PULL_REQUEST_SLUG";
-        public const string TravisRepoSlug = "TRAVIS_REPO_SLUG";
-        public const string TravisCommit = "TRAVIS_COMMIT";
-        public const string TravisTag = "TRAVIS_TAG";
-        public const string TravisPullRequestBranch = "TRAVIS_PULL_REQUEST_BRANCH";
-        public const string TravisBranch = "TRAVIS_BRANCH";
-        public const string TravisBuildDir = "TRAVIS_BUILD_DIR";
-        public const string TravisBuildId = "TRAVIS_BUILD_ID";
-        public const string TravisBuildNumber = "TRAVIS_BUILD_NUMBER";
-        public const string TravisBuildWebUrl = "TRAVIS_BUILD_WEB_URL";
-        public const string TravisJobWebUrl = "TRAVIS_JOB_WEB_URL";
-        public const string TravisCommitMessage = "TRAVIS_COMMIT_MESSAGE";
-        public const string TravisPullRequestSha = "TRAVIS_PULL_REQUEST_SHA";
-        public const string TravisPullRequestNumber = "TRAVIS_PULL_REQUEST";
+        lock (_codeOwnersLock)
+        {
+            if (CodeOwners is not null)
+            {
+                return;
+            }
 
-        // Circle CI Environment variables
-        public const string CircleCI = "CIRCLECI";
-        public const string CircleCIWorkflowId = "CIRCLE_WORKFLOW_ID";
-        public const string CircleCIBuildNum = "CIRCLE_BUILD_NUM";
-        public const string CircleCIRepositoryUrl = "CIRCLE_REPOSITORY_URL";
-        public const string CircleCISha = "CIRCLE_SHA1";
-        public const string CircleCITag = "CIRCLE_TAG";
-        public const string CircleCIBranch = "CIRCLE_BRANCH";
-        public const string CircleCIWorkingDirectory = "CIRCLE_WORKING_DIRECTORY";
-        public const string CircleCIProjectRepoName = "CIRCLE_PROJECT_REPONAME";
-        public const string CircleCIJob = "CIRCLE_JOB";
-        public const string CircleCIBuildUrl = "CIRCLE_BUILD_URL";
-        public const string CircleCIPrNumber = "CIRCLE_PR_NUMBER";
+            // Search order: source file path (most specific), then workspace root.
+            // Prefer a source-file-anchored search before falling back to the workspace root.
+            var platform = GetCodeOwnersPlatform();
+            if (TryLoadCodeOwnersFromAncestor(sourceFilePath, platform, WorkspacePath))
+            {
+                return;
+            }
 
-        // Jenkins Environment variables
-        public const string JenkinsUrl = "JENKINS_URL";
-        public const string JenkinsCustomTraceId = "DD_CUSTOM_TRACE_ID";
-        public const string JenkinsGitUrl = "GIT_URL";
-        public const string JenkinsGitUrl1 = "GIT_URL_1";
-        public const string JenkinsGitCommit = "GIT_COMMIT";
-        public const string JenkinsGitBranch = "GIT_BRANCH";
-        public const string JenkinsWorkspace = "WORKSPACE";
-        public const string JenkinsBuildTag = "BUILD_TAG";
-        public const string JenkinsBuildNumber = "BUILD_NUMBER";
-        public const string JenkinsBuildUrl = "BUILD_URL";
-        public const string JenkinsJobName = "JOB_NAME";
-        public const string JenkinsNodeName = "NODE_NAME";
-        public const string JenkinsNodeLabels = "NODE_LABELS";
-        public const string JenkinsChangeTarget = "CHANGE_TARGET";
-        public const string JenkinsChangeId = "CHANGE_ID";
-
-        // Gitlab Environment variables
-        public const string GitlabCI = "GITLAB_CI";
-        public const string GitlabProjectUrl = "CI_PROJECT_URL";
-        public const string GitlabPipelineId = "CI_PIPELINE_ID";
-        public const string GitlabJobId = "CI_JOB_ID";
-        public const string GitlabRepositoryUrl = "CI_REPOSITORY_URL";
-        public const string GitlabCommitSha = "CI_COMMIT_SHA";
-        public const string GitlabCommitBranch = "CI_COMMIT_BRANCH";
-        public const string GitlabCommitTag = "CI_COMMIT_TAG";
-        public const string GitlabCommitRefName = "CI_COMMIT_REF_NAME";
-        public const string GitlabProjectDir = "CI_PROJECT_DIR";
-        public const string GitlabProjectPath = "CI_PROJECT_PATH";
-        public const string GitlabPipelineIId = "CI_PIPELINE_IID";
-        public const string GitlabPipelineUrl = "CI_PIPELINE_URL";
-        public const string GitlabJobUrl = "CI_JOB_URL";
-        public const string GitlabJobName = "CI_JOB_NAME";
-        public const string GitlabJobStage = "CI_JOB_STAGE";
-        public const string GitlabCommitMessage = "CI_COMMIT_MESSAGE";
-        public const string GitlabCommitAuthor = "CI_COMMIT_AUTHOR";
-        public const string GitlabCommitTimestamp = "CI_COMMIT_TIMESTAMP";
-        public const string GitlabRunnerId = "CI_RUNNER_ID";
-        public const string GitlabRunnerTags = "CI_RUNNER_TAGS";
-        public const string GitlabMergeRequestSourceBranchSha = "CI_MERGE_REQUEST_SOURCE_BRANCH_SHA";
-        public const string GitlabMergeRequestTargetBranchSha = "CI_MERGE_REQUEST_TARGET_BRANCH_SHA";
-        public const string GitlabMergeRequestDiffBaseSha = "CI_MERGE_REQUEST_DIFF_BASE_SHA";
-        public const string GitlabMergeRequestTargetBranchName = "CI_MERGE_REQUEST_TARGET_BRANCH_NAME";
-        public const string GitlabMergeRequestId = "CI_MERGE_REQUEST_IID";
-
-        // Appveyor CI Environment variables
-        public const string Appveyor = "APPVEYOR";
-        public const string AppveyorRepoProvider = "APPVEYOR_REPO_PROVIDER";
-        public const string AppveyorRepoName = "APPVEYOR_REPO_NAME";
-        public const string AppveyorRepoCommit = "APPVEYOR_REPO_COMMIT";
-        public const string AppveyorBuildFolder = "APPVEYOR_BUILD_FOLDER";
-        public const string AppveyorBuildId = "APPVEYOR_BUILD_ID";
-        public const string AppveyorBuildNumber = "APPVEYOR_BUILD_NUMBER";
-        public const string AppveyorPullRequestHeadRepoBranch = "APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH";
-        public const string AppveyorPullRequestHeadCommit = "APPVEYOR_PULL_REQUEST_HEAD_COMMIT";
-        public const string AppveyorPullRequestNumber = "APPVEYOR_PULL_REQUEST_NUMBER";
-        public const string AppveyorRepoTagName = "APPVEYOR_REPO_TAG_NAME";
-        public const string AppveyorRepoBranch = "APPVEYOR_REPO_BRANCH";
-        public const string AppveyorRepoCommitMessage = "APPVEYOR_REPO_COMMIT_MESSAGE";
-        public const string AppveyorRepoCommitMessageExtended = "APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED";
-        public const string AppveyorRepoCommitAuthor = "APPVEYOR_REPO_COMMIT_AUTHOR";
-        public const string AppveyorRepoCommitAuthorEmail = "APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL";
-        public const string AppveyorPullRequestBaseRepoBranch = "APPVEYOR_REPO_BRANCH";
-
-        // Azure CI Environment variables
-        public const string AzureTFBuild = "TF_BUILD";
-        public const string AzureSystemTeamProjectId = "SYSTEM_TEAMPROJECTID";
-        public const string AzureBuildBuildId = "BUILD_BUILDID";
-        public const string AzureSystemJobId = "SYSTEM_JOBID";
-        public const string AzureBuildSourcesDirectory = "BUILD_SOURCESDIRECTORY";
-        public const string AzureBuildDefinitionName = "BUILD_DEFINITIONNAME";
-        public const string AzureSystemTeamFoundationServerUri = "SYSTEM_TEAMFOUNDATIONSERVERURI";
-        public const string AzureSystemStageDisplayName = "SYSTEM_STAGEDISPLAYNAME";
-        public const string AzureSystemJobDisplayName = "SYSTEM_JOBDISPLAYNAME";
-        public const string AzureSystemTaskInstanceId = "SYSTEM_TASKINSTANCEID";
-        public const string AzureSystemPullRequestSourceRepositoryUri = "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI";
-        public const string AzureBuildRepositoryUri = "BUILD_REPOSITORY_URI";
-        public const string AzureSystemPullRequestSourceCommitId = "SYSTEM_PULLREQUEST_SOURCECOMMITID";
-        public const string AzureBuildSourceVersion = "BUILD_SOURCEVERSION";
-        public const string AzureSystemPullRequestSourceBranch = "SYSTEM_PULLREQUEST_SOURCEBRANCH";
-        public const string AzureBuildSourceBranch = "BUILD_SOURCEBRANCH";
-        public const string AzureBuildSourceBranchName = "BUILD_SOURCEBRANCHNAME";
-        public const string AzureBuildSourceVersionMessage = "BUILD_SOURCEVERSIONMESSAGE";
-        public const string AzureBuildRequestedForId = "BUILD_REQUESTEDFORID";
-        public const string AzureBuildRequestedForEmail = "BUILD_REQUESTEDFOREMAIL";
-        public const string AzureSystemPullRequestTargetBranch = "SYSTEM_PULLREQUEST_TARGETBRANCH";
-        public const string AzureSystemPullRequestNumber = "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER";
-
-        // BitBucket CI Environment variables
-        public const string BitBucketCommit = "BITBUCKET_COMMIT";
-        public const string BitBucketGitSshOrigin = "BITBUCKET_GIT_SSH_ORIGIN";
-        public const string BitBucketGitHttpsOrigin = "BITBUCKET_GIT_HTTP_ORIGIN";
-        public const string BitBucketBranch = "BITBUCKET_BRANCH";
-        public const string BitBucketTag = "BITBUCKET_TAG";
-        public const string BitBucketCloneDir = "BITBUCKET_CLONE_DIR";
-        public const string BitBucketPipelineUuid = "BITBUCKET_PIPELINE_UUID";
-        public const string BitBucketBuildNumber = "BITBUCKET_BUILD_NUMBER";
-        public const string BitBucketRepoFullName = "BITBUCKET_REPO_FULL_NAME";
-        public const string BitBucketPullRequestDestinationBranch = "BITBUCKET_PR_DESTINATION_BRANCH";
-        public const string BitBucketPullRequestNumber = "BITBUCKET_PR_ID";
-
-        // GitHub CI Environment variables
-        public const string GitHubSha = "GITHUB_SHA";
-        public const string GitHubServerUrl = "GITHUB_SERVER_URL";
-        public const string GitHubRepository = "GITHUB_REPOSITORY";
-        public const string GitHubRunId = "GITHUB_RUN_ID";
-        public const string GitHubRunAttempt = "GITHUB_RUN_ATTEMPT";
-        public const string GitHubHeadRef = "GITHUB_HEAD_REF";
-        public const string GitHubRef = "GITHUB_REF";
-        public const string GitHubWorkspace = "GITHUB_WORKSPACE";
-        public const string GitHubRunNumber = "GITHUB_RUN_NUMBER";
-        public const string GitHubWorkflow = "GITHUB_WORKFLOW";
-        public const string GitHubJob = "GITHUB_JOB";
-        public const string GitHubEventPath = "GITHUB_EVENT_PATH";
-        public const string GitHubBaseRef = "GITHUB_BASE_REF";
-
-        // Teamcity CI Environment variables
-        public const string TeamCityVersion = "TEAMCITY_VERSION";
-        public const string TeamCityBuildConfName = "TEAMCITY_BUILDCONF_NAME";
-        public const string TeamCityBuildUrl = "BUILD_URL";
-        public const string TeamCityPrNumber = "TEAMCITY_PULLREQUEST_NUMBER";
-        public const string TeamCityPrTargetBranch = "TEAMCITY_PULLREQUEST_TARGET_BRANCH";
-
-        // BuildKite CI Environment variables
-        public const string BuildKite = "BUILDKITE";
-        public const string BuildKiteBuildId = "BUILDKITE_BUILD_ID";
-        public const string BuildKiteJobId = "BUILDKITE_JOB_ID";
-        public const string BuildKiteRepo = "BUILDKITE_REPO";
-        public const string BuildKiteCommit = "BUILDKITE_COMMIT";
-        public const string BuildKiteBranch = "BUILDKITE_BRANCH";
-        public const string BuildKiteTag = "BUILDKITE_TAG";
-        public const string BuildKiteBuildCheckoutPath = "BUILDKITE_BUILD_CHECKOUT_PATH";
-        public const string BuildKiteBuildNumber = "BUILDKITE_BUILD_NUMBER";
-        public const string BuildKitePipelineSlug = "BUILDKITE_PIPELINE_SLUG";
-        public const string BuildKiteBuildUrl = "BUILDKITE_BUILD_URL";
-        public const string BuildKiteMessage = "BUILDKITE_MESSAGE";
-        public const string BuildKiteBuildAuthor = "BUILDKITE_BUILD_AUTHOR";
-        public const string BuildKiteBuildAuthorEmail = "BUILDKITE_BUILD_AUTHOR_EMAIL";
-        public const string BuildKiteBuildCreator = "BUILDKITE_BUILD_CREATOR";
-        public const string BuildKiteBuildCreatorEmail = "BUILDKITE_BUILD_CREATOR_EMAIL";
-        public const string BuildKiteAgentId = "BUILDKITE_AGENT_ID";
-        public const string BuildKiteAgentMetadata = "BUILDKITE_AGENT_META_DATA_";
-        public const string BuildKitePullRequestBaseBranch = "BUILDKITE_PULL_REQUEST_BASE_BRANCH";
-        public const string BuildKitePullRequestNumber = "BUILDKITE_PULL_REQUEST";
-
-        // Bitrise CI Environment variables
-        public const string BitriseBuildSlug = "BITRISE_BUILD_SLUG";
-        public const string BitriseGitRepositoryUrl = "GIT_REPOSITORY_URL";
-        public const string BitriseGitCommit = "BITRISE_GIT_COMMIT";
-        public const string BitriseGitCloneCommitHash = "GIT_CLONE_COMMIT_HASH";
-        public const string BitriseGitBranchDest = "BITRISEIO_GIT_BRANCH_DEST";
-        public const string BitriseGitBranch = "BITRISE_GIT_BRANCH";
-        public const string BitriseGitTag = "BITRISE_GIT_TAG";
-        public const string BitriseSourceDir = "BITRISE_SOURCE_DIR";
-        public const string BitriseBuildNumber = "BITRISE_BUILD_NUMBER";
-        public const string BitriseTriggeredWorkflowId = "BITRISE_TRIGGERED_WORKFLOW_ID";
-        public const string BitriseBuildUrl = "BITRISE_BUILD_URL";
-        public const string BitriseGitMessage = "BITRISE_GIT_MESSAGE";
-        public const string BitriseCloneCommitAuthorName = "GIT_CLONE_COMMIT_AUTHOR_NAME";
-        public const string BitriseCloneCommitAuthorEmail = "GIT_CLONE_COMMIT_AUTHOR_EMAIL";
-        public const string BitriseCloneCommitCommiterName = "GIT_CLONE_COMMIT_COMMITER_NAME";
-        public const string BitriseCloneCommitCommiterEmail = "GIT_CLONE_COMMIT_COMMITER_EMAIL";
-        public const string BitrisePullRequestHeadBranch = "BITRISEIO_PULL_REQUEST_HEAD_BRANCH";
-        public const string BitrisePullRequestNumber = "BITRISE_PULL_REQUEST";
-
-        // Buddy CI Environment variables
-        public const string Buddy = "BUDDY";
-        public const string BuddyScmUrl = "BUDDY_SCM_URL";
-        public const string BuddyExecutionRevision = "BUDDY_EXECUTION_REVISION";
-        public const string BuddyExecutionBranch = "BUDDY_EXECUTION_BRANCH";
-        public const string BuddyExecutionTag = "BUDDY_EXECUTION_TAG";
-        public const string BuddyPipelineId = "BUDDY_PIPELINE_ID";
-        public const string BuddyExecutionId = "BUDDY_EXECUTION_ID";
-        public const string BuddyPipelineName = "BUDDY_PIPELINE_NAME";
-        public const string BuddyExecutionUrl = "BUDDY_EXECUTION_URL";
-        public const string BuddyExecutionRevisionMessage = "BUDDY_EXECUTION_REVISION_MESSAGE";
-        public const string BuddyExecutionRevisionCommitterName = "BUDDY_EXECUTION_REVISION_COMMITTER_NAME";
-        public const string BuddyExecutionRevisionCommitterEmail = "BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL";
-        public const string BuddyPullRequestBaseBranch = "BUDDY_RUN_PR_BASE_BRANCH";
-        public const string BuddyPullRequestNumber = "BUDDY_RUN_PR_NO";
-
-        // Codefresh CI Environment variables
-        public const string CodefreshBuildId = "CF_BUILD_ID";
-        public const string CodefreshPipelineName = "CF_PIPELINE_NAME";
-        public const string CodefreshBuildUrl = "CF_BUILD_URL";
-        public const string CodefreshStepName = "CF_STEP_NAME";
-        public const string CodefreshBranch = "CF_BRANCH";
-        public const string CodefreshPullRequestTarget = "CF_PULL_REQUEST_TARGET";
-        public const string CodefreshPullRequestNumber = "CF_PULL_REQUEST_NUMBER";
-
-        // AWS CodePipeline
-        public const string AWSCodePipelineId = "DD_PIPELINE_EXECUTION_ID";
-        public const string AWSCodePipelineBuildInitiator = "CODEBUILD_INITIATOR";
-        public const string AWSCodePipelineBuildArn = "CODEBUILD_BUILD_ARN";
-        public const string AWSCodePipelineActionExecutionId = "DD_ACTION_EXECUTION_ID";
-
-        // Drone CI
-        public const string Drone = "DRONE";
-        public const string DroneBranch = "DRONE_BRANCH";
-        public const string DroneBuildLink = "DRONE_BUILD_LINK";
-        public const string DroneBuildNumber = "DRONE_BUILD_NUMBER";
-        public const string DroneCommitAuthorEmail = "DRONE_COMMIT_AUTHOR_EMAIL";
-        public const string DroneCommitAuthorName = "DRONE_COMMIT_AUTHOR_NAME";
-        public const string DroneCommitMessage = "DRONE_COMMIT_MESSAGE";
-        public const string DroneCommitSha = "DRONE_COMMIT_SHA";
-        public const string DroneGitHttpUrl = "DRONE_GIT_HTTP_URL";
-        public const string DroneStageName = "DRONE_STAGE_NAME";
-        public const string DroneStepName = "DRONE_STEP_NAME";
-        public const string DroneTag = "DRONE_TAG";
-        public const string DroneWorkspace = "DRONE_WORKSPACE";
-        public const string DronePullRequest = "DRONE_PULL_REQUEST";
-        public const string DroneTargetBranch = "DRONE_TARGET_BRANCH";
-
-        // Datadog Custom CI Environment variables
-        public const string DDGitBranch = "DD_GIT_BRANCH";
-        public const string DDGitTag = "DD_GIT_TAG";
-        public const string DDGitRepository = "DD_GIT_REPOSITORY_URL";
-        public const string DDGitCommitSha = "DD_GIT_COMMIT_SHA";
-        public const string DDGitCommitMessage = "DD_GIT_COMMIT_MESSAGE";
-        public const string DDGitCommitAuthorName = "DD_GIT_COMMIT_AUTHOR_NAME";
-        public const string DDGitCommitAuthorEmail = "DD_GIT_COMMIT_AUTHOR_EMAIL";
-        public const string DDGitCommitAuthorDate = "DD_GIT_COMMIT_AUTHOR_DATE";
-        public const string DDGitCommitCommiterName = "DD_GIT_COMMIT_COMMITTER_NAME";
-        public const string DDGitCommitCommiterEmail = "DD_GIT_COMMIT_COMMITTER_EMAIL";
-        public const string DDGitCommitCommiterDate = "DD_GIT_COMMIT_COMMITTER_DATE";
-        public const string DDGitPullRequestBaseBranch = "DD_GIT_PULL_REQUEST_BASE_BRANCH";
-        public const string DDGitPullRequestBaseBranchSha = "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA";
+            TryLoadCodeOwnersFromAncestor(WorkspacePath, platform, basePath: null);
+        }
     }
+
+    private bool TryLoadCodeOwnersFromAncestor(string? startPath, CodeOwners.Platform platform, string? basePath)
+    {
+        var startDirectory = GetCodeOwnersSearchStart(startPath, basePath);
+        if (StringUtil.IsNullOrEmpty(startDirectory))
+        {
+            return false;
+        }
+
+        DirectoryInfo? directoryInfo;
+        try
+        {
+            directoryInfo = new DirectoryInfo(startDirectory);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error resolving CODEOWNERS search directory from '{Path}'", startDirectory);
+            return false;
+        }
+
+        // Limit cache growth to avoid unbounded memory in large test suites.
+        if (_codeOwnersSearchStarts.Count >= CodeOwnersSearchCacheLimit)
+        {
+            _codeOwnersSearchStarts.Clear();
+        }
+
+        // Skip repeated lookups for the same starting directory.
+        if (!_codeOwnersSearchStarts.Add(directoryInfo.FullName))
+        {
+            return false;
+        }
+
+        // Walk parent directories until we find CODEOWNERS or hit a git boundary.
+        while (directoryInfo != null)
+        {
+            if (TryGetCodeOwnersPath(directoryInfo.FullName, logLookup: false, out var codeOwnersPath))
+            {
+                Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);
+                CodeOwners = new CodeOwners(codeOwnersPath, platform);
+                CodeOwnersRoot = directoryInfo.FullName;
+                return true;
+            }
+
+            // Stop walking when we hit a git boundary.
+            if (HasGitDirectory(directoryInfo.FullName))
+            {
+                break;
+            }
+
+            directoryInfo = directoryInfo.Parent;
+        }
+
+        return false;
+    }
+
+    private CodeOwners.Platform GetCodeOwnersPlatform()
+        => GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
 }

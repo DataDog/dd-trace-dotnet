@@ -217,7 +217,7 @@ internal static class DatadogLoggingFactory
                 var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 if (string.IsNullOrEmpty(programData))
                 {
-                    programData = Environment.GetEnvironmentVariable("ProgramData");
+                    programData = EnvironmentHelpersNoLogging.ProgramData();
                     if (string.IsNullOrEmpty(programData))
                     {
                         programData = @"C:\ProgramData";

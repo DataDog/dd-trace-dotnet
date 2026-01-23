@@ -6,8 +6,6 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 

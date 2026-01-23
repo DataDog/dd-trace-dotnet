@@ -56,6 +56,10 @@ namespace Samples.Computer01
         private StringConcat _stringConcat;
         private SyncOverAsync _syncOverAsync;
 
+#if NETFRAMEWORK
+        private AppDomainCrash _appDomainCrash;
+#endif
+
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
             _scenario = scenario;
@@ -195,6 +199,12 @@ namespace Samples.Computer01
                     _syncOverAsync = new SyncOverAsync(nbThreads, true);
                     _syncOverAsync.Start();
                     break;
+#if NETFRAMEWORK
+                case Scenario.AppDomainCrash:
+                    _appDomainCrash = new AppDomainCrash(parameter);
+                    _appDomainCrash.Start();
+                    break;
+#endif
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -333,6 +343,12 @@ namespace Samples.Computer01
                 case Scenario.SyncOverAsyncWithResult:
                     _syncOverAsync.Stop();
                     break;
+
+#if NETFRAMEWORK
+                case Scenario.AppDomainCrash:
+                    _appDomainCrash.Stop();
+                    break;
+#endif
             }
         }
 
@@ -472,6 +488,11 @@ namespace Samples.Computer01
                         RunSyncOverAsync(nbThreads, true);
                         break;
 
+#if NETFRAMEWORK
+                    case Scenario.AppDomainCrash:
+                        RunAppDomainCrash(parameter);
+                        break;
+#endif
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -1000,6 +1021,14 @@ namespace Samples.Computer01
             var test = new SyncOverAsync(threadCount, useResultProperty);
             test.Run();
         }
+
+#if NETFRAMEWORK
+        private void RunAppDomainCrash(int nbAppDomains)
+        {
+            var test = new AppDomainCrash(nbAppDomains);
+            test.Run();
+        }
+#endif
 
         public class MySpecialClassA
         {

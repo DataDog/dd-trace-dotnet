@@ -578,7 +578,28 @@ internal partial class ProbeExpressionParser<T>
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
         var variable = Expression.Variable(type, name);
-        expressions.Add(Expression.Assign(variable, Expression.Convert(Expression.Field(parameterExpression, "Value"), type)));
+        var valueField = Expression.Field(parameterExpression, "Value");
+
+        // For value types, we need to handle null gracefully to avoid NullReferenceException during unboxing.
+        // When ScopeMember.Value is null and type is a struct, unboxing throws NRE.
+        // For reference types, Convert handles null correctly (returns null).
+        Expression assignmentValue;
+        if (type.IsValueType)
+        {
+            // If value is null, use default; otherwise unbox
+            var isNull = Expression.ReferenceEqual(valueField, Expression.Constant(null, typeof(object)));
+            assignmentValue = Expression.Condition(
+                isNull,
+                Expression.Default(type),
+                Expression.Convert(valueField, type));
+        }
+        else
+        {
+            // Reference types: Convert handles null correctly, throws on type mismatch
+            assignmentValue = Expression.Convert(valueField, type);
+        }
+
+        expressions.Add(Expression.Assign(variable, assignmentValue));
         scopeMembers.Add(variable);
         return parameterExpression;
     }

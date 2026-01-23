@@ -328,26 +328,26 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         var current = GitInfo.GetCurrent();
         var ciDictionaryValues = new Dictionary<string, string>
         {
-            [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
-            [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
-            [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
-            [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
-            [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
-            [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
-            [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemJobDisplayName] = "JobDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemTaskInstanceId] = "TaskInstanceId",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranchName] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersionMessage] = "Fake commit for testing",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForId] = "AuthorName",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForEmail] = "author@company.com",
+            [PlatformKeys.Ci.Azure.TFBuild] = "1",
+            [PlatformKeys.Ci.Azure.SystemTeamProjectId] = "TeamProjectId",
+            [PlatformKeys.Ci.Azure.BuildBuildId] = "BuildId",
+            [PlatformKeys.Ci.Azure.SystemJobId] = "JobId",
+            [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
+            [PlatformKeys.Ci.Azure.BuildDefinitionName] = "DefinitionName",
+            [PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri] = "https://foundation.server.url/",
+            [PlatformKeys.Ci.Azure.SystemStageDisplayName] = "StageDisplayName",
+            [PlatformKeys.Ci.Azure.SystemJobDisplayName] = "JobDisplayName",
+            [PlatformKeys.Ci.Azure.SystemTaskInstanceId] = "TaskInstanceId",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [PlatformKeys.Ci.Azure.BuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceBranch] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceBranchName] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceVersionMessage] = "Fake commit for testing",
+            [PlatformKeys.Ci.Azure.BuildRequestedForId] = "AuthorName",
+            [PlatformKeys.Ci.Azure.BuildRequestedForEmail] = "author@company.com",
         };
 
         foreach (var item in ciDictionaryValues)
@@ -400,15 +400,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
 
         gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         gitBranch = "main";
         gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitRepositoryUrl, gitRepositoryUrl);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitBranch, gitBranch);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitCommitSha, gitCommitSha);
 
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");

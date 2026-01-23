@@ -208,7 +208,7 @@ public sealed class Test
             var ciValues = TestOptimization.Instance.CIValues;
 
             var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
+            tags.SourceFile = ciValues.MakeRelativePathFromSourceRootWithFallback(methodSymbol.File, false);
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
             _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
@@ -220,10 +220,17 @@ public sealed class Test
                 static suiteTags => suiteTags.SourceFile,
                 static (suiteTags, value) => suiteTags.SourceFile = value);
 
+            string[]? owners;
             if (ciValues.CodeOwners is { } codeOwners &&
-                codeOwners.Match("/" + tags.SourceFile) is { } match)
+                (owners = codeOwners.Match("/" + tags.SourceFile).ToArray()) is { Length: > 0 })
             {
-                SetCodeOwnersOnTags(tags, Suite.Tags, match);
+                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
+            }
+            else if (ciValues.TryGetCodeOwnersRelativePath(methodSymbol.File, false, out var codeOwnersRelativePath) &&
+                     ciValues.CodeOwners is { } fallbackCodeOwners &&
+                     (owners = fallbackCodeOwners.Match("/" + codeOwnersRelativePath).ToArray()) is { Length: > 0 })
+            {
+                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
             }
         }
     }

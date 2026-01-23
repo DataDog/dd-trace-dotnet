@@ -6,11 +6,8 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.FeatureFlags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 

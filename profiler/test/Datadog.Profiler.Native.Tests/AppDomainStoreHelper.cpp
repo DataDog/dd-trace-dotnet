@@ -5,45 +5,35 @@
 #include "AppDomainStoreHelper.h"
 
 
-AppDomainInfo::AppDomainInfo()
-    :
-    AppDomainInfo(0, "")
-{
-}
-
-AppDomainInfo::AppDomainInfo(ProcessID pid, std::string name)
-    :
-    Pid{pid},
-    AppDomainName{std::move(name)}
-{
-}
-
 AppDomainStoreHelper::AppDomainStoreHelper(size_t appDomainCount)
 {
     for (size_t i = 1; i <= appDomainCount; i++)
     {
         std::stringstream builder;
         builder << "AD_" << i;
-        _mapping[i] = AppDomainInfo(i, builder.str());
+        _mapping[i] = builder.str();
     }
 }
 
-AppDomainStoreHelper::AppDomainStoreHelper(const std::unordered_map<AppDomainID, AppDomainInfo>& mapping)
+AppDomainStoreHelper::AppDomainStoreHelper(const std::unordered_map<AppDomainID, std::string>& mapping)
     :
     _mapping{mapping}
 {
 }
 
 
-bool AppDomainStoreHelper::GetInfo(AppDomainID appDomainId, ProcessID& pid, std::string& appDomainName)
+std::string_view AppDomainStoreHelper::GetName(AppDomainID appDomainId)
 {
     auto item = _mapping.find(appDomainId);
     if (item == _mapping.end())
     {
-        return false;
+        return {};
     }
 
-    pid = item->second.Pid;
-    appDomainName = item->second.AppDomainName;
-    return true;
+    return item->second;
+}
+
+void AppDomainStoreHelper::Register(AppDomainID appDomainId)
+{
+    // do nothing
 }

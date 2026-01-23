@@ -205,18 +205,18 @@ namespace Datadog.Trace.Telemetry
             public static AgentlessSettings Create(Uri agentlessUri, string apiKey)
             {
                 CloudSettings? cloud = null;
-                if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.GcpServiceVariable) is { Length: >0 } gcp)
+                if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.GcpFunction.FunctionNameKey) is { Length: >0 } gcp)
                 {
                     cloud = new("GCP", "GCPCloudRun", gcp);
                 }
-                else if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureContainerAppVariable) is { Length: >0 } aca)
+                else if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName) is { Length: >0 } aca)
                 {
                     cloud = new("Azure", "AzureContainerApp", aca);
                 }
-                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable1))
-                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable2)))
+                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.RunFromZipKey))
+                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey)))
                 {
-                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceIdentifierVariable));
+                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.SiteNameKey));
                 }
 
                 // TODO: Handle AWS Lambda. We don't currently have a good way to get the ARN as the identifier so skip for now
