@@ -28,7 +28,7 @@ public class AzureApiManagementExtractorTests
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
 
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
@@ -48,7 +48,7 @@ public class AzureApiManagementExtractorTests
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
 
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);

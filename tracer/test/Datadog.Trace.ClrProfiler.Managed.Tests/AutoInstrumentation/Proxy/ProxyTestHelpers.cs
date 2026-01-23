@@ -46,7 +46,7 @@ internal static class ProxyTestHelpers
 
     internal static NameValueHeadersCollection CreateValidAzureHeaders(string? start = null)
     {
-        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
 
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "azure-apim");

@@ -62,4 +62,32 @@ internal static class InferredProxySpanHelper
         Log.Debug("Invalid \"{HeaderName}\" header value: \"{Value}\"", InferredProxyHeaders.Name, proxyName);
         return null;
     }
+
+    public static bool GetStartTime(string? startTime, out DateTimeOffset start)
+    {
+        start = default;
+
+        if (string.IsNullOrEmpty(startTime))
+        {
+            Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
+            return false;
+        }
+
+        if (!long.TryParse(startTime, out var startTimeMs))
+        {
+            Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+            return false;
+        }
+
+        try
+        {
+            start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
+            return false;
+        }
+    }
 }

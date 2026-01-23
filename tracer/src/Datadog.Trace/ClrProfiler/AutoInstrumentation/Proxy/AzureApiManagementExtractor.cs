@@ -32,7 +32,7 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
             var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
 
             // we also need to validate that we have the start time header otherwise we won't be able to create the span
-            if (!GetStartTime(startTimeHeaderValue, out var startTime))
+            if (!InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out var startTime))
             {
                 return false;
             }
@@ -58,26 +58,5 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
             Log.Error(ex, "Error extracting proxy data from {Proxy} headers", AzureApim);
             return false;
         }
-    }
-
-    private static bool GetStartTime(string? startTime, out DateTimeOffset start)
-    {
-        start = default;
-
-        if (string.IsNullOrEmpty(startTime))
-        {
-            Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
-            return false;
-        }
-
-        // Parse as ISO 8601 timestamp (e.g., "2025-12-03T14:21:01.1900116Z")
-        if (!DateTimeOffset.TryParse(startTime, out var parsedTime))
-        {
-            Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
-            return false;
-        }
-
-        start = parsedTime;
-        return true;
     }
 }

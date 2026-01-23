@@ -32,7 +32,7 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
 
             // we also need to validate that we have the start time header otherwise we won't be able to create the span
-            if (!GetStartTime(startTimeHeaderValue, out var startTime))
+            if (!InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out var startTime))
             {
                 return false;
             }
@@ -57,34 +57,6 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
         catch (Exception ex)
         {
             Log.Error(ex, "Error extracting proxy data from {Proxy} headers", ProxyName);
-            return false;
-        }
-    }
-
-    private static bool GetStartTime(string? startTime, out DateTimeOffset start)
-    {
-        start = default;
-
-        if (string.IsNullOrEmpty(startTime))
-        {
-            Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
-            return false;
-        }
-
-        if (!long.TryParse(startTime, out var startTimeMs))
-        {
-            Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
-            return false;
-        }
-
-        try
-        {
-            start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
             return false;
         }
     }
