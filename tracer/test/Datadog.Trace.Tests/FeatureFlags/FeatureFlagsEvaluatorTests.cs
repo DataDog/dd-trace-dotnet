@@ -359,6 +359,113 @@ public partial class FeatureFlagsEvaluatorTests
         // DoLog=true -> one exposure event
         Assert.Single(events);
     }
+
+    // ---------------------------------------------------------------------
+    // ISO 8601 Date Parsing tests
+    // ---------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("2020-01-01T00:00:00.123Z", "2099-12-31T23:59:59.456Z")] // 3-digit milliseconds
+    [InlineData("2020-01-01T00:00:00.123456Z", "2099-12-31T23:59:59.654321Z")] // 6-digit microseconds
+    [InlineData("2020-01-01T00:00:00.123456789Z", "2099-12-31T23:59:59.987654321Z")] // 9-digit nanoseconds (last 2 digits truncated by .NET)
+    [InlineData("2020-01-01T00:00:00Z", "2099-12-31T23:59:59Z")] // no fractional seconds
+    [InlineData("2020-01-01T00:00:00.1Z", "2099-12-31T23:59:59.9Z")] // 1-digit
+    [InlineData("2020-01-01T00:00:00.12Z", "2099-12-31T23:59:59.99Z")] // 2-digit
+    public void EvaluateTimeBasedFlagWithVariousIso8601DateFormats(string startAt, string endAt)
+    {
+        var flag = CreateTimeBasedFlagWithDates("iso8601-flag", startAt, endAt);
+        var flags = new Dictionary<string, Flag> { ["iso8601-flag"] = flag };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-123");
+
+        var result = evaluator.Evaluate("iso8601-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        // The allocation is active (2020-2099 dates), so it should match
+        Assert.Equal("time-limited", result.Value);
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal("time-limited", result.Variant);
+    }
+
+    [Theory]
+    [InlineData("2020-01-01T00:00:00.235982Z", "2020-12-31T23:59:59.235982Z")] // 6-digit microseconds (past)
+    [InlineData("2020-01-01T00:00:00Z", "2020-12-31T23:59:59Z")] // no fractional seconds (past)
+    [InlineData("2020-01-01T00:00:00.123456789Z", "2020-12-31T23:59:59.987654321Z")] // 9-digit nanoseconds (truncated to 7 digits by .NET, but parses correctly)
+    public void EvaluateTimeBasedFlagWithExpiredMicrosecondDatesReturnsDefault(string startAt, string endAt)
+    {
+        var flag = CreateTimeBasedFlagWithDates("expired-flag", startAt, endAt);
+        var flags = new Dictionary<string, Flag> { ["expired-flag"] = flag };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-123");
+
+        var result = evaluator.Evaluate("expired-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        // The allocation is expired (2020 dates), so it should return default
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Default, result.Reason);
+    }
+
+    [Theory]
+    [InlineData("1/1/2020", "12/31/2099")]           // US short date format
+    [InlineData("2020/01/01T00:00:00Z", "2099/12/31T23:59:59Z")] // slash separators
+    [InlineData("01 Jan 2020 00:00:00Z", "31 Dec 2099 23:59:59Z")] // RFC 2822 style
+    public void EvaluateTimeBasedFlagWithNonStandardDateFormatsStillParses(string startAt, string endAt)
+    {
+        // TryParse accepts various date formats beyond strict RFC 3339.
+        // This test documents this behavior - since dates come from our controlled backend,
+        // accepting broader formats is acceptable.
+        var flag = CreateTimeBasedFlagWithDates("non-standard-flag", startAt, endAt);
+        var flags = new Dictionary<string, Flag> { ["non-standard-flag"] = flag };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-123");
+
+        var result = evaluator.Evaluate("non-standard-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        // The allocation is active (2020-2099 dates), so it should match
+        Assert.Equal("time-limited", result.Value);
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal("time-limited", result.Variant);
+    }
+
+    [Theory]
+    [InlineData("not-a-date", "2099-12-31T23:59:59Z")] // invalid startAt
+    [InlineData("2020-01-01T00:00:00Z", "not-a-date")] // invalid endAt
+    [InlineData("garbage-123-xyz", "2099-12-31T23:59:59Z")] // garbage string
+    [InlineData("", "2099-12-31T23:59:59Z")]              // empty string
+    [InlineData("abc123", "2099-12-31T23:59:59Z")]        // alphanumeric garbage
+    [InlineData("2020-13-01T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid month (13)
+    [InlineData("2020-01-32T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid day (32)
+    [InlineData("12345", "2099-12-31T23:59:59Z")]         // just numbers
+    [InlineData("T00:00:00Z", "2099-12-31T23:59:59Z")]    // time only, no date
+    public void EvaluateTimeBasedFlagWithInvalidDateReturnsParseError(string startAt, string endAt)
+    {
+        var flag = CreateTimeBasedFlagWithDates("invalid-flag", startAt, endAt);
+        var flags = new Dictionary<string, Flag> { ["invalid-flag"] = flag };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-123");
+
+        var result = evaluator.Evaluate("invalid-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.Equal("PARSE_ERROR", result.Error);
+    }
+
+    private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            ["time-limited"] = new Variant("time-limited", "time-limited")
+        };
+
+        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "time-limited" } };
+        var alloc = new Allocation { Key = "time-alloc", StartAt = startAt, EndAt = endAt, Splits = splits, DoLog = false };
+
+        return new Flag { Key = key, Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+    }
 }
 #pragma warning restore SA1204 // Static elements should appear before instance elements
 #pragma warning restore SA1500 // Braces for multi-line statements should not share line
