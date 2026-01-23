@@ -105,6 +105,7 @@ internal sealed class Utf8CountingPooledTextWriter : TextWriter
         {
             throw new ArgumentOutOfRangeException(nameof(count));
         }
+
         if (count == 0)
         {
             return;
