@@ -1,0 +1,558 @@
+# Azure Functions Testing Scripts
+
+Quick reference scripts and commands for Azure Functions development workflow.
+
+## Build Scripts
+
+### Build NuGet Package (Standard)
+```powershell
+# Build with verbose output
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+
+# Build without copying
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -Verbose
+
+# Build from specific Azure DevOps build
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo D:\temp\nuget -Verbose
+```
+
+### Clean and Rebuild
+```powershell
+# Clear NuGet caches and rebuild
+dotnet nuget locals all --clear
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+```
+
+## Deployment Scripts
+
+### Deploy to Primary Test App
+```bash
+cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+dotnet restore
+func azure functionapp publish lucasp-premium-linux-isolated-aspnet
+```
+
+### Deploy to Specific App
+```bash
+APP_NAME="lucasp-premium-linux-isolated"
+cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+dotnet restore
+func azure functionapp publish $APP_NAME
+```
+
+### Full Clean Deploy
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+
+# Clean build artifacts
+dotnet clean
+rm -rf bin/ obj/
+
+# Restore and deploy
+dotnet restore
+func azure functionapp publish $APP_NAME
+
+echo "Waiting 2 minutes for worker restart..."
+sleep 120
+```
+
+## Testing Scripts
+
+### Trigger and Capture Timestamp
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+
+# Trigger with timestamp
+echo "=== Triggering at $(date -u +%Y-%m-%d\ %H:%M:%S) UTC ==="
+TIMESTAMP=$(date -u +%Y-%m-%d\ %H:%M:%S)
+
+curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
+
+echo "Triggered at: $TIMESTAMP"
+echo "Use this timestamp for log filtering: grep \"$TIMESTAMP\" worker.log"
+```
+
+### Multiple Test Executions
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+
+for i in {1..5}; do
+  echo "=== Execution $i at $(date -u +%Y-%m-%d\ %H:%M:%S) UTC ==="
+  curl -s https://${APP_NAME}.azurewebsites.net/api/HttpTest
+  echo ""
+  sleep 10
+done
+```
+
+### Test with Different Endpoints
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+BASE_URL="https://${APP_NAME}.azurewebsites.net"
+
+# Test multiple functions
+for FUNC in HttpTest TimerTest QueueTest; do
+  echo "Testing $FUNC..."
+  curl -s "${BASE_URL}/api/${FUNC}"
+  sleep 5
+done
+```
+
+## Log Management Scripts
+
+### Download and Extract Logs
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+RESOURCE_GROUP="lucas.pimentel"
+TIMESTAMP=$(date +%H%M%S)
+LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+
+# Download
+az webapp log download \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --log-file $LOG_FILE
+
+# Extract
+unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+
+echo "Logs extracted to: D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
+```
+
+### Download Logs from All Test Apps
+```bash
+RESOURCE_GROUP="lucas.pimentel"
+APPS=(
+  "lucasp-premium-linux-isolated-aspnet"
+  "lucasp-premium-linux-isolated"
+  "lucasp-premium-linux-inproc"
+)
+
+for APP in "${APPS[@]}"; do
+  echo "Downloading logs from $APP..."
+  az webapp log download \
+    --name $APP \
+    --resource-group $RESOURCE_GROUP \
+    --log-file "D:/temp/logs-${APP}.zip"
+done
+```
+
+### Auto-Download After Test
+```bash
+#!/bin/bash
+# test-and-download.sh - Trigger function and download logs
+
+APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
+RESOURCE_GROUP="lucas.pimentel"
+
+# Trigger
+EXEC_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
+echo "Triggering at $EXEC_TIME UTC"
+curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
+
+# Wait for logs
+echo "Waiting 10 seconds for logs..."
+sleep 10
+
+# Download
+TIMESTAMP=$(date +%H%M%S)
+LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+az webapp log download \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --log-file $LOG_FILE
+
+# Extract
+unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+
+echo ""
+echo "=== Summary ==="
+echo "Execution time: $EXEC_TIME UTC"
+echo "Logs location: D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
+echo ""
+echo "Next steps:"
+echo "  cd D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog"
+echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
+```
+
+## Log Analysis Scripts
+
+### Quick Trace Analysis
+```bash
+#!/bin/bash
+# analyze-trace.sh - Quick trace analysis
+
+LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+EXEC_TIME="${2:-$(date -u +%Y-%m-%d\ %H:%M)}"
+
+cd "$LOG_DIR"
+
+echo "=== Finding execution at $EXEC_TIME ==="
+
+# Get trace ID from host
+echo "Host trace ID:"
+TRACE_ID=$(grep "$EXEC_TIME" dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log \
+  | grep "Span started" \
+  | head -1 \
+  | grep -o 't_id: [^]]*' \
+  | cut -d' ' -f2)
+
+echo "$TRACE_ID"
+
+# Check worker has same trace ID
+echo ""
+echo "Worker spans in this trace:"
+grep "$TRACE_ID" dotnet-tracer-managed-dotnet-*.log | wc -l
+
+# Show all spans
+echo ""
+echo "=== All spans in trace ==="
+grep "$TRACE_ID" dotnet-tracer-managed-*.log | grep "Span started"
+```
+
+### Verify Worker Version
+```bash
+#!/bin/bash
+# verify-version.sh - Check worker tracer version
+
+LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+
+cd "$LOG_DIR"
+
+echo "=== Most Recent Worker Initialization ==="
+grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log | tail -1
+
+echo ""
+echo "=== TracerVersion in Recent Logs ==="
+RECENT_TIME=$(date -u +%Y-%m-%d\ %H:%M)
+grep "$RECENT_TIME" dotnet-tracer-managed-dotnet-*.log | grep "TracerVersion" | tail -1
+```
+
+### Find Span Parenting Issues
+```bash
+#!/bin/bash
+# check-parenting.sh - Find orphaned spans
+
+LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+EXEC_TIME="${2}"
+
+cd "$LOG_DIR"
+
+echo "=== Root Spans (should only be in host) ==="
+echo ""
+echo "Host root spans:"
+grep "$EXEC_TIME" dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log \
+  | grep "Span started" \
+  | grep "p_id: null" \
+  | wc -l
+
+echo "Worker root spans (should be 0):"
+grep "$EXEC_TIME" dotnet-tracer-managed-dotnet-*.log \
+  | grep "Span started" \
+  | grep "p_id: null" \
+  | wc -l
+
+echo ""
+echo "=== Unique Trace IDs (should be 1) ==="
+grep "$EXEC_TIME" dotnet-tracer-managed-*.log \
+  | grep "Span started" \
+  | grep -o 't_id: [^]]*' \
+  | cut -d' ' -f2 \
+  | sort -u \
+  | wc -l
+```
+
+## Azure CLI Management
+
+### App Settings Management
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+RESOURCE_GROUP="lucas.pimentel"
+
+# List all settings
+az functionapp config appsettings list \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Get specific setting
+az functionapp config appsettings list \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  | jq '.[] | select(.name=="DD_TRACE_DEBUG")'
+
+# Enable debug logging
+az functionapp config appsettings set \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --settings DD_TRACE_DEBUG=1
+
+# Disable debug logging
+az functionapp config appsettings set \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --settings DD_TRACE_DEBUG=0
+```
+
+### App Lifecycle Management
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+RESOURCE_GROUP="lucas.pimentel"
+
+# Show app info
+az functionapp show \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Restart app
+az functionapp restart \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Stop app
+az functionapp stop \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP
+
+# Start app
+az functionapp start \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP
+```
+
+### Deployment History
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+RESOURCE_GROUP="lucas.pimentel"
+
+# List recent deployments
+az functionapp deployment list \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "[].{id:id, status:status, active:active, startTime:startTime}" \
+  --output table
+
+# Get most recent deployment
+az functionapp deployment list \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "[0]"
+```
+
+### Stream Live Logs
+```bash
+APP_NAME="lucasp-premium-linux-isolated-aspnet"
+
+# Stream application logs
+func azure functionapp logstream $APP_NAME
+
+# Stream with Azure CLI (alternative)
+az webapp log tail \
+  --name $APP_NAME \
+  --resource-group lucas.pimentel
+```
+
+## Datadog API Scripts
+
+### Query Spans
+```bash
+#!/bin/bash
+# query-spans.sh - Query spans from Datadog
+
+SERVICE="${1:-lucasp-premium-linux-isolated}"
+PROCESS="${2:-worker}"  # host or worker
+
+curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
+  -H "DD-API-KEY: ${DD_API_KEY}" \
+  -H "DD-APPLICATION-KEY: ${DD_APPLICATION_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"data\": {
+      \"attributes\": {
+        \"filter\": {
+          \"query\": \"service:${SERVICE} @aas.function.process:${PROCESS}\",
+          \"from\": \"now-10m\",
+          \"to\": \"now\"
+        }
+      },
+      \"type\": \"search_request\"
+    }
+  }" | jq '.data[] | {span_id: .attributes.attributes.span_id, operation: .attributes.attributes.operation_name, process: .attributes.tags."aas.function.process"}'
+```
+
+### Query Trace
+```bash
+#!/bin/bash
+# query-trace.sh - Get full trace by ID
+
+TRACE_ID="${1}"
+
+curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
+  -H "DD-API-KEY: ${DD_API_KEY}" \
+  -H "DD-APPLICATION-KEY: ${DD_APPLICATION_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"data\": {
+      \"attributes\": {
+        \"filter\": {
+          \"query\": \"@trace_id:${TRACE_ID}\",
+          \"from\": \"now-30m\",
+          \"to\": \"now\"
+        }
+      },
+      \"type\": \"search_request\"
+    }
+  }" | jq '.data[] | {span_id, parent_id, operation_name, process: .attributes.tags."aas.function.process"}' | tee "D:/temp/trace_${TRACE_ID}.json"
+```
+
+## Complete Workflow Scripts
+
+### Full Test Cycle
+```bash
+#!/bin/bash
+# full-test-cycle.sh - Complete build, deploy, test, analyze workflow
+
+set -e  # Exit on error
+
+APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
+RESOURCE_GROUP="lucas.pimentel"
+
+echo "=== 1. Building NuGet Package ==="
+cd D:/source/datadog/dd-trace-dotnet
+pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose"
+
+echo ""
+echo "=== 2. Deploying to $APP_NAME ==="
+cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+dotnet restore
+func azure functionapp publish $APP_NAME
+
+echo ""
+echo "=== 3. Waiting for worker restart (2 minutes) ==="
+sleep 120
+
+echo ""
+echo "=== 4. Triggering function ==="
+EXEC_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
+echo "Execution time: $EXEC_TIME UTC"
+curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
+echo ""
+
+echo ""
+echo "=== 5. Waiting for logs (10 seconds) ==="
+sleep 10
+
+echo ""
+echo "=== 6. Downloading logs ==="
+TIMESTAMP=$(date +%H%M%S)
+LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+az webapp log download \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --log-file $LOG_FILE
+
+unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+
+echo ""
+echo "=== 7. Analyzing logs ==="
+LOG_DIR="D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog"
+cd "$LOG_DIR"
+
+echo "Worker version:"
+grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log | tail -1
+
+echo ""
+echo "Spans at execution time:"
+grep "$EXEC_TIME" dotnet-tracer-managed-*.log | grep "Span started" | wc -l
+
+echo ""
+echo "=== Complete! ==="
+echo "Execution time: $EXEC_TIME UTC"
+echo "Logs location: $LOG_DIR"
+echo ""
+echo "Next: Analyze logs with:"
+echo "  cd $LOG_DIR"
+echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
+```
+
+### Compare Before/After
+```bash
+#!/bin/bash
+# compare-versions.sh - Test before and after changes
+
+APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
+RESOURCE_GROUP="lucas.pimentel"
+
+echo "=== Testing BEFORE changes ==="
+BEFORE_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
+curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
+sleep 10
+
+BEFORE_LOG="D:/temp/logs-before.zip"
+az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $BEFORE_LOG
+unzip -q -o $BEFORE_LOG -d D:/temp/before
+
+echo ""
+echo "=== Deploying changes ==="
+cd D:/source/datadog/dd-trace-dotnet
+pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose"
+
+cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+dotnet restore
+func azure functionapp publish $APP_NAME
+
+echo "Waiting 2 minutes for restart..."
+sleep 120
+
+echo ""
+echo "=== Testing AFTER changes ==="
+AFTER_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
+curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
+sleep 10
+
+AFTER_LOG="D:/temp/logs-after.zip"
+az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $AFTER_LOG
+unzip -q -o $AFTER_LOG -d D:/temp/after
+
+echo ""
+echo "=== Comparison ==="
+echo "Before execution: $BEFORE_TIME UTC"
+echo "After execution: $AFTER_TIME UTC"
+echo ""
+echo "Before logs: D:/temp/before/LogFiles/datadog/"
+echo "After logs: D:/temp/after/LogFiles/datadog/"
+echo ""
+echo "Compare with:"
+echo "  grep \"$BEFORE_TIME\" D:/temp/before/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > before.txt"
+echo "  grep \"$AFTER_TIME\" D:/temp/after/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > after.txt"
+echo "  diff before.txt after.txt"
+```
+
+## PowerShell Equivalents
+
+### Build and Deploy (PowerShell)
+```powershell
+# Build NuGet package
+Set-Location D:\source\datadog\dd-trace-dotnet
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+
+# Deploy
+Set-Location D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore
+dotnet restore
+func azure functionapp publish lucasp-premium-linux-isolated-aspnet
+```
+
+### Download Logs (PowerShell)
+```powershell
+$AppName = "lucasp-premium-linux-isolated-aspnet"
+$ResourceGroup = "lucas.pimentel"
+$Timestamp = Get-Date -Format "HHmmss"
+$LogFile = "D:\temp\logs-$Timestamp.zip"
+
+# Download
+az webapp log download --name $AppName --resource-group $ResourceGroup --log-file $LogFile
+
+# Extract
+Expand-Archive -Path $LogFile -DestinationPath "D:\temp\LogFiles-$Timestamp" -Force
+
+Write-Host "Logs extracted to: D:\temp\LogFiles-$Timestamp\LogFiles\datadog\"
+```
