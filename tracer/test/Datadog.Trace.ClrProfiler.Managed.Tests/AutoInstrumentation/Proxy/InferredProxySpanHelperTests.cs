@@ -28,7 +28,7 @@ public class InferredProxySpanHelperTests
     {
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
-        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString());
 
         var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
             _tracer,
@@ -44,8 +44,9 @@ public class InferredProxySpanHelperTests
     [Fact]
     public void ExtractAndCreateInferredProxyScope_WithAzureHeaders_ReturnsAzureScope()
     {
-        var start = DateTimeOffset.UtcNow;
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders(start.ToString("o", CultureInfo.InvariantCulture));
+        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
 
         var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
             _tracer,
@@ -116,8 +117,8 @@ public class InferredProxySpanHelperTests
     public void ExtractAndCreateInferredProxyScope_WithAzureProxyName_CaseInsensitive_ReturnsAzureScope(string proxyName)
     {
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var startTime = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds).ToString("o");
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders(start: startTime);
+        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
         headers.Set(InferredProxyHeaders.Name, proxyName);
 
         var result = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(
