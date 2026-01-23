@@ -196,4 +196,38 @@ public class SymbolExtractorTest
 
         return root;
     }
+
+    [SkippableFact]
+    [Trait("Category", "LinuxUnsupported")]
+    private void DoesNotDropClosureMethodsWhenThereAreMany()
+    {
+#if DEBUG
+        throw new SkipException("This test requires RELEASE mode (PDB/sequence points differ in DEBUG mode)");
+#elif NETFRAMEWORK
+        throw new SkipException("PDB-based symbol extraction tests are flaky on .NET Framework");
+#else
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
+        var type = typeof(ClosureOverflowSamples.ManyClosures);
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+
+        var extractor = SymbolExtractor.Create(assembly);
+        Assert.NotNull(extractor);
+
+        var classSymbol = extractor.GetClassSymbols(type.FullName);
+        Assert.True(classSymbol.HasValue);
+
+        var classScope = classSymbol.Value;
+        Assert.NotNull(classScope.Scopes);
+
+        var runMethodScope = classScope.Scopes.Single(s => s.ScopeType == ScopeType.Method && s.Name == nameof(ClosureOverflowSamples.ManyClosures.Run));
+        var closureCount = runMethodScope.Scopes?.Count(s => s.ScopeType == ScopeType.Closure) ?? 0;
+
+        Assert.Equal(ClosureOverflowSamples.ManyClosures.ClosureCount, closureCount);
+#endif
+    }
 }
