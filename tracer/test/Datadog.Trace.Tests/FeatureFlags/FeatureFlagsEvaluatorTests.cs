@@ -433,6 +433,12 @@ public partial class FeatureFlagsEvaluatorTests
     [InlineData("not-a-date", "2099-12-31T23:59:59Z")] // invalid startAt
     [InlineData("2020-01-01T00:00:00Z", "not-a-date")] // invalid endAt
     [InlineData("garbage-123-xyz", "2099-12-31T23:59:59Z")] // garbage string
+    [InlineData("", "2099-12-31T23:59:59Z")]              // empty string
+    [InlineData("abc123", "2099-12-31T23:59:59Z")]        // alphanumeric garbage
+    [InlineData("2020-13-01T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid month (13)
+    [InlineData("2020-01-32T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid day (32)
+    [InlineData("12345", "2099-12-31T23:59:59Z")]         // just numbers
+    [InlineData("T00:00:00Z", "2099-12-31T23:59:59Z")]    // time only, no date
     public void EvaluateTimeBasedFlagWithInvalidDateReturnsParseError(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("invalid-flag", startAt, endAt);
