@@ -405,20 +405,11 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            // Using TryParse instead of TryParseExact to support RFC 3339 dates with
-            // variable fractional second precision (0-9 digits). TryParseExact would
+            // Using Parse instead of ParseExact to support RFC 3339 dates with
+            // variable fractional second precision (0-9 digits). ParseExact would
             // require ~10 format strings. Since dates come from our controlled backend,
             // accepting broader date formats is acceptable.
-            if (DateTime.TryParse(
-                    dateString,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind,
-                    out var dt))
-            {
-                return dt;
-            }
-
-            throw new FormatException($"Wrong date format: {dateString}");
+            return DateTime.Parse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
         }
 
         private static object? ResolveAttribute(string? name, EvaluationContext? context)
