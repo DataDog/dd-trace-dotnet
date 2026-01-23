@@ -16,16 +16,23 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
     {
         // Don't change this constructor - it's used by Newtonsoft.JSON for deserialization
         // and that can mean the provided properties are not _really_ nullable, even though we "require" them to be
-        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string? appVersion, List<string> tags, IReadOnlyCollection<string>? processTags)
+        public RcmClientTracer(
+            string runtimeId,
+            string tracerVersion,
+            string service,
+            string env,
+            string? appVersion,
+            List<string> tags,
+            IReadOnlyCollection<string>? processTags)
         {
             RuntimeId = runtimeId;
-            Language = TracerConstants.Language;
             TracerVersion = tracerVersion;
+            Language = TracerConstants.Language;
             Service = service;
-            ProcessTags = processTags;
             Env = env;
             AppVersion = appVersion;
             Tags = tags ?? [];
+            ProcessTags = processTags;
         }
 
         [JsonIgnore]
@@ -58,7 +65,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         [JsonProperty("tags")]
         public List<string> Tags { get; }
 
-        public static RcmClientTracer Create(string runtimeId, string tracerVersion, string service, string env, string? appVersion, ReadOnlyDictionary<string, string> globalTags, IReadOnlyCollection<string>? processTags)
+        public static RcmClientTracer Create(
+            string runtimeId,
+            string tracerVersion,
+            string service,
+            string env,
+            string? appVersion,
+            ReadOnlyDictionary<string, string> globalTags,
+            IReadOnlyCollection<string>? processTags)
             => new(runtimeId, tracerVersion, service, env, appVersion, GetTags(env, service, globalTags), processTags);
 
         private static List<string> GetTags(string? environment, string? serviceVersion, ReadOnlyDictionary<string, string>? globalTags)

@@ -732,7 +732,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(settings, (_, _, processTags) =>
         {
             capturedProcessTags = processTags;
-            return new(new MockStatsdClient());
+            return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
@@ -751,7 +751,7 @@ public class StatsdManagerTests
         using var manager = new StatsdManager(settings, (_, _, processTags) =>
         {
             capturedProcessTags = processTags;
-            return new(new MockStatsdClient());
+            return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);

@@ -34,9 +34,11 @@ internal sealed class StatsdManager : IStatsdManager
     }
 
     // Internal for testing
-    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, IReadOnlyCollection<string>, StatsdClientHolder> statsdFactory)
+    internal StatsdManager(
+        TracerSettings tracerSettings,
+        Func<MutableSettings, ExporterSettings, IReadOnlyCollection<string>, StatsdClientHolder> statsdFactory)
     {
-        // The initial factory, assuming there's no updates
+        // The initial factory, assuming there are no updates
         _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
             tracerSettings.Manager.InitialExporterSettings,
@@ -176,9 +178,13 @@ internal sealed class StatsdManager : IStatsdManager
         return hasChanges;
     }
 
-    private static StatsdClientHolder CreateClient(MutableSettings settings, ExporterSettings exporter, IReadOnlyCollection<string> processTags)
+    private static StatsdClientHolder CreateClient(
+        MutableSettings settings,
+        ExporterSettings exporter,
+        IReadOnlyCollection<string> processTags)
     {
-        return new StatsdClientHolder(StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true, processTags));
+        var client = StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true, processTags);
+        return new StatsdClientHolder(client);
     }
 
     private void EnsureClient(bool ensureCreated, bool forceRecreate)
