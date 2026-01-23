@@ -18,7 +18,7 @@ internal static class StatsdFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StatsdFactory));
 
-    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, IList<string> processTags, string? prefix = null)
+    internal static IDogStatsd CreateDogStatsdClient(MutableSettings settings, ExporterSettings exporter, bool includeDefaultTags, ICollection<string> processTags, string? prefix = null)
     {
         var customTagCount = settings.GlobalTags.Count;
         var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + processTags.Count;
