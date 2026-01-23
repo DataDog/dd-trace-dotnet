@@ -727,7 +727,7 @@ public class StatsdManagerTests
     [Fact]
     public void ProcessTags_PassedToFactory_WhenEnabled()
     {
-        IList<string> capturedProcessTags = null;
+        IReadOnlyCollection<string> capturedProcessTags = null;
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, true } });
         using var manager = new StatsdManager(settings, (_, _, processTags) =>
         {
@@ -746,7 +746,7 @@ public class StatsdManagerTests
     [Fact]
     public void ProcessTags_NotPassedToFactory_WhenDisabled()
     {
-        IList<string> capturedProcessTags = null;
+        IReadOnlyCollection<string> capturedProcessTags = null;
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, false } });
         using var manager = new StatsdManager(settings, (_, _, processTags) =>
         {
