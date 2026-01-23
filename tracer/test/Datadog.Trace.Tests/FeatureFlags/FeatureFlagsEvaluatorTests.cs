@@ -407,6 +407,29 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Theory]
+    [InlineData("1/1/2020", "12/31/2099")]           // US short date format
+    [InlineData("2020/01/01T00:00:00Z", "2099/12/31T23:59:59Z")] // slash separators
+    [InlineData("01 Jan 2020 00:00:00Z", "31 Dec 2099 23:59:59Z")] // RFC 2822 style
+    public void EvaluateTimeBasedFlagWithNonStandardDateFormatsStillParses(string startAt, string endAt)
+    {
+        // TryParse accepts various date formats beyond strict RFC 3339.
+        // This test documents this behavior - since dates come from our controlled backend,
+        // accepting broader formats is acceptable.
+        var flag = CreateTimeBasedFlagWithDates("non-standard-flag", startAt, endAt);
+        var flags = new Dictionary<string, Flag> { ["non-standard-flag"] = flag };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-123");
+
+        var result = evaluator.Evaluate("non-standard-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        // The allocation is active (2020-2099 dates), so it should match
+        Assert.Equal("time-limited", result.Value);
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal("time-limited", result.Variant);
+    }
+
+    [Theory]
     [InlineData("not-a-date", "2099-12-31T23:59:59Z")] // invalid startAt
     [InlineData("2020-01-01T00:00:00Z", "not-a-date")] // invalid endAt
     [InlineData("garbage-123-xyz", "2099-12-31T23:59:59Z")] // garbage string
