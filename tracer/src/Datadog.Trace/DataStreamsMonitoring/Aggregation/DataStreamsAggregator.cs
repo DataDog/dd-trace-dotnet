@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -17,7 +19,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 /// Aggregates multiple <see cref="StatsPoint"/>s into their correct buckets
 /// Note that this class is *not* thread safe
 /// </summary>
-internal sealed class DataStreamsAggregator
+internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
 {
     // The inner dictionary is constrained in size by the number of unique hashes seen by the app
     // Unique hashes are unique paths from origin to here, which could be unbounded if there are loops
@@ -30,17 +32,13 @@ internal sealed class DataStreamsAggregator
 
     private readonly Dictionary<long, Dictionary<string, BacklogBucket>> _backlogBuckets = new();
 
-    private readonly DataStreamsMessagePackFormatter _formatter;
+    private readonly DataStreamsTransactionContainer _dataStreamsTransactionContainer = new(1024);
+
+    private readonly DataStreamsMessagePackFormatter _formatter = formatter;
     private readonly DDSketchPool _sketchPool = new();
-    private readonly long _bucketDurationInNs;
+    private readonly long _bucketDurationInNs = ((long)bucketDurationMs) * 1_000_000;
     private List<SerializableStatsBucket>? _statsToWrite;
     private List<SerializableBacklogBucket>? _backlogsToWrite;
-
-    public DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
-    {
-        _formatter = formatter;
-        _bucketDurationInNs = ((long)bucketDurationMs) * 1_000_000;
-    }
 
     /// <summary>
     /// Add the stats point to the aggregated stats
@@ -70,6 +68,11 @@ internal sealed class DataStreamsAggregator
         }
     }
 
+    public void AddTransaction(in DataStreamsTransactionInfo transaction)
+    {
+        _dataStreamsTransactionContainer.Add(transaction);
+    }
+
     /// <summary>
     /// Serialize the aggregated results using message pack
     /// </summary>
@@ -80,9 +83,11 @@ internal sealed class DataStreamsAggregator
     {
         var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
         var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
-        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
+
+        Console.WriteLine($@"### Serializing data streams aggregator {statsToAdd.Count}, {backlogsToAdd.Count}, {_dataStreamsTransactionContainer.Size()}");
+        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0 || _dataStreamsTransactionContainer.Size() > 0)
         {
-            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd);
+            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd, _dataStreamsTransactionContainer);
             Clear(statsToAdd, backlogsToAdd);
 
             return true;

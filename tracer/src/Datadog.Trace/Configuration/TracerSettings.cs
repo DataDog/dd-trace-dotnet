@@ -549,6 +549,10 @@ namespace Datadog.Trace.Configuration
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
 
+            DataStreamsTransactionExtractors = config
+                                                  .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
+                                                  .AsString(string.Empty);
+
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -1159,6 +1163,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
         /// </summary>
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
+
+        /// <summary>
+        /// Gets a raw value for DSM extractors
+        /// </summary>
+        internal string DataStreamsTransactionExtractors { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.

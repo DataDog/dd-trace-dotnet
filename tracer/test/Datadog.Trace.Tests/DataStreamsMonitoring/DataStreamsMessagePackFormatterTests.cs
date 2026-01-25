@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -91,7 +92,7 @@ public class DataStreamsMessagePackFormatterTests
         };
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets);
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets, new DataStreamsTransactionContainer(1024));
 
         var data = new ArraySegment<byte>(ms.GetBuffer());
 
@@ -192,7 +193,7 @@ public class DataStreamsMessagePackFormatterTests
         var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDuration, [], []);
+        formatter.Serialize(ms, bucketDuration, [], [], new DataStreamsTransactionContainer(1024));
         var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(new ArraySegment<byte>(ms.GetBuffer()));
 
         // content varies depending on how the tests are run, so we cannot really assert on the content.

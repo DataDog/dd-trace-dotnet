@@ -233,6 +233,9 @@ DD_DATA_STREAMS_LEGACY_HEADERS: |
   false by default if DSM is in default state, true otherwise
   <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
 
+DD_DATA_STREAMS_TRANSACTION_EXTRACTORS: |
+  Allows configuring transaction extractors for Data Streams Monitoring.
+
 DD_DBM_PROPAGATION_MODE: |
   Configuration key for setting DBM propagation mode
   Default value is disabled, expected values are either: disabled, service or full

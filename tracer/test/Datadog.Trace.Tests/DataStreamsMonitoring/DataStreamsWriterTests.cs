@@ -15,6 +15,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -65,6 +66,22 @@ public class DataStreamsWriterTests
         await writer.DisposeAsync();
 
         api.Sent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task WhenSupported_TracksTransactions()
+    {
+        var bucketDurationMs = 100;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        DataStreamsTransactionInfo.ClearCache();
+        writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
+        await api.WaitForCount(1, 30_000);
+
+        HasOneOrTwoPoints(api);
+        await writer.DisposeAsync();
     }
 
     [Fact]

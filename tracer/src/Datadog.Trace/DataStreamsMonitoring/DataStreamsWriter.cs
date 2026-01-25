@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -29,6 +30,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     private readonly long _bucketDurationMs;
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly BoundedConcurrentQueue<DataStreamsTransactionInfo> _transactionBuffer = new(queueLimit: 10_000);
     private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
     private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(1);
     private readonly DataStreamsAggregator _aggregator;
@@ -122,6 +124,25 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
             }
 
             if (_buffer.TryEnqueue(point))
+            {
+                return;
+            }
+        }
+
+        Interlocked.Increment(ref _pointsDropped);
+    }
+
+    public void AddTransaction(in DataStreamsTransactionInfo transaction)
+    {
+        Log.Debug(@"### Processing data streams transaction {Transaction}", transaction);
+        if (!Volatile.Read(ref _isInitialized))
+        {
+            Initialize();
+        }
+
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
+        {
+            if (_transactionBuffer.TryEnqueue(transaction))
             {
                 return;
             }
@@ -341,6 +362,12 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 while (_backlogBuffer.TryDequeue(out var backlogPoint))
                 {
                     _aggregator.AddBacklog(in backlogPoint);
+                }
+
+                while (_transactionBuffer.TryDequeue(out var transactionPoint))
+                {
+                    Log.Debug("### Aggregating transaction id {Id}", transactionPoint.TransactionId);
+                    _aggregator.AddTransaction(transactionPoint);
                 }
             }
             catch (Exception ex)

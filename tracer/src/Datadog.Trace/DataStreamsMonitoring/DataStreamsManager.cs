@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -13,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -29,6 +31,7 @@ internal sealed class DataStreamsManager
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
+    private readonly DataStreamsExtractorRegistry _registry;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private bool _isEnabled;
     private bool _isInDefaultState;
@@ -44,6 +47,11 @@ internal sealed class DataStreamsManager
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+        _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
+
+        Log.Debug(@"### Initializing DataStreamsManager with extractors (raw) {DataStreamsTransactionExtractors}", tracerSettings.DataStreamsTransactionExtractors);
+        Log.Debug(@"### Extractors loaded (parsed): {AsJson}", _registry.AsJson());
+
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
         {
             if (updates.UpdatedMutable is { } updated)
@@ -118,6 +126,11 @@ internal sealed class DataStreamsManager
         where TCarrier : IBinaryHeadersCollection
         => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
 
+    public List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)
+    {
+        return _registry.GetExtractorsByType(extractorType);
+    }
+
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
     /// </summary>
@@ -132,6 +145,21 @@ internal sealed class DataStreamsManager
         }
 
         DataStreamsContextPropagator.Instance.Inject(context.Value, headers, _isLegacyDsmHeadersEnabled);
+    }
+
+    public void TrackTransaction(string transactionId, string checkpointName)
+    {
+        Log.Debug(@"### Tracking transaction {TransactionId} at checkpoint {CheckpointName}", transactionId, checkpointName);
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.AddTransaction(new DataStreamsTransactionInfo(
+                                   transactionId,
+                                   DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+                                   checkpointName));
     }
 
     public void TrackBacklog(string tags, long value)

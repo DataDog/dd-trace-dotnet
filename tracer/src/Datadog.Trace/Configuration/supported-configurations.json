@@ -388,6 +388,12 @@
       ],
       "product": "DataStreamsMonitoring"
     },
+    "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS": {
+      "version": [
+        "A"
+      ],
+      "product": "DataStreamsMonitoring"
+    },
     "DD_DATA_STREAMS_LEGACY_HEADERS": {
       "version": [
         "A"

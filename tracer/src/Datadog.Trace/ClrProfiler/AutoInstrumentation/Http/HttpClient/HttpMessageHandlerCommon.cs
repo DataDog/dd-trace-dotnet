@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
@@ -44,6 +45,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
                     return new CallTargetState(scope);
+                }
+
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+                if (dataStreamsManager.IsEnabled)
+                {
+                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders);
+                    if (extractors != null)
+                    {
+                        foreach (var extractor in extractors)
+                        {
+                            if (headers.TryGetValues(extractor.Value, out var headerValues))
+                            {
+                                foreach (var headerValue in headerValues)
+                                {
+                                    dataStreamsManager.TrackTransaction(headerValue, extractor.Name);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

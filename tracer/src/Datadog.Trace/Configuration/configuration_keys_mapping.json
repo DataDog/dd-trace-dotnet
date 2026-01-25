@@ -273,6 +273,10 @@
       "const_name": "LegacyHeadersEnabled"
     },
     {
+      "env_var": "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS",
+      "const_name": "TransactionExtractors"
+    },
+    {
       "env_var": "DD_DBM_PROPAGATION_MODE",
       "const_name": "DbmPropagationMode"
     },
