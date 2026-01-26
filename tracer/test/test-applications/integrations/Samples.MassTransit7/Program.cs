@@ -87,8 +87,9 @@ void ConfigureAzureServiceBus(IBusRegistrationConfigurator x)
     x.UsingAzureServiceBus((context, cfg) =>
     {
         // Azure Service Bus connection string from environment variable
+        // Default uses Azure Service Bus Emulator (https://learn.microsoft.com/en-us/azure/service-bus-messaging/test-locally-with-service-bus-emulator)
         var connectionString = Environment.GetEnvironmentVariable("AZURE_SERVICEBUS_CONNECTION_STRING")
-            ?? throw new InvalidOperationException("AZURE_SERVICEBUS_CONNECTION_STRING environment variable is required");
+            ?? "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
 
         cfg.Host(connectionString);
 
