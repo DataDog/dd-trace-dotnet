@@ -9,14 +9,6 @@
 #include <set>
 #include <variant>
 
-#ifdef LINUX
-#include <elf.h>
-#endif
-
-#ifdef _WINDOWS
-#include <windows.h>  // For IMAGE_DOS_HEADER, IMAGE_NT_HEADERS, etc.
-#endif
-
 #include "Log.h"
 
 // PE32 and PE64 have different optional headers, which complexify the logic to fetch them
