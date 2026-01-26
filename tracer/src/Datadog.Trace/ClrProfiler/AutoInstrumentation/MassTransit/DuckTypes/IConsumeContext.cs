@@ -69,4 +69,10 @@ internal interface IConsumeContext
     /// Gets the message headers (returns object to allow duck-typing, should be duck-cast to IHeaders)
     /// </summary>
     object? Headers { get; }
+
+    /// <summary>
+    /// Gets the receive context which contains InputAddress
+    /// Returns object to allow duck-typing to IReceiveContext
+    /// </summary>
+    object? ReceiveContext { get; }
 }

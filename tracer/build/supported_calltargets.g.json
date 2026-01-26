@@ -9535,6 +9535,31 @@
   {
     "IntegrationName": "MassTransit",
     "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.InMemoryConfigurationExtensions",
+    "TargetMethodName": "UsingInMemory",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "MassTransit.IBusRegistrationConfigurator",
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IInMemoryBusFactoryConfigurator]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingInMemoryIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
     "TargetTypeName": "MassTransit.ISendEndpoint",
     "TargetMethodName": "Send",
     "TargetReturnType": "System.Threading.Tasks.Task",
@@ -9627,6 +9652,106 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointPipeSendIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit.ActiveMQ",
+    "TargetTypeName": "MassTransit.ActiveMqRegistrationExtensions",
+    "TargetMethodName": "UsingActiveMq",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "MassTransit.IBusRegistrationConfigurator",
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IActiveMqBusFactoryConfigurator]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingActiveMqIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit.AmazonSQS",
+    "TargetTypeName": "MassTransit.AmazonSqsRegistrationExtensions",
+    "TargetMethodName": "UsingAmazonSqs",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "MassTransit.IBusRegistrationConfigurator",
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IAmazonSqsBusFactoryConfigurator]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAmazonSqsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit.Azure.ServiceBus.Core",
+    "TargetTypeName": "MassTransit.AzureServiceBusRegistrationExtensions",
+    "TargetMethodName": "UsingAzureServiceBus",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "MassTransit.IBusRegistrationConfigurator",
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IServiceBusBusFactoryConfigurator]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAzureServiceBusIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit.RabbitMqTransport",
+    "TargetTypeName": "MassTransit.RabbitMqBusFactoryConfiguratorExtensions",
+    "TargetMethodName": "UsingRabbitMq",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "MassTransit.IBusRegistrationConfigurator",
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.RabbitMqTransport.IRabbitMqBusFactoryConfigurator]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingRabbitMqIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

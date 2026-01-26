@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -205,12 +206,91 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             tags.ResponseAddress = context.ResponseAddress?.ToString();
             tags.FaultAddress = context.FaultAddress?.ToString();
 
-            // Determine messaging system from addresses
-            var messagingSystem = DetermineMessagingSystemFromContext(context);
-            if (messagingSystem != null)
+            // Extract InputAddress from ReceiveContext (MT8 OTEL: messaging.masstransit.input_address)
+            try
             {
-                tags.MessagingSystem = messagingSystem;
+                var receiveContextObj = context.ReceiveContext;
+                if (receiveContextObj != null && receiveContextObj.TryDuckCast<IReceiveContext>(out var receiveContext))
+                {
+                    var inputAddress = receiveContext.InputAddress?.ToString();
+                    if (!string.IsNullOrEmpty(inputAddress))
+                    {
+                        tags.InputAddress = inputAddress;
+
+                        // MT8 OTEL sets peer.address as "{MessageType}/{MessageNamespace}" from destination
+                        // We'll set it from the destination address for similar behavior
+                        var destAddress = context.DestinationAddress?.ToString();
+                        if (!string.IsNullOrEmpty(destAddress))
+                        {
+                            // Extract message type info for peer.address
+                            var peerAddress = ExtractPeerAddress(destAddress);
+                            if (!string.IsNullOrEmpty(peerAddress))
+                            {
+                                tags.PeerAddress = peerAddress;
+                            }
+                        }
+                    }
+                }
             }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "MassTransitIntegration: Failed to extract ReceiveContext properties");
+            }
+
+            // Determine messaging system from addresses if not already set properly
+            // Don't overwrite if already set to a specific transport (not in-memory default)
+            if (string.IsNullOrEmpty(tags.MessagingSystem) || tags.MessagingSystem == "in-memory")
+            {
+                var messagingSystem = DetermineMessagingSystemFromContext(context);
+                if (!string.IsNullOrEmpty(messagingSystem) && messagingSystem != "in-memory")
+                {
+                    tags.MessagingSystem = messagingSystem;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts peer.address from a destination address for MT8 OTEL compatibility.
+        /// Format: "{MessageType}/{MessageNamespace}" e.g., "GettingStartedMessage/Samples.MassTransit.Contracts"
+        /// </summary>
+        internal static string? ExtractPeerAddress(string? destinationAddress)
+        {
+            if (string.IsNullOrEmpty(destinationAddress))
+            {
+                return null;
+            }
+
+            // Check for URN format: "urn:message:Namespace:MessageType" or embedded in path
+            string urn = destinationAddress!;
+
+            // If it's a URI, try to extract the path which may contain the URN
+            if (Uri.TryCreate(destinationAddress, UriKind.Absolute, out var uri))
+            {
+                var path = uri.AbsolutePath.TrimStart('/');
+                if (!string.IsNullOrEmpty(path))
+                {
+                    // Get the last segment which may be the URN
+                    var lastSlash = path.LastIndexOf('/');
+                    urn = lastSlash >= 0 && lastSlash < path.Length - 1
+                        ? path.Substring(lastSlash + 1)
+                        : path;
+                }
+            }
+
+            // Parse URN format: urn:message:Namespace:MessageType
+            if (urn.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = urn.Substring("urn:message:".Length).Split(':');
+                if (parts.Length >= 2)
+                {
+                    // Format: MessageType/Namespace (MT8 OTEL style)
+                    var messageType = parts[parts.Length - 1];
+                    var ns = string.Join(".", parts, 0, parts.Length - 1);
+                    return $"{messageType}/{ns}";
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

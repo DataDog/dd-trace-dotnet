@@ -229,6 +229,33 @@ public class DatadogFilterPipeSpecification<T> : IPipeSpecification<T>
 4. **Successful path**: `cfg._busConfiguration.<Consume>k__BackingField.Specification._specifications`
 5. **Filter is properly invoked** - The injected filter wraps message processing with BEFORE/AFTER hooks
 
+## Automatic Instrumentation Implementation
+
+The Datadog tracer implements automatic filter injection using the configuration-time approach. The implementation is in:
+
+**Tracer Source Files:**
+- `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MassTransit/FilterInjection/UsingInMemoryIntegration.cs` - CallTarget integration that hooks into `UsingInMemory`
+- `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MassTransit/FilterInjection/MassTransitFilterInjector.cs` - Reflection-based filter injection
+- `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MassTransit/FilterInjection/DatadogConsumePipeSpecification.cs` - Filter specification
+- `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MassTransit/FilterInjection/DatadogConsumeFilter.cs` - The filter that creates spans
+
+**How it works:**
+1. `UsingInMemoryIntegration` uses `[InstrumentMethod]` to hook `ServiceCollectionBusConfigurator.UsingInMemory`
+2. The integration wraps the user's callback using `DelegateInstrumentation`
+3. When the callback executes, `MassTransitFilterInjector.InjectConsumeFilter()` is called first
+4. The injector navigates the internal MassTransit configuration via reflection and adds `DatadogConsumePipeSpecification`
+5. When MassTransit builds the pipeline, `DatadogConsumePipeSpecification.Apply()` adds `DatadogConsumeFilter`
+6. `DatadogConsumeFilter.Send()` creates Datadog spans around message processing
+
+**Running the Sample App:**
+```bash
+# With manual injection (for testing without Datadog tracer)
+MASSTRANSIT_MANUAL_INJECTION=true dotnet run
+
+# With automatic instrumentation (requires Datadog tracer)
+dotnet run  # Tracer automatically injects filters via CallTarget
+```
+
 ## Recommendations for Datadog Tracer
 
 For automatic instrumentation without user code changes:
@@ -237,8 +264,8 @@ For automatic instrumentation without user code changes:
    - Pros: No need to inject filters, works with any MassTransit configuration
    - Cons: Limited to instrumenting specific methods, may miss some operations
 
-2. **Configuration-time filter injection** (verified working) - Hook the transport callback (e.g., `UsingInMemory`) via CallTarget and inject filters
-   - **Hook point**: The callback passed to `UsingInMemory`, `UsingRabbitMq`, etc.
+2. **Configuration-time filter injection** (IMPLEMENTED) - Hook the transport callback (e.g., `UsingInMemory`) via CallTarget and inject filters
+   - **Hook point**: `ServiceCollectionBusConfigurator.UsingInMemory` wrapped via `DelegateInstrumentation`
    - **Injection path**: `cfg._busConfiguration.<Consume>k__BackingField.Specification._specifications`
    - Pros: Filter wraps entire message processing, access to full context
    - Cons: Requires hooking into configuration phase, reflection-based

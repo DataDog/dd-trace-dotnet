@@ -43,6 +43,10 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
             || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MassTransit,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MassTransit.ActiveMQ,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MassTransit.AmazonSQS,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MassTransit.Azure.ServiceBus.Core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MassTransit.RabbitMqTransport,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MSTest.TestFramework,", StringComparison.Ordinal)
@@ -454,10 +458,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.StateMachineSagaMessageFilterIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingInMemoryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointSendIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ReceivePipeDispatcherIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointPipeSendIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingActiveMqIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAmazonSqsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAzureServiceBusIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingRabbitMqIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MassTransit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"

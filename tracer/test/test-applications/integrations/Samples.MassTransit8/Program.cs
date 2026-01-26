@@ -8,8 +8,14 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<GettingStartedConsumer>();
 
-    x.UsingInMemory((context, cfg) =>
+    x.UsingRabbitMq((context, cfg) =>
     {
+        var host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        cfg.Host(host, "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
         cfg.ConfigureEndpoints(context);
     });
 });
