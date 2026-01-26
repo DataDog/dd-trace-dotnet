@@ -26,8 +26,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         return new(
             _source,
             _telemetry,
-            integrationEnabledKeys[0],
-            integrationEnabledKeys.Skip(1).ToArray());
+            integrationEnabledKeys.Key,
+            integrationEnabledKeys.Value);
     }
 
     public HasKeys WithIntegrationAnalyticsKey(string integrationName)
@@ -38,8 +38,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         return new(
             _source,
             _telemetry,
-            integrationAnalyticsEnabledKeys[0],
-            integrationAnalyticsEnabledKeys.Skip(1).ToArray());
+            integrationAnalyticsEnabledKeys.Key,
+            integrationAnalyticsEnabledKeys.Value);
     }
 
     public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName)
@@ -50,8 +50,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         return new(
             _source,
             _telemetry,
-            integrationAnalyticsSampleRateKeys[0],
-            integrationAnalyticsSampleRateKeys.Skip(1).ToArray());
+            integrationAnalyticsSampleRateKeys.Key,
+            integrationAnalyticsSampleRateKeys.Value);
     }
 
     internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? providedAliases = null)

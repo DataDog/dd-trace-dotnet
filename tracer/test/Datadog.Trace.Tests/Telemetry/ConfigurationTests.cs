@@ -62,7 +62,7 @@ public class ConfigurationTests
                 // deprecated alias
                 "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED"
             }
-           .Concat(IntegrationNameToKeys.AllIntegrationEnabledKeys)
+           .Concat(IntegrationNameToKeys.GetAllIntegrationEnabledKeys())
            .ToArray();
 
     [Fact]

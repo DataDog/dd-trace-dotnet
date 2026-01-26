@@ -440,8 +440,9 @@ public class EnumExtensionsGeneratorTests
                     /// <summary>
                     /// All integration enabled keys (canonical + aliases).
                     /// </summary>
-                    public static readonly string[] AllIntegrationEnabledKeys = new[]
-                    {
+                    [Datadog.Trace.SourceGenerators.TestingOnly]
+                    public static string[] GetAllIntegrationEnabledKeys() =>
+                    [
                         "DD_TRACE_HTTPMESSAGEHANDLER_ENABLED", "DD_TRACE_HttpMessageHandler_ENABLED", "DD_HttpMessageHandler_ENABLED",
                         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_ENABLED", "DD_TRACE_HttpMessageHandler_ANALYTICS_ENABLED", "DD_HttpMessageHandler_ANALYTICS_ENABLED",
                         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_SAMPLE_RATE", "DD_TRACE_HttpMessageHandler_ANALYTICS_SAMPLE_RATE", "DD_HttpMessageHandler_ANALYTICS_SAMPLE_RATE", 
@@ -451,72 +452,72 @@ public class EnumExtensionsGeneratorTests
                         "DD_TRACE_ADONET_ENABLED", "DD_TRACE_AdoNet_ENABLED", "DD_AdoNet_ENABLED",
                         "DD_TRACE_ADONET_ANALYTICS_ENABLED", "DD_TRACE_AdoNet_ANALYTICS_ENABLED", "DD_AdoNet_ANALYTICS_ENABLED",
                         "DD_TRACE_ADONET_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AdoNet_ANALYTICS_SAMPLE_RATE", "DD_AdoNet_ANALYTICS_SAMPLE_RATE", 
-                    };
+                    ];
                     /// <summary>
                     /// Gets the configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
-                    public static string[] GetIntegrationEnabledKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationEnabledKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "HttpMessageHandler" => new[] { "DD_TRACE_HTTPMESSAGEHANDLER_ENABLED", "DD_TRACE_HttpMessageHandler_ENABLED", "DD_HttpMessageHandler_ENABLED" },
-                            "AspNetCore" => new[] { "DD_TRACE_ASPNETCORE_ENABLED", "DD_TRACE_AspNetCore_ENABLED", "DD_AspNetCore_ENABLED" },
-                            "AdoNet" => new[] { "DD_TRACE_ADONET_ENABLED", "DD_TRACE_AdoNet_ENABLED", "DD_AdoNet_ENABLED" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ENABLED", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ENABLED", integrationName),
-                                $"DD_{integrationName}_ENABLED"
-                            }
+                            "HttpMessageHandler" => new("DD_TRACE_HTTPMESSAGEHANDLER_ENABLED", ["DD_TRACE_HttpMessageHandler_ENABLED", "DD_HttpMessageHandler_ENABLED"]),
+                            "AspNetCore" => new("DD_TRACE_ASPNETCORE_ENABLED", ["DD_TRACE_AspNetCore_ENABLED", "DD_AspNetCore_ENABLED"]),
+                            "AdoNet" => new("DD_TRACE_ADONET_ENABLED", ["DD_TRACE_AdoNet_ENABLED", "DD_AdoNet_ENABLED"]),
+                            _ => GetIntegrationEnabledKeysFallback(integrationName) // we should never get here
                         };
-                    }
                     /// <summary>
                     /// Gets the analytics enabled configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
                     [System.Obsolete(ObsoleteMessage)]
-                    public static string[] GetIntegrationAnalyticsEnabledKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsEnabledKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "HttpMessageHandler" => new[] { "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_ENABLED", "DD_TRACE_HttpMessageHandler_ANALYTICS_ENABLED", "DD_HttpMessageHandler_ANALYTICS_ENABLED" },
-                            "AspNetCore" => new[] { "DD_TRACE_ASPNETCORE_ANALYTICS_ENABLED", "DD_TRACE_AspNetCore_ANALYTICS_ENABLED", "DD_AspNetCore_ANALYTICS_ENABLED" },
-                            "AdoNet" => new[] { "DD_TRACE_ADONET_ANALYTICS_ENABLED", "DD_TRACE_AdoNet_ANALYTICS_ENABLED", "DD_AdoNet_ANALYTICS_ENABLED" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName),
-                                $"DD_{integrationName}_ANALYTICS_ENABLED"
-                            }
+                            "HttpMessageHandler" => new("DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_ENABLED", ["DD_TRACE_HttpMessageHandler_ANALYTICS_ENABLED", "DD_HttpMessageHandler_ANALYTICS_ENABLED"]),
+                            "AspNetCore" => new("DD_TRACE_ASPNETCORE_ANALYTICS_ENABLED", ["DD_TRACE_AspNetCore_ANALYTICS_ENABLED", "DD_AspNetCore_ANALYTICS_ENABLED"]),
+                            "AdoNet" => new("DD_TRACE_ADONET_ANALYTICS_ENABLED", ["DD_TRACE_AdoNet_ANALYTICS_ENABLED", "DD_AdoNet_ANALYTICS_ENABLED"]),
+                            _ => GetIntegrationAnalyticsEnabledKeysFallback(integrationName) // we should never get here
                         };
-                    }
                     /// <summary>
                     /// Gets the analytics sample rate configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
                     [System.Obsolete(ObsoleteMessage)]
-                    public static string[] GetIntegrationAnalyticsSampleRateKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsSampleRateKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "HttpMessageHandler" => new[] { "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_SAMPLE_RATE", "DD_TRACE_HttpMessageHandler_ANALYTICS_SAMPLE_RATE", "DD_HttpMessageHandler_ANALYTICS_SAMPLE_RATE" },
-                            "AspNetCore" => new[] { "DD_TRACE_ASPNETCORE_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AspNetCore_ANALYTICS_SAMPLE_RATE", "DD_AspNetCore_ANALYTICS_SAMPLE_RATE" },
-                            "AdoNet" => new[] { "DD_TRACE_ADONET_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AdoNet_ANALYTICS_SAMPLE_RATE", "DD_AdoNet_ANALYTICS_SAMPLE_RATE" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName),
-                                $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
-                            }
+                            "HttpMessageHandler" => new("DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_HttpMessageHandler_ANALYTICS_SAMPLE_RATE", "DD_HttpMessageHandler_ANALYTICS_SAMPLE_RATE"]),
+                            "AspNetCore" => new("DD_TRACE_ASPNETCORE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AspNetCore_ANALYTICS_SAMPLE_RATE", "DD_AspNetCore_ANALYTICS_SAMPLE_RATE"]),
+                            "AdoNet" => new("DD_TRACE_ADONET_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AdoNet_ANALYTICS_SAMPLE_RATE", "DD_AdoNet_ANALYTICS_SAMPLE_RATE"]),
+                            _ => GetIntegrationAnalyticsSampleRateKeysFallback(integrationName) // we should never get here
                         };
-                    }
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationEnabledKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ENABLED", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ENABLED", integrationName),
+                            $"DD_{integrationName}_ENABLED"
+                        ]);
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsEnabledKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName),
+                            $"DD_{integrationName}_ANALYTICS_ENABLED"
+                        ]);
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsSampleRateKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName),
+                            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+                        ]);
                 }
             }
             
@@ -589,8 +590,9 @@ public class EnumExtensionsGeneratorTests
                     /// <summary>
                     /// All integration enabled keys (canonical + aliases).
                     /// </summary>
-                    public static readonly string[] AllIntegrationEnabledKeys = new[]
-                    {
+                    [Datadog.Trace.SourceGenerators.TestingOnly]
+                    public static string[] GetAllIntegrationEnabledKeys() =>
+                    [
                         "DD_TRACE_MYSQL_ENABLED", "DD_TRACE_MySql_ENABLED", "DD_MySql_ENABLED",
                         "DD_TRACE_MYSQL_ANALYTICS_ENABLED", "DD_TRACE_MySql_ANALYTICS_ENABLED", "DD_MySql_ANALYTICS_ENABLED",
                         "DD_TRACE_MYSQL_ANALYTICS_SAMPLE_RATE", "DD_TRACE_MySql_ANALYTICS_SAMPLE_RATE", "DD_MySql_ANALYTICS_SAMPLE_RATE", 
@@ -600,72 +602,72 @@ public class EnumExtensionsGeneratorTests
                         "DD_TRACE_RABBITMQ_ENABLED", "DD_TRACE_RabbitMQ_ENABLED", "DD_RabbitMQ_ENABLED",
                         "DD_TRACE_RABBITMQ_ANALYTICS_ENABLED", "DD_TRACE_RabbitMQ_ANALYTICS_ENABLED", "DD_RabbitMQ_ANALYTICS_ENABLED",
                         "DD_TRACE_RABBITMQ_ANALYTICS_SAMPLE_RATE", "DD_TRACE_RabbitMQ_ANALYTICS_SAMPLE_RATE", "DD_RabbitMQ_ANALYTICS_SAMPLE_RATE", 
-                    };
+                    ];
                     /// <summary>
                     /// Gets the configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
-                    public static string[] GetIntegrationEnabledKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationEnabledKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "MySql" => new[] { "DD_TRACE_MYSQL_ENABLED", "DD_TRACE_MySql_ENABLED", "DD_MySql_ENABLED" },
-                            "AwsS3" => new[] { "DD_TRACE_AWSS3_ENABLED", "DD_TRACE_AwsS3_ENABLED", "DD_AwsS3_ENABLED" },
-                            "RabbitMQ" => new[] { "DD_TRACE_RABBITMQ_ENABLED", "DD_TRACE_RabbitMQ_ENABLED", "DD_RabbitMQ_ENABLED" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ENABLED", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ENABLED", integrationName),
-                                $"DD_{integrationName}_ENABLED"
-                            }
+                            "MySql" => new("DD_TRACE_MYSQL_ENABLED", ["DD_TRACE_MySql_ENABLED", "DD_MySql_ENABLED"]),
+                            "AwsS3" => new("DD_TRACE_AWSS3_ENABLED", ["DD_TRACE_AwsS3_ENABLED", "DD_AwsS3_ENABLED"]),
+                            "RabbitMQ" => new("DD_TRACE_RABBITMQ_ENABLED", ["DD_TRACE_RabbitMQ_ENABLED", "DD_RabbitMQ_ENABLED"]),
+                            _ => GetIntegrationEnabledKeysFallback(integrationName) // we should never get here
                         };
-                    }
                     /// <summary>
                     /// Gets the analytics enabled configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
                     [System.Obsolete(ObsoleteMessage)]
-                    public static string[] GetIntegrationAnalyticsEnabledKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsEnabledKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "MySql" => new[] { "DD_TRACE_MYSQL_ANALYTICS_ENABLED", "DD_TRACE_MySql_ANALYTICS_ENABLED", "DD_MySql_ANALYTICS_ENABLED" },
-                            "AwsS3" => new[] { "DD_TRACE_AWSS3_ANALYTICS_ENABLED", "DD_TRACE_AwsS3_ANALYTICS_ENABLED", "DD_AwsS3_ANALYTICS_ENABLED" },
-                            "RabbitMQ" => new[] { "DD_TRACE_RABBITMQ_ANALYTICS_ENABLED", "DD_TRACE_RabbitMQ_ANALYTICS_ENABLED", "DD_RabbitMQ_ANALYTICS_ENABLED" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName),
-                                $"DD_{integrationName}_ANALYTICS_ENABLED"
-                            }
+                            "MySql" => new("DD_TRACE_MYSQL_ANALYTICS_ENABLED", ["DD_TRACE_MySql_ANALYTICS_ENABLED", "DD_MySql_ANALYTICS_ENABLED"]),
+                            "AwsS3" => new("DD_TRACE_AWSS3_ANALYTICS_ENABLED", ["DD_TRACE_AwsS3_ANALYTICS_ENABLED", "DD_AwsS3_ANALYTICS_ENABLED"]),
+                            "RabbitMQ" => new("DD_TRACE_RABBITMQ_ANALYTICS_ENABLED", ["DD_TRACE_RabbitMQ_ANALYTICS_ENABLED", "DD_RabbitMQ_ANALYTICS_ENABLED"]),
+                            _ => GetIntegrationAnalyticsEnabledKeysFallback(integrationName) // we should never get here
                         };
-                    }
                     /// <summary>
                     /// Gets the analytics sample rate configuration keys for the specified integration name.
-                    /// Returns keys in order: [canonical key, alias1, alias2]
+                    /// Returns a KeyValuePair where Key is the canonical key and Value is an array of aliases.
                     /// </summary>
                     /// <param name="integrationName">The integration name</param>
-                    /// <returns>Array of configuration keys to check in order</returns>
+                    /// <returns>KeyValuePair with canonical key and aliases</returns>
                     [System.Obsolete(ObsoleteMessage)]
-                    public static string[] GetIntegrationAnalyticsSampleRateKeys(string integrationName)
-                    {
-                        return integrationName switch
+                    public static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsSampleRateKeys(string integrationName) =>
+                        integrationName switch
                         {
-                            "MySql" => new[] { "DD_TRACE_MYSQL_ANALYTICS_SAMPLE_RATE", "DD_TRACE_MySql_ANALYTICS_SAMPLE_RATE", "DD_MySql_ANALYTICS_SAMPLE_RATE" },
-                            "AwsS3" => new[] { "DD_TRACE_AWSS3_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AwsS3_ANALYTICS_SAMPLE_RATE", "DD_AwsS3_ANALYTICS_SAMPLE_RATE" },
-                            "RabbitMQ" => new[] { "DD_TRACE_RABBITMQ_ANALYTICS_SAMPLE_RATE", "DD_TRACE_RabbitMQ_ANALYTICS_SAMPLE_RATE", "DD_RabbitMQ_ANALYTICS_SAMPLE_RATE" },
-                            _ => new[]
-                            {
-                                string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName.ToUpperInvariant()),
-                                string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName),
-                                $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
-                            }
+                            "MySql" => new("DD_TRACE_MYSQL_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_MySql_ANALYTICS_SAMPLE_RATE", "DD_MySql_ANALYTICS_SAMPLE_RATE"]),
+                            "AwsS3" => new("DD_TRACE_AWSS3_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AwsS3_ANALYTICS_SAMPLE_RATE", "DD_AwsS3_ANALYTICS_SAMPLE_RATE"]),
+                            "RabbitMQ" => new("DD_TRACE_RABBITMQ_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_RabbitMQ_ANALYTICS_SAMPLE_RATE", "DD_RabbitMQ_ANALYTICS_SAMPLE_RATE"]),
+                            _ => GetIntegrationAnalyticsSampleRateKeysFallback(integrationName) // we should never get here
                         };
-                    }
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationEnabledKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ENABLED", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ENABLED", integrationName),
+                            $"DD_{integrationName}_ENABLED"
+                        ]);
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsEnabledKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName),
+                            $"DD_{integrationName}_ANALYTICS_ENABLED"
+                        ]);
+
+                    private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsSampleRateKeysFallback(string integrationName) =>
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName.ToUpperInvariant()),
+                        [
+                            string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName),
+                            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
+                        ]);
                 }
             }
             
