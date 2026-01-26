@@ -1481,8 +1481,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Configure which profiler callbacks we want to receive by setting the event mask:
     DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
-    // TODO rename IsNGENProfilingEnabled into something more tailored for
-    // our new feature
     if (_pConfiguration->UseCustomGetFunctionFromIP())
     {
         eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
