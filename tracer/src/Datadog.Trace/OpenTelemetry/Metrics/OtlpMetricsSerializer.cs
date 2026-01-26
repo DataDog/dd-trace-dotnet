@@ -82,7 +82,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return sb.ToString();
         }
 
-        private byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics)
+        private byte[] SerializeResourceMetrics(IEnumerable<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream(512);
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
@@ -94,9 +94,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             // Group metrics by meter identity (name + version + tags)
             var meterGroups = new Dictionary<string, List<MetricPoint>>();
-            for (int i = 0; i < metrics.Count; i++)
+            foreach (var metric in metrics)
             {
-                var metric = metrics[i];
                 var meterKey = $"{metric.MeterName}|{metric.MeterVersion}|{JoinMeterTags(metric.MeterTags)}";
 
                 if (!meterGroups.TryGetValue(meterKey, out var meterMetrics))
@@ -510,20 +509,19 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write((ulong)metric.SnapshotBucketCounts[i]);
             }
 
-            var bounds = MetricPoint.DefaultHistogramBounds;
-            for (int i = 0; i < bounds.Length; i++)
+            for (int i = 0; i < metric.SnapshotBucketBounds.Length; i++)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointExplicitBounds, Fixed64);
-                writer.Write(bounds[i]);
+                writer.Write(metric.SnapshotBucketBounds[i]);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMin != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, Fixed64);
                 writer.Write(metric.SnapshotMin);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMax != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, Fixed64);
                 writer.Write(metric.SnapshotMax);
@@ -599,7 +597,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         /// </summary>
         /// <param name="metrics">The metrics to serialize</param>
         /// <param name="startPosition">Optional start position to leave empty bytes at the beginning (e.g., for gRPC 5-byte frame header)</param>
-        public byte[] SerializeMetrics(IReadOnlyList<MetricPoint> metrics, int startPosition = 0)
+        public byte[] SerializeMetrics(IEnumerable<MetricPoint> metrics, int startPosition = 0)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);

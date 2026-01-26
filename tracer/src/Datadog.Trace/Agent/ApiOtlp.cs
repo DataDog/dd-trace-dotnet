@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
@@ -196,6 +197,18 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /*
+            var metrics = state.Stats.ConvertToOtlpMetrics(state.BucketDuration);
+
+            var headers = new Dictionary<string, string>
+            {
+                { "DD-Protocol", "otlp" },
+                { "DD-Api-Key", System.Environment.GetEnvironmentVariable("DD_API_KEY") },
+                { "X-Datadog-Reported-Languages", "dotnet" },
+            };
+            var exporter = new OtlpExporter(Tracer.Instance.Settings, new Uri($"https://trace.agent.datadoghq.com/api/v0.2/stats"), Configuration.OtlpProtocol.HttpProtobuf, headers);
+        */
+
         private async Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
             bool success = false;
@@ -203,17 +216,61 @@ namespace Datadog.Trace.Agent
 
             request.AddContainerMetadataHeaders(_containerMetadata);
 
+#if NET6_0_OR_GREATER
+            var endTime = DateTimeOffset.UtcNow;
+            var metrics = state.Stats.ConvertToOtlpMetrics(endTime);
+            var headers = new Dictionary<string, string>
+            {
+                { "DD-Protocol", "otlp" },
+                { "DD-Api-Key", System.Environment.GetEnvironmentVariable("DD_API_KEY") },
+                { "X-Datadog-Reported-Languages", "dotnet" },
+            };
+            var exporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(Tracer.Instance.Settings, new Uri($"https://trace.agent.datadoghq.com/api/v0.2/stats"), Configuration.OtlpProtocol.HttpProtobuf, headers);
+#else
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
-
             var buffer = stream.GetBuffer();
+#endif
 
+#if NET6_0_OR_GREATER
+            Datadog.Trace.OpenTelemetry.ExportResult exportResult;
+
+            try
+            {
+                TelemetryFactory.Metrics.RecordCountStatsApiRequests();
+                exportResult = await exporter.ExportAsync(metrics).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                TelemetryFactory.Metrics.RecordCountStatsApiErrors(tag);
+                throw;
+            }
+
+            // TelemetryFactory.Metrics.RecordCountStatsApiResponses(response.GetTelemetryStatusCodeMetricTag());
+            if (exportResult == Datadog.Trace.OpenTelemetry.ExportResult.Success)
+            {
+                success = true;
+            }
+
+            if (success)
+            {
+                _log.Debug("Successfully sent stats to the Datadog Agent.");
+            }
+            else
+            {
+                TelemetryFactory.Metrics.RecordCountStatsApiErrors(MetricTags.ApiError.StatusCode);
+            }
+
+            response?.Dispose();
+            return success ? SendResult.Success :
+                    isFinalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
+#else
             try
             {
                 try
                 {
                     TelemetryFactory.Metrics.RecordCountStatsApiRequests();
-                    response = await request.PostAsync(new ArraySegment<byte>(buffer, 0, (int)stream.Length), MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -257,6 +314,7 @@ namespace Datadog.Trace.Agent
             {
                 response?.Dispose();
             }
+#endif
         }
 
         private async Task<SendResult> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)

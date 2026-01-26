@@ -1,4 +1,4 @@
-﻿// <copyright file="RareSampler.cs" company="Datadog">
+// <copyright file="RareSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, isOtlp: false);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private void UpdateSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, isOtlp: false);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)

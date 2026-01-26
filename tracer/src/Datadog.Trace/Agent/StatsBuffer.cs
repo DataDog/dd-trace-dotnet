@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsBuffer.cs" company="Datadog">
+// <copyright file="StatsBuffer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,6 +28,8 @@ namespace Datadog.Trace.Agent
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
 
+        public DateTimeOffset StartTime { get; private set; }
+
         public long Start { get; private set; }
 
         public void Reset()
@@ -54,8 +56,121 @@ namespace Datadog.Trace.Agent
 
             _keysToRemove.Clear();
 
-            Start = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            StartTime = DateTimeOffset.UtcNow;
+            Start = StartTime.ToUnixTimeNanoseconds();
         }
+
+#if NET6_0_OR_GREATER
+        public List<Datadog.Trace.OpenTelemetry.Metrics.MetricPoint> ConvertToOtlpMetrics(DateTimeOffset endTime)
+        {
+            // Potentially add resource attributes here
+            // - telemetry.sdk.name
+            // - telemetry.sdk.language
+            // - telemetry.sdk.version
+            // - language
+            // - hostname
+            // - runtime.id
+            // - service.name
+            // - deployment.environment.name
+            // - deployment.environment
+            // - service.version
+            // - process.tags
+            // - tracer.version
+            // - tracer.runtime.id
+
+            return OtlpSerializeBuckets(endTime);
+        }
+
+        private Datadog.Trace.OpenTelemetry.Metrics.MetricPoint OtlpSerializeBucket(StatsBucket bucket, DateTimeOffset endTime)
+        {
+            // TODO: Do something with bucket.Key.Service
+            // Ignored for now: Service, IsSyntheticsRequest
+
+            var timeseriesAttributes = new Dictionary<string, object>()
+            {
+                // { "service", bucket.Key.Service },
+                { "Name", bucket.Key.OperationName },
+                { "Resource", bucket.Key.Resource },
+                { "Type", bucket.Key.Type },
+                { "StatusCode", bucket.Key.HttpStatusCode },
+                { "TopLevel", bucket.Key.IsTopLevel },
+                { "Error", bucket.Key.IsError },
+            };
+
+            var metricPoint = new Datadog.Trace.OpenTelemetry.Metrics.MetricPoint(instrumentName: "request.latencies", meterName: "datadog.trace.metrics", meterVersion: string.Empty, meterTags: Array.Empty<KeyValuePair<string, object>>(), instrumentType: Datadog.Trace.OpenTelemetry.Metrics.InstrumentType.Histogram, temporality: Datadog.Trace.OpenTelemetry.Metrics.AggregationTemporality.Delta, tags: timeseriesAttributes, unit: "ns", description: "Summary of request latencies")
+            {
+                StartTime = StartTime,
+                EndTime = endTime,
+                SnapshotSum = bucket.Duration,
+                SnapshotCount = bucket.Hits,
+                SnapshotMin = double.NaN,
+                SnapshotMax = double.NaN,
+                SnapshotBucketCounts = GetCounts(bucket.OkSummary).ToArray(),
+                SnapshotBucketBounds = GetBoundaries(bucket.OkSummary).ToArray(),
+            };
+
+            static List<double> GetBoundaries(DDSketch sketch)
+            {
+                var boundaries = new List<double>();
+
+                // OTel boundaries are defined as a sequence of upper bounds. When our sketch contains gaps we
+                // must introduce extra bounds to represent the lower bound of any bins after a gap; otherwise
+                // it would look like that bin covers not just its original range, but the gap as well.
+                int lastBinIndex = -1;
+                var indexMapping = sketch.IndexMapping;
+                foreach (var bin in sketch.PositiveValueStore.EnumerateAscending())
+                {
+                    int binIndex = bin.Index;
+                    if (lastBinIndex < binIndex - 1)
+                    {
+                        // gap detected, introduce boundary representing current bin's lower bound
+                        boundaries.Add(indexMapping.GetLowerBound(binIndex));
+                    }
+
+                    boundaries.Add(indexMapping.GetLowerBound(binIndex + 1));
+                    lastBinIndex = binIndex;
+                }
+
+                return boundaries;
+            }
+
+            static List<long> GetCounts(DDSketch sketch)
+            {
+                var counts = new List<long>();
+
+                // to maintain alignment with getBoundaries we must introduce zero counts for
+                // boundaries inserted to represent the lower bound of any bins after a gap.
+                int lastBinIndex = -1;
+                foreach (var bin in sketch.PositiveValueStore.EnumerateAscending())
+                {
+                    int binIndex = bin.Index;
+                    if (lastBinIndex < binIndex - 1)
+                    {
+                        // gap detected, insert zero count for boundary introduced by getBoundaries
+                        counts.Add(0);
+                    }
+
+                    counts.Add((long)bin.Count);
+                    lastBinIndex = binIndex;
+                }
+
+                return counts;
+            }
+
+            return metricPoint;
+        }
+
+        private List<Datadog.Trace.OpenTelemetry.Metrics.MetricPoint> OtlpSerializeBuckets(DateTimeOffset endTime)
+        {
+            var metricPoints = new List<Datadog.Trace.OpenTelemetry.Metrics.MetricPoint>();
+            foreach (var bucket in Buckets.Values)
+            {
+                metricPoints.Add(OtlpSerializeBucket(bucket, endTime));
+            }
+
+            return metricPoints;
+        }
+#endif
 
         public void Serialize(Stream stream, long bucketDuration)
         {

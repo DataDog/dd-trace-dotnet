@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Processors;
@@ -19,20 +20,28 @@ internal static class OtlpMapper
 {
     public static void WriteDatadogResourceAttributes(JsonTextWriter writer, in TraceChunkModel traceChunk)
     {
-        if (traceChunk.DefaultServiceName is string service)
-        {
-            OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("service.name", service));
-        }
+        OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
 
+        // Breaking change: We are now sending the service version as a resource attribute.
+        // This means we're adding version tags to all spans, not just those whose service name is the default service name
         if (traceChunk.ServiceVersion is string version)
         {
+            // Note: The `service.version` resource attribute gets written as both a `service.version` span tag
+            // and a `version` span tag
             OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("service.version", version));
         }
 
         if (traceChunk.Environment is string environment)
         {
+            // Note: The `deployment.environment.name` resource attribute gets written as both a `deployment.environment.name` span tag
+            // and a `env` span tag
             OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("deployment.environment.name", environment));
         }
+
+        // Write telemetry SDK attributes
+        OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
+        OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("telemetry.sdk.language", TracerConstants.Language));
+        OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
 
         if (traceChunk.GitCommitSha is string gitCommitSha)
         {
@@ -51,6 +60,22 @@ internal static class OtlpMapper
         {
             OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
         }
+
+        // Write global tags
+        // TODO: Save global tags to the trace chunk model then write each one as a KeyValue
+        // Also, skip any well-known tag names: service, env, version, service.name, deployment.environment.name, deployment.environment, service.version
+        // if (traceChunk.GlobalTags.Count > 0)
+        // {
+        //     foreach (var tag in traceChunk.GlobalTags)
+        //     {
+        //         if (IsHandledResourceAttribute(tag.Key))
+        //         {
+        //             continue;
+        //         }
+        //
+        //         OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue(tag.Key, tag.Value));
+        //     }
+        // }
     }
 
     public static int WriteDatadogSpanAttributes(JsonTextWriter writer, in SpanModel spanModel, int limit)
@@ -117,29 +142,9 @@ internal static class OtlpMapper
             }
         }
 
-        // add "env" to all spans
-        if (count < limit)
-        {
-            OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue(Trace.Tags.Env, spanModel.TraceChunk.Environment));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+        // Notes for later:
+        // - Do we actually need to add _dd.base_service tag even though the OTLP span shares the same service name?
 
-        // add "language=dotnet" tag to all spans
-        if (count < limit)
-        {
-            OtlpTracesSerializer.WriteKeyValue(writer, new KeyValue(Trace.Tags.Language, TracerConstants.Language));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
-
-        // add "version" tags to all spans whose service name is the default service name
         // add _dd.base_service tag to spans where the service name has been overrideen
         // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
         // SCI tags will be sent only once per trace
@@ -161,6 +166,17 @@ internal static class OtlpMapper
 
         writer.WriteEndArray();
         return droppedAttributesCount;
+    }
+
+    private static bool IsHandledResourceAttribute(string tagKey)
+    {
+        return tagKey.Equals("service", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("env", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("version", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("service.name", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("deployment.environment.name", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("deployment.environment", StringComparison.OrdinalIgnoreCase) ||
+               tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
     internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>

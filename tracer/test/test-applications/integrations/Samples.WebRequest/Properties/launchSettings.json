@@ -1,24 +1,46 @@
 {
-    "profiles": {
-      "Samples.WebRequest": {
-        "commandName": "Project",
-        "environmentVariables": {
-          "COR_ENABLE_PROFILING": "1",
-          "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-          "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+  "profiles": {
+    "Samples.WebRequest": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
 
-          "CORECLR_ENABLE_PROFILING": "1",
-          "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-          "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
 
-          "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
-          "DD_VERSION": "1.0.0",
-          "OTEL_TRACES_EXPORTER": "otlp",
-          "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4418",
-          "DD_PROFILER_EXCLUDE_PROCESSES": "sqlservr.exe"
-        },
-        "nativeDebugging": true
-      }
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_VERSION": "1.0.0",
+        "DD_TRACE_STATS_COMPUTATION_ENABLED": "true",
+        "DD_PROFILER_EXCLUDE_PROCESSES": "sqlservr.exe"
+      },
+      "nativeDebugging": true
+    },
+    "Samples.WebRequest.OTEL": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_VERSION": "1.0.0",
+        "DD_TRACE_STATS_COMPUTATION_ENABLED": "true",
+        "OTEL_SERVICE_NAME": "Samples.WebRequest.OTEL",
+        "OTEL_TRACES_EXPORTER": "otlp",
+        "DD_TRACE_METRICS_ENABLED": "true",
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4418/v1/traces",
+        "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": "https://trace.agent.app.datadoghq.com/api/v0.2/stats",
+        "DD_PROFILER_EXCLUDE_PROCESSES": "sqlservr.exe"
+      },
+      "nativeDebugging": true
     }
   }
+}
   

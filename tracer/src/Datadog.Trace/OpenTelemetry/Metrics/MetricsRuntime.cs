@@ -7,9 +7,13 @@
 
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics
 {
@@ -29,7 +33,37 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 return;
             }
 
-            var exporter = new OtlpExporter(settings);
+            MetricExporter exporter = new OtlpExporter(settings);
+            if (settings.StatsComputationEnabled)
+            {
+                var config = new ConfigurationBuilder(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+                var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
+                var ddSite = config.WithKeys(ConfigurationKeys.Site)
+                                   .AsString(
+                                       defaultValue: "datadoghq.com",
+                                       validator: siteFromEnv => !string.IsNullOrEmpty(siteFromEnv));
+                var statsUri = $"https://trace.agent.{ddSite}/api/v0.2/stats";
+
+                if (!Uri.TryCreate(statsUri, UriKind.Absolute, out var uri))
+                {
+                    Log.Error($"The stats url was not a valid URL. No trace stats will be sent.");
+                }
+                else if (string.IsNullOrEmpty(apiKey))
+                {
+                    Log.Error("No API key found. No trace stats will be sent.");
+                }
+                else
+                {
+                    var headers = new Dictionary<string, string>
+                    {
+                        { "DD-Protocol", "otlp" },
+                        { "DD-Api-Key", apiKey },
+                        { "X-Datadog-Reported-Languages", "dotnet" },
+                    };
+                    exporter = new TraceStatsRoutingMetricExporter(settings, uri, Configuration.OtlpProtocol.HttpProtobuf, headers, exporter);
+                }
+            }
+
             _instance = new OtelMetricsPipeline(settings, exporter);
             _instance.Start();
 

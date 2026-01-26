@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -40,11 +41,16 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly Configuration.OtlpProtocol _protocol;
 
         public OtlpExporter(Configuration.TracerSettings settings)
+            : this(settings, settings.OtlpMetricsEndpoint, settings.OtlpMetricsProtocol, settings.OtlpMetricsHeaders)
         {
-            _endpoint = settings.OtlpMetricsEndpoint;
-            _headers = settings.OtlpMetricsHeaders;
+        }
+
+        public OtlpExporter(Configuration.TracerSettings settings, Uri endpoint, Configuration.OtlpProtocol protocol, IReadOnlyDictionary<string, string> headers)
+        {
+            _endpoint = endpoint;
+            _headers = headers;
             _timeoutMs = settings.OtlpMetricsTimeoutMs;
-            _protocol = settings.OtlpMetricsProtocol;
+            _protocol = protocol;
 
             _protocolTag = _protocol switch
             {
@@ -91,9 +97,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         /// </summary>
         /// <param name="metrics">Batch of metrics to export</param>
         /// <returns>ExportResult indicating success or failure</returns>
-        public override async Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics)
+        public override async Task<ExportResult> ExportAsync(IEnumerable<MetricPoint> metrics)
         {
-            if (metrics.Count == 0)
+            if (!metrics.Any())
             {
                 return ExportResult.Success;
             }
@@ -186,7 +192,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             };
         }
 
-        private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)
+        private async Task<bool> SendOtlpRequest(IEnumerable<MetricPoint> metrics)
         {
             try
             {

@@ -34,12 +34,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
         }
 
-        public override Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics)
+        public override Task<ExportResult> ExportAsync(IEnumerable<MetricPoint> metrics)
         {
             lock (_lock)
             {
                 _exportedMetrics.AddRange(metrics);
-                Log.Debug<int, int>("InMemoryExporter: Exported {Count} metrics (total: {Total})", metrics.Count, _exportedMetrics.Count);
             }
 
             var result = ExportResult.Success;

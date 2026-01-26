@@ -227,7 +227,7 @@ internal sealed class OtlpTracesSerializer
         writer.WritePropertyName("name");
         writer.WriteValue(spanModel.Span.ResourceName);
 
-        // kind (optional, default is SPAN_KIND_UNSPECIFIED)
+        // kind (optional, default should be SPAN_KIND_UNSPECIFIED but we use SPAN_KIND_INTERNAL instead)
         var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
         {
             SpanKinds.Server => "SPAN_KIND_SERVER",
@@ -245,7 +245,7 @@ internal sealed class OtlpTracesSerializer
 
         // endTimeUnixNano (required) - string representation of uint64
         writer.WritePropertyName("endTimeUnixNano");
-        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString()); // TODO: Remove allocation
+        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString());
 
         // attributes (optional)
         // TODO: Actually implement
@@ -452,13 +452,6 @@ internal sealed class OtlpTracesSerializer
         writer.WriteStartArray();
 
         OtlpMapper.WriteDatadogResourceAttributes(writer, in traceChunk);
-
-        // TODO: Fix arbitrary DD_TAGS/OTEL_RESOURCE_ATTRIBUTES: Curently they are added to all spans during StartSpan :/
-        // if (resource.Attributes != null && resource.Attributes.Count > 0)
-        // {
-        //     writer.WritePropertyName("attributes");
-        //     WriteKeyValueArray(writer, resource.Attributes);
-        // }
 
         writer.WriteEndArray();
 

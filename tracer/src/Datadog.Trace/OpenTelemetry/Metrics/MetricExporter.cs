@@ -20,7 +20,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         /// <summary>
         /// Exports a batch of metrics asynchronously.
         /// </summary>
-        public abstract Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics);
+        public abstract Task<ExportResult> ExportAsync(IEnumerable<MetricPoint> metrics);
 
         /// <summary>
         /// Shuts down the exporter.
