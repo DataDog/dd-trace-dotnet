@@ -52,7 +52,7 @@ internal interface ISendContext
     Uri? DestinationAddress { get; }
 
     /// <summary>
-    /// Gets the send headers for setting trace context (returns object to allow duck-typing, should be duck-cast to ISendHeaders)
+    /// Gets the send headers for setting trace context (returns object, accessed via reflection)
     /// </summary>
     object? Headers { get; }
 }

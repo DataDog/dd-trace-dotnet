@@ -45,7 +45,7 @@ internal interface IPublishContext
     Uri? DestinationAddress { get; }
 
     /// <summary>
-    /// Gets the message headers (returns object to allow duck-typing, should be duck-cast to ISendHeaders)
+    /// Gets the message headers (returns object, accessed via reflection)
     /// </summary>
     object? Headers { get; }
 }

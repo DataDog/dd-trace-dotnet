@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
@@ -101,42 +100,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         public void Remove(string name)
         {
             // Headers on consume side are read-only
-        }
-    }
-
-    /// <summary>
-    /// Adapter for injecting trace context into MassTransit SendHeaders (send side)
-    /// Uses duck-typed ISendHeaders interface
-    /// </summary>
-    internal readonly struct SendContextPropagation : IHeadersCollection
-    {
-        private readonly ISendHeaders? _headers;
-
-        public SendContextPropagation(ISendHeaders? headers)
-        {
-            _headers = headers;
-        }
-
-        public IEnumerable<string> GetValues(string name)
-        {
-            // SendHeaders is write-only for our purposes
-            yield break;
-        }
-
-        public void Set(string name, string value)
-        {
-            _headers?.Set(name, value, true);
-        }
-
-        public void Add(string name, string value)
-        {
-            // Set replaces existing values, which is the desired behavior
-            _headers?.Set(name, value, true);
-        }
-
-        public void Remove(string name)
-        {
-            // MassTransit SendHeaders doesn't have a Remove method
         }
     }
 }

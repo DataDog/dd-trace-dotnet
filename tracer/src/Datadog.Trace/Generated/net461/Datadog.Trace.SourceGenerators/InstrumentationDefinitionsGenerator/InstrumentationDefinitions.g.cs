@@ -424,10 +424,8 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.StateMachineSagaMessageFilterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingInMemoryIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointSendIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.ReceivePipeDispatcherIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.SendEndpointPipeSendIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingActiveMqIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAmazonSqsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection.UsingAzureServiceBusIntegration"
