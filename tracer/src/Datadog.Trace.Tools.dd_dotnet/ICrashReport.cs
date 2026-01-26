@@ -36,6 +36,10 @@ internal unsafe interface ICrashReport : IUnknown
     [Obsolete("You're aware it's going to crash the process, right?")]
     int CrashProcess();
 
+    int SendPing();
+
+    int WritePingToFile(IntPtr url);
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct Tag
     {

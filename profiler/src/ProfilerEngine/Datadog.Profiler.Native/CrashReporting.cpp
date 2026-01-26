@@ -337,11 +337,29 @@ int32_t CrashReporting::Send()
     return ExportImpl(nullptr);
 }
 
+int32_t CrashReporting::SendPing()
+{
+    return SendPingImpl(nullptr);
+}
+
 int32_t CrashReporting::WriteToFile(const char* url)
 {
     auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
     on_leave { if (endpoint != nullptr) ddog_endpoint_drop(endpoint); };
     return ExportImpl(endpoint);
+}
+
+int32_t CrashReporting::WritePingToFile(const char* url)
+{
+    auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
+    on_leave { if (endpoint != nullptr) ddog_endpoint_drop(endpoint); };
+    return SendPingImpl(endpoint);
+}
+
+int32_t CrashReporting::SendPingImpl(ddog_Endpoint* endpoint)
+{
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_upload_ping_to_endpoint(&_builder, endpoint));
+    return 0;
 }
 
 int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
