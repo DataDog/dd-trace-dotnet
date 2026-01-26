@@ -19,10 +19,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "MassTransit.Azure.ServiceBus.Core",
-    TypeName = "MassTransit.AzureServiceBusRegistrationExtensions",
+    TypeName = "MassTransit.ServiceBusConfigurationExtensions",
     MethodName = "UsingAzureServiceBus",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = ["MassTransit.IBusRegistrationConfigurator", "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IServiceBusBusFactoryConfigurator]"],
+    ParameterTypeNames = ["MassTransit.IBusRegistrationConfigurator", "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.Azure.ServiceBus.Core.IServiceBusBusFactoryConfigurator]"],
     MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = MassTransitConstants.IntegrationName)]

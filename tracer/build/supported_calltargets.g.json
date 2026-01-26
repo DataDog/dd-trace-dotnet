@@ -9609,13 +9609,13 @@
   },
   {
     "IntegrationName": "MassTransit",
-    "AssemblyName": "MassTransit.ActiveMQ",
-    "TargetTypeName": "MassTransit.ActiveMqRegistrationExtensions",
+    "AssemblyName": "MassTransit.ActiveMqTransport",
+    "TargetTypeName": "MassTransit.ActiveMqBusFactoryConfiguratorExtensions",
     "TargetMethodName": "UsingActiveMq",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "MassTransit.IBusRegistrationConfigurator",
-      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IActiveMqBusFactoryConfigurator]"
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.ActiveMqTransport.IActiveMqBusFactoryConfigurator]"
     ],
     "MinimumVersion": {
       "Item1": 7,
@@ -9634,13 +9634,13 @@
   },
   {
     "IntegrationName": "MassTransit",
-    "AssemblyName": "MassTransit.AmazonSQS",
-    "TargetTypeName": "MassTransit.AmazonSqsRegistrationExtensions",
+    "AssemblyName": "MassTransit.AmazonSqsTransport",
+    "TargetTypeName": "MassTransit.AmazonSqsBusFactoryConfiguratorExtensions",
     "TargetMethodName": "UsingAmazonSqs",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "MassTransit.IBusRegistrationConfigurator",
-      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IAmazonSqsBusFactoryConfigurator]"
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.AmazonSqsTransport.IAmazonSqsBusFactoryConfigurator]"
     ],
     "MinimumVersion": {
       "Item1": 7,
@@ -9660,12 +9660,12 @@
   {
     "IntegrationName": "MassTransit",
     "AssemblyName": "MassTransit.Azure.ServiceBus.Core",
-    "TargetTypeName": "MassTransit.AzureServiceBusRegistrationExtensions",
+    "TargetTypeName": "MassTransit.ServiceBusConfigurationExtensions",
     "TargetMethodName": "UsingAzureServiceBus",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "MassTransit.IBusRegistrationConfigurator",
-      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IServiceBusBusFactoryConfigurator]"
+      "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.Azure.ServiceBus.Core.IServiceBusBusFactoryConfigurator]"
     ],
     "MinimumVersion": {
       "Item1": 7,

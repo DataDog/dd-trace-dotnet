@@ -18,11 +18,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 /// This hooks into the UsingAmazonSqs configuration method to inject Datadog filters during configuration time.
 /// </summary>
 [InstrumentMethod(
-    AssemblyName = "MassTransit.AmazonSQS",
-    TypeName = "MassTransit.AmazonSqsRegistrationExtensions",
+    AssemblyName = "MassTransit.AmazonSqsTransport",
+    TypeName = "MassTransit.AmazonSqsBusFactoryConfiguratorExtensions",
     MethodName = "UsingAmazonSqs",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = ["MassTransit.IBusRegistrationConfigurator", "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.IAmazonSqsBusFactoryConfigurator]"],
+    ParameterTypeNames = ["MassTransit.IBusRegistrationConfigurator", "System.Action`2[MassTransit.IBusRegistrationContext,MassTransit.AmazonSqsTransport.IAmazonSqsBusFactoryConfigurator]"],
     MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     IntegrationName = MassTransitConstants.IntegrationName)]

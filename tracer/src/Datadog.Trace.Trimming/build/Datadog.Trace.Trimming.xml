@@ -30,8 +30,8 @@
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
    <assembly fullname="MassTransit" />
-   <assembly fullname="MassTransit.ActiveMQ" />
-   <assembly fullname="MassTransit.AmazonSQS" />
+   <assembly fullname="MassTransit.ActiveMqTransport" />
+   <assembly fullname="MassTransit.AmazonSqsTransport" />
    <assembly fullname="MassTransit.Azure.ServiceBus.Core" />
    <assembly fullname="MassTransit.RabbitMqTransport" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
