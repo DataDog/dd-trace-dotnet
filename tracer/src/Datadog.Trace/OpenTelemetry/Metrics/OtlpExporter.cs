@@ -36,16 +36,16 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly Telemetry.Metrics.MetricTags.MetricEncoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
         private readonly Uri _endpoint;
-        private readonly IReadOnlyDictionary<string, string> _headers;
+        private readonly KeyValuePair<string, string>[] _headers;
         private readonly int _timeoutMs;
         private readonly Configuration.OtlpProtocol _protocol;
 
         public OtlpExporter(Configuration.TracerSettings settings)
-            : this(settings, settings.OtlpMetricsEndpoint, settings.OtlpMetricsProtocol, settings.OtlpMetricsHeaders)
+            : this(settings, settings.OtlpMetricsEndpoint, settings.OtlpMetricsProtocol, settings.OtlpMetricsHeaders.ToArray())
         {
         }
 
-        public OtlpExporter(Configuration.TracerSettings settings, Uri endpoint, Configuration.OtlpProtocol protocol, IReadOnlyDictionary<string, string> headers)
+        public OtlpExporter(Configuration.TracerSettings settings, Uri endpoint, Configuration.OtlpProtocol protocol, KeyValuePair<string, string>[] headers)
         {
             _endpoint = endpoint;
             _headers = headers;
@@ -89,7 +89,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
         }
 
-        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers);
+        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers);
 
         /// <summary>
         /// Exports a batch of metrics using OTLP protocol asynchronously.
@@ -226,7 +226,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers)
+            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers)
             {
                 var content = new ByteArrayContent(payload);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");

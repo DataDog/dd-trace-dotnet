@@ -31,7 +31,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly OtlpExporter _traceStatsExporter;
         private readonly MetricExporter[] _additionalExporters;
 
-        public TraceStatsRoutingMetricExporter(Configuration.TracerSettings settings, Uri endpoint, Configuration.OtlpProtocol protocol, IReadOnlyDictionary<string, string> headers, params MetricExporter[] additionalExporters)
+        public TraceStatsRoutingMetricExporter(Configuration.TracerSettings settings, Uri endpoint, Configuration.OtlpProtocol protocol, KeyValuePair<string, string>[] headers, params MetricExporter[] additionalExporters)
         {
             _traceStatsExporter = new OtlpExporter(settings, endpoint, protocol, headers);
             _additionalExporters = additionalExporters;

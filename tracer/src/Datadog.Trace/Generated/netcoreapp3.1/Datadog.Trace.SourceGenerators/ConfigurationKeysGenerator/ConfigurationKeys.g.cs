@@ -136,6 +136,10 @@ internal static partial class ConfigurationKeys
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
     public const string Environment = "DD_ENV";
 
+    public const string ExperimentalOtlpStatsIntakeEndpoint = "DD_EXPERIMENTAL_OTLP_STATS_INTAKE_ENDPOINT";
+
+    public const string ExperimentalOtlpStatsIntakeHeaders = "DD_EXPERIMENTAL_OTLP_STATS_INTAKE_HEADERS";
+
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
     /// <summary>

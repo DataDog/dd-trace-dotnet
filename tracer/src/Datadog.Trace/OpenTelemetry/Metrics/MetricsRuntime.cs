@@ -54,11 +54,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 else
                 {
-                    var headers = new Dictionary<string, string>
+                    var headers = new KeyValuePair<string, string>[]
                     {
-                        { "DD-Protocol", "otlp" },
-                        { "DD-Api-Key", apiKey },
-                        { "X-Datadog-Reported-Languages", "dotnet" },
+                        new KeyValuePair<string, string>("DD-Protocol", "otlp"),
+                        new KeyValuePair<string, string>("DD-Api-Key", apiKey),
+                        new KeyValuePair<string, string>("X-Datadog-Reported-Languages", "dotnet"),
                     };
                     exporter = new TraceStatsRoutingMetricExporter(settings, uri, Configuration.OtlpProtocol.HttpProtobuf, headers, exporter);
                 }

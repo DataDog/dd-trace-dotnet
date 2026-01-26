@@ -45,7 +45,9 @@ internal sealed class ManagedApiOtlp : IApi
         void UpdateApi(ExporterSettings exporterSettings, bool healthMetricsEnabled)
         {
             var apiRequestFactory = OtlpTracesTransportStrategy.Get(exporterSettings);
-            var api = new ApiOtlp(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
+            var statsPath = exporterSettings.OtlpStatsIntakeEndpoint ?? $"https://trace.agent.datadoghq.com/api/v0.2/stats";
+            var statsHeaders = exporterSettings.OtlpStatsIntakeHeaders;
+            var api = new ApiOtlp(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled, statsPath, statsHeaders);
             Interlocked.Exchange(ref _api!, api);
         }
     }

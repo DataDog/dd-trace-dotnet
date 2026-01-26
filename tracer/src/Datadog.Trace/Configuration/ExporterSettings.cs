@@ -102,7 +102,9 @@ namespace Datadog.Trace.Configuration
             AgentUri = traceSettings.AgentUri;
             OtlpTracesProtocol = CalculateOltpTracesProtocol(rawSettings.OtlpTracesProtocol, rawSettings.OtlpGeneralProtocol);
             OtlpTracesEndpoint = CalculateOltpTracesEndpoint(OtlpTracesProtocol, rawSettings.OtlpTracesEndpoint, rawSettings.OtlpGeneralEndpoint);
-            OtlpTracesHeaders = CalculateOltpTracesHeaders(rawSettings.OtlpTracesHeaders, rawSettings.OtlpGeneralHeaders);
+            OtlpTracesHeaders = CalculateHeaders(rawSettings.OtlpTracesHeaders, rawSettings.OtlpGeneralHeaders);
+            OtlpStatsIntakeEndpoint = rawSettings.OtlpStatsIntakeEndpoint;
+            OtlpStatsIntakeHeaders = CalculateHeaders(rawSettings.OtlpStatsIntakeHeaders, null);
 
             var metricsSettings = ConfigureMetricsTransport(
                 metricsUrl: rawSettings.MetricsUrl,
@@ -193,6 +195,18 @@ namespace Datadog.Trace.Configuration
         internal Uri OtlpTracesEndpoint { get; }
 
         internal KeyValuePair<string, string>[] OtlpTracesHeaders { get; }
+
+        /// <summary>
+        /// Gets the endpoint for trace stats for OTLP traces.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExperimentalOtlpStatsIntakeEndpoint"/>
+        public string? OtlpStatsIntakeEndpoint { get; }
+
+        /// <summary>
+        /// Gets the headers for trace stats for OTLP traces.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
+        public KeyValuePair<string, string>[] OtlpStatsIntakeHeaders { get; }
 
         /// <summary>
         /// Gets the exporter used to send traces.
@@ -458,6 +472,9 @@ namespace Datadog.Trace.Configuration
                 OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsString()?.Trim();
                 OtlpGeneralHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsString()?.Trim();
 
+                OtlpStatsIntakeEndpoint = config.WithKeys(ConfigurationKeys.ExperimentalOtlpStatsIntakeEndpoint).AsString()?.Trim();
+                OtlpStatsIntakeHeaders = config.WithKeys(ConfigurationKeys.ExperimentalOtlpStatsIntakeHeaders).AsString()?.Trim();
+
                 TracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString("datadog");
                 TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
@@ -524,6 +541,18 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
             public string? OtlpGeneralHeaders { get; private init; }
+
+            /// <summary>
+            /// Gets the endpoint for trace stats for OTLP traces.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.ExperimentalOtlpStatsIntakeEndpoint"/>
+            public string? OtlpStatsIntakeEndpoint { get; private init; }
+
+            /// <summary>
+            /// Gets the headers for trace stats for OTLP traces.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
+            public string? OtlpStatsIntakeHeaders { get; private init; }
 
             /// <summary>
             /// Gets the Uri where the Tracer can connect to the Agent.

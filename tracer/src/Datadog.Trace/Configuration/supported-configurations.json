@@ -540,6 +540,16 @@
       ],
       "product": "AppSec"
     },
+    "DD_EXPERIMENTAL_OTLP_STATS_INTAKE_ENDPOINT": {
+      "version": [
+        "A"
+      ]
+    },
+    "DD_EXPERIMENTAL_OTLP_STATS_INTAKE_HEADERS": {
+      "version": [
+        "A"
+      ]
+    },
     "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": {
       "version": [
         "A"

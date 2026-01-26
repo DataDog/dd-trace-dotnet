@@ -81,9 +81,9 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        private KeyValuePair<string, string>[] CalculateOltpTracesHeaders(string? otlpTracesHeaders, string? otlpGeneralHeaders)
+        private KeyValuePair<string, string>[] CalculateHeaders(string? primaryHeadersValue, string? fallbackHeadersValue)
         {
-            return (otlpTracesHeaders ?? otlpGeneralHeaders) switch
+            return (primaryHeadersValue ?? fallbackHeadersValue) switch
             {
                 string s => s.Split(',')
                              .Select(x => x.Split(new char[] { '=' }, 2))

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Agent
         private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
+        private readonly KeyValuePair<string, string>[] _statsHeaders;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
@@ -54,6 +56,8 @@ namespace Datadog.Trace.Agent
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
+            string statsPath,
+            KeyValuePair<string, string>[] statsHeaders,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -69,8 +73,9 @@ namespace Datadog.Trace.Agent
             _healthMetricsEnabled = healthMetricsEnabled;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The absolute traces endpoint has already been calculated, since it is only one endpoint
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
-            _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
+            _statsEndpoint = new Uri(statsPath);
             _log.Debug("Using stats endpoint {StatsEndpoint}", _statsEndpoint.ToString());
+            _statsHeaders = statsHeaders;
         }
 
         private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -225,7 +230,11 @@ namespace Datadog.Trace.Agent
                 { "DD-Api-Key", System.Environment.GetEnvironmentVariable("DD_API_KEY") },
                 { "X-Datadog-Reported-Languages", "dotnet" },
             };
-            var exporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(Tracer.Instance.Settings, new Uri($"https://trace.agent.datadoghq.com/api/v0.2/stats"), Configuration.OtlpProtocol.HttpProtobuf, headers);
+
+            // Set additional headers
+            var updatedHeaders = headers.Concat(_statsHeaders).ToArray();
+
+            var exporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(Tracer.Instance.Settings, _statsEndpoint, Configuration.OtlpProtocol.HttpProtobuf, updatedHeaders);
 #else
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
