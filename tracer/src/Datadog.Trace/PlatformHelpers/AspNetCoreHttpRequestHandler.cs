@@ -32,7 +32,8 @@ namespace Datadog.Trace.PlatformHelpers
 {
     internal sealed class AspNetCoreHttpRequestHandler
     {
-        internal const string HttpContextItemsKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
+        internal const string HttpContextTrackingKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
+
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
@@ -146,11 +147,11 @@ namespace Datadog.Trace.PlatformHelpers
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
 #if NET6_0_OR_GREATER
-            httpContext.Items[HttpContextItemsKey] = useSingleSpanRequestTracking
+            httpContext.Items[HttpContextTrackingKey] = useSingleSpanRequestTracking
                                                          ? new SingleSpanRequestTrackingFeature(originalPath, scope, proxyContext?.Scope)
                                                          : new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #else
-            httpContext.Items[HttpContextItemsKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
+            httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
@@ -173,7 +174,7 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
-            => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: (httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature)?.ProxyScope);
+            => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext, Scope proxyScope)
         {
@@ -227,7 +228,7 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
-            => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature)?.ProxyScope);
+            => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
 
         public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
         {
