@@ -69,66 +69,73 @@ internal static class ProcessTags
             return string.Empty;
         }
 
+        // NOTE #1: the most correct way of doing this (that handles most edge cases, etc) is
+        // new DirectoryInfo(directoryPath).Name, but it allocates several objects. Instead, we'll try
+        // to do this with only a single string allocation for the result.
+
+        // NOTE #2: Since directoryPath always comes from either AppContext.BaseDirectory or Environment.CurrentDirectory,
+        // we assume it is always a valid and rooted path to keep things simple.
+
         if (IsRootPath(directoryPath))
         {
-            // return root paths like "/" or "C:\" as-is
+            // root paths like "C:\" on Windows or "/" on other OSes
             return directoryPath;
         }
 
-        // Path.GetFileName() returns an empty string if the path ends in a directory separator,
-        // so trim those first
-        var trimmedPath = TrimEndingDirectorySeparator(directoryPath.AsSpan());
-
 #if NETCOREAPP3_1_OR_GREATER
-        // avoid the intermediate string allocation for trimmedPath
-        return Path.GetFileName(trimmedPath).ToString();
+        // allocate 1-2 char array on the stack
+        ReadOnlySpan<char> separators = FrameworkDescription.Instance.IsWindows() ?
+                                            stackalloc[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar } :
+                                            stackalloc[] { Path.DirectorySeparatorChar };
 #else
-        return Path.GetFileName(trimmedPath.ToString());
+        // allocate 1-2 char array on the heap :(
+        ReadOnlySpan<char> separators = FrameworkDescription.Instance.IsWindows() ?
+                                            new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar } :
+                                            new[] { Path.DirectorySeparatorChar };
 #endif
-    }
 
-    [TestingOnly]
-    internal static string TrimEndingDirectorySeparator(string path)
-    {
-        return TrimEndingDirectorySeparator(path.AsSpan()).ToString();
-    }
+        // Trim trailing separators (non-allocating)
+        var span = directoryPath.AsSpan().TrimEnd(separators);
 
-    private static ReadOnlySpan<char> TrimEndingDirectorySeparator(ReadOnlySpan<char> path)
-    {
-        if (path.IsEmpty)
+        // Find the last separator after trimming
+        var lastSeparatorIndex = span.LastIndexOfAny(separators);
+
+        // If no separator found, return the entire path
+        if (lastSeparatorIndex < 0)
         {
-            return ReadOnlySpan<char>.Empty;
+            return span.ToString();
         }
 
-        // Path.TrimEndingDirectorySeparator() is not available in older .NET versions.
-        // Not using "#if NETCOREAPP3_1_OR_GREATER" here to keep consistent behavior across TFMs.
-        var last = path[path.Length - 1];
-
-        return last == Path.DirectorySeparatorChar || last == Path.AltDirectorySeparatorChar ?
-                   path.Slice(0, path.Length - 1) :
-                   path;
+        // Return everything after the last separator
+        return span.Slice(lastSeparatorIndex + 1).ToString();
     }
 
     [TestingAndPrivateOnly]
-    internal static bool IsRootPath(string path)
+    internal static bool IsRootPath(string directoryPath)
     {
-        if (StringUtil.IsNullOrEmpty(path))
+        if (StringUtil.IsNullOrEmpty(directoryPath))
         {
             return false;
         }
 
-        if (path == "/")
+        // On Windows: "\" (most common) or "/"
+        // Otherwise: "/" only
+        if (directoryPath.Length == 1 &&
+            (directoryPath[0] == Path.DirectorySeparatorChar || directoryPath[0] == Path.AltDirectorySeparatorChar))
         {
             return true;
         }
 
-        // path could be drive root like C:\
-        if (path.Length == 3 &&
-            char.IsLetter(path[0]) &&
-            path[1] == ':' &&
-            (path[2] == Path.DirectorySeparatorChar || path[2] == Path.AltDirectorySeparatorChar))
+        // On Windows, root drive paths look like "C:\" or "D:\".
+        // This code does NOT handle device paths like "\\?\." or "\\.\",
+        // or server\share paths like "\\server\share" or "\\?\UNC\".
+        if (FrameworkDescription.Instance.IsWindows())
         {
-            return true;
+            // the common case (not a root) will fail the first check
+            return directoryPath.Length is 3 &&
+                   char.IsLetter(directoryPath[0]) &&
+                   directoryPath[1] == Path.VolumeSeparatorChar &&
+                   directoryPath[2] == Path.DirectorySeparatorChar;
         }
 
         return false;

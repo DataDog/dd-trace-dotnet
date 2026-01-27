@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -25,66 +26,79 @@ public class ProcessTagsTests
         tags.Split(',')
             .Should()
             .AllSatisfy(s =>
-            {
-                s.Count(c => c == ':').Should().Be(1);
-            });
+                        {
+                            s.Count(c => c == ':').Should().Be(1);
+                        });
         // cannot really assert on content because it depends on how the tests are run.
     }
 
-    [Theory]
-    [InlineData(@"C:\Users\MyUser\Documents", "Documents")]
-    [InlineData(@"C:\Users\MyUser\Documents\", "Documents")]
-    [InlineData(@"/home/user/projects", "projects")]
-    [InlineData(@"/home/user/projects/", "projects")]
-    [InlineData(@"C:\Program Files\", "Program Files")]
-    [InlineData(@"/var/log/", "log")]
-    [InlineData(@"C:\", @"C:\")]
-    [InlineData(@"/", @"/")]
-    [InlineData(@"simple", "simple")]
-    [InlineData(@"simple/", "simple")]
-    [InlineData(@"", "")]
-    [InlineData(null, "")]
-    public void GetLastPathSegment_ReturnsLastDirectory(string path, string expected)
+    [SkippableTheory]
+    [InlineData(@"C:\Users\MyUser\Documents", "Documents")]  // no trailing separator
+    [InlineData(@"C:\Users\MyUser\Documents\", "Documents")] // with trailing separator
+    [InlineData(@"C:\Program Files\", "Program Files")]      // with space
+    [InlineData(@"simple", "simple")]                        // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                       // not rooted, with trailing separator
+    [InlineData(@"C:\", @"C:\")]                             // root
+    [InlineData(@"", "")]                                    // empty
+    [InlineData(null, "")]                                   // null
+    public void GetLastPathSegment_ReturnsLastDirectory_Windows(string path, string expected)
     {
+        // run these on Windows only
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
         ProcessTags.GetLastPathSegment(path).Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(@"C:\Users\MyUser\Documents", @"C:\Users\MyUser\Documents")]
-    [InlineData(@"C:\Users\MyUser\Documents\", @"C:\Users\MyUser\Documents")]
-    [InlineData(@"/home/user/projects", @"/home/user/projects")]
-    [InlineData(@"/home/user/projects/", @"/home/user/projects")]
-    [InlineData(@"C:\", @"C:")]
-    [InlineData(@"/", @"")]
-    [InlineData(@"simple", @"simple")]
-    [InlineData(@"simple\", @"simple")]
-    [InlineData(@"simple/", @"simple")]
-    [InlineData(@"", "")]
-    [InlineData(null, "")]
-    public void TrimEndingDirectorySeparator_RemovesTrailingSeparator(string path, string expected)
+    [SkippableTheory]
+    [InlineData(@"/home/user/projects", "projects")]  // no trailing separator
+    [InlineData(@"/home/user/projects/", "projects")] // with trailing separator
+    [InlineData(@"simple", "simple")]                 // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                // not rooted, with trailing separator
+    [InlineData(@"/", @"/")]                          // root
+    [InlineData(@"", "")]                             // empty
+    [InlineData(null, "")]                            // null
+    public void GetLastPathSegment_ReturnsLastDirectory_NonWindows(string path, string expected)
     {
-        ProcessTags.TrimEndingDirectorySeparator(path).Should().Be(expected);
+        // do not run these on Windows
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(@"/", true)]
-    [InlineData(@"C:\", true)]
-    [InlineData(@"c:\", true)]
-    [InlineData(@"D:\", true)]
-    [InlineData(@"C:/", true)]
-    [InlineData(@"C:\Users", false)]
-    [InlineData(@"/home", false)]
-    [InlineData(@"C:\Program Files", false)]
-    [InlineData(@"/var/log", false)]
-    [InlineData(@"simple", false)]
-    [InlineData(@"", false)]
-    [InlineData(null, false)]
-    [InlineData(@"C:", false)]
-    [InlineData(@"C", false)]
-    [InlineData(@"1:\", false)]
-    [InlineData(@"CC:\", false)]
-    public void IsRootPath_DetectsRootPaths(string path, bool expected)
+    [SkippableTheory]
+    [InlineData(@"C:\", true)]               // root, common case
+    [InlineData(@"c:\", true)]               // root, lower-case
+    [InlineData(@"D:\", true)]               // root, different drive
+    [InlineData(@"C:\Users", false)]         // not root, single path segment
+    [InlineData(@"C:\Users\foo", false)]     // not root, multiple path segments
+    [InlineData(@"C:\Program Files", false)] // not root, with space
+    [InlineData(@"C:", false)]               // not root
+    [InlineData(@"simple", false)]           // not rooted
+    [InlineData(@"C", false)]                // not rooted (single character, looks like a drive letter)
+    [InlineData(@"1:\", false)]              // invalid drive
+    [InlineData(@"CC:\", false)]             // invalid drive
+    [InlineData(@"", false)]                 // empty
+    [InlineData(null, false)]                // null
+    public void IsRootPath_DetectsRootPaths_Windows(string path, bool expected)
     {
+        // run these on Windows only
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.IsRootPath(path).Should().Be(expected);
+    }
+
+    [SkippableTheory]
+    [InlineData(@"/", true)]         // root
+    [InlineData(@"/home", false)]    // not root, single path segment
+    [InlineData(@"/var/log", false)] // not root, multiple path segments
+    [InlineData(@"simple", false)]   // not rooted
+    [InlineData(@"", false)]         // empty
+    [InlineData(null, false)]        // null
+    public void IsRootPath_DetectsRootPaths_NonWindows(string path, bool expected)
+    {
+        // do not run these on Windows
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
         ProcessTags.IsRootPath(path).Should().Be(expected);
     }
 }
