@@ -91,21 +91,16 @@ public sealed class AddMassTransitIntegration
 
         var collectionType = collection.GetType();
 
-        // Get IConfigureReceiveEndpoint type from MassTransit assembly
-        var configureReceiveEndpointType = MassTransitCommon.GetConfigureReceiveEndpointType();
-        if (configureReceiveEndpointType == null)
+        // Create the Datadog IConfigureReceiveEndpoint proxy (similar to HangfireCommon.CreateDatadogFilter)
+        MassTransitCommon.CreateDatadogConfigureReceiveEndpoint(out var datadogProxy);
+        if (datadogProxy == null)
         {
-            Log.Debug("MassTransit AddMassTransitIntegration: Could not find IConfigureReceiveEndpoint type");
+            Log.Debug("MassTransit AddMassTransitIntegration: Could not create IConfigureReceiveEndpoint proxy");
             return;
         }
 
-        // Create a reverse duck type instance that implements IConfigureReceiveEndpoint
-        var datadogProxy = MassTransitCommon.CreateConfigureReceiveEndpointProxy(new DatadogConfigureReceiveEndpoint());
-        if (datadogProxy == null)
-        {
-            Log.Debug("MassTransit AddMassTransitIntegration: Could not create reverse duck type for IConfigureReceiveEndpoint");
-            return;
-        }
+        // Get IConfigureReceiveEndpoint type from MassTransit assembly (already validated in CreateDatadogConfigureReceiveEndpoint)
+        var configureReceiveEndpointType = MassTransitCommon.GetConfigureReceiveEndpointType()!;
 
         // Find ServiceDescriptor and ServiceLifetime types from DI assembly
         var serviceDescriptorType = MassTransitCommon.GetServiceDescriptorType();

@@ -22,16 +22,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 /// Note: This filter creates spans for consume operations and extracts trace context
 /// from message headers for distributed tracing.
 /// </summary>
-internal sealed class DatadogConsumeFilter
+public sealed class DatadogConsumeFilter
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogConsumeFilter));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogConsumeFilter>();
 
     /// <summary>
     /// Creates a probe scope for diagnostic purposes.
     /// Called by MassTransit's pipeline probing mechanism.
     /// </summary>
     /// <param name="context">The probe context</param>
-    [DuckReverseMethod(ParameterTypeNames = ["GreenPipes.ProbeContext, GreenPipes"])]
+    [DuckReverseMethod(ParameterTypeNames = new[] { "GreenPipes.ProbeContext, GreenPipes" })]
     public void Probe(object context)
     {
         try
@@ -58,7 +58,7 @@ internal sealed class DatadogConsumeFilter
     /// <param name="context">The consume context</param>
     /// <param name="next">The next pipe in the pipeline</param>
     /// <returns>A task representing the async operation</returns>
-    [DuckReverseMethod(ParameterTypeNames = ["MassTransit.ConsumeContext, MassTransit", "GreenPipes.IPipe`1[MassTransit.ConsumeContext], GreenPipes"])]
+    [DuckReverseMethod(ParameterTypeNames = new[] { "MassTransit.ConsumeContext, MassTransit", "GreenPipes.IPipe`1[MassTransit.ConsumeContext], GreenPipes" })]
     public async Task Send(object? context, object next)
     {
         Log.Debug<string?>("DatadogConsumeFilter.Send() - Processing consume context: {ContextType}", context?.GetType().Name);

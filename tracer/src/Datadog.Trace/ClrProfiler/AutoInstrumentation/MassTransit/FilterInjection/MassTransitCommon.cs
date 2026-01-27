@@ -39,6 +39,34 @@ internal static class MassTransitCommon
     private static IEnumerable? _emptyValidationResults;
 
     /// <summary>
+    /// Creates the Datadog IConfigureReceiveEndpoint proxy for MassTransit filter injection.
+    /// This is the main entry point for filter creation, similar to HangfireCommon.CreateDatadogFilter().
+    /// </summary>
+    /// <param name="configureReceiveEndpoint">The created IConfigureReceiveEndpoint proxy, or null on failure</param>
+    internal static void CreateDatadogConfigureReceiveEndpoint(out object? configureReceiveEndpoint)
+    {
+        configureReceiveEndpoint = null;
+
+        var massTransitAssembly = GetMassTransitAssembly();
+        var greenPipesAssembly = GetGreenPipesAssembly();
+
+        if (massTransitAssembly == null || greenPipesAssembly == null)
+        {
+            Log.Debug("MassTransitCommon: Could not find required MassTransit/GreenPipes assemblies. MassTransit integration is not enabled.");
+            return;
+        }
+
+        var configureType = GetConfigureReceiveEndpointType();
+        if (configureType == null)
+        {
+            Log.Debug("MassTransitCommon: Could not find IConfigureReceiveEndpoint type. MassTransit integration is not enabled.");
+            return;
+        }
+
+        configureReceiveEndpoint = DuckType.CreateReverse(configureType, new DatadogConfigureReceiveEndpoint());
+    }
+
+    /// <summary>
     /// Finds and caches the MassTransit assembly.
     /// </summary>
     internal static Assembly? GetMassTransitAssembly()

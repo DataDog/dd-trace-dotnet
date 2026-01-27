@@ -19,16 +19,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 /// Note: This class is designed to be added to the _specifications list via reflection.
 /// It implements the interface duck-typed since we can't reference GreenPipes directly.
 /// </summary>
-internal sealed class DatadogConsumePipeSpecification
+public sealed class DatadogConsumePipeSpecification
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogConsumePipeSpecification));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogConsumePipeSpecification>();
 
     /// <summary>
     /// Applies the filter specification to the pipeline builder.
     /// This method is called by MassTransit when building the consume pipeline.
     /// </summary>
     /// <param name="builder">The pipe builder (IPipeBuilder{ConsumeContext})</param>
-    [DuckReverseMethod(ParameterTypeNames = ["GreenPipes.IPipeBuilder`1[MassTransit.ConsumeContext], GreenPipes"])]
+    [DuckReverseMethod(ParameterTypeNames = new[] { "GreenPipes.IPipeBuilder`1[MassTransit.ConsumeContext], GreenPipes" })]
     public void Apply(object builder)
     {
         Log.Debug("DatadogConsumePipeSpecification.Apply() called - adding DatadogConsumeFilter to pipeline");

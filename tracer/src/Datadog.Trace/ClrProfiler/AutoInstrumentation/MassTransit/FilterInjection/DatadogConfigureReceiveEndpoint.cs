@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 /// This class is called by MassTransit for every receive endpoint on all transports,
 /// allowing us to inject Datadog filters in a transport-agnostic way.
 /// </summary>
-internal sealed class DatadogConfigureReceiveEndpoint
+public sealed class DatadogConfigureReceiveEndpoint
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogConfigureReceiveEndpoint>();
 
@@ -26,7 +26,7 @@ internal sealed class DatadogConfigureReceiveEndpoint
     /// </summary>
     /// <param name="name">The endpoint name</param>
     /// <param name="configurator">The receive endpoint configurator (IReceiveEndpointConfigurator)</param>
-    [DuckReverseMethod]
+    [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", "MassTransit.IReceiveEndpointConfigurator, MassTransit" })]
     public void Configure(string name, object configurator)
     {
         if (configurator == null)
