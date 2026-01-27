@@ -217,29 +217,8 @@ stages:
       displayName: Fetch master id
       name: set_sha
 
-- stage: validate_pr_labels
-  displayName: Validate PR Labels
-  dependsOn: []
-  condition: eq(variables.isPullRequest, true)
-  jobs:
-  - job: check_labels
-    displayName: Check PR has at least one label
-    timeoutInMinutes: 10
-    pool:
-      vmImage: ubuntu-latest
-
-    steps:
-    - checkout: self
-    - template: steps/create-github-app-token.yml
-
-    - bash: ./tracer/build.sh ValidatePrLabels
-      displayName: Validate PR has labels
-      env:
-        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
-        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-
 - stage: generate_variables
-  dependsOn: [merge_commit_id, validate_pr_labels]
+  dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
