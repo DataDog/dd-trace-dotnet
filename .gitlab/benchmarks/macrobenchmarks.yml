@@ -43,7 +43,8 @@ check-azure-pipeline:
     expire_in: 3 months
   variables:
     # Set this for quickly testing benchmarking workflows.
-    HARDCODED_BUILD_ID: "" 
+    # TODO: Revert to ""
+    HARDCODED_BUILD_ID: "192820" 
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
@@ -522,22 +523,32 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
+      - reports/
     expire_in: 3 months
   variables:
+    RUNNER_AFTER_SCRIPT_TIMEOUT: 30m
+
     # Allows ephemeral instances to read content from benchmarking-platform
     DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
-    
+
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet/macro/apmsp-2292.add-perf-quality-gates"
+
+    # Where benchmarking results will be stored
+    BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+    # Whether to mock benchmark execution. Useful for testing the after_script steps
+    BP_INFRA_TEST: "false"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
+
+    ARTIFACTS_DIR: "reports"
 
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
@@ -572,6 +583,8 @@ profiler_cpu_timer_create-arm64:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+    - ./platform/steps/fetch-results.sh
+    - ./platform/steps/upload-to-bp-ui.sh
 
 baseline-win:
   extends: .benchmarks-win
