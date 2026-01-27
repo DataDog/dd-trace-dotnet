@@ -14,24 +14,43 @@ using Datadog.Trace.Processors;
 
 namespace Datadog.Trace;
 
-internal static class ProcessTags
+internal sealed class ProcessTags
 {
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
+    public const string ServiceNameUserDefined = "service_name.user_defined";
+
+    public ProcessTags(bool serviceNameUserDefined)
+    {
+        // Build the complete tags list with service_name.user_defined
+        TagsList = GetTagsList(serviceNameUserDefined);
+
+        // Build the serialized version with service_name.user_defined
+        SerializedTags = GetSerializedTagsFromList(TagsList);
+    }
 
     // two views on the same data
-    public static readonly IReadOnlyCollection<string> TagsList = GetTagsList();
-    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
+    public List<string> TagsList
+    {
+        get;
+    }
 
-    private static List<string> GetTagsList()
+    public string SerializedTags
+    {
+        get;
+    }
+
+    private static List<string> GetTagsList(bool serviceNameUserDefined)
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        var tags = new List<string>(3); // Update if you add more entries below
-        tags.AddNormalizedTag(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
-        tags.AddNormalizedTag(EntrypointName, GetEntryPointName());
+        var tags = new List<string>(4); // Update if you add more entries below
+        AddNormalizedTag(tags, EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
+        AddNormalizedTag(tags, EntrypointName, GetEntryPointName());
         // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-        tags.AddNormalizedTag(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+        AddNormalizedTag(tags, EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+        // ServiceName can be changed when the API is called, but we consider that capturing the value when config is set is good enough
+        tags.Add($"{ServiceNameUserDefined}:{(serviceNameUserDefined ? "true" : "false")}");
 
         return tags;
     }
@@ -40,7 +59,7 @@ internal static class ProcessTags
     /// normalizes the tag value (keys are hardcoded so they don't need that)
     /// and adds it to the list iff not null or empty
     /// </summary>
-    private static void AddNormalizedTag(this List<string> tags, string key, string? value)
+    private static void AddNormalizedTag(List<string> tags, string key, string? value)
     {
         if (string.IsNullOrEmpty(value))
         {

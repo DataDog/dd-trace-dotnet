@@ -641,6 +641,18 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.LogsInjectionEnabled.Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void ProcessTagsEnabledIfExperimentalEnabled(bool serviceNameIsSetByUser)
+        {
+            var source = serviceNameIsSetByUser ? CreateConfigurationSource((ConfigurationKeys.ServiceName, "my-Service")) : CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, settings);
+
+            mutable.ProcessTags.SerializedTags.Should().Contain("service_name.user_defined:" + serviceNameIsSetByUser.ToString().ToLower());
+        }
+
         private static (string Key, string Property, object Value1, object Value2)[] GetTestValues()
             =>
             [
