@@ -52,6 +52,7 @@
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
 #include "StackSamplerLoopManager.h"
+#include "StackFramesCollectorFactory.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
@@ -268,6 +269,7 @@ void CorProfilerCallback::InitializeServices()
             _rawSampleTransformer.get(),
             _metricsRegistry,
             CallstackProvider(_memoryResourceManager.GetDefault()),
+            _pStackFramesCollectorFactory.get(),
             MemoryResourceManager::GetDefault());
     }
 
@@ -296,6 +298,7 @@ void CorProfilerCallback::InitializeServices()
                     _pLiveObjectsProvider,
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
+                    _pStackFramesCollectorFactory.get(),
                     MemoryResourceManager::GetDefault()
                 );
 
@@ -324,6 +327,7 @@ void CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
+                _pStackFramesCollectorFactory.get(),
                 MemoryResourceManager::GetDefault()
             );
         }
@@ -341,6 +345,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
+                _pStackFramesCollectorFactory.get(),
                 MemoryResourceManager::GetDefault()
             );
         }
@@ -391,6 +396,7 @@ void CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
+                    _pStackFramesCollectorFactory.get(),
                     MemoryResourceManager::GetDefault()
                 );
             }
@@ -441,6 +447,7 @@ void CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
+                _pStackFramesCollectorFactory.get(),
                 MemoryResourceManager::GetDefault());
         }
 
@@ -455,6 +462,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
+                _pStackFramesCollectorFactory.get(),
                 MemoryResourceManager::GetDefault());
         }
 
@@ -547,6 +555,8 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    _pStackFramesCollectorFactory = std::make_unique<StackFramesCollectorFactory>(_pCorProfilerInfo, _pConfiguration.get(), _metricsRegistry);
+    
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -558,7 +568,8 @@ void CorProfilerCallback::InitializeServices()
         _pWallTimeProvider,
         _pCpuTimeProvider,
         _metricsRegistry,
-        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
+        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)),
+        _pStackFramesCollectorFactory.get());
 
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)

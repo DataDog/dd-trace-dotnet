@@ -25,6 +25,7 @@
 class IConfiguration;
 class SampleValueTypeProvider;
 class RawSampleTransformer;
+class StackFramesCollectorFactory;
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
@@ -40,6 +41,7 @@ public:
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         CallstackProvider pool,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory,
         shared::pmr::memory_resource* memoryResource);
 
     bool OnModuleLoaded(ModuleID moduleId);
@@ -78,5 +80,5 @@ private:
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
     CallstackProvider _callstackProvider;
-    MetricsRegistry& _metricsRegistry;
+    StackFramesCollectorFactory* _pStackFramesCollectorFactory;
 };
