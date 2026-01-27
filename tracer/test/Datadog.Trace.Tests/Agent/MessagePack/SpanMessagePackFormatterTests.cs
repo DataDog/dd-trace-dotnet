@@ -509,6 +509,64 @@ public class SpanMessagePackFormatterTests
         tagValue0.Should().Be("0123456789abcdef");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ProcessTags_Serialization(bool propagateProcessTags)
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+            { ConfigurationKeys.ServiceName, "test-service" }
+        });
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (_ = tracer.StartActive("root"))
+        {
+            using (_ = tracer.StartActive("child1"))
+            {
+            }
+
+            using (_ = tracer.StartActive("child2"))
+            {
+            }
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        traceChunks.Should().HaveCount(1);
+        var spans = traceChunks[0];
+        spans.Should().HaveCount(3);
+
+        var firstSpan = spans[0];
+        var secondSpan = spans[1];
+        var thirdSpan = spans[2];
+
+        if (propagateProcessTags)
+        {
+            // Process tags should be present only in the first span
+            var processTagsValue = firstSpan.GetTag(Tags.ProcessTags);
+            processTagsValue.Should().NotBeNullOrEmpty("process tags should be in the first span when enabled");
+            processTagsValue.Should().Contain(ProcessTags.EntrypointBasedir);
+            processTagsValue.Should().Contain(ProcessTags.EntrypointWorkdir);
+            processTagsValue.Should().Contain("svc.user:1");
+
+            // Should not be in subsequent spans
+            secondSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should only be in the first span");
+            thirdSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should only be in the first span");
+        }
+        else
+        {
+            // When disabled, process tags should not be present in any span
+            firstSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should not be present when disabled");
+            secondSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should not be present when disabled");
+            thirdSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should not be present when disabled");
+        }
+    }
+
     private readonly struct TagsProcessor<T> : IItemProcessor<T>
     {
         private readonly Dictionary<string, T> _expectedTags;

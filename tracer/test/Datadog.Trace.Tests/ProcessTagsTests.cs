@@ -12,10 +12,13 @@ namespace Datadog.Trace.Tests;
 
 public class ProcessTagsTests
 {
-    [Fact]
-    public void TagsPresentWhenEnabled()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TagsPresentWhenServiceNameUserDefined(bool isServiceNameUserDefined)
     {
-        var tags = ProcessTags.SerializedTags;
+        var processTags = new ProcessTags(serviceNameUserDefined: isServiceNameUserDefined, autoServiceName: "auto-service");
+        var tags = processTags.SerializedTags;
 
         tags.Should().ContainAll(ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
         // EntrypointName may not be present, especially when ran in the CI
@@ -29,7 +32,19 @@ public class ProcessTagsTests
             {
                 s.Count(c => c == ':').Should().Be(1);
             });
-        // cannot really assert on content because it depends on how the tests are run.
+
+        if (isServiceNameUserDefined)
+        {
+            tags.Should().Contain("svc.user:1");
+            tags.Should().NotContain("svc.auto");
+        }
+        else
+        {
+            tags.Should().NotContain("svc.user");
+            tags.Should().Contain("svc.auto:auto-service");
+        }
+
+        // cannot really assert the rest of the content because it depends on how the tests are run.
     }
 
     [SkippableTheory]

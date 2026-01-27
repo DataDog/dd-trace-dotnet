@@ -42,7 +42,7 @@ internal sealed class StatsdManager : IStatsdManager
         _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
             tracerSettings.Manager.InitialExporterSettings,
-            tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []);
+            tracerSettings.PropagateProcessTags ? tracerSettings.Manager.InitialMutableSettings.ProcessTags?.TagsList ?? [] : []);
 
         // We don't create a new client unless we need one, and we rely on consumers of the manager to tell us when it's needed
         _current = null;
@@ -65,7 +65,7 @@ internal sealed class StatsdManager : IStatsdManager
                 () => statsdFactory(
                     c.UpdatedMutable ?? c.PreviousMutable,
                     c.UpdatedExporter ?? c.PreviousExporter,
-                    tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []));
+                    tracerSettings.PropagateProcessTags ? tracerSettings.Manager.InitialMutableSettings.ProcessTags?.TagsList ?? [] : []));
 
             // check if we actually need to do an update or if noone is using the client yet
             if (Volatile.Read(ref _isRequiredMask) != 0)
