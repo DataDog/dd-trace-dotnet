@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -36,122 +35,35 @@ internal sealed class DatadogConfigureReceiveEndpoint
             return;
         }
 
-        try
-        {
-            Log.Debug("DatadogConfigureReceiveEndpoint: Configuring endpoint {EndpointName} with {ConfiguratorType}", name, configurator.GetType().FullName);
+        Log.Debug("DatadogConfigureReceiveEndpoint: Configuring endpoint {EndpointName} with {ConfiguratorType}", name, configurator.GetType().FullName);
 
-            // Inject consume filter via IConsumePipeConfigurator.AddPipeSpecification
-            InjectConsumeFilter(configurator);
+        // Inject consume filter via IConsumePipeConfigurator.AddPipeSpecification
+        InjectConsumeFilter(configurator);
 
-            // Note: Send and Publish filters cannot be injected at the receive endpoint level because
-            // IReceiveEndpointConfigurator doesn't expose AddPipeSpecification for SendContext/PublishContext.
-            // However, publish operations are still captured by the underlying transport instrumentation
-            // (e.g., RabbitMQ's basic.publish). For MassTransit-specific publish spans, we would need to
-            // hook at the bus level via IBusControl or IPublishEndpoint.Publish.
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "DatadogConfigureReceiveEndpoint: Failed to configure endpoint {EndpointName}", name);
-        }
+        // Note: Send and Publish filters cannot be injected at the receive endpoint level because
+        // IReceiveEndpointConfigurator doesn't expose AddPipeSpecification for SendContext/PublishContext.
+        // However, publish operations are still captured by the underlying transport instrumentation
+        // (e.g., RabbitMQ's basic.publish). For MassTransit-specific publish spans, we would need to
+        // hook at the bus level via IBusControl or IPublishEndpoint.Publish.
     }
 
     private static void InjectConsumeFilter(object configurator)
     {
-        try
+        var filterSpec = MassTransitCommon.CreatePipeSpecificationProxy(new DatadogConsumePipeSpecification());
+        if (filterSpec == null)
         {
-            var configuratorType = configurator.GetType();
-
-            // Find MassTransit assembly
-            Assembly? massTransitAssembly = null;
-            Assembly? greenPipesAssembly = null;
-
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var assemblyName = assembly.GetName().Name;
-                if (assemblyName == "MassTransit")
-                {
-                    massTransitAssembly = assembly;
-                }
-                else if (assemblyName == "GreenPipes")
-                {
-                    greenPipesAssembly = assembly;
-                }
-
-                if (massTransitAssembly != null && greenPipesAssembly != null)
-                {
-                    break;
-                }
-            }
-
-            if (massTransitAssembly == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not find MassTransit assembly");
-                return;
-            }
-
-            if (greenPipesAssembly == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not find GreenPipes assembly");
-                return;
-            }
-
-            // Get ConsumeContext type
-            var consumeContextType = massTransitAssembly.GetType("MassTransit.ConsumeContext");
-            if (consumeContextType == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not find ConsumeContext type");
-                return;
-            }
-
-            // Get IPipeSpecification<ConsumeContext> type
-            var pipeSpecOpenType = greenPipesAssembly.GetType("GreenPipes.IPipeSpecification`1");
-            if (pipeSpecOpenType == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not find IPipeSpecification<> type");
-                return;
-            }
-
-            var pipeSpecType = pipeSpecOpenType.MakeGenericType(consumeContextType);
-
-            // Create our filter specification via reverse duck typing
-            var filterSpecImpl = new DatadogConsumePipeSpecification();
-            var filterSpec = DuckType.CreateReverse(pipeSpecType, filterSpecImpl);
-
-            if (filterSpec == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not create reverse duck type for IPipeSpecification<ConsumeContext>");
-                return;
-            }
-
-            // Find the AddPipeSpecification method on the configurator
-            // IConsumePipeConfigurator.AddPipeSpecification(IPipeSpecification<ConsumeContext>)
-            var addPipeSpecMethod = configuratorType.GetMethod("AddPipeSpecification", new[] { pipeSpecType });
-
-            if (addPipeSpecMethod == null)
-            {
-                // Try finding the method on interfaces
-                foreach (var iface in configuratorType.GetInterfaces())
-                {
-                    addPipeSpecMethod = iface.GetMethod("AddPipeSpecification", new[] { pipeSpecType });
-                    if (addPipeSpecMethod != null)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            if (addPipeSpecMethod == null)
-            {
-                Log.Debug("DatadogConfigureReceiveEndpoint: Could not find AddPipeSpecification method");
-                return;
-            }
-
-            addPipeSpecMethod.Invoke(configurator, new[] { filterSpec });
-            Log.Debug("DatadogConfigureReceiveEndpoint: Successfully injected consume filter specification");
+            Log.Debug("DatadogConfigureReceiveEndpoint: Could not create pipe specification proxy");
+            return;
         }
-        catch (Exception ex)
+
+        var addPipeSpecMethod = MassTransitCommon.FindAddPipeSpecificationMethod(configurator.GetType());
+        if (addPipeSpecMethod == null)
         {
-            Log.Debug(ex, "DatadogConfigureReceiveEndpoint: Failed to inject consume filter");
+            Log.Debug("DatadogConfigureReceiveEndpoint: Could not find AddPipeSpecification method");
+            return;
         }
+
+        addPipeSpecMethod.Invoke(configurator, new[] { filterSpec });
+        Log.Debug("DatadogConfigureReceiveEndpoint: Successfully injected consume filter specification");
     }
 }

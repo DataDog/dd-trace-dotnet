@@ -7,10 +7,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInjection;
@@ -93,35 +91,8 @@ public sealed class AddMassTransitIntegration
 
         var collectionType = collection.GetType();
 
-        // Find the MassTransit and DI assemblies
-        Assembly? massTransitAssembly = null;
-        Assembly? diAssembly = null;
-
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            var assemblyName = assembly.GetName().Name;
-            if (assemblyName == "MassTransit")
-            {
-                massTransitAssembly = assembly;
-            }
-            else if (assemblyName == "Microsoft.Extensions.DependencyInjection.Abstractions")
-            {
-                diAssembly = assembly;
-            }
-
-            if (massTransitAssembly != null && diAssembly != null)
-            {
-                break;
-            }
-        }
-
-        if (massTransitAssembly == null)
-        {
-            Log.Debug("MassTransit AddMassTransitIntegration: Could not find MassTransit assembly");
-            return;
-        }
-
-        var configureReceiveEndpointType = massTransitAssembly.GetType("MassTransit.IConfigureReceiveEndpoint");
+        // Get IConfigureReceiveEndpoint type from MassTransit assembly
+        var configureReceiveEndpointType = MassTransitCommon.GetConfigureReceiveEndpointType();
         if (configureReceiveEndpointType == null)
         {
             Log.Debug("MassTransit AddMassTransitIntegration: Could not find IConfigureReceiveEndpoint type");
@@ -129,31 +100,22 @@ public sealed class AddMassTransitIntegration
         }
 
         // Create a reverse duck type instance that implements IConfigureReceiveEndpoint
-        var datadogImpl = new DatadogConfigureReceiveEndpoint();
-        var datadogProxy = DuckType.CreateReverse(configureReceiveEndpointType, datadogImpl);
-
+        var datadogProxy = MassTransitCommon.CreateConfigureReceiveEndpointProxy(new DatadogConfigureReceiveEndpoint());
         if (datadogProxy == null)
         {
             Log.Debug("MassTransit AddMassTransitIntegration: Could not create reverse duck type for IConfigureReceiveEndpoint");
             return;
         }
 
-        if (diAssembly == null)
-        {
-            Log.Debug("MassTransit AddMassTransitIntegration: Could not find DI Abstractions assembly");
-            return;
-        }
-
-        // Find ServiceDescriptor type
-        var serviceDescriptorType = diAssembly.GetType("Microsoft.Extensions.DependencyInjection.ServiceDescriptor");
+        // Find ServiceDescriptor and ServiceLifetime types from DI assembly
+        var serviceDescriptorType = MassTransitCommon.GetServiceDescriptorType();
         if (serviceDescriptorType == null)
         {
             Log.Debug("MassTransit AddMassTransitIntegration: Could not find ServiceDescriptor type");
             return;
         }
 
-        // Find ServiceLifetime enum
-        var serviceLifetimeType = diAssembly.GetType("Microsoft.Extensions.DependencyInjection.ServiceLifetime");
+        var serviceLifetimeType = MassTransitCommon.GetServiceLifetimeType();
         if (serviceLifetimeType == null)
         {
             Log.Debug("MassTransit AddMassTransitIntegration: Could not find ServiceLifetime type");
@@ -161,11 +123,11 @@ public sealed class AddMassTransitIntegration
         }
 
         // Create ServiceDescriptor for our implementation (Scoped lifetime)
-        // ServiceDescriptor.Describe(typeof(IConfigureReceiveEndpoint), _ => datadogProxy, ServiceLifetime.Scoped)
         var scopedLifetime = Enum.ToObject(serviceLifetimeType, 1); // ServiceLifetime.Scoped = 1
 
         // Create a factory func that returns our proxy instance
-        var serviceProviderType = diAssembly.GetType("System.IServiceProvider") ?? typeof(IServiceProvider);
+        var diAssembly = MassTransitCommon.GetDiAbstractionsAssembly();
+        var serviceProviderType = diAssembly?.GetType("System.IServiceProvider") ?? typeof(IServiceProvider);
         var funcType = typeof(Func<,>).MakeGenericType(serviceProviderType, configureReceiveEndpointType);
 
         // Create a delegate that returns our singleton proxy
@@ -182,11 +144,11 @@ public sealed class AddMassTransitIntegration
         var factory = factoryMethod.Invoke(null, new[] { datadogProxy });
 
         // Find the ServiceDescriptor constructor: ServiceDescriptor(Type serviceType, Func<IServiceProvider, object> factory, ServiceLifetime lifetime)
-        var descriptorCtor = serviceDescriptorType.GetConstructor(new[] { typeof(Type), funcType, serviceLifetimeType });
+        var descriptorCtor = serviceDescriptorType.GetConstructor([typeof(Type), funcType, serviceLifetimeType]);
         if (descriptorCtor == null)
         {
             // Try the simpler overload
-            descriptorCtor = serviceDescriptorType.GetConstructor(new[] { typeof(Type), typeof(object), serviceLifetimeType });
+            descriptorCtor = serviceDescriptorType.GetConstructor([typeof(Type), typeof(object), serviceLifetimeType]);
         }
 
         if (descriptorCtor == null)
@@ -195,11 +157,11 @@ public sealed class AddMassTransitIntegration
             return;
         }
 
-        var descriptor = descriptorCtor.Invoke(new[] { configureReceiveEndpointType, factory, scopedLifetime });
+        var descriptor = descriptorCtor.Invoke([configureReceiveEndpointType, factory, scopedLifetime]);
 
         // Add the descriptor to the collection
         // collection.Add(descriptor)
-        var addMethod = collectionType.GetMethod("Add", new[] { serviceDescriptorType });
+        var addMethod = collectionType.GetMethod("Add", [serviceDescriptorType]);
         if (addMethod == null)
         {
             // Try ICollection<ServiceDescriptor>.Add
@@ -209,8 +171,8 @@ public sealed class AddMassTransitIntegration
 
         if (addMethod != null)
         {
-            addMethod.Invoke(collection, new[] { descriptor });
-            Log.Information("MassTransit AddMassTransitIntegration: Successfully registered DatadogConfigureReceiveEndpoint");
+            addMethod.Invoke(collection, [descriptor]);
+            Log.Debug("MassTransit AddMassTransitIntegration: Successfully registered DatadogConfigureReceiveEndpoint");
         }
         else
         {
