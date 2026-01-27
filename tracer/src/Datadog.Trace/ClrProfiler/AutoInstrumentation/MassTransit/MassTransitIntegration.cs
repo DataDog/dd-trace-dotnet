@@ -195,6 +195,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             tags.MessageId = context.MessageId?.ToString();
             tags.ConversationId = context.ConversationId?.ToString();
+            tags.CorrelationId = context.CorrelationId?.ToString();
             tags.SourceAddress = context.SourceAddress?.ToString();
             tags.DestinationAddress = context.DestinationAddress?.ToString();
             tags.InitiatorId = context.InitiatorId?.ToString();

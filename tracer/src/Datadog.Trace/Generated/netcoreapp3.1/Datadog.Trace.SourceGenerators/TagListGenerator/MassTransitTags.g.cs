@@ -56,6 +56,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 #else
         private static readonly byte[] ConversationIdBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 99, 111, 110, 118, 101, 114, 115, 97, 116, 105, 111, 110, 95, 105, 100 };
 #endif
+        // CorrelationIdBytes = MessagePack.Serialize("messaging.masstransit.correlation_id");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CorrelationIdBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#else
+        private static readonly byte[] CorrelationIdBytes = new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#endif
         // SourceAddressBytes = MessagePack.Serialize("messaging.masstransit.source_address");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> SourceAddressBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 111, 117, 114, 99, 101, 95, 97, 100, 100, 114, 101, 115, 115 };
@@ -122,12 +128,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 #else
         private static readonly byte[] EndStateBytes = new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101 };
 #endif
-        // CorrelationIdBytes = MessagePack.Serialize("messaging.masstransit.correlation_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CorrelationIdBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
-#else
-        private static readonly byte[] CorrelationIdBytes = new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
-#endif
         // SagaIdBytes = MessagePack.Serialize("messaging.masstransit.saga_id");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> SagaIdBytes => new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
@@ -158,6 +158,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 "messaging.destination.name" => DestinationName,
                 "messaging.masstransit.message_id" => MessageId,
                 "messaging.message.conversation_id" => ConversationId,
+                "messaging.masstransit.correlation_id" => CorrelationId,
                 "messaging.masstransit.source_address" => SourceAddress,
                 "messaging.masstransit.destination_address" => DestinationAddress,
                 "messaging.masstransit.input_address" => InputAddress,
@@ -169,7 +170,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 "messaging.masstransit.fault_address" => FaultAddress,
                 "messaging.masstransit.begin_state" => BeginState,
                 "messaging.masstransit.end_state" => EndState,
-                "messaging.masstransit.correlation_id" => CorrelationId,
                 "messaging.masstransit.saga_id" => SagaId,
                 "peer.address" => PeerAddress,
                 "messaging.masstransit.consumer_type" => ConsumerType,
@@ -195,6 +195,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     break;
                 case "messaging.message.conversation_id": 
                     ConversationId = value;
+                    break;
+                case "messaging.masstransit.correlation_id": 
+                    CorrelationId = value;
                     break;
                 case "messaging.masstransit.source_address": 
                     SourceAddress = value;
@@ -228,9 +231,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     break;
                 case "messaging.masstransit.end_state": 
                     EndState = value;
-                    break;
-                case "messaging.masstransit.correlation_id": 
-                    CorrelationId = value;
                     break;
                 case "messaging.masstransit.saga_id": 
                     SagaId = value;
@@ -288,6 +288,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 processor.Process(new TagItem<string>("messaging.message.conversation_id", ConversationId, ConversationIdBytes));
             }
 
+            if (CorrelationId is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.correlation_id", CorrelationId, CorrelationIdBytes));
+            }
+
             if (SourceAddress is not null)
             {
                 processor.Process(new TagItem<string>("messaging.masstransit.source_address", SourceAddress, SourceAddressBytes));
@@ -341,11 +346,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (EndState is not null)
             {
                 processor.Process(new TagItem<string>("messaging.masstransit.end_state", EndState, EndStateBytes));
-            }
-
-            if (CorrelationId is not null)
-            {
-                processor.Process(new TagItem<string>("messaging.masstransit.correlation_id", CorrelationId, CorrelationIdBytes));
             }
 
             if (SagaId is not null)
@@ -414,6 +414,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 sb.Append("messaging.message.conversation_id (tag):")
                   .Append(ConversationId)
+                  .Append(',');
+            }
+
+            if (CorrelationId is not null)
+            {
+                sb.Append("messaging.masstransit.correlation_id (tag):")
+                  .Append(CorrelationId)
                   .Append(',');
             }
 
@@ -491,13 +498,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 sb.Append("messaging.masstransit.end_state (tag):")
                   .Append(EndState)
-                  .Append(',');
-            }
-
-            if (CorrelationId is not null)
-            {
-                sb.Append("messaging.masstransit.correlation_id (tag):")
-                  .Append(CorrelationId)
                   .Append(',');
             }
 

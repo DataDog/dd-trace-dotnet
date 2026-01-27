@@ -23,67 +23,64 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MassTransitConstants.IntegrationName;
 
-        [Tag("messaging.operation")]
+        [Tag(Trace.Tags.MassTransitMessagingOperation)]
         public string? MessagingOperation { get; set; }
 
-        [Tag("messaging.system")]
+        [Tag(Trace.Tags.MassTransitMessagingSystem)]
         public string? MessagingSystem { get; set; }
 
-        [Tag("messaging.destination.name")]
+        [Tag(Trace.Tags.MassTransitDestinationName)]
         public string? DestinationName { get; set; }
 
-        [Tag("messaging.masstransit.message_id")]
+        [Tag(Trace.Tags.MassTransitMessageId)]
         public string? MessageId { get; set; }
 
-        [Tag("messaging.message.conversation_id")]
+        [Tag(Trace.Tags.MassTransitConversationId)]
         public string? ConversationId { get; set; }
 
-        [Tag("messaging.masstransit.source_address")]
-        public string? SourceAddress { get; set; }
-
-        [Tag("messaging.masstransit.destination_address")]
-        public string? DestinationAddress { get; set; }
-
-        // MT8 OTEL has input_address on receive spans
-        [Tag("messaging.masstransit.input_address")]
-        public string? InputAddress { get; set; }
-
-        [Tag("messaging.masstransit.message_types")]
-        public string? MessageTypes { get; set; }
-
-        [Tag("messaging.message.body.size")]
-        public string? MessageSize { get; set; }
-
-        [Tag("messaging.masstransit.initiator_id")]
-        public string? InitiatorId { get; set; }
-
-        [Tag("messaging.masstransit.request_id")]
-        public string? RequestId { get; set; }
-
-        [Tag("messaging.masstransit.response_address")]
-        public string? ResponseAddress { get; set; }
-
-        [Tag("messaging.masstransit.fault_address")]
-        public string? FaultAddress { get; set; }
-
-        // Saga state machine tags (matching MT8 OTEL instrumentation)
-        [Tag("messaging.masstransit.begin_state")]
-        public string? BeginState { get; set; }
-
-        [Tag("messaging.masstransit.end_state")]
-        public string? EndState { get; set; }
-
-        [Tag("messaging.masstransit.correlation_id")]
+        [Tag(Trace.Tags.MassTransitCorrelationId)]
         public string? CorrelationId { get; set; }
 
-        [Tag("messaging.masstransit.saga_id")]
+        [Tag(Trace.Tags.MassTransitSourceAddress)]
+        public string? SourceAddress { get; set; }
+
+        [Tag(Trace.Tags.MassTransitDestinationAddress)]
+        public string? DestinationAddress { get; set; }
+
+        [Tag(Trace.Tags.MassTransitInputAddress)]
+        public string? InputAddress { get; set; }
+
+        [Tag(Trace.Tags.MassTransitMessageTypes)]
+        public string? MessageTypes { get; set; }
+
+        [Tag(Trace.Tags.MassTransitMessageSize)]
+        public string? MessageSize { get; set; }
+
+        [Tag(Trace.Tags.MassTransitInitiatorId)]
+        public string? InitiatorId { get; set; }
+
+        [Tag(Trace.Tags.MassTransitRequestId)]
+        public string? RequestId { get; set; }
+
+        [Tag(Trace.Tags.MassTransitResponseAddress)]
+        public string? ResponseAddress { get; set; }
+
+        [Tag(Trace.Tags.MassTransitFaultAddress)]
+        public string? FaultAddress { get; set; }
+
+        [Tag(Trace.Tags.MassTransitBeginState)]
+        public string? BeginState { get; set; }
+
+        [Tag(Trace.Tags.MassTransitEndState)]
+        public string? EndState { get; set; }
+
+        [Tag(Trace.Tags.MassTransitSagaId)]
         public string? SagaId { get; set; }
 
-        // Additional MT8 OTEL tags
-        [Tag("peer.address")]
+        [Tag(Trace.Tags.MassTransitPeerAddress)]
         public string? PeerAddress { get; set; }
 
-        [Tag("messaging.masstransit.consumer_type")]
+        [Tag(Trace.Tags.MassTransitConsumerType)]
         public string? ConsumerType { get; set; }
     }
 }

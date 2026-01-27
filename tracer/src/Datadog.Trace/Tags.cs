@@ -763,6 +763,28 @@ namespace Datadog.Trace
         internal const string HangfireJobCreatedAt = "job.CreatedAt";
         internal const string HangfireJobId = "job.ID";
 
+        // MassTransit tags
+        internal const string MassTransitMessagingOperation = "messaging.operation";
+        internal const string MassTransitMessagingSystem = "messaging.system";
+        internal const string MassTransitDestinationName = "messaging.destination.name";
+        internal const string MassTransitMessageId = "messaging.masstransit.message_id";
+        internal const string MassTransitConversationId = "messaging.message.conversation_id";
+        internal const string MassTransitCorrelationId = "messaging.masstransit.correlation_id";
+        internal const string MassTransitSourceAddress = "messaging.masstransit.source_address";
+        internal const string MassTransitDestinationAddress = "messaging.masstransit.destination_address";
+        internal const string MassTransitInputAddress = "messaging.masstransit.input_address";
+        internal const string MassTransitMessageTypes = "messaging.masstransit.message_types";
+        internal const string MassTransitMessageSize = "messaging.message.body.size";
+        internal const string MassTransitInitiatorId = "messaging.masstransit.initiator_id";
+        internal const string MassTransitRequestId = "messaging.masstransit.request_id";
+        internal const string MassTransitResponseAddress = "messaging.masstransit.response_address";
+        internal const string MassTransitFaultAddress = "messaging.masstransit.fault_address";
+        internal const string MassTransitBeginState = "messaging.masstransit.begin_state";
+        internal const string MassTransitEndState = "messaging.masstransit.end_state";
+        internal const string MassTransitSagaId = "messaging.masstransit.saga_id";
+        internal const string MassTransitPeerAddress = "peer.address";
+        internal const string MassTransitConsumerType = "messaging.masstransit.consumer_type";
+
         // general Service Fabric
         internal const string ServiceFabricApplicationId = "service-fabric.application-id";
         internal const string ServiceFabricApplicationName = "service-fabric.application-name";
