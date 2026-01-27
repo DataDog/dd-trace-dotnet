@@ -2,7 +2,7 @@ using MassTransit;
 using Samples.MassTransit7;
 using Samples.MassTransit7.Consumers;
 
-// Transport selection via environment variable: "rabbitmq" (default), "amazonsqs", or "azureservicebus"
+// Transport selection via environment variable: "rabbitmq" (default) or "amazonsqs"
 var transport = Environment.GetEnvironmentVariable("MASSTRANSIT_TRANSPORT")?.ToLowerInvariant() ?? "rabbitmq";
 
 Console.WriteLine($"MassTransit 7 Sample - Using transport: {transport}");
@@ -18,9 +18,6 @@ var builder = Host.CreateDefaultBuilder(args)
             {
                 case "amazonsqs":
                     ConfigureAmazonSqs(x);
-                    break;
-                case "azureservicebus":
-                    ConfigureAzureServiceBus(x);
                     break;
                 case "rabbitmq":
                 default:
@@ -77,21 +74,6 @@ void ConfigureAmazonSqs(IBusRegistrationConfigurator x)
             h.AccessKey("test");
             h.SecretKey("test");
         });
-
-        cfg.ConfigureEndpoints(context);
-    });
-}
-
-void ConfigureAzureServiceBus(IBusRegistrationConfigurator x)
-{
-    x.UsingAzureServiceBus((context, cfg) =>
-    {
-        // Azure Service Bus connection string from environment variable
-        // Default uses Azure Service Bus Emulator (https://learn.microsoft.com/en-us/azure/service-bus-messaging/test-locally-with-service-bus-emulator)
-        var connectionString = Environment.GetEnvironmentVariable("AZURE_SERVICEBUS_CONNECTION_STRING")
-            ?? "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
-
-        cfg.Host(connectionString);
 
         cfg.ConfigureEndpoints(context);
     });
