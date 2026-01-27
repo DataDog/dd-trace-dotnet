@@ -143,7 +143,7 @@ public sealed class StateMachineSagaMessageFilterIntegration
                 // Add saga-specific tags (MT8 OTEL style)
                 if (sagaType != null)
                 {
-                    tags.SetTag("messaging.masstransit.saga_type", sagaType);
+                    tags.SagaType = sagaType;
                     // MT8 OTEL uses consumer_type for the state machine name
                     tags.ConsumerType = sagaType + "StateMachine";
                 }

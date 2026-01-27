@@ -77,6 +77,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         [Tag(Trace.Tags.MassTransitSagaId)]
         public string? SagaId { get; set; }
 
+        [Tag(Trace.Tags.MassTransitSagaType)]
+        public string? SagaType { get; set; }
+
         [Tag(Trace.Tags.MassTransitPeerAddress)]
         public string? PeerAddress { get; set; }
 

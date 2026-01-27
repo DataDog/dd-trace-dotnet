@@ -7,7 +7,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -33,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 public sealed class AddMassTransitIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AddMassTransitIntegration>();
-    private static int _filterRegistered = 1;
 
     /// <summary>
     /// OnMethodBegin callback - stores the IServiceCollection for use in OnMethodEnd
@@ -73,11 +71,10 @@ public sealed class AddMassTransitIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        if (Interlocked.Exchange(ref _filterRegistered, 0) != 1)
-        {
-            // filter already registered, skip injection
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
+        // Note: Unlike Hangfire, we register for each AddMassTransit call because:
+        // 1. Each call may use a different IServiceCollection (different DI containers)
+        // 2. The sample app creates separate service collections for each transport test
+        // 3. The IConfigureReceiveEndpoint needs to be in each container that hosts MassTransit
 
         try
         {

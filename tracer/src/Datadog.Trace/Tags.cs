@@ -782,6 +782,7 @@ namespace Datadog.Trace
         internal const string MassTransitBeginState = "messaging.masstransit.begin_state";
         internal const string MassTransitEndState = "messaging.masstransit.end_state";
         internal const string MassTransitSagaId = "messaging.masstransit.saga_id";
+        internal const string MassTransitSagaType = "messaging.masstransit.saga_type";
         internal const string MassTransitPeerAddress = "peer.address";
         internal const string MassTransitConsumerType = "messaging.masstransit.consumer_type";
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Samples.MassTransit7.Contracts;
 using Samples.MassTransit7.Consumers;
+using Samples.MassTransit7.Sagas;
 
 Console.WriteLine("MassTransit 7 Sample - Testing all transports sequentially");
 
@@ -10,6 +11,9 @@ Console.WriteLine("MassTransit 7 Sample - Testing all transports sequentially");
 await RunWithTransport("inmemory", ConfigureInMemory);
 await RunWithTransport("rabbitmq", ConfigureRabbitMq);
 await RunWithTransport("amazonsqs", ConfigureAmazonSqs);
+
+// Run saga test with in-memory transport
+await RunSagaTest();
 
 Console.WriteLine("All transports tested successfully!");
 
@@ -109,4 +113,68 @@ void ConfigureAmazonSqs(IBusRegistrationConfigurator x)
 
         cfg.ConfigureEndpoints(context);
     });
+}
+
+async Task RunSagaTest()
+{
+    Console.WriteLine("\n========== Testing SAGA STATE MACHINE ==========");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
+    {
+        // Register the saga state machine with in-memory repository
+        x.AddSagaStateMachine<OrderStateMachine, OrderState>()
+            .InMemoryRepository();
+
+        x.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        Console.WriteLine("[saga] Starting the bus...");
+        await busControl.StartAsync();
+
+        // Give the bus time to fully initialize
+        await Task.Delay(500);
+
+        // Create an order ID for the saga
+        var orderId = Guid.NewGuid();
+        Console.WriteLine($"[saga] Testing order saga with OrderId: {orderId}");
+
+        // Step 1: Submit the order (Initial -> Submitted)
+        Console.WriteLine("[saga] Publishing OrderSubmitted event...");
+        await busControl.Publish(new OrderSubmitted
+        {
+            OrderId = orderId,
+            CustomerName = "Test Customer",
+            Amount = 99.99m
+        });
+        await Task.Delay(500);
+
+        // Step 2: Accept the order (Submitted -> Accepted)
+        Console.WriteLine("[saga] Publishing OrderAccepted event...");
+        await busControl.Publish(new OrderAccepted { OrderId = orderId });
+        await Task.Delay(500);
+
+        // Step 3: Complete the order (Accepted -> Completed)
+        Console.WriteLine("[saga] Publishing OrderCompleted event...");
+        await busControl.Publish(new OrderCompleted { OrderId = orderId });
+        await Task.Delay(500);
+
+        Console.WriteLine("[saga] Saga test completed successfully!");
+    }
+    finally
+    {
+        Console.WriteLine("[saga] Stopping the bus...");
+        await busControl.StopAsync();
+        await Task.Delay(500);
+    }
 }

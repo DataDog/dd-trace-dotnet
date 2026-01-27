@@ -46,17 +46,19 @@ public class MassTransit7Tests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            // Wait for spans to arrive - the sample tests 3 transports:
-            // Each transport produces 2 MassTransit spans (receive + process)
-            // Note: We wait for at least 6 spans, but more will arrive from RabbitMQ/SQS integrations
-            const int expectedMassTransitSpanCount = 6;
+            // Wait for spans to arrive - the sample tests 3 transports + saga state machine:
+            // Each transport produces 2 MassTransit spans (receive + process) = 6 spans
+            // Saga test produces 6 MassTransit spans (3 events × 2 spans each) = 6 spans
+            // Total: 12 MassTransit spans
+            // Note: We wait for at least 12 spans, but more will arrive from RabbitMQ/SQS integrations
+            const int expectedMassTransitSpanCount = 12;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();
 
             // Filter to MassTransit spans - component tag should be "MassTransit"
             var massTransitSpans = spans.Where(span => span.GetTag("component") == "MassTransit").ToList();
-            massTransitSpans.Count.Should().Be(expectedMassTransitSpanCount, "should have exactly 6 MassTransit spans (2 per transport)");
+            massTransitSpans.Count.Should().Be(expectedMassTransitSpanCount, "should have exactly 12 MassTransit spans (2 per transport × 3 transports + 2 per saga event × 3 events)");
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
 
@@ -69,6 +71,14 @@ public class MassTransit7Tests : TracingIntegrationTest
             // Scrub dynamic queue names for RabbitMQ and SQS
             var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
             settings.AddRegexScrubber(queueNameRegex, "QueueName");
+
+            // Scrub saga-specific dynamic values (correlation IDs, saga IDs)
+            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
+            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
+
+            // Scrub saga queue names (e.g., order-state_[guid])
+            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
+            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
             await VerifyHelper.VerifySpans(
                 massTransitSpans,

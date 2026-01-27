@@ -134,6 +134,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 #else
         private static readonly byte[] SagaIdBytes = new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
 #endif
+        // SagaTypeBytes = MessagePack.Serialize("messaging.masstransit.saga_type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SagaTypeBytes => new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] SagaTypeBytes = new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 116, 121, 112, 101 };
+#endif
         // PeerAddressBytes = MessagePack.Serialize("peer.address");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> PeerAddressBytes => new byte[] { 172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
@@ -171,6 +177,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 "messaging.masstransit.begin_state" => BeginState,
                 "messaging.masstransit.end_state" => EndState,
                 "messaging.masstransit.saga_id" => SagaId,
+                "messaging.masstransit.saga_type" => SagaType,
                 "peer.address" => PeerAddress,
                 "messaging.masstransit.consumer_type" => ConsumerType,
                 _ => base.GetTag(key),
@@ -234,6 +241,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     break;
                 case "messaging.masstransit.saga_id": 
                     SagaId = value;
+                    break;
+                case "messaging.masstransit.saga_type": 
+                    SagaType = value;
                     break;
                 case "peer.address": 
                     PeerAddress = value;
@@ -351,6 +361,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (SagaId is not null)
             {
                 processor.Process(new TagItem<string>("messaging.masstransit.saga_id", SagaId, SagaIdBytes));
+            }
+
+            if (SagaType is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.masstransit.saga_type", SagaType, SagaTypeBytes));
             }
 
             if (PeerAddress is not null)
@@ -505,6 +520,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 sb.Append("messaging.masstransit.saga_id (tag):")
                   .Append(SagaId)
+                  .Append(',');
+            }
+
+            if (SagaType is not null)
+            {
+                sb.Append("messaging.masstransit.saga_type (tag):")
+                  .Append(SagaType)
                   .Append(',');
             }
 
