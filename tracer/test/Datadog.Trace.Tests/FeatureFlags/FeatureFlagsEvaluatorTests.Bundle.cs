@@ -132,7 +132,7 @@ public partial class FeatureFlagsEvaluatorTests
                 System.Globalization.DateTimeStyles.AdjustToUniversal,
                 out var dt))
             {
-                return dt.ToString(FeatureFlagsEvaluator.DateFormat);
+                return dt.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'");
             }
 
             return dateString;

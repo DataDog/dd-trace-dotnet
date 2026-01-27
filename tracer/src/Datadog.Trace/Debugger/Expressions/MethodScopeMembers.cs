@@ -24,6 +24,11 @@ internal sealed class MethodScopeMembers : IPoolable<MethodScopeMembersParameter
 
     internal ScopeMember[] Members { get; private set; }
 
+    /// <summary>
+    /// Gets the number of valid members currently stored in <see cref="Members"/>.
+    /// </summary>
+    internal int MemberCount => _index;
+
     internal Exception Exception { get; set; }
 
     // food for thought:

@@ -50,7 +50,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly SpanCodeOrigin? _spanCodeOrigin;
         private string? _hostingHttpRequestInStartEventKey;
         private string? _mvcBeforeActionEventKey;
-        private string? _mvcAfterActionEventKey;
         private string? _hostingUnhandledExceptionEventKey;
         private string? _diagnosticsUnhandledExceptionEventKey;
         private string? _hostingHttpRequestInStopEventKey;
@@ -96,11 +95,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnMvcBeforeAction(arg);
                     return;
                 }
-                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
-                {
-                    OnMvcAfterAction();
-                    return;
-                }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
                          ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
@@ -114,11 +108,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
-                }
-                else if (suffix is "Mvc.AfterAction")
-                {
-                    _mvcAfterActionEventKey = eventName;
-                    OnMvcAfterAction();
                 }
                 else if (suffix is "Hosting.UnhandledException")
                 {
@@ -333,51 +322,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (iastEnabled)
                 {
                     rootSpan.Context.TraceContext.IastRequestContext?.AddRequestData(httpContext.Request, typedArg.RouteData?.Values);
-                }
-            }
-        }
-
-        private void OnMvcAfterAction()
-        {
-            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                return;
-            }
-
-            var scope = _tracer.InternalActiveScope;
-
-            if (scope is { Span: { } span }
-             && ReferenceEquals(span.OperationName, HttpRequestInOperationName)
-                // To avoid the expensive reading of activity tags etc if they don't have "otel compatibility enabled"
-             && _tracer.Settings.IsActivityListenerEnabled)
-            {
-                AddActivityTags(span);
-            }
-
-            static void AddActivityTags(Span span)
-            {
-                try
-                {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
                 }
             }
         }

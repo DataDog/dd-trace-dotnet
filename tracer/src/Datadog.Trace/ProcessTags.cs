@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -21,7 +21,7 @@ internal static class ProcessTags
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
     // two views on the same data
-    public static readonly List<string> TagsList = GetTagsList();
+    public static readonly IReadOnlyCollection<string> TagsList = GetTagsList();
     public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
 
     private static List<string> GetTagsList()
@@ -53,7 +53,7 @@ internal static class ProcessTags
         tags.Add($"{key}:{normalizedValue}");
     }
 
-    private static string GetSerializedTagsFromList(List<string> tags)
+    private static string GetSerializedTagsFromList(IEnumerable<string> tags)
     {
         return string.Join(",", tags);
     }

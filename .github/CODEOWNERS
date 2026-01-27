@@ -91,6 +91,29 @@
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TracingIntegrationTest.cs                       @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TransportTests.cs                               @DataDog/tracing-dotnet
 
+## Serverless (AWS Lambda)
+/tracer/src/**/*Lambda*                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/**/*Lambda*                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/build/_build/docker/serverless.lambda.dockerfile                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/docker-compose.serverless.yml                                                  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/.gitlab/download-serverless-artifacts.sh                                       @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/docs/development/**/*Lambda*.md                                                @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+
+## Serverless (Azure)
+/tracer/src/**/*AzureAppService*.cs                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/src/**/*AzureFunctions*.cs                                              @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/src/Datadog.AzureFunctions/                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/**/*AzureAppService*.cs                                            @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/**/*AzureFunctions*.cs                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/test-applications/azure-functions/                                 @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/HttpBypassTests.cs         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/docs/development/**/AzureFunctions*.md                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+
+## Serverless (GCP)
+/tracer/src/**/*GCP*.cs                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/**/*GCP*.cs                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
 /tracer/src/Datadog.Tracer.Native/iast/    @DataDog/asm-dotnet
@@ -142,36 +165,14 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 # Exploration tests
 /tracer/build/_build/Build.ExplorationTests.cs @DataDog/debugger-dotnet @DataDog/tracing-dotnet @DataDog/profiling-dotnet
 
-## Serverless (AWS Lambda)
-/tracer/src/**/*Lambda*                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/tracer/test/**/*Lambda*                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/tracer/build/_build/docker/serverless.lambda.dockerfile                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/docker-compose.serverless.yml                                                  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/.gitlab/download-serverless-artifacts.sh                                       @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/docs/development/**/*Lambda*.md                                                @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-
-## Serverless (Azure)
-/tracer/src/**/*AzureAppService*.cs                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/src/**/*AzureFunctions*.cs                                              @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/src/Datadog.AzureFunctions/                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/**/*AzureAppService*.cs                                            @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/**/*AzureFunctions*.cs                                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/test-applications/azure-functions/                                 @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/HttpBypassTests.cs         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/docs/development/**/AzureFunctions*.md                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-
-## Serverless (GCP)
-/tracer/src/**/*GCP*.cs                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/**/*GCP*.cs                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-
-## Feature Flagging and Experimentation (Currently developed by ASM)
-/tracer/src/Datadog.Trace/FeatureFlags/                                         @DataDog/tracing-dotnet @DataDog/asm-dotnet
-/tracer/src/Datadog.Trace.Manual/FeatureFlags/                                  @DataDog/tracing-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/FeatureFlags/                                  @DataDog/tracing-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/FeatureFlags/           @DataDog/tracing-dotnet @DataDog/asm-dotnet
-/tracer/test/test-applications/integrations/Samples.FeatureFlags/               @DataDog/tracing-dotnet @DataDog/asm-dotnet
-/tracer/test/test-applications/integrations/Samples.OpenFeature/                @DataDog/tracing-dotnet @DataDog/asm-dotnet
+## Feature Flagging and Experimentation
+/tracer/src/Datadog.Trace/FeatureFlags/                                                        @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace.Manual/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/FeatureFlags/  @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Tests/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/FeatureFlags/                          @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.FeatureFlags/                              @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/Samples.OpenFeature/                               @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet
