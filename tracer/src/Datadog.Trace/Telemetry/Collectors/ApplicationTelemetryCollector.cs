@@ -22,7 +22,7 @@ internal sealed class ApplicationTelemetryCollector
         string? processTags = null;
         if (tracerSettings.PropagateProcessTags)
         {
-            var pTags = ProcessTags.SerializedTags;
+            var pTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
             if (!string.IsNullOrEmpty(pTags))
             {
                 processTags = pTags;

@@ -77,7 +77,10 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+        return new DataStreamsManager(
+            settings,
+            writer,
+            settings.PropagateProcessTags ? settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags : null);
     }
 
     public async Task DisposeAsync()

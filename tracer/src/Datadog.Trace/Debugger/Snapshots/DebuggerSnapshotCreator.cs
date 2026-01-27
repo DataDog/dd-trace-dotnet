@@ -838,6 +838,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
+            var processTags = Tracer.Instance.Settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
 
             // TODO: support 128-bit trace ids?
             var traceId = activeScope?.Span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
@@ -847,7 +848,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(_serviceNameProvider(), ProcessTags.SerializedTags, traceId, spanId)
+            .AddGeneralInfo(_serviceNameProvider(), processTags, traceId, spanId)
             .AddMessage()
             .Complete();
         }
