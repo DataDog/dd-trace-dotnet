@@ -229,12 +229,24 @@
       "const_name": "KnownTestsEnabled"
     },
     {
+      "env_var": "_DD_EXTENSION_PATH",
+      "const_name": "LambdaExtensionPath"
+    },
+    {
       "env_var": "DD_CIVISIBILITY_LOGS_ENABLED",
       "const_name": "Logs"
     },
     {
       "env_var": "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS",
       "const_name": "RumFlushWaitMillis"
+    },
+    {
+      "env_var": "DD_TESTSESSION_COMMAND",
+      "const_name": "TestSessionCommand"
+    },
+    {
+      "env_var": "DD_TESTSESSION_WORKINGDIRECTORY",
+      "const_name": "TestSessionWorkingDirectory"
     },
     {
       "env_var": "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED",
@@ -605,6 +617,10 @@
       "const_name": "Site"
     },
     {
+      "env_var": "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED",
+      "const_name": "SingleSpanAspNetCoreEnabled"
+    },
+    {
       "env_var": "DD_SPAN_SAMPLING_RULES",
       "const_name": "SpanSamplingRules"
     },
@@ -831,6 +847,10 @@
     {
       "env_var": "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED",
       "const_name": "InjectContextIntoStoredProceduresEnabled"
+    },
+    {
+      "env_var": "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED",
+      "const_name": "FlaggingProviderEnabled"
     },
     {
       "env_var": "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED",

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -32,10 +33,7 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
     /// </summary>
     public const string DiagnosticId = "DD0010";
 
-    private const string PlatformKeysClassName = "PlatformKeys";
-    private const string PlatformKeysNamespace = "Datadog.Trace.Configuration";
-
-    private static readonly string[] ForbiddenPrefixes = { "OTEL", "DD_", "_DD_", "DATADOG_  " };
+    private static readonly string[] ForbiddenPrefixes = ["OTEL", "DD_", "_DD_", "DATADOG_"];
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -47,41 +45,42 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
         description: "Constants in PlatformKeys class should not start with OTEL, DD_, or _DD_ prefixes as these are reserved for OpenTelemetry and Datadog configuration keys. Platform keys should represent environment variables from external platforms and services.");
 
     /// <inheritdoc />
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [Rule, Helpers.Diagnostics.MissingRequiredType];
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-        context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
+            var platformKeysType = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
+
+            if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeysType, nameof(PlatformKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
+            {
+                return;
+            }
+
+            compilationContext.RegisterSymbolAction(
+                c => AnalyzeNamedType(c, platformKeysType),
+                SymbolKind.NamedType);
+        });
     }
 
-    private static void AnalyzeNamedType(SymbolAnalysisContext context)
+    private static void AnalyzeNamedType(SymbolAnalysisContext context, INamedTypeSymbol platformKeysType)
     {
         var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
 
-        // Check if this is the PlatformKeys class in the correct namespace
-        if (!IsPlatformKeysClass(namedTypeSymbol))
+        // Only analyze the top-level PlatformKeys class directly
+        // Nested classes will be analyzed recursively via AnalyzeConstFields
+        if (!SymbolEqualityComparer.Default.Equals(namedTypeSymbol, platformKeysType))
         {
             return;
         }
 
         // Analyze all const fields in the PlatformKeys class and its nested classes
         AnalyzeConstFields(context, namedTypeSymbol);
-    }
-
-    private static bool IsPlatformKeysClass(INamedTypeSymbol namedTypeSymbol)
-    {
-        // Check if this is the PlatformKeys class (including partial classes)
-        if (namedTypeSymbol.Name != PlatformKeysClassName)
-        {
-            return false;
-        }
-
-        // Check if it's in the correct namespace
-        var containingNamespace = namedTypeSymbol.ContainingNamespace;
-        return containingNamespace?.ToDisplayString() == PlatformKeysNamespace;
     }
 
     private static void AnalyzeConstFields(SymbolAnalysisContext context, INamedTypeSymbol typeSymbol)
@@ -91,7 +90,21 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
         {
             if (member is IFieldSymbol { IsConst: true, Type.SpecialType: SpecialType.System_String } field)
             {
-                AnalyzeConstField(context, field);
+                if (field.ConstantValue is string constantValue)
+                {
+                    // Check if the constant value starts with any forbidden prefix (case-insensitive)
+                    var forbiddenPrefix = ForbiddenPrefixes.FirstOrDefault(prefix => constantValue.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                    if (forbiddenPrefix != null)
+                    {
+                        var diagnostic = Diagnostic.Create(
+                            Rule,
+                            field.Locations.FirstOrDefault(),
+                            constantValue,
+                            forbiddenPrefix);
+
+                        context.ReportDiagnostic(diagnostic);
+                    }
+                }
             }
             else if (member is INamedTypeSymbol nestedType)
             {
@@ -99,28 +112,5 @@ public sealed class PlatformKeysAnalyzer : DiagnosticAnalyzer
                 AnalyzeConstFields(context, nestedType);
             }
         }
-    }
-
-    private static void AnalyzeConstField(SymbolAnalysisContext context, IFieldSymbol field)
-    {
-        if (field.ConstantValue is not string constantValue)
-        {
-            return;
-        }
-
-        // Check if the constant value starts with any forbidden prefix (case-insensitive)
-        var forbiddenPrefix = ForbiddenPrefixes.FirstOrDefault(prefix => constantValue.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-        if (forbiddenPrefix == null)
-        {
-            return;
-        }
-
-        var diagnostic = Diagnostic.Create(
-            Rule,
-            field.Locations.FirstOrDefault(),
-            constantValue,
-            forbiddenPrefix);
-
-        context.ReportDiagnostic(diagnostic);
     }
 }

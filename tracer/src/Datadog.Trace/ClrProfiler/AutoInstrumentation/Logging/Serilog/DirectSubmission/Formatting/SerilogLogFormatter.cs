@@ -5,11 +5,13 @@
 #nullable enable
 
 using System.Collections;
+using System.IO;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -104,6 +106,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             if (value.TryDuckCast<DictionaryValueDuck>(out var dictionary))
             {
                 FormatDictionary(writer, dictionary.Elements);
+                return;
+            }
+
+            if (value.TryDuckCast<ILogEventPropertyValue>(out var propertyValue))
+            {
+                // This is likely an edge case, so we just write the value as a string and then embed that in the JSON
+                var sb = StringBuilderCache.Acquire();
+                var stringWriter = new StringWriter(sb);
+                propertyValue.Render(stringWriter, null, null);
+                var stringValue = stringWriter.ToString();
+                StringBuilderCache.Release(sb);
+                LogFormatter.WriteValue(writer, stringValue);
                 return;
             }
 

@@ -4304,6 +4304,39 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "CosmosDb",
+    "AssemblyName": "Microsoft.Azure.Cosmos.Client",
+    "TargetTypeName": "Microsoft.Azure.Cosmos.Handlers.RequestInvokerHandler",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Azure.Cosmos.ResponseMessage]",
+    "TargetParameterTypes": [
+      "System.String",
+      "Microsoft.Azure.Documents.ResourceType",
+      "Microsoft.Azure.Documents.OperationType",
+      "Microsoft.Azure.Cosmos.RequestOptions",
+      "Microsoft.Azure.Cosmos.ContainerInternal",
+      "_",
+      "System.IO.Stream",
+      "System.Action`1[Microsoft.Azure.Cosmos.RequestMessage]",
+      "_",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 12,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.RequestInvokerHandlerSendAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "Couchbase",
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.Core.ClusterNode",
@@ -6645,6 +6678,80 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions.SpanExtensionsSetTraceSamplingPriorityIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "Evaluate",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.FeatureFlags.ValueType",
+      "System.Object",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "IsAvailable",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "RegisterOnNewConfigEventHandler",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Action"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -13662,6 +13769,80 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "Evaluate",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.FeatureFlags.ValueType",
+      "System.Object",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "IsAvailable",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "RegisterOnNewConfigEventHandler",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Action"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

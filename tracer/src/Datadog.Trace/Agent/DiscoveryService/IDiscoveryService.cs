@@ -28,6 +28,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         void RemoveSubscription(Action<AgentConfiguration> callback);
 
+        /// <summary>
+        /// Report the current config state hash, as returned in a header from the agent.
+        /// </summary>
+        /// <param name="configStateHash">The sha256 hash of the config state, as returned by the agent</param>
+        void SetCurrentConfigStateHash(string configStateHash);
+
         Task DisposeAsync();
     }
 }

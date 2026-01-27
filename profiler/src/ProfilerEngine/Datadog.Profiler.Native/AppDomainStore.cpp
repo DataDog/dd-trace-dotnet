@@ -5,7 +5,7 @@
 #include "AppDomainStore.h"
 
 #include "shared/src/native-src/string.h"
-
+#include "Log.h"
 
 AppDomainStore::AppDomainStore(ICorProfilerInfo4* pProfilerInfo)
     :
@@ -13,34 +13,40 @@ AppDomainStore::AppDomainStore(ICorProfilerInfo4* pProfilerInfo)
 {
 }
 
-
-bool AppDomainStore::GetInfo(AppDomainID appDomainId, ProcessID& pid, std::string& appDomainName)
+std::string_view AppDomainStore::GetName(AppDomainID appDomainId)
 {
-    std::unique_lock lock{_lock};
-
-    auto it = _appDomainToInfo.find(appDomainId);
-
-    if (it != _appDomainToInfo.cend())
+    // check for null AppDomainId (garbage collection for example)
+    if (appDomainId == 0)
     {
-        std::tie(pid, appDomainName) = it->second;
-        return true;
+        return "CLR";
     }
 
+    std::unique_lock lock{_lock};
+
+    auto it = _appDomainToName.find(appDomainId);
+
+    if (it != _appDomainToName.cend())
+    {
+        return it->second;
+    }
+
+    return {};
+}
+
+void AppDomainStore::Register(AppDomainID appDomainId)
+{
     // Get the size of the buffer to allocate and then get the name into the buffer
     // see https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo-getappdomaininfo-method for more details
     ULONG characterCount;
-    HRESULT hr = _pProfilerInfo->GetAppDomainInfo(appDomainId, 0, &characterCount, nullptr, &pid);
-    if (FAILED(hr)) { return false; }
-
+    HRESULT hr = _pProfilerInfo->GetAppDomainInfo(appDomainId, 0, &characterCount, nullptr, nullptr);
+    if (FAILED(hr)) { return; }
     auto pBuffer = std::make_unique<WCHAR[]>(characterCount);
 
-    hr = _pProfilerInfo->GetAppDomainInfo(appDomainId, characterCount, &characterCount, pBuffer.get(), &pid);
-    if (FAILED(hr)) { return false; }
+    hr = _pProfilerInfo->GetAppDomainInfo(appDomainId, characterCount, &characterCount, pBuffer.get(), nullptr);
+    if (FAILED(hr)) { return; }
 
-    // convert from UTF16 to UTF8
-    appDomainName = shared::ToString(shared::WSTRING(pBuffer.get()));
+    auto appDomainName = shared::ToString(shared::WSTRING(pBuffer.get()));
 
-    _appDomainToInfo[appDomainId] = std::make_pair(pid, appDomainName);
-
-    return true;
+    std::unique_lock lock{_lock};
+    _appDomainToName[appDomainId] = std::move(appDomainName);
 }

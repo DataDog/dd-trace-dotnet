@@ -7,7 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -97,6 +101,19 @@ namespace Datadog.Trace.PlatformHelpers
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
+            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
+            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
+        }
+
+#if NET6_0_OR_GREATER
+        public Scope StartAspNetCoreSingleSpanPipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
+            => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
+#endif
+
+        private Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags, bool useSingleSpanRequestTracking)
+            where T : WebTags
+        {
             var request = httpContext.Request;
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
@@ -116,9 +133,6 @@ namespace Datadog.Trace.PlatformHelpers
                 }
             }
 
-            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
 
@@ -131,14 +145,13 @@ namespace Datadog.Trace.PlatformHelpers
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-            var requestTrackingFeature = new RequestTrackingFeature(originalPath, scope);
-
-            if (proxyContext?.Scope is { } proxyScope)
-            {
-                requestTrackingFeature.ProxyScope = proxyScope;
-            }
-
-            httpContext.Items[HttpContextItemsKey] = requestTrackingFeature;
+#if NET6_0_OR_GREATER
+            httpContext.Items[HttpContextItemsKey] = useSingleSpanRequestTracking
+                                                         ? new SingleSpanRequestTrackingFeature(originalPath, scope, proxyContext?.Scope)
+                                                         : new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
+#else
+            httpContext.Items[HttpContextItemsKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
+#endif
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
@@ -160,11 +173,12 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
+            => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: (httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature)?.ProxyScope);
+
+        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext, Scope proxyScope)
         {
             if (rootScope != null)
             {
-                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
-                var proxyScope = requestFeature?.ProxyScope;
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
@@ -174,6 +188,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
                 // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
                 var span = rootScope.Span;
+                CopyAspNetCoreActivityTagsIfRequired(span);
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 var settings = tracer.CurrentTraceSettings.Settings;
@@ -212,6 +227,9 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
+            => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature)?.ProxyScope);
+
+        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
         {
             // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
             // root span. In "normal" operation, this will be the same span returned by
@@ -229,8 +247,6 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
 
-                var requestFeature = httpContext.Items[HttpContextItemsKey] as RequestTrackingFeature;
-                var proxyScope = requestFeature?.ProxyScope;
                 if (proxyScope?.Span != null)
                 {
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
@@ -249,15 +265,106 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
+        public void CopyAspNetCoreActivityTagsIfRequired(Span span)
+        {
+            // Extract data from the Activity if there is one, and it's the one we expect
+            // We're using GetCurrentActivityObject rather than GetCurrentActivity because
+            // we don't actually need to duck cast as IActivity6 or IW3CActivity
+            // This will only be non-null if the activity listener is enabled by enabling
+            // the OTel integration
+            var rawActivity = ActivityListener.GetCurrentActivityObject();
+            if (rawActivity is null)
+            {
+                return;
+            }
+
+            AddActivityTags(span, rawActivity, _log);
+
+            // Extracted to method as not invoked in default config (only when otel enabled)
+            static void AddActivityTags(Span span, object rawActivity, IDatadogLogger log)
+            {
+                // AFAICT this has been static since at least .NET Core 2.1
+                // https://github.com/dotnet/aspnetcore/blob/v2.1.33/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L18C46-L18C88
+                // https://github.com/dotnet/aspnetcore/blob/v10.0.1/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L20
+                const string aspnetcoreActivityOperationName = "Microsoft.AspNetCore.Hosting.HttpRequestIn";
+
+                try
+                {
+                    if (rawActivity.DuckAs<IActivity5>() is { } activity5
+                     && string.Equals(activity5.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
+                     && activity5.HasTagObjects())
+                    {
+                        var state = new OtelTagsEnumerationState(span);
+                        ActivityEnumerationHelper.EnumerateTagObjects(
+                            activity5,
+                            ref state,
+                            static (ref s, kvp) =>
+                            {
+                                // We don't want to set know values to avoid conflicting scenarios
+                                // with the status code, resource name, operation name etc that we set
+                                // by default on aspnetcore spans when _not_ using activities
+                                // We also don't want to override our standard aspnetcore/web tags.
+                                if (!IsKnownWebTag(kvp.Key))
+                                {
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                }
+
+                                return true;
+                            });
+                    }
+                    else if (rawActivity.DuckAs<IActivity>() is { } activity
+                          && string.Equals(activity.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
+                          && activity.HasTags())
+                    {
+                        var state = new OtelTagsEnumerationState(span);
+                        ActivityEnumerationHelper.EnumerateTags(
+                            activity,
+                            ref state,
+                            static (ref s, kvp) =>
+                            {
+                                // We don't want to set know values to avoid conflicting scenarios
+                                // with the status code, resource name, operation name etc that we set
+                                // by default on aspnetcore spans when _not_ using activities
+                                // We also don't want to override our standard aspnetcore/web tags.
+                                if (!IsKnownWebTag(kvp.Key))
+                                {
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                }
+
+                                return true;
+                            });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex, "Error extracting activity data.");
+                }
+            }
+
+            // Theoretically we should check
+            // for _all_ the tags we might set on aspnetcore root spans,
+            // but we only both to check tags that are likely to be set here
+            // (i.e. don't bother checking the aspnetcore. tags)
+            static bool IsKnownWebTag(string tagName) =>
+                tagName == Tags.HttpRoute
+             || tagName == Tags.HttpUserAgent
+             || tagName == Tags.HttpMethod
+             || tagName == Tags.HttpUrl
+             || tagName == Tags.HttpStatusCode
+             || tagName == Tags.NetworkClientIp
+             || tagName == Tags.HttpClientIp;
+        }
+
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
         internal sealed class RequestTrackingFeature
         {
-            public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope)
+            public RequestTrackingFeature(PathString originalPath, Scope rootAspNetCoreScope, Scope proxyScope)
             {
                 OriginalPath = originalPath;
                 RootScope = rootAspNetCoreScope;
+                ProxyScope = proxyScope;
             }
 
             /// <summary>
@@ -309,6 +416,45 @@ namespace Datadog.Trace.PlatformHelpers
                     && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
             }
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// Holds state that we want to pass between diagnostic source events
+        /// </summary>
+        internal sealed class SingleSpanRequestTrackingFeature(PathString originalPath, Scope rootScope, [MaybeNull] Scope proxyScope)
+        {
+            /// <summary>
+            /// Gets the root ASP.NET Core Scope
+            /// </summary>
+            [NotNull]
+            public Scope RootScope { get; } = rootScope;
+
+            /// <summary>
+            /// Gets the inferred ASP.NET Core Scope created from headers.
+            /// </summary>
+            [MaybeNull]
+            public Scope ProxyScope { get; } = proxyScope;
+
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public PathString OriginalPath { get; } = originalPath;
+
+            public bool MatchesOriginalPath(HttpRequest request)
+            {
+                if (!request.PathBase.HasValue)
+                {
+                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return OriginalPath.StartsWithSegments(
+                           request.PathBase,
+                           StringComparison.OrdinalIgnoreCase)
+                    && OriginalPath.Value.AsSpan(request.PathBase.Value.Length)
+                                   .Equals(request.Path.Value, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+#endif
     }
 }
 #endif

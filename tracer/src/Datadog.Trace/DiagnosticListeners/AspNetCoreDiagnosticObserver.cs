@@ -645,7 +645,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
         {
             try
             {
@@ -702,30 +702,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
-                try
-                {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
-                }
-
                 scope.Dispose();
             }
         }

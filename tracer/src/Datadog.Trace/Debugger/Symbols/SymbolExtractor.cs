@@ -631,7 +631,20 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 var nestedTypes = typeDef.GetNestedTypes();
                 var methods = typeDef.GetMethods();
-                closureMethods = ArrayPool<Model.Scope>.Shared.Rent(methods.Count + (nestedTypes.Length * 2));
+                // Heuristic: closure/state-machine generated methods tend to scale with the number of methods (async methods, lambdas).
+                // We intentionally over-estimate a bit to reduce pool growth.
+                long estimatedCapacity = (methods.Count * 2L) + (nestedTypes.Length * 4L);
+                if (estimatedCapacity < 16)
+                {
+                    estimatedCapacity = 16;
+                }
+
+                if (estimatedCapacity > int.MaxValue)
+                {
+                    estimatedCapacity = int.MaxValue;
+                }
+
+                closureMethods = ArrayPool<Model.Scope>.Shared.Rent((int)estimatedCapacity);
 
                 for (int i = 0; i < nestedTypes.Length; i++)
                 {
@@ -687,6 +700,8 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (closureMethods != null)
                 {
+                    // Clear only the populated portion to avoid keeping references alive via the pool
+                    Array.Clear(closureMethods, 0, index);
                     ArrayPool<Model.Scope>.Shared.Return(closureMethods);
                 }
             }
@@ -695,15 +710,21 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (TryCreateMethodScopeForGeneratedMethod(methodDef, generatedMethod, ownerType, out var closureMethodScope))
                 {
-                    if (index < closureMethods.Length)
+                    // This can exceed our initial heuristic, so grow the pooled buffer on-demand to avoid dropping closure methods.
+                    if (index >= closureMethods!.Length)
                     {
-                        closureMethods[index] = closureMethodScope;
-                        index++;
+                        var newBuffer = ArrayPool<Model.Scope>.Shared.Rent(closureMethods.Length * 2);
+                        Array.Copy(closureMethods, 0, newBuffer, 0, index);
+
+                        // Clear only the used portion
+                        Array.Clear(closureMethods, 0, index);
+                        ArrayPool<Model.Scope>.Shared.Return(closureMethods);
+
+                        closureMethods = newBuffer;
                     }
-                    else
-                    {
-                        Log.Warning("Not enough space for all closure methods");
-                    }
+
+                    closureMethods![index] = closureMethodScope;
+                    index++;
                 }
             }
         }

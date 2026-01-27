@@ -108,7 +108,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AzureEventHubs => nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
             Datadog.Trace.Configuration.IntegrationId.Hangfire => nameof(Datadog.Trace.Configuration.IntegrationId.Hangfire),
-            Datadog.Trace.Configuration.IntegrationId.MassTransit => nameof(Datadog.Trace.Configuration.IntegrationId.MassTransit),
+            Datadog.Trace.Configuration.IntegrationId.OpenFeature => nameof(Datadog.Trace.Configuration.IntegrationId.OpenFeature),
             _ => value.ToString(),
         };
 
@@ -200,7 +200,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AzureEventHubs,
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
             Datadog.Trace.Configuration.IntegrationId.Hangfire,
-            Datadog.Trace.Configuration.IntegrationId.MassTransit,
+            Datadog.Trace.Configuration.IntegrationId.OpenFeature,
         };
 
     /// <summary>
@@ -292,6 +292,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureEventHubs),
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
             nameof(Datadog.Trace.Configuration.IntegrationId.Hangfire),
-            nameof(Datadog.Trace.Configuration.IntegrationId.MassTransit),
+            nameof(Datadog.Trace.Configuration.IntegrationId.OpenFeature),
         };
 }

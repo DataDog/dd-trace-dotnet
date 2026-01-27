@@ -179,6 +179,16 @@ namespace Datadog.Trace.Configuration
 
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+
+#if !NET6_0_OR_GREATER
+            if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
+            {
+                Log.Warning(
+                    $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -378,9 +388,23 @@ namespace Datadog.Trace.Configuration
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
 
+            SingleSpanAspNetCoreEnabled = config
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
+                                         .AsBool(defaultValue: false);
+#if !NET6_0_OR_GREATER
+            // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
+            if (SingleSpanAspNetCoreEnabled)
+            {
+                SingleSpanAspNetCoreEnabled = false;
+                Log.Warning(
+                    $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set to true, but is only supported in .NET 6+. Using false instead.");
+                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
+            }
+#endif
+
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
-                                         .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
+                                         .AsBool(defaultValue: !(RouteTemplateResourceNamesEnabled || SingleSpanAspNetCoreEnabled)); // disabled by default if route template resource names or single-span enabled
 
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
@@ -600,6 +624,9 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
+                                                       .AsBool(false);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -631,10 +658,10 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
             // these are SSI variables that would be useful for correlation purposes
-            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
-            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InjectForce), recordValue: true, ConfigurationOrigins.EnvVars);
 
-            var installType = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
+            var installType = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallType);
 
             var instrumentationSource = installType switch
             {
@@ -642,7 +669,7 @@ namespace Datadog.Trace.Configuration
                 "dd_trace_tool" => "cmd_line",
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
-                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")) => "ssi", // "normal" ssi
+                _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)) => "ssi", // "normal" ssi
                 _ => "manual" // everything else
             };
 
@@ -723,7 +750,7 @@ namespace Datadog.Trace.Configuration
                 // SSI already utilizes libdatadog. To prevent unexpected behavior,
                 // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
                 // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")))
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)))
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(
@@ -1054,6 +1081,15 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the experimental runtime metrics collector which uses the
+        /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
+        /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
+        /// when using .NET 8+.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
+        internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline
         /// is enabled.
         /// </summary>
@@ -1089,9 +1125,15 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
-        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> or <see cref="SingleSpanAspNetCoreEnabled"/> are <code>true</code>.
         /// </summary>
         internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether single-span ASP.NET Core instrumentation should be used.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled"/>
+        internal bool SingleSpanAspNetCoreEnabled { get; }
 
         /// <summary>
         /// Gets the direct log submission settings.
@@ -1231,6 +1273,11 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
+        /// Gets a value indicating whether remote Feature Flags Provider is enabled
+        /// </summary>
+        internal bool IsFlaggingProviderEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether partial flush is enabled
         /// </summary>
         public bool PartialFlushEnabled { get; }
@@ -1345,7 +1392,11 @@ namespace Datadog.Trace.Configuration
         internal static TracerSettings Create(Dictionary<string, object?> settings)
             => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
 
-        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new(), isLibDatadogAvailable);
+        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
+            new(
+                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
+                new ConfigurationTelemetry(),
+                new OverrideErrorLog(),
+                isLibDatadogAvailable);
     }
 }

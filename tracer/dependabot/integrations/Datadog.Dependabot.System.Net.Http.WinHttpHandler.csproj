@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!--    Assembly: System.Net.Http.WinHttpHandler -->
-    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/10.0.1 -->
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="10.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/10.0.2 -->
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="10.0.2" />
   </ItemGroup>
 
 </Project>

@@ -192,6 +192,9 @@ internal static class MetricTags
         [Description("integration_name:opentracing")]OpenTracing,
         [Description("integration_name:version_conflict")]VersionConflict,
 
+        // feature flags
+        [Description("integration_name:open_feature")] OpenFeature,
+
         // automatic "custom" integration
         [Description("integration_name:ciapp")]CiAppManual,
         [Description("integration_name:debugger_span_probe")]DebuggerSpanProbe,

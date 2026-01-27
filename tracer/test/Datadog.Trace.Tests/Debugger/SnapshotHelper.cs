@@ -47,7 +47,7 @@ internal static class SnapshotHelper
             MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
             MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, withProcessTags);
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, withProcessTags, serviceNameProvider: static () => "test-service");
         {
             // method entry
             snapshotCreator.StartEntry();
@@ -61,7 +61,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureArgument(args[i], "arg" + i, args[i].GetType());
             }
 
-            snapshotCreator.EndEntry(hasArgumentsOrLocals: args.Length > 0);
+            snapshotCreator.EndEntry();
         }
 
         {
@@ -82,7 +82,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureInstance(instance, instance.GetType());
             }
 
-            snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
+            snapshotCreator.EndReturn();
         }
 
         snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");

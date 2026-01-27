@@ -24,6 +24,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
     internal sealed class RemoteConfigurationApi : IRemoteConfigurationApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
+        private static readonly JsonSerializerSettings SerializerSettings = new();
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ContainerMetadata _containerMetadata;
@@ -58,14 +59,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
             var apiRequest = _apiRequestFactory.Create(uri);
 
-            var requestContent = JsonConvert.SerializeObject(request);
-            Log.Debug("Sending Remote Configuration Request: {Content}", requestContent);
-            var bytes = Encoding.UTF8.GetBytes(requestContent);
-            var payload = new ArraySegment<byte>(bytes);
-
             apiRequest.AddContainerMetadataHeaders(_containerMetadata);
 
-            using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+            using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;
             if (isRcmDisabled)
             {

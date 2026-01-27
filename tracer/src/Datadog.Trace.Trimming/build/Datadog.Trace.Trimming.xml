@@ -15,6 +15,7 @@
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />
+   <assembly fullname="Datadog.FeatureFlags.OpenFeature" />
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="Datadog.Trace.Manual" />
    <assembly fullname="Datadog.Trace.OpenTracing" />
@@ -619,6 +620,7 @@
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
       <type fullname="System.GC" />
+      <type fullname="System.GCGenerationInfo" />
       <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
@@ -847,6 +849,7 @@
       <type fullname="System.StringComparison" />
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
+      <type fullname="System.Text.Encoder" />
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
@@ -965,6 +968,9 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
@@ -1066,7 +1072,6 @@
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />
-      <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
       <type fullname="System.Threading.Volatile" />

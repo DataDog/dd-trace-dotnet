@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
@@ -19,6 +19,7 @@
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,11 +49,6 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <!-- System.Diagnostics.DiagnosticSource doesn't support netcoreapp3.1-->
-    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />

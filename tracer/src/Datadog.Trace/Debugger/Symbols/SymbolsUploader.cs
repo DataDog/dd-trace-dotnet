@@ -1,4 +1,4 @@
-﻿// <copyright file="SymbolsUploader.cs" company="Datadog">
+// <copyright file="SymbolsUploader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
         private readonly JsonSerializerSettings _jsonSerializerSettings;
-        private readonly string _serviceName;
+        private readonly Lazy<string> _serviceName;
         private readonly string? _serviceVersion;
         private readonly string? _environment;
         private readonly SemaphoreSlim _assemblySemaphore;
@@ -59,13 +59,14 @@ namespace Datadog.Trace.Debugger.Symbols
             IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
             TracerSettings tracerSettings,
-            string serviceName)
+            Func<string> serviceNameProvider)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
             _environment = tracerSettings.Manager.InitialMutableSettings.Environment;
             _serviceVersion = tracerSettings.Manager.InitialMutableSettings.ServiceVersion;
-            _serviceName = serviceName;
+            // Capture service name on first use and keep it fixed for the lifetime of this uploader instance
+            _serviceName = new Lazy<string>(serviceNameProvider, LazyThreadSafetyMode.ExecutionAndPublication);
             _discoveryService = discoveryService;
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
@@ -120,7 +121,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService.RemoveSubscription(ConfigurationChanged);
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
@@ -135,7 +136,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
-            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
+            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceNameProvider);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -253,7 +254,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var root = new Root
             {
-                Service = _serviceName,
+                Service = _serviceName.Value,
                 Env = _environment,
                 Language = "dotnet",
                 Version = _serviceVersion,
@@ -266,9 +267,22 @@ namespace Datadog.Trace.Debugger.Symbols
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
             var rootAsString = JsonConvert.SerializeObject(root);
-            var rootBytes = Encoding.UTF8.GetByteCount(rootAsString);
-            var builder = StringBuilderCache.Acquire((int)_thresholdInBytes + rootBytes + 4);
+            if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out var suffix))
+            {
+                // this should not happen unless Root/Scope JSON shape changes
+                Log.Warning("Unable to find insertion point for class scopes in SymDB payload");
+                return;
+            }
+
+            var prefixLength = prefix.Length;
+            var builder = StringBuilderCache.Acquire(prefixLength + (int)_thresholdInBytes + suffix.Length + 16);
+            builder.Append(prefix);
+
+            var serializer = JsonSerializer.Create(_jsonSerializerSettings);
+            using var pooledWriter = new Utf8CountingPooledTextWriter();
+
             var accumulatedBytes = 0;
+            var hasAnyClass = false;
 
             try
             {
@@ -280,18 +294,18 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     // Try to serialize and append the class
-                    if (!TrySerializeClass(classSymbol, builder, accumulatedBytes, out var newByteCount))
+                    if (!TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
                     {
                         // If we couldn't append because it would exceed capacity,
                         // upload current batch first
                         bool succeeded = false;
-                        if (builder.Length > 0)
+                        if (hasAnyClass)
                         {
-                            await Upload(rootAsString, builder).ConfigureAwait(false);
-                            builder.Clear();
+                            await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
                             accumulatedBytes = 0;
+                            hasAnyClass = false;
                             // Try again with empty builder
-                            succeeded = TrySerializeClass(classSymbol, builder, accumulatedBytes, out newByteCount);
+                            succeeded = TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
                         }
 
                         if (!succeeded)
@@ -303,12 +317,13 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     accumulatedBytes = newByteCount;
+                    hasAnyClass = true;
                 }
 
                 // Upload any remaining data
-                if (builder.Length > 0)
+                if (hasAnyClass)
                 {
-                    await Upload(rootAsString, builder).ConfigureAwait(false);
+                    await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
                 }
             }
             finally
@@ -320,25 +335,18 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private async Task Upload(string rootAsString, StringBuilder builder)
+        private async Task Upload(StringBuilder builder, int prefixLength, string suffix)
         {
-            FinalizeSymbolForSend(rootAsString, builder);
+            builder.Append(']');
+            builder.Append(suffix);
             await SendSymbol(builder.ToString()).ConfigureAwait(false);
-            ResetPayload();
-        }
-
-        private void ResetPayload()
-        {
-            if (_payload != null)
-            {
-                Array.Clear(_payload, 0, _payload.Length);
-            }
+            builder.Length = prefixLength;
         }
 
         private async Task<bool> SendSymbol(string symbol)
         {
             var count = Encoding.UTF8.GetByteCount(symbol);
-            if (_payload == null || count >= _payload.Length)
+            if (_payload == null || count > _payload.Length)
             {
                 _payload = new byte[count];
             }
@@ -346,7 +354,7 @@ namespace Datadog.Trace.Debugger.Symbols
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
             try
             {
-                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload, 0, count)).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -355,19 +363,24 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private bool TrySerializeClass(Model.Scope classScope, StringBuilder sb, int currentBytes, out int newTotalBytes)
+        private bool TrySerializeClass(
+            Model.Scope classScope,
+            StringBuilder payloadBuilder,
+            bool hasAnyClass,
+            JsonSerializer serializer,
+            Utf8CountingPooledTextWriter pooledWriter,
+            int currentBytes,
+            out int newTotalBytes)
         {
-            // Calculate the serialized string first
-            var symbolAsString = JsonConvert.SerializeObject(classScope, _jsonSerializerSettings);
-            var classBytes = Encoding.UTF8.GetByteCount(symbolAsString);
-
-            newTotalBytes = currentBytes;
-            if (sb.Length > 0)
+            pooledWriter.Reset();
+            using (var jsonWriter = new JsonTextWriter(pooledWriter) { CloseOutput = false })
             {
-                classBytes += 1; // for comma
+                serializer.Serialize(jsonWriter, classScope);
+                jsonWriter.Flush();
             }
 
-            newTotalBytes += classBytes;
+            var classBytes = pooledWriter.Utf8ByteCount + (hasAnyClass ? 1 : 0); // comma
+            newTotalBytes = currentBytes + classBytes;
 
             if (newTotalBytes > _thresholdInBytes)
             {
@@ -375,24 +388,32 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             // Safe to append
-            if (sb.Length > 0)
+            if (hasAnyClass)
             {
-                sb.Append(',');
+                payloadBuilder.Append(',');
             }
 
-            sb.Append(symbolAsString);
+            payloadBuilder.Append(pooledWriter.Buffer, 0, pooledWriter.Length);
             return true;
         }
 
-        private void FinalizeSymbolForSend(string rootAsString, StringBuilder sb)
+        private bool TryBuildPrefixAndSuffix(string rootAsString, out string prefix, out string suffix)
         {
-            const string classScopeString = "\"scopes\":null";
+            const string scopesNull = "\"scopes\":null";
 
-            var classesIndex = rootAsString.IndexOf(classScopeString, StringComparison.Ordinal);
+            var index = rootAsString.IndexOf(scopesNull, StringComparison.Ordinal);
+            if (index < 0)
+            {
+                prefix = string.Empty;
+                suffix = string.Empty;
+                return false;
+            }
 
-            sb.Insert(0, rootAsString.Substring(0, classesIndex + classScopeString.Length - "null".Length) + "[");
-            sb.Append("]");
-            sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length));
+            // Insert '[' in place of 'null' (matching previous logic)
+            var beforeNullEnd = index + scopesNull.Length - "null".Length;
+            prefix = rootAsString.Substring(0, beforeNullEnd) + "[";
+            suffix = rootAsString.Substring(index + scopesNull.Length);
+            return true;
         }
 
         public async Task StartFlushingAsync()

@@ -29,6 +29,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 
+#define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
 using namespace std::literals;

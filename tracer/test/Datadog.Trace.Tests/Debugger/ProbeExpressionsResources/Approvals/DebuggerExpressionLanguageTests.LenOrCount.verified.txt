@@ -35,9 +35,11 @@ Expression: (
     exception,
     scopeMemberArray) =>
 {
-    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var this = (scopeMember.Value == null)
+        ? default(DebuggerExpressionLanguageTests.TestStruct)
+        : (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
-    var @duration = (TimeSpan)scopeMember.Value;
+    var @duration = (scopeMember.Value == null) ? default(TimeSpan) : (TimeSpan)scopeMember.Value;
     var @exception = exception;
     var IntLocal = (int)scopeMemberArray[0].Value;
     var DoubleLocal = (double)scopeMemberArray[1].Value;
@@ -53,7 +55,7 @@ Expression: (
     var BooleanValue = (bool)scopeMemberArray[11].Value;
     var Char = (char)scopeMemberArray[12].Value;
     var AnotherChar = (char)scopeMemberArray[13].Value;
-    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[14].Value;
+    var NullableNotNullValueLocal = (Guid)scopeMemberArray[14].Value;
     var NullableNullValueLocal = (Guid?)scopeMemberArray[15].Value;
     var IntArg = (int)scopeMemberArray[16].Value;
     var DoubleArg = (double)scopeMemberArray[17].Value;

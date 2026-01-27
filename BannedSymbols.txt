@@ -1,0 +1,9 @@
+# Banned APIs for Datadog.Trace
+# This file defines APIs that should not be used in the Datadog.Trace project.
+# Format: Full type name with method signature; Optional message
+
+# Ban System.Environment.GetEnvironmentVariable - use EnvironmentHelpers instead
+M:System.Environment.GetEnvironmentVariable(System.String);Use EnvironmentHelpers.GetEnvironmentVariable instead to ensure proper configuration handling
+M:System.Environment.GetEnvironmentVariable(System.String,System.EnvironmentVariableTarget);Use EnvironmentHelpers.GetEnvironmentVariable instead to ensure proper configuration handling
+M:System.Environment.GetEnvironmentVariables();Avoid using this alltogether and get precise env vars through ConfigurationBuilder
+

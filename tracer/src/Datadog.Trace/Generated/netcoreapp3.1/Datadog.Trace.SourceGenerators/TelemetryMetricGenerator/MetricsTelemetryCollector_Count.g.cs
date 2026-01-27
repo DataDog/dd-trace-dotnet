@@ -28,6 +28,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
             new(new[] { "integration_name:version_conflict" }),
+            new(new[] { "integration_name:open_feature" }),
             new(new[] { "integration_name:ciapp" }),
             new(new[] { "integration_name:debugger_span_probe" }),
             new(new[] { "integration_name:aws_lambda" }),
@@ -108,7 +109,6 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:emailhtmlinjection" }),
             new(new[] { "integration_name:protobuf" }),
             new(new[] { "integration_name:hangfire" }),
-            new(new[] { "integration_name:masstransit" }),
             // spans_finished, index = 88
             new(null),
             // spans_enqueued_for_serialization, index = 89
@@ -478,6 +478,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
             new(new[] { "integration_name:version_conflict" }),
+            new(new[] { "integration_name:open_feature" }),
             new(new[] { "integration_name:ciapp" }),
             new(new[] { "integration_name:debugger_span_probe" }),
             new(new[] { "integration_name:aws_lambda" }),
@@ -558,7 +559,6 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:emailhtmlinjection" }),
             new(new[] { "integration_name:protobuf" }),
             new(new[] { "integration_name:hangfire" }),
-            new(new[] { "integration_name:masstransit" }),
             // direct_log_api.requests, index = 507
             new(null),
             // direct_log_api.responses, index = 508

@@ -10,7 +10,6 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 
@@ -161,7 +160,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
+                // In .NET Framework, we have en issue with multiple AppDomains. We can't easily share probe metadata
+                // between different AppDomain. The domain that request to put a probe might be different from the one that executes it.
+                // It results in entering into this branch. There is ongoing effort to fix this issue entirely in .NET Framework,
+                // for now as a quick fix to unblock a customer, this patch is being applied, to avoid logging tremendous amount of
+                // log entries.
+                #if !NETFRAMEWORK
                 Log.Warning("BeginMethod: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                #endif
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }
@@ -210,6 +216,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             if (!asyncState.IsActive)
             {
+                return;
+            }
+
+            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+            {
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                    "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
+                    property0: asyncState.ProbeData.ProbeId,
+                    property1: index,
+                    property2: typeof(TLocal).FullName);
+                }
+
                 return;
             }
 
@@ -364,7 +384,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                Log.Warning(exception, "Error caused by our instrumentation");
+                Log.Warning(
+                    exception,
+                    "Error caused by our instrumentation. probeId={ProbeId}, Method={TypeName}.{MethodName}",
+                    property0: asyncState.ProbeId,
+                    property1: asyncState.MethodMetadataInfo.DeclaringType?.Name,
+                    property2: asyncState.MethodMetadataInfo.Method.Name);
                 asyncState.ProbeData.Processor.LogException(exception, asyncState.SnapshotCreator);
             }
             catch

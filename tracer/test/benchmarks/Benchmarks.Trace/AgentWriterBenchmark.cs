@@ -12,6 +12,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
@@ -52,13 +53,14 @@ namespace Benchmarks.Trace
 
             var api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
-                new StatsdManager(settings, (_, _) => null!),
+                new StatsdManager(settings, (_, _, _) => null!),
                 ContainerMetadata.Instance,
                 updateSampleRates: null,
+                updateConfigState: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
+            var noOpStatsd = new StatsdManager(settings, (_, _, _) => null);
             var noopApi = new NullApi();
             _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
             _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
@@ -160,6 +162,12 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
+            public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+                => throw new NotImplementedException();
+
+            public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+                => throw new NotImplementedException();
 
             public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
             {

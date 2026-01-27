@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.RuntimeMetrics
 {
     internal sealed class AzureAppServicePerformanceCounters : IRuntimeMetricsListener
     {
-        internal const string EnvironmentVariableName = "WEBSITE_COUNTERS_CLR";
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureAppServicePerformanceCounters>();
@@ -47,7 +47,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            var rawValue = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableName);
+            var rawValue = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.CountersKey);
             var value = JsonConvert.DeserializeObject<PerformanceCountersValue>(rawValue);
 
             statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);
