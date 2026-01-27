@@ -15,9 +15,11 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -238,8 +240,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     switch (triggerType)
                     {
                         case "Http":
-                            extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        {
+                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
+                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
+                            // The headers in the gRPC message are STALE (contain host's root span context)
+                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
+                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey("HttpRequestContext") == true;
+
+                            if (isAspNetCoreIntegration)
+                            {
+                                // Skip extraction - will rely on HttpContext.Items bridge or create root span
+                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                            }
+                            else
+                            {
+                                // Only extract from gRPC message when NOT using ASP.NET Core integration
+                                extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                                Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+                            }
+
                             break;
+                        }
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
@@ -262,16 +283,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                if (tracer.InternalActiveScope == null)
+                // If active scope didn't flow via AsyncLocal, try to get it from HttpContext.Items
+                // (for HTTP triggers using ASP.NET Core integration).
+                // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow.
+                var parentScope = tracer.InternalActiveScope ?? GetAspNetCoreScope(functionContext);
+
+                if (parentScope == null)
                 {
-                    // This is the root scope
+                    // no local parent available, we are creating a local root span
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                    scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, tags: tags);
+
+                    if (extractedContext.SpanContext is { } extractedSpanContext)
+                    {
+                        Log.Debug("Azure Functions span creation: Parented to extracted context. parent_id: {ParentId}, trace_id: {TraceId}", extractedSpanContext.SpanId, extractedSpanContext.TraceId);
+                    }
+                    else
+                    {
+                        Log.Debug("Azure Functions span creation: Created as root span (no parent available)");
+                    }
                 }
                 else
                 {
-                    // shouldn't be hit, but better safe than sorry
-                    scope = tracer.StartActiveInternal(OperationName);
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentScope.Span.Context, tags: tags);
+
+                    // copy some tags to the root span
                     var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
@@ -296,6 +332,47 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        private static Scope? GetAspNetCoreScope<T>(T functionContext)
+            where T : IFunctionContext
+        {
+            Log.Debug("Azure Functions span creation: AsyncLocal context not available - attempting HttpContext.Items bridge");
+
+            // AsyncLocal context didn't flow - try to get parent scope from HttpContext.Items
+            // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow
+            Scope? parentScope = null;
+            try
+            {
+                if (functionContext.Items != null &&
+                    functionContext.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
+                    httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
+                    httpContext.Items.TryGetValue(AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey, out var scopeObj) &&
+                    scopeObj is Scope aspNetCoreScope)
+                {
+                    parentScope = aspNetCoreScope;
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var spanContext = parentScope.Span.Context;
+
+                        Log.Debug(
+                            "Azure Functions span creation: Retrieved AspNetCore scope {TraceId}-{SpanId}",
+                            spanContext.RawTraceId,
+                            spanContext.RawSpanId);
+                    }
+                }
+                else
+                {
+                    Log.Debug("Azure Functions span creation: Could not retrieve AspNetCore scope from HttpContext.Items");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Azure Functions span creation: Error retrieving AspNetCore scope from HttpContext.Items");
+            }
+
+            return parentScope;
         }
 
         private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
