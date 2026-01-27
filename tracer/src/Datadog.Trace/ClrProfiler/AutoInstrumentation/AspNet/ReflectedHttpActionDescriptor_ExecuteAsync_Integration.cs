@@ -91,44 +91,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private static void AddSpanCodeOrigin<TTarget>(TTarget instance, SpanCodeOrigin codeOrigin)
         {
-            if (SharedItems.TryPeekScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey) is not { Root.Span: { } rootSpan })
+            if (instance == null)
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Code origin is enabled for spans but WebApi2 scope was not found in HttpContext.");
-                }
-
                 return;
             }
 
-            if (instance is null)
-            {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Code origin is enabled for spans but ReflectedHttpActionDescriptor instance was null.");
-                }
-
-                return;
-            }
-
-            if (!instance.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected) || reflected.MethodInfo is not { } actionMethod)
+            var httpContext = HttpContext.Current;
+            if (SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey) is not { Root.Span: { } rootSpan })
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Code origin is enabled for spans but could not extract WebApi2 action MethodInfo from ReflectedHttpActionDescriptor type {ActionDescriptorType}.",
+                        "Code origin is enabled but scope was not found in HttpContext (key: {HttpContextKey}, httpContextNull: {HttpContextIsNull}, itemsCount: {HttpContextItemsCount}, actionDescriptorType: {ActionDescriptorType}).",
+                        AspNetWebApi2Integration.HttpContextKey,
+                        httpContext is null,
+                        httpContext?.Items?.Count ?? 0,
                         instance.GetType());
                 }
 
                 return;
             }
 
-            if (actionMethod.DeclaringType is not { } actionType)
+            if (!instance.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected)
+             || reflected.MethodInfo is not { } actionMethod
+             || actionMethod.DeclaringType is not { } actionType)
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Code origin is enabled for spans but extracted WebApi2 action MethodInfo has no DeclaringType. Method: {Method}.",
+                        "Code origin is enabled but could not extract action from HttpActionDescriptor type {ActionDescriptorType} or action has no DeclaringType. Method: {Method}.",
+                        instance.GetType(),
                         actionMethod);
                 }
 
