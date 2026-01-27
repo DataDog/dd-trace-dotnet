@@ -9642,31 +9642,6 @@
   {
     "IntegrationName": "MassTransit",
     "AssemblyName": "MassTransit",
-    "TargetTypeName": "MassTransit.Pipeline.Filters.ConsumerSplitFilter`2",
-    "TargetMethodName": "Send",
-    "TargetReturnType": "System.Threading.Tasks.Task",
-    "TargetParameterTypes": [
-      "_",
-      "_"
-    ],
-    "MinimumVersion": {
-      "Item1": 7,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 7,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.MethodConsumerMessageFilterIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MassTransit",
-    "AssemblyName": "MassTransit",
     "TargetTypeName": "MassTransit.Transports.ReceivePipeDispatcher",
     "TargetMethodName": "Dispatch",
     "TargetReturnType": "System.Threading.Tasks.Task",
