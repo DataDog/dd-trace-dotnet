@@ -49,10 +49,10 @@ public sealed class DatadogConfigureReceiveEndpoint
 
     private static void InjectConsumeFilter(object configurator)
     {
-        var filterSpec = MassTransitCommon.CreatePipeSpecificationProxy(new DatadogConsumePipeSpecification());
-        if (filterSpec == null)
+        var pipeSpecification = MassTransitCommon.CreateDatadogConsumePipeSpecification(new DatadogConsumePipeSpecification());
+        if (pipeSpecification == null)
         {
-            Log.Debug("DatadogConfigureReceiveEndpoint: Could not create pipe specification proxy");
+            Log.Debug("DatadogConfigureReceiveEndpoint: Could not create consume pipe specification");
             return;
         }
 
@@ -63,7 +63,7 @@ public sealed class DatadogConfigureReceiveEndpoint
             return;
         }
 
-        addPipeSpecMethod.Invoke(configurator, new[] { filterSpec });
-        Log.Debug("DatadogConfigureReceiveEndpoint: Successfully injected consume filter specification");
+        addPipeSpecMethod.Invoke(configurator, new[] { pipeSpecification });
+        Log.Debug("DatadogConfigureReceiveEndpoint: Successfully injected consume pipe specification");
     }
 }

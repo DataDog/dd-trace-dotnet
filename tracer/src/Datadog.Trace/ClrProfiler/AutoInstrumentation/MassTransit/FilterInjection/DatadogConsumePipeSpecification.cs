@@ -42,14 +42,14 @@ public sealed class DatadogConsumePipeSpecification
             return;
         }
 
-        var filter = MassTransitCommon.CreateFilterProxy(new DatadogConsumeFilter());
-        if (filter == null)
+        var consumeFilter = MassTransitCommon.CreateDatadogConsumeFilter(new DatadogConsumeFilter());
+        if (consumeFilter == null)
         {
-            Log.Warning("DatadogConsumePipeSpecification: Could not create filter proxy");
+            Log.Warning("DatadogConsumePipeSpecification: Could not create consume filter");
             return;
         }
 
-        addFilterMethod.Invoke(builder, new object[] { filter });
+        addFilterMethod.Invoke(builder, new object[] { consumeFilter });
         Log.Debug("DatadogConsumePipeSpecification: Successfully added DatadogConsumeFilter to pipeline");
     }
 

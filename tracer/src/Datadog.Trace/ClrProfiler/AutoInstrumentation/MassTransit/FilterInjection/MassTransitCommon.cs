@@ -278,11 +278,11 @@ internal static class MassTransitCommon
     }
 
     /// <summary>
-    /// Creates a reverse duck type proxy that implements IFilter{ConsumeContext}.
+    /// Creates the Datadog consume filter that implements IFilter{ConsumeContext}.
     /// </summary>
     /// <param name="filterImpl">The DatadogConsumeFilter implementation</param>
-    /// <returns>A proxy object implementing IFilter{ConsumeContext}, or null on failure</returns>
-    internal static object? CreateFilterProxy(DatadogConsumeFilter filterImpl)
+    /// <returns>An object implementing IFilter{ConsumeContext}, or null on failure</returns>
+    internal static object? CreateDatadogConsumeFilter(DatadogConsumeFilter filterImpl)
     {
         try
         {
@@ -292,23 +292,23 @@ internal static class MassTransitCommon
                 return null;
             }
 
-            var filter = DuckType.CreateReverse(filterType, filterImpl);
-            Log.Debug("MassTransitCommon: Created filter proxy: {FilterProxyType}", filter?.GetType().FullName);
-            return filter;
+            var consumeFilter = DuckType.CreateReverse(filterType, filterImpl);
+            Log.Debug("MassTransitCommon: Created consume filter: {FilterType}", consumeFilter?.GetType().FullName);
+            return consumeFilter;
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "MassTransitCommon: Failed to create filter proxy");
+            Log.Debug(ex, "MassTransitCommon: Failed to create consume filter");
             return null;
         }
     }
 
     /// <summary>
-    /// Creates a reverse duck type proxy that implements IPipeSpecification{ConsumeContext}.
+    /// Creates the Datadog pipe specification that implements IPipeSpecification{ConsumeContext}.
     /// </summary>
     /// <param name="specImpl">The DatadogConsumePipeSpecification implementation</param>
-    /// <returns>A proxy object implementing IPipeSpecification{ConsumeContext}, or null on failure</returns>
-    internal static object? CreatePipeSpecificationProxy(DatadogConsumePipeSpecification specImpl)
+    /// <returns>An object implementing IPipeSpecification{ConsumeContext}, or null on failure</returns>
+    internal static object? CreateDatadogConsumePipeSpecification(DatadogConsumePipeSpecification specImpl)
     {
         try
         {
@@ -318,13 +318,13 @@ internal static class MassTransitCommon
                 return null;
             }
 
-            var proxy = DuckType.CreateReverse(pipeSpecType, specImpl);
-            Log.Debug("MassTransitCommon: Created pipe specification proxy");
-            return proxy;
+            var pipeSpecification = DuckType.CreateReverse(pipeSpecType, specImpl);
+            Log.Debug("MassTransitCommon: Created consume pipe specification");
+            return pipeSpecification;
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "MassTransitCommon: Failed to create pipe specification proxy");
+            Log.Debug(ex, "MassTransitCommon: Failed to create consume pipe specification");
             return null;
         }
     }

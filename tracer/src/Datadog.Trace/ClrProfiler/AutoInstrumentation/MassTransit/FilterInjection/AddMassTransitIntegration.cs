@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -32,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.FilterInject
 public sealed class AddMassTransitIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AddMassTransitIntegration>();
+    private static int _filterRegistered = 1;
 
     /// <summary>
     /// OnMethodBegin callback - stores the IServiceCollection for use in OnMethodEnd
@@ -71,6 +73,12 @@ public sealed class AddMassTransitIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
+        if (Interlocked.Exchange(ref _filterRegistered, 0) != 1)
+        {
+            // filter already registered, skip injection
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
         try
         {
             var collection = state.State;
@@ -91,11 +99,11 @@ public sealed class AddMassTransitIntegration
 
         var collectionType = collection.GetType();
 
-        // Create the Datadog IConfigureReceiveEndpoint proxy (similar to HangfireCommon.CreateDatadogFilter)
-        MassTransitCommon.CreateDatadogConfigureReceiveEndpoint(out var datadogProxy);
-        if (datadogProxy == null)
+        // Create the Datadog IConfigureReceiveEndpoint (similar to HangfireCommon.CreateDatadogFilter)
+        MassTransitCommon.CreateDatadogConfigureReceiveEndpoint(out var configureReceiveEndpoint);
+        if (configureReceiveEndpoint == null)
         {
-            Log.Debug("MassTransit AddMassTransitIntegration: Could not create IConfigureReceiveEndpoint proxy");
+            Log.Debug("MassTransit AddMassTransitIntegration: Could not create IConfigureReceiveEndpoint");
             return;
         }
 
@@ -136,7 +144,7 @@ public sealed class AddMassTransitIntegration
             return;
         }
 
-        var factory = factoryMethod.Invoke(null, new[] { datadogProxy });
+        var factory = factoryMethod.Invoke(null, new[] { configureReceiveEndpoint });
 
         // Find the ServiceDescriptor constructor: ServiceDescriptor(Type serviceType, Func<IServiceProvider, object> factory, ServiceLifetime lifetime)
         var descriptorCtor = serviceDescriptorType.GetConstructor([typeof(Type), funcType, serviceLifetimeType]);
