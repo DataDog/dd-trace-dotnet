@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -73,21 +72,33 @@ internal sealed class DatadogConsumePipeSpecification
     {
         try
         {
-            // Find the GreenPipes assembly and IFilter<ConsumeContext> type
-            var greenPipesAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(asm => asm.GetName().Name == "GreenPipes");
+            // Find the GreenPipes and MassTransit assemblies
+            Assembly? greenPipesAssembly = null;
+            Assembly? massTransitAssembly = null;
+
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var assemblyName = assembly.GetName().Name;
+                if (assemblyName == "GreenPipes")
+                {
+                    greenPipesAssembly = assembly;
+                }
+                else if (assemblyName == "MassTransit")
+                {
+                    massTransitAssembly = assembly;
+                }
+
+                if (greenPipesAssembly != null && massTransitAssembly != null)
+                {
+                    break;
+                }
+            }
 
             if (greenPipesAssembly == null)
             {
                 Log.Debug("DatadogConsumePipeSpecification: Could not find GreenPipes assembly");
                 return null;
             }
-
-            // Find MassTransit assembly and ConsumeContext type
-            var massTransitAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(asm => asm.GetName().Name == "MassTransit");
 
             if (massTransitAssembly == null)
             {
@@ -143,9 +154,15 @@ internal sealed class DatadogConsumePipeSpecification
         try
         {
             // Find the GreenPipes assembly and ValidationResult type
-            var greenPipesAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(asm => asm.GetName().Name == "GreenPipes");
+            Assembly? greenPipesAssembly = null;
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (assembly.GetName().Name == "GreenPipes")
+                {
+                    greenPipesAssembly = assembly;
+                    break;
+                }
+            }
 
             if (greenPipesAssembly != null)
             {

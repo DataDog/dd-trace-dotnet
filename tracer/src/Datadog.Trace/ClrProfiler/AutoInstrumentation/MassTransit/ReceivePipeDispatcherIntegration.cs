@@ -6,9 +6,8 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
+using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -67,8 +66,25 @@ public sealed class ReceivePipeDispatcherIntegration
 
                 // Log available properties to debug duck typing failures
                 var props = contextType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                var propNames = string.Join(", ", props.Select(p => $"{p.Name}:{p.PropertyType.Name}").Take(20));
-                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Available properties: {Properties}", propNames);
+                var propNamesSb = new StringBuilder();
+                var propCount = 0;
+                foreach (var p in props)
+                {
+                    if (propCount >= 20)
+                    {
+                        break;
+                    }
+
+                    if (propCount > 0)
+                    {
+                        propNamesSb.Append(", ");
+                    }
+
+                    propNamesSb.Append(p.Name).Append(':').Append(p.PropertyType.Name);
+                    propCount++;
+                }
+
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Available properties: {Properties}", propNamesSb.ToString());
 
                 if (context.TryDuckCast<IReceiveContext>(out var duckContext))
                 {
@@ -79,12 +95,8 @@ public sealed class ReceivePipeDispatcherIntegration
                     transportHeadersObj = receiveContext.TransportHeaders;
                     if (transportHeadersObj != null)
                     {
-                        var headersType = transportHeadersObj.GetType();
-                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders type: {HeadersType}", headersType.FullName);
+                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders type: {HeadersType}", transportHeadersObj.GetType().FullName);
 
-                        // Log available methods to debug duck typing failures
-                        var methods = headersType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                        var methodSignatures = string.Join(", ", methods.Where(m => !m.IsSpecialName).Select(m => $"{m.Name}({string.Join(",", m.GetParameters().Select(p => p.ParameterType.Name))})").Distinct().Take(15));
                         // Use reflection-based ContextPropagation since the Get method is generic
                         var headersAdapter = new ContextPropagation(transportHeadersObj);
                         propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);

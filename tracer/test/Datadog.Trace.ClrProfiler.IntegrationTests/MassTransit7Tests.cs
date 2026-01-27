@@ -48,15 +48,15 @@ public class MassTransit7Tests : TracingIntegrationTest
         {
             // Wait for spans to arrive - the sample tests 3 transports:
             // Each transport produces 2 MassTransit spans (receive + process)
-            const int expectedSpanCount = 6;
-            var spans = await agent.WaitForSpansAsync(expectedSpanCount, timeoutInMilliseconds: 60000);
+            // Note: We wait for at least 6 spans, but more will arrive from RabbitMQ/SQS integrations
+            const int expectedMassTransitSpanCount = 6;
+            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();
-            spans.Count.Should().Be(expectedSpanCount);
 
             // Filter to MassTransit spans - component tag should be "MassTransit"
             var massTransitSpans = spans.Where(span => span.GetTag("component") == "MassTransit").ToList();
-            massTransitSpans.Should().NotBeEmpty("should have MassTransit spans with component tag");
+            massTransitSpans.Count.Should().Be(expectedMassTransitSpanCount, "should have exactly 6 MassTransit spans (2 per transport)");
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
 

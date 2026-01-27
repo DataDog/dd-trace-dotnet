@@ -7,7 +7,7 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
+using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -93,10 +93,27 @@ public sealed class AddMassTransitIntegration
 
         var collectionType = collection.GetType();
 
-        // Find the MassTransit assembly to get IConfigureReceiveEndpoint type
-        var massTransitAssembly = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "MassTransit");
+        // Find the MassTransit and DI assemblies
+        Assembly? massTransitAssembly = null;
+        Assembly? diAssembly = null;
+
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var assemblyName = assembly.GetName().Name;
+            if (assemblyName == "MassTransit")
+            {
+                massTransitAssembly = assembly;
+            }
+            else if (assemblyName == "Microsoft.Extensions.DependencyInjection.Abstractions")
+            {
+                diAssembly = assembly;
+            }
+
+            if (massTransitAssembly != null && diAssembly != null)
+            {
+                break;
+            }
+        }
 
         if (massTransitAssembly == null)
         {
@@ -120,11 +137,6 @@ public sealed class AddMassTransitIntegration
             Log.Debug("MassTransit AddMassTransitIntegration: Could not create reverse duck type for IConfigureReceiveEndpoint");
             return;
         }
-
-        // Find the Microsoft.Extensions.DependencyInjection assembly
-        var diAssembly = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "Microsoft.Extensions.DependencyInjection.Abstractions");
 
         if (diAssembly == null)
         {

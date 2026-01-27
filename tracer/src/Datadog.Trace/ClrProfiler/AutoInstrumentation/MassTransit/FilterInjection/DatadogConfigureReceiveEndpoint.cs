@@ -6,7 +6,7 @@
 #nullable enable
 
 using System;
-using System.Linq;
+using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -62,20 +62,32 @@ internal sealed class DatadogConfigureReceiveEndpoint
             var configuratorType = configurator.GetType();
 
             // Find MassTransit assembly
-            var massTransitAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(a => a.GetName().Name == "MassTransit");
+            Assembly? massTransitAssembly = null;
+            Assembly? greenPipesAssembly = null;
+
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var assemblyName = assembly.GetName().Name;
+                if (assemblyName == "MassTransit")
+                {
+                    massTransitAssembly = assembly;
+                }
+                else if (assemblyName == "GreenPipes")
+                {
+                    greenPipesAssembly = assembly;
+                }
+
+                if (massTransitAssembly != null && greenPipesAssembly != null)
+                {
+                    break;
+                }
+            }
 
             if (massTransitAssembly == null)
             {
                 Log.Debug("DatadogConfigureReceiveEndpoint: Could not find MassTransit assembly");
                 return;
             }
-
-            // Find GreenPipes assembly
-            var greenPipesAssembly = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(a => a.GetName().Name == "GreenPipes");
 
             if (greenPipesAssembly == null)
             {
