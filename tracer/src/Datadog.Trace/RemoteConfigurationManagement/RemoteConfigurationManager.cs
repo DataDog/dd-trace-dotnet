@@ -102,7 +102,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager,
-                    tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : null);
+                    tracerSettings.PropagateProcessTags ? tracerSettings.Manager.InitialMutableSettings.ProcessTags?.TagsList : null);
         }
 
         public void Start()

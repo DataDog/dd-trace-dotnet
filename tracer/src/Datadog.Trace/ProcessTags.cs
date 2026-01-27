@@ -14,34 +14,67 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
-internal static class ProcessTags
+internal sealed class ProcessTags
 {
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
+    public const string ServiceSetByUser = "svc.user";
+    public const string ServiceAuto = "svc.auto";
+
+    public ProcessTags(bool serviceNameUserDefined, string autoServiceName)
+    {
+        // Build the complete tags list with svc.user and svc.auto
+        TagsList = GetTagsList(serviceNameUserDefined, autoServiceName);
+
+        // Build the serialized version with svc.user and svc.auto
+        SerializedTags = GetSerializedTagsFromList(TagsList);
+    }
 
     // two views on the same data
-    public static IReadOnlyCollection<string> TagsList => field ??= GetTagsList();
+    public List<string> TagsList
+    {
+        get;
+    }
 
-    public static string SerializedTags => field ??= string.Join(",", TagsList);
+    public string SerializedTags
+    {
+        get;
+    }
 
-    private static List<string> GetTagsList()
+    private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)
     {
         // ⚠️ make sure entries are added in alphabetical order of keys
-        var tags = new List<string>(3); // Update if you add more entries below
-        tags.AddNormalizedTag(EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
-        tags.AddNormalizedTag(EntrypointName, GetEntryPointName());
+        var tags = new List<string>(4); // Update if you add more entries below
+        AddNormalizedTag(tags, EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
+        AddNormalizedTag(tags, EntrypointName, GetEntryPointName());
         // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
-        tags.AddNormalizedTag(EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+        AddNormalizedTag(tags, EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+        // Either svc.user or svc.auto, never both
+        if (serviceNameUserDefined)
+        {
+            // svc.user is only added when the user explicitly set the service name
+            tags.Add($"{ServiceSetByUser}:1");
+        }
+        else
+        {
+            // svc.auto contains the automatically determined service name when user didn't set it
+            AddNormalizedTag(tags, ServiceAuto, autoServiceName);
+        }
 
         return tags;
+    }
+
+    private static string GetSerializedTagsFromList(IEnumerable<string> tags)
+    {
+        return string.Join(",", tags);
     }
 
     /// <summary>
     /// normalizes the tag value (keys are hardcoded so they don't need that)
     /// and adds it to the list iff not null or empty
     /// </summary>
-    private static void AddNormalizedTag(this List<string> tags, string key, string? value)
+    private static void AddNormalizedTag(List<string> tags, string key, string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
