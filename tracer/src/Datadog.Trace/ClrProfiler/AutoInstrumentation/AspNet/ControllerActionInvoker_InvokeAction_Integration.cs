@@ -120,9 +120,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Code origin is enabled but could not extract action from ActionDescriptor type {ActionDescriptorType} or action MethodInfo has no DeclaringType. Method: {Method}.",
-                        actionDescriptor.GetType(),
-                        actionMethod);
+                        "Code origin is enabled but could not extract action from ActionDescriptor type {ActionDescriptorType} or action MethodInfo has no DeclaringType.",
+                        actionDescriptor.GetType());
                 }
 
                 return;
