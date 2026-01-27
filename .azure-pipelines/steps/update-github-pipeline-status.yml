@@ -3,6 +3,7 @@ stages:
   - stage: azure_pipeline_succeeded
     dependsOn:
       - merge_commit_id
+      - validate_pr_labels
       - generate_variables
       - build_windows_tracer
       - build_windows_profiler
@@ -80,6 +81,7 @@ stages:
     condition: |
       and(
          in(dependencies.merge_commit_id.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.validate_pr_labels.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.generate_variables.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.build_windows_tracer.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.build_windows_profiler.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -169,6 +171,7 @@ stages:
   - stage: azure_pipeline_failed
     dependsOn:
       - merge_commit_id
+      - validate_pr_labels
       - generate_variables
       - build_windows_tracer
       - build_windows_profiler
@@ -246,6 +249,7 @@ stages:
     condition: |
       not(and(
          in(dependencies.merge_commit_id.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.validate_pr_labels.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.generate_variables.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.build_windows_tracer.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.build_windows_profiler.result, 'Succeeded','SucceededWithIssues','Skipped'),
