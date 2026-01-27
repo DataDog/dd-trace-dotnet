@@ -74,6 +74,9 @@
     <ClInclude Include="DbgHelpParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SymPdbParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -119,6 +122,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DbgHelpParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SymPdbParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

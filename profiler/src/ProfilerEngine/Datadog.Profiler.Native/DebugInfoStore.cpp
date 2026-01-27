@@ -17,6 +17,7 @@
 
 #ifdef _WINDOWS
 #include "..\Datadog.Profiler.Native.Windows\DbgHelpParser.h"
+#include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
 #endif
 
 const std::string DebugInfoStore::NoFileFound = "";
@@ -88,10 +89,10 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
 
     Log::Debug("Parsing ", pdbFile, " pdb file. (for module ", filePath,")");
 
-    ParseModuleDebugInfo(pdbFile.string(), filePath.string(), moduleInfo);
+    ParseModuleDebugInfo(moduleId, pdbFile.string(), filePath.string(), moduleInfo);
 }
 
-void DebugInfoStore::ParseModuleDebugInfo(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
+void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
 {
 
     // first, try to load the symbols via Portable PDB
@@ -161,6 +162,12 @@ void DebugInfoStore::ParseModuleDebugInfo(std::string pdbFilename, std::string m
     // try to load the symbols via DbgHelp as a fallback
     if (moduleInfo.LoadingState != SymbolLoadingState::Portable)
     {
+        if (TryLoadSymbolsWithSym(moduleId, pdbFilename, moduleFilename, moduleInfo))
+        {
+            moduleInfo.LoadingState = SymbolLoadingState::Windows;
+            Log::Debug("PDB file ", pdbFilename, " parsed successfully with Sym (for module ", moduleFilename, ")");
+            return;
+        }
         if (TryLoadSymbolsWithDbgHelp(pdbFilename, moduleInfo))
         {
             moduleInfo.LoadingState = SymbolLoadingState::Windows;
@@ -178,6 +185,25 @@ void DebugInfoStore::ParseModuleDebugInfo(std::string pdbFilename, std::string m
 }
 
 #ifdef _WINDOWS
+bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo)
+{
+    // clear the module info in case some partial data was loaded
+    moduleInfo.RidToDebugInfo.clear();
+
+    moduleInfo.Files.clear();
+    moduleInfo.Files.reserve(1024);
+    // still need to have the first file as empty string
+    moduleInfo.Files.push_back(NoFileFound);
+
+    SymParser parser(_profilerInfo, moduleId, &moduleInfo);
+    if (!parser.LoadPdbFile(pdbFile, moduleFile))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo)
 {
     // clear the module info in case some partial data was loaded

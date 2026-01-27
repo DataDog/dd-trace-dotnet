@@ -3,44 +3,35 @@
 
 #pragma once
 
-#include <windows.h>
-
 #include "DebugInfoStore.h"
 
-// needed for symTag definitions
-#define _NO_CVCONST_H
-#include "DbgHelp.h"
-
-#include <algorithm>
+#include <corsym.h>
 #include <string>
-#include <unordered_map>
-#include <vector>
+#include<vector>
+#include <windows.h>
 
 
-struct MethodInfo
+struct SymMethodInfo
 {
     uint32_t rid;
-    uint64_t address;
-    uint32_t size;
     std::string_view sourceFile;
     uint32_t lineNumber;
 };
 
-
-class DbgHelpParser
+class SymParser
 {
 public:
-    DbgHelpParser(ModuleDebugInfo* pModuleInfo);
-    ~DbgHelpParser();
+    SymParser(ICorProfilerInfo4* pCorProfilerInfo, ModuleID moduleId, ModuleDebugInfo* pModuleInfo);
+    ~SymParser();
 
-    bool LoadPdbFile(const std::string& pdbFilePath);
-    std::vector<MethodInfo> GetMethods();
-    std::string GetGuid() const { return _guid; }
-    DWORD GetAge() const { return _age; }
+    bool LoadPdbFile(const std::string& pdbFilePath, const std::string& moduleFilePath);
+    std::vector<SymMethodInfo> GetMethods();
 
 private:
-    static BOOL CALLBACK EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext);
+    bool GetMetadataImport(ModuleID moduleId);
+    bool GetSymReader(const std::string& moduleFilePath);
     bool ComputeMethodsInfo();
+    bool GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodInfo& info);
     std::string& FindOrAddSourceFile(const char* filePath);
 
 private:
@@ -66,13 +57,12 @@ private:
     };
 
 private:
+    ModuleID _moduleId;
+    ICorProfilerInfo4* _pCorProfilerInfo;
     ModuleDebugInfo* _pModuleInfo;
 
-    HANDLE _hProcess;
-    uint64_t _baseAddress;
-
-    // the symbols are enumerated in an implicit "RID" order
-    uint32_t _currentRID;
+    ISymUnmanagedReader* _pReader;
+    IMetaDataImport* _pMetaDataImport;
 
     // strings corresponding to source file paths are stored in the given ModuleDebugInfo
     // but we use this map to avoid duplications
@@ -80,10 +70,8 @@ private:
 
     // this stores all the managed methods found in the PDB with string views to the source file paths
     // stored in the given ModuleDebugInfo
-    std::vector<MethodInfo> _methods;
+    std::vector<SymMethodInfo> _methods;
 
     std::string _guid;
     DWORD _age;
-
 };
-

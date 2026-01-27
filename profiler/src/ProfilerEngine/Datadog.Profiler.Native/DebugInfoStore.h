@@ -3,11 +3,6 @@
 
 #pragma once
 
-// from dotnet coreclr includes
-#include "cor.h"
-#include "corprof.h"
-// end
-
 #include "IDebugInfoStore.h"
 #include "Log.h"
 
@@ -56,7 +51,7 @@ public:
     SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
     // for tests
-    void ParseModuleDebugInfo(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
+    void ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
 
 private:
     void ParseModuleDebugInfo(ModuleID moduleID);
@@ -97,6 +92,7 @@ private:
 
 #ifdef _WINDOWS
     bool TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo);
+    bool TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo);
 #endif
 
     // we need to support both Portable PDB (Windows and Linux) and Windows PDB (Windows only for old .NET Framework scenarios)

@@ -226,6 +226,7 @@
     <ClInclude Include="ETW\Protocol.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="SecurityDescriptorHelpers.h" />
+    <ClInclude Include="SymPdbParser.h" />
     <ClInclude Include="SystemTime.h" />
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
@@ -241,6 +242,7 @@
     <ClCompile Include="ETW\IpcServer.cpp" />
     <ClCompile Include="ETW\ProfilerLogger.cpp" />
     <ClCompile Include="SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="SymPdbParser.cpp" />
     <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="WindowsThreadInfo.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />
