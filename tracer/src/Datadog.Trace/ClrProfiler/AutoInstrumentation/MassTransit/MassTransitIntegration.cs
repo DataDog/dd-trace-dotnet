@@ -41,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     MessagingOperation = operation,
                 };
 
-                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MassTransitConstants.MessagingType);
-
                 // Determine messaging system from destination or use provided value or default to in-memory
                 var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName);
                 tags.MessagingSystem = resolvedMessagingSystem;
@@ -51,10 +49,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // e.g., "in_memory.send", "rabbitmq.send"
                 var operationName = $"{resolvedMessagingSystem.Replace("-", "_")}.{operation}";
 
+                // Don't specify serviceName to use the default tracer service name (like Hangfire)
                 scope = tracer.StartActiveInternal(
                     operationName,
                     tags: tags,
-                    serviceName: serviceName,
                     startTime: startTime);
 
                 var span = scope.Span;
@@ -120,8 +118,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     MessagingOperation = operation,
                 };
 
-                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MassTransitConstants.MessagingType);
-
                 // Determine messaging system from destination or use provided value or default to in-memory
                 var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName) ?? "in-memory";
                 tags.MessagingSystem = resolvedMessagingSystem;
@@ -130,11 +126,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // This matches the MT8 OTEL instrumentation which uses "consumer" for all consumer operations
                 var operationName = MassTransitConstants.ConsumerOperationName;
 
+                // Don't specify serviceName to use the default tracer service name (like Hangfire)
                 scope = tracer.StartActiveInternal(
                     operationName,
                     parent: context.SpanContext,
                     tags: tags,
-                    serviceName: serviceName,
                     startTime: startTime);
 
                 var span = scope.Span;

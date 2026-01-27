@@ -35,14 +35,14 @@ async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigu
         await busControl.StartAsync();
 
         // Give the bus time to fully initialize
-        await Task.Delay(2000);
+        await Task.Delay(500);
 
         Console.WriteLine($"[{transportName}] Publishing message...");
         await busControl.Publish(new GettingStartedMessage { Value = $"Hello from {transportName} at {DateTimeOffset.Now}" });
 
         // Wait for the message to be consumed
         Console.WriteLine($"[{transportName}] Waiting for message to be consumed...");
-        await Task.Delay(3000);
+        await Task.Delay(1000);
 
         Console.WriteLine($"[{transportName}] Test completed successfully!");
     }
@@ -52,7 +52,7 @@ async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigu
         await busControl.StopAsync();
 
         // Give time for cleanup before next transport
-        await Task.Delay(1000);
+        await Task.Delay(500);
     }
 }
 
