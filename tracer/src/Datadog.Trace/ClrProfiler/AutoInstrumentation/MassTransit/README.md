@@ -158,7 +158,19 @@ Users can disable one integration if they prefer fewer spans.
 - Consumers will see the transport span as parent, not the framework span
 - This maintains the trace chain correctly
 
-### 3. Batch Operations (SNS)
+### 3. Amazon SQS/SNS Trace Connectivity
+
+**Status**: ✅ Working - MassTransit receive/process spans are connected to the SNS producer span.
+
+**How it works**: MassTransit publishes via SNS, which injects trace context into the SQS message. On the receive side:
+1. MassTransit's `JsonTransportHeaders` doesn't expose the trace context for SQS
+2. We fall back to extracting from the raw SQS message's `MessageAttributes`
+3. The `_datadog` attribute contains JSON-encoded trace headers (as binary data)
+4. We parse this JSON and extract the parent span context
+
+**Note**: The trace context is stored as binary data in the SQS MessageAttribute, not as a string. Both String and Binary formats are supported.
+
+### 4. Batch Operations (SNS)
 
 **Limitation**: For batch publishes, context extraction is skipped.
 
@@ -201,7 +213,9 @@ catch
 
 | Aspect | Status | Notes |
 |--------|--------|-------|
-| **Trace Continuity** | ✅ Working | Spans properly parent to framework spans |
+| **In-Memory Transport** | ✅ Working | MassTransit receive → process spans connected |
+| **RabbitMQ Transport** | ✅ Working | Producer → consumer → MassTransit spans all connected |
+| **SQS/SNS Transport** | ✅ Working | SNS producer → MassTransit receive → process spans all connected |
 | **Double Spans** | ⚠️ Expected | Both framework and transport spans created |
 | **Batch Operations** | ⚠️ Limited | SNS batch doesn't extract parent context |
 | **Performance** | ✅ Minimal | Small overhead for header extraction |

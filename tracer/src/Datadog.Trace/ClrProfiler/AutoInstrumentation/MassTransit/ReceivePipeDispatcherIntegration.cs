@@ -6,11 +6,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -83,12 +85,20 @@ public sealed class ReceivePipeDispatcherIntegration
                         // Log available methods to debug duck typing failures
                         var methods = headersType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                         var methodSignatures = string.Join(", ", methods.Where(m => !m.IsSpecialName).Select(m => $"{m.Name}({string.Join(",", m.GetParameters().Select(p => p.ParameterType.Name))})").Distinct().Take(15));
-                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - TransportHeaders methods: {Methods}", methodSignatures);
-
                         // Use reflection-based ContextPropagation since the Get method is generic
                         var headersAdapter = new ContextPropagation(transportHeadersObj);
                         propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);
-                        Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Extracted propagation context from transport headers");
+                    }
+
+                    // For SQS: If we didn't extract context from transport headers, try the SQS message attributes
+                    // MassTransit's JsonTransportHeaders for SQS doesn't include trace context, but the raw SQS message might have it
+                    if (propagationContext.SpanContext == null)
+                    {
+                        propagationContext = TryExtractFromSqsMessageAttributes(context);
+                        if (propagationContext.SpanContext != null)
+                        {
+                            Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Extracted propagation context from SQS message attributes");
+                        }
                     }
                 }
                 else
@@ -268,5 +278,143 @@ public sealed class ReceivePipeDispatcherIntegration
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Tries to extract propagation context from SQS message attributes.
+    /// For Amazon SQS, MassTransit's JsonTransportHeaders doesn't include trace context,
+    /// but the raw SQS message's MessageAttributes might contain it (injected by SNS or direct SQS publish).
+    /// </summary>
+    private static PropagationContext TryExtractFromSqsMessageAttributes<TContext>(TContext context)
+    {
+        if (context == null)
+        {
+            return default;
+        }
+
+        try
+        {
+            var contextType = context.GetType();
+
+            // Check if this is AmazonSqsReceiveContext by looking for TransportMessage property
+            var transportMessageProp = contextType.GetProperty("TransportMessage", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (transportMessageProp == null)
+            {
+                return default;
+            }
+
+            var transportMessage = transportMessageProp.GetValue(context);
+            if (transportMessage == null)
+            {
+                return default;
+            }
+
+            Log.Debug("MassTransit ReceivePipeDispatcherIntegration - Found TransportMessage, type: {Type}", transportMessage.GetType().FullName);
+
+            // Get MessageAttributes from the SQS Message object
+            var messageType = transportMessage.GetType();
+            var messageAttributesProp = messageType.GetProperty("MessageAttributes", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (messageAttributesProp == null)
+            {
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - No MessageAttributes property on TransportMessage");
+                return default;
+            }
+
+            var messageAttributes = messageAttributesProp.GetValue(transportMessage);
+            if (messageAttributes == null)
+            {
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - MessageAttributes is null");
+                return default;
+            }
+
+            // MessageAttributes is Dictionary<string, MessageAttributeValue>
+            // Log the keys to understand what's available
+            if (messageAttributes is System.Collections.IDictionary dict)
+            {
+                var keys = new System.Collections.Generic.List<string>();
+                foreach (var key in dict.Keys)
+                {
+                    keys.Add(key?.ToString() ?? "null");
+                }
+
+                Log.Debug("MassTransit ReceivePipeDispatcherIntegration - SQS MessageAttributes keys: [{Keys}]", string.Join(", ", keys));
+
+                // Look for _datadog key (our standard injection key)
+                const string datadogKey = "_datadog";
+
+                // Try to get the value directly using the indexer
+                object? datadogAttr = null;
+                try
+                {
+                    datadogAttr = dict[datadogKey];
+                }
+                catch
+                {
+                    // Key not found
+                }
+
+                if (datadogAttr != null)
+                {
+                    var attrType = datadogAttr.GetType();
+
+                    // MessageAttributeValue may have StringValue (String type) or BinaryValue (Binary type)
+                    string? jsonString = null;
+
+                    // First try StringValue
+                    var stringValueProp = attrType.GetProperty("StringValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (stringValueProp != null)
+                    {
+                        jsonString = stringValueProp.GetValue(datadogAttr) as string;
+                    }
+
+                    // If StringValue is null, try BinaryValue (MemoryStream) - SNS/SQS often uses binary encoding
+                    if (string.IsNullOrEmpty(jsonString))
+                    {
+                        var binaryValueProp = attrType.GetProperty("BinaryValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        if (binaryValueProp != null)
+                        {
+                            var binaryValue = binaryValueProp.GetValue(datadogAttr) as System.IO.MemoryStream;
+                            if (binaryValue != null && binaryValue.Length > 0)
+                            {
+                                binaryValue.Position = 0;
+                                var bytes = binaryValue.ToArray();
+                                jsonString = System.Text.Encoding.UTF8.GetString(bytes);
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(jsonString))
+                    {
+                        // Parse the JSON and extract headers
+                        var headers = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<string, string>>(jsonString!);
+                        if (headers != null)
+                        {
+                            return Tracer.Instance.TracerManager.SpanContextPropagator
+                                         .Extract(headers, default(DictionaryCarrierGetter))
+                                         .MergeBaggageInto(Baggage.Current);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "MassTransit ReceivePipeDispatcherIntegration - Failed to extract from SQS message attributes");
+        }
+
+        return default;
+    }
+
+    private readonly struct DictionaryCarrierGetter : ICarrierGetter<System.Collections.Generic.Dictionary<string, string>>
+    {
+        public System.Collections.Generic.IEnumerable<string> Get(System.Collections.Generic.Dictionary<string, string> carrier, string key)
+        {
+            if (carrier.TryGetValue(key, out var value))
+            {
+                return new[] { value };
+            }
+
+            return System.Array.Empty<string>();
+        }
     }
 }

@@ -1,36 +1,68 @@
 using MassTransit;
-using Samples.MassTransit7;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Samples.MassTransit7.Contracts;
 using Samples.MassTransit7.Consumers;
 
-// Transport selection via environment variable: "rabbitmq" (default) or "amazonsqs"
-var transport = Environment.GetEnvironmentVariable("MASSTRANSIT_TRANSPORT")?.ToLowerInvariant() ?? "rabbitmq";
+Console.WriteLine("MassTransit 7 Sample - Testing all transports sequentially");
 
-Console.WriteLine($"MassTransit 7 Sample - Using transport: {transport}");
+// Run each transport one after another
+await RunWithTransport("inmemory", ConfigureInMemory);
+await RunWithTransport("rabbitmq", ConfigureRabbitMq);
+await RunWithTransport("amazonsqs", ConfigureAmazonSqs);
 
-var builder = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
+Console.WriteLine("All transports tested successfully!");
+
+async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
+{
+    Console.WriteLine($"\n========== Testing {transportName.ToUpperInvariant()} ==========");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
     {
-        services.AddMassTransit(x =>
-        {
-            x.AddConsumer<GettingStartedConsumer>();
-
-            switch (transport)
-            {
-                case "amazonsqs":
-                    ConfigureAmazonSqs(x);
-                    break;
-                case "rabbitmq":
-                default:
-                    ConfigureRabbitMq(x);
-                    break;
-            }
-        });
-
-        services.AddHostedService<Worker>();
+        x.AddConsumer<GettingStartedConsumer>();
+        configureTransport(x);
     });
 
-var host = builder.Build();
-await host.RunAsync();
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        Console.WriteLine($"[{transportName}] Starting the bus...");
+        await busControl.StartAsync();
+
+        // Give the bus time to fully initialize
+        await Task.Delay(2000);
+
+        Console.WriteLine($"[{transportName}] Publishing message...");
+        await busControl.Publish(new GettingStartedMessage { Value = $"Hello from {transportName} at {DateTimeOffset.Now}" });
+
+        // Wait for the message to be consumed
+        Console.WriteLine($"[{transportName}] Waiting for message to be consumed...");
+        await Task.Delay(3000);
+
+        Console.WriteLine($"[{transportName}] Test completed successfully!");
+    }
+    finally
+    {
+        Console.WriteLine($"[{transportName}] Stopping the bus...");
+        await busControl.StopAsync();
+
+        // Give time for cleanup before next transport
+        await Task.Delay(1000);
+    }
+}
+
+void ConfigureInMemory(IBusRegistrationConfigurator x)
+{
+    x.UsingInMemory((context, cfg) =>
+    {
+        cfg.ConfigureEndpoints(context);
+    });
+}
 
 void ConfigureRabbitMq(IBusRegistrationConfigurator x)
 {
