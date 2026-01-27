@@ -474,16 +474,59 @@ namespace Datadog.Trace.FeatureFlags
 
             if (target == ValueType.Json)
             {
-                if (value is JObject)
+                // Return structured object instead of JSON string for easier conversion to OpenFeature Value
+                if (value is JObject jObject)
                 {
-                    return value.ToString();
+                    return ConvertJObjectToDictionary(jObject);
                 }
 
-                var json = JsonConvert.SerializeObject(value);
-                return json;
+                if (value is JArray jArray)
+                {
+                    return ConvertJArrayToList(jArray);
+                }
+
+                // Already a native type (Dictionary, List, etc.)
+                return value;
             }
 
             throw new ArgumentException($"Type not supported: {target}");
+        }
+
+        private static Dictionary<string, object?> ConvertJObjectToDictionary(JObject jObject)
+        {
+            var result = new Dictionary<string, object?>();
+            foreach (var property in jObject.Properties())
+            {
+                result[property.Name] = ConvertJTokenToObject(property.Value);
+            }
+
+            return result;
+        }
+
+        private static List<object?> ConvertJArrayToList(JArray jArray)
+        {
+            var result = new List<object?>();
+            foreach (var item in jArray)
+            {
+                result.Add(ConvertJTokenToObject(item));
+            }
+
+            return result;
+        }
+
+        private static object? ConvertJTokenToObject(JToken token)
+        {
+            return token.Type switch
+            {
+                JTokenType.Object => ConvertJObjectToDictionary((JObject)token),
+                JTokenType.Array => ConvertJArrayToList((JArray)token),
+                JTokenType.Integer => token.Value<long>(),
+                JTokenType.Float => token.Value<double>(),
+                JTokenType.String => token.Value<string>(),
+                JTokenType.Boolean => token.Value<bool>(),
+                JTokenType.Null => null,
+                _ => token.ToString()
+            };
         }
 
         private static double ParseDouble(object value)
