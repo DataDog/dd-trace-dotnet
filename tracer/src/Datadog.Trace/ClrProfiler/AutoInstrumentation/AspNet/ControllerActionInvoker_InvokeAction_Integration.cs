@@ -92,44 +92,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private static void AddSpanCodeOrigin<TActionDescriptor>(TActionDescriptor actionDescriptor, SpanCodeOrigin codeOrigin)
         {
-            if (SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey) is not { Root.Span: { } rootSpan })
-            {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Code origin is enabled for spans but MVC scope was not found in HttpContext.");
-                }
-
-                return;
-            }
-
             if (actionDescriptor is null)
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Code origin is enabled for spans but MVC ActionDescriptor instance was null.");
-                }
-
                 return;
             }
 
-            if (!actionDescriptor.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected) || reflected.MethodInfo is not { } actionMethod)
+            var httpContext = HttpContext.Current;
+            if (SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey) is not { Root.Span: { } rootSpan })
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Code origin is enabled for spans but could not extract MVC action MethodInfo from ActionDescriptor type {ActionDescriptorType}.",
+                        "Code origin is enabled but scope was not found in HttpContext (key: {HttpContextKey}, httpContextNull: {HttpContextIsNull}, itemsCount: {HttpContextItemsCount}, actionDescriptorType: {ActionDescriptorType}).",
+                        AspNetMvcIntegration.HttpContextKey,
+                        httpContext is null,
+                        httpContext?.Items?.Count ?? 0,
                         actionDescriptor.GetType());
                 }
 
                 return;
             }
 
-            if (actionMethod.DeclaringType is not { } actionType)
+            if (!actionDescriptor.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected)
+             || reflected.MethodInfo is not { } actionMethod
+             || actionMethod.DeclaringType is not { } actionType)
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Code origin is enabled for spans but extracted MVC action MethodInfo has no DeclaringType. Method: {Method}.",
+                        "Code origin is enabled but could not extract action from ActionDescriptor type {ActionDescriptorType} or action MethodInfo has no DeclaringType. Method: {Method}.",
+                        actionDescriptor.GetType(),
                         actionMethod);
                 }
 
