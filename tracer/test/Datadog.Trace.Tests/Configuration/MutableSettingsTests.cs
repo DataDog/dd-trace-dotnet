@@ -641,6 +641,18 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.LogsInjectionEnabled.Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void ProcessTagsEnabledIfExperimentalEnabled(bool propagateTags)
+        {
+            var source = propagateTags ? CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, "true")) : CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, settings);
+
+            mutable.ProcessTags?.Should().NotBeNull();
+        }
+
         private static (string Key, string Property, object Value1, object Value2)[] GetTestValues()
             =>
             [
