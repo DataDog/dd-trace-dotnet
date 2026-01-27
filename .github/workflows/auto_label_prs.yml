@@ -20,6 +20,12 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: "Add labels"
+        run: ./tracer/build.sh AssignLabelsToPullRequest
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          PullRequestNumber: "${{ github.event.pull_request.number }}"
+
       - name: "Validate PR has labels"
         run: ./tracer/build.sh ValidatePrLabels
         env:
