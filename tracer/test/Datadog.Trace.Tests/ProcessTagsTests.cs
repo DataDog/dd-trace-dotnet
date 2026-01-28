@@ -64,41 +64,4 @@ public class ProcessTagsTests
 
         ProcessTags.GetLastPathSegment(path).Should().Be(expected);
     }
-
-    [SkippableTheory]
-    [InlineData(@"C:\", true)]               // root, common case
-    [InlineData(@"c:\", true)]               // root, lower-case
-    [InlineData(@"D:\", true)]               // root, different drive
-    [InlineData(@"C:\Users", false)]         // not root, single path segment
-    [InlineData(@"C:\Users\foo", false)]     // not root, multiple path segments
-    [InlineData(@"C:\Program Files", false)] // not root, with space
-    [InlineData(@"C:", false)]               // not root
-    [InlineData(@"simple", false)]           // not rooted
-    [InlineData(@"C", false)]                // not rooted (single character, looks like a drive letter)
-    [InlineData(@"1:\", false)]              // invalid drive
-    [InlineData(@"CC:\", false)]             // invalid drive
-    [InlineData(@"", false)]                 // empty
-    [InlineData(null, false)]                // null
-    public void IsRootPath_DetectsRootPaths_Windows(string path, bool expected)
-    {
-        // run these on Windows only
-        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-
-        ProcessTags.IsRootPath(path).Should().Be(expected);
-    }
-
-    [SkippableTheory]
-    [InlineData(@"/", true)]         // root
-    [InlineData(@"/home", false)]    // not root, single path segment
-    [InlineData(@"/var/log", false)] // not root, multiple path segments
-    [InlineData(@"simple", false)]   // not rooted
-    [InlineData(@"", false)]         // empty
-    [InlineData(null, false)]        // null
-    public void IsRootPath_DetectsRootPaths_NonWindows(string path, bool expected)
-    {
-        // do not run these on Windows
-        SkipOn.Platform(SkipOn.PlatformValue.Windows);
-
-        ProcessTags.IsRootPath(path).Should().Be(expected);
-    }
 }

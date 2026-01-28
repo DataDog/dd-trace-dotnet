@@ -21,12 +21,9 @@ internal static class ProcessTags
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
     // two views on the same data
-    private static readonly Lazy<IReadOnlyCollection<string>> _tagsList = new(() => GetTagsList());
-    private static readonly Lazy<string> _serializedTags = new(() => string.Join(",", _tagsList.Value));
+    public static IReadOnlyCollection<string> TagsList => field ??= GetTagsList();
 
-    public static IReadOnlyCollection<string> TagsList => _tagsList.Value;
-
-    public static string SerializedTags => _serializedTags.Value;
+    public static string SerializedTags => field ??= string.Join(",", TagsList);
 
     private static List<string> GetTagsList()
     {
@@ -63,81 +60,9 @@ internal static class ProcessTags
     [TestingAndPrivateOnly]
     internal static string GetLastPathSegment(string directoryPath)
     {
-        if (StringUtil.IsNullOrEmpty(directoryPath))
-        {
-            return string.Empty;
-        }
-
-        // NOTE #1: using "new DirectoryInfo(directoryPath).Name" seems to be the most correct way of doing this
-        // (it handles most edge cases, etc), but it allocates several objects. Instead, we'll try
-        // to do this with only a single string allocation for the result (and a char[2] on netfx).
-
-        // NOTE #2: Since directoryPath always comes from either AppContext.BaseDirectory or Environment.CurrentDirectory,
-        // to keep things simple we assume it is always a valid and rooted path.
-
-        if (IsRootPath(directoryPath))
-        {
-            // root paths like "C:\" on Windows or "/" on other OSes
-            return directoryPath;
-        }
-
-#if NETCOREAPP3_1_OR_GREATER
-        // allocate 1-2 char array on the stack
-        ReadOnlySpan<char> separators = FrameworkDescription.Instance.IsWindows() ?
-                                            stackalloc[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar } :
-                                            stackalloc[] { Path.DirectorySeparatorChar };
-#else
-        // allocate 1-2 char array on the heap :(
-        ReadOnlySpan<char> separators = FrameworkDescription.Instance.IsWindows() ?
-                                            new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar } :
-                                            new[] { Path.DirectorySeparatorChar };
-#endif
-
-        // Trim trailing separators (non-allocating)
-        var span = directoryPath.AsSpan().TrimEnd(separators);
-
-        // Find the last separator after trimming
-        var lastSeparatorIndex = span.LastIndexOfAny(separators);
-
-        // If no separator found, return the entire path
-        if (lastSeparatorIndex < 0)
-        {
-            return span.ToString();
-        }
-
-        // Return everything after the last separator
-        return span.Slice(lastSeparatorIndex + 1).ToString();
-    }
-
-    [TestingAndPrivateOnly]
-    internal static bool IsRootPath(string directoryPath)
-    {
-        if (StringUtil.IsNullOrEmpty(directoryPath))
-        {
-            return false;
-        }
-
-        // On Windows: "\" (most common) or "/"
-        // Otherwise: "/" only
-        if (directoryPath.Length == 1 &&
-            (directoryPath[0] == Path.DirectorySeparatorChar || directoryPath[0] == Path.AltDirectorySeparatorChar))
-        {
-            return true;
-        }
-
-        // On Windows, root drive paths look like "C:\" or "D:\".
-        // This code does NOT handle device paths like "\\?\." or "\\.\",
-        // or server\share paths like "\\server\share" or "\\?\UNC\".
-        if (FrameworkDescription.Instance.IsWindows())
-        {
-            // the common case (not a root) will fail the first check
-            return directoryPath.Length is 3 &&
-                   char.IsLetter(directoryPath[0]) &&
-                   directoryPath[1] == Path.VolumeSeparatorChar &&
-                   directoryPath[2] == Path.DirectorySeparatorChar;
-        }
-
-        return false;
+        return StringUtil.IsNullOrEmpty(directoryPath) ?
+                   string.Empty :
+                   new DirectoryInfo(directoryPath).Name;
     }
 
     private static string? GetEntryPointName()
