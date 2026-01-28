@@ -105,6 +105,9 @@ public sealed class DatadogConsumeFilter
         }
         finally
         {
+            // Note: Saga tags (saga_type, saga_id, begin_state, end_state) are added by
+            // StateMachineSagaMessageFilterIntegration which runs deeper in the pipeline
+            // where SagaConsumeContext is available
             processScope?.Dispose();
         }
     }
@@ -235,6 +238,11 @@ public sealed class DatadogConsumeFilter
         }
     }
 
+    /// <summary>
+    /// Sets tags from the consume context.
+    /// Note: Saga-specific tags are set by StateMachineSagaMessageFilterIntegration
+    /// which runs deeper in the pipeline where SagaConsumeContext is available.
+    /// </summary>
     private static void SetConsumeContextTags(Scope scope, object? context)
     {
         if (context == null || scope.Span?.Tags is not MassTransitTags tags)

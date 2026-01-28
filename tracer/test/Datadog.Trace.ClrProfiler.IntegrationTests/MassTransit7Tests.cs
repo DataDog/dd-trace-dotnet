@@ -48,9 +48,8 @@ public class MassTransit7Tests : TracingIntegrationTest
         {
             // Wait for spans to arrive - the sample tests 3 transports + saga state machine:
             // Each transport produces 2 MassTransit spans (receive + process) = 6 spans
-            // Saga test produces 6 MassTransit spans (3 events × 2 spans each) = 6 spans
+            // Saga test produces 6 MassTransit spans (3 events × 2 spans each: receive + process) = 6 spans
             // Total: 12 MassTransit spans
-            // Note: We wait for at least 12 spans, but more will arrive from RabbitMQ/SQS integrations
             const int expectedMassTransitSpanCount = 12;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 

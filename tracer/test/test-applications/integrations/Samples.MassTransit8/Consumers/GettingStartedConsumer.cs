@@ -1,4 +1,5 @@
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using Samples.MassTransit8.Contracts;
 
 namespace Samples.MassTransit8.Consumers;

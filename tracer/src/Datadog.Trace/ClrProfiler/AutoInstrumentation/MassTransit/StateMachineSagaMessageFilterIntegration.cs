@@ -15,6 +15,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 /// <summary>
 /// Automatonymous.Pipeline.StateMachineSagaMessageFilter`2.Send calltarget instrumentation
 /// This instruments saga state machine message processing in MassTransit 7
+///
+/// This integration adds saga-specific tags to the existing process span (created by DatadogConsumeFilter)
+/// rather than creating a new nested span. This matches MT8 OTEL behavior which has a single process span
+/// with saga tags (saga_type, saga_id, begin_state, end_state, consumer_type, correlation_id).
 /// </summary>
 [InstrumentMethod(
     AssemblyName = MassTransitConstants.MassTransitAssembly,
@@ -45,17 +49,21 @@ public sealed class StateMachineSagaMessageFilterIntegration
     {
         Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration.OnMethodBegin() - Intercepted saga state machine");
 
-        string? messageType = null;
+        // Get the active span (the process span from DatadogConsumeFilter)
+        // We don't create a new span - just add saga tags to the existing one to match MT8 OTEL behavior
+        var activeScope = Tracer.Instance.InternalActiveScope;
+        if (activeScope?.Span?.Tags is not MassTransitTags tags)
+        {
+            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - No active MassTransit span found, skipping saga tag addition");
+            return default;
+        }
+
         string? sagaType = null;
-        Guid? correlationId = null;
-        string? destinationAddress = null;
-        string? messagingSystem = "in-memory";
-        string? beginState = null;
         object? sagaInstance = null;
 
         try
         {
-            // Get saga and message types from generic arguments of the TARGET type
+            // Get saga type from generic arguments of the TARGET type (StateMachineSagaMessageFilter<TSaga, TMessage>)
             var targetType = instance?.GetType();
             if (targetType != null && targetType.IsGenericType)
             {
@@ -63,16 +71,15 @@ public sealed class StateMachineSagaMessageFilterIntegration
                 if (genericArgs.Length >= 2)
                 {
                     sagaType = genericArgs[0].Name;
-                    messageType = genericArgs[1].Name;
                 }
             }
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Failed to extract message/saga type from target");
+            Log.Debug(ex, "Failed to extract saga type from target");
         }
 
-        // Try to extract context info using reflection
+        // Try to extract saga info from context using reflection
         if (context is not null)
         {
             try
@@ -81,9 +88,10 @@ public sealed class StateMachineSagaMessageFilterIntegration
 
                 // Try to get CorrelationId from the saga context
                 var correlationIdProp = contextType.GetProperty("CorrelationId");
-                if (correlationIdProp?.GetValue(context) is Guid id)
+                if (correlationIdProp?.GetValue(context) is Guid correlationId)
                 {
-                    correlationId = id;
+                    tags.SagaId = correlationId.ToString();
+                    tags.CorrelationId = correlationId.ToString();
                 }
 
                 // Try to get the saga instance to extract current state
@@ -93,26 +101,34 @@ public sealed class StateMachineSagaMessageFilterIntegration
                     sagaInstance = sagaProp.GetValue(context);
                     if (sagaInstance != null)
                     {
-                        // Try to get CurrentState property from the saga
+                        // Use saga instance type if we couldn't get it from target
+                        if (sagaType == null)
+                        {
+                            sagaType = sagaInstance.GetType().Name;
+                        }
+
+                        // Try to get CurrentState property from the saga for begin_state
                         var currentStateProp = sagaInstance.GetType().GetProperty("CurrentState");
                         if (currentStateProp != null)
                         {
                             var currentState = currentStateProp.GetValue(sagaInstance);
-                            beginState = currentState?.ToString();
-                            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Begin state: {BeginState}", beginState);
+                            if (currentState != null)
+                            {
+                                tags.BeginState = currentState.ToString();
+                                Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Begin state: {BeginState}", tags.BeginState);
+                            }
                         }
                     }
                 }
 
-                // Get destination address for messaging system detection via MessageContext interface
+                // Get destination address for peer.address tag (MT8 OTEL style)
                 var messageContextInterface = contextType.GetInterface("MassTransit.MessageContext");
                 if (messageContextInterface != null)
                 {
                     var destAddressProp = messageContextInterface.GetProperty("DestinationAddress");
                     if (destAddressProp?.GetValue(context) is Uri destAddress)
                     {
-                        destinationAddress = destAddress.ToString();
-                        messagingSystem = DetermineMessagingSystem(destinationAddress);
+                        tags.PeerAddress = destAddress.ToString();
                     }
                 }
             }
@@ -122,96 +138,17 @@ public sealed class StateMachineSagaMessageFilterIntegration
             }
         }
 
-        // NOTE: We do NOT extract trace context from headers here.
-        // The "process" span should be a child of the "receive" span which is already active.
-        // The "receive" span (created by ReceivePipeDispatcherIntegration) already extracted
-        // the trace context from headers, so we just parent under the current active span.
-        var scope = MassTransitIntegration.CreateConsumerScope(
-            Tracer.Instance,
-            MassTransitConstants.OperationProcess,
-            messageType ?? "Unknown",
-            context: default, // Parent under current active span (the receive span)
-            destinationName: destinationAddress,
-            messagingSystem: messagingSystem);
-
-        if (scope != null)
+        // Set saga-specific tags (MT8 OTEL style)
+        if (sagaType != null)
         {
-            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Created saga scope for message type: {MessageType}, saga: {SagaType}", messageType, sagaType);
-
-            if (scope.Span?.Tags is MassTransitTags tags)
-            {
-                // Add saga-specific tags (MT8 OTEL style)
-                if (sagaType != null)
-                {
-                    tags.SagaType = sagaType;
-                    // MT8 OTEL uses consumer_type for the state machine name
-                    tags.ConsumerType = sagaType + "StateMachine";
-                }
-
-                if (correlationId.HasValue)
-                {
-                    tags.SagaId = correlationId.Value.ToString();
-                    tags.CorrelationId = correlationId.Value.ToString();
-                }
-
-                // Set begin state (MT8 OTEL tag)
-                if (beginState != null)
-                {
-                    tags.BeginState = beginState;
-                }
-
-                // Set peer address to match MT8 OTEL
-                if (destinationAddress != null)
-                {
-                    tags.PeerAddress = destinationAddress;
-                }
-
-                // Try to extract additional context info
-                if (context is not null)
-                {
-                    try
-                    {
-                        var contextType = context.GetType();
-                        var messageContextInterface = contextType.GetInterface("MassTransit.MessageContext");
-                        if (messageContextInterface != null)
-                        {
-                            var messageIdProp = messageContextInterface.GetProperty("MessageId");
-                            var conversationIdProp = messageContextInterface.GetProperty("ConversationId");
-                            var sourceAddressProp = messageContextInterface.GetProperty("SourceAddress");
-
-                            if (messageIdProp?.GetValue(context) is Guid messageId)
-                            {
-                                tags.MessageId = messageId.ToString();
-                            }
-
-                            if (conversationIdProp?.GetValue(context) is Guid conversationId)
-                            {
-                                tags.ConversationId = conversationId.ToString();
-                            }
-
-                            // MT8 OTEL tag: source_address
-                            if (sourceAddressProp?.GetValue(context) is Uri sourceAddress)
-                            {
-                                tags.SourceAddress = sourceAddress.ToString();
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Debug(ex, "Failed to set additional saga context tags");
-                    }
-                }
-            }
-
-            // Store saga instance in state to capture end state later
-            return new CallTargetState(scope, sagaInstance);
-        }
-        else
-        {
-            Log.Warning("MassTransit StateMachineSagaMessageFilterIntegration - Failed to create saga scope (integration may be disabled)");
+            tags.SagaType = sagaType;
+            // MT8 OTEL uses consumer_type for the state machine name
+            tags.ConsumerType = sagaType + "StateMachine";
+            Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration - Added saga tags to existing span: saga_type={SagaType}", sagaType);
         }
 
-        return new CallTargetState(scope);
+        // Store saga instance in state to capture end state later (no scope - we're not managing it)
+        return new CallTargetState(scope: null, sagaInstance);
     }
 
     /// <summary>
@@ -226,15 +163,14 @@ public sealed class StateMachineSagaMessageFilterIntegration
     /// <returns>A response value</returns>
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration.OnAsyncMethodEnd() - Completing saga span");
+        Log.Debug("MassTransit StateMachineSagaMessageFilterIntegration.OnAsyncMethodEnd() - Capturing saga end state");
 
-        if (exception != null)
-        {
-            Log.Warning(exception, "MassTransit StateMachineSagaMessageFilterIntegration - Saga state machine processing failed with exception");
-        }
+        // Get the active span (the process span from DatadogConsumeFilter)
+        // We capture end_state on the existing span
+        var activeScope = Tracer.Instance.InternalActiveScope;
 
-        // Try to capture end state (MT8 OTEL tag)
-        if (state.Scope?.Span?.Tags is MassTransitTags tags && state.State != null)
+        // Try to capture end state (MT8 OTEL tag) from the saga instance stored in state
+        if (state.State != null && activeScope?.Span?.Tags is MassTransitTags tags)
         {
             try
             {
@@ -256,7 +192,7 @@ public sealed class StateMachineSagaMessageFilterIntegration
             }
         }
 
-        state.Scope.DisposeWithException(exception);
+        // Note: We don't dispose any scope here - the DatadogConsumeFilter manages the process span lifecycle
         return returnValue;
     }
 
