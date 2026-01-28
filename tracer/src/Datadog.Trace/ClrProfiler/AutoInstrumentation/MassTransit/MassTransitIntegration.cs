@@ -385,7 +385,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             return urn;
         }
 
-        private static string DetermineMessagingSystem(string? destination)
+        internal static string DetermineMessagingSystem(string? destination)
         {
             if (string.IsNullOrEmpty(destination))
             {

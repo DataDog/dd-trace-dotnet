@@ -644,7 +644,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsMassTransitV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "consumer", "in_memory.send")
+                .MatchesOneOf(Name, "consumer", "in_memory.send", "rabbitmq.send", "amazonsqs.send", "azureservicebus.send", "kafka.send")
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .Matches("component", "MassTransit")

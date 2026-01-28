@@ -41,11 +41,20 @@ async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigu
         // Give the bus time to fully initialize
         await Task.Delay(500);
 
-        Console.WriteLine($"[{transportName}] Publishing message...");
-        await busControl.Publish(new GettingStartedMessage { Value = $"Hello from {transportName} at {DateTimeOffset.Now}" });
+        // Test Publish (fanout to all subscribers)
+        Console.WriteLine($"[{transportName}] Publishing message (Publish)...");
+        await busControl.Publish(new GettingStartedMessage { Value = $"Hello via Publish from {transportName} at {DateTimeOffset.Now}" });
 
         // Wait for the message to be consumed
-        Console.WriteLine($"[{transportName}] Waiting for message to be consumed...");
+        await Task.Delay(500);
+
+        // Test Send (direct to specific endpoint)
+        Console.WriteLine($"[{transportName}] Sending message (Send)...");
+        var sendEndpoint = await busControl.GetSendEndpoint(new Uri("queue:GettingStarted"));
+        await sendEndpoint.Send(new GettingStartedMessage { Value = $"Hello via Send from {transportName} at {DateTimeOffset.Now}" });
+
+        // Wait for the message to be consumed
+        Console.WriteLine($"[{transportName}] Waiting for messages to be consumed...");
         await Task.Delay(1000);
 
         Console.WriteLine($"[{transportName}] Test completed successfully!");

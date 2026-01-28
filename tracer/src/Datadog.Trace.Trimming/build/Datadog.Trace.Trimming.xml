@@ -30,8 +30,6 @@
    <assembly fullname="Hangfire.Core" />
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
-   <assembly fullname="MassTransit" />
-   <assembly fullname="MassTransit.ExtensionsDependencyInjectionIntegration" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
    <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
@@ -184,9 +182,6 @@
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
       <type fullname="System.Collections.Specialized.OrderedDictionary" />
-   </assembly>
-   <assembly fullname="System.ComponentModel">
-      <type fullname="System.IServiceProvider" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
