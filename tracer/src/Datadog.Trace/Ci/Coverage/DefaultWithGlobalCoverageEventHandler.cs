@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -54,7 +55,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         {
             lock (_coverages)
             {
-                var sw = Stopwatch.StartNew();
+                var sw = RefStopwatch.Create();
                 var globalCoverage = new GlobalCoverageInfo();
 
                 IEnumerable<ModuleValue> GetModuleValues()
@@ -151,7 +152,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 // Clean coverages
                 Clear();
 
-                Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.Elapsed.TotalMilliseconds);
+                Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.ElapsedMilliseconds);
                 return globalCoverage;
             }
         }
