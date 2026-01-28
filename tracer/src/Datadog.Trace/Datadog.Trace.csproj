@@ -11,6 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsTrimmable>false</IsTrimmable>
+    <NoWarn>NU1510;SYSLIB0014</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
