@@ -111,7 +111,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     // Use ConcurrentDictionary for thread safety - MSTest can run parameterized rows in parallel
     // ConditionalWeakTable allows garbage collection of testMethod without manual cleanup
     private static readonly ConditionalWeakTable<object, ConcurrentDictionary<string, bool>> InitialExecutionPassedCache = new();
+    private static readonly ConditionalWeakTable<object, ConcurrentDictionary<string, bool>> InitialExecutionFailedCache = new();
     private static readonly ConditionalWeakTable<object, ConcurrentDictionary<string, bool>> AnyRetryPassedCache = new();
+    private static readonly ConditionalWeakTable<object, ConcurrentDictionary<string, bool>> AllAttemptsPassedCache = new();
 
     private static int _totalRetries = -1;
 
@@ -165,6 +167,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
             var initialExecutionPassed = false;
+            var initialExecutionFailed = false;
             for (var i = 0; i < returnValueList.Count; i++)
             {
                 var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
@@ -197,15 +200,20 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
 
-                        // Track if initial execution passed (for final_status) - both aggregate and per-row
+                        // Track if initial execution passed/failed (for final_status) - both aggregate and per-row
+                        var displayName = testResult.DisplayName ?? test.Name ?? string.Empty;
+                        var cacheKey = GetCacheKey(displayName);
                         if (resultStatus == TestStatus.Pass)
                         {
                             initialExecutionPassed = true;
-
                             // Cache per-row initial execution result for parameterized tests
-                            var displayName = testResult.DisplayName ?? test.Name ?? string.Empty;
-                            var cacheKey = GetCacheKey(displayName);
                             SetInitialExecutionPassed(testMethodState.TestMethod, cacheKey, true);
+                        }
+                        else if (resultStatus == TestStatus.Fail)
+                        {
+                            initialExecutionFailed = true;
+                            // Cache per-row initial execution failure for ATF tracking
+                            SetInitialExecutionFailed(testMethodState.TestMethod, cacheKey, true);
                         }
                     }
                     else
@@ -242,6 +250,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         IsEfdOrAtfTest = true,
                         TotalExecutions = 1 + remainingRetries,
                         InitialExecutionPassed = initialExecutionPassed,
+                        InitialExecutionFailed = initialExecutionFailed,
                     };
 
                     // Handle retries
@@ -281,6 +290,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         IsEfdOrAtfTest = false,
                         TotalExecutions = 1 + remainingRetries,
                         InitialExecutionPassed = initialExecutionPassed,
+                        InitialExecutionFailed = initialExecutionFailed,
                     };
 
                     // Handle retries
@@ -415,10 +425,26 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         {
             if (exception is not null)
             {
-                // Track failure for ATF
+                // Track failure for ATF - both shared state and per-row cache
                 if (retryState.IsAttemptToFix)
                 {
                     retryState.AllAttemptsPassed = false;
+
+                    // Cache per-row ATF failure for parameterized tests (retry path)
+                    if (retryState.IsARetry && testMethod is not null)
+                    {
+                        SetAllAttemptsPassed(testMethod, cacheKey, false);
+                    }
+                }
+
+                // Track initial execution failure - both shared state and per-row cache
+                if (!retryState.IsARetry)
+                {
+                    retryState.InitialExecutionFailed = true;
+                    if (testMethod is not null)
+                    {
+                        SetInitialExecutionFailed(testMethod, cacheKey, true);
+                    }
                 }
 
                 // Set final_status before closing
@@ -449,6 +475,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 else if (retryState.IsAttemptToFix && testStatus == TestStatus.Fail)
                 {
                     retryState.AllAttemptsPassed = false;
+
+                    // Cache per-row ATF failure for parameterized tests
+                    SetAllAttemptsPassed(testMethod!, cacheKey, false);
                 }
             }
             else
@@ -460,6 +489,13 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
                     // Cache per-row initial pass result for parameterized tests
                     SetInitialExecutionPassed(testMethod!, cacheKey, true);
+                }
+                else if (testStatus == TestStatus.Fail)
+                {
+                    retryState.InitialExecutionFailed = true;
+
+                    // Cache per-row initial execution failure for ATF tracking
+                    SetInitialExecutionFailed(testMethod!, cacheKey, true);
                 }
             }
 
@@ -574,11 +610,6 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         // Only set retry-specific tags for tests with actual retries
         if (retryState.TotalExecutions > 1)
         {
-            if (retryState.IsAttemptToFix)
-            {
-                testTags.AttemptToFixPassed = retryState.AllAttemptsPassed ? "true" : "false";
-            }
-
             if (retryState.AllRetriesFailed)
             {
                 testTags.HasFailedAllRetries = "true";
@@ -589,26 +620,42 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         // This ensures each row gets the correct final_status based on its own execution results,
         // not the shared RetryState which aggregates across all rows
         bool anyExecutionPassed;
+        bool anyExecutionFailed;
         if (retryState.TotalExecutions == 1)
         {
-            // Single execution: current status is pass
+            // Single execution: current status determines pass/fail
             anyExecutionPassed = testStatus == TestStatus.Pass;
+            anyExecutionFailed = testStatus == TestStatus.Fail;
         }
         else if (testMethod is not null)
         {
             // Retry: use per-row cache for correct parameterized test handling
             var initialPassed = GetInitialExecutionPassed(testMethod, cacheKey);
+            var initialFailed = GetInitialExecutionFailed(testMethod, cacheKey);
             var retryPassed = GetAnyRetryPassed(testMethod, cacheKey);
+            var allAttemptsPassed = GetAllAttemptsPassed(testMethod, cacheKey);
             anyExecutionPassed = initialPassed || retryPassed;
+            // For ATF: any actual failure (initial or retry) means the fix didn't work (test is still flaky)
+            // Note: skip does NOT count as failure per ATF semantics
+            anyExecutionFailed = initialFailed || !allAttemptsPassed;
         }
         else
         {
             // Fallback: use shared RetryState (shouldn't happen in normal flow)
             anyExecutionPassed = retryState.InitialExecutionPassed || retryState.AnyRetryPassed;
+            // Use explicit InitialExecutionFailed - skip does NOT count as failure per ATF semantics
+            anyExecutionFailed = retryState.InitialExecutionFailed || !retryState.AllAttemptsPassed;
         }
 
         var isSkippedOrInconclusive = testStatus == TestStatus.Skip;
-        testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, isSkippedOrInconclusive, testTags);
+        testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+
+        // ATF: AttemptToFixPassed should be consistent with final_status
+        // If any execution failed, the fix didn't work
+        if (retryState.TotalExecutions > 1 && retryState.IsAttemptToFix)
+        {
+            testTags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
+        }
     }
 
     private static IList GetFinalResults(List<IList> executionStatuses)
@@ -743,6 +790,50 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         cache[cacheKey] = passed;
     }
 
+    /// <summary>
+    /// Gets whether the initial execution failed for a specific parameterized row.
+    /// </summary>
+    private static bool GetInitialExecutionFailed(object testMethodKey, string cacheKey)
+    {
+        if (InitialExecutionFailedCache.TryGetValue(testMethodKey, out var cache) && cache.TryGetValue(cacheKey, out var failed))
+        {
+            return failed;
+        }
+
+        return false; // Default: assume initial didn't fail if not cached
+    }
+
+    /// <summary>
+    /// Sets whether the initial execution failed for a specific parameterized row.
+    /// </summary>
+    private static void SetInitialExecutionFailed(object testMethodKey, string cacheKey, bool failed)
+    {
+        var cache = InitialExecutionFailedCache.GetOrCreateValue(testMethodKey);
+        cache[cacheKey] = failed;
+    }
+
+    /// <summary>
+    /// Gets whether all attempts passed for a specific parameterized row (ATF tracking).
+    /// </summary>
+    private static bool GetAllAttemptsPassed(object testMethodKey, string cacheKey)
+    {
+        if (AllAttemptsPassedCache.TryGetValue(testMethodKey, out var cache) && cache.TryGetValue(cacheKey, out var allPassed))
+        {
+            return allPassed;
+        }
+
+        return true; // Default: assume all passed until a failure is recorded
+    }
+
+    /// <summary>
+    /// Sets whether all attempts passed for a specific parameterized row (ATF tracking).
+    /// </summary>
+    private static void SetAllAttemptsPassed(object testMethodKey, string cacheKey, bool allPassed)
+    {
+        var cache = AllAttemptsPassedCache.GetOrCreateValue(testMethodKey);
+        cache[cacheKey] = allPassed;
+    }
+
     private readonly struct TestRunnerState
     {
         private readonly TraceClock _clock;
@@ -782,6 +873,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
         /// </summary>
         public bool InitialExecutionPassed { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the initial execution failed. Only FAIL counts as failed, not SKIP.
+        /// Used for ATF final_status calculation.
+        /// </summary>
+        public bool InitialExecutionFailed { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether any retry execution passed. Only PASS counts as passed, not SKIP.

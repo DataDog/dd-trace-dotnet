@@ -94,7 +94,8 @@ internal sealed class TestOptimizationTestCommand
             {
                 // Single execution: passed if status == Pass (not skip, not fail)
                 var anyExecutionPassed = resultStatus == TestStatus.Passed;
-                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, isSkippedOrInconclusive, testTags);
+                var anyExecutionFailed = resultStatus == TestStatus.Failed;
+                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
             }
         }
 
@@ -226,8 +227,9 @@ internal sealed class TestOptimizationTestCommand
                 retryState.AllRetriesFailed = false;
             }
 
-            // ATF: AllAttemptsPassed clears on non-pass (skip or fail)
-            if (attemptToFixRetryBehavior && resultStatus != TestStatus.Passed)
+            // ATF: AllAttemptsPassed clears only on actual failure (not skip)
+            // Per ATF semantics: "failed" means actual failure, not skip/inconclusive
+            if (attemptToFixRetryBehavior && resultStatus == TestStatus.Failed)
             {
                 retryState.AllAttemptsPassed = false;
             }
@@ -260,11 +262,6 @@ internal sealed class TestOptimizationTestCommand
 
             if (isFinalExecution)
             {
-                if (attemptToFixRetryBehavior)
-                {
-                    testTags.AttemptToFixPassed = retryState.AllAttemptsPassed ? "true" : "false";
-                }
-
                 if (retryState.AllRetriesFailed)
                 {
                     testTags.HasFailedAllRetries = "true";
@@ -272,8 +269,18 @@ internal sealed class TestOptimizationTestCommand
 
                 // Set final_status on the final retry
                 var anyExecutionPassed = retryState.InitialExecutionPassed || retryState.AnyRetryPassed;
+                // For ATF: any actual failure (initial or retry) means the fix didn't work (test is still flaky)
+                // Note: skip/inconclusive does NOT count as failure per ATF semantics
+                var anyExecutionFailed = retryState.InitialExecutionFailed || !retryState.AllAttemptsPassed;
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, isSkippedOrInconclusive, testTags);
+                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+
+                // ATF: AttemptToFixPassed should be consistent with final_status
+                // If any execution failed, the fix didn't work
+                if (attemptToFixRetryBehavior)
+                {
+                    testTags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
+                }
             }
 
             NUnitIntegration.FinishTest(test, testResult);
@@ -289,14 +296,17 @@ internal sealed class TestOptimizationTestCommand
         var remainingRetries = behavior.RemainingRetries;
         var retryNumber = 0;
         var totalRetries = remainingRetries;
-        // Initialize InitialExecutionPassed from the initial execution result
-        // CRITICAL: Only PASS counts as passed, not SKIP!
-        var initialPassed = result.ResultState.Status == TestStatus.Passed;
+        // Initialize InitialExecutionPassed/Failed from the initial execution result
+        // CRITICAL: Only PASS counts as passed, only FAIL counts as failed (not skip)
+        var initialStatus = result.ResultState.Status;
+        var initialPassed = initialStatus == TestStatus.Passed;
+        var initialFailed = initialStatus == TestStatus.Failed;
         var retryState = new RetryState
         {
             IsARetry = true,
             BehaviorType = typeof(TBehavior),
-            InitialExecutionPassed = initialPassed
+            InitialExecutionPassed = initialPassed,
+            InitialExecutionFailed = initialFailed
         };
         while (remainingRetries-- > 0)
         {
@@ -330,6 +340,7 @@ internal sealed class TestOptimizationTestCommand
         public bool AllAttemptsPassed;
         public bool AllRetriesFailed;
         public bool InitialExecutionPassed;
+        public bool InitialExecutionFailed;
         public bool AnyRetryPassed;
         public Type? BehaviorType;
 
@@ -340,6 +351,7 @@ internal sealed class TestOptimizationTestCommand
             AllAttemptsPassed = true;
             AllRetriesFailed = true;
             InitialExecutionPassed = false;
+            InitialExecutionFailed = false;
             AnyRetryPassed = false;
             BehaviorType = null;
         }

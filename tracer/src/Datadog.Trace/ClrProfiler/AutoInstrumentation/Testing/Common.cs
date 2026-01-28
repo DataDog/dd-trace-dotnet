@@ -279,15 +279,17 @@ internal static class Common
     /// Calculates the final status for a test based on execution results and test management tags.
     /// Priority order (first match wins):
     /// 1. Quarantined/disabled -> skip (always mask to skip)
-    /// 2. Any execution passed -> pass
-    /// 3. Skip/inconclusive AND no pass -> skip
-    /// 4. All executions failed -> fail
+    /// 2. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 3. Any execution passed -> pass
+    /// 4. Skip/inconclusive AND no pass -> skip
+    /// 5. All executions failed -> fail
     /// </summary>
     /// <param name="anyExecutionPassed">True if any execution (initial or retry) passed.</param>
+    /// <param name="anyExecutionFailed">True if any execution (initial or retry) failed.</param>
     /// <param name="isSkippedOrInconclusive">True if the current/last execution was skip or inconclusive.</param>
-    /// <param name="testTags">The test tags to check for quarantine/disabled status.</param>
+    /// <param name="testTags">The test tags to check for quarantine/disabled/ATF status.</param>
     /// <returns>The final status string: "pass", "fail", or "skip".</returns>
-    internal static string CalculateFinalStatus(bool anyExecutionPassed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
+    internal static string CalculateFinalStatus(bool anyExecutionPassed, bool anyExecutionFailed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
     {
         // Priority 1: Quarantined/disabled tests always mask to skip
         if (testTags?.IsQuarantined == "true" || testTags?.IsDisabled == "true")
@@ -295,19 +297,26 @@ internal static class Common
             return TestTags.StatusSkip;
         }
 
-        // Priority 2: Any execution passed -> pass (pass takes precedence over skip)
+        // Priority 2: For ATF tests, any failure means fix didn't work (test is still flaky)
+        // This must be checked BEFORE anyPassed for ATF tests
+        if (testTags?.IsAttemptToFix == "true" && anyExecutionFailed)
+        {
+            return TestTags.StatusFail;
+        }
+
+        // Priority 3: Any execution passed -> pass (pass takes precedence over skip)
         if (anyExecutionPassed)
         {
             return TestTags.StatusPass;
         }
 
-        // Priority 3: Skip/inconclusive AND no pass -> skip
+        // Priority 4: Skip/inconclusive AND no pass -> skip
         if (isSkippedOrInconclusive)
         {
             return TestTags.StatusSkip;
         }
 
-        // Priority 4: All executions failed -> fail
+        // Priority 5: All executions failed -> fail
         return TestTags.StatusFail;
     }
 }

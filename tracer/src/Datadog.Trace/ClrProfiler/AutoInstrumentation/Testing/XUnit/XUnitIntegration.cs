@@ -228,10 +228,16 @@ internal static class XUnitIntegration
                     if (testCaseMetadata != null)
                     {
                         testCaseMetadata.HasAnException = true;
-                        // ATF: AllAttemptsPassed clears on non-pass (fail or skip)
+                        // ATF: AllAttemptsPassed clears only on actual failure (not skip)
                         if (testCaseMetadata.IsAttemptToFix)
                         {
                             testCaseMetadata.AllAttemptsPassed = false;
+                        }
+
+                        // Track initial execution failure for ATF final_status
+                        if (testCaseMetadata.ExecutionIndex == 0)
+                        {
+                            testCaseMetadata.InitialExecutionFailed = true;
                         }
                     }
 
@@ -357,11 +363,6 @@ internal static class XUnitIntegration
         // Only set retry-specific tags for tests with actual retries
         if (testCaseMetadata.TotalExecutions > 1)
         {
-            if (testCaseMetadata.IsAttemptToFix)
-            {
-                tags.AttemptToFixPassed = testCaseMetadata.AllAttemptsPassed ? "true" : "false";
-            }
-
             if (testCaseMetadata.AllRetriesFailed)
             {
                 tags.HasFailedAllRetries = "true";
@@ -374,8 +375,21 @@ internal static class XUnitIntegration
             ? !testCaseMetadata.HasAnException && !testCaseMetadata.Skipped // Single: no exception and not skipped = passed
             : testCaseMetadata.InitialExecutionPassed || testCaseMetadata.AnyRetryPassed; // Retry: tracked values
 
+        // For ATF: any actual failure (initial or retry) means the fix didn't work (test is still flaky)
+        // Note: skip does NOT count as failure per ATF semantics
+        var anyExecutionFailed = testCaseMetadata.TotalExecutions == 1
+            ? testCaseMetadata.HasAnException && !testCaseMetadata.Skipped // Single: exception and not skip = failed
+            : testCaseMetadata.InitialExecutionFailed || !testCaseMetadata.AllAttemptsPassed; // Retry: initial failed OR any retry failed
+
         var isSkippedOrInconclusive = isSkip || testCaseMetadata.Skipped;
-        tags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, isSkippedOrInconclusive, tags);
+        tags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, tags);
+
+        // ATF: AttemptToFixPassed should be consistent with final_status
+        // If any execution failed, the fix didn't work
+        if (testCaseMetadata.TotalExecutions > 1 && testCaseMetadata.IsAttemptToFix)
+        {
+            tags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
+        }
     }
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)

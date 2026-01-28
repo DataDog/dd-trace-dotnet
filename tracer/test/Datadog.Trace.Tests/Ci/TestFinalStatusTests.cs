@@ -22,21 +22,21 @@ public class TestFinalStatusTests
     [Fact]
     public void CalculateFinalStatus_NullTags_AnyPassed_ReturnsPass()
     {
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: null);
         result.Should().Be(TestTags.StatusPass);
     }
 
     [Fact]
     public void CalculateFinalStatus_NullTags_NotPassed_NotSkip_ReturnsFail()
     {
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: null);
         result.Should().Be(TestTags.StatusFail);
     }
 
     [Fact]
     public void CalculateFinalStatus_NullTags_NotPassed_Skip_ReturnsSkip()
     {
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: null);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -44,7 +44,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_NullTags_Passed_Skip_ReturnsPass()
     {
         // Pass takes precedence over skip
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: true, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: null);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -54,7 +54,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_Quarantined_AnyPassed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsQuarantined = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined tests always return skip regardless of actual result");
     }
 
@@ -62,7 +62,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_Quarantined_AllFailed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsQuarantined = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined tests always return skip regardless of actual result");
     }
 
@@ -70,7 +70,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_Disabled_AnyPassed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsDisabled = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "disabled tests always return skip regardless of actual result");
     }
 
@@ -78,7 +78,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_Disabled_AllFailed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsDisabled = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "disabled tests always return skip regardless of actual result");
     }
 
@@ -87,7 +87,7 @@ public class TestFinalStatusTests
     {
         // Quarantine always masks to skip, even with ATF enabled
         var tags = new TestSpanTags { IsQuarantined = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined tests with ATF still return skip");
     }
 
@@ -95,7 +95,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_QuarantinedWithATF_AllFailed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsQuarantined = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined tests with ATF still return skip");
     }
 
@@ -103,17 +103,90 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_DisabledWithATF_Passed_ReturnsSkip()
     {
         var tags = new TestSpanTags { IsDisabled = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "disabled tests with ATF still return skip");
     }
 
-    // Priority 2: Any Execution Passed
+    // Priority 2: For ATF - Any Execution Failed
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_AnyFailed_ReturnsFail()
+    {
+        // ATF: if any execution failed, the fix didn't work (test is still flaky)
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF with any failure means fix didn't work");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_AllPassed_ReturnsPass()
+    {
+        // ATF: if all executions passed, the fix worked
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusPass, "ATF with all passes means fix worked");
+    }
+
+    // ATF Skip/Inconclusive Semantics - Skip does NOT count as failure
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_SkipDoesNotCountAsFailure_ReturnsPass()
+    {
+        // ATF: if initial passes and retry is skipped (not failed), the test is considered passing
+        // Skip does NOT count as failure per ATF semantics
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        // anyExecutionPassed=true (initial passed), anyExecutionFailed=false (skip doesn't count as fail)
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
+        result.Should().Be(TestTags.StatusPass, "ATF with skip (not fail) should pass - skip != fail");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_AllSkipped_ReturnsSkip()
+    {
+        // ATF: if all executions were skipped (none passed, none failed), final_status is skip
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        // anyExecutionPassed=false (none passed), anyExecutionFailed=false (skip doesn't count as fail)
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
+        result.Should().Be(TestTags.StatusSkip, "ATF with all skips should return skip");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_InitialFailsRetrySkipped_ReturnsFail()
+    {
+        // ATF: if initial fails but retry is skipped, the test still failed (initial failure counts)
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        // anyExecutionPassed=false (none passed), anyExecutionFailed=true (initial failed)
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: true, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF with initial failure should fail even if retry skipped");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_InitialSkippedRetryPasses_ReturnsPass()
+    {
+        // ATF: if initial is skipped (not failed) but retry passes, the fix worked
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        // anyExecutionPassed=true (retry passed), anyExecutionFailed=false (initial skip doesn't count as fail)
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusPass, "ATF with skip then pass should pass");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_InitialSkippedRetryFails_ReturnsFail()
+    {
+        // ATF: if initial is skipped but retry fails, the test failed (retry failure counts)
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        // anyExecutionPassed=false (none passed), anyExecutionFailed=true (retry failed)
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF with skip then fail should fail");
+    }
+
+    // Priority 3: Any Execution Passed (non-ATF)
 
     [Fact]
     public void CalculateFinalStatus_AnyPassed_NotSkip_ReturnsPass()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -122,17 +195,17 @@ public class TestFinalStatusTests
     {
         // "Pass then skip" scenario - pass takes precedence
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "pass takes precedence over skip");
     }
 
-    // Priority 3: Skip/Inconclusive
+    // Priority 4: Skip/Inconclusive
 
     [Fact]
     public void CalculateFinalStatus_NotPassed_Skip_ReturnsSkip()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -141,30 +214,30 @@ public class TestFinalStatusTests
     {
         // Inconclusive is treated as skip
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
-    // Priority 4: All Failed
+    // Priority 5: All Failed
 
     [Fact]
     public void CalculateFinalStatus_AllFailed_ReturnsFail()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
     // Single Execution Scenarios
 
     [Theory]
-    [InlineData(true, false, TestTags.StatusPass)]  // Single pass
-    [InlineData(false, false, TestTags.StatusFail)] // Single fail
-    [InlineData(false, true, TestTags.StatusSkip)]  // Single skip
-    public void CalculateFinalStatus_SingleExecution(bool passed, bool skipped, string expected)
+    [InlineData(true, false, false, TestTags.StatusPass)]  // Single pass
+    [InlineData(false, true, false, TestTags.StatusFail)]  // Single fail
+    [InlineData(false, false, true, TestTags.StatusSkip)]  // Single skip
+    public void CalculateFinalStatus_SingleExecution(bool passed, bool failed, bool skipped, string expected)
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -174,7 +247,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_EFD_AllRetriesPass_ReturnsPass()
     {
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -182,15 +255,15 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_EFD_FirstFailsLaterPasses_ReturnsPass()
     {
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusPass, "any pass means final status is pass");
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusPass, "any pass means final status is pass (EFD is not ATF)");
     }
 
     [Fact]
     public void CalculateFinalStatus_EFD_AllRetriesFail_ReturnsFail()
     {
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -199,7 +272,7 @@ public class TestFinalStatusTests
     {
         // Edge Case 17: Initial passes, all retries fail -> pass (because initial passed)
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "initial execution passed, so final status is pass");
     }
 
@@ -209,7 +282,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_ATR_FirstFailsRetryPasses_ReturnsPass()
     {
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -217,7 +290,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_ATR_AllRetriesFail_ReturnsFail()
     {
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -225,35 +298,45 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_ATR_PassesOnLastRetry_ReturnsPass()
     {
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
     // ATF (Attempt to Fix) Scenarios
 
     [Fact]
-    public void CalculateFinalStatus_ATF_NonQuarantined_FirstFailsLaterPasses_ReturnsPass()
+    public void CalculateFinalStatus_ATF_NonQuarantined_FirstFailsLaterPasses_ReturnsFail()
     {
+        // ATF: if ANY execution failed, the test is still flaky, so fix didn't work
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusPass);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF with any failure means fix didn't work, test is still flaky");
     }
 
     [Fact]
     public void CalculateFinalStatus_ATF_NonQuarantined_AllFail_ReturnsFail()
     {
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
     [Fact]
-    public void CalculateFinalStatus_ATF_InitialPassesAllRetriesFail_ReturnsPass()
+    public void CalculateFinalStatus_ATF_InitialPassesAllRetriesFail_ReturnsFail()
     {
-        // Edge Case 17: ATF variant
+        // ATF: even if initial passed, if any retry failed, the test is still flaky
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusPass, "initial execution passed");
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF with any failure means fix didn't work");
+    }
+
+    [Fact]
+    public void CalculateFinalStatus_ATF_AllExecutionsPass_ReturnsPass()
+    {
+        // ATF: only if ALL executions pass, the fix worked
+        var tags = new TestSpanTags { IsAttemptToFix = "true" };
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusPass, "ATF with no failures means fix worked");
     }
 
     // ITR and Pre-execution Skip Scenarios
@@ -262,7 +345,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_ITRSkipped_ReturnsSkip()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -270,7 +353,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_AttributeSkipped_ReturnsSkip()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -280,7 +363,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_IsQuarantinedFalse_NotTreatedAsQuarantined()
     {
         var tags = new TestSpanTags { IsQuarantined = "false" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "IsQuarantined='false' should not be treated as quarantined");
     }
 
@@ -288,7 +371,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_IsDisabledFalse_NotTreatedAsDisabled()
     {
         var tags = new TestSpanTags { IsDisabled = "false" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "IsDisabled='false' should not be treated as disabled");
     }
 
@@ -296,24 +379,24 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_EmptyTags_BehavesAsNormalTest()
     {
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
     [Theory]
-    [InlineData(true, false, false, false, TestTags.StatusSkip)]   // Quarantined + passed
-    [InlineData(false, true, false, false, TestTags.StatusSkip)]   // Disabled + passed
-    [InlineData(false, false, true, false, TestTags.StatusPass)]   // Normal + passed
-    [InlineData(false, false, false, false, TestTags.StatusFail)]  // Normal + failed
-    [InlineData(false, false, false, true, TestTags.StatusSkip)]   // Normal + skipped
-    public void CalculateFinalStatus_PriorityOrder(bool quarantined, bool disabled, bool passed, bool skipped, string expected)
+    [InlineData(true, false, false, false, false, TestTags.StatusSkip)]   // Quarantined + passed
+    [InlineData(false, true, false, false, false, TestTags.StatusSkip)]   // Disabled + passed
+    [InlineData(false, false, true, false, false, TestTags.StatusPass)]   // Normal + passed
+    [InlineData(false, false, false, true, false, TestTags.StatusFail)]   // Normal + failed
+    [InlineData(false, false, false, false, true, TestTags.StatusSkip)]   // Normal + skipped
+    public void CalculateFinalStatus_PriorityOrder(bool quarantined, bool disabled, bool passed, bool failed, bool skipped, string expected)
     {
         var tags = new TestSpanTags
         {
             IsQuarantined = quarantined ? "true" : null,
             IsDisabled = disabled ? "true" : null
         };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -324,7 +407,7 @@ public class TestFinalStatusTests
     {
         // CI behavior: if test passed once, pipeline passes
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "pass takes precedence over skip to match CI behavior");
     }
 
@@ -333,23 +416,24 @@ public class TestFinalStatusTests
     {
         // No pass + skip = skip
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "no pass + skip = skip");
     }
 
     // Mixed Retry Reason Scenarios
 
     [Theory]
-    [InlineData(TestTags.TestRetryReasonEfd, true, TestTags.StatusPass)]
-    [InlineData(TestTags.TestRetryReasonEfd, false, TestTags.StatusFail)]
-    [InlineData(TestTags.TestRetryReasonAtr, true, TestTags.StatusPass)]
-    [InlineData(TestTags.TestRetryReasonAtr, false, TestTags.StatusFail)]
-    [InlineData(TestTags.TestRetryReasonAttemptToFix, true, TestTags.StatusPass)]
-    [InlineData(TestTags.TestRetryReasonAttemptToFix, false, TestTags.StatusFail)]
-    public void CalculateFinalStatus_RetryReasons_CorrectFinalStatus(string retryReason, bool anyPassed, string expected)
+    [InlineData(TestTags.TestRetryReasonEfd, true, false, TestTags.StatusPass)]
+    [InlineData(TestTags.TestRetryReasonEfd, false, true, TestTags.StatusFail)]
+    [InlineData(TestTags.TestRetryReasonAtr, true, false, TestTags.StatusPass)]
+    [InlineData(TestTags.TestRetryReasonAtr, false, true, TestTags.StatusFail)]
+    [InlineData(TestTags.TestRetryReasonAttemptToFix, true, false, TestTags.StatusPass)]
+    [InlineData(TestTags.TestRetryReasonAttemptToFix, false, true, TestTags.StatusFail)]
+    public void CalculateFinalStatus_RetryReasons_CorrectFinalStatus(string retryReason, bool anyPassed, bool anyFailed, string expected)
     {
+        // Note: This test doesn't set IsAttemptToFix="true", so ATF-specific behavior won't trigger
         var tags = new TestSpanTags { TestRetryReason = retryReason };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: anyPassed, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: anyPassed, anyExecutionFailed: anyFailed, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -376,7 +460,7 @@ public class TestFinalStatusTests
     {
         // HasFailedAllRetries is a separate tag, doesn't affect final_status calculation
         var tags = new TestSpanTags { HasFailedAllRetries = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -385,7 +469,7 @@ public class TestFinalStatusTests
     {
         // Edge case: HasFailedAllRetries might be set incorrectly, but if anyPassed is true, should be pass
         var tags = new TestSpanTags { HasFailedAllRetries = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -396,7 +480,7 @@ public class TestFinalStatusTests
     {
         // AttemptToFixPassed is a separate tag, doesn't affect final_status calculation
         var tags = new TestSpanTags { AttemptToFixPassed = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -404,7 +488,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_AttemptToFixPassedFalse_AllFailed_ReturnsFail()
     {
         var tags = new TestSpanTags { AttemptToFixPassed = "false" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -415,24 +499,25 @@ public class TestFinalStatusTests
     /// </summary>
     [Theory]
     // Normal tests (not quarantined, not disabled)
-    [InlineData(false, false, true, false, TestTags.StatusPass)]   // passed, not skip
-    [InlineData(false, false, true, true, TestTags.StatusPass)]    // passed, skip (pass takes precedence)
-    [InlineData(false, false, false, false, TestTags.StatusFail)]  // not passed, not skip
-    [InlineData(false, false, false, true, TestTags.StatusSkip)]   // not passed, skip
+    [InlineData(false, false, true, false, false, TestTags.StatusPass)]   // passed, not skip
+    [InlineData(false, false, true, false, true, TestTags.StatusPass)]    // passed, skip (pass takes precedence)
+    [InlineData(false, false, false, true, false, TestTags.StatusFail)]   // not passed, not skip, failed
+    [InlineData(false, false, false, false, true, TestTags.StatusSkip)]   // not passed, skip
     // Quarantined tests (always skip)
-    [InlineData(true, false, true, false, TestTags.StatusSkip)]    // quarantined, passed
-    [InlineData(true, false, true, true, TestTags.StatusSkip)]     // quarantined, passed, skip
-    [InlineData(true, false, false, false, TestTags.StatusSkip)]   // quarantined, not passed
-    [InlineData(true, false, false, true, TestTags.StatusSkip)]    // quarantined, not passed, skip
+    [InlineData(true, false, true, false, false, TestTags.StatusSkip)]    // quarantined, passed
+    [InlineData(true, false, true, false, true, TestTags.StatusSkip)]     // quarantined, passed, skip
+    [InlineData(true, false, false, true, false, TestTags.StatusSkip)]    // quarantined, not passed
+    [InlineData(true, false, false, false, true, TestTags.StatusSkip)]    // quarantined, not passed, skip
     // Disabled tests (always skip)
-    [InlineData(false, true, true, false, TestTags.StatusSkip)]    // disabled, passed
-    [InlineData(false, true, true, true, TestTags.StatusSkip)]     // disabled, passed, skip
-    [InlineData(false, true, false, false, TestTags.StatusSkip)]   // disabled, not passed
-    [InlineData(false, true, false, true, TestTags.StatusSkip)]    // disabled, not passed, skip
+    [InlineData(false, true, true, false, false, TestTags.StatusSkip)]    // disabled, passed
+    [InlineData(false, true, true, false, true, TestTags.StatusSkip)]     // disabled, passed, skip
+    [InlineData(false, true, false, true, false, TestTags.StatusSkip)]    // disabled, not passed
+    [InlineData(false, true, false, false, true, TestTags.StatusSkip)]    // disabled, not passed, skip
     public void CalculateFinalStatus_ComprehensiveMatrix(
         bool isQuarantined,
         bool isDisabled,
         bool anyPassed,
+        bool anyFailed,
         bool isSkip,
         string expected)
     {
@@ -441,7 +526,7 @@ public class TestFinalStatusTests
             IsQuarantined = isQuarantined ? "true" : null,
             IsDisabled = isDisabled ? "true" : null
         };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: anyPassed, isSkippedOrInconclusive: isSkip, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: anyPassed, anyExecutionFailed: anyFailed, isSkippedOrInconclusive: isSkip, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -452,7 +537,7 @@ public class TestFinalStatusTests
     {
         // Test 50: XUnit single-execution dynamic skip (SkipException)
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -461,7 +546,7 @@ public class TestFinalStatusTests
     {
         // Test 51: XUnit retry test dynamic skip on last retry
         var tags = new TestSpanTags { TestIsRetry = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -472,7 +557,7 @@ public class TestFinalStatusTests
     {
         // Test 52: XUnit ATR enabled, initial pass -> final_status = "pass"
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -481,20 +566,20 @@ public class TestFinalStatusTests
     {
         // Test 53: XUnit ATR enabled, initial fail, retry passes
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
     // EFD Single Execution Scenarios - Tests 54-56
 
     [Theory]
-    [InlineData(true, false, TestTags.StatusPass)]   // Test 54/56: EFD slow abort pass
-    [InlineData(false, false, TestTags.StatusFail)]  // Test 54: EFD slow abort fail
-    [InlineData(false, true, TestTags.StatusSkip)]   // EFD slow abort skip
-    public void CalculateFinalStatus_EFD_SingleExecution_SlowAbort(bool passed, bool skipped, string expected)
+    [InlineData(true, false, false, TestTags.StatusPass)]   // Test 54/56: EFD slow abort pass
+    [InlineData(false, true, false, TestTags.StatusFail)]   // Test 54: EFD slow abort fail
+    [InlineData(false, false, true, TestTags.StatusSkip)]   // EFD slow abort skip
+    public void CalculateFinalStatus_EFD_SingleExecution_SlowAbort(bool passed, bool failed, bool skipped, string expected)
     {
         var tags = new TestSpanTags { TestIsNew = "true", EarlyFlakeDetectionTestAbortReason = "slow" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -503,19 +588,19 @@ public class TestFinalStatusTests
     {
         // Test 55: XUnit ATF with only 1 retry configured (TotalExecutions=1)
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
     // ATF Framework Outcome Consistency - Tests 57-62
 
     [Theory]
-    [InlineData(true, TestTags.StatusPass)]   // Test 57/61/62: ATF on normal test passes
-    [InlineData(false, TestTags.StatusFail)]  // Test 58: ATF on normal test fails all
-    public void CalculateFinalStatus_ATF_NormalTest_FrameworkOutcome(bool passed, string expected)
+    [InlineData(true, false, TestTags.StatusPass)]   // Test 57/61/62: ATF on normal test, all pass
+    [InlineData(false, true, TestTags.StatusFail)]   // Test 58: ATF on normal test fails all
+    public void CalculateFinalStatus_ATF_NormalTest_FrameworkOutcome(bool passed, bool failed, string expected)
     {
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -524,7 +609,7 @@ public class TestFinalStatusTests
     {
         // Test 59: MsTest ATF on quarantined test (passes) -> skip
         var tags = new TestSpanTags { IsAttemptToFix = "true", IsQuarantined = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined always takes precedence");
     }
 
@@ -533,20 +618,20 @@ public class TestFinalStatusTests
     {
         // Test 60: MsTest ATF on disabled test (fails) -> skip
         var tags = new TestSpanTags { IsAttemptToFix = "true", IsDisabled = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "disabled always takes precedence");
     }
 
     // ATR with FlakyRetryCount=0 Edge Cases - Tests 63-65
 
     [Theory]
-    [InlineData(false, TestTags.StatusFail)]  // Test 63: ATR FlakyRetryCount=0, initial fail
-    [InlineData(true, TestTags.StatusPass)]   // Test 64: ATR FlakyRetryCount=0, initial pass
-    public void CalculateFinalStatus_ATR_ZeroRetries_SingleExecution(bool passed, string expected)
+    [InlineData(false, true, TestTags.StatusFail)]   // Test 63: ATR FlakyRetryCount=0, initial fail
+    [InlineData(true, false, TestTags.StatusPass)]   // Test 64: ATR FlakyRetryCount=0, initial pass
+    public void CalculateFinalStatus_ATR_ZeroRetries_SingleExecution(bool passed, bool failed, string expected)
     {
         // Treated as single-execution when FlakyRetryCount=0
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -555,7 +640,7 @@ public class TestFinalStatusTests
     {
         // Test 65: XUnit ATF with TestManagementAttemptToFixRetryCount=1
         var tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -566,20 +651,20 @@ public class TestFinalStatusTests
     {
         // Test 66: MsTest early exception branch
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
     // Parameterized Test Per-Row Scenarios - Tests 67-68
 
     [Theory]
-    [InlineData(true, TestTags.StatusPass)]   // Row passes
-    [InlineData(false, TestTags.StatusFail)]  // Row fails
-    public void CalculateFinalStatus_ParameterizedTest_PerRowStatus(bool rowPassed, string expected)
+    [InlineData(true, false, TestTags.StatusPass)]   // Row passes
+    [InlineData(false, true, TestTags.StatusFail)]   // Row fails
+    public void CalculateFinalStatus_ParameterizedTest_PerRowStatus(bool rowPassed, bool rowFailed, string expected)
     {
         // Tests 67-68: Each parameterized row gets its own final_status
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: rowPassed, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: rowPassed, anyExecutionFailed: rowFailed, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -590,7 +675,7 @@ public class TestFinalStatusTests
     {
         // Test 70: NUnit ITR-skipped test
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -599,7 +684,7 @@ public class TestFinalStatusTests
     {
         // Test 71: NUnit attribute-skipped test
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -608,7 +693,7 @@ public class TestFinalStatusTests
     {
         // Test 72: MsTest Inconclusive
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -617,7 +702,7 @@ public class TestFinalStatusTests
     {
         // Test 73: MsTest NotRunnable
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -626,7 +711,7 @@ public class TestFinalStatusTests
     {
         // Test 74: MsTest class initialization error
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -635,20 +720,20 @@ public class TestFinalStatusTests
     {
         // Test 75: MsTest assembly initialization error
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
     // EFD Single-Execution and Initial Pass Gaps - Tests 76-80
 
     [Theory]
-    [InlineData(true, false, TestTags.StatusPass)]   // Test 76: EFD fast test pass
-    [InlineData(false, false, TestTags.StatusFail)]  // Test 76: EFD fast test fail
-    [InlineData(false, true, TestTags.StatusSkip)]   // Test 77: EFD fast test skip
-    public void CalculateFinalStatus_EFD_FastTest_DurationBasedCount1(bool passed, bool skipped, string expected)
+    [InlineData(true, false, false, TestTags.StatusPass)]   // Test 76: EFD fast test pass
+    [InlineData(false, true, false, TestTags.StatusFail)]   // Test 76: EFD fast test fail
+    [InlineData(false, false, true, TestTags.StatusSkip)]   // Test 77: EFD fast test skip
+    public void CalculateFinalStatus_EFD_FastTest_DurationBasedCount1(bool passed, bool failed, bool skipped, string expected)
     {
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -661,7 +746,7 @@ public class TestFinalStatusTests
         // Tests 78-80: Initial PASSES, all 3 retries fail -> final_status = "pass"
         // HasFailedAllRetries = "true" is set separately (preserves retries-only semantics)
         var tags = new TestSpanTags { TestIsNew = "true", HasFailedAllRetries = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, $"{framework}: initial execution passed, so final status is pass");
     }
 
@@ -672,7 +757,7 @@ public class TestFinalStatusTests
     {
         // Test 81: MsTest retry execution with exception (early branch)
         var tags = new TestSpanTags { TestIsRetry = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -681,7 +766,7 @@ public class TestFinalStatusTests
     {
         // Test 82: MsTest retry execution, retry 2 of 5 passes (ATR early exit)
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -690,7 +775,7 @@ public class TestFinalStatusTests
     {
         // Test 83: XUnit EFD TotalExecutions=1 uses metadata
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -698,7 +783,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_XUnit_NullMetadata_Pass_ReturnsPass()
     {
         // Test 84: XUnit null metadata pass (TestManagement disabled)
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: null);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -706,7 +791,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_XUnit_NullMetadata_Fail_ReturnsFail()
     {
         // Test 85: XUnit null metadata fail
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: null);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -714,7 +799,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_XUnit_NullMetadata_Skip_ReturnsSkip()
     {
         // Test 86: XUnit null metadata skip
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: true, testTags: null);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: false, isSkippedOrInconclusive: true, testTags: null);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -728,7 +813,7 @@ public class TestFinalStatusTests
     {
         // Tests 87-89: ATR budget exhausted mid-retry (fail)
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail, $"{framework}: budget exhausted with fail -> final_status = fail");
     }
 
@@ -737,7 +822,7 @@ public class TestFinalStatusTests
     {
         // Test 90: ATR budget exhausted, but test passed (covered by early exit)
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -746,7 +831,7 @@ public class TestFinalStatusTests
     {
         // Test 95: NUnit ATR budget exhaustion: GetRemainingBudget() <= 1 -> isFinalExecution = true
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -758,7 +843,7 @@ public class TestFinalStatusTests
     {
         // Tests 104-106: ATR budget exhausted BEFORE first retry, test fails -> final_status = "fail" on initial
         var tags = new TestSpanTags();
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail, $"{framework}: budget exhausted before retry, test fails -> final_status = fail");
     }
 
@@ -767,7 +852,7 @@ public class TestFinalStatusTests
     {
         // Test 107: XUnit ATR budget = 1 at initial, test fails, retry 1 -> budget decremented to 0
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -779,12 +864,12 @@ public class TestFinalStatusTests
         // Test 91: MsTest parameterized (row1 passes, row2 fails) with EFD retries
         // Row 1
         var row1Tags = new TestSpanTags { TestIsNew = "true" };
-        var row1Result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: row1Tags);
+        var row1Result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: row1Tags);
         row1Result.Should().Be(TestTags.StatusPass, "row1 passes -> final_status = pass");
 
         // Row 2
         var row2Tags = new TestSpanTags { TestIsNew = "true" };
-        var row2Result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: row2Tags);
+        var row2Result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: row2Tags);
         row2Result.Should().Be(TestTags.StatusFail, "row2 fails -> final_status = fail");
     }
 
@@ -794,12 +879,12 @@ public class TestFinalStatusTests
         // Test 92: MsTest parameterized (row1 fails, row2 passes) with ATF retries
         // Row 1
         var row1Tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var row1Result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: row1Tags);
+        var row1Result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: row1Tags);
         row1Result.Should().Be(TestTags.StatusFail, "row1 fails -> final_status = fail");
 
         // Row 2
         var row2Tags = new TestSpanTags { IsAttemptToFix = "true" };
-        var row2Result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: row2Tags);
+        var row2Result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: row2Tags);
         row2Result.Should().Be(TestTags.StatusPass, "row2 passes -> final_status = pass");
     }
 
@@ -808,7 +893,7 @@ public class TestFinalStatusTests
     {
         // Tests 93-94: MsTest parameterized with aggregate retries -> all rows get final_status on last retry
         var tags = new TestSpanTags { TestIsNew = "true", TestIsRetry = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -819,7 +904,7 @@ public class TestFinalStatusTests
     {
         // Test 98: EFD + ATR: new test fails -> EFD retries all, final_status on last EFD retry
         var tags = new TestSpanTags { TestIsNew = "true", TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonEfd };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -828,7 +913,7 @@ public class TestFinalStatusTests
     {
         // Test 99: EFD + ATF: new test marked for ATF -> EFD retries take precedence
         var tags = new TestSpanTags { TestIsNew = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -837,7 +922,7 @@ public class TestFinalStatusTests
     {
         // Test 100: ATR + ATF: ATF test fails -> ATF retries all
         var tags = new TestSpanTags { IsAttemptToFix = "true", TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAttemptToFix };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -846,7 +931,7 @@ public class TestFinalStatusTests
     {
         // Test 101: XUnit EFD + ATR: new test passes immediately -> EFD retries happen, final_status = "pass" on last retry
         var tags = new TestSpanTags { TestIsNew = "true", TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonEfd };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -855,7 +940,7 @@ public class TestFinalStatusTests
     {
         // Test 102: MsTest EFD + ATF: new test also ATF -> EFD behavior (TestIsNew checked before ATF)
         var tags = new TestSpanTags { TestIsNew = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass);
     }
 
@@ -864,7 +949,7 @@ public class TestFinalStatusTests
     {
         // Test 103: NUnit EFD + ATR: known test fails -> ATR retries (not EFD)
         var tags = new TestSpanTags { TestIsRetry = "true", TestRetryReason = TestTags.TestRetryReasonAtr };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusFail);
     }
 
@@ -875,7 +960,7 @@ public class TestFinalStatusTests
     {
         // Edge case: both flags set (shouldn't happen but test the priority)
         var tags = new TestSpanTags { IsQuarantined = "true", IsDisabled = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip);
     }
 
@@ -884,40 +969,40 @@ public class TestFinalStatusTests
     {
         // Edge case: all flags set
         var tags = new TestSpanTags { IsQuarantined = "true", IsDisabled = "true", IsAttemptToFix = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusSkip, "quarantined/disabled always takes precedence over ATF");
     }
 
     // EFD + New Test Combinations
 
     [Theory]
-    [InlineData(true, false, TestTags.StatusPass)]
-    [InlineData(false, false, TestTags.StatusFail)]
-    [InlineData(false, true, TestTags.StatusSkip)]
-    [InlineData(true, true, TestTags.StatusPass)]  // Pass takes precedence over skip
-    public void CalculateFinalStatus_NewTest_AllCombinations(bool passed, bool skipped, string expected)
+    [InlineData(true, false, false, TestTags.StatusPass)]
+    [InlineData(false, true, false, TestTags.StatusFail)]
+    [InlineData(false, false, true, TestTags.StatusSkip)]
+    [InlineData(true, false, true, TestTags.StatusPass)]  // Pass takes precedence over skip
+    public void CalculateFinalStatus_NewTest_AllCombinations(bool passed, bool failed, bool skipped, string expected)
     {
         var tags = new TestSpanTags { TestIsNew = "true" };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
     // Retry with Various Tags
 
     [Theory]
-    [InlineData(true, false, false, TestTags.StatusPass)]   // Retry passed
-    [InlineData(false, false, false, TestTags.StatusFail)]  // Retry failed
-    [InlineData(false, true, false, TestTags.StatusSkip)]   // Retry skipped
-    [InlineData(true, false, true, TestTags.StatusSkip)]    // Retry passed but quarantined
-    [InlineData(false, false, true, TestTags.StatusSkip)]   // Retry failed but quarantined
-    public void CalculateFinalStatus_RetryWithQuarantine(bool passed, bool skipped, bool quarantined, string expected)
+    [InlineData(true, false, false, false, TestTags.StatusPass)]   // Retry passed
+    [InlineData(false, true, false, false, TestTags.StatusFail)]   // Retry failed
+    [InlineData(false, false, true, false, TestTags.StatusSkip)]   // Retry skipped
+    [InlineData(true, false, false, true, TestTags.StatusSkip)]    // Retry passed but quarantined
+    [InlineData(false, true, false, true, TestTags.StatusSkip)]    // Retry failed but quarantined
+    public void CalculateFinalStatus_RetryWithQuarantine(bool passed, bool failed, bool skipped, bool quarantined, string expected)
     {
         var tags = new TestSpanTags
         {
             TestIsRetry = "true",
             IsQuarantined = quarantined ? "true" : null
         };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, isSkippedOrInconclusive: skipped, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: passed, anyExecutionFailed: failed, isSkippedOrInconclusive: skipped, testTags: tags);
         result.Should().Be(expected);
     }
 
@@ -927,7 +1012,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_IsQuarantinedEmptyString_NotTreatedAsQuarantined()
     {
         var tags = new TestSpanTags { IsQuarantined = string.Empty };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "empty string should not be treated as quarantined");
     }
 
@@ -935,7 +1020,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_IsDisabledEmptyString_NotTreatedAsDisabled()
     {
         var tags = new TestSpanTags { IsDisabled = string.Empty };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         result.Should().Be(TestTags.StatusPass, "empty string should not be treated as disabled");
     }
 
@@ -949,7 +1034,7 @@ public class TestFinalStatusTests
     public void CalculateFinalStatus_IsQuarantined_CaseSensitive_OnlyLowercaseTrue(string value)
     {
         var tags = new TestSpanTags { IsQuarantined = value };
-        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, isSkippedOrInconclusive: false, testTags: tags);
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
         // Only exact "true" should be treated as quarantined
         result.Should().Be(TestTags.StatusPass, $"'{value}' should not be treated as quarantined (only exact 'true' matches)");
     }
