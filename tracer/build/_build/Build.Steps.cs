@@ -610,6 +610,19 @@ partial class Build
                     {
                         var vcpkgExePath = await GetVcpkg();
                         var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT") ?? Directory.GetParent(vcpkgExePath).FullName;
+
+                        // Set up environment variables for vcpkg to access GitHub token for private repos
+                        var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+                        if (!string.IsNullOrEmpty(githubToken))
+                        {
+                            Logger.Information("GITHUB_TOKEN environment variable detected for authenticated downloads");
+                            Environment.SetEnvironmentVariable("VCPKG_KEEP_ENV_VARS", "GITHUB_TOKEN");
+                        }
+                        else
+                        {
+                            Logger.Warning("GITHUB_TOKEN not set - downloads from private repositories will fail");
+                        }
+
                         var vcpkg = ToolResolver.GetLocalTool(vcpkgExePath);
 
                         foreach (var arch in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })

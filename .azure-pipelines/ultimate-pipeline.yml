@@ -298,18 +298,37 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [create_github_token, build]
+
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+  - job: create_github_token
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - template: steps/create-github-app-token.yml
 
   - job: build
+    dependsOn: create_github_token
     pool:
       name: $(windowsX64Pool)
+    variables:
+      GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - script: tracer\build.cmd BuildProfilerHome
+    - powershell: |
+        $env:GITHUB_TOKEN = "$(GITHUB_APP_TOKEN)"
+        $env:VCPKG_KEEP_ENV_VARS = "GITHUB_TOKEN"
+        if ($env:GITHUB_TOKEN) {
+          Write-Host "GITHUB_TOKEN is set (length: $($env:GITHUB_TOKEN.Length))"
+        } else {
+          Write-Host "WARNING: GITHUB_TOKEN is not set"
+        }
+        & tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
 
@@ -2761,7 +2780,10 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
         destinationFolder: $(monitoringHome)
 
-    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildProfilerSamples --TargetPlatform $(targetPlatform)
+      displayName: Build Profiler Samples
+
+    - script: tracer\build.cmd BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)

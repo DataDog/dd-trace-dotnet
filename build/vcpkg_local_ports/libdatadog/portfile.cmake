@@ -3,26 +3,56 @@ set(LIBDATADOG_VERSION ${VERSION})
 if(TARGET_TRIPLET STREQUAL "x64-windows" OR
    TARGET_TRIPLET STREQUAL "x64-windows-static")
     set(PLATFORM "x64")
-    set(LIBDATADOG_HASH "abcdc9a07494ef5043bcc9654cd9fea833762441b80cf2d7959779c83f7c25cc0c3a8b2ec341389942d950720c4532b2feb1703f18d55386348ed691352dda88")
+    # TODO: Update this hash after first libdatadog-dotnet release
+    set(LIBDATADOG_HASH "72e24e30f9bf4e047f46038d215f070f8f77613653867024a339c243ef9f47bb7dfdbc4536d957d1deb33181167ef86647447586b31d3404ce8d302b9415bb0c")
 elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
        TARGET_TRIPLET STREQUAL "x86-windows-static")
     set(PLATFORM "x86")
-    set(LIBDATADOG_HASH "b93fee3a03453fe64c1e4e5267063cdff78c1fd7a12651556f53947b40c7ca716fdb4c03d6a496c0a961d1aba06088f9611eb40cb3bfbf625220a8f0f475267d")
+    # TODO: Update this hash after first libdatadog-dotnet release (when x86 support is added)
+    set(LIBDATADOG_HASH "03a50287519e48b4fa75ea5d7cd76da5c2083da0d8613bc95707d5f87dfdd86b8a2b6e82092a277513d368c66079b3646dee2f9112dfa142d7a671ccd6bbca79")
 else()
     message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
 endif()
 
 # Define the version and download URL for the prebuilt binaries
+# Note: Changed to use libdatadog-dotnet repository for custom .NET-specific builds (private repo)
 set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
 set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
-set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
+set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
 # Download and extract the prebuilt binaries
-vcpkg_download_distfile(ARCHIVE
-    URLS ${LIBDATADOG_URL}
-    FILENAME "${LIBDATADOG_ARTIFACT}"
-    SHA512 ${LIBDATADOG_HASH}
-)
+# Use CMake file(DOWNLOAD) with HTTPHEADER for authentication since vcpkg_download_distfile may not support HEADERS
+if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
+    message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
+    set(ARCHIVE "${DOWNLOADS}/libdatadog/${LIBDATADOG_ARTIFACT}")
+
+    # Create downloads directory if it doesn't exist
+    file(MAKE_DIRECTORY "${DOWNLOADS}/libdatadog")
+
+    # Download with authentication using CMake's file(DOWNLOAD)
+    file(DOWNLOAD
+        "${LIBDATADOG_URL}"
+        "${ARCHIVE}"
+        EXPECTED_HASH SHA512=${LIBDATADOG_HASH}
+        HTTPHEADER "Authorization: token $ENV{GITHUB_TOKEN}"
+        STATUS download_status
+        LOG download_log
+    )
+
+    # Check download status
+    list(GET download_status 0 status_code)
+    list(GET download_status 1 status_message)
+    if(NOT status_code EQUAL 0)
+        message(FATAL_ERROR "Download failed: ${status_message}\nLog: ${download_log}")
+    endif()
+else()
+    message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet (will fail for private repos)")
+    vcpkg_download_distfile(ARCHIVE
+        URLS ${LIBDATADOG_URL}
+        FILENAME "${LIBDATADOG_ARTIFACT}"
+        SHA512 ${LIBDATADOG_HASH}
+    )
+endif()
 
 # Extract the downloaded archive using vcpkg_extract_source_archive_ex
 vcpkg_extract_source_archive_ex(
