@@ -791,6 +791,9 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        /// <summary> contains a hash of container tags (for now), to be matched with the hash injected in queries, so that we can retrieve the corresponding values from the span</summary>
+        internal const string BaseHash = "_dd.propagated_hash";
+
         // Data Streams Monitoring
         internal const string SchemaDefinition = "schema.definition";
         internal const string SchemaWeight = "schema.weight";

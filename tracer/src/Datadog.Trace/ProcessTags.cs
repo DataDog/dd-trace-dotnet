@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -22,7 +21,7 @@ internal static class ProcessTags
 
     // two views on the same data
     public static readonly List<string> TagsList = GetTagsList();
-    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
+    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList); // don't forget to refresh the base hash on write if this value becomes mutable
 
     private static List<string> GetTagsList()
     {
