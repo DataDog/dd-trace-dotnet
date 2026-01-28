@@ -68,12 +68,12 @@ internal static class ProcessTags
             return string.Empty;
         }
 
-        // NOTE #1: the most correct way of doing this (that handles most edge cases, etc) is
-        // new DirectoryInfo(directoryPath).Name, but it allocates several objects. Instead, we'll try
-        // to do this with only a single string allocation for the result.
+        // NOTE #1: using "new DirectoryInfo(directoryPath).Name" seems to be the most correct way of doing this
+        // (it handles most edge cases, etc), but it allocates several objects. Instead, we'll try
+        // to do this with only a single string allocation for the result (and a char[2] on netfx).
 
         // NOTE #2: Since directoryPath always comes from either AppContext.BaseDirectory or Environment.CurrentDirectory,
-        // we assume it is always a valid and rooted path to keep things simple.
+        // to keep things simple we assume it is always a valid and rooted path.
 
         if (IsRootPath(directoryPath))
         {
