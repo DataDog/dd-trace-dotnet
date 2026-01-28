@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -40,21 +41,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
-                 && tracer.InternalActiveScope is null)
-                {
-                    // in a "timer" trigger, or similar. Context won't be propagated to child, so no
-                    // need to create the scope etc.
-                    return CallTargetState.GetDefault();
-                }
-
-                var scope = CreateScope(tracer, instanceParam);
-                return new CallTargetState(scope);
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
+             && tracer.InternalActiveScope is null)
+            {
+                // in a "timer" trigger, or similar. Context won't be propagated to child, so no
+                // need to create the scope etc.
+                return CallTargetState.GetDefault();
+            }
+
+            var scope = CreateScope(tracer, instanceParam);
+            return new CallTargetState(scope);
         }
 
         internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
@@ -147,7 +148,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             triggerType: triggerType);
                         rootSpan.Type = SpanType;
                     }
-
                     return null;
                 }
 
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T context)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -227,8 +227,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
+
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
-                foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
+                foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
                     var binding = entry.Value.DuckCast<BindingMetadata>();
@@ -240,52 +241,54 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     var type = binding.BindingType;
                     triggerType = type switch
                     {
-                        _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http", // Microsoft.Azure.Functions.Worker.Extensions.Http
-                        _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer", // Microsoft.Azure.Functions.Worker.Extensions.Timer
+                        _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http",             // Microsoft.Azure.Functions.Worker.Extensions.Http
+                        _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer",           // Microsoft.Azure.Functions.Worker.Extensions.Timer
                         _ when type.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
-                        _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue", // Microsoft.Azure.Functions.Worker.Extensions.Queues
-                        _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob", // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
-                        _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
-                        _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
-                        _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
-                        _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
+                        _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue",                  // Microsoft.Azure.Functions.Worker.Extensions.Queues
+                        _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob",                // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
+                        _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
+                        _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
+                        _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
-                    if (triggerType == "Http")
+                    switch (triggerType)
                     {
-                        var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(context, entry.Key as string);
-                        extractedContext = httpContext;
-                        Log.Debug("These are the extracted headers {Headers}", extractedHeaders);
-                        InferredProxyScopePropagationContext? proxyContext = null;
+                        case "Http":
+                            var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(context, entry.Key as string);
+                            extractedContext = httpContext;
+                            Log.Debug("These are the extracted headers {Headers}", extractedHeaders);
+                            InferredProxyScopePropagationContext? proxyContext = null;
 
-                        // Check if there's an active AspNetCore span
-                        var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
-                                                activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
+                            // Check if there's an active AspNetCore span
+                            var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
+                                                    activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
 
-                        if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
-                        {
-                           proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new AzureHeadersCollectionAdapter(headers), extractedContext);
-                           if (proxyContext != null)
-                           {
-                               extractedContext = proxyContext.Value.Context;
-                           }
-                        }
-                    }
-                    else if (triggerType == "ServiceBus" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
-                    }
-                    else if (triggerType == "EventHub" && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
-                    {
-                        extractedContext = ExtractPropagatedContextFromMessaging(context, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
+                            {
+                                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new AzureHeadersCollectionAdapter(headers), extractedContext);
+                                if (proxyContext != null)
+                                {
+                                    extractedContext = proxyContext.Value.Context;
+                                }
+                            }
+                            break;
+
+                        case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
                 }
 
-                var functionName = context.FunctionDefinition.Name;
+                var functionName = functionContext.FunctionDefinition.Name;
 
                 // Check if there's an APIM proxy span that we shouldn't overwrite
                 var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
@@ -298,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         TriggerType = triggerType,
                         ShortName = functionName,
-                        FullName = context.FunctionDefinition.EntryPoint,
+                        FullName = functionContext.FunctionDefinition.EntryPoint,
                     };
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
@@ -314,7 +317,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         AzureFunctionsTags.SetRootSpanTags(
                             rootSpan,
                             shortName: functionName,
-                            fullName: context.FunctionDefinition.EntryPoint,
+                            fullName: functionContext.FunctionDefinition.EntryPoint,
                             bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                             triggerType: triggerType);
                     }
@@ -322,6 +325,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (!isProxySpan)
                 {
+                    // change root span's type to "serverless"
                     scope.Root.Span.Type = SpanType;
                     scope.Span.ResourceName = $"{triggerType} {functionName}";
                     scope.Span.Type = SpanType;
