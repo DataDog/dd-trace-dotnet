@@ -42,19 +42,19 @@ namespace Datadog.Trace.DiagnosticListeners
         public override bool IsSubscriberEnabled()
         {
             var enabled = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit);
-            Log.Information("MassTransitDiagnosticObserver.IsSubscriberEnabled: {Enabled}", enabled);
+            Log.Debug("MassTransitDiagnosticObserver.IsSubscriberEnabled: {Enabled}", enabled);
             return enabled;
         }
 
         public override IDisposable? SubscribeIfMatch(System.Diagnostics.DiagnosticListener diagnosticListener)
         {
-            Log.Information("MassTransitDiagnosticObserver.SubscribeIfMatch: Checking listener '{ListenerName}'", diagnosticListener.Name);
+            Log.Debug("MassTransitDiagnosticObserver.SubscribeIfMatch: Checking listener '{ListenerName}'", diagnosticListener.Name);
 
             if (diagnosticListener.Name == ListenerName)
             {
                 // Subscribe without predicate to receive all events
                 var subscription = diagnosticListener.Subscribe(this);
-                Log.Information("MassTransitDiagnosticObserver: Subscribed to '{ListenerName}'", diagnosticListener.Name);
+                Log.Debug("MassTransitDiagnosticObserver: Subscribed to '{ListenerName}'", diagnosticListener.Name);
                 return subscription;
             }
 
@@ -63,7 +63,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override void OnNext(string eventName, object arg)
         {
-            Log.Information(
+            Log.Debug(
                 "MassTransitDiagnosticObserver.OnNext: Event='{EventName}', ArgType={ArgType}",
                 eventName,
                 arg?.GetType().FullName ?? "null");
@@ -148,13 +148,32 @@ namespace Datadog.Trace.DiagnosticListeners
 
             try
             {
-                var property = obj.GetType().GetProperty(propertyName);
+                var type = obj.GetType();
+
+                // First try direct property lookup
+                var property = type.GetProperty(propertyName);
                 if (property != null)
                 {
                     var value = property.GetValue(obj);
                     if (value is T typedValue)
                     {
                         return typedValue;
+                    }
+                }
+
+                // If not found, search interface properties
+                // MassTransit's MessageConsumeContext<T> only has 'Message' as direct property,
+                // other properties like DestinationAddress come from interfaces
+                foreach (var iface in type.GetInterfaces())
+                {
+                    property = iface.GetProperty(propertyName);
+                    if (property != null)
+                    {
+                        var value = property.GetValue(obj);
+                        if (value is T typedValue)
+                        {
+                            return typedValue;
+                        }
                     }
                 }
             }
@@ -284,22 +303,21 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnSendStart(object? arg)
         {
-            Log.Information("MassTransitDiagnosticObserver.OnSendStart: Starting");
+            Log.Debug("MassTransitDiagnosticObserver.OnSendStart: Starting");
 
             if (arg == null)
             {
-                Log.Warning("MassTransitDiagnosticObserver.OnSendStart: arg is null");
+                Log.Debug("MassTransitDiagnosticObserver.OnSendStart: arg is null");
                 return;
             }
 
             var activityId = GetCurrentActivityId();
-            Log.Information("MassTransitDiagnosticObserver.OnSendStart: ActivityId={ActivityId}", activityId);
 
             // Extract destination and message type from the SendContext
             var destinationAddress = TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
             var messageType = GetMessageType(arg);
 
-            Log.Information(
+            Log.Debug(
                 "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}, MessageType={MessageType}",
                 destinationAddress,
                 messageType);
@@ -323,14 +341,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 // Inject trace context into message headers for distributed tracing
                 InjectTraceContext(arg, scope);
 
-                Log.Information(
+                Log.Debug(
                     "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span?.TraceId,
                     scope.Span?.SpanId);
             }
             else
             {
-                Log.Warning(
+                Log.Debug(
                     "MassTransitDiagnosticObserver.OnSendStart: No scope created or no activityId. Scope={ScopeNotNull}, ActivityId={ActivityId}",
                     scope != null,
                     activityId);
@@ -339,22 +357,21 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnReceiveStart(object? arg)
         {
-            Log.Information("MassTransitDiagnosticObserver.OnReceiveStart: Starting");
+            Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: Starting");
 
             if (arg == null)
             {
-                Log.Warning("MassTransitDiagnosticObserver.OnReceiveStart: arg is null");
+                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: arg is null");
                 return;
             }
 
             var activityId = GetCurrentActivityId();
-            Log.Information("MassTransitDiagnosticObserver.OnReceiveStart: ActivityId={ActivityId}", activityId);
 
             // Extract input address from ReceiveContext
             var inputAddress = TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
             var messageType = GetMessageType(arg);
 
-            Log.Information(
+            Log.Debug(
                 "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, MessageType={MessageType}",
                 inputAddress,
                 messageType);
@@ -379,7 +396,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var correlationId = TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
-                Log.Information(
+                Log.Debug(
                     "MassTransitDiagnosticObserver.OnReceiveStart: Created span TraceId={TraceId}, SpanId={SpanId}, ParentId={ParentId}",
                     scope.Span?.TraceId,
                     scope.Span?.SpanId,
@@ -389,16 +406,15 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnConsumeStart(object? arg)
         {
-            Log.Information("MassTransitDiagnosticObserver.OnConsumeStart: Starting");
+            Log.Debug("MassTransitDiagnosticObserver.OnConsumeStart: Starting");
 
             if (arg == null)
             {
-                Log.Warning("MassTransitDiagnosticObserver.OnConsumeStart: arg is null");
+                Log.Debug("MassTransitDiagnosticObserver.OnConsumeStart: arg is null");
                 return;
             }
 
             var activityId = GetCurrentActivityId();
-            Log.Information("MassTransitDiagnosticObserver.OnConsumeStart: ActivityId={ActivityId}", activityId);
 
             // For consume, we get a ConsumeContext - try multiple address properties
             // Try DestinationAddress first (where the message was sent to)
@@ -419,7 +435,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var messageType = GetMessageType(arg);
 
-            Log.Information(
+            Log.Debug(
                 "MassTransitDiagnosticObserver.OnConsumeStart: Destination={Destination}, MessageType={MessageType}",
                 destinationAddress,
                 messageType);
@@ -440,7 +456,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var correlationId = TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
-                Log.Information(
+                Log.Debug(
                     "MassTransitDiagnosticObserver.OnConsumeStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span?.TraceId,
                     scope.Span?.SpanId);
@@ -450,14 +466,10 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnStop(string operationType)
         {
             var activityId = GetCurrentActivityId();
-            Log.Information(
-                "MassTransitDiagnosticObserver.OnStop: OperationType={OperationType}, ActivityId={ActivityId}",
-                operationType,
-                activityId);
 
             if (string.IsNullOrEmpty(activityId))
             {
-                Log.Warning("MassTransitDiagnosticObserver.OnStop: No activity ID for {OperationType}", operationType);
+                Log.Debug("MassTransitDiagnosticObserver.OnStop: No activity ID for {OperationType}", operationType);
                 return;
             }
 
@@ -465,11 +477,11 @@ namespace Datadog.Trace.DiagnosticListeners
             if (_activeScopes.TryRemove(key, out var scope))
             {
                 MassTransitCommon.CloseScope(scope, operationType);
-                Log.Information("MassTransitDiagnosticObserver.OnStop: Closed scope for key '{Key}'", key);
+                Log.Debug("MassTransitDiagnosticObserver.OnStop: Closed scope for key '{Key}'", key);
             }
             else
             {
-                Log.Warning(
+                Log.Debug(
                     "MassTransitDiagnosticObserver.OnStop: No scope found for key '{Key}'. Active keys: [{Keys}]",
                     key,
                     string.Join(", ", _activeScopes.Keys));
@@ -479,10 +491,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnException(string operationType, object? arg)
         {
             var activityId = GetCurrentActivityId();
-            Log.Information(
-                "MassTransitDiagnosticObserver.OnException: OperationType={OperationType}, ActivityId={ActivityId}",
-                operationType,
-                activityId);
 
             if (string.IsNullOrEmpty(activityId))
             {
@@ -494,7 +502,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var exception = arg as Exception ?? TryGetProperty<Exception>(arg, "Exception");
                 MassTransitCommon.SetException(scope, exception);
-                Log.Information("MassTransitDiagnosticObserver.OnException: Set error on scope for key '{Key}'", key);
+                Log.Debug("MassTransitDiagnosticObserver.OnException: Set error on scope for key '{Key}'", key);
             }
         }
 
@@ -502,7 +510,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var key = $"{operationType}:{activityId}";
             _activeScopes[key] = scope;
-            Log.Information("MassTransitDiagnosticObserver.StoreScope: Stored scope with key '{Key}'", key);
+            Log.Debug("MassTransitDiagnosticObserver.StoreScope: Stored scope with key '{Key}'", key);
         }
     }
 }
