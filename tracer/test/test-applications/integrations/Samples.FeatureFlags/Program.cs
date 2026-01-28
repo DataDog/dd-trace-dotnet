@@ -1,7 +1,5 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.FeatureFlags;
 
 namespace Samples.FeatureFlags;
 class Program
@@ -9,9 +7,7 @@ class Program
 
     private static void Main(string[] args)
     {
-        Evaluator.Init();
-
-        if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
+        if (!Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
             return;
@@ -27,9 +23,9 @@ class Program
 
 
         int configUpdates = 0;
-        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
+        Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
-        int attempts = 5;
+        int attempts = 50;
         while (configUpdates == 0)
         {
             if (attempts-- == 0)
@@ -46,6 +42,10 @@ class Program
         Evaluator.Evaluate("rule-based-flag");
         Evaluator.Evaluate("numeric-rule-flag");
         Evaluator.Evaluate("time-based-flag");
+
+        Console.WriteLine("Extra checks...");
+        Evaluator.ExtraChecks();
+        Console.WriteLine("Exit. OK");
     }
 
 

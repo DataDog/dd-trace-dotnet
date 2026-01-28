@@ -27,7 +27,7 @@
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
-    <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+    
     <Compile Update="AppSec\Coordinator\SecurityCoordinator.Core.cs">
       <DependentUpon>SecurityCoordinator.cs</DependentUpon>
     </Compile>
@@ -40,10 +40,28 @@
     <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
       <DependentUpon>SecurityReporter.cs</DependentUpon>
     </Compile>
+    <Compile Update="Configuration\PlatformKeys.Aws.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureAppService.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.AzureFunctions.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.DotNet.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.GcpFunction.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Configuration\PlatformKeys.ServiceFabric.cs">
+      <DependentUpon>PlatformKeys.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -166,5 +184,6 @@
     <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 </Project>

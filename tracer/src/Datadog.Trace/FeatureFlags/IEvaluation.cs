@@ -13,7 +13,11 @@ namespace Datadog.Trace.FeatureFlags;
 /// <summary>FeatureFlag Evaluation result.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [Browsable(false)]
+#if INTERNAL_FFE
+internal interface IEvaluation
+#else
 public partial interface IEvaluation
+#endif
 {
     /// <summary> Gets the flag key being evaluate </summary>
     string FlagKey { get; }

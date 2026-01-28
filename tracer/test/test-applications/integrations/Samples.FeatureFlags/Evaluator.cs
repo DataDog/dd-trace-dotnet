@@ -1,15 +1,26 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
 using Datadog.Trace.FeatureFlags;
 
 namespace Samples.FeatureFlags;
 class Evaluator
 {
-    public static void Init()
+    static Action? _onNewConfig = null;
+
+    public static bool Init()
     {
         Console.WriteLine("FeatureFlags SDK Sample");
+        if (FeatureFlagsSdk.IsAvailable())
+        {
+            Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+            return true;
+        }
+
+        return false;
+    }
+
+    public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
+    {
+        _onNewConfig = onNewConfig;
     }
 
     public static (string? Value, string? Error)? Evaluate(string key)
@@ -32,5 +43,9 @@ class Evaluator
         }
 
         return (evaluation.Value as string, evaluation.Error);
+    }
+
+    public static void ExtraChecks()
+    {
     }
 }

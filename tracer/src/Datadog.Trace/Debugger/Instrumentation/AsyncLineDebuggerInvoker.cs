@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -44,6 +43,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 if (!state.IsActive)
                 {
+                    return;
+                }
+
+                if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+                {
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                    {
+                        Log.Debug(
+                        "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
+                        property0: state.ProbeData.ProbeId,
+                        property1: index,
+                        property2: typeof(TLocal).FullName);
+                    }
+
                     return;
                 }
 
@@ -85,7 +98,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                Log.Warning(exception, "Error caused by our instrumentation");
+                Log.Warning(
+                    exception,
+                    "Error caused by our instrumentation. probeId={ProbeId}, Method={TypeName}.{MethodName}",
+                    property0: state.ProbeId,
+                    property1: state.MethodMetadataInfo.DeclaringType?.Name,
+                    property2: state.MethodMetadataInfo.Method.Name);
                 state.IsActive = false;
             }
             catch

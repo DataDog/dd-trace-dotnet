@@ -47,7 +47,7 @@ public class SymbolUploaderTest
         var tracerSettings = new TracerSettings(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Environment, "SymbolUploaderTests" }, { ConfigurationKeys.ServiceVersion, "1" } }));
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, tracerSettings, settings, "test");
+        _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, tracerSettings, settings, () => "test");
     }
 
     [Fact]
@@ -88,6 +88,26 @@ public class SymbolUploaderTest
             Assert.True(root1.Scopes.Count == root.Scopes.Count);
             Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
             Assert.True(classesScope.All(cls => cls.ScopeType == ScopeType.Class));
+        }
+    }
+
+    [Fact]
+    public async Task DoesNotSendTrailingNullBytesWhenReusingPayloadBuffer()
+    {
+        // Force the uploader to allocate a large internal payload buffer first
+        var (bigRoot, bigClasses) = GenerateSymbolString(2000);
+        Assert.True(await UploadClasses(bigRoot, bigClasses));
+
+        // Then send a smaller payload which would reuse the same buffer
+        _api.Segments.Clear();
+        var (smallRoot, smallClasses) = GenerateSymbolString(1);
+        Assert.True(await UploadClasses(smallRoot, smallClasses));
+
+        Assert.NotEmpty(_api.Segments);
+        foreach (var segment in _api.Segments)
+        {
+            var json = Encoding.UTF8.GetString(segment);
+            Assert.DoesNotContain('\0', json);
         }
     }
 

@@ -4,9 +4,6 @@ src/Datadog.Trace/AspNetCoreAvailabilityChecker.cs
 src/Datadog.Trace/AssemblyInfo.cs
 src/Datadog.Trace/AsyncLocalScopeManager.cs
 src/Datadog.Trace/CorrelationIdentifier.cs
-src/Datadog.Trace/FrameworkDescription.cs
-src/Datadog.Trace/FrameworkDescription.NetCore.cs
-src/Datadog.Trace/FrameworkDescription.NetFramework.cs
 src/Datadog.Trace/HttpHeaderNames.cs
 src/Datadog.Trace/IDatadogOpenTracingTracer.cs
 src/Datadog.Trace/IDatadogTracer.cs

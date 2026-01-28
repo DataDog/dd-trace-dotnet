@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -246,7 +247,7 @@ namespace Datadog.Trace.ClrProfiler
                 try
                 {
                     // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                    return !string.IsNullOrEmpty(EnvironmentHelpersNoLogging.SsiDeployedEnvVar());
                 }
                 catch
                 {
@@ -366,7 +367,7 @@ namespace Datadog.Trace.ClrProfiler
                     // ignore
                 }
             }
-#endif
+#endif // #if !NETFRAMEWORK
 
             try
             {
@@ -473,43 +474,41 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime);
-
-            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
+            if (!SkipAspNetCoreDiagnosticObserver())
             {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
-                // This is because user code is loaded within the functions host in a separate context.
-                // Even in isolated functions, we don't want the AspNetCore spans to be created.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
+                observers.Add(GetAspNetCoreDiagnosticObserver());
             }
-            else
-            {
-                // Tracer, Security, should both have been initialized by now.
-                // Iast hasn't yet, but doing it now is fine
-                // span origins is _not_ initialized yet, and we can't guarantee it will be
-                // so just be lazy instead
-#if NET6_0_OR_GREATER
-                if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
-                {
-                    observers.Add(new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, null));
-                }
-                else
-#endif
-                {
-                    observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null));
-                }
 
-                observers.Add(new QuartzDiagnosticObserver());
-            }
+            observers.Add(new QuartzDiagnosticObserver());
 
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
             DiagnosticManager.Instance = diagnosticManager;
         }
-#endif
+
+        private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
+        {
+            // Tracer and Security should both have been initialized by now.
+            // Iast hasn't yet, but doing it now is fine.
+            // SpanCodeOrigin is _not_ initialized yet, and we can't guarantee it will be, so just be lazy instead.
+#if NET6_0_OR_GREATER
+            if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
+            {
+                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+            }
+#endif // #if NET6_0_OR_GREATER
+
+            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+        }
+
+        [Pure]
+        private static bool SkipAspNetCoreDiagnosticObserver()
+        {
+            // this is extremely simple now, but will get more complex soon...
+            return EnvironmentHelpers.IsAzureFunctions();
+        }
+
+#endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {

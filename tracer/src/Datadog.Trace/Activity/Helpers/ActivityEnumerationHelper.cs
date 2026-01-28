@@ -24,6 +24,14 @@ namespace Datadog.Trace.Activity.Helpers;
 internal static class ActivityEnumerationHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityEnumerationHelper));
+
+    private static readonly bool IsDotNet10
+#if NET10_0_OR_GREATER
+        = true;
+#else
+        = FrameworkDescription.Instance.RuntimeVersion.Major >= 10;
+#endif
+
     private static TagObjectsEnumerator.AllocationFreeForEachDelegate? _tagObjectsEnumerator;
     private static TagsEnumerator.AllocationFreeForEachDelegate? _tagsEnumerator;
     private static Type? _tagObjectsType;
@@ -35,7 +43,7 @@ internal static class ActivityEnumerationHelper
     public static void EnumerateTagObjects<T>(T activity5, ref OtelTagsEnumerationState state, TagObjectsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity5
     {
-        if (Environment.Version.Major >= 10)
+        if (IsDotNet10)
         {
             // .NET 10 doesn't allocate _anyway_, so we should just do naive enumeration
             foreach (var value in activity5.TagObjects)
@@ -83,7 +91,7 @@ internal static class ActivityEnumerationHelper
     public static void EnumerateTags<T>(T activity, ref OtelTagsEnumerationState state, TagsEnumerator.ForEachDelegate funcToRun)
         where T : IActivity
     {
-        if (Environment.Version.Major >= 10)
+        if (IsDotNet10)
         {
             // .NET 10 doesn't allocate _anyway_, so we should just do naive enumeration
             foreach (var value in activity.Tags)

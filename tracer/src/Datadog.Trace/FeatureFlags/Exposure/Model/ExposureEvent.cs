@@ -11,4 +11,4 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal readonly record struct ExposureEvent(long TimeStamp, Allocation Allocation, Flag Flag, Variant Variant, Subject Subject);
+internal readonly record struct ExposureEvent(long Timestamp, Allocation Allocation, Flag Flag, Variant Variant, Subject Subject);

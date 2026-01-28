@@ -197,7 +197,7 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "original" } });
         var statsdManager = new StatsdManager(
             settings,
-            (m, e) => new(m.ServiceName == "original" ? originalStatsd.Object : newStatsd.Object));
+            (m, e, l) => new(m.ServiceName == "original" ? originalStatsd.Object : newStatsd.Object));
         statsdManager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         using var listener = new DiagnosticsMetricsRuntimeMetricsListener(statsdManager);
 

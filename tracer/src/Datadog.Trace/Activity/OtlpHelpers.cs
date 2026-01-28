@@ -363,7 +363,18 @@ namespace Datadog.Trace.Activity
                 _ => SpanKinds.Internal,
             };
 
-        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
+        /// <summary>
+        /// Add the provided Otel <paramref name="key"/> and <paramref name="value"/> on the <paramref name="span"/>.
+        /// Depending on the <paramref name="key"/>, this may set a metric, a tag, a tag with a different value
+        /// (such as <see cref="Tags.HttpStatusCode"/>, or it may set a standard property such as <see cref="Span.OperationName"/>
+        /// </summary>
+        /// <param name="span">The span to set the tag on</param>
+        /// <param name="key">The OTel tag key</param>
+        /// <param name="value">The OTel tag value</param>
+        /// <param name="allowUnrolling">When enabled, enumerable values will be set as multiple indexed tags, e.g. (key[0], value0), (key[1], value1) </param>
+        /// <param name="setKnownValues">When enabled, the key value can be used to set "standard" properties, such as <see cref="Span.OperationName"/>.
+        /// When disabled, tags that would otherwise set these values are ignored. </param>
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true, bool setKnownValues = true)
         {
             if (value is null)
             {
@@ -398,7 +409,10 @@ namespace Datadog.Trace.Activity
                     // special case where we need to remap "http.response.status_code" and the deprecated "http.status_code"
                     if (key == "http.response.status_code" || key == "http.status_code")
                     {
-                        span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
+                        if (setKnownValues)
+                        {
+                            span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
+                        }
                     }
                     else
                     {
@@ -452,21 +466,37 @@ namespace Datadog.Trace.Activity
         }
 
         // See trace agent func setMetaOTLP: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
-        internal static void AgentSetOtlpTag(Span span, string key, string? value)
+        internal static void AgentSetOtlpTag(Span span, string key, string? value, bool setKnownValues = true)
         {
             switch (key)
             {
                 case "operation.name":
-                    span.OperationName = value?.ToLowerInvariant();
+                    if (setKnownValues)
+                    {
+                        span.OperationName = value?.ToLowerInvariant();
+                    }
+
                     break;
                 case "service.name":
-                    span.ServiceName = value;
+                    if (setKnownValues)
+                    {
+                        span.ServiceName = value;
+                    }
+
                     break;
                 case "resource.name":
-                    span.ResourceName = value;
+                    if (setKnownValues)
+                    {
+                        span.ResourceName = value;
+                    }
+
                     break;
                 case "span.type":
-                    span.Type = value;
+                    if (setKnownValues)
+                    {
+                        span.Type = value;
+                    }
+
                     break;
                 case "analytics.event":
                     if (GoStrConvParseBool(value) is bool b)
@@ -476,18 +506,26 @@ namespace Datadog.Trace.Activity
 
                     break;
                 case "otel.status_code":
-                    var newStatusCodeString = value switch
+                    if (setKnownValues)
                     {
-                        null => "STATUS_CODE_UNSET",
-                        "ERROR" => "STATUS_CODE_ERROR",
-                        "UNSET" => "STATUS_CODE_UNSET",
-                        "OK" => "STATUS_CODE_OK",
-                        string s => s,
-                    };
-                    span.SetTag(key, newStatusCodeString);
+                        var newStatusCodeString = value switch
+                        {
+                            null => "STATUS_CODE_UNSET",
+                            "ERROR" => "STATUS_CODE_ERROR",
+                            "UNSET" => "STATUS_CODE_UNSET",
+                            "OK" => "STATUS_CODE_OK",
+                            string s => s,
+                        };
+                        span.SetTag(key, newStatusCodeString);
+                    }
+
                     break;
                 case "http.response.status_code":
-                    span.SetTag(Tags.HttpStatusCode, value);
+                    if (setKnownValues)
+                    {
+                        span.SetTag(Tags.HttpStatusCode, value);
+                    }
+
                     break;
                 default:
                     span.SetTag(key, value);

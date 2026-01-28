@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/10.0.1 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/10.0.2 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.2" />
   </ItemGroup>
 
 </Project>

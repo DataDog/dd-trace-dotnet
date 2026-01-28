@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Samples.LifetimeManager.TerminationSignals</RootNamespace>
+    <IncludeSharedSampleHelpers>false</IncludeSharedSampleHelpers>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(PublishTrimmed)' == 'true'">
+    <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(PublishTrimmed)' == 'true'">
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="..\..\..\..\src\Datadog.Trace.Trimming\build\Datadog.Trace.Trimming.xml" />
+  </ItemGroup>
+</Project>
