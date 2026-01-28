@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -21,8 +21,9 @@ internal static class ProcessTags
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
     // two views on the same data
-    public static readonly IReadOnlyCollection<string> TagsList = GetTagsList();
-    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
+    public static IReadOnlyCollection<string> TagsList => field ??= GetTagsList();
+
+    public static string SerializedTags => field ??= string.Join(",", TagsList);
 
     private static List<string> GetTagsList()
     {
@@ -53,19 +54,15 @@ internal static class ProcessTags
         tags.Add($"{key}:{normalizedValue}");
     }
 
-    private static string GetSerializedTagsFromList(IEnumerable<string> tags)
-    {
-        return string.Join(",", tags);
-    }
-
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
     /// </summary>
-    private static string GetLastPathSegment(string directoryPath)
+    [TestingAndPrivateOnly]
+    internal static string GetLastPathSegment(string directoryPath)
     {
-        // Path.GetFileName returns an empty string if the path ends with a '/'.
-        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
-        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
+        return StringUtil.IsNullOrEmpty(directoryPath) ?
+                   string.Empty :
+                   new DirectoryInfo(directoryPath).Name;
     }
 
     private static string? GetEntryPointName()
