@@ -14,9 +14,10 @@ public class ProcessTagsTests
     [Fact]
     public void TagsPresentWhenEnabled()
     {
-        var tags = ProcessTags.SerializedTags;
+        var processTags = new ProcessTags(serviceNameUserDefined: true);
+        var tags = processTags.SerializedTags;
 
-        tags.Should().ContainAll(ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
+        tags.Should().ContainAll(ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir, ProcessTags.EntrypointName, ProcessTags.ServiceNameUserDefined);
         // EntrypointName may not be present, especially when ran in the CI
 
         tags.Split(',').Should().BeInAscendingOrder();
@@ -28,6 +29,8 @@ public class ProcessTagsTests
             {
                 s.Count(c => c == ':').Should().Be(1);
             });
-        // cannot really assert on content because it depends on how the tests are run.
+
+        tags.Should().Contain("service_name.user_defined:true");
+        // cannot really assert the rest of the content because it depends on how the tests are run.
     }
 }
