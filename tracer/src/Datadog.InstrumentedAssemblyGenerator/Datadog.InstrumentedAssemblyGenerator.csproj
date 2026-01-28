@@ -13,6 +13,7 @@
     <NoWin32Manifest>true</NoWin32Manifest>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
