@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var tracerSettings = TracerSettings.Create(new Dictionary<string, object>
             {
-                { ConfigurationKeys.InjectSqlBasehash, hashPropagationEnabled.ToString() },
+                { ConfigurationKeys.DbmInjectSqlBasehash, hashPropagationEnabled.ToString() },
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             });
             await using var tracer = TracerHelper.Create(tracerSettings);

@@ -594,8 +594,8 @@ namespace Datadog.Trace.Configuration
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
-            InjectSqlBasehash = config
-                .WithKeys(ConfigurationKeys.InjectSqlBasehash)
+            DbmInjectSqlBasehash = config
+                .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
                 .AsBool(false);
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
@@ -1208,7 +1208,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer should inject Base Hash in SQL Comments.
         /// Default value is false (disabled).
         /// </summary>
-        internal bool InjectSqlBasehash { get; }
+        internal bool DbmInjectSqlBasehash { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer will generate 128-bit trace ids
