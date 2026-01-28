@@ -22,7 +22,7 @@ internal static class ProcessTags
 
     // two views on the same data
     private static readonly Lazy<IReadOnlyCollection<string>> _tagsList = new(() => GetTagsList());
-    private static readonly Lazy<string> _serializedTags = new(() => GetSerializedTagsFromList(_tagsList.Value));
+    private static readonly Lazy<string> _serializedTags = new(() => string.Join(",", _tagsList.Value));
 
     public static IReadOnlyCollection<string> TagsList => _tagsList.Value;
 
@@ -55,11 +55,6 @@ internal static class ProcessTags
         // which we don't want because we use it as a key/value separator.
         var normalizedValue = TraceUtil.NormalizeTag(value).Replace(oldChar: ':', newChar: '_');
         tags.Add($"{key}:{normalizedValue}");
-    }
-
-    private static string GetSerializedTagsFromList(IEnumerable<string> tags)
-    {
-        return string.Join(",", tags);
     }
 
     /// <summary>
