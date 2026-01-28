@@ -21,15 +21,30 @@ set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
 set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
 # Download and extract the prebuilt binaries
-# Use HEADERS parameter for authentication (GITHUB_TOKEN in URL is deprecated and returns 404)
+# Use CMake file(DOWNLOAD) with HTTPHEADER for authentication since vcpkg_download_distfile may not support HEADERS
 if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
     message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
-    vcpkg_download_distfile(ARCHIVE
-        URLS ${LIBDATADOG_URL}
-        FILENAME "${LIBDATADOG_ARTIFACT}"
-        SHA512 ${LIBDATADOG_HASH}
-        HEADERS "Authorization: token $ENV{GITHUB_TOKEN}"
+    set(ARCHIVE "${DOWNLOADS}/libdatadog/${LIBDATADOG_ARTIFACT}")
+
+    # Create downloads directory if it doesn't exist
+    file(MAKE_DIRECTORY "${DOWNLOADS}/libdatadog")
+
+    # Download with authentication using CMake's file(DOWNLOAD)
+    file(DOWNLOAD
+        "${LIBDATADOG_URL}"
+        "${ARCHIVE}"
+        EXPECTED_HASH SHA512=${LIBDATADOG_HASH}
+        HTTPHEADER "Authorization: token $ENV{GITHUB_TOKEN}"
+        STATUS download_status
+        LOG download_log
     )
+
+    # Check download status
+    list(GET download_status 0 status_code)
+    list(GET download_status 1 status_message)
+    if(NOT status_code EQUAL 0)
+        message(FATAL_ERROR "Download failed: ${status_message}\nLog: ${download_log}")
+    endif()
 else()
     message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet (will fail for private repos)")
     vcpkg_download_distfile(ARCHIVE
