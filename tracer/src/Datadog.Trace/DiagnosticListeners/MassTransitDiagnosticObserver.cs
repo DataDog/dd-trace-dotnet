@@ -11,7 +11,6 @@ using System.Collections.Concurrent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
@@ -139,168 +138,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return id;
         }
 
-        private static T? TryGetProperty<T>(object? obj, string propertyName)
-        {
-            if (obj == null)
-            {
-                return default;
-            }
-
-            try
-            {
-                var type = obj.GetType();
-
-                // First try direct property lookup
-                var property = type.GetProperty(propertyName);
-                if (property != null)
-                {
-                    var value = property.GetValue(obj);
-                    if (value is T typedValue)
-                    {
-                        return typedValue;
-                    }
-                }
-
-                // If not found, search interface properties
-                // MassTransit's MessageConsumeContext<T> only has 'Message' as direct property,
-                // other properties like DestinationAddress come from interfaces
-                foreach (var iface in type.GetInterfaces())
-                {
-                    property = iface.GetProperty(propertyName);
-                    if (property != null)
-                    {
-                        var value = property.GetValue(obj);
-                        if (value is T typedValue)
-                        {
-                            return typedValue;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitDiagnosticObserver.TryGetProperty: Failed to get property '{PropertyName}'", propertyName);
-            }
-
-            return default;
-        }
-
-        private static string? GetMessageType(object? context)
-        {
-            if (context == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                // Try generic type argument - MassTransit contexts are typically generic
-                var contextType = context.GetType();
-                if (contextType.IsGenericType)
-                {
-                    var genericArgs = contextType.GetGenericArguments();
-                    if (genericArgs.Length > 0)
-                    {
-                        return genericArgs[0].Name;
-                    }
-                }
-
-                // Try SupportedMessageTypes property
-                var supportedTypes = TryGetProperty<string[]>(context, "SupportedMessageTypes");
-                if (supportedTypes != null && supportedTypes.Length > 0)
-                {
-                    return string.Join(",", supportedTypes);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitDiagnosticObserver.GetMessageType: Failed to get message type");
-            }
-
-            return null;
-        }
-
-        private static void InjectTraceContext(object? sendContext, Scope scope)
-        {
-            if (sendContext == null || scope.Span == null)
-            {
-                return;
-            }
-
-            try
-            {
-                // Get Headers property from SendContext
-                var headers = TryGetProperty<object>(sendContext, "Headers");
-                if (headers == null)
-                {
-                    Log.Debug("MassTransitDiagnosticObserver.InjectTraceContext: No Headers property found");
-                    return;
-                }
-
-                // Use SendContextHeadersAdapter to inject trace context
-                var headersAdapter = new SendContextHeadersAdapter(headers);
-                var context = new PropagationContext(scope.Span.Context, Baggage.Current);
-                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, headersAdapter);
-
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.InjectTraceContext: Injected trace context TraceId={TraceId}",
-                    scope.Span.TraceId);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitDiagnosticObserver.InjectTraceContext: Failed to inject trace context");
-            }
-        }
-
-        private static PropagationContext ExtractTraceContext(object? receiveContext)
-        {
-            if (receiveContext == null)
-            {
-                return default;
-            }
-
-            try
-            {
-                // Try TransportHeaders first (ReceiveContext)
-                var headers = TryGetProperty<object>(receiveContext, "TransportHeaders");
-
-                // If not found, try Headers (ConsumeContext)
-                if (headers == null)
-                {
-                    headers = TryGetProperty<object>(receiveContext, "Headers");
-                }
-
-                if (headers == null)
-                {
-                    Log.Debug("MassTransitDiagnosticObserver.ExtractTraceContext: No headers found");
-                    return default;
-                }
-
-                // Use ContextPropagation to extract trace context from headers
-                var headersAdapter = new ContextPropagation(headers);
-                var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headersAdapter);
-
-                if (extractedContext.SpanContext != null)
-                {
-                    Log.Debug(
-                        "MassTransitDiagnosticObserver.ExtractTraceContext: Extracted TraceId={TraceId}, SpanId={SpanId}",
-                        extractedContext.SpanContext.TraceId,
-                        extractedContext.SpanContext.SpanId);
-                }
-                else
-                {
-                    Log.Debug("MassTransitDiagnosticObserver.ExtractTraceContext: No trace context found in headers");
-                }
-
-                return extractedContext;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitDiagnosticObserver.ExtractTraceContext: Failed to extract trace context");
-                return default;
-            }
-        }
-
         private void OnSendStart(object? arg)
         {
             Log.Debug("MassTransitDiagnosticObserver.OnSendStart: Starting");
@@ -314,8 +151,8 @@ namespace Datadog.Trace.DiagnosticListeners
             var activityId = GetCurrentActivityId();
 
             // Extract destination and message type from the SendContext
-            var destinationAddress = TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
-            var messageType = GetMessageType(arg);
+            var destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
+            var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}, MessageType={MessageType}",
@@ -333,13 +170,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 StoreScope("Send", activityId, scope);
 
                 // Set additional context tags
-                var messageId = TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = TryGetProperty<Guid?>(arg, "CorrelationId");
+                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
+                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
+                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
                 // Inject trace context into message headers for distributed tracing
-                InjectTraceContext(arg, scope);
+                MassTransitCommon.InjectTraceContext(Tracer.Instance, arg, scope);
 
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
@@ -368,8 +205,8 @@ namespace Datadog.Trace.DiagnosticListeners
             var activityId = GetCurrentActivityId();
 
             // Extract input address from ReceiveContext
-            var inputAddress = TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
-            var messageType = GetMessageType(arg);
+            var inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
+            var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, MessageType={MessageType}",
@@ -377,7 +214,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 messageType);
 
             // Extract parent context from headers for distributed tracing
-            var parentContext = ExtractTraceContext(arg);
+            var parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
 
             var scope = MassTransitCommon.CreateConsumerScope(
                 Tracer.Instance,
@@ -391,9 +228,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 StoreScope("Receive", activityId, scope);
 
                 // Set additional context tags
-                var messageId = TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = TryGetProperty<Guid?>(arg, "CorrelationId");
+                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
+                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
+                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
                 Log.Debug(
@@ -418,22 +255,22 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // For consume, we get a ConsumeContext - try multiple address properties
             // Try DestinationAddress first (where the message was sent to)
-            var destinationAddress = TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
+            var destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
 
             // If not available, try ReceiveContext.InputAddress (where the message was received)
             if (string.IsNullOrEmpty(destinationAddress))
             {
-                var receiveContext = TryGetProperty<object>(arg, "ReceiveContext");
-                destinationAddress = TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
+                var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
+                destinationAddress = MassTransitCommon.TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
             }
 
             // If still not available, try SourceAddress (where the message came from)
             if (string.IsNullOrEmpty(destinationAddress))
             {
-                destinationAddress = TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
+                destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
             }
 
-            var messageType = GetMessageType(arg);
+            var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnConsumeStart: Destination={Destination}, MessageType={MessageType}",
@@ -451,9 +288,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 StoreScope("Consume", activityId, scope);
 
                 // Set additional context tags
-                var messageId = TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = TryGetProperty<Guid?>(arg, "CorrelationId");
+                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
+                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
+                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
                 Log.Debug(
@@ -500,7 +337,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var key = $"{operationType}:{activityId}";
             if (_activeScopes.TryGetValue(key, out var scope))
             {
-                var exception = arg as Exception ?? TryGetProperty<Exception>(arg, "Exception");
+                var exception = arg as Exception ?? MassTransitCommon.TryGetProperty<Exception>(arg, "Exception");
                 MassTransitCommon.SetException(scope, exception);
                 Log.Debug("MassTransitDiagnosticObserver.OnException: Set error on scope for key '{Key}'", key);
             }
