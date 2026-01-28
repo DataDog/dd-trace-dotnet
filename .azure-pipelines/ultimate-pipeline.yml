@@ -320,7 +320,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - pwsh: |
+    - powershell: |
         $env:GITHUB_TOKEN = "$(GITHUB_APP_TOKEN)"
         $env:VCPKG_KEEP_ENV_VARS = "GITHUB_TOKEN"
         if ($env:GITHUB_TOKEN) {
