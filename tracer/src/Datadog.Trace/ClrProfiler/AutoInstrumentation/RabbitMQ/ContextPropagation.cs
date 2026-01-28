@@ -17,9 +17,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         public IEnumerable<string> Get(IDictionary<string, object> carrier, string key)
         {
-            if (carrier.TryGetValue(key, out var value) && value is byte[] bytes)
+            if (carrier.TryGetValue(key, out var value))
             {
-                return new[] { Encoding.UTF8.GetString(bytes) };
+                // RabbitMQ native headers are byte[], but messaging frameworks like MassTransit
+                // may inject string values before they get converted to byte[]
+                if (value is byte[] bytes)
+                {
+                    return new[] { Encoding.UTF8.GetString(bytes) };
+                }
+
+                if (value is string str)
+                {
+                    return new[] { str };
+                }
             }
 
             return Enumerable.Empty<string>();
