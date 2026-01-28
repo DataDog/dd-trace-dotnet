@@ -18,23 +18,26 @@ endif()
 # Note: Changed to use libdatadog-dotnet repository for custom .NET-specific builds (private repo)
 set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
 set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
-
-# Build authenticated URL if GITHUB_TOKEN is available (for private repo access)
-# Otherwise use standard URL (will fail for private repos but allows local builds with public access)
-if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
-    message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
-    set(LIBDATADOG_URL "https://$ENV{GITHUB_TOKEN}@github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
-else()
-    message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet")
-    set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
-endif()
+set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
 # Download and extract the prebuilt binaries
-vcpkg_download_distfile(ARCHIVE
-    URLS ${LIBDATADOG_URL}
-    FILENAME "${LIBDATADOG_ARTIFACT}"
-    SHA512 ${LIBDATADOG_HASH}
-)
+# Use HEADERS parameter for authentication (GITHUB_TOKEN in URL is deprecated and returns 404)
+if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
+    message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
+    vcpkg_download_distfile(ARCHIVE
+        URLS ${LIBDATADOG_URL}
+        FILENAME "${LIBDATADOG_ARTIFACT}"
+        SHA512 ${LIBDATADOG_HASH}
+        HEADERS "Authorization: token $ENV{GITHUB_TOKEN}"
+    )
+else()
+    message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet (will fail for private repos)")
+    vcpkg_download_distfile(ARCHIVE
+        URLS ${LIBDATADOG_URL}
+        FILENAME "${LIBDATADOG_ARTIFACT}"
+        SHA512 ${LIBDATADOG_HASH}
+    )
+endif()
 
 # Extract the downloaded archive using vcpkg_extract_source_archive_ex
 vcpkg_extract_source_archive_ex(
