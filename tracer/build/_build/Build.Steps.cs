@@ -228,7 +228,7 @@ partial class Build
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator",
             })
-            .Concat(new[] {
+            .Concat(new [] {
                 // Changes to the integrations themselves, e.g. change in behaviour
                 "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation",
                 "tracer/src/Datadog.Trace/Iast/Aspects"
@@ -707,8 +707,8 @@ partial class Build
             // Copy the native files to all the test projects for simplicity.
             var testProjects = Solution.GetProjects("*Tests")
                                        .Where(p => p.SolutionFolder.Name == "test"
-                                               && p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
-            foreach (var projectName in testProjects)
+                                               &&  p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
+            foreach(var projectName in testProjects)
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
@@ -717,7 +717,7 @@ partial class Build
 
                 if (Framework is not null)
                 {
-                    frameworks = frameworks.Where(x => x == Framework).ToList();
+                    frameworks = frameworks.Where(x=> x == Framework).ToList();
                 }
 
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
@@ -878,10 +878,10 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
-                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeTracerProject.Name}.pdb";
-                var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+               var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                            $"{NativeTracerProject.Name}.pdb";
+               var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+               CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -1548,142 +1548,142 @@ partial class Build
          .After(Clean)
          .DependsOn(HackForMissingMsBuildLocation)
          .Executes(() =>
-         {
-             if (TestAllPackageVersions)
-             {
-                 // Explicitly compiles the prerequisites which MSbuild doesn't
-                 // (no, I don't know why, I can't seem to convince it to do this automatically)
-                 var projects = TracerDirectory.GlobFiles(
-                     "test/test-applications/integrations/dependency-libs/**/*.csproj",
-                     "test/test-applications/integrations/**/*.vbproj",
-                     "src/Datadog.FeatureFlags.OpenFeature/*.csproj"
-                 );
+          {
+              if (TestAllPackageVersions)
+              {
+                  // Explicitly compiles the prerequisites which MSbuild doesn't
+                  // (no, I don't know why, I can't seem to convince it to do this automatically)
+                  var projects = TracerDirectory.GlobFiles(
+                      "test/test-applications/integrations/dependency-libs/**/*.csproj",
+                      "test/test-applications/integrations/**/*.vbproj",
+                      "src/Datadog.FeatureFlags.OpenFeature/*.csproj"
+                  );
 
-                 DotnetBuild(projects, noDependencies: false, noRestore: false);
-                 // these are defined in Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet dependencies
-                 var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
-                 var frameworks = Framework is null || string.IsNullOrEmpty(Framework)
-                                      ? TestingFrameworks
-                                      : new[] { Framework };
+                  DotnetBuild(projects, noDependencies: false, noRestore: false);
+                  // these are defined in Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet dependencies
+                  var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
+                  var frameworks = Framework is null || string.IsNullOrEmpty(Framework)
+                                       ? TestingFrameworks
+                                       : new[] { Framework };
 
-                 foreach (var framework in frameworks)
-                 {
-                     foreach (var target in targets)
-                     {
-                         // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                         // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                         MSBuild(x => x
-                                     .SetTargetPath(MsBuildProject)
-                                     .SetTargets(target)
-                                     .SetConfiguration(BuildConfiguration)
-                                     .SetProperty("TargetFramework", framework.ToString())
-                                     .SetProperty("BuildInParallel", "true")
-                                     .SetProperty("CheckEolTargetFramework", "false")
-                                     .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
-                                     .When(!string.IsNullOrEmpty(SampleName), o => o.SetProperty("SampleName", SampleName))
-                                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                                     .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701").Add($"/bl:\"{(BuildDataDirectory / $"build_{DateTime.UtcNow.Ticks}.binlog")}\""))
-                                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                         );
-                     }
-                 }
+                  foreach (var framework in frameworks)
+                  {
+                      foreach (var target in targets)
+                      {
+                          // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                          // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                          MSBuild(x => x
+                                      .SetTargetPath(MsBuildProject)
+                                      .SetTargets(target)
+                                      .SetConfiguration(BuildConfiguration)
+                                      .SetProperty("TargetFramework", framework.ToString())
+                                      .SetProperty("BuildInParallel", "true")
+                                      .SetProperty("CheckEolTargetFramework", "false")
+                                      .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
+                                      .When(!string.IsNullOrEmpty(SampleName), o => o.SetProperty("SampleName", SampleName))
+                                      .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                                      .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701").Add($"/bl:\"{(BuildDataDirectory / $"build_{DateTime.UtcNow.Ticks}.binlog")}\""))
+                                      .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                                      .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                          );
+                      }
+                  }
 
-                 // All done with the multi-api version
-                 return;
-             }
+                  // All done with the multi-api version
+                  return;
+              }
 
-             // Build the "standalone" samples (i.e. the single-api-version samples)
-             var samples = GetSamplesToBuild();
-             Logger.Information("Building {SampleName}", samples);
+              // Build the "standalone" samples (i.e. the single-api-version samples)
+              var samples = GetSamplesToBuild();
+              Logger.Information("Building {SampleName}", samples);
 
-             // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
-             // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
-             // As it needs to be restored first, but when it did it couldn't find the assets file
-             if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
-             {
-                 Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
+              // If we are building a specific sample, with a specific NuGet version, we can target just that one with MSBuild
+              // Windows only at the moment as I couldn't get `dotnet build` to work with the ApiVersion parameter
+              // As it needs to be restored first, but when it did it couldn't find the assets file
+              if (IsWin && !string.IsNullOrEmpty(ApiVersion) && !string.IsNullOrEmpty(SampleName))
+              {
+                  Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
 
-                 MSBuild(x => x.SetTargetPath(samples)
-                               .SetTargets("Restore", "Build")
-                               .SetConfiguration(BuildConfiguration)
-                               .SetProperty("ApiVersion", ApiVersion)
-                               .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
-                               .SetProperty("BuildInParallel", "true")
-                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
-             }
-             else
-             {
-                 // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
-                 DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
-                                             .SetProperty("BuildInParallel", "true")
-                                             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                                             .When(Framework is not null, x => x.SetFramework(Framework))
-                                             .SetProjectFile(samples));
-             }
+                  MSBuild(x => x.SetTargetPath(samples)
+                                .SetTargets("Restore", "Build")
+                                .SetConfiguration(BuildConfiguration)
+                                .SetProperty("ApiVersion", ApiVersion)
+                                .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
+                                .SetProperty("BuildInParallel", "true")
+                                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
+              }
+              else
+              {
+                  // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
+                  DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .SetProperty("BuildInParallel", "true")
+                                              .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                                              .When(Framework is not null, x => x.SetFramework(Framework))
+                                              .SetProjectFile(samples));
+              }
 
-             string GetSamplesToBuild()
-             {
-                 // If a specific sample name was not given, build whole samples solution
-                 if (string.IsNullOrWhiteSpace(SampleName))
-                 {
-                     return SamplesSolution;
-                 }
+              string GetSamplesToBuild()
+              {
+                  // If a specific sample name was not given, build whole samples solution
+                  if (string.IsNullOrWhiteSpace(SampleName))
+                  {
+                      return SamplesSolution;
+                  }
 
-                 // Filter to a single candidate SampleName
-                 var candidates =
-                     TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
-                                    .Select(x => Solution.GetProject(x))
-                                    .Where(project => project is not null
-                                                   && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
+                  // Filter to a single candidate SampleName
+                  var candidates =
+                      TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
+                                     .Select(x => Solution.GetProject(x))
+                                     .Where(project => project is not null
+                                                    && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
 
-                 if (Framework is not null)
-                 {
-                     // exclude projects that can't be built for this TFM
-                     candidates = candidates.Where(project => project.TryGetTargetFrameworks()?.Contains(Framework) ?? true);
-                 }
+                  if (Framework is not null)
+                  {
+                      // exclude projects that can't be built for this TFM
+                      candidates = candidates.Where(project => project.TryGetTargetFrameworks()?.Contains(Framework) ?? true);
+                  }
 
-                 var allMatches = candidates.ToList();
-                 if (allMatches.Count == 0)
-                 {
-                     throw new InvalidOperationException($"No sample projects found matching '{SampleName}'." +
-                                                         (string.IsNullOrEmpty(Framework) ? $" Does the project support the specified framework '{Framework}'?" : " ") +
-                                                         "Alternatively, exclude the SampleName parameter to build all samples instead");
-                 }
+                  var allMatches = candidates.ToList();
+                  if (allMatches.Count == 0)
+                  {
+                      throw new InvalidOperationException($"No sample projects found matching '{SampleName}'." +
+                                                          (string.IsNullOrEmpty(Framework) ? $" Does the project support the specified framework '{Framework}'?" : " ") +
+                                                          "Alternatively, exclude the SampleName parameter to build all samples instead");
+                  }
 
-                 if (allMatches.Count == 1)
-                 {
-                     return allMatches.First();
-                 }
+                  if (allMatches.Count == 1)
+                  {
+                      return allMatches.First();
+                  }
 
-                 // try to find best "exact" match
-                 // exact name match
-                 var bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.Ordinal)).ToList();
-                 if (bestMatches.Count == 1)
-                 {
-                     return bestMatches.First();
-                 }
+                  // try to find best "exact" match
+                  // exact name match
+                  var bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.Ordinal)).ToList();
+                  if(bestMatches.Count == 1)
+                  {
+                      return bestMatches.First();
+                  }
 
-                 // case insensitive exact name match
-                 bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
-                 if (bestMatches.Count == 1)
-                 {
-                     return bestMatches.First();
-                 }
+                  // case insensitive exact name match
+                  bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
+                  if(bestMatches.Count == 1)
+                  {
+                      return bestMatches.First();
+                  }
 
-                 // case insensitive path suffix match
-                 bestMatches = allMatches.Where(x => x.Path.ToString().EndsWith(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
-                 if (bestMatches.Count == 1)
-                 {
-                     return bestMatches.First();
-                 }
+                  // case insensitive path suffix match
+                  bestMatches = allMatches.Where(x => x.Path.ToString().EndsWith(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
+                  if(bestMatches.Count == 1)
+                  {
+                      return bestMatches.First();
+                  }
 
-                 // no way to choose between them
-                 throw new InvalidOperationException($"Found multiple sample projects matching '{SampleName}'. " +
-                                                     string.Join(",", allMatches.Select(x => $"'{x.Name}'")) +
-                                                     ". Provide an exact match for the name of of the project, or a path suffix");
-             }
-         });
+                  // no way to choose between them
+                  throw new InvalidOperationException($"Found multiple sample projects matching '{SampleName}'. " +
+                                                      string.Join(",", allMatches.Select(x => $"'{x.Name}'")) +
+                                                      ". Provide an exact match for the name of of the project, or a path suffix");
+              }
+          });
 
     Target CompileTrimmingSamples => _ => _
         .Description("Compiles the trimming samples")
@@ -1698,7 +1698,7 @@ partial class Build
             CompileSamplesThatDependOnDatadogTrace();
 
             // This is separated from CompileSamples, because we can only publish for the actual platform we're on,
-            var trimmingSamples = new[]
+            var trimmingSamples = new []
             {
                 (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
                 (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
@@ -1706,13 +1706,13 @@ partial class Build
             var projectsToPublish = trimmingSamples
                                    .Select(x => (project: Solution.GetProject(x.project), x.include, x.r2r))
                                    .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
-                                   {
-                                       ({ include: false }, _, _) => false,
-                                       _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                                       (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
-                                       (_, { } targets, _) => targets.Contains(Framework),
-                                       _ => true,
-                                   });
+                                    {
+                                        ({include: false }, _, _) => false,
+                                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
+                                        (_, { } targets, _) => targets.Contains(Framework),
+                                        _ => true,
+                                    });
             var rid = (Platform, TargetPlatform.ToString()) switch
             {
                 (PlatformFamily.Linux, "x64") => IsAlpine ? "linux-musl-x64" : "linux-x64",
@@ -1802,10 +1802,10 @@ partial class Build
                 // filter out fleet installer tests unless we're on netframework and x64
                 var parallelJobs = ParallelIntegrationTests
                    .Where(project => project.Name switch
-                   {
-                       Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
-                       _ => true,
-                   });
+                    {
+                        Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
+                        _ => true,
+                    });
 
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
@@ -2090,10 +2090,10 @@ partial class Build
     Target HackForMissingMsBuildLocation => _ => _
        .Unlisted()
        .Executes(() =>
-       {
-           // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug:
-           ProjectModelTasks.Initialize();
-       });
+        {
+            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug:
+            ProjectModelTasks.Initialize();
+        });
 
     Target CompileLinuxOrOsxIntegrationTests => _ => _
         .Unlisted()
@@ -2189,9 +2189,9 @@ partial class Build
          .After(CompileManagedTestHelpers)
          .After(InstallDdTraceTool)
          .Executes(() =>
-         {
-             DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
-         });
+          {
+              DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
+          });
 
     Target BuildDdDotnetArtifactTests => _ => _
      .Description("Builds the dd-dotnet artifacts tests")
@@ -2232,22 +2232,22 @@ partial class Build
        .Description("Runs the tool artifacts tests")
        .After(BuildToolArtifactTests)
        .Executes(() =>
-       {
-           var isDebugRun = IsDebugRun();
-           var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
+        {
+            var isDebugRun = IsDebugRun();
+            var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
 
-           DotNetTest(config => config
-               .SetProjectFile(project)
-               .SetConfiguration(BuildConfiguration)
-               .EnableNoRestore()
-               .EnableNoBuild()
-               .SetIsDebugRun(isDebugRun)
-               .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-               .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
-               .SetLogsDirectory(TestLogsDirectory)
-               .EnableTrxLogOutput(GetResultsDirectory(project))
-               .WithDatadogLogger());
-       });
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetIsDebugRun(isDebugRun)
+                .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
+                .SetLogsDirectory(TestLogsDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project))
+                .WithDatadogLogger());
+        });
 
     Target RunDdDotnetArtifactTests => _ => _
        .Description("Runs the dd-dotnet artifacts tests")
@@ -2285,19 +2285,19 @@ partial class Build
        .Unlisted()
        .After(CompileSamples, CompileTrimmingSamples)
        .Executes(() =>
-       {
-           // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
-           var serverlessProjects = new List<string> { "Samples.AWS.Lambda", "Samples.Amazon.Lambda.RuntimeSupport" };
-           foreach (var project in serverlessProjects)
-           {
-               var rootSampleFolder = BuildArtifactsDirectory / "bin" / project;
-               CopyDirectoryRecursively(MonitoringHomeDirectory, rootSampleFolder / "monitoring-home", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-               CopyFileToDirectory(
-                   source: TracerDirectory / "build" / "_build" / "docker" / "serverless.lambda.dockerfile",
-                   targetDirectory: rootSampleFolder,
-                   FileExistsPolicy.Skip);
-           }
-       });
+        {
+            // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda", "Samples.Amazon.Lambda.RuntimeSupport" };
+            foreach (var project in serverlessProjects)
+            {
+                var rootSampleFolder = BuildArtifactsDirectory / "bin" / project;
+                CopyDirectoryRecursively(MonitoringHomeDirectory, rootSampleFolder / "monitoring-home", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(
+                    source: TracerDirectory / "build" / "_build" / "docker" / "serverless.lambda.dockerfile",
+                    targetDirectory: rootSampleFolder,
+                    FileExistsPolicy.Skip);
+            }
+        });
 
     Target CreateMissingNullabilityFile => _ => _
         .Description("Create missing-nullability-files.csv file for tracking nullability in the repo")
@@ -2365,129 +2365,129 @@ partial class Build
        .Description("Create Datadog.Trace.Trimming.xml file")
        .After(CompileManagedSrc)
        .Executes(() =>
-       {
-           var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
-           List<(string Assembly, string Type)> datadogTraceTypes = new();
-           foreach (var tfm in AppTrimmingTFMs)
-           {
-               datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
-           }
+        {
+            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+            List<(string Assembly, string Type)> datadogTraceTypes = new();
+            foreach (var tfm in AppTrimmingTFMs)
+            {
+                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+            }
 
-           // add Datadog projects to the root descriptors file
-           datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
+            // add Datadog projects to the root descriptors file
+            datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
 
-           var types = loaderTypes
-                      .Concat(datadogTraceTypes)
-                      .Distinct()
-                      .OrderBy(t => t.Assembly)
-                      .ThenBy(t => t.Type);
+            var types = loaderTypes
+                       .Concat(datadogTraceTypes)
+                       .Distinct()
+                       .OrderBy(t => t.Assembly)
+                       .ThenBy(t => t.Type);
 
-           var sb = new StringBuilder(65_536);
-           sb.AppendLine("<linker>");
-           foreach (var module in types.GroupBy(g => g.Assembly))
-           {
-               if (module.Count() == 1 && module.First().Type == null)
-               {
-                   sb.AppendLine($"   <assembly fullname=\"{module.Key}\" />");
-               }
-               else
-               {
-                   sb.AppendLine($"   <assembly fullname=\"{module.Key}\">");
-                   foreach (var type in module)
-                   {
-                       if (!string.IsNullOrEmpty(type.Type))
-                       {
-                           sb.AppendLine($"      <type fullname=\"{type.Type}\" />");
-                       }
-                   }
+            var sb = new StringBuilder(65_536);
+            sb.AppendLine("<linker>");
+            foreach (var module in types.GroupBy(g => g.Assembly))
+            {
+                if (module.Count() == 1 && module.First().Type == null)
+                {
+                    sb.AppendLine($"   <assembly fullname=\"{module.Key}\" />");
+                }
+                else
+                {
+                    sb.AppendLine($"   <assembly fullname=\"{module.Key}\">");
+                    foreach (var type in module)
+                    {
+                        if (!string.IsNullOrEmpty(type.Type))
+                        {
+                            sb.AppendLine($"      <type fullname=\"{type.Type}\" />");
+                        }
+                    }
 
-                   sb.AppendLine("""   </assembly>""");
-               }
-           }
+                    sb.AppendLine("""   </assembly>""");
+                }
+            }
 
-           sb.AppendLine("</linker>");
+            sb.AppendLine("</linker>");
 
-           var projectFolder = Solution.GetProject(Projects.DatadogTraceTrimming).Directory;
-           var descriptorFilePath = projectFolder / "build" / $"{Projects.DatadogTraceTrimming}.xml";
-           File.WriteAllText(descriptorFilePath, sb.ToString());
-           Logger.Information("File saved: {File}", descriptorFilePath);
+            var projectFolder = Solution.GetProject(Projects.DatadogTraceTrimming).Directory;
+            var descriptorFilePath = projectFolder / "build" / $"{Projects.DatadogTraceTrimming}.xml";
+            File.WriteAllText(descriptorFilePath, sb.ToString());
+            Logger.Information("File saved: {File}", descriptorFilePath);
 
-           static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
-           {
-               // We check if the assembly file exists.
-               if (!File.Exists(dllPath))
-               {
-                   throw new FileNotFoundException($"Error extracting types for trimming support. Assembly file was not found. Path: {dllPath}", dllPath);
-               }
+            static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
+            {
+                // We check if the assembly file exists.
+                if (!File.Exists(dllPath))
+                {
+                    throw new FileNotFoundException($"Error extracting types for trimming support. Assembly file was not found. Path: {dllPath}", dllPath);
+                }
 
-               // Open dll to extract all referenced types from the assembly (TypeRef table)
-               using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
-               var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
+                // Open dll to extract all referenced types from the assembly (TypeRef table)
+                using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
+                var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
 
-               // Get target assemblies from Calltarget integrations.
-               // We need to play safe and select the complete assembly and not the type due to the impossibility
-               // to extract the target types from DuckTyping proxies.
-               lst.AddRange(GetTargetAssembliesFromAttributes(asmDefinition));
-               return lst;
-           }
+                // Get target assemblies from Calltarget integrations.
+                // We need to play safe and select the complete assembly and not the type due to the impossibility
+                // to extract the target types from DuckTyping proxies.
+                lst.AddRange(GetTargetAssembliesFromAttributes(asmDefinition));
+                return lst;
+            }
 
-           static IEnumerable<(string Assembly, string Type)> GetTargetAssembliesFromAttributes(AssemblyDefinition asmDefinition)
-           {
-               foreach (var type in asmDefinition.MainModule.Types)
-               {
-                   if (type.HasCustomAttributes)
-                   {
-                       foreach (var attr in type.CustomAttributes)
-                       {
-                           // Extract InstrumentMethodAttribute (CallTarget integrations)
-                           // We need to check both properties `AssemblyName` and `AssemblyNames`
-                           // because the actual data is embedded to the argument parameter in the assembly
-                           // (doesn't work as a normally property works at runtime)
-                           if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
-                           {
-                               foreach (var prp in attr.Properties)
-                               {
-                                   if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
-                                   {
-                                       yield return (asmValue, null);
-                                   }
+            static IEnumerable<(string Assembly, string Type)> GetTargetAssembliesFromAttributes(AssemblyDefinition asmDefinition)
+            {
+                foreach (var type in asmDefinition.MainModule.Types)
+                {
+                    if (type.HasCustomAttributes)
+                    {
+                        foreach (var attr in type.CustomAttributes)
+                        {
+                            // Extract InstrumentMethodAttribute (CallTarget integrations)
+                            // We need to check both properties `AssemblyName` and `AssemblyNames`
+                            // because the actual data is embedded to the argument parameter in the assembly
+                            // (doesn't work as a normally property works at runtime)
+                            if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
+                            {
+                                foreach (var prp in attr.Properties)
+                                {
+                                    if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
+                                    {
+                                        yield return (asmValue, null);
+                                    }
 
-                                   if (prp.Name == "AssemblyNames" && prp.Argument.Value is Mono.Cecil.CustomAttributeArgument[] attributeArguments)
-                                   {
-                                       foreach (var attrArg in attributeArguments)
-                                       {
-                                           if (attrArg.Value?.ToString() is { Length: > 0 } attrArgValue)
-                                           {
-                                               yield return (attrArgValue, null);
-                                           }
-                                       }
-                                   }
-                               }
-                           }
-                       }
-                   }
-               }
+                                    if (prp.Name == "AssemblyNames" && prp.Argument.Value is Mono.Cecil.CustomAttributeArgument[] attributeArguments)
+                                    {
+                                        foreach (var attrArg in attributeArguments)
+                                        {
+                                            if (attrArg.Value?.ToString() is { Length: > 0 } attrArgValue)
+                                            {
+                                                yield return (attrArgValue, null);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-               // Extract AdoNetClientInstrumentMethodsAttribute (ADO.NET CallTarget integrations)
-               // We look for the target integration assembly.
-               if (asmDefinition.MainModule.Assembly.HasCustomAttributes)
-               {
-                   foreach (var attr in asmDefinition.MainModule.Assembly.CustomAttributes)
-                   {
-                       if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute")
-                       {
-                           foreach (var prp in attr.Properties)
-                           {
-                               if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
-                               {
-                                   yield return (asmValue, null);
-                               }
-                           }
-                       }
-                   }
-               }
-           }
-       });
+                // Extract AdoNetClientInstrumentMethodsAttribute (ADO.NET CallTarget integrations)
+                // We look for the target integration assembly.
+                if (asmDefinition.MainModule.Assembly.HasCustomAttributes)
+                {
+                    foreach (var attr in asmDefinition.MainModule.Assembly.CustomAttributes)
+                    {
+                        if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute")
+                        {
+                            foreach (var prp in attr.Properties)
+                            {
+                                if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
+                                {
+                                    yield return (asmValue, null);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
@@ -2531,7 +2531,7 @@ partial class Build
                new(@".*Some errors were found while applying waf configuration \(RulesFile: rasp-rule-set.json\).*", RegexOptions.Compiled),
            };
 
-           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new());
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error, new ());
        });
 
     Target CheckSmokeTestsForErrors => _ => _
@@ -2856,9 +2856,9 @@ partial class Build
             var path = Path.GetDirectoryName(file);
 
             if (!Directory.Exists(path) && !string.IsNullOrEmpty(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+                {
+                    Directory.CreateDirectory(path);
+                }
 
             using var entryStream = zipFile.GetInputStream(entry);
             using var outputStream = File.Open(file, FileMode.Create);
