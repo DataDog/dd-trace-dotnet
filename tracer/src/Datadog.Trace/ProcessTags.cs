@@ -21,8 +21,12 @@ internal static class ProcessTags
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
     // two views on the same data
-    public static readonly IReadOnlyCollection<string> TagsList = GetTagsList();
-    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList);
+    private static readonly Lazy<IReadOnlyCollection<string>> _tagsList = new(() => GetTagsList());
+    private static readonly Lazy<string> _serializedTags = new(() => GetSerializedTagsFromList(_tagsList.Value));
+
+    public static IReadOnlyCollection<string> TagsList => _tagsList.Value;
+
+    public static string SerializedTags => _serializedTags.Value;
 
     private static List<string> GetTagsList()
     {
