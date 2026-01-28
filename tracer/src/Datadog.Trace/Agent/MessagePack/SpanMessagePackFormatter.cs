@@ -613,7 +613,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processTagsNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, processTagsRawBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
             }
 
