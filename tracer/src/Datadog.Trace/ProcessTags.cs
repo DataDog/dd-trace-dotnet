@@ -60,6 +60,12 @@ internal static class ProcessTags
     [TestingAndPrivateOnly]
     internal static string GetLastPathSegment(string directoryPath)
     {
+        // See https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats
+        // Use DirectoryInfo.Name because it correctly handles
+        // - "/" and "\" separators
+        // - paths with or without trailing separators
+        // - root paths like "/" or "C:\"
+        // - other edge cases on Windows like device paths ("\\?\.\" etc) or "\\server\share" UNC paths
         return StringUtil.IsNullOrEmpty(directoryPath) ?
                    string.Empty :
                    new DirectoryInfo(directoryPath).Name;
