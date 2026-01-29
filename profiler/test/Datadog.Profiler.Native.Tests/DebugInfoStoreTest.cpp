@@ -18,67 +18,95 @@
 using ::testing::Return;
 using ::testing::ReturnRef;
 
+namespace
+{
+    // Helper function to get the current process executable path (cross-platform)
+    bool GetCurrentProcessPath(std::string& outPath)
+    {
+#ifdef _WINDOWS
+        char buffer[MAX_PATH];
+        DWORD len = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        if (len == 0 || len == MAX_PATH)
+        {
+            return false;
+        }
+        outPath = std::string(buffer);
+#else
+        char buffer[PATH_MAX];
+        ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+        if (len == -1)
+        {
+            return false;
+        }
+        buffer[len] = '\0';
+        outPath = std::string(buffer);
+#endif
+        return true;
+    }
+
+    // Helper function to build path to a sample PDB based on process location
+    // Returns the PDB path and module path (via out parameter)
+    fs::path GetSamplePdbPath(const std::string& sampleName, const std::string& targetFramework, fs::path& outModulePath)
+    {
+        std::string processPath;
+        if (!GetCurrentProcessPath(processPath))
+        {
+            return fs::path();
+        }
+
+        // Build path relative to the process location: ../../src/Demos/{sampleName}/{targetFramework}/{sampleName}.pdb
+        fs::path pdbPath = fs::path(processPath).parent_path() / ".." / ".." / "src" / "Demos" / sampleName / targetFramework / (sampleName + ".pdb");
+
+        // Module is in the same directory with .exe extension
+        outModulePath = pdbPath.parent_path() / (sampleName + ".exe");
+
+        return pdbPath;
+    }
+} // anonymous namespace
+
 #ifdef _WINDOWS
 
 // This test validates that SymPdbParser can parse symbols from a .NET Framework PDB (Windows PDB format).
 // .NET Framework (net48) produces Windows PDB files that cannot be parsed as Portable PDBs.
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 {
-    // Try to find the Computer01 net48 PDB file in common build output location
-    fs::path pdbPath =
-        fs::current_path() / ".." / ".." / ".." / "profiler" / "src" / "Demos" / "Samples.Computer01" / "net48" / "Samples.Computer01.pdb";
-
+    // Get paths to the sample PDB and module
     fs::path modulePath;
-    bool foundPdb = false;
+    fs::path pdbPath = GetSamplePdbPath("Samples.Computer01", "net48", modulePath);
+
+    if (pdbPath.empty())
+    {
+        GTEST_SKIP() << "Failed to get current process path";
+        return;
+    }
 
     std::error_code ec;
-    if (fs::exists(pdbPath, ec))
+    if (!fs::exists(pdbPath, ec) || !fs::exists(modulePath, ec))
     {
-        // The DLL should be in the same directory
-        modulePath = pdbPath.parent_path() / "Samples.Computer01.exe";
-        if (!fs::exists(modulePath, ec))
-        {
-            GTEST_SKIP() << "Samples.Computer01.pdb (net48) not found. Build the Samples.Computer01 project for net48 first.";
-            return;
-        }
+        GTEST_SKIP() << "Samples.Computer01.pdb (net48) not found. Build the Samples.Computer01 project for net48 first.";
+        return;
     }
 
     // Create a minimal mock configuration
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsDebugInfoEnabled()).WillRepeatedly(Return(true));
 
-    // Get IMetaDataImport from the module file for Windows PDB parsing
-    IMetaDataDispenser* pMetaDataDispenser = nullptr;
-    IMetaDataImport* pMetaDataImport = nullptr;
-
     // Initialize COM
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     bool comInitialized = SUCCEEDED(hr);
 
-    // Get the metadata dispenser
-    ICLRMetaHost* pMetaHost = nullptr;
+    // Get IMetaDataImport from the module file for Windows PDB parsing
+    CComPtr<ICLRMetaHost> pMetaHost;
     hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (void**)&pMetaHost);
     ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to create CLRMetaHost";
 
-    IEnumUnknown* pRuntimes = nullptr;
-    hr = pMetaHost->EnumerateInstalledRuntimes(&pRuntimes);
-    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to enumerate runtimes";
+    // Get .NET Framework 4.0 runtime for metadata access
+    CComPtr<ICLRRuntimeInfo> pRuntimeInfo;
+    hr = pMetaHost->GetRuntime(L"v4.0.30319", IID_ICLRRuntimeInfo, (void**)&pRuntimeInfo);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to get .NET Framework 4.0 runtime";
 
-    ICLRRuntimeInfo* pLatestRuntime = nullptr;
-    ICLRRuntimeInfo* pRuntime = nullptr;
-    ULONG fetched = 0;
-    while ((hr = pRuntimes->Next(1, (IUnknown**)&pRuntime, &fetched)) == S_OK && fetched > 0)
-    {
-        if (pLatestRuntime != nullptr)
-        {
-            pLatestRuntime->Release();
-        }
-        pLatestRuntime = pRuntime;
-    }
-
-    ASSERT_TRUE(pLatestRuntime != nullptr) << "No .NET runtime found";
-
-    hr = pLatestRuntime->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser, (void**)&pMetaDataDispenser);
+    CComPtr<IMetaDataDispenser> pMetaDataDispenser;
+    hr = pRuntimeInfo->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser, (void**)&pMetaDataDispenser);
     ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to get IMetaDataDispenser";
 
     // Convert module path to wide string
@@ -87,7 +115,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
     MultiByteToWideChar(CP_UTF8, 0, modulePath.string().c_str(), -1, &wModulePath[0], len);
 
     // Open the module to get metadata
-    CComPtr<IUnknown> pMetadataInterfaces;
+    CComPtr<IMetaDataImport> pMetaDataImport;
     hr = pMetaDataDispenser->OpenScope(wModulePath.c_str(), ofRead, IID_IMetaDataImport, (IUnknown**)&pMetaDataImport);
     ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to open module metadata";
 
@@ -96,27 +124,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
     SymParser parser(pMetaDataImport, &moduleInfo);
     bool success = parser.LoadPdbFile(pdbPath.string(), modulePath.string());
 
-    // Cleanup
-    if (pMetaDataImport != nullptr)
-    {
-        pMetaDataImport->Release();
-    }
-    if (pMetaDataDispenser != nullptr)
-    {
-        pMetaDataDispenser->Release();
-    }
-    if (pLatestRuntime != nullptr)
-    {
-        pLatestRuntime->Release();
-    }
-    if (pRuntimes != nullptr)
-    {
-        pRuntimes->Release();
-    }
-    if (pMetaHost != nullptr)
-    {
-        pMetaHost->Release();
-    }
+    // COM cleanup is automatic via CComPtr
     if (comInitialized)
     {
         CoUninitialize();
@@ -171,20 +179,20 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 // Additional test to verify that .NET Core/5+ PDBs are Portable format
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 {
-    // Try to find the BuggyBits net10.0 PDB file (as an example of Portable PDB)
-    fs::path pdbPath = fs::current_path() / ".." / ".." / ".." / "profiler" / "src" / "Demos" / "Samples.BuggyBits" / "net10.0" / "Samples.BuggyBits.pdb";
+    // Get paths to the sample PDB and module
     fs::path modulePath;
-    bool foundPdb = false;
+    fs::path pdbPath = GetSamplePdbPath("Samples.BuggyBits", "net10.0", modulePath);
+    if (pdbPath.empty())
+    {
+        GTEST_SKIP() << "Failed to get current process path";
+        return;
+    }
 
     std::error_code ec;
-    if (fs::exists(pdbPath, ec))
+    if (!fs::exists(pdbPath, ec) || !fs::exists(modulePath, ec))
     {
-        modulePath = pdbPath.parent_path() / "Samples.BuggyBits.exe";
-        if (!fs::exists(modulePath, ec))
-        {
-            GTEST_SKIP() << "Samples.BuggyBits.pdb (net10.0) not found. This is expected if net10.0 is not compiled.";
-            return;
-        }
+        GTEST_SKIP() << "Samples.BuggyBits.pdb (net10.0) not found. This is expected if net10.0 is not compiled.";
+        return;
     }
 
     ModuleDebugInfo moduleInfo;
