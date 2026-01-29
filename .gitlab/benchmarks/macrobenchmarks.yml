@@ -584,6 +584,8 @@ profiler_cpu_timer_create-arm64:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+    - ./platform/steps/fetch-results.sh
+    - ./platform/steps/upload-to-bp-ui.sh
 
 baseline-win:
   extends: .benchmarks-win
