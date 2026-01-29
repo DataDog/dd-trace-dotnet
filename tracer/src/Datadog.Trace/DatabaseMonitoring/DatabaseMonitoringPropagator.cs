@@ -84,6 +84,11 @@ namespace Datadog.Trace.DatabaseMonitoring
             if (ddprs != null)
             {
                 propagatorStringBuilder.Append(',').Append(SqlCommentPeerService).Append("='").Append(Uri.EscapeDataString(ddprs)).Append('\'');
+                Log.Information("DBM: Injecting ddprs (peer service) into SQL comment. Value: '{PeerService}'", ddprs);
+            }
+            else
+            {
+                Log.Information("DBM: NOT injecting ddprs. PeerServiceSource: '{Source}'", (span.Tags is SqlV1Tags st) ? st.PeerServiceSource : "N/A");
             }
 
             if (span.Context.TraceContext?.Environment is { } envTag)
@@ -92,6 +97,9 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
 
             propagatorStringBuilder.Append(',').Append(SqlCommentRootService).Append("='").Append(Uri.EscapeDataString(configuredServiceName)).Append('\'');
+
+            Log.Information("DBM: SQL comment fields - dddbs (span service): '{SpanService}', ddps (root service): '{RootService}', dddb: '{DbName}', ddh: '{OutHost}'",
+                dddbs, configuredServiceName, dbName ?? "null", outhost ?? "null");
 
             if (!string.IsNullOrEmpty(dbName))
             {
