@@ -84,5 +84,5 @@ public:
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
     inline static const shared::WSTRING WaitHandleProfilingEnabled  = WStr("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");
-    inline static const shared::WSTRING UseCustomGetFunctionFromIP = WStr("DD_EXPERIMENTAL_USE_CUSTOM_GET_FUNCTION_FROM_IP");
+    inline static const shared::WSTRING UseCustomGetFunctionFromIP = WStr("DD_INTERNAL_PROFILING_USE_CUSTOM_GET_FUNCTION_FROM_IP");
 };

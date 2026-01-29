@@ -30,29 +30,20 @@ ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfigurat
 
 ManagedCodeCache::~ManagedCodeCache()
 {
-    // clean up the work queue
+    if (_worker.joinable())
+    {
+        _requestStop = true;
+        _workerQueueEvent.Set();
+        _worker.join();
+    }
 }
 
-bool ManagedCodeCache::StartImpl()
+bool ManagedCodeCache::Initialize()
 {
     std::promise<void> startPromise;
     auto future = startPromise.get_future();
     _worker = std::thread(&ManagedCodeCache::WorkerThread, this, std::move(startPromise));
     return future.wait_for(2s) == std::future_status::ready;
-}
-
-bool ManagedCodeCache::StopImpl()
-{
-    _requestStop = true;
-    _workerQueueEvent.Set();
-    _worker.join();
-    // clean up the work queue
-    return true;
-}
-
-const char* ManagedCodeCache::GetName()
-{
-    return "ManagedCodeCache";
 }
 
 bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept

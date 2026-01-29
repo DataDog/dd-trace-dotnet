@@ -22,14 +22,6 @@
 #include "cor.h"
 #include "corprof.h"
 
-// Managed code information for a specific address range
-struct ManagedCodeInfo {
-    FunctionID functionId;
-    
-    // Future: Add unwind info here
-    // UnwindInfo unwindInfo;
-};
-
 // Represents a single contiguous code range
 struct CodeRange {
     UINT_PTR startAddress;
@@ -82,7 +74,7 @@ class IConfiguration;
 // - Is simpler than querying with Info9
 //
 // See: dotnet-runtime/docs/design/features/code-versioning-profiler-breaking-changes.md
-class ManagedCodeCache : public ServiceBase {
+class ManagedCodeCache {
 public:
     explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration);
     ~ManagedCodeCache();
@@ -97,9 +89,7 @@ public:
     void AddModule(ModuleID moduleId);
     void RemoveModule(ModuleID moduleId);
 
-    bool StartImpl() override;
-    bool StopImpl() override;
-    const char* GetName() override;
+    bool Initialize();
 
 private:
     // Each page has its own data + lock for fine-grained concurrency
@@ -189,7 +179,7 @@ private:
 };
 
 // Compile-time checks for signal-safety
-static_assert(std::is_trivially_copyable_v<ManagedCodeInfo>,
-              "ManagedCodeInfo must be trivially copyable for signal-safe access");
+static_assert(std::is_trivially_copyable_v<CodeRange>,
+              "CodeRange must be trivially copyable for signal-safe access");
 static_assert(std::is_trivially_copyable_v<FunctionID>,
               "FunctionID must be trivially copyable");

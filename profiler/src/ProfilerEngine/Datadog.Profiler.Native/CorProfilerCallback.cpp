@@ -164,7 +164,7 @@ void CorProfilerCallback::InitializeServices()
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
 
     _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _pConfiguration.get());
-    _managedCodeCache->Start();
+    _managedCodeCache->Initialize();
     
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
