@@ -17,16 +17,20 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <summary>
     /// Instruments MassTransit message bus operations via DiagnosticSource.
     /// <para/>
-    /// MassTransit 7 emits DiagnosticSource events but the Activities it creates are minimal.
+    /// MassTransit 7 emits DiagnosticSource events but uses the older Activity pattern
+    /// (not ActivitySource), so these Activities are not picked up by our ActivityListener.
     /// We create our own Datadog spans based on the diagnostic events.
     /// </summary>
     /// <remarks>
     /// MassTransit emits the following diagnostic events:
     /// - MassTransit.Transport.Send (Start/Stop) - When messages are sent
-    /// - MassTransit.Transport.Receive (Start/Stop) - When messages are received
+    /// - MassTransit.Transport.Receive (Start/Stop) - When messages are received (NOT instrumented - too low-level)
     /// - MassTransit.Consumer.Consume (Start/Stop) - When a consumer processes a message
-    /// - MassTransit.Consumer.Handle (Start/Stop) - When a handler processes a message
-    /// - MassTransit.Saga.* - Various saga events
+    /// - MassTransit.Consumer.Handle (Start/Stop) - When a handler processes a message (NOT instrumented - fires with Consume)
+    /// <para/>
+    /// We only instrument Send and Consume to avoid duplicate spans. The Receive event fires at the transport
+    /// level before message deserialization, and Handle fires in addition to Consume for the same message.
+    /// Context propagation (trace context injection/extraction) happens in Send and Consume handlers.
     /// </remarks>
     internal sealed class MassTransitDiagnosticObserver : DiagnosticObserver
     {
@@ -51,7 +55,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (diagnosticListener.Name == ListenerName)
             {
-                // Subscribe without predicate to receive all events
                 var subscription = diagnosticListener.Subscribe(this);
                 Log.Debug("MassTransitDiagnosticObserver: Subscribed to '{ListenerName}'", diagnosticListener.Name);
                 return subscription;
@@ -82,18 +85,11 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnException("Send", arg);
                         break;
 
-                    // Receive events (consumer spans)
-                    case "MassTransit.Transport.Receive.Start":
-                        OnReceiveStart(arg);
-                        break;
-                    case "MassTransit.Transport.Receive.Stop":
-                        OnStop("Receive");
-                        break;
-                    case "MassTransit.Transport.Receive.Exception":
-                        OnException("Receive", arg);
-                        break;
+                    // NOTE: We intentionally do NOT instrument Receive events.
+                    // Receive fires at the transport level before message deserialization,
+                    // which would create duplicate spans alongside Consume events.
 
-                    // Consumer Consume events (process spans)
+                    // Consumer Consume events (consumer spans)
                     case "MassTransit.Consumer.Consume.Start":
                         OnConsumeStart(arg);
                         break;
@@ -104,19 +100,11 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnException("Consume", arg);
                         break;
 
-                    // Consumer Handle events
-                    case "MassTransit.Consumer.Handle.Start":
-                        OnConsumeStart(arg); // Treat same as Consume
-                        break;
-                    case "MassTransit.Consumer.Handle.Stop":
-                        OnStop("Consume"); // Use same key as Consume
-                        break;
-                    case "MassTransit.Consumer.Handle.Exception":
-                        OnException("Consume", arg);
-                        break;
+                    // NOTE: We intentionally do NOT instrument Handle events.
+                    // Handle fires in addition to Consume for the same message,
+                    // which would create duplicate spans.
 
                     default:
-                        // Log but don't process unknown events (saga events, etc.)
                         Log.Debug("MassTransitDiagnosticObserver: Unhandled event '{EventName}'", eventName);
                         break;
                 }
@@ -130,21 +118,13 @@ namespace Datadog.Trace.DiagnosticListeners
         private static string GetCurrentActivityId()
         {
             var activity = System.Diagnostics.Activity.Current;
-            var id = activity?.Id ?? string.Empty;
-            Log.Debug(
-                "MassTransitDiagnosticObserver.GetCurrentActivityId: Activity.Current={CurrentNotNull}, Id={Id}",
-                activity != null,
-                id);
-            return id;
+            return activity?.Id ?? string.Empty;
         }
 
         private void OnSendStart(object? arg)
         {
-            Log.Debug("MassTransitDiagnosticObserver.OnSendStart: Starting");
-
             if (arg == null)
             {
-                Log.Debug("MassTransitDiagnosticObserver.OnSendStart: arg is null");
                 return;
             }
 
@@ -183,88 +163,28 @@ namespace Datadog.Trace.DiagnosticListeners
                     scope.Span?.TraceId,
                     scope.Span?.SpanId);
             }
-            else
-            {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnSendStart: No scope created or no activityId. Scope={ScopeNotNull}, ActivityId={ActivityId}",
-                    scope != null,
-                    activityId);
-            }
-        }
-
-        private void OnReceiveStart(object? arg)
-        {
-            Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: Starting");
-
-            if (arg == null)
-            {
-                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: arg is null");
-                return;
-            }
-
-            var activityId = GetCurrentActivityId();
-
-            // Extract input address from ReceiveContext
-            var inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
-            var messageType = MassTransitCommon.GetMessageType(arg);
-
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, MessageType={MessageType}",
-                inputAddress,
-                messageType);
-
-            // Extract parent context from headers for distributed tracing
-            var parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
-
-            var scope = MassTransitCommon.CreateConsumerScope(
-                Tracer.Instance,
-                MassTransitConstants.OperationReceive,
-                inputAddress,
-                messageType,
-                parentContext);
-
-            if (scope != null && !string.IsNullOrEmpty(activityId))
-            {
-                StoreScope("Receive", activityId, scope);
-
-                // Set additional context tags
-                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
-                MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
-
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: Created span TraceId={TraceId}, SpanId={SpanId}, ParentId={ParentId}",
-                    scope.Span?.TraceId,
-                    scope.Span?.SpanId,
-                    parentContext.SpanContext?.SpanId);
-            }
         }
 
         private void OnConsumeStart(object? arg)
         {
-            Log.Debug("MassTransitDiagnosticObserver.OnConsumeStart: Starting");
-
             if (arg == null)
             {
-                Log.Debug("MassTransitDiagnosticObserver.OnConsumeStart: arg is null");
                 return;
             }
 
             var activityId = GetCurrentActivityId();
 
             // For consume, we get a ConsumeContext - try multiple address properties
-            // Try DestinationAddress first (where the message was sent to)
             var destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
 
-            // If not available, try ReceiveContext.InputAddress (where the message was received)
+            // If not available, try ReceiveContext.InputAddress
             if (string.IsNullOrEmpty(destinationAddress))
             {
                 var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
                 destinationAddress = MassTransitCommon.TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
             }
 
-            // If still not available, try SourceAddress (where the message came from)
+            // If still not available, try SourceAddress
             if (string.IsNullOrEmpty(destinationAddress))
             {
                 destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
@@ -277,11 +197,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 destinationAddress,
                 messageType);
 
+            // Extract parent context from headers for distributed tracing
+            var parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+
             var scope = MassTransitCommon.CreateConsumerScope(
                 Tracer.Instance,
                 MassTransitConstants.OperationProcess,
                 destinationAddress,
-                messageType);
+                messageType,
+                parentContext);
 
             if (scope != null && !string.IsNullOrEmpty(activityId))
             {
@@ -319,9 +243,8 @@ namespace Datadog.Trace.DiagnosticListeners
             else
             {
                 Log.Debug(
-                    "MassTransitDiagnosticObserver.OnStop: No scope found for key '{Key}'. Active keys: [{Keys}]",
-                    key,
-                    string.Join(", ", _activeScopes.Keys));
+                    "MassTransitDiagnosticObserver.OnStop: No scope found for key '{Key}'",
+                    key);
             }
         }
 

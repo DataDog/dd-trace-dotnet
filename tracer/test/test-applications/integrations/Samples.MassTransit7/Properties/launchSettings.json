@@ -17,7 +17,7 @@
         "DD_TRACE_OTEL_ENABLED": "true",
         "DD_TRACE_AGENT_PORT": "8136",
         "DD_SERVICE": "Samples.MassTransit7",
-        "DD_TRACE_DEBUG": "true",
+        "DD_TRACE_DEBUG": "false",
         "DD_TRACE_LOG_DIRECTORY": "/tmp/dd-logs",
 
         "RABBITMQ_HOST": "localhost"
