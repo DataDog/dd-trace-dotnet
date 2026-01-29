@@ -543,7 +543,7 @@ profiler_cpu_timer_create-arm64:
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
     # Whether to mock benchmark execution. Useful for testing the after_script steps
-    BP_INFRA_TEST: "false"
+    BP_INFRA_TEST: "true"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
