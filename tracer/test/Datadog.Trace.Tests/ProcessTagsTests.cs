@@ -26,9 +26,9 @@ public class ProcessTagsTests
         tags.Split(',')
             .Should()
             .AllSatisfy(s =>
-                        {
-                            s.Count(c => c == ':').Should().Be(1);
-                        });
+            {
+                s.Count(c => c == ':').Should().Be(1);
+            });
         // cannot really assert on content because it depends on how the tests are run.
     }
 
