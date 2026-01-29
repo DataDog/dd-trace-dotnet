@@ -545,6 +545,8 @@ profiler_cpu_timer_create-arm64:
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
+    ARTIFACTS_DIR: "reports"
+
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
