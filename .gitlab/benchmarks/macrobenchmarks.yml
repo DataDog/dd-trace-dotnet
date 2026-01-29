@@ -44,7 +44,7 @@ check-azure-pipeline:
   variables:
     # Set this for quickly testing benchmarking workflows.
     # TODO: Revert to ""
-    HARDCODED_BUILD_ID: "192820"
+    HARDCODED_BUILD_ID: "194777"
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
