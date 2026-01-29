@@ -690,4 +690,3 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-
