@@ -740,6 +740,7 @@ notify-slo-breaches:
   when: always
   allow_failure: true
   variables:
+    # TODO: Change to an appropriate channel once SLOs are calibrated
     CHANNEL: "performance-quality-gates-alerts"
     ARTIFACTS_DIR: "reports"
 
