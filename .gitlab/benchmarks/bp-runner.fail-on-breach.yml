@@ -1,20 +1,5 @@
-# SLO definitions for dd-trace-dotnet macrobenchmarks.
-# These thresholds define performance gates that block releases when breached.
-#
-# Format:
-#   - name: <scenario_name_regex>
-#     thresholds:
-#       - <metric> <operator> <value> <unit>
-#
-# Available operators: <, >, <=, >=
-# Common units: op/s, ms, ns, B/s
-#
-# Baseline values from pipeline 93426043 (2026-01-28):
-#   - Throughput: ~10,000-10,500 op/s across all scenarios
-#   - p95 latency: 26-51 ms depending on scenario
-#
-# Current thresholds are set conservatively (~20% margin) for initial setup.
-# TODO: Calibrate thresholds based on historical data once sufficient runs are collected.
+# The thresholds were set conservatively (~20% margin) for an initial, non-blocking setup.
+# TODO: Calibrate thresholds based on historical data once results for a few runs are collected.
 
 experiments:
   - name: Check SLO breaches
@@ -23,7 +8,7 @@ experiments:
         run: fail_on_breach
         scenarios:
           # Catch-all for all macrobenchmark scenarios
-          # Observed throughput: ~10k op/s, p95: 26-51ms
+          # Observed throughput: ~10k op/s, p95 latency: 26-51ms
           - name: .*
             thresholds:
               - throughput > 8000 op/s
