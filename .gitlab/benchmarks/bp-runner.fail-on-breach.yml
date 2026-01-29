@@ -15,7 +15,7 @@ experiments:
         run: fail_on_breach
         scenarios:
           # Dummy SLO for testing - will be replaced with real thresholds
-          - name: throughput-3
+          - name: throughput.*
             thresholds:
               - throughput > 1 op/s
               - agg_http_req_duration_p50 < 100 ms
