@@ -14,6 +14,7 @@
 #include "shared/src/native-src/com_ptr.h"
 
 class IConfiguration;
+class ManagedCodeCache;
 
 class FrameStore : public IFrameStore
 {
@@ -43,7 +44,11 @@ public:
     static const uintptr_t MaxFakeIP = 2;
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
+    FrameStore(
+        ICorProfilerInfo4* pCorProfilerInfo, 
+        IConfiguration* pConfiguration,
+        IDebugInfoStore* pDebugInfoStore,
+        ManagedCodeCache* pManagedCodeCache);
 
 public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
@@ -158,6 +163,7 @@ private:
     std::unordered_map<ClassID, std::string> _fullTypeNames;
 
     bool _resolveNativeFrames;
+    ManagedCodeCache* _pManagedCodeCache;
     // TODO: dump stats about caches size at the end of the application
 
     // TODO: would it be needed to have a cache (moduleId + mdTypeDef) -> TypeDesc?
