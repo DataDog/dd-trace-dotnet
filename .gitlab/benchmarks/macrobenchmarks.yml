@@ -729,8 +729,7 @@ check-slo-breaches:
     - profiler_cpu-win
     - profiler_cpu_timer_create-win
   when: always
-  # TODO: Set to false once SLO thresholds are calibrated
-  allow_failure: true
+  allow_failure: true # Allowed to fail since we don't want it to block releases yet
   variables:
     ARTIFACTS_DIR: "reports"
 
@@ -739,7 +738,6 @@ notify-slo-breaches:
   stage: notify
   needs: ["check-slo-breaches"]
   when: always
-  # TODO: Set to false once SLO thresholds are calibrated
   allow_failure: true
   variables:
     CHANNEL: "performance-quality-gates-alerts"
